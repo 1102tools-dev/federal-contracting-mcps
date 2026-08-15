@@ -4,6 +4,14 @@ Eight free and open source MCP servers for federal contracting data and policy t
 
 Your assistant queries the real APIs instead of recalling what it thinks the FAR says. Same input, same output, every time.
 
+Website: [1102tools.com](https://1102tools.com)
+
+![What an MCP server is, where they run, and what that means in practice. An MCP server is a small program that sits between your AI and a federal data API; Model Context Protocol is the open standard for that connection. Each one runs locally on your own machine and calls the API with your own free key, so nothing routes through a third party. Answers come from the live API on every call rather than a cached copy, four of the eight need a free key, and all 124 tools are live-tested.](docs/mcp-explainer.png)
+
+Client links, since the image above cannot be clicked: [Claude Desktop](https://claude.ai/download) &middot; [Claude Code](https://claude.com/claude-code) &middot; [Codex](https://developers.openai.com/codex/app) &middot; [Gemini CLI](https://geminicli.com) &middot; [Copilot](https://code.visualstudio.com/docs/copilot/customization/mcp-servers)
+
+![Architecture diagram showing how a question travels: your AI client, to an MCP server launched by uvx on your own machine, to the official federal API using your own free key, back to a deterministic result. Coverage is grouped in three domains. Awards and entities: SAM.gov (19 tools, key) and USASpending (55 tools). Labor and pricing: BLS OEWS (7 tools, key), GSA CALC+ (8 tools), GSA Per Diem (6 tools, key). Regulation and rulemaking: eCFR (13 tools), Federal Register (8 tools), Regulations.gov (8 tools, key).](docs/architecture.png)
+
 ---
 
 ## 1.0.0 is out (August 2026)

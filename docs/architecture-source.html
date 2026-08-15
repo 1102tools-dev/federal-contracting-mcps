@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --border: #252a36;
+    --bg-raised: #12151c;
+    --accent: #4a9eff;
+    --blue: #75c7ff;
+    --gold: #d4a574;
+    --violet: #a78bfa;
+    --green: #34d399;
+    --text: #e8eaed;
+    --text-muted: #8b919e;
+    --text-dim: #646b78;
+    --mono: "SF Mono", ui-monospace, Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    margin: 0;
+    padding: 0;
+    width: 1800px;
+  }
+  #capture { padding: 60px 80px; background: var(--bg); }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 20px;
+    color: var(--accent);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-family: var(--sans);
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 18px;
+    letter-spacing: -0.02em;
+  }
+  .lede {
+    font-family: var(--sans);
+    font-size: 20px;
+    color: var(--text);
+    max-width: 900px;
+    margin: 0 0 56px;
+    line-height: 1.5;
+  }
+
+  /* Request path */
+  .path {
+    display: grid;
+    grid-template-columns: 1fr 44px 1fr 44px 1fr 44px 1fr;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
+  .step {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 26px;
+    text-align: center;
+  }
+  .step-kicker {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .step-title { font-size: 22px; font-weight: 700; line-height: 1.25; }
+  .step-sub {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--text-muted);
+    margin-top: 10px;
+    line-height: 1.45;
+  }
+  .step.local { border-color: var(--blue); background: rgba(93,173,226,0.06); }
+  .step.gov { border-color: var(--gold); background: rgba(212,165,116,0.08); }
+  .arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-size: 26px;
+    font-family: var(--mono);
+  }
+  .path-note {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  hr.divider { border: 0; border-top: 1px solid var(--border); margin: 0 0 44px; }
+
+  /* Coverage matrix */
+  .matrix {
+    display: grid;
+    grid-template-columns: 320px 1fr 1fr 1fr;
+    column-gap: 28px;
+    align-items: stretch;
+  }
+  .col-header {
+    font-family: var(--mono);
+    font-size: 17px;
+    color: var(--text);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    padding: 14px 0 22px;
+    text-align: center;
+  }
+  .row-label {
+    font-family: var(--mono);
+    font-size: 16px;
+    color: var(--text);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    text-align: right;
+    padding-right: 24px;
+  }
+  .cell {
+    padding: 22px 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    justify-content: center;
+  }
+  .cell.empty {
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 14px;
+    align-items: center;
+  }
+  .matrix > .row-label.first + .cell,
+  .matrix > .row-label.first + .cell + .cell,
+  .matrix > .row-label.first + .cell + .cell + .cell { border-top: none; }
+
+  .tile {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    text-align: center;
+    min-height: 70px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-color: var(--gold);
+    background: rgba(212, 165, 116, 0.08);
+  }
+  .tile-title { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .tile-sub {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--text);
+    margin-top: 8px;
+    letter-spacing: 0.02em;
+  }
+  .tile-kind {
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-top: 10px;
+    letter-spacing: 0.18em;
+    font-weight: 600;
+    color: var(--gold);
+  }
+  .tile-kind .key { color: var(--blue); }
+
+  .legend {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    margin-top: 52px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 17px;
+    color: var(--text);
+  }
+  .legend-item { display: flex; align-items: center; gap: 14px; }
+  .swatch { width: 22px; height: 22px; border-radius: 5px; }
+  .swatch.local { background: rgba(93,173,226,0.2); border: 1px solid var(--blue); }
+  .swatch.gov { background: rgba(212,165,116,0.2); border: 1px solid var(--gold); }
+</style>
+</head>
+<body>
+<div id="capture">
+
+<div class="section-label">Architecture</div>
+<h1>How they connect</h1>
+<p class="lede">Every server runs locally on your own machine and calls the official API directly. Nothing
+routes through a third party, and no data is cached or resold. Read across for the path one question
+takes. Read down for what the suite covers.</p>
+
+<div class="path">
+  <div class="step local">
+    <div class="step-kicker">You ask</div>
+    <div class="step-title">Your AI client</div>
+    <div class="step-sub">Claude, Codex, Gemini,<br>Copilot, LibreChat</div>
+  </div>
+  <div class="arrow">&#8594;</div>
+  <div class="step local">
+    <div class="step-kicker">Runs locally</div>
+    <div class="step-title">MCP server</div>
+    <div class="step-sub">launched by uvx<br>on your machine</div>
+  </div>
+  <div class="arrow">&#8594;</div>
+  <div class="step gov">
+    <div class="step-kicker">Live call</div>
+    <div class="step-title">Official federal API</div>
+    <div class="step-sub">your own free key,<br>where one is needed</div>
+  </div>
+  <div class="arrow">&#8594;</div>
+  <div class="step local">
+    <div class="step-kicker">You get</div>
+    <div class="step-title">Deterministic result</div>
+    <div class="step-sub">same input,<br>same output, every time</div>
+  </div>
+</div>
+<p class="path-note">124 tool calls across eight servers &middot; no scraping, no cached mirror, no paid research platform in the path</p>
+
+<hr class="divider">
+
+<div class="matrix">
+  <div class="row-label first">Awards &amp;<br>Entities</div>
+  <div class="cell">
+    <div class="tile">
+      <div class="tile-title">SAM.gov</div>
+      <div class="tile-sub">entities, exclusions,<br>opportunities, FPDS awards</div>
+      <div class="tile-kind">19 TOOLS &middot; <span class="key">KEY</span></div>
+    </div>
+  </div>
+  <div class="cell">
+    <div class="tile">
+      <div class="tile-title">USASpending</div>
+      <div class="tile-sub">contracts, grants, subawards,<br>recipients, agency depth</div>
+      <div class="tile-kind">55 TOOLS</div>
+    </div>
+  </div>
+  <div class="cell empty"></div>
+
+  <div class="row-label">Labor &amp;<br>Pricing</div>
+  <div class="cell">
+    <div class="tile">
+      <div class="tile-title">BLS OEWS</div>
+      <div class="tile-sub">wages, ~830 occupations,<br>530+ metro areas</div>
+      <div class="tile-kind">7 TOOLS &middot; <span class="key">KEY</span></div>
+    </div>
+  </div>
+  <div class="cell">
+    <div class="tile">
+      <div class="tile-title">GSA CALC+</div>
+      <div class="tile-sub">awarded MAS ceiling rates,<br>230K+ records</div>
+      <div class="tile-kind">8 TOOLS</div>
+    </div>
+  </div>
+  <div class="cell">
+    <div class="tile">
+      <div class="tile-title">GSA Per Diem</div>
+      <div class="tile-sub">CONUS lodging and M&amp;IE,<br>first/last day 75%</div>
+      <div class="tile-kind">6 TOOLS &middot; <span class="key">KEY</span></div>
+    </div>
+  </div>
+
+  <div class="row-label">Regulation &amp;<br>Rulemaking</div>
+  <div class="cell">
+    <div class="tile">
+      <div class="tile-title">eCFR</div>
+      <div class="tile-sub">current CFR daily,<br>FAR / DFARS clause lookup</div>
+      <div class="tile-kind">13 TOOLS</div>
+    </div>
+  </div>
+  <div class="cell">
+    <div class="tile">
+      <div class="tile-title">Federal Register</div>
+      <div class="tile-sub">rules and notices since 1994,<br>executive orders, FAR cases</div>
+      <div class="tile-kind">8 TOOLS</div>
+    </div>
+  </div>
+  <div class="cell">
+    <div class="tile">
+      <div class="tile-title">Regulations.gov</div>
+      <div class="tile-sub">dockets, public comments,<br>docket histories</div>
+      <div class="tile-kind">8 TOOLS &middot; <span class="key">KEY</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span class="swatch local"></span> Runs on your machine</div>
+  <div class="legend-item"><span class="swatch gov"></span> Official federal API</div>
+  <div class="legend-item"><span style="color:var(--blue);font-weight:600">KEY</span> free API key required</div>
+</div>
+
+</div>
+</body>
+</html>
