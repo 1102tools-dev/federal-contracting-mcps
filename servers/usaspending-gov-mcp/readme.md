@@ -87,8 +87,16 @@ pip install usaspending-gov-mcp
 ### Via uvx (recommended, no venv needed)
 
 ```bash
-uvx usaspending-gov-mcp
+uvx --from usaspending-gov-mcp usaspending-mcp
 ```
+
+The `--from` is required for this server and only this server. The PyPI package
+is `usaspending-gov-mcp` but the console script it installs is `usaspending-mcp`,
+so a bare `uvx usaspending-gov-mcp` fails with "An executable named
+usaspending-gov-mcp is not provided by package usaspending-gov-mcp".
+
+Do **not** run `uvx usaspending-mcp` either. `usaspending-mcp` is an unrelated
+third-party package on PyPI, not this project.
 
 ### From source
 
@@ -107,7 +115,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
   "mcpServers": {
     "usaspending": {
       "command": "uvx",
-      "args": ["usaspending-gov-mcp"]
+      "args": ["--from", "usaspending-gov-mcp", "usaspending-mcp"]
     }
   }
 }
@@ -137,7 +145,7 @@ Add to `~/.claude.json` or your project's `.claude.json`:
   "mcpServers": {
     "usaspending": {
       "command": "uvx",
-      "args": ["usaspending-gov-mcp"]
+      "args": ["--from", "usaspending-gov-mcp", "usaspending-mcp"]
     }
   }
 }
