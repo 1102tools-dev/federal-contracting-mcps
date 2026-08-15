@@ -48,6 +48,9 @@ async def _call_expect_error(name: str, match: str, **kwargs):
 
 
 def _payload(result):
+    # mcp>=2.0 returns CallToolResult; mcp 1.x returned (content, structured).
+    if hasattr(result, "structured_content"):
+        return result.structured_content
     return result[1] if isinstance(result, tuple) else result
 
 
@@ -805,7 +808,7 @@ def test_live_get_cfr_content_dfars_chapter_2():
 
 def test_unknown_param_rejected():
     """Typo'd param names must raise, not silently drop.
-    FastMCP default is extra='ignore' which lets silent-wrong-data through."""
+    The default is extra='ignore' which lets silent-wrong-data through."""
     async def _run():
         try:
             await mcp.call_tool(

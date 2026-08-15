@@ -59,6 +59,9 @@ def _reset_client():
 
 
 def _payload(result):
+    # mcp>=2.0 returns CallToolResult; mcp 1.x returned (content, structured).
+    if hasattr(result, "structured_content"):
+        return result.structured_content
     return result[1] if isinstance(result, tuple) else result
 
 

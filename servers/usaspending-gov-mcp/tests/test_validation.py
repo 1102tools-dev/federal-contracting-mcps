@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Regression tests for 0.2.0 hardening fixes.
 
-These invoke tools through the FastMCP registry (mcp.call_tool) rather
+These invoke tools through the MCPServer registry (mcp.call_tool) rather
 than awaiting the decorated coroutines directly. That matters: the prior
 stress tests awaited raw coroutines and bypassed the tool pipeline,
 missing whole classes of bugs. The patterns covered here (empty filters,
@@ -68,22 +68,22 @@ def test_spending_over_time_award_type_alone_raises():
 
 def test_autocomplete_psc_short_query_returns_empty_with_note():
     result = asyncio.run(_call("autocomplete_psc", search_text="R"))
-    # FastMCP's call_tool returns a tuple (content_blocks, structured_response) in
+    # call_tool returns CallToolResult on mcp>=2, or a tuple/dict on 1.x.
     # newer versions, or the dict directly in older. Handle both.
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     assert payload.get("results") == []
     assert "_note" in payload
 
 
 def test_autocomplete_psc_empty_query_returns_empty_with_note():
     result = asyncio.run(_call("autocomplete_psc", search_text=""))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     assert payload.get("results") == []
 
 
 def test_autocomplete_naics_short_query_returns_empty_with_note():
     result = asyncio.run(_call("autocomplete_naics", search_text="x"))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     assert payload.get("results") == []
 
 
@@ -296,7 +296,7 @@ def test_live_smoke_all_in_one_loop():
                 "limit": 1,
             },
         )
-        p1 = r1[1] if isinstance(r1, tuple) else r1
+        p1 = r1.structured_content if hasattr(r1, "structured_content") else (r1[1] if isinstance(r1, tuple) else r1)
         assert p1["limit"] == 1
         assert "results" in p1
 
@@ -308,7 +308,7 @@ def test_live_smoke_all_in_one_loop():
                 "time_period_end": "2026-04-18",
             },
         )
-        p2 = r2[1] if isinstance(r2, tuple) else r2
+        p2 = r2.structured_content if hasattr(r2, "structured_content") else (r2[1] if isinstance(r2, tuple) else r2)
         assert "results" in p2
 
         # 3. autocomplete_naics with exclude_retired filter
@@ -316,14 +316,14 @@ def test_live_smoke_all_in_one_loop():
             "autocomplete_naics",
             {"search_text": "software", "limit": 5},
         )
-        p3 = r3[1] if isinstance(r3, tuple) else r3
+        p3 = r3.structured_content if hasattr(r3, "structured_content") else (r3[1] if isinstance(r3, tuple) else r3)
         # With exclude_retired=True (default), all returned should be active
         for item in p3.get("results", []):
             assert item.get("year_retired") is None, f"retired leaked: {item}"
 
         # 4. toptier auto-pad: "97" -> "097" -> Department of Defense
         r4 = await mcp.call_tool("get_agency_overview", {"toptier_code": "97"})
-        p4 = r4[1] if isinstance(r4, tuple) else r4
+        p4 = r4.structured_content if hasattr(r4, "structured_content") else (r4[1] if isinstance(r4, tuple) else r4)
         assert "Defense" in p4.get("name", "") or p4.get("toptier_code") == "097"
 
     asyncio.run(run_all())
@@ -470,7 +470,12 @@ def test_autocomplete_psc_length_clamped():
 
 def test_user_agent_matches_version():
     from usaspending_gov_mcp.constants import USER_AGENT
-    assert "0.3.1" in USER_AGENT, f"USER_AGENT stale: {USER_AGENT}"
+    # Derived from package metadata so it cannot silently drift.
+    from importlib.metadata import version as _pkg_version
+    _expected = _pkg_version("usaspending-gov-mcp")
+    assert USER_AGENT.endswith(f"/{_expected}"), (
+        f"USER_AGENT {USER_AGENT!r} does not match packaged version {_expected!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -584,6 +589,9 @@ def test_ensure_dict_response_catches_string():
 # ---------------------------------------------------------------------------
 
 def _payload(result):
+    # mcp>=2.0 returns CallToolResult; mcp 1.x returned (content, structured).
+    if hasattr(result, "structured_content"):
+        return result.structured_content
     return result[1] if isinstance(result, tuple) else result
 
 

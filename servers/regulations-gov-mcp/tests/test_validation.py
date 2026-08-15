@@ -37,6 +37,9 @@ async def _call_expect_error(name: str, match: str, **kwargs):
 
 
 def _payload(result):
+    # mcp>=2.0 returns CallToolResult; mcp 1.x returned (content, structured).
+    if hasattr(result, "structured_content"):
+        return result.structured_content
     return result[1] if isinstance(result, tuple) else result
 
 
@@ -391,7 +394,12 @@ def test_search_documents_no_flag_when_real_results():
 
 def test_user_agent_matches_version():
     from regulationsgov_mcp.constants import USER_AGENT
-    assert "0.2.4" in USER_AGENT, f"USER_AGENT stale: {USER_AGENT}"
+    # Derived from package metadata so it cannot silently drift.
+    from importlib.metadata import version as _pkg_version
+    _expected = _pkg_version("regulationsgov-mcp")
+    assert USER_AGENT.endswith(f"/{_expected}"), (
+        f"USER_AGENT {USER_AGENT!r} does not match packaged version {_expected!r}"
+    )
 
 
 def test_safe_dict():

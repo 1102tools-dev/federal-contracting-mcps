@@ -10,7 +10,7 @@ Without a key (v1): 25 queries/day, 25 series/query.
 With a key (v2): 500 queries/day, 50 series/query.
 
 OEWS data lags ~2 years. The server defaults to the correct data year
-(currently 2024 = May 2024 estimates). Do NOT query the current calendar year.
+(currently 2025 = May 2025 estimates). Do NOT query the current calendar year.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import re
 from typing import Any, Literal, Union
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
 from .constants import (
     BASE_URL_V1,
@@ -41,7 +41,7 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = FastMCP("bls-oews")
+mcp = MCPServer("bls-oews")
 
 
 # ---------------------------------------------------------------------------
@@ -531,9 +531,11 @@ async def get_wage_data(
     Other: '01' (Employment), '03' (Hourly Mean), '08' (Hourly Median),
     '12' (25th Percentile), '14' (75th Percentile).
 
-    CRITICAL: Data year defaults to 2024 (May 2024 estimates). Do NOT pass
-    2025 or 2026. OEWS data lags ~2 years. Querying the current year returns
-    nothing.
+    CRITICAL: Data year defaults to 2025 (May 2025 estimates). Do NOT pass
+    2026. OEWS estimates publish about a year in arrears (May 2025 estimates
+    released April 2026), so the current calendar year returns nothing. Older
+    years are withdrawn once superseded: 2024 now returns no data at all.
+    Call detect_latest_year() if you need to confirm the newest published year.
 
     Values of '-' mean wage >= $239,200/yr (capped). '*' means sample too small.
     """
@@ -910,8 +912,8 @@ async def detect_latest_year() -> dict[str, Any]:
     """Probe the BLS API to check if a newer OEWS data year is available.
 
     OEWS data releases annually around April/May. The server defaults to
-    2024 (May 2024 estimates). This tool checks if 2025 data has been
-    published yet by querying a known-good national series.
+    2025 (May 2025 estimates). This tool checks whether the next year has
+    been published yet by querying a known-good national series.
 
     Call this once at the start of an IGCE build to ensure you're using
     the latest available data.
@@ -986,7 +988,7 @@ async def list_common_metros() -> dict[str, Any]:
 def _forbid_extra_params_on_all_tools() -> None:
     """Set extra='forbid' on every registered tool's pydantic arg model.
 
-    FastMCP's default is extra='ignore', which silently drops unknown
+    MCPServer's default is extra='ignore', which silently drops unknown
     parameter names. A typo like get_wage_data(ocupation_code='15-1252')
     (with the real parameter soc_code) would succeed with the typo
     silently discarded, returning default-filter data with no indication

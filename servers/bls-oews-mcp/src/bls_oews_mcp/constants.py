@@ -5,11 +5,14 @@
 BASE_URL_V2 = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 BASE_URL_V1 = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = "bls-oews-mcp/0.2.6"
+USER_AGENT = "bls-oews-mcp/1.0.0"
 
-# OEWS data lags ~2 years. Do NOT use the calendar year.
-# May 2024 estimates released April 2025. Next: May 2025 estimates in ~April 2026.
-OEWS_CURRENT_YEAR = "2024"
+# OEWS publishes about a year in arrears. Do NOT use the calendar year.
+# May 2025 estimates released April 2026. Next: May 2026 estimates in ~April 2027.
+# BLS withdraws the prior year once superseded: 2024 stopped returning rows
+# when 2025 published, so this constant must be bumped each release cycle or
+# every defaulted query comes back empty. Verify with detect_latest_year().
+OEWS_CURRENT_YEAR = "2025"
 
 # Series ID format: PREFIX(4) + AREA(7) + INDUSTRY(6) + OCC(6) + DATATYPE(2) = 25 chars
 SERIES_ID_LENGTH = 25

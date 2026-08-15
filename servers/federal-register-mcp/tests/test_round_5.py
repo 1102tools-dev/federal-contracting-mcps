@@ -49,6 +49,9 @@ def _reset_client():
 
 
 def _payload(result):
+    # mcp>=2.0 returns CallToolResult; mcp 1.x returned (content, structured).
+    if hasattr(result, "structured_content"):
+        return result.structured_content
     return result[1] if isinstance(result, tuple) else result
 
 
@@ -584,7 +587,7 @@ def test_live_get_documents_batch_with_real_search():
             "term": "small business",
             "per_page": 3,
         })
-        payload = r[1] if isinstance(r, tuple) else r
+        payload = r.structured_content if hasattr(r, "structured_content") else (r[1] if isinstance(r, tuple) else r)
         if not payload.get("results"):
             return None
         doc_numbers = [d.get("document_number") for d in payload["results"][:3] if d.get("document_number")]

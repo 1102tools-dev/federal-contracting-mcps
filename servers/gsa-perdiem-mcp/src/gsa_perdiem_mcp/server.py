@@ -23,11 +23,11 @@ from datetime import date as _date
 from typing import Any
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
 from .constants import BASE_URL, DEFAULT_TIMEOUT, USER_AGENT
 
-mcp = FastMCP("gsa-perdiem")
+mcp = MCPServer("gsa-perdiem")
 
 
 # ---------------------------------------------------------------------------
@@ -844,7 +844,7 @@ async def compare_locations(
 def _forbid_extra_params_on_all_tools() -> None:
     """Set extra='forbid' on every registered tool's pydantic arg model.
 
-    FastMCP's default is extra='ignore', which silently drops unknown
+    MCPServer's default is extra='ignore', which silently drops unknown
     parameter names. A typo like lookup_city_perdiem(state_code='VA')
     (real param is `state`) would succeed with the typo discarded and
     run without the intended filter. extra='forbid' raises "Extra inputs

@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.0.0
+
+First stable release. The suite is feature-complete for its intended scope and
+moves to baseline maintenance from here.
+
+### Breaking
+
+Requires **v2 of the MCP Python SDK** (`mcp>=2.0.0`). Version 2 renamed the
+high-level server class from `FastMCP` to `MCPServer` and removed the
+`mcp.server.fastmcp` module. No tool name, parameter, or response shape changed.
+Installs pinned to `mcp` 1.x should stay on the 0.x line of this package.
+
+Earlier releases declared `mcp>=1.0.0` with no upper bound. When `mcp` 2.0.0
+published, fresh installs of the 0.x line resolved to it and failed at import
+with `ModuleNotFoundError: No module named 'mcp.server.fastmcp'`. Requiring
+`mcp>=2.0.0` closes that gap.
+
+### Changed
+
+- Package version, `__version__`, `USER_AGENT`, and the MCPB manifest version
+  are now synchronized. The USER_AGENT currency test derives its expected value
+  from package metadata rather than a hardcoded literal, which is why the string
+  had drifted a patch behind the package.
+- Declares Python 3.10 through 3.14. Classifiers normalized across all eight
+  servers.
+
+### Verified
+
+240 regression tests (134 offline, 106 live-gated), all passing
+against `mcp` 2.0.0 on Python 3.14, with pass counts identical to the pre-migration
+baseline on `mcp` 1.x. Server confirmed to boot over stdio and enumerate all
+13 tools.
+
 ## 0.2.5
 
 Round 6: Hypothesis-driven property test suite + extensive live audit.

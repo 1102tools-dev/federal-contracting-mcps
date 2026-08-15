@@ -48,6 +48,9 @@ async def _call(name: str, **kwargs):
 
 
 def _payload(result):
+    # mcp>=2.0 returns CallToolResult; mcp 1.x returned (content, structured).
+    if hasattr(result, "structured_content"):
+        return result.structured_content
     return result[1] if isinstance(result, tuple) else result
 
 
@@ -332,12 +335,25 @@ def test_live_get_wage_data_industry_int():
 # F. YEAR HANDLING
 # ===========================================================================
 
-def test_live_get_wage_data_year_2024():
+def test_live_get_wage_data_current_year():
     r = asyncio.run(
-        _call("get_wage_data", occ_code="151252", scope="national", year=2024)
+        _call("get_wage_data", occ_code="151252", scope="national", year=2025)
     )
     data = _payload(r)
     assert isinstance(data, dict)
+    assert not data.get("no_data"), "current OEWS year should return live rows"
+
+
+def test_live_get_wage_data_year_2024_rejected():
+    """2024 was withdrawn when 2025 published; it is now a historical year."""
+    try:
+        asyncio.run(
+            _call("get_wage_data", occ_code="151252", scope="national", year=2024)
+        )
+    except Exception as e:
+        assert "before the current" in str(e) or "latest year" in str(e).lower()
+        return
+    raise AssertionError("expected year=2024 to be rejected as historical")
 
 
 def test_live_get_wage_data_year_2023_rejected():

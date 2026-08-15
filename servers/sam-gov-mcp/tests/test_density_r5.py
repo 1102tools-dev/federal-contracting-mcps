@@ -104,14 +104,14 @@ def test_uei_invalid_lookup_entity_by_uei(uei, match):
 
 def test_uei_empty_lookup_entity_by_uei_returns_empty_result():
     result = asyncio.run(_call("lookup_entity_by_uei", uei=""))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     if isinstance(payload, dict):
         assert payload.get("totalRecords", 0) == 0
 
 
 def test_uei_whitespace_lookup_entity_by_uei_returns_empty_result():
     result = asyncio.run(_call("lookup_entity_by_uei", uei="   "))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     if isinstance(payload, dict):
         assert payload.get("totalRecords", 0) == 0
 
@@ -126,15 +126,15 @@ def test_uei_invalid_check_exclusion_by_uei(uei, match):
 def test_uei_empty_check_exclusion_returns_empty_result():
     """Empty UEI returns dict with totalRecords=0 instead of raising."""
     result = asyncio.run(_call("check_exclusion_by_uei", uei=""))
-    # FastMCP wraps result; payload is at index 1
-    payload = result[1] if isinstance(result, tuple) else result
+    # Result is wrapped: CallToolResult on mcp>=2, (content, payload) tuple on 1.x
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     if isinstance(payload, dict):
         assert payload.get("totalRecords", 0) == 0
 
 
 def test_uei_whitespace_check_exclusion_returns_empty_result():
     result = asyncio.run(_call("check_exclusion_by_uei", uei="   "))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     if isinstance(payload, dict):
         assert payload.get("totalRecords", 0) == 0
 
@@ -165,7 +165,7 @@ def test_uei_invalid_format_vendor_responsibility_check(uei, match):
     try:
         result = asyncio.run(_call("vendor_responsibility_check", uei=uei))
         # If it didn't raise, the result should at least have a flag
-        payload = result[1] if isinstance(result, tuple) else result
+        payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
         if isinstance(payload, dict):
             assert payload.get("flags"), (
                 f"format-invalid UEI {uei!r} should produce flags or raise"
@@ -178,7 +178,7 @@ def test_uei_invalid_format_vendor_responsibility_check(uei, match):
 def test_vendor_responsibility_check_empty_uei_flags():
     """Empty UEI returns EMPTY_UEI flag instead of raising."""
     result = asyncio.run(_call("vendor_responsibility_check", uei=""))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     if isinstance(payload, dict):
         flags = payload.get("flags", [])
         assert "EMPTY_UEI" in flags, f"expected EMPTY_UEI flag, got {flags}"
@@ -186,7 +186,7 @@ def test_vendor_responsibility_check_empty_uei_flags():
 
 def test_vendor_responsibility_check_whitespace_uei_flags():
     result = asyncio.run(_call("vendor_responsibility_check", uei="   "))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     if isinstance(payload, dict):
         flags = payload.get("flags", [])
         assert "EMPTY_UEI" in flags
@@ -244,7 +244,7 @@ def test_cage_invalid_lookup_entity_by_cage(cage, match):
     if cage.strip() == "":
         # Empty/whitespace returns empty result dict, doesn't raise
         result = asyncio.run(_call("lookup_entity_by_cage", cage_code=cage))
-        # Result is a (call_result, payload) tuple from FastMCP
+        # Result is CallToolResult on mcp>=2, (call_result, payload) tuple on 1.x
         return
     asyncio.run(_call_expect_error("lookup_entity_by_cage", match, cage_code=cage))
 

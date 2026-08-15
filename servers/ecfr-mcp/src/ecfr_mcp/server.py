@@ -19,7 +19,7 @@ import re
 from typing import Any
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
 from .constants import (
     BASE_URL,
@@ -33,7 +33,7 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = FastMCP("ecfr")
+mcp = MCPServer("ecfr")
 
 
 # ---------------------------------------------------------------------------
@@ -1176,7 +1176,7 @@ async def find_recent_changes(
 def _forbid_extra_params_on_all_tools() -> None:
     """Set extra='forbid' on every registered tool's pydantic arg model.
 
-    FastMCP's default is extra='ignore', which silently drops unknown
+    MCPServer's default is extra='ignore', which silently drops unknown
     parameter names. A typo like search_cfr(keyword='audit') (the real
     parameter is `query`) would succeed with the typo silently discarded,
     leaving the tool to hit the API with no query at all.

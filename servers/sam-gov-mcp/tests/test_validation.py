@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Regression tests for 0.3.0 hardening fixes.
 
-Invoked through the FastMCP registry (mcp.call_tool) so pydantic type coercion
+Invoked through the MCPServer registry (mcp.call_tool) so pydantic type coercion
 runs exactly as it does in production. The prior stress_test.py awaited raw
 coroutines and bypassed the tool pipeline entirely.
 """
@@ -50,6 +50,9 @@ async def _call_expect_error(name: str, match: str, **kwargs):
 
 
 def _payload(result):
+    # mcp>=2.0 returns CallToolResult; mcp 1.x returned (content, structured).
+    if hasattr(result, "structured_content"):
+        return result.structured_content
     return result[1] if isinstance(result, tuple) else result
 
 
@@ -270,8 +273,12 @@ def test_clean_error_body_passthrough_non_html():
 
 def test_user_agent_matches_version():
     from sam_gov_mcp.constants import USER_AGENT
-    # Match the current published version; bump this string when pyproject bumps.
-    assert "0.4.0" in USER_AGENT, f"USER_AGENT stale: {USER_AGENT}"
+    # Derived from package metadata so it cannot silently drift.
+    from importlib.metadata import version as _pkg_version
+    _expected = _pkg_version("sam-gov-mcp")
+    assert USER_AGENT.endswith(f"/{_expected}"), (
+        f"USER_AGENT {USER_AGENT!r} does not match packaged version {_expected!r}"
+    )
 
 
 # ---------------------------------------------------------------------------

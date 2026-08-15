@@ -27,7 +27,7 @@ from datetime import date
 from typing import Any, Literal, Union
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
 from .constants import (
     ASSISTANCE_SUBAWARDS_PATH,
@@ -51,7 +51,7 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = FastMCP("sam-gov")
+mcp = MCPServer("sam-gov")
 
 
 # ---------------------------------------------------------------------------
@@ -455,9 +455,13 @@ def _format_error(status: int, body: str) -> str:
         if "entered search criteria is not found" in cleaned.lower():
             return (
                 "HTTP 404: SAM.gov did not find any record matching your search. "
-                "For PSC codes: verify the code exists at "
-                "https://www.acquisition.gov/psc-manual (common codes are "
-                "4 characters like 'R425', 'D302' is not a valid PSC). "
+                "For PSC codes: this endpoint defaults to active_only='Y', so a "
+                "retired code returns 404 even though it is a real PSC. If the "
+                "code is well-formed (4 characters, like 'R425'), retry with "
+                "active_only='ALL' to see retired entries and their end dates "
+                "(D302, for example, is real but was retired 2020-10-29). "
+                "Otherwise verify the code at "
+                "https://www.acquisition.gov/psc-manual. "
                 "For free-text PSC searches: SAM's PSC endpoint requires a "
                 "substring that appears in an active PSC name or description."
             )
@@ -1896,7 +1900,7 @@ async def search_assistance_subawards(
 def _forbid_extra_params_on_all_tools() -> None:
     """Set extra='forbid' on every registered tool's pydantic arg model.
 
-    Default FastMCP behavior is extra='ignore' which silently drops unknown
+    Default MCPServer behavior is extra='ignore' which silently drops unknown
     parameter names. That turns a typo like search_entities(keyword='x')
     (the real param is free_text) into an unfiltered default-query response
     instead of an error. Applying extra='forbid' across the board surfaces

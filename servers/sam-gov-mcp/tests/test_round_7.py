@@ -740,7 +740,7 @@ def test_vendor_responsibility_check_input_handling(uei_input):
     try:
         result = asyncio.run(mcp.call_tool("vendor_responsibility_check", {"uei": uei_input}))
         # Result should be a dict with flags
-        payload = result[1] if isinstance(result, tuple) else result
+        payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
         if isinstance(payload, dict):
             assert "flags" in payload
     except Exception:

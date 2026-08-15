@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Regression tests for 0.2.0 hardening fixes.
 
-Goes through the FastMCP registry (mcp.call_tool) so pydantic type coercion
+Goes through the MCPServer registry (mcp.call_tool) so pydantic type coercion
 runs exactly as in production. The prior stress_test.py awaited raw coroutines
 and bypassed the tool pipeline, missing most of the crash and silent-wrong-data
 paths fixed here.
@@ -44,6 +44,9 @@ async def _call_expect_error(name: str, match: str, **kwargs):
 
 
 def _payload(result):
+    # mcp>=2.0 returns CallToolResult; mcp 1.x returned (content, structured).
+    if hasattr(result, "structured_content"):
+        return result.structured_content
     return result[1] if isinstance(result, tuple) else result
 
 
@@ -255,10 +258,13 @@ def test_year_historical_gets_clear_redirect():
 
 
 def test_year_accepts_int():
+    # Use the current OEWS year: a superseded year is rejected as historical,
+    # which would exercise the wrong code path for an int-coercion test.
     try:
-        asyncio.run(_call("get_wage_data", occ_code="151252", year=2024))
+        asyncio.run(_call("get_wage_data", occ_code="151252", year=int(srv.OEWS_CURRENT_YEAR)))
     except Exception as e:
         assert "4-digit year" not in str(e)
+        assert "before the current" not in str(e)
 
 
 def test_year_letters_rejected():
@@ -553,7 +559,12 @@ def test_clean_error_body_passthrough_non_html():
 
 def test_user_agent_matches_version():
     from bls_oews_mcp.constants import USER_AGENT
-    assert "0.2.6" in USER_AGENT, f"USER_AGENT stale: {USER_AGENT}"
+    # Derived from package metadata so it cannot silently drift.
+    from importlib.metadata import version as _pkg_version
+    _expected = _pkg_version("bls-oews-mcp")
+    assert USER_AGENT.endswith(f"/{_expected}"), (
+        f"USER_AGENT {USER_AGENT!r} does not match packaged version {_expected!r}"
+    )
 
 
 def test_api_key_status_whitespace_flagged():
@@ -616,7 +627,7 @@ def test_live_igce_benchmark_software_devs():
 
 def test_unknown_param_rejected():
     """Typo'd param names must raise, not silently drop.
-    FastMCP default is extra='ignore' which lets silent-wrong-data through."""
+    The default is extra='ignore' which lets silent-wrong-data through."""
     async def _run():
         try:
             await mcp.call_tool(
@@ -638,7 +649,7 @@ def test_no_data_flag_on_fake_soc():
     async def _run():
         try:
             r = await mcp.call_tool("get_wage_data", {"occ_code": "99-9999"})
-            p = r[1] if isinstance(r, tuple) else r
+            p = r.structured_content if hasattr(r, "structured_content") else (r[1] if isinstance(r, tuple) else r)
             assert p.get("no_data") is True
             assert "no_data_reason" in p
             assert "SOC" in p["no_data_reason"]
@@ -654,7 +665,7 @@ def test_no_data_flag_on_fake_state():
                 "get_wage_data",
                 {"occ_code": "15-1252", "scope": "state", "area_code": "99"},
             )
-            p = r[1] if isinstance(r, tuple) else r
+            p = r.structured_content if hasattr(r, "structured_content") else (r[1] if isinstance(r, tuple) else r)
             assert p.get("no_data") is True
         except Exception:
             pass
@@ -691,7 +702,7 @@ def test_igce_flags_unknown_soc_title():
             r = await mcp.call_tool(
                 "igce_wage_benchmark", {"occ_code": "99-9999"}
             )
-            p = r[1] if isinstance(r, tuple) else r
+            p = r.structured_content if hasattr(r, "structured_content") else (r[1] if isinstance(r, tuple) else r)
             assert p.get("no_data") is True or p.get("_title_warning")
         except Exception:
             pass

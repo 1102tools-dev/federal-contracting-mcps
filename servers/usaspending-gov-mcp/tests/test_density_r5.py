@@ -1026,7 +1026,7 @@ def test_state_fips_with_whitespace_stripped():
 def test_autocomplete_psc_empty_returns_note():
     """Empty query returns empty results with a note, not an error."""
     result = asyncio.run(_call("autocomplete_psc", search_text=""))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     if isinstance(payload, dict):
         assert "results" in payload
         assert payload["results"] == []
@@ -1035,7 +1035,7 @@ def test_autocomplete_psc_empty_returns_note():
 
 def test_autocomplete_psc_single_char_returns_note():
     result = asyncio.run(_call("autocomplete_psc", search_text="r"))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     if isinstance(payload, dict):
         assert "results" in payload
         assert payload["results"] == []
@@ -1043,7 +1043,7 @@ def test_autocomplete_psc_single_char_returns_note():
 
 def test_autocomplete_psc_whitespace_only_returns_note():
     result = asyncio.run(_call("autocomplete_psc", search_text="   "))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     if isinstance(payload, dict):
         assert payload.get("results") == []
 
@@ -1066,14 +1066,14 @@ def test_autocomplete_psc_at_length_cap_passes():
 
 def test_autocomplete_naics_empty_returns_note():
     result = asyncio.run(_call("autocomplete_naics", search_text=""))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     if isinstance(payload, dict):
         assert payload.get("results") == []
 
 
 def test_autocomplete_naics_single_char_returns_note():
     result = asyncio.run(_call("autocomplete_naics", search_text="x"))
-    payload = result[1] if isinstance(result, tuple) else result
+    payload = result.structured_content if hasattr(result, "structured_content") else (result[1] if isinstance(result, tuple) else result)
     if isinstance(payload, dict):
         assert payload.get("results") == []
 

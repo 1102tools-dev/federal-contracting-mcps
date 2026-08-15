@@ -21,7 +21,7 @@ import urllib.parse
 from typing import Any, Literal, Union
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 from pydantic import BeforeValidator
 from typing_extensions import Annotated
 
@@ -35,7 +35,7 @@ from .constants import (
     WORKSITE_VALUES,
 )
 
-mcp = FastMCP("gsa-calc")
+mcp = MCPServer("gsa-calc")
 
 
 # ---------------------------------------------------------------------------
@@ -1189,7 +1189,7 @@ async def sin_analysis(
 def _forbid_extra_params_on_all_tools() -> None:
     """Set extra='forbid' on every registered tool's pydantic arg model.
 
-    FastMCP's default is extra='ignore', which silently drops unknown
+    MCPServer's default is extra='ignore', which silently drops unknown
     parameter names. A typo like keyword_search(keyword='engineer') (real
     param is `q`) would succeed with the typo silently discarded, returning
     unfiltered data. extra='forbid' raises "Extra inputs are not permitted"

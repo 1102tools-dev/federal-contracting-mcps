@@ -17,7 +17,7 @@ from datetime import date
 from typing import Any, Literal
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
 from .constants import (
     BASE_URL,
@@ -27,7 +27,7 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = FastMCP("federal-register")
+mcp = MCPServer("federal-register")
 
 
 # ---------------------------------------------------------------------------
@@ -750,7 +750,7 @@ async def far_case_history(docket_id: str) -> dict[str, Any]:
 def _forbid_extra_params_on_all_tools() -> None:
     """Set extra='forbid' on every registered tool's pydantic arg model.
 
-    FastMCP's default is extra='ignore', which silently drops unknown
+    MCPServer's default is extra='ignore', which silently drops unknown
     parameter names. A typo like search_documents(keyword='acquisition')
     (real param is `term`) would succeed with the typo silently discarded,
     leaving the tool to hit the API with no filter. extra='forbid' raises

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Regression tests for 0.2.0 hardening fixes.
 
-These invoke tools through the FastMCP registry (mcp.call_tool) rather than
+These invoke tools through the MCPServer registry (mcp.call_tool) rather than
 awaiting the decorated coroutines directly. That matters: the prior stress
 tests awaited raw coroutines and bypassed the tool pipeline, missing whole
 classes of bugs. The list_agencies pydantic crash slipped through the
@@ -43,6 +43,9 @@ async def _call_expect_error(name: str, match: str, **kwargs):
 
 
 def _payload(result):
+    # mcp>=2.0 returns CallToolResult; mcp 1.x returned (content, structured).
+    if hasattr(result, "structured_content"):
+        return result.structured_content
     return result[1] if isinstance(result, tuple) else result
 
 
@@ -338,7 +341,12 @@ def test_get_document_accepts_correction_prefix():
 
 def test_user_agent_version_matches():
     from federal_register_mcp.constants import USER_AGENT
-    assert "0.2.6" in USER_AGENT, f"USER_AGENT stale: {USER_AGENT}"
+    # Derived from package metadata so it cannot silently drift.
+    from importlib.metadata import version as _pkg_version
+    _expected = _pkg_version("federal-register-mcp")
+    assert USER_AGENT.endswith(f"/{_expected}"), (
+        f"USER_AGENT {USER_AGENT!r} does not match packaged version {_expected!r}"
+    )
 
 
 def test_clean_error_body_strips_html():
@@ -609,13 +617,21 @@ def test_ensure_json_container_rejects_string():
 
 def test_user_agent_matches_version():
     from federal_register_mcp.constants import USER_AGENT
-    assert "0.2.6" in USER_AGENT, f"USER_AGENT stale: {USER_AGENT}"
+    # Derived from package metadata so it cannot silently drift.
+    from importlib.metadata import version as _pkg_version
+    _expected = _pkg_version("federal-register-mcp")
+    assert USER_AGENT.endswith(f"/{_expected}"), (
+        f"USER_AGENT {USER_AGENT!r} does not match packaged version {_expected!r}"
+    )
 
 
 # ---- LIVE tests ----
 
 
 def _payload(result):
+    # mcp>=2.0 returns CallToolResult; mcp 1.x returned (content, structured).
+    if hasattr(result, "structured_content"):
+        return result.structured_content
     return result[1] if isinstance(result, tuple) else result
 
 

@@ -15,7 +15,7 @@ SUBCONTRACTS_PATH = "/prod/contract/v1/subcontracts/search"
 ASSISTANCE_SUBAWARDS_PATH = "/prod/assistance/v1/subawards/search"
 
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = "sam-gov-mcp/0.4.0"
+USER_AGENT = "sam-gov-mcp/1.0.0"
 
 # Hard caps from the SAM.gov API (enforce client-side to give good errors)
 ENTITY_MAX_SIZE = 10          # Entity Management has a hard cap of 10

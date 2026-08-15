@@ -17,7 +17,7 @@ from datetime import date
 from typing import Any, Literal
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
 from .constants import (
     ALL_SB_SET_ASIDE_CODES,
@@ -33,7 +33,7 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = FastMCP("usaspending")
+mcp = MCPServer("usaspending")
 
 
 # ---------------------------------------------------------------------------
@@ -2053,7 +2053,7 @@ async def get_federal_account_fy_snapshot(
 def _forbid_extra_params_on_all_tools() -> None:
     """Set extra='forbid' on every registered tool's pydantic arg model.
 
-    FastMCP's default is extra='ignore', which silently drops unknown
+    MCPServer's default is extra='ignore', which silently drops unknown
     parameter names. A typo like search_awards(keyword='cyber') (real
     param is `search_text`) would succeed with the typo discarded and
     return unfiltered data. extra='forbid' raises "Extra inputs are not
