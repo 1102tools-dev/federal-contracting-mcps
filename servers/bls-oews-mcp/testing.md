@@ -45,6 +45,25 @@ The 0.1.1 smoke test for this MCP said "zero bugs." The retroactive live audit p
 
 The retroactive audit in 0.2.2 used a real BLS v2 API key throughout. The repository includes 5 live-gated regression tests executable via `BLS_LIVE_TESTS=1 BLS_API_KEY=... pytest` covering real wage data retrieval, metro comparison, occupation comparison, IGCE wage benchmark, and the SOC format that previously failed validation ("15-1252" with dash). A BLS v2 key is free at `data.bls.gov/registrationEngine` and carries a 500-queries-per-day limit.
 
+## Live test quota budget
+
+The BLS v2 API allows **500 requests per day per registration key**. This suite
+carries **159 live-gated tests**, and each one costs roughly one request, so a
+single full live pass (`BLS_LIVE_TESTS=1`) burns about a third of the daily
+budget. Three full passes in a day is the practical ceiling.
+
+**Do not re-run the suite just to re-read output.** On 2026-08-15 the key was
+exhausted by running the full live pass four times while diagnosing failures
+that the first run had already reported. The tell is `HTTP 429` or `the daily
+threshold for total number of requests allocated to the user with registration
+key ... has been reached`. Both are rate limiting, not server defects. Capture
+the first run's output to a file and read that instead.
+
+For reference, the server itself is efficient: every tool issues exactly one
+POST, batching up to `MAX_SERIES_V2` (50) series per request. A 12-metro
+`compare_metros` call costs one request, not twelve. Normal use is nowhere near
+the cap; a complete IGCE labor basis runs 5 to 15 requests.
+
 ## Issues Found and Fixed
 
 ### Priority 0: Usability-breaking
