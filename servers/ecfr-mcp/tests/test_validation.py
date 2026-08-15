@@ -819,3 +819,55 @@ def test_unknown_param_rejected():
             return
         raise AssertionError("expected extra-param rejection")
     asyncio.run(_run())
+
+
+# ---------------------------------------------------------------------------
+# 1.0.1: CFR identifier params must be typed (issue #6, PR #8)
+# ---------------------------------------------------------------------------
+
+# Params that name a CFR location. Declared as `Any` these emitted a schema
+# with no type constraint, so a client sent 4.130 as a JSON number, Python got
+# the float 4.13, and the validator refused it. Only identifiers with a
+# trailing letter survived. Worse, 4.130 and 4.13 are different sections and
+# the float round-trip collapsed them, so the rejection was the only thing
+# standing between the user and quietly wrong regulatory text.
+_ID_PARAMS = {
+    "part", "subpart", "section", "chapter", "subchapter",
+    "part_number", "section_id",
+}
+
+
+def test_cfr_identifier_params_are_typed():
+    """Every identifier param must constrain to string/integer in the schema.
+
+    An untyped param is the whole bug: without `type`, a conformant client is
+    free to send a JSON number for a value that is not numeric.
+    """
+    async def _run():
+        untyped = []
+        for tool in await mcp.list_tools():
+            # SDK v2 renamed inputSchema to input_schema; accept either.
+            schema = getattr(tool, "input_schema", None) or getattr(tool, "inputSchema", {})
+            for name, spec in (schema.get("properties") or {}).items():
+                if name not in _ID_PARAMS:
+                    continue
+                types = (
+                    {spec["type"]} if "type" in spec
+                    else {o.get("type") for o in spec.get("anyOf", [])}
+                )
+                types.discard("null")
+                if not types or not types <= {"string", "integer"}:
+                    untyped.append(f"{tool.name}.{name} -> {types or 'no type'}")
+        assert not untyped, "untyped CFR identifier params: " + "; ".join(untyped)
+    asyncio.run(_run())
+
+
+def test_decimal_section_survives_as_string():
+    """4.130 and 4.13 are different sections and must not collapse."""
+    async def _run():
+        for sec in ("4.130", "4.13"):
+            r = await mcp.call_tool(
+                "get_cfr_content", {"title_number": 38, "part": 4, "section": sec}
+            )
+            assert "must be a string or integer" not in json.dumps(_payload(r))
+    asyncio.run(_run())

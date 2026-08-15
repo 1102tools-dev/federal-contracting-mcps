@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.0.1
+
+### Fixed
+
+**Most CFR sections were unreachable.** The CFR identifier parameters
+(`section`, `part`, `subpart`, `chapter`, `subchapter`, `part_number`,
+`section_id`) were declared as `Any`, so the emitted JSON Schema carried no
+type constraint. A conformant client was free to send `4.130` as a JSON
+number, Python received the float `4.13`, and the validator refused it. Only
+identifiers ending in a letter, such as `4.88a`, survived, which in most CFR
+titles is a small minority of sections.
+
+The quiet part was worse than the error: `4.130` and `4.13` are different
+sections, and a float round-trip collapses one into the other. The validator
+rejecting the request is the only thing that kept this from returning the
+wrong regulatory text without any signal.
+
+Those parameters are now typed `str | int`, so the schema constrains them to
+string or integer and decimal identifiers arrive intact. A regression test
+asserts every identifier parameter carries a type constraint, and a second
+test checks that `4.130` and `4.13` still resolve to different sections.
+
+Reported by @zackunseasoned in #6, who also narrowed the scope by testing the
+sibling servers and confirming the issue is eCFR-only: JSON numbers cannot
+carry leading zeros, so codes like `01` are always serialized as strings.
+Fix contributed in #8, extended here to `list_sections_in_part`, which the
+original patch did not cover.
+
 ## 1.0.0
 
 First stable release. The suite is feature-complete for its intended scope and

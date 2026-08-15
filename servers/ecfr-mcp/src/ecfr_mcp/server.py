@@ -1014,8 +1014,8 @@ async def compare_versions(
 
 @mcp.tool(annotations={"title": "List Sections in Part", "readOnlyHint": True, "destructiveHint": False})
 async def list_sections_in_part(
-    part_number: Any,
-    chapter: Any = "1",
+    part_number: str | int,
+    chapter: str | int = "1",
     title_number: int = 48,
     date: str | None = None,
 ) -> dict[str, Any]:
