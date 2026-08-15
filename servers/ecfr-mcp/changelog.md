@@ -11,6 +11,16 @@ Requires **v2 of the MCP Python SDK** (`mcp>=2.0.0`). Version 2 renamed the
 high-level server class from `FastMCP` to `MCPServer` and removed the
 `mcp.server.fastmcp` module. No tool name, parameter, or response shape changed.
 Installs pinned to `mcp` 1.x should stay on the 0.x line of this package.
+The requirement is now bounded (`mcp>=2.0.0,<3`) so a future major release of
+the SDK produces a clean resolver error instead of an import-time crash.
+
+**Claude Desktop `.mcpb` bundles are discontinued.** Bundles could not be
+signed in a way Claude Desktop recognizes, so every install surfaced an
+untrusted-developer warning, and because the bundle shipped without a lockfile
+it re-resolved its dependencies on every launch, which is what made it the
+install path most exposed to the failure above. Install via `uvx`, `pip`, or
+Docker instead; the per-server readme has the client config block. Existing
+bundle installs keep working until removed, but will not receive updates.
 
 Earlier releases declared `mcp>=1.0.0` with no upper bound. When `mcp` 2.0.0
 published, fresh installs of the 0.x line resolved to it and failed at import

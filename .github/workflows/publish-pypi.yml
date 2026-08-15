@@ -51,3 +51,18 @@ jobs:
         with:
           packages-dir: servers/${{ matrix.server.dir }}/dist/
           skip-existing: true
+
+  # Bundles were dropped in 1.0.0, and the .mcpb workflow was what used to
+  # create the GitHub Release. This keeps a Release (notes only, no assets)
+  # for every tag so the Releases page stays the changelog landing spot.
+  release:
+    needs: publish
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
