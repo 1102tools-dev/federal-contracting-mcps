@@ -550,10 +550,10 @@ async def get_latest_date(title_number: int = 48) -> dict[str, Any]:
 async def get_cfr_content(
     title_number: int = 48,
     date: str | None = None,
-    part: Any = None,
-    subpart: Any = None,
-    section: Any = None,
-    chapter: Any = None,
+    part: str | int | None = None,
+    subpart: str | int | None = None,
+    section: str | int | None = None,
+    chapter: str | int | None = None,
     raw_xml: bool = False,
 ) -> dict[str, Any]:
     """Get the full text of a CFR section, subpart, or part.
@@ -629,10 +629,10 @@ async def get_cfr_content(
 async def get_cfr_structure(
     title_number: int = 48,
     date: str | None = None,
-    chapter: Any = None,
-    subchapter: Any = None,
-    part: Any = None,
-    subpart: Any = None,
+    chapter: str | int | None = None,
+    subchapter: str | int | None = None,
+    part: str | int | None = None,
+    subpart: str | int | None = None,
 ) -> dict[str, Any]:
     """Get the hierarchical table of contents for a CFR title or subset.
 
@@ -677,9 +677,9 @@ async def get_cfr_structure(
 @mcp.tool(annotations={"title": "Get Version History", "readOnlyHint": True, "destructiveHint": False})
 async def get_version_history(
     title_number: int = 48,
-    part: Any = None,
-    section: Any = None,
-    subpart: Any = None,
+    part: str | int | None = None,
+    section: str | int | None = None,
+    subpart: str | int | None = None,
 ) -> dict[str, Any]:
     """Get the version history of a CFR section, subpart, or part.
 
@@ -719,8 +719,8 @@ async def get_version_history(
 async def get_ancestry(
     title_number: int = 48,
     date: str | None = None,
-    part: Any = None,
-    section: Any = None,
+    part: str | int | None = None,
+    section: str | int | None = None,
 ) -> dict[str, Any]:
     """Get the breadcrumb hierarchy path for a section or part.
 
@@ -752,10 +752,10 @@ async def get_ancestry(
 async def search_cfr(
     query: str,
     title: int | None = None,
-    chapter: Any = None,
-    part: Any = None,
-    subpart: Any = None,
-    section: Any = None,
+    chapter: str | int | None = None,
+    part: str | int | None = None,
+    subpart: str | int | None = None,
+    section: str | int | None = None,
     current_only: bool = True,
     last_modified_after: str | None = None,
     last_modified_before: str | None = None,
@@ -914,8 +914,8 @@ async def get_corrections(
 
 @mcp.tool(annotations={"title": "Lookup FAR Clause", "readOnlyHint": True, "destructiveHint": False})
 async def lookup_far_clause(
-    section_id: Any,
-    chapter: Any = "1",
+    section_id: str | int,
+    chapter: str | int = "1",
     date: str | None = None,
 ) -> dict[str, Any]:
     """Convenience tool: look up the current text of a FAR or DFARS clause.
@@ -950,11 +950,11 @@ async def lookup_far_clause(
 
 @mcp.tool(annotations={"title": "Compare Versions", "readOnlyHint": True, "destructiveHint": False})
 async def compare_versions(
-    section_id: Any,
+    section_id: str | int,
     date_before: str,
     date_after: str,
     title_number: int = 48,
-    chapter: Any = None,
+    chapter: str | int | None = None,
 ) -> dict[str, Any]:
     """Compare the text of a CFR section at two different dates.
 
@@ -1133,8 +1133,8 @@ async def find_far_definition(
 async def find_recent_changes(
     since_date: str,
     title: int = 48,
-    chapter: Any = None,
-    part: Any = None,
+    chapter: str | int | None = None,
+    part: str | int | None = None,
     per_page: int = 100,
 ) -> dict[str, Any]:
     """Find CFR sections that have been modified since a given date.
