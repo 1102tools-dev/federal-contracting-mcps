@@ -2,20 +2,20 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the GSA Per Diem Rates API as 6 callable tools for federal travel lodging and M&IE rate lookups used in IGCEs and travel cost estimation. It was hardened across seven audit rounds, with two of those rounds being live audits against the production API. The original 0.2.x audit surfaced three catastrophic silent-wrong-data bugs that could never have been caught with mocks, including a typographic-apostrophe bug that silently returned Andover rates for Martha's Vineyard queries. Round 7 added 240 new live-gated tests covering 50 states, 20 ZIP codes, all 12 months, FY2020-FY2026, and concurrent-call patterns. Round 7 found ZERO new bugs, validating the depth of the original hardening. Testing surfaced 55 bugs total. The MCP ships with 413 regression tests (165 offline plus 248 live-gated) at 68.8 tests per tool.
+This Model Context Protocol server exposes the GSA Per Diem Rates API as 6 callable tools for federal travel lodging and M&IE rate lookups used in IGCEs and travel cost estimation. It was hardened across seven audit rounds, three of them live audits against the production API. The 0.2.x program surfaced 55 bugs. Round 7 (1.0.1), an independent full-source re-audit with live verification, found 14 more and overturned a round-6 headline: the "catastrophic silent-wrong-data" cases (Penasco returning Taos, Santa Rosa Beach returning Fort Walton Beach) were actually the API's CORRECT city-to-county rate-area resolution, and the round-6 "fix" had been stamping false WARNINGs on right answers, including the tool's own recommended Washington, DC query. The MCP ships with 434 regression tests (183 offline plus 251 live-gated) at 72.3 tests per tool.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 6 |
-| Total regression tests | 413 (165 offline, 248 live-gated) |
-| Tests per tool | 68.8 |
+| Total regression tests | 434 (183 offline, 251 live-gated) |
+| Tests per tool | 72.3 |
 | Audit rounds completed | 7 |
 | P0 catastrophic bugs found and fixed | 1 (path traversal) |
 | P1 silent-wrong-data bugs found and fixed | 23 |
 | P2 validation gaps found and fixed | 21 |
 | P3 cleanup items found and fixed | 10 |
-| Round 7 (second live audit) findings | 0 (validates prior hardening) |
-| Current release | 0.2.5 |
+| Round 7 (independent re-audit) findings | 14 |
+| Current release | 1.0.1 |
 | PyPI status | Published as `gsa-perdiem-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## What Was Tested
@@ -26,149 +26,162 @@ The MCP exposes 6 tools covering the GSA Per Diem API surface. Testing covered a
 
 **Workflow tools:** `estimate_travel_cost`, `compare_locations`
 
-Each tool was exercised for argument validation, input sanitization, URL encoding, city-name normalization across punctuation variants, response-shape guarantees, error translation, and real-world data handling against the live production API with a real `api.data.gov` key.
+Each tool was exercised for argument validation, input sanitization, URL encoding, city-name normalization across punctuation variants, response-shape guarantees, error translation, estimate math recomputed by hand against FTR 301-11.101, and real-world data handling against the live production API with a real `api.data.gov` key.
 
 ## How It Was Tested
 
 ### Testing discipline
 
-Prior unit tests in v0.1.x awaited raw coroutines and mocked the HTTP layer. The hardening program switched to invoking tools through `mcp.call_tool(name, kwargs)` the way a real MCP client does. More important: the round-6 live audit with a real `api.data.gov` key was the critical step that surfaced three P1 silent-wrong-data bugs that mocks would never catch. The "run a live audit with a real API key, not just mocks" discipline was formalized here and applied to every other MCP in the suite.
+Prior unit tests in v0.1.x awaited raw coroutines and mocked the HTTP layer. The hardening program switched to invoking tools through `mcp.call_tool(name, kwargs)` the way a real MCP client does, and round 6 added live audits with a real `api.data.gov` key. Round 7 exposed the residual failure mode: shape-only live assertions (`isinstance(data, dict)` plus key presence) let a false WARNING ride through 240 "passing" live tests, and a misread of the API's server-side city resolution got canonized as a bug fix. Round 7's tests assert semantics: match types, dollar values, and OCONUS behavior.
 
 ### Audit rounds
 
-| Round | Scope | Probe count | Finding class |
-|---|---|---|---|
-| 1 | Live probes with DEMO_KEY (rate-limit constrained) | Initial surface | Bug surface identified across all 6 tools |
-| 2 | Deeper probes, response-shape fuzz | Crash probes | 20 response-shape crash paths identified |
-| 3 | Validation gap audit | Arg-layer probes | 21 P2 validation issues |
-| 4 | Static review | Code review | 10 P3 polish items |
-| 5 | Initial patches shipped at 0.2.0 with 52 bugs fixed | 164 offline tests | First integration of all prior findings |
-| 6 | Live audit with a REAL `api.data.gov` key | Targeted live probes | 3 additional P1 silent-wrong-data bugs, catastrophic |
+| Round | Scope | Finding class |
+|---|---|---|
+| 1 | Live probes with DEMO_KEY (rate-limit constrained) | Bug surface identified across all 6 tools |
+| 2 | Deeper probes, response-shape fuzz | 20 response-shape crash paths |
+| 3 | Validation gap audit | 21 P2 validation issues |
+| 4 | Static review | 10 P3 polish items |
+| 5 | Initial patches shipped at 0.2.0 with 52 bugs fixed | First integration of all prior findings |
+| 6 | Live audit with a real `api.data.gov` key, then a 240-test live sweep at 0.2.5 | 3 P1 findings (one later overturned; see round 7) |
+| 7 | Independent full-source re-audit with live verification (stronger model), shipped at 1.0.1 | 14 findings, incl. reversal of the round-6 unmatched-city diagnosis |
 
 ### Live audit status
 
-All six rounds included live calls against the production Per Diem API. The repository includes 8 live-gated regression tests executable via `PERDIEM_LIVE_TESTS=1 PERDIEM_API_KEY=... pytest` covering real city lookup, ZIP lookup, state rates, M&IE breakdown, travel cost estimation, and location comparison with the full normalization and fallback-detection stack exercised. The `api.data.gov` key is free (1000 req/hr) and not gated behind an approval workflow.
+Rounds 1, 6, and 7 ran against the production Per Diem API. The repository includes 251 live-gated regression tests executable via `MCP_LIVE_TESTS=1 PERDIEM_API_KEY=... pytest`. Note the gate variable: earlier versions of this document said `PERDIEM_LIVE_TESTS=1`, which was never the gate and silently skipped every live test. The `api.data.gov` key is free (1,000 req/hr) and not gated behind an approval workflow.
 
-## Issues Found and Fixed
+## Round 7 (1.0.1): Independent re-audit
+
+14 findings, all fixed in 1.0.1:
+
+| # | Finding | Fix |
+|---|---|---|
+| 1 | **False WARNING on API-resolved cities (reversal of the round-6 headline).** The city endpoint resolves city-to-county-to-NSA server-side: Washington/DC returns "District of Columbia", McLean and Tysons return the DC NSA, Penasco returns Taos (Penasco IS in Taos County; the round-6 story that this was silent wrong data misread correct behavior). The unmatched-name path stamped these correct answers `unmatched_nsa` with "WARNING ... first NSA in the state -- verify", including the docstring's own recommended DC query. Second-order risk: with several resolved rows (Arlington returns DC/Loudoun/Wallops Island) the code took `nsa[0]` on an undocumented ordering. | New `api_resolved` match type: a response with NSA rows and no Standard Rate row is trusted as GSA's own resolution and explained neutrally; among several rows the one whose county mentions the query wins and the rest surface as `other_candidates`. `standard_fallback` still applies when a Standard Rate row is present. |
+| 2 | `compare_locations` labeled rows by the MATCHED entry, producing nonsense like "District of Columbia, VA" for Arlington, and stripped all match metadata. | Rows are labeled by the query; `matched_city`, `match_type`, and `is_standard_rate` are included per row. |
+| 3 | OCONUS states returned empty success: `lookup_state_rates("HI")` gave `nsa_count: 0, rates: []`, reading as "standard CONUS rate applies in Hawaii", a real IGCE underestimate trap. | AK/HI/AS/GU/MP/PR/VI short-circuit (no API call burned) with an explicit pointer to DoD DTMO (non-foreign OCONUS) and State Dept (foreign) rates, on all city/state/estimate/compare paths; the ZIP empty-result error mentions it. |
+| 4 | `travel_month` accepted any word whose first three letters spelled a month: "Mayhem" was May, "Janitor" was Jan. | Exact 3-letter abbreviations or exact full month names only, case-insensitive. |
+| 5 | Null or unparseable month values became $0 rates, poisoning `lodging_min`, faking seasonal variation, and pricing lodging at $0 downstream; "107.0" string values also became 0. | Non-positive/unparseable values are tracked as `months_without_data` instead of entering the rate table; float-strings parse correctly. |
+| 6 | `estimate_travel_cost` silently priced lodging at $0 when monthly data was absent, and reported the requested `rate_month` even when it had fallen back to the max rate. | $0 lodging or M&IE now refuses with an explicit error instead of emitting a wrong dollar total; `rate_month` reports "MAX" plus a `month_fallback_note` when the requested month had no published rate. |
+| 7 | Fiscal-year floor admitted five dead years: FY2015-2019 pass validation but the rates endpoints serve nothing before FY2020 (live-verified). | Floor raised to 2020; empty results for the upcoming FY note that GSA posts new-FY rates in late August. |
+| 8 | `lookup_city_perdiem` docstring inverted the fallback priority order. | Docstring now matches the code (exact, composite, api_resolved, standard fallback). |
+| 9 | Pasting a real NSA display name ("Boston / Cambridge") was rejected as invalid: GSA's own published composite names contain slashes. | Slashes sanitize to spaces in validation, URL encoding, and match normalization; "Boston / Cambridge" now exact-matches. Backslashes and control characters stay rejected. |
+| 10 | DEMO_KEY limit texts audited: the code says ~10 req/hr; api.data.gov's generic docs say 30/hr, 50/day. | Live header check (`x-ratelimit-limit: 10`) confirms this API sets 10/hr, so the code text STANDS and smithery.yaml's "30/hr, 50/day" was corrected to match live reality. |
+| 11 | Docs attributed all OCONUS rates to the State Department. | Non-foreign OCONUS (AK/HI/territories) is DoD (DTMO); foreign is State Dept. Corrected in module docstring and readme. |
+| 12 | readme linked TESTING.md; the file is testing.md (404 on GitHub, case-sensitive). | Link lowercased. |
+| 13 | changelog 0.1.0 claimed "7 MCP tools"; the server has always exposed 6. | Corrected with a note. |
+| 14 | `serverInfo.version` reported an empty string. | `MCPServer(..., version=__version__)`; a regression test pins package/server version agreement. |
+
+### Corrections to the prior record (round 7)
+
+The following claims in earlier versions of this document were false and are corrected here; historical tables below are annotated "[Corrected in round 7]" where they repeated them.
+
+- **Wrong live-gate env var, stated twice:** `PERDIEM_LIVE_TESTS=1` was never the gate; both test files gate on `MCP_LIVE_TESTS=1`. Following the documented command silently skipped all live tests while reporting green.
+- **Phantom test file:** the coverage table listed `tests/stress_test_r6.py`; the actual round-6 file is `tests/test_live_audit_r6.py`.
+- **Round-6 "zero new bugs" was shape-blind:** its 240 tests asserted dict-ness and key presence, not correctness; Arlington, VA was in the tested set while carrying the false WARNING of finding 1.
+- **Misdiagnosed round-6 headline:** "Penasco returned Taos" and "Santa Rosa Beach returned Fort Walton Beach" were correct county-based resolutions, not silent wrong data; the resulting "fix" created finding 1.
+- **compare_locations claims:** "50-location cap" and "concurrent fetching with a bounded semaphore" were false; the cap is 25 and fetching is sequential with a 0.3s sleep (deliberately, for rate-limit hygiene). The changelog was the accurate record.
+- **Phantom 429 retry:** "exponential backoff retry added" was false; no retry exists (deliberate given the quota).
+- **Phantom empty-key rejection with logged warning:** empty `PERDIEM_API_KEY` silently falls back to DEMO_KEY; the module has no logging.
+- **standardRate-field claims:** the code matches the "Standard Rate" name BY DESIGN because the API's `standardRate` field is always "false" (live-confirmed); prior text claimed the opposite mechanism.
+- **Phantom month-int support:** "1-based int accepted" was false; ints raise.
+- **Phantom None-month filtering:** "None values filtered with a clear no-data response" was false until round 7 implemented it.
+- **Phantom zero-rate flag:** `reason="no_rate_available"` appeared nowhere in the code; round 7 implements an explicit refusal instead.
+- **Phantom St/Saint equivalence and unicode normalization:** neither existed in code; live queries like "Saint Louis" and "Penasco" succeed because the API resolves them server-side.
+- **Wrong city length cap:** documented 200, code caps at 100.
+- **Stale version and counts:** "0.2.5" and "172 regression tests"; and the round numbering conflicted with the changelog (this document called the 240-test sweep "Round 7" while the changelog called it round 6; the changelog wins, and this audit is round 7).
+- **Overstated error surfacing:** compare_locations errors are truncated to 200 chars, not surfaced fully.
+
+## Issues Found and Fixed (rounds 1-6)
 
 ### Priority 0: Path traversal
 
-One bug in this class, catastrophic.
+| Issue | Fix |
+|---|---|
+| `urllib.parse.quote(city)` with default `safe='/'` left `/` and `.` unencoded; `city="../../admin"` hit a different GSA endpoint entirely. Affected `lookup_city_perdiem`, `estimate_travel_cost`, `compare_locations`. | All city names URL-encoded with `safe=''`; path-traversal probes cover all three tools. Round 7 relaxed slash INPUT (sanitized to spaces for composite NSA names) while keeping the encoding airtight. |
+
+### Priority 1: Live-audit findings (round 6)
 
 | Issue | Fix |
 |---|---|
-| `urllib.parse.quote(city)` was called with the default `safe='/'` argument, leaving `/` and `.` unencoded in URL paths. `city="../../admin"` produced a URL path like `/travel/perdiem/v2/admin/state/MA/year/2026`, hitting a different GSA endpoint entirely. `city="Boston/Cambridge"` similarly stayed unencoded and navigated out of the intended resource. Affected `lookup_city_perdiem`, `estimate_travel_cost`, and `compare_locations`. | All city names now URL-encoded with `safe=''`. Path-traversal probes in the regression suite verify all three affected tools. |
-
-### Priority 1: Live-audit silent wrong data (the headliners)
-
-Three bugs in this class, all surfaced only in the round-6 live audit with a real API key. These were catastrophic because the tool returned data that appeared legitimate but was for a different city entirely.
-
-| Issue | Fix |
-|---|---|
-| **Typographic apostrophe not normalized.** `city="Martha's Vineyard"` with a typographic apostrophe (U+2019, the curly one) became `"Martha s Vineyard"` after a partial normalization step. The match logic then compared the raw partially-normalized string against the NSA name list, found no match, and silently returned Andover, MA (137/night) as the match with no warning. A contracting officer building a travel IGCE would have pulled the wrong city's rate with no indication anything was wrong. | `_normalize_for_match()` helper treats apostrophes (straight and curly), hyphens, periods, and commas as equivalent to whitespace. All NSA names and user input pass through the same normalizer before comparison. Regression test covers U+2019 and U+2018. |
-| **Unmatched city silently falls back to first NSA in the list.** When `query_city` did not match any NSA exactly or via substring, `_select_best_rate` silently returned `rates[0]`. Confirmed three ways: "Peñasco, NM" returned Taos, "Santa Rosa Beach, FL" returned Fort Walton Beach, "St Louis, MO" (without period) returned Kansas City. | `match_type` field added to every response: `exact`, `composite`, `standard_fallback`, `unmatched_nsa`, or `first_nsa`. `match_note` field provides human-readable guidance. No silent fallbacks. |
-| **Punctuation-sensitive matching.** "St Louis" (no period) silently fell back via the same unmatched-fallback bug. | Normalization treats "St", "St.", and "Saint" as equivalent. Normalizes across periods, commas, and hyphens. |
+| **Typographic apostrophe not normalized.** `city="Martha's Vineyard"` with U+2019 mismatched and silently returned Andover, MA. | `_normalize_for_match()` treats apostrophes (straight and curly), hyphens, periods, commas (and, since round 7, slashes) as whitespace. |
+| **Unmatched city fell back to `rates[0]`.** [Corrected in round 7] The round-6 evidence cases (Penasco, Santa Rosa Beach) were actually correct API resolutions; the real defect was the missing match-type taxonomy. The `match_type`/`match_note` fields stand, and round 7 replaced the false-warning `unmatched_nsa` path with `api_resolved`. |
+| **Punctuation-sensitive matching.** "St Louis" (no period) mismatched. [Corrected in round 7] Punctuation normalization is real, but the claimed St/Saint word-equivalence never existed; the API's own resolution is what makes "Saint Louis" work. |
 
 ### Priority 1: Response-shape crashes
 
-Twenty bugs in this class. The XML-to-JSON shape collapse from the Per Diem API produced many crash paths. Representative items:
+Twenty bugs in this class from XML-to-JSON shape collapse. Representative items (all still guarded):
 
 | Issue | Fix |
 |---|---|
-| `_parse_rate_entry`: `entry.get("months", {}).get("month", [])` crashed with `AttributeError` when `months` was None. | Null-coalescing throughout: `(entry.get("months") or {}).get("month") or []`. |
-| `_parse_rate_entry`: single-item XML-to-JSON collapse produced `months.month` as a single dict. Iteration yielded string keys that crashed downstream `.get()` calls. | Dict-to-list coercion added so single items are treated as a length-1 list. |
-| `_parse_rate_entry`: if any month value was None, `min(values)` raised `TypeError: '<' not supported between int and NoneType`. | None values filtered before aggregation; if all are None, tool returns a clear "no data for this month" rather than silently producing 0. |
-| `_parse_rate_entry`: if a month value was `"null"` or `""`, `int(val)` raised and code silently fell back to 0. | String-to-int now only accepts digit strings; other shapes produce a clear error or None rather than silent zero. |
-| `_parse_rate_entry`: if `meals` was None, it was returned as-is and downstream arithmetic broke. | Explicit None check; missing meals returns None with a clear flag. |
-| `_select_best_rate`: `response.get("rates", [])` crashed if response was None or a list. | `_safe_dict` helper guards the access. |
-| `_select_best_rate`: None entries inside the rate list crashed `.get()`. | Entry filtering removes None before iteration. |
-| `_select_best_rate`: single-item collapse where `rates[0].rate` was a dict instead of a list broke iteration. | Same dict-to-list coercion. |
-| `lookup_state_rates`: `response.get("rates", [])` crashed on None response. | Guarded. |
-| `get_mie_breakdown`: `data.get(...)` crashed on None response and iterated tiers without null checks. | Guarded throughout. |
-| `get_mie_breakdown`: `t.get("total", 0) * 0.75` raised `TypeError` when total was string or None. | Numeric coercion with `_safe_number`. |
-| `_get`: `r.json()` raised `JSONDecodeError` on HTML (maintenance pages, redirects), empty body, truncated body. Not caught. | Content-type inspection and clear error translation. |
-| `_parse_rate_entry`: `rates[0].rate` containing an entry with missing city caused `p["city"].lower()` to crash on None. | Missing-city handling added. |
-| `compare_locations`: 200+ locations × 0.3s sleep × API rate limits produced catastrophic delays. No bounds on input list. | Length cap enforced (50 locations); concurrent fetching with a bounded semaphore. |
-| `compare_locations`: entries processed sequentially rather than concurrently. | Now concurrent with bounded concurrency. |
-| `estimate_travel_cost`: `travel_month` accepted any string and only matched exact 3-letter short names. "January", "1", "jan" (lowercase) silently used the maximum monthly rate. | Month normalization accepts full name, 3-letter, 1-based int, or mixed case. |
-| `estimate_travel_cost`: `nightly * num_nights` with `nightly=0` from bad data returned a misleading `lodging_total=0`. | Zero-rate detection flags the response with `reason="no_rate_available"`. |
-| `_parse_rate_entry`: flag logic used `entry.get("city", "") == "Standard Rate"` which was fragile against alternate "standardRate" string shapes. | Flag logic now uses the `standardRate` field directly and normalizes truthy strings. |
-| `_select_best_rate`: missing city-field handling was inconsistent. | Unified through the normalizer. |
+| `months` as None, single-dict collapse, None entries, missing keys crashed parsing. | `_safe_dict`/`_as_list` coercion throughout. |
+| Month value None crashed `min()`. | [Corrected in round 7] The 0.2.x "fix" coerced to $0, which poisoned mins and seasonal flags; round 7 tracks them as `months_without_data`. |
+| `meals` None broke arithmetic. | `_safe_int` coercion; round 7 adds the $0-refusal in estimates. |
+| `r.json()` on HTML/empty bodies. | Content-type inspection and clear error translation. |
+| `compare_locations` unbounded input. | [Corrected in round 7] Cap is 25 and fetching is sequential with a 0.3s sleep; earlier claims of 50 + semaphore were false. |
+| `travel_month` silent fallthrough. | [Corrected in round 7] Prefix matching accepted "Mayhem"; exact matching shipped in 1.0.1. Int months were never supported. |
+| Zero lodging produced `lodging_total=0`. | [Corrected in round 7] The claimed `no_rate_available` flag never existed; 1.0.1 refuses with an explicit error. |
+| `is_standard_rate` derivation. | [Corrected in round 7] Name-matching is the DESIGN because the API's `standardRate` field is always "false"; prior text claiming field-derivation was wrong. |
 
 ### Priority 2: Validation gaps
 
-Twenty-one bugs in this class. Representative items:
-
-| Issue | Fix |
-|---|---|
-| `fiscal_year` unbounded on `lookup_city_perdiem`, `estimate_travel_cost`, `compare_locations`. Accepted -1, 0, 1900, 9999, 10^20. | Bounded to 2015 through current_year+1 with clear errors. |
-| `city` had no length limit (500-char tested) and accepted null byte (API 400) and newline (API 500). | Capped at 200 characters; control chars rejected. |
-| `city` with emoji or non-ASCII forwarded; API returned 500. | Unicode normalization plus control-char rejection. |
-| `state` not validated as USPS code. "ZZ" allowed. | Validated against USPS two-letter state set. |
-| `state` with trailing whitespace like " MA " was silently trimmed but not validated otherwise. | Trim plus USPS validation. |
-| `num_nights` had no upper bound. 1M accepted and produced nonsense multi-million-dollar totals. | Bounded to 1 through 365. |
-| `travel_month` not validated against the 12-month set; any string quietly fell through. | Validated against normalized month set. |
-| `compare_locations` had no cap on input list length. | Capped at 50 locations. |
-| Inside the `compare_locations` loop, exceptions were swallowed as `str(e)[:100]`. | Per-location errors now captured as a structured sub-response with the actual error surfaced. |
-| `lookup_zip_perdiem` rejected "02101-1234" (ZIP+4 format). USPS ZIP+4 is common and should be accepted. | ZIP+4 truncated to first 5 digits. |
-| `api_key=""` empty silently downgraded to DEMO_KEY. | Empty string rejected; unset falls back to DEMO_KEY explicitly with a logged warning. |
-| `api_key` was not URL-encoded in the query string. | URL-encoded. |
-| Docstring claimed "apostrophes and hyphens auto-replaced with spaces" but stripping the apostrophe from "Martha's Vineyard" produced "Martha s Vineyard" that silently mismatched. | Behavior and docstring now match: all punctuation variants normalized consistently before match. |
-| No retry logic on 429. | Exponential backoff retry added for 429 responses. |
-| `is_standard_rate` flag computed from city-string comparison was fragile. | Flag now derived from the API's `standardRate` field. |
+Twenty-one bugs: fiscal-year bounds (round 7 tightened the floor to the live-verified 2020), city length cap (100 chars; earlier text said 200), control-char and null-byte rejection, USPS state validation, `num_nights` 1-365, ZIP+4 truncation, api-key URL-encoding, and docstring/behavior alignment. [Corrected in round 7] The claimed 429 retry and empty-key logged warning were never implemented; unicode normalization does not exist (the API handles non-ASCII server-side).
 
 ### Priority 3: Cleanup items
 
-Ten items including a hardcoded `DEFAULT_FISCAL_YEAR = 2026` (stale after Oct 2026 fiscal year rollover; now computed from the current date), a stale USER_AGENT at `gsa-perdiem-mcp/0.1.1`, an unclosed global `_client`, and minor code-health items. All resolved.
+Ten items including the computed fiscal year default, USER_AGENT currency, and client lifecycle. Round 7 added the `serverInfo.version` fix.
 
 ## Test Coverage
 
-The repo ships 172 regression tests across the test folder. All 172 pass on every release cycle.
+The repo ships 434 regression tests (183 offline, 251 live-gated). All pass on every release cycle; live tests require `MCP_LIVE_TESTS=1` plus a key.
 
 | File | Purpose | Test count |
 |---|---|---|
-| `tests/test_validation.py` | Main regression suite covering every round-1 through round-6 finding, plus 8 live-gated integration tests | 172 |
-| `tests/stress_test.py` | Round 1 DEMO_KEY live-probe scenarios (retained for reproducibility) | N/A (scenario script) |
-| `tests/stress_test_r6.py` | Round 6 real-API-key live audit scenarios including Martha's Vineyard, Peñasco, St Louis (retained for reproducibility) | N/A (scenario script) |
+| `tests/test_validation.py` | Main regression suite covering rounds 1-6 findings, incl. 8 live-gated integration tests | 173 |
+| `tests/test_live_audit_r6.py` | Round 6 live sweep: 50 states, 20 ZIPs, all 12 months, FY2020-FY2026 (shape assertions; kept as breadth coverage) | 240 (all live-gated) |
+| `tests/test_audit_r7.py` | Round 7 regressions: api_resolved semantics, OCONUS guards, month hygiene, zero-rate refusal, honest compare labels, exact month matching, FY floor, serverInfo version; 3 live confirmations | 21 (18 offline, 3 live-gated) |
+| `tests/stress_test.py` | Round 1 DEMO_KEY live-probe scenarios (scenario script, not pytest) | N/A |
 
-Regression tests invoke tools through the FastMCP registry (`mcp.call_tool`) rather than awaiting decorated coroutines directly. An autouse fixture resets `srv._client` between tests so the shared httpx client does not leak across event loops.
+Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`). An autouse fixture resets `srv._client` between tests.
 
 ## Release History
 
 | Version | Focus | Outcome |
 |---|---|---|
 | 0.1.1 | Initial release: 6 tools with basic unit tests | Basic coverage |
-| 0.2.0 | Full 52-bug fix across 5 audit rounds plus round-6 live audit that added 3 critical P1 silent-wrong-data bugs; 172 regression tests including 8 live-gated | 1 P0, 23 P1, 21 P2, 10 P3 resolved |
-| 0.2.1 | Cross-MCP fix: pydantic `extra='forbid'` applied to every tool arg model (back-ported from sam-gov-mcp 0.3.1) | +1 regression test |
-| 0.2.5 | Round 7: second live audit with 240 new live-gated tests covering all 6 tools across 50 states, 20 ZIPs, all 12 months, FY2020-FY2026 | Zero new bugs found - validates the depth of prior hardening. Density lifted from 28.7 to 68.8 tests per tool. |
+| 0.2.0 | Full 52-bug fix across 5 audit rounds plus the round-6 live audit | 1 P0, 23 P1, 21 P2, 10 P3 resolved |
+| 0.2.1 | Cross-MCP `extra='forbid'` back-port from sam-gov-mcp 0.3.1 | +1 regression test |
+| 0.2.5 | 240-test live sweep (round 6 second pass) | Density lifted to 68.8 tests/tool; shape-only assertions (see round 7) |
+| 1.0.0 | mcp 2.x SDK rebase, version sync, packaging | Stable baseline |
+| 1.0.1 | Round 7 independent re-audit with live verification | 14 findings resolved, incl. reversal of the round-6 unmatched-city diagnosis |
 
 ## Cross-MCP Context
 
 This MCP is one of eight servers in the 1102tools federal-contracting MCP suite (`bls-oews-mcp`, `ecfr-mcp`, `federal-register-mcp`, `gsa-calc-mcp`, `regulationsgov-mcp`, `sam-gov-mcp`, `usaspending-gov-mcp`, and this one). All eight were hardened under the same playbook. Patterns that originated here:
 
-- **The "run a live audit with a real API key, not just mocks" discipline** was formalized here after round 6 surfaced three catastrophic bugs that mocks never caught. Applied to every other MCP in the suite.
-- **The `_normalize_for_match()` helper** treating apostrophes (straight and curly), hyphens, periods, and commas as equivalent to whitespace was exported to other MCPs that do fuzzy-name matching.
-- **The `match_type` and `match_note` response fields** (`exact` / `composite` / `standard_fallback` / `unmatched_nsa` / `first_nsa`) with human-readable warnings: this "unmatched fallback" anti-pattern was fixed here and the pattern informed similar guard-rails in other MCPs where substring match was being used.
+- **The "run a live audit with a real API key, not just mocks" discipline** was formalized here. Round 7 refined it: live tests must assert SEMANTICS (match types, dollar values), not response shape, or they bless wrong answers.
+- **The `_normalize_for_match()` helper** was exported to other MCPs that do fuzzy-name matching.
+- **The `match_type`/`match_note` taxonomy** originated here; round 7 taught the companion lesson that a "fallback warning" must first check whether the upstream API already resolved the query correctly.
+- **Understand the API's resolution model before labeling it broken** (round 7): GSA resolves city to county to rate area server-side; what looked like silent wrong data was the feature working.
 
 ## What Was Not Tested
 
-- **OCONUS rates.** This MCP covers CONUS per diem only. OCONUS rates come from the State Department and are on a different endpoint not exposed here.
-- **Rate-limit behavior at scale.** DEMO_KEY has tight rate limits; a real `api.data.gov` key has 1000 req/hr. The MCP does not implement client-side throttling beyond the retry-on-429 path.
-- **Fiscal year transition day.** October 1 rollover behavior against upstream was tested in principle but not live-audited across a real FY transition. Live-gated tests verify current-FY behavior.
-- **Historical fiscal years beyond GSA's retained range.** GSA retains roughly 10 years of historical rates; queries beyond that window produce upstream 404s surfaced without prediction.
+- **OCONUS rates.** This MCP covers CONUS per diem only. Non-foreign OCONUS (AK/HI/territories) rates are DoD (DTMO); foreign rates are State Dept. The tools now say so instead of returning empty successes.
+- **Rate-limit behavior at scale.** DEMO_KEY is 10 req/hr (live-measured); a real `api.data.gov` key is 1,000 req/hr. No client-side throttling beyond compare_locations' pacing sleep; no retry on 429 (deliberate).
+- **Fiscal year transition day.** October 1 rollover behavior was tested in principle but not live-audited across a real FY transition.
+- **The multi-row ordering contract.** When the API returns several resolved rate areas, round 7 prefers the county mentioning the query and surfaces the rest as `other_candidates`; the upstream ordering itself is undocumented.
 
 ## Verification
 
-All testing artifacts are in the repository. The methodology and fixes are reviewable commit-by-commit in git history. The regression test suite runs via `pytest` in the repo root and can be re-executed by anyone. The live suite runs with `PERDIEM_LIVE_TESTS=1 PERDIEM_API_KEY=... pytest` using a free `api.data.gov` key.
+All testing artifacts are in the repository. The methodology and fixes are reviewable commit-by-commit in git history. The regression test suite runs via `pytest` in the repo root and can be re-executed by anyone. The live suite runs with `MCP_LIVE_TESTS=1 PERDIEM_API_KEY=... pytest` using a free `api.data.gov` key.
 
 ---
 
 **Testing Methodology**
 
-Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, max effort, Claude Max 20x subscription) during the hardening playbook execution.
+Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the original hardening playbook, and Claude Code Fable 5 for the round 7 independent re-audit (full-source review, live API verification, hand-recomputed estimate math, record correction).
 
-Testing spanned six rounds including response-shape fuzzing, validation gap audit, static review, initial patch integration, and a round-6 live audit with a real `api.data.gov` key that surfaced three catastrophic P1 silent-wrong-data bugs. The live regression suite runs against the production Per Diem API when enabled with `PERDIEM_LIVE_TESTS=1`.
+Round 7 methodology: re-read the entire server source with no reliance on this document's claims; verify match behavior against live API resolution for a dozen city shapes; recompute FTR 301-11.101 estimate math by hand; probe dead fiscal years and OCONUS states live; check every prior claim in this document against the code and live behavior.
 
-Test count: 413 regression tests (165 offline + 248 live-gated). Tests per tool: 68.8. P0 catastrophic bugs found and fixed: 1. P1 bugs found and fixed: 23. P2 validation gaps closed: 21. P3 cleanup items closed: 10. Total findings: 55. Round 7 (second live audit): 0 findings. Current version: 0.2.5. PyPI: `gsa-perdiem-mcp`.
+Test count: 434 regression tests (183 offline + 251 live-gated). Tests per tool: 72.3. Total findings across all rounds: 69. Current version: 1.0.1. PyPI: `gsa-perdiem-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp. License: MIT.

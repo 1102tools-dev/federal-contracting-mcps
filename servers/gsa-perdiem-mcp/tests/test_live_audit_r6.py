@@ -53,7 +53,7 @@ def _payload(result):
 
 
 # ===========================================================================
-# A. CITY/STATE LOOKUPS — 50 states + DC representative cities
+# A. CITY/STATE LOOKUPS: 50 states + DC representative cities
 # ===========================================================================
 
 # (city, state) pairs covering all 50 states + DC

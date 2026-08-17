@@ -10,7 +10,8 @@ DEMO_KEY (~10 req/hr) if not set. Register free at api.data.gov/signup
 for 1,000 req/hr.
 
 These are maximum reimbursement ceilings, not actual hotel prices.
-CONUS only; OCONUS rates are from the State Department.
+CONUS only. Non-foreign OCONUS (Alaska, Hawaii, territories) rates are
+set by DoD (DTMO); foreign rates by the State Department.
 """
 
 from __future__ import annotations
@@ -25,9 +26,10 @@ from typing import Any
 import httpx
 from mcp.server import MCPServer
 
+from . import __version__
 from .constants import BASE_URL, DEFAULT_TIMEOUT, USER_AGENT
 
-mcp = MCPServer("gsa-perdiem")
+mcp = MCPServer("gsa-perdiem", version=__version__)
 
 
 # ---------------------------------------------------------------------------
@@ -51,13 +53,16 @@ def _as_list(value: Any) -> list[Any]:
 
 
 def _safe_int(value: Any, default: int = 0) -> int:
-    """Coerce to int, handling None/''/'null'/non-parseable."""
+    """Coerce to int, handling None/''/'null'/float-strings/non-parseable."""
     if value in (None, "", "null", "None"):
         return default
     try:
         return int(value)
     except (TypeError, ValueError):
-        return default
+        try:
+            return int(float(value))
+        except (TypeError, ValueError):
+            return default
 
 
 def _safe_number(value: Any, default: float = 0.0) -> float:
@@ -88,7 +93,12 @@ def _current_fiscal_year() -> int:
 
 
 def _validate_fiscal_year(value: Any, *, field: str = "fiscal_year") -> int:
-    """GSA Per Diem covers FY2021 onward. Allow up to next-FY for planning."""
+    """Allow FY2020 through next-FY (for planning).
+
+    Live-verified floor: the rates endpoints return empty for FY2015-2019
+    (FY2020 is the earliest that serves data), so years below 2020 are
+    rejected instead of producing an unhelpful "No rates found".
+    """
     if value is None:
         return _current_fiscal_year()
     if isinstance(value, bool):
@@ -98,7 +108,7 @@ def _validate_fiscal_year(value: Any, *, field: str = "fiscal_year") -> int:
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{field} must be an int year like 2026. Got {value!r}.") from exc
     current = _current_fiscal_year()
-    lo = 2015  # GSA API has data back to ~FY2015
+    lo = 2020
     hi = current + 1
     if fy < lo or fy > hi:
         raise ValueError(
@@ -117,9 +127,23 @@ _USPS_STATES = frozenset({
     "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI",
     "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI",
     "WY",
-    # Territories (OCONUS but API accepts)
+    # Territories (OCONUS; accepted so tools can explain, not error)
     "AS", "GU", "MP", "PR", "VI",
 })
+
+# GSA CONUS per diem does not cover these. Non-foreign OCONUS rates
+# (AK, HI, territories) are set by DoD (DTMO); foreign by State Dept.
+# The API accepts these codes but returns empty rate sets, which without
+# this guard reads as "standard CONUS rate applies", a real IGCE trap.
+_OCONUS_STATES = frozenset({"AK", "HI", "AS", "GU", "MP", "PR", "VI"})
+
+_OCONUS_NOTE = (
+    "GSA per diem covers CONUS only. Rates for Alaska, Hawaii, and the "
+    "territories (non-foreign OCONUS) are set by DoD's Defense Travel "
+    "Management Office at travel.dod.mil; foreign rates by the State "
+    "Department at aoprals.state.gov. Do NOT apply the CONUS standard "
+    "rate to these locations."
+)
 
 
 def _validate_state(value: Any, *, field: str = "state") -> str:
@@ -160,7 +184,7 @@ def _validate_zip(value: Any, *, field: str = "zip_code") -> str:
     return s
 
 
-_CITY_INVALID_CHARS_RE = re.compile(r"[\x00-\x1f/\\]")
+_CITY_INVALID_CHARS_RE = re.compile(r"[\x00-\x1f\\]")
 
 
 def _validate_city(value: Any, *, field: str = "city") -> str:
@@ -171,16 +195,20 @@ def _validate_city(value: Any, *, field: str = "city") -> str:
     # Check raw value for control chars before stripping (strip() eats \n, \r, \t)
     if _CITY_INVALID_CHARS_RE.search(value):
         raise ValueError(
-            f"{field}={value!r} contains control characters, slashes, or backslashes. "
+            f"{field}={value!r} contains control characters or backslashes. "
             f"Use plain city names like 'Boston' or 'Saint Louis'."
         )
-    s = value.strip()
+    # GSA publishes composite NSA names like "Boston / Cambridge"; users
+    # paste them verbatim. Treat forward slashes as separators, not errors.
+    value = value.replace("/", " ")
+    s = re.sub(r"\s+", " ", value).strip()
     if not s:
         raise ValueError(f"{field} cannot be empty or whitespace.")
     if len(s) > 100:
         raise ValueError(f"{field} exceeds 100 chars. Got {len(s)}.")
-    # Reject path-traversal sequences (checked after slash/control rejection
-    # above catches the slash; .. alone is still worth blocking).
+    # Reject path-traversal sequences. Slashes were replaced with spaces
+    # above and the URL encoder never emits raw slashes, but '..' alone is
+    # still worth blocking.
     if ".." in s:
         raise ValueError(
             f"{field}={value!r} contains '..' which is not a valid city name."
@@ -190,23 +218,30 @@ def _validate_city(value: Any, *, field: str = "city") -> str:
 
 _MONTH_SHORTS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+_MONTH_FULL = ("January", "February", "March", "April", "May", "June",
+               "July", "August", "September", "October", "November", "December")
+_MONTH_LOOKUP = {m.lower(): m for m in _MONTH_SHORTS}
+_MONTH_LOOKUP.update({full.lower(): _MONTH_SHORTS[i] for i, full in enumerate(_MONTH_FULL)})
 
 
 def _validate_travel_month(value: Any, *, field: str = "travel_month") -> str | None:
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a 3-letter month abbreviation.")
+        raise ValueError(f"{field} must be a month name like 'Jan' or 'January'.")
     s = value.strip()
     if not s:
         return None
-    # Normalize capitalization: "jan" / "JAN" / "January" all -> "Jan"
-    cap = s[:3].capitalize()
-    if cap not in _MONTH_SHORTS:
+    # Exact 3-letter abbreviation or exact full name, case-insensitive.
+    # Prefix matching is deliberately NOT done: it silently accepted any
+    # word whose first three letters spelled a month ("Mayhem" -> May).
+    month = _MONTH_LOOKUP.get(s.lower())
+    if month is None:
         raise ValueError(
-            f"{field}={value!r} must be a 3-letter month like 'Jan', 'Feb', ..., 'Dec'."
+            f"{field}={value!r} must be an exact month: 'Jan'-'Dec' or "
+            f"'January'-'December' (case-insensitive)."
         )
-    return cap
+    return month
 
 
 _HTML_MARK_RE = re.compile(r"<(?:!doctype|html)", re.IGNORECASE)
@@ -324,12 +359,20 @@ def _parse_rate_entry(entry: Any) -> dict[str, Any]:
     entry = _safe_dict(entry)
     months_raw = _as_list(_safe_dict(entry.get("months")).get("month"))
     months: dict[str, int] = {}
+    months_without_data: list[str] = []
     for m in months_raw:
         m = _safe_dict(m)
         short = m.get("short")
         if not isinstance(short, str) or not short:
             continue
-        months[short] = _safe_int(m.get("value"), default=0)
+        # A null or unparseable value must NOT become $0: it would poison
+        # lodging_min, flip has_seasonal_variation, and price lodging at $0
+        # downstream. Track it as missing instead.
+        value = _safe_int(m.get("value"), default=0)
+        if value > 0:
+            months[short] = value
+        else:
+            months_without_data.append(short)
 
     city = entry.get("city") or ""
     if not isinstance(city, str):
@@ -349,7 +392,7 @@ def _parse_rate_entry(entry: Any) -> dict[str, Any]:
 
     meals = _safe_int(entry.get("meals"), default=0)
 
-    return {
+    out = {
         "city": city or None,
         "county": county,
         "meals": meals,
@@ -360,13 +403,17 @@ def _parse_rate_entry(entry: Any) -> dict[str, Any]:
         "has_seasonal_variation": bool(lodging_values) and lodging_min != lodging_max,
         "has_monthly_data": bool(months),
     }
+    if months_without_data:
+        out["months_without_data"] = months_without_data
+    return out
 
 
 def _normalize_for_match(s: str) -> str:
-    """Normalize a city string for matching: lowercase, strip common punctuation,
-    collapse whitespace. Handles ASCII and typographic apostrophes."""
+    """Normalize a city string for matching: lowercase, strip common punctuation
+    (including the slashes GSA uses in composite NSA names), collapse
+    whitespace. Handles ASCII and typographic apostrophes."""
     s = s.lower()
-    for ch in ("'", "\u2019", "\u2018", ".", ",", "-"):
+    for ch in ("'", "\u2019", "\u2018", ".", ",", "-", "/"):
         s = s.replace(ch, " ")
     return re.sub(r"\s+", " ", s).strip()
 
@@ -380,11 +427,17 @@ def _select_best_rate(
     Priority (when query_city given):
       1. Exact city match (after normalization)
       2. Composite name match ("Boston" -> "Boston / Cambridge")
-      3. Standard Rate with match_type='standard_fallback' — indicates the
-         user's specific city wasn't found as an NSA
-      4. First NSA with match_type='unmatched_nsa' — last-resort fallback
-         (happens when API returns NSAs but none match AND there's no
-         Standard Rate row; rare in practice)
+      3. API-resolved NSA, match_type='api_resolved': the city endpoint does
+         city-to-county-to-NSA resolution server-side, so a response with
+         NSA rows and NO Standard Rate row means GSA resolved the query to
+         those rate areas even though no name matches (live-verified:
+         Washington/DC -> "District of Columbia", McLean/VA -> DC NSA,
+         Penasco/NM -> Taos). Among several rows, prefer the one whose
+         county mentions the query; other rows are listed in
+         `other_candidates` so nothing is silently discarded.
+      4. Standard Rate with match_type='standard_fallback': the response
+         carries a Standard Rate row, meaning the query fell through to the
+         state-wide default (unlisted city).
 
     Without query_city: returns first NSA, else first entry.
 
@@ -426,17 +479,29 @@ def _select_best_rate(
         ]
         if composite:
             return tag(composite[0], "composite")
-        # No match against any NSA -- prefer Standard Rate so the user gets
-        # the correct fallback rate for that state rather than a random NSA.
+
         standard = [p for p in parsed if p["is_standard_rate"]]
+        nsa = [p for p in parsed if not p["is_standard_rate"]]
+
+        # No Standard Rate row present: GSA resolved the query city to the
+        # returned NSA(s). Trust the resolution instead of warning on it.
+        if nsa and not standard:
+            county_hits = [
+                p for p in nsa
+                if q and q in _normalize_for_match(str(p.get("county") or ""))
+            ]
+            chosen = county_hits[0] if county_hits else nsa[0]
+            out = tag(chosen, "api_resolved")
+            others = [p["city"] for p in nsa if p is not chosen]
+            if others:
+                out["other_candidates"] = others
+            return out
+
+        # Standard Rate row present and nothing matched: the query fell
+        # through to the state-wide default rate.
         if standard:
             return tag(standard[0], "standard_fallback")
-        # API returned NSAs but none match and no Standard Rate row.
-        # Return the first NSA but flag it clearly.
-        nsa = [p for p in parsed if not p["is_standard_rate"]]
-        if nsa:
-            return tag(nsa[0], "unmatched_nsa")
-        return tag(parsed[0], "unmatched_nsa")
+        return tag(parsed[0], "api_resolved")
 
     # No query_city: caller wants any representative rate.
     nsa = [p for p in parsed if not p["is_standard_rate"]]
@@ -479,21 +544,31 @@ async def lookup_city_perdiem(
     fiscal_year: defaults to current FY. FY runs Oct 1 - Sep 30, so
     FY2026 = 2025-10-01 through 2026-09-30.
 
-    The API uses prefix matching on city names, which can return multiple
-    entries. This tool auto-selects the best match:
+    The city endpoint resolves cities to their county's rate area
+    server-side, so the matched NSA name can legitimately differ from the
+    query (Washington -> 'District of Columbia', Penasco -> 'Taos').
+    Selection order:
     1. Exact city name match
     2. Composite NSA name containing the city (e.g., 'Boston' matches 'Boston / Cambridge')
-    3. First non-standard rate entry
-    4. Standard rate as fallback
+    3. API-resolved rate area (no Standard Rate row in the response)
+    4. Standard Rate fallback (query fell through to the state default)
 
-    Apostrophes and hyphens in city names are auto-replaced with spaces
-    (GSA API quirk). Keep periods for 'St.' prefix cities (St. Louis).
+    Apostrophes, hyphens, and slashes in city names are auto-replaced with
+    spaces (GSA API quirk). Keep periods for 'St.' prefix cities (St. Louis).
 
     For DC: query city='Washington', state='DC'.
+    CONUS only: AK, HI, and territories return a pointer to DoD/State rates.
     """
     city_clean = _validate_city(city, field="city")
     state_upper = _validate_state(state, field="state")
     year = _validate_fiscal_year(fiscal_year, field="fiscal_year")
+
+    if state_upper in _OCONUS_STATES:
+        return {
+            "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
+            "oconus": True,
+            "error": _OCONUS_NOTE,
+        }
 
     city_encoded = _normalize_city_for_url(city_clean)
     response = await _get(f"city/{city_encoded}/state/{state_upper}/year/{year}")
@@ -502,14 +577,17 @@ async def lookup_city_perdiem(
     if not best:
         return {
             "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
-            "error": f"No rates found for {city_clean}, {state_upper} in FY{year}.",
+            "error": (
+                f"No rates found for {city_clean}, {state_upper} in FY{year}."
+                + _no_rates_hint(year)
+            ),
         }
 
-    return {
+    out = {
         "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
         "matched_city": best["city"],
         "match_type": best.get("match_type", "exact"),
-        "match_note": _match_note(best.get("match_type"), city_clean),
+        "match_note": _match_note(best.get("match_type"), city_clean, best),
         "county": best["county"],
         "is_standard_rate": best["is_standard_rate"],
         "lodging_by_month": best["lodging_by_month"],
@@ -519,9 +597,18 @@ async def lookup_city_perdiem(
         "max_daily_total": best["lodging_max"] + best["meals"],
         "has_monthly_data": best["has_monthly_data"],
     }
+    if best.get("other_candidates"):
+        out["other_candidates"] = best["other_candidates"]
+    if best.get("months_without_data"):
+        out["months_without_data"] = best["months_without_data"]
+    return out
 
 
-def _match_note(match_type: str | None, query_city: str) -> str | None:
+def _match_note(
+    match_type: str | None,
+    query_city: str,
+    best: dict[str, Any] | None = None,
+) -> str | None:
     """Human-readable note explaining non-exact matches."""
     if match_type in (None, "exact"):
         return None
@@ -533,13 +620,32 @@ def _match_note(match_type: str | None, query_city: str) -> str | None:
             f"Returning the Standard Rate, which applies to all non-NSA "
             f"locations in this state."
         )
-    if match_type == "unmatched_nsa":
-        return (
-            f"WARNING: {query_city!r} did not match any NSA exactly and "
-            f"no Standard Rate was returned. The rate shown is the first "
-            f"NSA in the state -- verify it applies to your destination."
+    if match_type == "api_resolved":
+        best = best or {}
+        note = (
+            f"GSA resolved {query_city!r} to the {best.get('city')!r} rate "
+            f"area (county: {best.get('county')}). This is the API's own "
+            f"city-to-county resolution, not a name-match failure."
         )
+        others = best.get("other_candidates")
+        if others:
+            note += (
+                f" Other rate areas in the response: {others}. If the "
+                f"destination county is ambiguous, verify with "
+                f"lookup_zip_perdiem."
+            )
+        return note
     return None
+
+
+def _no_rates_hint(year: int) -> str:
+    """Extra context for empty results when querying the upcoming FY."""
+    if year > _current_fiscal_year():
+        return (
+            f" FY{year} rates may simply not be published yet; GSA posts "
+            f"new-FY rates in late August."
+        )
+    return ""
 
 
 def _format_lodging_range(rate: dict[str, Any]) -> str:
@@ -575,7 +681,12 @@ async def lookup_zip_perdiem(
         return {
             "zip_code": zip5,
             "fiscal_year": year,
-            "error": "No rates found for this ZIP.",
+            "error": (
+                "No rates found for this ZIP."
+                + _no_rates_hint(year)
+                + " If this ZIP is in Alaska, Hawaii, or a territory: "
+                + _OCONUS_NOTE
+            ),
         }
 
     return {
@@ -601,15 +712,36 @@ async def lookup_state_rates(
     Returns every city/county with rates above the standard rate in that
     state. Useful for comparing rates across cities within a state or for
     building a travel IGCE with multiple destinations.
+
+    CONUS only: AK, HI, and territories return a pointer to DoD/State rates
+    instead of an empty list that would falsely imply the standard CONUS
+    rate applies there.
     """
     state_upper = _validate_state(state, field="state")
     year = _validate_fiscal_year(fiscal_year, field="fiscal_year")
+
+    if state_upper in _OCONUS_STATES:
+        return {
+            "state": state_upper,
+            "fiscal_year": year,
+            "oconus": True,
+            "error": _OCONUS_NOTE,
+        }
 
     response = await _get(f"state/{state_upper}/year/{year}")
     response = _safe_dict(response)
     rates = _as_list(response.get("rates"))
     if not rates:
-        return {"state": state_upper, "fiscal_year": year, "nsa_count": 0, "rates": []}
+        return {
+            "state": state_upper,
+            "fiscal_year": year,
+            "nsa_count": 0,
+            "rates": [],
+            "note": (
+                f"The API returned no rate data for {state_upper} in FY{year}."
+                + _no_rates_hint(year)
+            ),
+        }
     first = _safe_dict(rates[0])
     raw_entries = _as_list(first.get("rate"))
     parsed = [_parse_rate_entry(e) for e in raw_entries]
@@ -715,6 +847,13 @@ async def estimate_travel_cost(
     year = _validate_fiscal_year(fiscal_year, field="fiscal_year")
     travel_month = _validate_travel_month(travel_month, field="travel_month")
 
+    if state_upper in _OCONUS_STATES:
+        return {
+            "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
+            "oconus": True,
+            "error": _OCONUS_NOTE,
+        }
+
     city_encoded = _normalize_city_for_url(city_clean)
     response = await _get(f"city/{city_encoded}/state/{state_upper}/year/{year}")
     best = _select_best_rate(response, query_city=city_clean)
@@ -722,17 +861,44 @@ async def estimate_travel_cost(
     if not best:
         return {
             "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
-            "error": f"No rates found for {city_clean}, {state_upper} in FY{year}.",
+            "error": (
+                f"No rates found for {city_clean}, {state_upper} in FY{year}."
+                + _no_rates_hint(year)
+            ),
         }
 
+    month_fallback_note: str | None = None
     if travel_month and travel_month in best["lodging_by_month"]:
         nightly = best["lodging_by_month"][travel_month]
+        rate_month = travel_month
     else:
         nightly = best["lodging_max"]
+        rate_month = "MAX"
+        if travel_month:
+            month_fallback_note = (
+                f"No published lodging rate for {travel_month}; used the "
+                f"max monthly rate instead."
+            )
+
+    daily_mie = best["meals"]
+    # A $0 lodging or M&IE rate is missing data, not a real rate. Refuse to
+    # produce a dollar estimate that silently prices a component at zero.
+    if nightly <= 0 or daily_mie <= 0:
+        return {
+            "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
+            "matched_city": best["city"],
+            "match_type": best.get("match_type"),
+            "error": (
+                f"Rate data for {best['city']!r} is incomplete "
+                f"(nightly lodging={nightly}, M&IE={daily_mie}); refusing to "
+                f"build an estimate that prices a component at $0. Try "
+                f"lookup_state_rates or a different fiscal year."
+                + _no_rates_hint(year)
+            ),
+        }
 
     lodging_total = nightly * num_nights
     travel_days = num_nights + 1
-    daily_mie = best["meals"]
     first_last_mie = round(daily_mie * 0.75, 2)
 
     if travel_days <= 1:
@@ -742,12 +908,12 @@ async def estimate_travel_cost(
     else:
         mie_total = (daily_mie * (travel_days - 2)) + (first_last_mie * 2)
 
-    return {
+    out = {
         "destination": best["city"],
         "state": state_upper,
         "fiscal_year": year,
         "match_type": best.get("match_type"),
-        "match_note": _match_note(best.get("match_type"), city_clean),
+        "match_note": _match_note(best.get("match_type"), city_clean, best),
         "num_nights": num_nights,
         "travel_days": travel_days,
         "nightly_lodging": nightly,
@@ -756,9 +922,12 @@ async def estimate_travel_cost(
         "first_last_day_mie": first_last_mie,
         "mie_total": round(mie_total, 2),
         "grand_total": round(lodging_total + mie_total, 2),
-        "rate_month": travel_month or "MAX",
+        "rate_month": rate_month,
         "_note": "Per diem only (lodging + M&IE). Airfare and ground transport not included.",
     }
+    if month_fallback_note:
+        out["month_fallback_note"] = month_fallback_note
+    return out
 
 
 _MAX_COMPARE_LOCATIONS = 25
@@ -809,12 +978,21 @@ async def compare_locations(
 
     import asyncio
     for city_clean, state_upper, city_encoded in prepared:
+        # Label rows by the QUERY, not the matched entry: labeling Arlington
+        # by its matched NSA produced nonsense like "District of Columbia, VA".
+        label = f"{city_clean}, {state_upper}"
+        if state_upper in _OCONUS_STATES:
+            results.append({"location": label, "oconus": True, "error": _OCONUS_NOTE})
+            continue
         try:
             response = await _get(f"city/{city_encoded}/state/{state_upper}/year/{year}")
             best = _select_best_rate(response, query_city=city_clean)
             if best:
                 results.append({
-                    "location": f"{best['city']}, {state_upper}",
+                    "location": label,
+                    "matched_city": best["city"],
+                    "match_type": best.get("match_type"),
+                    "is_standard_rate": best["is_standard_rate"],
                     "lodging_max": best["lodging_max"],
                     "lodging_min": best["lodging_min"],
                     "mie": best["meals"],
@@ -823,12 +1001,12 @@ async def compare_locations(
                 })
             else:
                 results.append({
-                    "location": f"{city_clean}, {state_upper}",
-                    "error": "no rates found",
+                    "location": label,
+                    "error": "no rates found" + _no_rates_hint(year),
                 })
         except RuntimeError as e:
             results.append({
-                "location": f"{city_clean}, {state_upper}",
+                "location": label,
                 "error": str(e)[:200],
             })
         await asyncio.sleep(0.3)

@@ -129,9 +129,11 @@ def test_validate_city_rejects_newline():
         srv._validate_city("Boston\n")
 
 
-def test_validate_city_rejects_slash():
-    with pytest.raises(ValueError, match="slash"):
-        srv._validate_city("Boston/Cambridge")
+def test_validate_city_sanitizes_slash():
+    # Round 7: GSA publishes composite NSA names like "Boston / Cambridge";
+    # users paste them verbatim. Slashes become spaces instead of erroring.
+    assert srv._validate_city("Boston/Cambridge") == "Boston Cambridge"
+    assert srv._validate_city("Boston / Cambridge") == "Boston Cambridge"
 
 
 def test_validate_city_rejects_backslash():
@@ -185,12 +187,12 @@ def test_validate_travel_month_normalizes_full_name():
 
 
 def test_validate_travel_month_rejects_garbage():
-    with pytest.raises(ValueError, match="3-letter"):
+    with pytest.raises(ValueError, match="exact month"):
         srv._validate_travel_month("xyz")
 
 
 def test_validate_travel_month_rejects_one_char():
-    with pytest.raises(ValueError, match="3-letter"):
+    with pytest.raises(ValueError, match="exact month"):
         srv._validate_travel_month("J")
 
 
@@ -278,9 +280,9 @@ def test_lookup_city_rejects_bad_state():
 
 
 def test_lookup_city_rejects_path_traversal():
-    # '../../admin' has both slashes and '..', either error message is fine.
+    # Slashes sanitize to spaces, so '../../admin' trips the '..' check.
     asyncio.run(_call_expect_error(
-        "lookup_city_perdiem", "slash", city="../../admin", state="MA"
+        "lookup_city_perdiem", "'..'", city="../../admin", state="MA"
     ))
 
 
@@ -291,10 +293,9 @@ def test_lookup_city_rejects_dot_dot():
     ))
 
 
-def test_lookup_city_rejects_slash_in_city():
-    asyncio.run(_call_expect_error(
-        "lookup_city_perdiem", "slash", city="Boston/Cambridge", state="MA"
-    ))
+def test_validate_city_still_rejects_backslash_variant():
+    with pytest.raises(ValueError, match="slash"):
+        srv._validate_city("Boston\\Cambridge")
 
 
 def test_lookup_city_rejects_null_byte():
@@ -338,7 +339,7 @@ def test_estimate_travel_cost_rejects_huge_nights():
 
 def test_estimate_travel_cost_rejects_bad_month():
     asyncio.run(_call_expect_error(
-        "estimate_travel_cost", "3-letter",
+        "estimate_travel_cost", "exact month",
         city="Boston", state="MA", num_nights=3, travel_month="xyz"
     ))
 
@@ -405,13 +406,16 @@ def test_parse_rate_entry_handles_single_month_dict():
 
 
 def test_parse_rate_entry_handles_null_month_value():
+    # Round 7: a null month value is MISSING data, not a $0 rate. It must
+    # not poison lodging_min or flip the seasonal flag.
     r = srv._parse_rate_entry({
         "city": "X", "county": "Y", "meals": 50,
         "months": {"month": [{"short": "Jan", "value": None}, {"short": "Feb", "value": 100}]},
     })
-    assert r["lodging_by_month"]["Jan"] == 0
+    assert "Jan" not in r["lodging_by_month"]
     assert r["lodging_by_month"]["Feb"] == 100
-    assert r["lodging_min"] == 0
+    assert r["lodging_min"] == 100
+    assert r["months_without_data"] == ["Jan"]
 
 
 def test_parse_rate_entry_handles_string_meals():
@@ -547,7 +551,8 @@ def test_lookup_state_rates_filters_out_standard_rate():
         {"city": "Standard Rate", "meals": 68, "months": {"month": [{"short":"Jan","value":110}]}},
     ]}]})
     try:
-        r = asyncio.run(srv.lookup_state_rates(state="AK"))
+        # CO, not AK: OCONUS states short-circuit before the API call now.
+        r = asyncio.run(srv.lookup_state_rates(state="CO"))
         assert r["nsa_count"] == 1
         assert r["rates"][0]["city"] == "Anchorage"
     finally:
@@ -917,9 +922,10 @@ def test_select_best_rate_query_city_no_match_prefers_standard():
     assert r["match_type"] == "standard_fallback"
 
 
-def test_select_best_rate_query_no_match_no_standard_flags_unmatched():
-    """When no Standard Rate is returned AND query doesn't match, flag the
-    fallback clearly so the caller doesn't silently accept wrong data."""
+def test_select_best_rate_query_no_match_no_standard_is_api_resolved():
+    """Round 7: a response with NSA rows and NO Standard Rate row means the
+    API resolved the query city to those rate areas (live-verified with
+    Washington/DC and Penasco/NM). Tag it api_resolved, not a warning."""
     r = srv._select_best_rate(
         {"rates": [{"rate": [
             {"city": "Other", "meals": 10},
@@ -927,7 +933,7 @@ def test_select_best_rate_query_no_match_no_standard_flags_unmatched():
         query_city="Boston",
     )
     assert r["city"] == "Other"
-    assert r["match_type"] == "unmatched_nsa"
+    assert r["match_type"] == "api_resolved"
 
 
 def test_select_best_rate_typographic_apostrophe_matches():

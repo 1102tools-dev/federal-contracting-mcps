@@ -1,5 +1,62 @@
 # Changelog
 
+## 1.0.1
+
+Round 7: independent full-source re-audit with live verification. 14 findings
+fixed, headlined by the reversal of a round-6 misdiagnosis.
+
+### Fixed
+
+- **False WARNING on API-resolved cities.** The GSA city endpoint resolves
+  city-to-county-to-rate-area server-side (Washington -> "District of
+  Columbia", Penasco -> "Taos": Penasco is in Taos County, so round 6's
+  "silent wrong data" story misread correct behavior). The unmatched-name
+  path stamped these right answers with "WARNING ... verify it applies",
+  including the docstring's own recommended DC query. New `api_resolved`
+  match type explains the resolution neutrally; among several resolved
+  rows the one whose county mentions the query wins and the rest surface
+  as `other_candidates`. `standard_fallback` still applies when a
+  Standard Rate row is present.
+- `compare_locations` rows are labeled by the QUERY (no more
+  "District of Columbia, VA" for Arlington) and carry `matched_city`,
+  `match_type`, and `is_standard_rate`.
+- OCONUS states (AK, HI, AS, GU, MP, PR, VI) return an explicit pointer
+  to DoD DTMO / State Dept rates instead of an empty success that read as
+  "standard CONUS rate applies in Hawaii". No API call is burned on them.
+- `travel_month` accepts exact month names only: prefix matching had
+  accepted any word starting with a month ("Mayhem" -> May). Full names
+  still work; ints never did and now the docs say so.
+- Null/unparseable month values no longer become $0 rates that poison
+  `lodging_min` and the seasonal flag; they surface as
+  `months_without_data`. Float-string values ("107.0") parse correctly.
+- `estimate_travel_cost` refuses to price a component at $0 when rate
+  data is incomplete, reports `rate_month: "MAX"` honestly with a
+  `month_fallback_note` when the requested month has no published rate.
+- Fiscal-year floor raised to the live-verified 2020 (FY2015-2019 pass
+  validation but serve no data); empty results for the upcoming FY note
+  that GSA posts new-FY rates in late August.
+- "Boston / Cambridge" style composite NSA names (GSA's own display
+  format) are accepted: slashes sanitize to spaces in validation and
+  match normalization. Backslashes and control chars stay rejected.
+- `lookup_city_perdiem` docstring had the fallback priority inverted.
+- Non-foreign OCONUS rate attribution corrected to DoD (DTMO); only
+  foreign rates are State Dept. smithery.yaml's DEMO_KEY "30/hr, 50/day"
+  corrected to the live-measured 10/hr; the server's ~10 req/hr text was
+  right all along.
+- readme now links testing.md (lowercase; the TESTING.md link 404'd on
+  GitHub) and the 0.1.0 changelog entry's "7 MCP tools" corrected to 6.
+- `serverInfo.version` no longer empty: MCPServer receives the package
+  version, pinned by a regression test.
+
+### Testing
+
+- `tests/test_audit_r7.py`: 18 offline regressions plus 3 live
+  confirmations (DC resolves without warning, Arlington resolves to the
+  DC NSA, Hawaii OCONUS guard).
+- testing.md round 7 documents the audit and corrects the prior record
+  (wrong live-gate env var, phantom stress_test_r6.py, phantom
+  retry/semaphore/no_rate_available claims, the round-6 misdiagnosis).
+
 ## 1.0.0
 
 First stable release. The suite is feature-complete for its intended scope and
@@ -235,7 +292,8 @@ missed.
 ## 0.1.0
 Initial release.
 
-- 7 MCP tools covering the GSA Per Diem Rates API
+- 6 MCP tools covering the GSA Per Diem Rates API (the original entry
+  claimed 7; the server has always exposed 6)
 - Core: lookup_city_perdiem, lookup_zip_perdiem, lookup_state_rates, get_mie_breakdown
 - Workflows: estimate_travel_cost (with first/last day 75% M&IE), compare_locations
 - Auto-selects best rate from API response (exact > composite NSA > first NSA > standard)

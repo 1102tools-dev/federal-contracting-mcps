@@ -6,7 +6,7 @@ MCP server for the GSA Per Diem Rates API. Federal travel lodging and M&IE rates
 
 Works without configuration using DEMO_KEY. Optional free API key for higher rate limits.
 
-*Tested and hardened through six rounds of integration testing against the live GSA Per Diem API, including a round-6 live audit with a real api.data.gov key. 413 regression tests covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, and 21 P2 validation gaps fixed. See [TESTING.md](TESTING.md) for the full testing record.*
+*Tested and hardened through seven rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 437 regression tests covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, and 14 round-7 findings fixed. See [testing.md](testing.md) for the full testing record.*
 
 ## What it does
 
@@ -34,7 +34,7 @@ This server hits `api.gsa.gov`, which uses api.data.gov for rate limiting.
 **Get a free key (takes 30 seconds):**
 
 1. Go to [api.data.gov/signup](https://api.data.gov/signup/)
-2. Enter your name and email — no approval, no wait
+2. Enter your name and email: no approval, no wait
 3. Copy the key from the confirmation page
 4. Paste it into your Claude Desktop config as `PERDIEM_API_KEY` (see below)
 
@@ -87,7 +87,7 @@ uvx gsa-perdiem-mcp
 
 ## Important: maximum reimbursement, not actual prices
 
-Per diem rates are federal reimbursement ceilings per 41 CFR 301-11. They are not actual hotel prices. CONUS only. OCONUS rates are from the State Department. Lodging taxes generally not included. First/last travel day M&IE at 75%.
+Per diem rates are federal reimbursement ceilings per 41 CFR 301-11. They are not actual hotel prices. CONUS only. Non-foreign OCONUS rates (Alaska, Hawaii, territories) are set by DoD (DTMO); foreign rates by the State Department. Lodging taxes generally not included. First/last travel day M&IE at 75%.
 
 ## Companion tools
 
