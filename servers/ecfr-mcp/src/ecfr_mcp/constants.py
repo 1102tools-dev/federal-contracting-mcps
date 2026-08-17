@@ -6,13 +6,35 @@ BASE_URL = "https://www.ecfr.gov"
 DEFAULT_TIMEOUT_JSON = 15.0
 DEFAULT_TIMEOUT_STRUCTURE = 30.0
 DEFAULT_TIMEOUT_CONTENT = 60.0
-USER_AGENT = "ecfr-mcp/1.0.0"
+
+# Derived from the installed package so it can never go stale again
+# (1.0.1 shipped with this still pinned at 1.0.0).
+try:
+    from importlib.metadata import version as _pkg_version
+    USER_AGENT = f"ecfr-mcp/{_pkg_version('ecfr-mcp')}"
+except Exception:  # pragma: no cover - not installed (vendored copy)
+    USER_AGENT = "ecfr-mcp/1.0.2"
+
+# eCFR point-in-time coverage starts here. Every versioner request for an
+# earlier date is a guaranteed 404.
+ECFR_EARLIEST_DATE = "2017-01-03"
 
 # Search caps
 SEARCH_MAX_PER_PAGE = 5000
 SEARCH_MAX_TOTAL = 10000
 
-# Title 48 chapter map (Federal Acquisition Regulations System)
+# Search result orderings accepted by /api/search/v1/results. Live-verified
+# 2026-08-16: each value returns 200 and reorders results; unknown values are
+# rejected by the API with {"errors": {"order": ...}}.
+SEARCH_ORDERS: frozenset[str] = frozenset({
+    "relevance", "newest_first", "oldest_first", "hierarchy", "citations",
+})
+
+# Title 48 chapter map (Federal Acquisition Regulations System).
+# Authority: the eCFR agencies endpoint (/api/admin/v1/agencies.json) title-48
+# references plus the live title-48 structure. A live-gated regression test
+# diffs these keys against agencies.json so the map cannot silently drift
+# again (round 6 found nine live chapters missing, including the entire HSAR).
 TITLE_48_CHAPTERS: dict[str, str] = {
     "1": "FAR (Parts 1-99)",
     "2": "DFARS (Parts 200-299)",
@@ -28,14 +50,23 @@ TITLE_48_CHAPTERS: dict[str, str] = {
     "13": "CAR (Parts 1300-1399)",
     "14": "DIAR (Parts 1400-1499)",
     "15": "EPAAR (Parts 1500-1599)",
-    "16": "OPMAR (Parts 1600-1699)",
+    "16": "FEHBAR, OPM health benefits (Parts 1600-1699)",
+    "17": "OPM (Parts 1700-1799)",
     "18": "NFS (Parts 1800-1899)",
+    "19": "USAGM, Broadcasting Board of Governors (Parts 1900-1999)",
     "20": "NRCAR (Parts 2000-2099)",
+    "21": "LIFAR, OPM group life insurance (Parts 2100-2199)",
     "23": "SSAAR (Parts 2300-2399)",
     "24": "HUDAR (Parts 2400-2499)",
     "25": "NSFAR (Parts 2500-2599)",
     "28": "JAR (Parts 2800-2899)",
     "29": "DOLAR (Parts 2900-2999)",
+    "30": "HSAR (Parts 3000-3099)",
+    "34": "EDAR, Dept. of Education (Parts 3400-3499)",
+    "52": "Dept. of the Navy (Parts 5200-5299)",
+    "54": "DLA (Parts 5400-5499)",
+    "57": "USADF, African Development Foundation (Parts 5700-5799)",
+    "61": "CBCA, Civilian Board of Contract Appeals (Parts 6100-6199)",
     "99": "CAS (Part 9900)",
 }
 

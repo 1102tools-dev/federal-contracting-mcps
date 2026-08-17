@@ -19,7 +19,10 @@ import pytest
 import ecfr_mcp.server as srv
 from ecfr_mcp.server import mcp
 
-LIVE = os.environ.get("MCP_LIVE_TESTS") == "1"
+# Both spellings accepted since 1.0.2: testing.md documented ECFR_LIVE_TESTS
+# for two releases while the gate only read MCP_LIVE_TESTS, silently running
+# zero live tests for anyone who followed the doc.
+LIVE = os.environ.get("MCP_LIVE_TESTS") == "1" or os.environ.get("ECFR_LIVE_TESTS") == "1"
 
 
 @pytest.fixture(autouse=True)
@@ -55,7 +58,7 @@ def _payload(result):
 
 
 # ---------------------------------------------------------------------------
-# Input validation (offline — uses pydantic + handler validators)
+# Input validation (offline, uses pydantic + handler validators)
 # ---------------------------------------------------------------------------
 
 def test_search_rejects_empty_query():
@@ -321,7 +324,7 @@ def test_get_latest_date_rejects_negative_title():
 
 
 # ---------------------------------------------------------------------------
-# Response-shape defense (offline — mock _get_json / _get_xml)
+# Response-shape defense (offline, mock _get_json / _get_xml)
 # ---------------------------------------------------------------------------
 
 def _with_mock_json(response):
@@ -502,7 +505,7 @@ def test_get_corrections_filters_since_year():
 
 
 # ---------------------------------------------------------------------------
-# XML parser defense (offline — pure function)
+# XML parser defense (offline, pure function)
 # ---------------------------------------------------------------------------
 
 def test_parse_xml_handles_none():
@@ -833,7 +836,7 @@ def test_unknown_param_rejected():
 # standing between the user and quietly wrong regulatory text.
 _ID_PARAMS = {
     "part", "subpart", "section", "chapter", "subchapter",
-    "part_number", "section_id",
+    "part_number", "section_id", "appendix",
 }
 
 

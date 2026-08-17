@@ -37,7 +37,7 @@ from ecfr_mcp.server import (  # noqa: E402
 from ecfr_mcp.server import mcp  # noqa: E402
 
 
-LIVE = os.environ.get("MCP_LIVE_TESTS") == "1"
+LIVE = os.environ.get("MCP_LIVE_TESTS") == "1" or os.environ.get("ECFR_LIVE_TESTS") == "1"
 
 PUNISHMENT = settings(
     max_examples=500,

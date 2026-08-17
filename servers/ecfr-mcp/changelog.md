@@ -1,5 +1,72 @@
 # Changelog
 
+## 1.0.2
+
+Round 6: an external re-audit probed the constants against the live API, the
+XML parser against real section archetypes, and the exposed parameters
+against documented API behavior. Ten findings, all fixed here.
+
+### Fixed
+
+**Nine live Title 48 chapters were unreachable through chapter filters.**
+`TITLE_48_CHAPTERS` was missing chapters 17, 19, 21, 30 (the entire DHS
+HSAR), 34 (Dept. of Education), 52 (Navy), 54 (DLA), 57 (USADF), and 61
+(Civilian Board of Contract Appeals), all live and non-reserved in eCFR. The
+chapter validator rejected them with a confident but false "not a valid
+Title 48 chapter" error across every chapter-taking tool. The map now
+matches the eCFR agencies endpoint, chapter 16's label is corrected to
+FEHBAR (there is no "OPMAR"), and a live-gated regression test diffs the
+map's keys against agencies.json so it cannot silently drift again.
+
+**Table content was silently discarded.** The parser extracted only
+paragraph, heading, citation, and extract tags, so a table-based section
+like FAR 1.106 (a 562-cell OMB control number table) came back as a single
+stray paragraph with no signal that anything was missing. Tables now parse
+into a `tables` field (rows of cell strings, both HTML-style and GPO-style
+markup) with a `table_note`, and any table that resists row parsing is
+reported in a `warning` instead of vanishing.
+
+**Dropped heading and editorial-note text.** `<HD1>`-`<HD3>` blocks (which
+carry text like "(End of clause)" and Alternate markers) and `<FP>` flush
+paragraphs now flow into `paragraphs` in document order; `<EDNOTE>` bodies
+land in a new `editorial_notes` field.
+
+**`summary_only` agency listings lost the biggest FAR supplements.** CFR
+references that live on child agencies (DFARS chapter 2 sits on a DoD child,
+HSAR chapter 30 on a DHS child, plus chapters 34, 52, 54, and 61) were
+stripped along with the `children` key, so the summary could not answer
+"which chapter is DFARS". Child references now merge into the parent row.
+
+**Trailing paragraph cites 404'd.** `section='15.305(a)(2)'`, a common LLM
+shape, now resolves to section `15.305` on every section-taking tool. The
+404 guidance also explains paragraph cites and the 2017-01-03 history floor.
+
+**`compare_versions` accepted dates before eCFR history begins.**
+Point-in-time coverage starts 2017-01-03; earlier dates always 404'd with
+misleading guidance. They are now rejected up front with the floor named.
+
+**Stale `USER_AGENT`.** The header was pinned at `ecfr-mcp/1.0.0`. It now
+derives from the installed package version so it cannot go stale again.
+
+**Live test gate documented wrong.** testing.md said `ECFR_LIVE_TESTS=1`;
+the gate only read `MCP_LIVE_TESTS`, so the documented command silently ran
+zero live tests. Both variables now work and the docs name the real one.
+
+### Added
+
+**`appendix` parameter** on `get_cfr_content`, `get_cfr_structure`, and
+`get_ancestry`. DFARS appendices (Appendix A, F, H, and I to Chapter 2) were
+live in the API but unreachable through any tool parameter.
+
+**`order` and `agency_slugs` on `search_cfr`.** The API supports both; the
+docstring previously claimed only relevance ordering existed. Verified
+orderings: relevance, newest_first, oldest_first, hierarchy, citations.
+`find_recent_changes` now returns newest first instead of applying
+relevance scoring to a wildcard query.
+
+**Docstring corrections** in `search_cfr`: the per_page text described a
+100-item soft cap that never existed (actual bound 1 to 5000).
+
 ## 1.0.1
 
 ### Fixed

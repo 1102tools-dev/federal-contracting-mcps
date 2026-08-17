@@ -27,8 +27,10 @@ from .constants import (
     DEFAULT_TIMEOUT_CONTENT,
     DEFAULT_TIMEOUT_JSON,
     DEFAULT_TIMEOUT_STRUCTURE,
+    ECFR_EARLIEST_DATE,
     SEARCH_MAX_PER_PAGE,
     SEARCH_MAX_TOTAL,
+    SEARCH_ORDERS,
     TITLE_48_CHAPTERS,
     USER_AGENT,
 )
@@ -184,18 +186,25 @@ def _validate_title_number(value: Any, *, field: str = "title_number") -> int:
 
 _SECTION_PREFIX_RE = re.compile(r"^\s*(?:FAR|DFARS|GSAR|48\s*CFR|CFR)\s+", re.IGNORECASE)
 
+# Trailing paragraph cites like '15.305(a)' or '52.212-4(c)(2)(ii)'. The cited
+# paragraph is not a separate eCFR document; the base section is.
+_PAREN_CITE_RE = re.compile(r"(?:\([A-Za-z0-9]{1,4}\))+\s*$")
+
 
 def _coerce_cfr_str(
     value: Any,
     *,
     field: str,
     strip_prefixes: bool = False,
+    strip_cites: bool = False,
     maxlen: int = 120,
 ) -> str | None:
     """Accept int or str for CFR identifiers (part/subpart/section/chapter).
 
     LLMs often pass ints (part=15). We coerce to str, strip whitespace, and
     optionally strip common user-added prefixes like 'FAR ' or '48 CFR '.
+    strip_cites additionally drops trailing paragraph cites, so
+    '15.305(a)(2)' resolves to section '15.305' instead of a guaranteed 404.
     Returns None for None/empty/whitespace-only. Raises on other types.
     """
     if value is None:
@@ -216,6 +225,10 @@ def _coerce_cfr_str(
         return None
     if strip_prefixes:
         s = _SECTION_PREFIX_RE.sub("", s).strip()
+        if not s:
+            return None
+    if strip_cites:
+        s = _PAREN_CITE_RE.sub("", s).strip()
         if not s:
             return None
     if len(s) > maxlen:
@@ -239,6 +252,33 @@ def _validate_chapter(value: Any, *, title_number: int | None = None) -> str | N
             f"Chapter 1=FAR, 2=DFARS."
         )
     return s
+
+
+_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+
+def _validate_agency_slugs(value: list[str] | str | None) -> list[str] | None:
+    """Normalize agency_slugs to a list of validated slug strings.
+
+    Accepts a single slug or a list. Slugs are lowercase letters, digits,
+    and hyphens (e.g. 'defense-acquisition-regulations-system').
+    """
+    if value is None:
+        return None
+    items = [value] if isinstance(value, str) else list(value)
+    slugs: list[str] = []
+    for item in items:
+        s = _strip_or_none(item)
+        if s is None:
+            raise ValueError("agency_slugs entries cannot be empty or whitespace.")
+        s = s.lower()
+        if len(s) > 100 or not _SLUG_RE.match(s):
+            raise ValueError(
+                f"agency_slugs entry {item!r} is not a valid agency slug "
+                f"(lowercase letters, digits, hyphens). Use list_agencies() to find slugs."
+            )
+        slugs.append(s)
+    return slugs or None
 
 
 # Free-text guard for search queries
@@ -281,7 +321,10 @@ def _format_error(status: int, body: Any) -> str:
             "HTTP 404: Resource not found. Common causes: (1) the date exceeds "
             "the title's up_to_date_as_of value -- use get_latest_date() first; "
             "(2) the section/part does not exist at the requested date; "
-            "(3) 'current' is not a valid date keyword -- use a specific YYYY-MM-DD date. "
+            "(3) 'current' is not a valid date keyword -- use a specific YYYY-MM-DD date; "
+            "(4) paragraph cites like '15.305(a)(2)' are not separate documents -- "
+            "request the base section and read the paragraph from its text; "
+            f"(5) point-in-time history begins {ECFR_EARLIEST_DATE} -- earlier dates always 404. "
             f"API response: {cleaned}"
         )
     if status == 406:
@@ -365,8 +408,20 @@ async def _get_xml(path: str, params: dict[str, Any] | None = None) -> str:
 
 _HEAD_RE = re.compile(r"<HEAD\b[^>]*>(.*?)</HEAD>", re.IGNORECASE | re.DOTALL)
 _CITA_RE = re.compile(r"<CITA\b[^>]*>(.*?)</CITA>", re.IGNORECASE | re.DOTALL)
-_P_RE = re.compile(r"<P\b[^>]*>(.*?)</P>", re.IGNORECASE | re.DOTALL)
+# Text blocks in document order: paragraphs (P), flush paragraphs (FP), and
+# inline headings (HD1-HD3, which carry text like '(End of clause)' and
+# 'Alternate I' markers). Round 6: HD and FP content was silently dropped.
+_BLOCK_RE = re.compile(r"<(P|FP|HD1|HD2|HD3)\b[^>]*>(.*?)</\1>", re.IGNORECASE | re.DOTALL)
 _EXTRACT_RE = re.compile(r"<EXTRACT\b[^>]*>(.*?)</EXTRACT>", re.IGNORECASE | re.DOTALL)
+# Editorial notes: <EDNOTE><HED>Editorial Note:</HED><PSPACE>text</PSPACE></EDNOTE>
+_EDNOTE_RE = re.compile(r"<EDNOTE\b[^>]*>(.*?)</EDNOTE>", re.IGNORECASE | re.DOTALL)
+# Tables. eCFR content XML carries both HTML-style <table><tr><td> markup
+# (e.g. the FAR 1.106 OMB control number table) and GPO-style
+# <GPOTABLE><ROW><ENT>. Round 6: table content was silently dropped; FAR
+# 1.106 (a 562-cell table) came back as a single stray paragraph.
+_TABLE_RE = re.compile(r"<(GPOTABLE|TABLE)\b[^>]*>(.*?)</\1>", re.IGNORECASE | re.DOTALL)
+_TABLE_ROW_RE = re.compile(r"<(TR|ROW)\b[^>]*>(.*?)</\1>", re.IGNORECASE | re.DOTALL)
+_TABLE_CELL_RE = re.compile(r"<(TD|TH|ENT)\b[^>]*>(.*?)</\1>", re.IGNORECASE | re.DOTALL)
 _XML_DECL_RE = re.compile(r"<\?xml[^>]*\?>", re.IGNORECASE)
 _PI_RE = re.compile(r"<\?[^>]*\?>")
 _COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -387,8 +442,10 @@ def _clean_inline(s: str) -> str:
 def _parse_xml_to_text(xml_content: Any) -> dict[str, Any]:
     """Extract clean text from eCFR XML content response.
 
-    Returns structured data with heading, paragraphs, and citations.
-    Handles <I>, <E> (emphasis), <EXTRACT>, <P>, <HEAD>, and <CITA> tags.
+    Returns structured data with heading, paragraphs, citations, plus
+    tables and editorial_notes when present. Handles <I>, <E> (emphasis),
+    <EXTRACT>, <P>, <FP>, <HD1>-<HD3>, <HEAD>, <CITA>, <EDNOTE>, and both
+    HTML-style and GPO-style table markup.
 
     Robust to bytes/None/int input, case variations, and malformed XML.
     """
@@ -414,8 +471,31 @@ def _parse_xml_to_text(xml_content: Any) -> dict[str, Any]:
     citations = [_clean_inline(c) for c in _CITA_RE.findall(text)]
     citations = [c for c in citations if c]
 
+    # Editorial notes come out before the paragraph pass so their bodies
+    # (and any nested <P>) are not double-counted as regulatory text.
+    editorial_notes = [_clean_inline(n) for n in _EDNOTE_RE.findall(text)]
+    editorial_notes = [n for n in editorial_notes if n]
+    text = _EDNOTE_RE.sub(" ", text)
+
+    # Tables likewise: rows of cell strings, removed from the paragraph pass
+    # so cell text is not duplicated. A table whose content resists row
+    # parsing is counted and reported rather than silently dropped.
+    tables: list[list[list[str]]] = []
+    tables_unparsed = 0
+    for _tag, table_body in _TABLE_RE.findall(text):
+        rows: list[list[str]] = []
+        for _row_tag, row_body in _TABLE_ROW_RE.findall(table_body):
+            cells = [_clean_inline(c) for _cell_tag, c in _TABLE_CELL_RE.findall(row_body)]
+            if any(cells):
+                rows.append(cells)
+        if rows:
+            tables.append(rows)
+        elif _clean_inline(table_body):
+            tables_unparsed += 1
+    text = _TABLE_RE.sub(" ", text)
+
     clean_paragraphs: list[str] = []
-    for p in _P_RE.findall(text):
+    for _tag, p in _BLOCK_RE.findall(text):
         p = _ITAG_RE.sub(r"*\1*", p)
         p = _ETAG_RE.sub(r"*\1*", p)
         p = _clean_inline(p)
@@ -443,6 +523,19 @@ def _parse_xml_to_text(xml_content: Any) -> dict[str, Any]:
     }
     if extract_texts:
         result["extracts"] = extract_texts
+    if tables:
+        result["tables"] = tables
+        result["table_note"] = (
+            f"{len(tables)} table(s) extracted into 'tables': "
+            f"each entry is a list of rows, each row a list of cell strings."
+        )
+    if tables_unparsed:
+        result["warning"] = (
+            f"{tables_unparsed} table(s) contained content that could not be "
+            f"parsed into rows and were omitted. Use raw_xml=True to inspect."
+        )
+    if editorial_notes:
+        result["editorial_notes"] = editorial_notes
     if metadata:
         result["hierarchy_metadata"] = metadata
 
@@ -554,41 +647,49 @@ async def get_cfr_content(
     subpart: str | int | None = None,
     section: str | int | None = None,
     chapter: str | int | None = None,
+    appendix: str | int | None = None,
     raw_xml: bool = False,
 ) -> dict[str, Any]:
-    """Get the full text of a CFR section, subpart, or part.
+    """Get the full text of a CFR section, subpart, part, or appendix.
 
     This is the primary workhorse for reading regulatory text. Returns
-    parsed clean text by default (heading, paragraphs, citations). Set
-    raw_xml=True to get the original XML instead.
+    parsed clean text by default (heading, paragraphs, citations, plus
+    tables and editorial_notes when present). Set raw_xml=True to get the
+    original XML instead.
 
     Specify the narrowest scope possible to keep responses manageable:
     - section='15.305' for a single FAR section
     - subpart='15.3' for a subpart
     - part='15' for an entire part (can be large)
     - chapter='1' for an entire chapter (often >1 MB, avoid)
+    - appendix='Appendix A to Chapter 2' (with chapter='2') for a DFARS appendix
 
     Date auto-resolves to the latest available if not provided. Do NOT use
     today's date directly -- eCFR lags 1-2 business days and today often 404s.
 
     Title 48 = FAR/DFARS. Chapter 1 = FAR (Parts 1-99), Chapter 2 = DFARS
-    (Parts 200-299). Other chapters = agency FAR supplements (GSAR, VAAR, etc.).
+    (Parts 200-299). Other chapters = agency FAR supplements (GSAR, VAAR,
+    HSAR, etc.).
 
     For DFARS clauses, use chapter='2' (e.g., section='252.227-7014').
 
     part/subpart/section accept int or string. Common prefix mistakes like
-    section='FAR 15.305' or '48 CFR 15.305' are stripped automatically.
+    section='FAR 15.305' or '48 CFR 15.305' are stripped automatically, and
+    trailing paragraph cites like section='15.305(a)(2)' resolve to the base
+    section '15.305'.
     """
     title_number = _validate_title_number(title_number)
     date = _validate_date_ymd(date, field="date")
-    section = _coerce_cfr_str(section, field="section", strip_prefixes=True)
+    section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
     chapter = _validate_chapter(chapter, title_number=title_number)
+    appendix = _coerce_cfr_str(appendix, field="appendix")
 
-    if not any((section, part, subpart, chapter)):
+    if not any((section, part, subpart, chapter, appendix)):
         raise ValueError(
-            "get_cfr_content requires at least one of: section, subpart, part, chapter. "
+            "get_cfr_content requires at least one of: section, subpart, part, "
+            "chapter, appendix. "
             "Calling without any filter returns the entire title (often 20+ MB)."
         )
 
@@ -605,6 +706,8 @@ async def get_cfr_content(
         params["subpart"] = subpart
     if section:
         params["section"] = section
+    if appendix:
+        params["appendix"] = appendix
 
     xml_content = await _get_xml(path, params)
 
@@ -622,6 +725,8 @@ async def get_cfr_content(
         parsed["subpart"] = subpart
     if chapter:
         parsed["chapter"] = chapter
+    if appendix:
+        parsed["appendix"] = appendix
     return parsed
 
 
@@ -633,6 +738,7 @@ async def get_cfr_structure(
     subchapter: str | int | None = None,
     part: str | int | None = None,
     subpart: str | int | None = None,
+    appendix: str | int | None = None,
 ) -> dict[str, Any]:
     """Get the hierarchical table of contents for a CFR title or subset.
 
@@ -648,7 +754,7 @@ async def get_cfr_structure(
     - part='15' for FAR Part 15 structure
     - subpart='15.3' for just that subpart's sections
 
-    part/subpart/chapter accept int or string.
+    part/subpart/chapter/appendix accept int or string.
     """
     title_number = _validate_title_number(title_number)
     date = _validate_date_ymd(date, field="date")
@@ -656,6 +762,7 @@ async def get_cfr_structure(
     subchapter = _coerce_cfr_str(subchapter, field="subchapter", maxlen=8)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
+    appendix = _coerce_cfr_str(appendix, field="appendix")
 
     if date is None:
         date = await _resolve_date(title_number)
@@ -670,6 +777,8 @@ async def get_cfr_structure(
         params["part"] = part
     if subpart:
         params["subpart"] = subpart
+    if appendix:
+        params["appendix"] = appendix
 
     return await _get_json(path, params, timeout=DEFAULT_TIMEOUT_STRUCTURE)
 
@@ -695,7 +804,7 @@ async def get_version_history(
     """
     title_number = _validate_title_number(title_number)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
-    section = _coerce_cfr_str(section, field="section", strip_prefixes=True)
+    section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
 
     if not any((part, section, subpart)):
@@ -721,19 +830,21 @@ async def get_ancestry(
     date: str | None = None,
     part: str | int | None = None,
     section: str | int | None = None,
+    appendix: str | int | None = None,
 ) -> dict[str, Any]:
-    """Get the breadcrumb hierarchy path for a section or part.
+    """Get the breadcrumb hierarchy path for a section, part, or appendix.
 
     Returns ancestors from title down to the target node: title > chapter >
     subchapter > part > subpart > section. Useful for understanding where
     a section sits in the CFR hierarchy and what regulation it belongs to.
 
-    part/section accept int or string.
+    part/section/appendix accept int or string.
     """
     title_number = _validate_title_number(title_number)
     date = _validate_date_ymd(date, field="date")
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
-    section = _coerce_cfr_str(section, field="section", strip_prefixes=True)
+    section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
+    appendix = _coerce_cfr_str(appendix, field="appendix")
 
     if date is None:
         date = await _resolve_date(title_number)
@@ -744,6 +855,8 @@ async def get_ancestry(
         params["part"] = part
     if section:
         params["section"] = section
+    if appendix:
+        params["appendix"] = appendix
 
     return await _get_json(path, params)
 
@@ -759,6 +872,8 @@ async def search_cfr(
     current_only: bool = True,
     last_modified_after: str | None = None,
     last_modified_before: str | None = None,
+    order: str | None = None,
+    agency_slugs: list[str] | str | None = None,
     per_page: int = 20,
     page: int = 1,
 ) -> dict[str, Any]:
@@ -773,12 +888,17 @@ async def search_cfr(
     Search caps at 10,000 total results. Use hierarchy filters (title,
     chapter, part) to narrow if you hit the cap.
 
-    Only 'relevance' ordering is supported. No date or newest sorting.
+    order controls result ordering: 'relevance' (default), 'newest_first',
+    'oldest_first', 'hierarchy', or 'citations'.
+
+    agency_slugs filters to one or more agencies (single slug string or a
+    list, e.g. 'defense-acquisition-regulations-system'). Use list_agencies()
+    to find slugs.
 
     last_modified_after/before use YYYY-MM-DD format and filter by the
     date sections were last amended. Useful for finding recent regulatory changes.
 
-    per_page capped at 100 by default (server-side soft cap; API max is 5000).
+    per_page accepts 1 to 5000 (default 20); paginate with page for more.
     """
     q = _strip_or_none(query)
     if q is None:
@@ -793,31 +913,70 @@ async def search_cfr(
     chapter = _validate_chapter(chapter, title_number=title)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
-    section = _coerce_cfr_str(section, field="section", strip_prefixes=True)
+    section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
     last_modified_after = _validate_date_ymd(last_modified_after, field="last_modified_after")
     last_modified_before = _validate_date_ymd(last_modified_before, field="last_modified_before")
+    order_clean = _strip_or_none(order)
+    if order_clean is not None:
+        order_clean = order_clean.lower()
+        if order_clean not in SEARCH_ORDERS:
+            raise ValueError(
+                f"order must be one of {sorted(SEARCH_ORDERS)}. Got {order!r}."
+            )
+    slugs = _validate_agency_slugs(agency_slugs)
 
-    params: list[tuple[str, str]] = [("query", q)]
+    params: dict[str, Any] = {"query": q}
     if title is not None:
-        params.append(("hierarchy[title]", str(title)))
+        params["hierarchy[title]"] = str(title)
     if chapter:
-        params.append(("hierarchy[chapter]", chapter))
+        params["hierarchy[chapter]"] = chapter
     if part:
-        params.append(("hierarchy[part]", part))
+        params["hierarchy[part]"] = part
     if subpart:
-        params.append(("hierarchy[subpart]", subpart))
+        params["hierarchy[subpart]"] = subpart
     if section:
-        params.append(("hierarchy[section]", section))
+        params["hierarchy[section]"] = section
     if current_only:
-        params.append(("date", "current"))
+        params["date"] = "current"
     if last_modified_after:
-        params.append(("last_modified_on_or_after", last_modified_after))
+        params["last_modified_on_or_after"] = last_modified_after
     if last_modified_before:
-        params.append(("last_modified_on_or_before", last_modified_before))
-    params.append(("per_page", str(per_page)))
-    params.append(("page", str(page)))
+        params["last_modified_on_or_before"] = last_modified_before
+    if order_clean:
+        params["order"] = order_clean
+    if slugs:
+        # httpx expands a list value into repeated agency_slugs[] params.
+        params["agency_slugs[]"] = slugs
+    params["per_page"] = str(per_page)
+    params["page"] = str(page)
 
-    return await _get_json("/api/search/v1/results", dict(params))
+    return await _get_json("/api/search/v1/results", params)
+
+
+def _agency_refs_with_children(agency: dict[str, Any]) -> list[dict[str, Any]]:
+    """Collect cfr_references from an agency and all of its descendants.
+
+    Title 48 chapter mappings often live on child agencies only: DFARS
+    chapter 2 sits on the Defense Acquisition Regulations System child of
+    DoD, HSAR chapter 30 on a child of DHS. A summary built from top-level
+    references alone loses exactly the biggest FAR supplements (round 6).
+    """
+    refs: list[dict[str, Any]] = []
+    seen: set[tuple[Any, ...]] = set()
+
+    def _walk(a: dict[str, Any]) -> None:
+        for r in _as_list(a.get("cfr_references")):
+            r = _safe_dict(r)
+            key = (r.get("title"), r.get("chapter"))
+            if key in seen:
+                continue
+            seen.add(key)
+            refs.append(r)
+        for child in _as_list(a.get("children")):
+            _walk(_safe_dict(child))
+
+    _walk(_safe_dict(agency))
+    return refs
 
 
 @mcp.tool(annotations={"title": "List Agencies", "readOnlyHint": True, "destructiveHint": False})
@@ -829,7 +988,9 @@ async def list_agencies(summary_only: bool = True) -> dict[str, Any]:
 
     summary_only (default True) strips the `children` and most of
     `cfr_references` to keep the response compact (~20 KB vs ~100 KB).
-    Set False for the full raw payload.
+    References owned by child agencies are merged into the parent row, so
+    chapter lookups like DFARS (chapter 2, on a DoD child agency) still work
+    in summary mode. Set False for the full raw payload including children.
     """
     data = await _get_json("/api/admin/v1/agencies.json")
     agencies = _as_list(_safe_dict(data).get("agencies"))
@@ -838,14 +999,13 @@ async def list_agencies(summary_only: bool = True) -> dict[str, Any]:
     summarized: list[dict[str, Any]] = []
     for a in agencies:
         a = _safe_dict(a)
-        refs = _as_list(a.get("cfr_references"))
+        refs = _agency_refs_with_children(a)
         summarized.append({
             "name": a.get("name"),
             "short_name": a.get("short_name"),
             "slug": a.get("slug"),
             "cfr_references": [
-                {"title": _safe_dict(r).get("title"),
-                 "chapter": _safe_dict(r).get("chapter")}
+                {"title": r.get("title"), "chapter": r.get("chapter")}
                 for r in refs
             ],
             "child_count": len(_as_list(a.get("children"))),
@@ -930,7 +1090,7 @@ async def lookup_far_clause(
     15.305 (Proposal Evaluation), 19.502-2 (Small Business Set-Asides),
     52.212-4 (Commercial Terms), 52.212-5 (Required Commercial Terms).
     """
-    section_id = _coerce_cfr_str(section_id, field="section_id", strip_prefixes=True)
+    section_id = _coerce_cfr_str(section_id, field="section_id", strip_prefixes=True, strip_cites=True)
     if not section_id:
         raise ValueError(
             "section_id is required. Pass a FAR/DFARS section like '15.305' or '52.212-4'. "
@@ -971,7 +1131,7 @@ async def compare_versions(
     exceed 100 KB per side.
     """
     title_number = _validate_title_number(title_number)
-    section_id = _coerce_cfr_str(section_id, field="section_id", strip_prefixes=True)
+    section_id = _coerce_cfr_str(section_id, field="section_id", strip_prefixes=True, strip_cites=True)
     if not section_id:
         raise ValueError(
             "section_id is required. Pass a section like '15.305', not a whole part."
@@ -988,6 +1148,12 @@ async def compare_versions(
     if date_before > date_after:
         raise ValueError(
             f"date_before ({date_before}) must be earlier than date_after ({date_after})."
+        )
+    if date_before < ECFR_EARLIEST_DATE:
+        raise ValueError(
+            f"date_before ({date_before}) precedes {ECFR_EARLIEST_DATE}. eCFR "
+            f"point-in-time history begins {ECFR_EARLIEST_DATE}; earlier "
+            f"snapshots do not exist and always return 404."
         )
     chapter = _validate_chapter(chapter, title_number=title_number)
 
@@ -1141,7 +1307,7 @@ async def find_recent_changes(
 
     Uses the search API with last_modified_on_or_after filter to find
     sections amended after the specified date. Returns section identifiers,
-    headings, and excerpts.
+    headings, and excerpts, most recently amended first.
 
     since_date must be in YYYY-MM-DD format. Results are capped at 10,000
     by the API. Use title/chapter/part filters to narrow if needed.
@@ -1158,6 +1324,8 @@ async def find_recent_changes(
     per_page = _clamp(per_page, field="per_page", lo=1, hi=SEARCH_MAX_PER_PAGE)
 
     # Use a broad query that every section matches; eCFR requires a query term.
+    # Relevance ordering is meaningless for a wildcard query, so return the
+    # most recently amended sections first.
     return await search_cfr(
         query="*",
         title=title,
@@ -1165,6 +1333,7 @@ async def find_recent_changes(
         part=part,
         current_only=True,
         last_modified_after=since_date,
+        order="newest_first",
         per_page=per_page,
     )
 
