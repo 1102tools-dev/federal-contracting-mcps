@@ -610,6 +610,7 @@ async def search_entities(
     any_naics: Union[str, int, None] = None,
     psc_code: str | None = None,
     business_type_code: str | None = None,
+    sba_business_type_code: str | None = None,
     state_code: str | None = None,
     registration_status: Literal["A", "E", "D", "I"] = "A",
     purpose_of_registration: Literal["Z1", "Z2", "Z5"] | None = None,
@@ -630,8 +631,17 @@ async def search_entities(
       For exact lookup use UEI or CAGE.
     - primary_naics matches the entity's designated primary NAICS only.
     - any_naics matches any NAICS the entity has on file.
-    - business_type_code uses codes like QF (SDVOSB), A2 (Women-Owned),
-      8W (WOSB), 23 (Minority-Owned). SDVOSB is NOT XS (that's S-Corp).
+    - business_type_code covers self-selected types: QF (SDVOSB), A2
+      (Women-Owned), 8W (WOSB), 23 (Minority-Owned). SDVOSB is NOT XS
+      (that's S-Corp).
+    - sba_business_type_code covers SBA-certified programs, which SAM.gov
+      filters through a dedicated sbaBusinessTypeCode parameter: A6 (8(a)
+      Program Participant), XX (HUBZone), JT (8(a) Joint Venture), A4 (Small
+      Disadvantaged Business), A9 (SBA-Certified WOSB), A0 (SBA-Certified
+      EDWOSB). Per the SAM data dictionary, XX is HUBZone and A6 is 8(a); do
+      not swap them. Note A9 is the SBA-CERTIFIED WOSB population; 8W on
+      business_type_code is the broader self-designated WOSB flag. SBA codes
+      passed to business_type_code raise a redirect error.
     - state_code is 2-letter USPS.
     - purpose_of_registration: Z1=Federal Assistance only, Z2=All Awards,
       Z5=Supplemental grants only.
@@ -654,11 +664,27 @@ async def search_entities(
             raise ValueError(
                 f"state_code must be 2-letter USPS (e.g. 'VA', 'CA'). Got {state_code!r}."
             )
-    # business_type_code: validate against known codes (merge standard + SBA)
+    # business_type_code: self-selected types only. SBA certification codes
+    # filter through the separate sbaBusinessTypeCode API parameter, so a code
+    # from that family redirects with an error instead of silently searching
+    # the wrong field and returning 0 results.
     if business_type_code:
-        all_codes = {**BUSINESS_TYPE_CODES, **SBA_BUSINESS_TYPE_CODES}
+        probe = business_type_code.strip().upper()
+        if probe in SBA_BUSINESS_TYPE_CODES:
+            raise ValueError(
+                f"business_type_code={business_type_code!r} is an SBA certification "
+                f"code ({SBA_BUSINESS_TYPE_CODES[probe]}). SAM.gov filters SBA "
+                f"certifications through a separate parameter; pass it as "
+                f"sba_business_type_code instead."
+            )
         business_type_code = _validate_code_in_dict(
-            business_type_code, field="business_type_code", valid_codes=all_codes,
+            business_type_code, field="business_type_code",
+            valid_codes=BUSINESS_TYPE_CODES,
+        )
+    if sba_business_type_code:
+        sba_business_type_code = _validate_code_in_dict(
+            sba_business_type_code, field="sba_business_type_code",
+            valid_codes=SBA_BUSINESS_TYPE_CODES,
         )
     # WAF-safe + length clamp on user-controlled strings
     legal_business_name = _clamp_str_len(
@@ -689,6 +715,8 @@ async def search_entities(
         params["pscCode"] = psc_code
     if business_type_code:
         params["businessTypeCode"] = business_type_code
+    if sba_business_type_code:
+        params["sbaBusinessTypeCode"] = sba_business_type_code
     if state_code:
         params["physicalAddressProvinceOrStateCode"] = state_code
     if purpose_of_registration:

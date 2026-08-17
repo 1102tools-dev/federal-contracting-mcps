@@ -15,7 +15,7 @@ SUBCONTRACTS_PATH = "/prod/contract/v1/subcontracts/search"
 ASSISTANCE_SUBAWARDS_PATH = "/prod/assistance/v1/subawards/search"
 
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = "sam-gov-mcp/1.0.0"
+USER_AGENT = "sam-gov-mcp/1.0.1"
 
 # Hard caps from the SAM.gov API (enforce client-side to give good errors)
 ENTITY_MAX_SIZE = 10          # Entity Management has a hard cap of 10
@@ -73,10 +73,21 @@ BUSINESS_TYPE_CODES: dict[str, str] = {
     "XS": "Subchapter S Corporation",
 }
 
-# SBA-specific business types
+# SBA-determined certification types. Assigned by SBA, never self-selected,
+# and filtered through the dedicated sbaBusinessTypeCode query parameter, not
+# businessTypeCode. The codes are counterintuitive: XX is HUBZone and A6 is
+# 8(a). Releases before 1.0.1 had XX mislabeled as "8(a) Certified".
+# A6/JT/XX/A4 are from the SAM Functional Data Dictionary ("Business Types"
+# field); A9/A0 postdate it and were pinned from live entity data, where both
+# filter correctly and appear in sbaBusinessTypeList with these descriptions
+# (verified 2026-08-16).
 SBA_BUSINESS_TYPE_CODES: dict[str, str] = {
-    "XX": "8(a) Certified",
-    "JT": "Joint Venture",
+    "A6": "SBA Certified 8(a) Program Participant",
+    "JT": "SBA Certified 8(a) Joint Venture",
+    "XX": "SBA Certified HUBZone Firm",
+    "A4": "SBA Certified Small Disadvantaged Business",
+    "A9": "SBA-Certified Women-Owned Small Business",
+    "A0": "SBA-Certified Economically Disadvantaged Women-Owned Small Business",
 }
 
 # Valid includeSections values for Entity Management

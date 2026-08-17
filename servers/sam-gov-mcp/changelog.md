@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.0.1
+
+### Fixed
+
+**`SBA_BUSINESS_TYPE_CODES` had XX mislabeled as "8(a) Certified".** Per the
+SAM Functional Data Dictionary ("Business Types" field), XX is SBA Certified
+HUBZone Firm and A6 is SBA Certified 8(a) Program Participant. The table now
+carries all four SBA-determined codes from the dictionary, A6 (8(a) Program
+Participant), JT (8(a) Joint Venture), XX (HUBZone), A4 (Small Disadvantaged
+Business), plus two newer codes pinned and live-verified from entity data:
+A9 (SBA-Certified WOSB, 13K+ active registrants) and A0 (SBA-Certified
+EDWOSB, 4K+). The mislabel is why round-1 guide testing could not find 8(a)
+firms.
+
+### Added
+
+**`search_entities` gained `sba_business_type_code`**, mapped to the Entity
+Management API's `sbaBusinessTypeCode` query parameter. SAM.gov filters SBA
+certifications through that dedicated parameter, so 8(a) and HUBZone searches
+were previously impossible: `business_type_code` sends `businessTypeCode`,
+which covers self-selected types only. Passing an SBA certification code to
+`business_type_code` now raises a redirect error naming the new parameter
+instead of silently searching the wrong field.
+
 ## 1.0.0
 
 First stable release. The suite is feature-complete for its intended scope and
