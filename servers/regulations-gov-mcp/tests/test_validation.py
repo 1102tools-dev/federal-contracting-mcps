@@ -284,9 +284,11 @@ def test_page_number_negative():
 
 
 def test_page_number_over_cap():
+    # Round 7: cap raised to the live-verified 40 (the API's own 400 says
+    # "Maximum value is 40"; page 21 returns real data).
     asyncio.run(_call_expect_error(
-        "search_documents", "exceeds maximum of 20",
-        agency_id="FAR", page_number=21,
+        "search_documents", "exceeds maximum of 40",
+        agency_id="FAR", page_number=41,
     ))
 
 

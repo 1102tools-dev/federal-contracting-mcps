@@ -6,7 +6,7 @@ MCP server for the Regulations.gov API. Federal rulemaking dockets, proposed rul
 
 Optional free API key for higher rate limits.
 
-*Tested and hardened through three rounds of integration testing against the live Regulations.gov API. 51 regression tests covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), and 7 P2 validation gaps fixed. See [TESTING.md](TESTING.md) for the full testing record.*
+*Tested and hardened through five rounds of integration testing against the live Regulations.gov API, including a round-7 independent re-audit with live verification. 197 regression tests covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, and 12 round-7 findings fixed. See [testing.md](testing.md) for the full testing record.*
 
 ## What it does
 
@@ -30,15 +30,14 @@ This server hits `api.regulations.gov`, which uses api.data.gov for rate
 limiting.
 
 - **Without a key**: falls back to the shared `DEMO_KEY` which is capped at
-  **40 requests per hour across everyone using it**. A single
-  `open_comment_periods` scan across 8 agencies already uses 8 of those 40,
-  so you'll hit 429 errors within a couple of prompts.
+  **~10 requests per hour (live-measured) across everyone using it**, so
+  you'll hit 429 errors within a couple of prompts.
 - **With a personal key**: 1,000 requests per hour, yours alone.
 
 **Get a free key (takes 30 seconds):**
 
 1. Go to [open.gsa.gov/api/regulationsgov/#getting-started](https://open.gsa.gov/api/regulationsgov/#getting-started) (or directly at [api.data.gov/signup](https://api.data.gov/signup/))
-2. Enter your name and email — no approval, no wait
+2. Enter your name and email: no approval, no wait
 3. Copy the key from the confirmation page
 4. Paste it into your Claude Desktop config as `REGULATIONS_GOV_API_KEY` (see below)
 

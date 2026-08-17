@@ -18,7 +18,6 @@ from regulationsgov_mcp.server import (  # noqa: E402
     _as_list,
     _check_date_range,
     _clamp,
-    _clamp_str_len,
     _clean_error_body,
     _safe_dict,
     _validate_agency_id,
@@ -73,7 +72,8 @@ def test_property_as_list(value):
 
 
 # ===========================================================================
-# B. _clamp / _clamp_str_len
+# B. _clamp (round 7 removed the dead _clamp_str_len helper: it was
+# referenced only by its own test and no production code path)
 # ===========================================================================
 
 @PUNISHMENT
@@ -90,17 +90,6 @@ def test_property_clamp(value, lo, hi):
         assert lo <= result <= hi
     except ValueError:
         assert value < lo or value > hi
-
-
-@PUNISHMENT
-@given(st.one_of(st.none(), st.text(min_size=0, max_size=2000)), st.integers(min_value=1, max_value=5000))
-def test_property_clamp_str_len(value, maximum):
-    try:
-        result = _clamp_str_len(value, field="x", maximum=maximum)
-        if result is not None:
-            assert len(result) <= maximum
-    except ValueError:
-        pass
 
 
 # ===========================================================================
@@ -470,14 +459,18 @@ def test_live_search_documents_each_additional_term(term):
     assert isinstance(data, dict)
 
 
-@pytest.mark.skipif(not LIVE, reason=LIVE_REASON)
-def test_live_search_within_comment_period_false_rejected_by_api():
-    """Regulations.gov API rejects withinCommentPeriod=false; only true valid."""
+def test_within_comment_period_false_rejected_locally():
+    """Round 7: the API rejects withinCommentPeriod=false with a 400, and a
+    prior round enshrined that 400 in a live test instead of fixing the
+    parameter. The server now rejects False locally with real guidance
+    (no network call, so this test no longer needs the live gate)."""
     try:
         asyncio.run(mcp.call_tool("search_documents", {
             "within_comment_period": False,
             "page_size": 5,
         }))
-        assert False, "API rejects withinCommentPeriod=false"
+        assert False, "expected local rejection of within_comment_period=False"
     except Exception as e:
-        assert "withinCommentPeriod" in str(e) or "Invalid" in str(e) or "400" in str(e)
+        msg = str(e)
+        assert "not supported by the API" in msg
+        assert "Omit the parameter" in msg

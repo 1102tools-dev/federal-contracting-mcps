@@ -4,7 +4,7 @@
 
 Federal rulemaking dockets, documents, public comments, and comment period
 tracking. Authentication via REGULATIONS_GOV_API_KEY environment variable.
-Falls back to DEMO_KEY (40 req/hr) if not set.
+Falls back to DEMO_KEY (10 req/hr, live-measured) if not set.
 
 Complements the Federal Register MCP (what was published) by providing the
 rulemaking docket structure, public comments, and comment period status.
@@ -22,19 +22,18 @@ from typing import Any, Literal
 import httpx
 from mcp.server import MCPServer
 
+from . import __version__
 from .constants import (
     BASE_URL,
     DEFAULT_PAGE_SIZE,
     DEFAULT_TIMEOUT,
-    DOCKET_TYPES,
-    DOCUMENT_TYPES,
     MAX_PAGE_SIZE,
     MIN_PAGE_SIZE,
     PROCUREMENT_AGENCIES,
     USER_AGENT,
 )
 
-mcp = MCPServer("regulationsgov")
+mcp = MCPServer("regulationsgov", version=__version__)
 
 
 # ---------------------------------------------------------------------------
@@ -60,16 +59,6 @@ def _clamp(value: int, *, field: str, lo: int, hi: int) -> int:
         raise ValueError(f"{field} must be >= {lo}. Got {value}.")
     if value > hi:
         raise ValueError(f"{field} exceeds maximum of {hi}. Got {value}. Paginate instead.")
-    return value
-
-
-def _clamp_str_len(value: str | None, *, field: str, maximum: int) -> str | None:
-    if value is None:
-        return None
-    if len(value) > maximum:
-        raise ValueError(
-            f"{field} exceeds maximum length of {maximum} chars. Got {len(value)}."
-        )
     return value
 
 
@@ -122,7 +111,9 @@ _DOCKET_SORT_FIELDS = {"title", "docketId", "lastModifiedDate"}
 
 
 def _validate_sort(value: Any, *, field: str, valid_fields: set[str]) -> str | None:
-    """Validate a sort parameter: optional leading '-' plus a known field name."""
+    """Validate a sort parameter: comma-separated fields, each with an
+    optional leading '-'. The API documents multi-field sorts, and its own
+    deep-pagination recipe requires 'lastModifiedDate,documentId'."""
     if value is None:
         return None
     if not isinstance(value, str):
@@ -130,14 +121,19 @@ def _validate_sort(value: Any, *, field: str, valid_fields: set[str]) -> str | N
     s = value.strip()
     if not s:
         return None
-    bare = s[1:] if s.startswith("-") else s
-    if bare not in valid_fields:
-        sample = ", ".join(sorted(valid_fields))
-        raise ValueError(
-            f"{field}={value!r} is not a valid sort field. "
-            f"Use one of: {sample} (prefix with '-' for descending)."
-        )
-    return s
+    parts = [p.strip() for p in s.split(",")]
+    if any(not p for p in parts):
+        raise ValueError(f"{field}={value!r} has an empty entry in the comma list.")
+    for part in parts:
+        bare = part[1:] if part.startswith("-") else part
+        if bare not in valid_fields:
+            sample = ", ".join(sorted(valid_fields))
+            raise ValueError(
+                f"{field} entry {part!r} is not a valid sort field. "
+                f"Use one of: {sample} (prefix with '-' for descending; "
+                f"comma-separate for multi-field sorts)."
+            )
+    return ",".join(parts)
 
 
 def _validate_date_ymd(value: str | None, *, field: str) -> str | None:
@@ -222,6 +218,8 @@ _AGENCY_ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9\-_]{0,19}$")
 
 def _validate_agency_id(value: str | None, *, field: str = "agency_id") -> str | None:
     """Agency IDs are short letter-prefixed codes (FAR, DARS, GSA, DoD, etc).
+    Comma-separated lists are accepted: the API documents
+    filter[agencyId]=GSA,EPA as the multi-agency form (verified live).
 
     Empty string is explicitly rejected so that callers do not accidentally
     issue an unfiltered query that returns every document in Regulations.gov
@@ -238,15 +236,62 @@ def _validate_agency_id(value: str | None, *, field: str = "agency_id") -> str |
             f"documents in Regulations.gov (~1.95M). Pass None to skip the "
             f"filter or a valid agency code like 'FAR', 'DARS', 'GSA'."
         )
-    if not _AGENCY_ID_RE.match(s):
+    tokens = [t.strip() for t in s.split(",")]
+    if any(not t for t in tokens):
         raise ValueError(
-            f"{field}={value!r} is not a valid agency code. Agency codes are "
-            f"short letter-prefixed strings like 'FAR', 'DARS', 'GSA', 'DoD'."
+            f"{field}={value!r} has an empty entry in the comma list. "
+            f"Use 'FAR,GSA' with no trailing comma."
         )
-    return s
+    for token in tokens:
+        if not _AGENCY_ID_RE.match(token):
+            raise ValueError(
+                f"{field} entry {token!r} is not a valid agency code. Agency "
+                f"codes are short letter-prefixed strings like 'FAR', 'DARS', "
+                f"'GSA', 'DoD'; comma-separate for multiple agencies."
+            )
+    return ",".join(tokens)
 
 
 _ID_SAFE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9\-_.]{0,%d}$" % (_ID_MAX_LEN - 1))
+_OBJECT_ID_RE = re.compile(r"^[0-9a-fA-F]{10,32}$")
+
+
+def _validate_optional_id(value: str | None, *, field: str) -> str | None:
+    """Optional-ID params: None skips the filter; empty string is REJECTED.
+
+    Before this guard, docket_id='' silently dropped the filter and searched
+    all ~2M documents / ~26M comments: the exact empty-string bug class the
+    0.2.0 release headline-fixed for agency_id, left open here.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str) and not value.strip():
+        raise ValueError(
+            f"{field} cannot be empty or whitespace. An empty {field} would "
+            f"silently drop the filter and search the entire corpus. Pass "
+            f"None to skip the filter."
+        )
+    return _validate_id(value, field=field)
+
+
+def _validate_comment_on_id(value: str | None, *, field: str = "comment_on_id") -> str | None:
+    """filter[commentOnId] takes the document's hex objectId, NOT its
+    documentId. Passing a documentId (e.g. 'FAR-2023-0008-0024') returns
+    zero comments with no error (verified live), which is the number-one
+    cause of falsely-empty comment searches. Reject non-hex shapes with
+    directions to the objectId."""
+    s = _validate_optional_id(value, field=field)
+    if s is None:
+        return None
+    if not _OBJECT_ID_RE.match(s):
+        raise ValueError(
+            f"{field}={s!r} looks like a documentId, but the API requires the "
+            f"document's hex objectId (e.g. '0900006486531e6b'). Get it from "
+            f"get_document_detail or search_documents: it is the "
+            f"attributes.objectId field. Passing a documentId silently "
+            f"returns 0 comments."
+        )
+    return s
 
 
 def _validate_id(value: Any, *, field: str) -> str:
@@ -315,7 +360,7 @@ def _format_error(status: int, body: Any) -> str:
         )
     if status == 429:
         key = _get_api_key()
-        limit = "1,000/hr (registered)" if key != "DEMO_KEY" else "40/hr (DEMO_KEY)"
+        limit = "1,000/hr (registered)" if key != "DEMO_KEY" else "10/hr (DEMO_KEY, live-measured)"
         return (
             f"HTTP 429: Rate limited ({limit}). "
             "Register a free key for 1,000/hr at "
@@ -329,9 +374,10 @@ def _format_error(status: int, body: Any) -> str:
             )
         if "page number" in low:
             return (
-                f"HTTP 400: page_number out of range. The API caps total "
-                f"results around 5,000 (20 pages at page_size=250). For "
-                f"larger sets, partition with date ranges. API: {cleaned}"
+                f"HTTP 400: page_number out of range. The API allows pages "
+                f"1-40 (10,000 records at page_size=250; its own 400 names "
+                f"40 as the max). For larger sets, partition with "
+                f"lastModifiedDate windows. API: {cleaned}"
             )
         if "date" in low:
             return (
@@ -410,8 +456,10 @@ def _validate_page_size(page_size: Any) -> int:
 def _validate_page_number(page_number: Any) -> int:
     if not isinstance(page_number, int) or isinstance(page_number, bool):
         raise ValueError("page_number must be a positive int.")
-    # API caps at 20 pages (~5,000 records). Reject up front.
-    return _clamp(page_number, field="page_number", lo=1, hi=20)
+    # The published docs say 20 pages, but the live API accepts up to 40
+    # (its own 400 at page 1000 says "Maximum value is 40", and page 21
+    # returns real data). 40 x 250 = 10,000 reachable records per query.
+    return _clamp(page_number, field="page_number", lo=1, hi=40)
 
 
 def _flag_no_data(
@@ -471,29 +519,40 @@ async def search_documents(
 
     Key parameters:
     - agency_id: FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA, etc.
+      Comma-separate for multiple agencies ('FAR,GSA').
       Empty string is REJECTED (previously returned all 1.95M records).
     - docket_id: e.g., 'FAR-2023-0008' for a specific FAR case
-    - within_comment_period: True to find documents currently accepting comments
+    - within_comment_period: True to find documents currently accepting
+      comments. False is NOT supported by the API (it 400s); omit the
+      parameter instead to search regardless of comment status.
     - posted_date_ge/le: YYYY-MM-DD format (calendar-checked)
     - comment_end_date_ge/le: YYYY-MM-DD format
 
     Response includes meta.aggregations with counts by document type, agency,
     and comment period status.
 
-    Page size: 5-250. page_number: 1-20 (API caps total results at ~5,000).
-    For larger sets, use date ranges to partition.
+    Page size: 5-250. page_number: 1-40 (10,000 reachable records per
+    query; the live API allows 40 pages even though the docs say 20).
+    For larger sets, partition with date ranges, or use the API's deep
+    pagination recipe: sort='lastModifiedDate,documentId' plus
+    lastModifiedDate windows on search_dockets/search_comments.
 
     sort: '-postedDate' (newest first, default), 'postedDate', '-commentEndDate',
-    'lastModifiedDate', 'title', 'documentId'.
+    'lastModifiedDate', 'title', 'documentId'. Comma-separate for
+    multi-field sorts ('lastModifiedDate,documentId').
     """
     page_size = _validate_page_size(page_size)
     page_number = _validate_page_number(page_number)
     search_term = _validate_search_term(search_term, field="search_term")
     agency_id = _validate_agency_id(agency_id, field="agency_id")
-    if docket_id is not None and docket_id != "":
-        docket_id = _validate_id(docket_id, field="docket_id")
-    elif docket_id == "":
-        docket_id = None
+    docket_id = _validate_optional_id(docket_id, field="docket_id")
+    if within_comment_period is False:
+        raise ValueError(
+            "within_comment_period=False is not supported by the API "
+            "(only 'true' is an acceptable filter value; false returns "
+            "HTTP 400). Omit the parameter to search all documents "
+            "regardless of comment-period status."
+        )
     posted_date_ge = _validate_date_ymd(posted_date_ge, field="posted_date_ge")
     posted_date_le = _validate_date_ymd(posted_date_le, field="posted_date_le")
     comment_end_date_ge = _validate_date_ymd(comment_end_date_ge, field="comment_end_date_ge")
@@ -518,8 +577,8 @@ async def search_documents(
         params["filter[documentType]"] = document_type
     if docket_id:
         params["filter[docketId]"] = docket_id
-    if within_comment_period is not None:
-        params["filter[withinCommentPeriod]"] = str(within_comment_period).lower()
+    if within_comment_period:
+        params["filter[withinCommentPeriod]"] = "true"
     if posted_date_ge:
         params["filter[postedDate][ge]"] = posted_date_ge
     if posted_date_le:
@@ -570,10 +629,12 @@ async def search_comments(
     """Search public comments on Regulations.gov.
 
     To find comments on a specific document, use comment_on_id with the
-    hex objectId from document search results (NOT the human-readable
-    documentId).
+    hex objectId from document detail/search results (attributes.objectId,
+    e.g. '0900006486531e6b'). The human-readable documentId is REJECTED
+    here because the API silently returns 0 comments for it.
 
-    docket_id can also filter comments to all documents in a docket.
+    docket_id can also filter comments to all documents in a docket
+    (undocumented upstream but verified working live).
 
     Page size: 5-250. Comments sorted by '-postedDate' by default.
     """
@@ -581,14 +642,8 @@ async def search_comments(
     page_number = _validate_page_number(page_number)
     search_term = _validate_search_term(search_term, field="search_term")
     agency_id = _validate_agency_id(agency_id, field="agency_id")
-    if comment_on_id is not None and comment_on_id != "":
-        comment_on_id = _validate_id(comment_on_id, field="comment_on_id")
-    elif comment_on_id == "":
-        comment_on_id = None
-    if docket_id is not None and docket_id != "":
-        docket_id = _validate_id(docket_id, field="docket_id")
-    elif docket_id == "":
-        docket_id = None
+    comment_on_id = _validate_comment_on_id(comment_on_id, field="comment_on_id")
+    docket_id = _validate_optional_id(docket_id, field="docket_id")
     posted_date_ge = _validate_date_ymd(posted_date_ge, field="posted_date_ge")
     posted_date_le = _validate_date_ymd(posted_date_le, field="posted_date_le")
     _check_date_range(posted_date_ge, posted_date_le,
@@ -615,7 +670,10 @@ async def search_comments(
         params["filter[postedDate][le]"] = posted_date_le
 
     result = await _get("comments", params)
-    ctx = f"agency_id={agency_id!r}, docket_id={docket_id!r}"
+    ctx = (
+        f"agency_id={agency_id!r}, docket_id={docket_id!r}, "
+        f"comment_on_id={comment_on_id!r}"
+    )
     return _flag_no_data(result, context=ctx, page_size=page_size, page_number=page_number)
 
 
@@ -725,15 +783,16 @@ async def open_comment_periods(
     """Find documents with currently open comment periods.
 
     Searches for documents where withinCommentPeriod=true, sorted by
-    soonest closing deadline. Returns document IDs, titles, agencies,
-    comment end dates, and docket IDs.
+    soonest closing deadline (ascending commentEndDate, so even when the
+    result set is truncated it keeps the deadlines you can still act on).
+    Returns document IDs, titles, agencies, comment end dates, docket IDs,
+    the API-true total_open, and a truncated flag when more exist than the
+    250 returned.
 
-    Default searches FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA.
-    Pass agency_ids to narrow or expand the scope. An empty list is
-    rejected; pass None to use the defaults.
+    Default searches FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA in a single
+    comma-joined query. Pass agency_ids to narrow or expand the scope. An
+    empty list is rejected; pass None to use the defaults.
     """
-    import asyncio
-
     if agency_ids is not None:
         if not isinstance(agency_ids, list):
             raise ValueError("agency_ids must be a list of agency codes.")
@@ -745,8 +804,7 @@ async def open_comment_periods(
             )
         if len(agency_ids) > 20:
             raise ValueError(
-                f"agency_ids capped at 20 entries (got {len(agency_ids)}). "
-                f"Each entry costs a round-trip."
+                f"agency_ids capped at 20 entries (got {len(agency_ids)})."
             )
         validated = []
         for i, a in enumerate(agency_ids):
@@ -755,43 +813,57 @@ async def open_comment_periods(
     else:
         agencies = list(PROCUREMENT_AGENCIES)
 
+    # One comma-joined call (documented multi-agency form) replaces the old
+    # per-agency loop of 8 round-trips. Ascending sort is the load-bearing
+    # fix: the old -commentEndDate DESCENDING sort plus a 50-row page kept
+    # the FURTHEST deadlines and silently dropped the soonest-closing
+    # documents, the exact ones this tool exists to surface.
+    result = await search_documents(
+        agency_id=",".join(agencies),
+        within_comment_period=True,
+        sort="commentEndDate",
+        page_size=250,
+    )
+
     all_docs: list[dict[str, Any]] = []
-    errors_by_agency: dict[str, str] = {}
+    for item in _as_list(result.get("data")):
+        item = _safe_dict(item)
+        attrs = _safe_dict(item.get("attributes"))
+        all_docs.append({
+            "document_id": item.get("id"),
+            "agency": attrs.get("agencyId"),
+            "title": attrs.get("title"),
+            "document_type": attrs.get("documentType"),
+            "comment_end_date": attrs.get("commentEndDate"),
+            "docket_id": attrs.get("docketId"),
+            "url": f"https://www.regulations.gov/document/{item.get('id')}",
+        })
 
-    for agency in agencies:
-        try:
-            result = await search_documents(
-                agency_id=agency,
-                within_comment_period=True,
-                sort="-commentEndDate",
-                page_size=50,
-            )
-            for item in _as_list(result.get("data")):
-                item = _safe_dict(item)
-                attrs = _safe_dict(item.get("attributes"))
-                all_docs.append({
-                    "document_id": item.get("id"),
-                    "agency": attrs.get("agencyId"),
-                    "title": attrs.get("title"),
-                    "document_type": attrs.get("documentType"),
-                    "comment_end_date": attrs.get("commentEndDate"),
-                    "docket_id": attrs.get("docketId"),
-                    "url": f"https://www.regulations.gov/document/{item.get('id')}",
-                })
-        except Exception as e:
-            errors_by_agency[agency] = str(e)[:200]
-        await asyncio.sleep(0.5)
+    dated = [d for d in all_docs if d.get("comment_end_date")]
+    dated.sort(key=lambda x: x["comment_end_date"] or "")
+    undated = [d for d in all_docs if not d.get("comment_end_date")]
 
-    valid = [d for d in all_docs if d.get("comment_end_date")]
-    valid.sort(key=lambda x: x["comment_end_date"] or "")
+    api_total = _safe_dict(result.get("meta")).get("totalElements")
+    total_open = api_total if isinstance(api_total, int) else len(all_docs)
 
     response: dict[str, Any] = {
         "agencies_searched": agencies,
-        "total_open": len(valid),
-        "documents": valid,
+        "total_open": total_open,
+        "returned": len(all_docs),
+        "documents": dated + undated,
     }
-    if errors_by_agency:
-        response["errors_by_agency"] = errors_by_agency
+    if isinstance(api_total, int) and api_total > len(all_docs):
+        response["truncated"] = True
+        response["truncated_note"] = (
+            f"Showing the {len(all_docs)} soonest-closing of {api_total} open "
+            f"documents (one page of 250, ascending commentEndDate). The "
+            f"omitted documents all close LATER than the ones shown."
+        )
+    if undated:
+        response["undated_note"] = (
+            f"{len(undated)} open document(s) report no commentEndDate; they "
+            f"are listed after the dated ones instead of being dropped."
+        )
     return response
 
 
@@ -799,12 +871,14 @@ async def open_comment_periods(
 async def far_case_history(docket_id: str) -> dict[str, Any]:
     """Get the full lifecycle of a FAR/DFARS rulemaking case.
 
-    Fetches the docket metadata (title, abstract, RIN) plus all documents
-    filed under the docket, sorted by most recent first.
+    Fetches the docket metadata (title, abstract, RIN) plus the documents
+    filed under the docket, sorted by most recent first. Follows pagination
+    up to 1,000 documents (4 pages); larger dockets set truncated=true
+    (FAR/DARS dockets are far smaller, but the tool accepts any docket).
 
     docket_id examples: FAR-2023-0008, DARS-2025-0071
 
-    Returns the docket abstract, RIN (links to Unified Agenda), and all
+    Returns the docket abstract, RIN (links to Unified Agenda), and the
     documents with their types, dates, and URLs.
     """
     docket_id = _validate_id(docket_id, field="docket_id")
@@ -813,40 +887,58 @@ async def far_case_history(docket_id: str) -> dict[str, Any]:
     docket = await get_docket_detail(docket_id)
     docket_attrs = _safe_dict(_safe_dict(docket.get("data")).get("attributes"))
 
-    await asyncio.sleep(0.5)
+    _MAX_DOC_PAGES = 4  # 4 x 250 = 1,000 documents
+    documents: list[dict[str, Any]] = []
+    total_documents: Any = None
+    for page in range(1, _MAX_DOC_PAGES + 1):
+        await asyncio.sleep(0.3)
+        docs_result = await search_documents(
+            docket_id=docket_id,
+            sort="-postedDate",
+            page_size=250,
+            page_number=page,
+        )
+        page_items = _as_list(docs_result.get("data"))
+        for item in page_items:
+            item = _safe_dict(item)
+            attrs = _safe_dict(item.get("attributes"))
+            documents.append({
+                "document_id": item.get("id"),
+                "document_type": attrs.get("documentType"),
+                "title": attrs.get("title"),
+                "posted_date": attrs.get("postedDate"),
+                "comment_end_date": attrs.get("commentEndDate"),
+                "within_comment_period": attrs.get("withinCommentPeriod"),
+                "url": f"https://www.regulations.gov/document/{item.get('id')}",
+            })
+        meta = _safe_dict(docs_result.get("meta"))
+        if total_documents is None:
+            total_documents = meta.get("totalElements")
+        if len(page_items) < 250:
+            break
+        if isinstance(total_documents, int) and len(documents) >= total_documents:
+            break
 
-    docs_result = await search_documents(
-        docket_id=docket_id,
-        sort="-postedDate",
-        page_size=250,
-    )
+    if total_documents is None:
+        total_documents = len(documents)
 
-    documents = []
-    for item in _as_list(docs_result.get("data")):
-        item = _safe_dict(item)
-        attrs = _safe_dict(item.get("attributes"))
-        documents.append({
-            "document_id": item.get("id"),
-            "document_type": attrs.get("documentType"),
-            "title": attrs.get("title"),
-            "posted_date": attrs.get("postedDate"),
-            "comment_end_date": attrs.get("commentEndDate"),
-            "within_comment_period": attrs.get("withinCommentPeriod"),
-            "url": f"https://www.regulations.gov/document/{item.get('id')}",
-        })
-
-    return {
+    out = {
         "docket_id": docket_id,
         "title": docket_attrs.get("title"),
         "abstract": docket_attrs.get("dkAbstract"),
         "rin": docket_attrs.get("rin"),
         "agency": docket_attrs.get("agencyId"),
-        "total_documents": _safe_dict(docs_result.get("meta")).get(
-            "totalElements", len(documents)
-        ),
+        "total_documents": total_documents,
         "documents": documents,
         "url": f"https://www.regulations.gov/docket/{docket_id}",
     }
+    if isinstance(total_documents, int) and total_documents > len(documents):
+        out["truncated"] = True
+        out["truncated_note"] = (
+            f"Docket has {total_documents} documents; the {len(documents)} "
+            f"most recent are shown ({_MAX_DOC_PAGES} pages of 250)."
+        )
+    return out
 
 
 # ---------------------------------------------------------------------------

@@ -1,5 +1,58 @@
 # Changelog
 
+## 1.0.1
+
+Round-7 wave: independent full-source re-audit with live verification. 12
+findings fixed.
+
+### Fixed
+
+- **open_comment_periods no longer drops the soonest-closing documents.**
+  It sorted by deadline DESCENDING and truncated at one page of 50, so the
+  documents closing soonest (the tool's entire purpose) were silently
+  discarded while evergreen 2050 notices were kept. Live proof: FDA had 71
+  open documents and the ones closing in 2 days were among the missing.
+  Now: ascending commentEndDate, one comma-joined query for all agencies
+  (8 round-trips became 1), page size 250, API-true total_open, a
+  truncated flag noting omitted documents all close later, and undated
+  documents listed last instead of dropped.
+- `within_comment_period=False` is rejected locally with real guidance:
+  the API accepts only true (false returns HTTP 400), and the old error
+  handler misdiagnosed the 400 as a casing problem.
+- Page cap raised from 20 to the live-verified 40 (the API's own 400
+  names 40 as max; page 21 returns data), doubling reachable records per
+  query to 10,000. Three stale "~5,000 / 20 pages" strings corrected.
+- Comma-separated multi-field sorts accepted (the API's own deep
+  pagination recipe needs sort=lastModifiedDate,documentId) and
+  comma-separated multi-agency filters accepted (filter[agencyId]=FAR,GSA
+  is the documented form, verified live).
+- far_case_history follows pagination up to 1,000 documents and flags
+  truncation beyond, instead of silently returning the first 250 of a
+  553-document docket while claiming "all documents".
+- Empty-string docket_id and comment_on_id now raise instead of silently
+  dropping the filter and searching the entire corpus: the exact class
+  the 0.2.0 agency_id headline fix left open elsewhere.
+- comment_on_id rejects documentId-shaped values with directions to the
+  hex objectId (attributes.objectId): the API silently returns 0 comments
+  for documentIds, the number-one cause of falsely-empty comment
+  searches. The no-data hint now includes comment_on_id.
+- DEMO_KEY rate limit standardized on the live-measured 10/hr (code said
+  40, smithery.yaml said 30/hr + 50/day).
+- readme links testing.md (the TESTING.md link 404'd on GitHub);
+  changelog 0.1.0 "9 MCP tools" corrected to 8; dead `_clamp_str_len`
+  and unused constant imports removed; `serverInfo.version` populated
+  from the package version.
+
+### Testing
+
+- `tests/test_audit_r7.py`: 20 offline regressions plus 4 live
+  confirmations (multi-agency comma filter, page 21 reachable,
+  multi-field sort accepted, open_comment_periods soonest-first against
+  live FDA data).
+- testing.md documents the round-7 wave and corrects the prior record
+  (wrong live-gate env var, phantom stress_test_r3.py, phantom
+  known-agency-list and header-inspection claims, the false 20-page cap).
+
 ## 1.0.0
 
 First stable release. The suite is feature-complete for its intended scope and
@@ -122,7 +175,9 @@ First hardening pass. Live audit with a real api.data.gov key surfaced
 ## 0.1.0
 Initial release.
 
-- 9 MCP tools covering the Regulations.gov API (documents, comments, dockets)
+- 8 MCP tools covering the Regulations.gov API (documents, comments,
+  dockets; the original entry claimed 9, but the server has always
+  exposed 8)
 - Core: search_documents, get_document_detail, search_comments, get_comment_detail, search_dockets, get_docket_detail
 - Workflows: open_comment_periods (multi-agency scan), far_case_history (docket + all documents)
 - Page size validation (5-250 range enforced client-side)

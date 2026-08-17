@@ -2,19 +2,19 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the Regulations.gov API as 8 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across three audit rounds (a broad live sweep, response-shape probes, and a deep live stress round). The signature finding was the most dramatic bug of the entire 8-MCP suite: `agency_id=""` (empty string) silently returned all 1,951,938 Regulations.gov documents because the empty string was treated as "no filter." The MCP ships with 51 regression tests (46 offline plus 5 live-gated).
+This Model Context Protocol server exposes the Regulations.gov API as 8 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The MCP ships with 200 regression tests (85 offline plus 115 live-gated).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 51 (46 offline, 5 live-gated) |
-| Audit rounds completed | 3 |
+| Total regression tests | 200 (85 offline, 115 live-gated) |
+| Audit rounds completed | 5 (rounds 1-4 plus the suite-wide round-7 wave) |
 | P0 catastrophic bugs found and fixed | 1 (`extra='ignore'` silent typo drop) |
 | P1 silent-wrong-data bugs found and fixed | 10 |
 | P2 validation gaps found and fixed | 7 |
-| P3 cleanup items found and fixed | 4 |
-| Current release | 0.2.0 |
-| PyPI status | Published as `regulationsgov-mcp`, auto-publishes via Trusted Publisher on tag push (publisher was reconfigured mid-release after a misconfiguration pointed it at the wrong repo) |
+| Round-7 wave findings | 12 |
+| Current release | 1.0.1 |
+| PyPI status | Published as `regulationsgov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## What Was Tested
 
@@ -24,126 +24,144 @@ The MCP exposes 8 tools covering the Regulations.gov API surface. Testing covere
 
 **Workflow:** `open_comment_periods`, `far_case_history`
 
-Each tool was exercised for argument validation, input sanitization (null bytes, script injection, path-traversal IDs), empty-string filter detection, date format checking, pagination edge cases, response-shape guarantees, error translation (WAF 403 vs auth 403 disambiguation), and real-world data handling against the live production Regulations.gov API with a real `api.data.gov` key.
+Each tool was exercised for argument validation, input sanitization (null bytes, script injection, path-traversal IDs), empty-string filter detection, date format checking, pagination edge cases (including the live 40-page boundary), response-shape guarantees, error translation, filter-name truth (every filter the code builds verified live to actually change results), and real-world data handling against the live production Regulations.gov API with a real `api.data.gov` key.
 
 ## How It Was Tested
 
 ### Testing discipline
 
-This MCP had never been hardened before the session; 0.1.1 was a first-pass release. The hardening program invoked tools through `mcp.call_tool(name, kwargs)` the way a real MCP client does, paired with a live audit using a real `api.data.gov` API key (same key tier as `gsa-perdiem-mcp`). Live testing was critical: mocks could not have surfaced the 1.95-million-record bug or the WAF-vs-auth 403 error message confusion.
+This MCP had never been hardened before 0.2.0. The hardening program invoked tools through `mcp.call_tool(name, kwargs)` the way a real MCP client does, paired with live audits using a real `api.data.gov` key. The round-7 wave added the harder discipline: verify each documented API limit against live behavior instead of trusting the docs (the "20-page cap" is really 40), verify each of this document's own claims against the code (several were phantom), and end-to-end test the workflow tools' OUTPUT semantics, not just that they return dicts.
 
 ### Audit rounds
 
-| Round | Scope | Probe count | Finding class |
-|---|---|---|---|
-| 1 | Broad live sweep across all 8 tools | Live probes per tool | 1 P0, 8 P1, 6 P2, 3 P3 |
-| 2 | Response-shape probes and workflow tools | Targeted shape probes | 2 additional P1, 1 P2 |
-| 3 | Deep live stress (40 probes targeting pagination, concurrency, compound filters) | 40 probes | No new bugs; 1 UX enhancement (`paged_past_end` flag) |
+| Round | Scope | Finding class |
+|---|---|---|
+| 1 | Broad live sweep across all 8 tools | 1 P0, 8 P1, 6 P2, 3 P3 |
+| 2 | Response-shape probes and workflow tools | 2 additional P1, 1 P2 |
+| 3 | Deep live stress (pagination, concurrency, compound filters) | `paged_past_end` flag; the round's "no new bugs" claim did not survive round 7 |
+| 4 | Property-based (hypothesis) + live suite in `tests/test_round_4.py` | Previously undocumented in this file |
+| 7 (suite-wide wave) | Independent full-source re-audit with live verification (stronger model), shipped at 1.0.1 | 12 findings |
 
 ### Live audit status
 
-All three rounds included live calls against the production Regulations.gov API. The repository includes 5 live-gated regression tests executable via `REGULATIONS_GOV_LIVE_TESTS=1 REGULATIONS_GOV_API_KEY=... pytest` covering real document search, docket detail, comment detail, open comment periods, and FAR case history. The key is free at `api.data.gov` (1000 req/hr) and is the same key tier as `gsa-perdiem-mcp`.
+Rounds 1-4 and 7 ran against the production Regulations.gov API. The repository includes 115 live-gated regression tests executable via `REGULATIONS_LIVE_TESTS=1 REGULATIONS_GOV_API_KEY=... pytest`. Note the gate variable: earlier versions of this document said `REGULATIONS_GOV_LIVE_TESTS=1`, which was never the gate and silently skipped every live test. The key is free at `api.data.gov` (1,000 req/hr, live-verified via x-ratelimit headers); DEMO_KEY is 10 req/hr (live-measured; earlier docs said 40).
 
-## Issues Found and Fixed
+## Round 7 wave (1.0.1): Independent re-audit
+
+12 findings, all fixed in 1.0.1:
+
+| # | Finding | Fix |
+|---|---|---|
+| 1 | **`open_comment_periods` silently dropped the soonest-closing documents.** Per agency it fetched one page of 50 sorted `-commentEndDate` (DESCENDING: furthest deadline first), never followed pagination, and reported `total_open=len(fetched)`. Live: FDA has 71 open documents; the tool returned 50 whose soonest deadline was 2026-09-16 while the API's true soonest (closing in 2 days) were absent, and evergreen 2050 notices were kept. | Ascending `commentEndDate` sort, one comma-joined query for all agencies (8 round-trips became 1), page size 250, API-true `total_open` from `meta.totalElements`, `truncated` flag noting the omitted documents all close LATER, undated documents listed last instead of dropped. |
+| 2 | `within_comment_period=False` always failed with HTTP 400 (the API accepts only `true`), and the server's 400 handler misdiagnosed it as a casing problem. A prior round enshrined the 400 in a live test instead of fixing the parameter. | `False` is rejected locally with real guidance ("omit the parameter instead"); only `true` is ever sent. |
+| 3 | Local page cap of 20 blocked records 5,001-10,000: the live API accepts pages up to 40 (its own 400 at page 1000 says "Maximum value is 40"; page 21 returns real data). | Cap raised to 40; the three stale "~5,000 / 20 pages" strings corrected. |
+| 4 | Comma-separated multi-field sort rejected, blocking the API's own deep-pagination recipe (`sort=lastModifiedDate,documentId`). | Sort validator splits on commas and validates each field. |
+| 5 | Comma-separated multi-agency filter rejected despite being the documented form (`filter[agencyId]=GSA,EPA`, verified live: FAR,GSA returns both). | Agency validator accepts comma lists, validating each token. |
+| 6 | `far_case_history` silently truncated dockets with more than 250 documents while its docstring promised "all documents" (live: EPA-HQ-OAR-2009-0171 reported total 553, returned exactly 250, no flag). | Follows pagination up to 1,000 documents (4 pages), sets `truncated` beyond, docstring states the cap. |
+| 7 | Empty-string `docket_id` / `comment_on_id` silently dropped the filter and searched the whole corpus (~2M documents / ~26M comments): the exact empty-string class the 0.2.0 headline fixed for agency_id, left open here. Bonus inconsistency: whitespace-only strings DID raise while `""` did not. | Both now raise, matching the agency_id treatment. |
+| 8 | Passing a documentId where `filter[commentOnId]` needs the hex objectId silently returned 0 comments (verified live: the documentId form gives totalElements 0; the objectId gives the real comments), and the no-data hint did not even mention comment_on_id. | Non-hex `comment_on_id` shapes are rejected with directions to `attributes.objectId`; the no-data context includes comment_on_id. |
+| 9 | DEMO_KEY rate limit misstated three different ways (40/hr in code and readme, 30/hr + 50/day in smithery.yaml); live header says 10. | Standardized on the live-measured 10/hr. |
+| 10 | readme linked TESTING.md; the file is testing.md (404 on GitHub, case-sensitive). | Link lowercased. |
+| 11 | Dead code: `_clamp_str_len` referenced only by its own test; `DOCUMENT_TYPES`/`DOCKET_TYPES` imported but unused (tools use Literal types). | Removed. |
+| 12 | changelog 0.1.0 claimed "9 MCP tools"; the server has always exposed 8. `serverInfo.version` was empty. | Corrected; MCPServer now receives the package version. |
+
+**Verified clean in the round-7 wave (live-checked, no bug):** every filter param name the code builds is honored live and changes results (agencyId, docketId, documentType, searchTerm, withinCommentPeriod=true, postedDate, commentEndDate, lastModifiedDate, commentOnId, docketType); `filter[docketId]` on /comments works live even though the v4 OpenAPI spec omits it (undocumented-upstream dependency, now noted in the docstring); space and ampersand URL-encoding; agencyId case-insensitivity as the no_data hint claims; `meta.aggregations` present as promised; per-endpoint sort whitelists match the spec; OFPP and DARS are real agency codes; the server boots over stdio and lists all 8 tools.
+
+### Corrections to the prior record (round-7 wave)
+
+- **Wrong live-gate env var, stated twice:** `REGULATIONS_GOV_LIVE_TESTS` was never the gate; both test files gate on `REGULATIONS_LIVE_TESTS`.
+- **Phantom test file:** the coverage table listed `tests/stress_test_r3.py` ("retained for reproducibility"); no such file exists. `tests/test_round_4.py`, the bulk of the suite, was absent from this document entirely.
+- **Stale version and counts:** "0.2.0" and "51 regression tests"; the 51 figure described test_validation.py alone.
+- **"WAF vs auth 403 disambiguation added via header inspection":** false mechanism; the code inspects the response BODY, and the quoted error string "WAF blocked request (not an auth issue)" appears nowhere in the code.
+- **"Known-agency list validation ... suggestion to check `list_agencies`":** false twice. No known-agency list exists (format regex only; unknown codes return the no_data flag), and no `list_agencies` tool exists in this server.
+- **"API caps total results around 5,000 (20 pages)":** contradicted live; 40 pages are reachable. The published GSA docs do say 20, but this document presented the 20-page cap as live-verified.
+- **"Empty-string filter detection" as a closed class:** only agency_id was fixed; docket_id and comment_on_id still silently unfiltered until the round-7 wave.
+- **Round 3 "no new bugs":** the round's own later artifact enshrined the withinCommentPeriod=false 400 in a test without fixing it, and both workflow tools carried live-reproducible silent-data-loss bugs.
+
+## Issues Found and Fixed (rounds 1-4)
 
 ### Priority 0: Catastrophic silent wrong data
 
-One bug in this class, the `extra='forbid'` cross-fix:
-
 | Issue | Fix |
 |---|---|
-| **Unknown parameters silently dropped** via pydantic's default `extra='ignore'`. Verified live: `search_documents(agency_id="FAR", bogus_typo="x")` succeeded with the typo dropped and returned unfiltered documents. | `extra='forbid'` applied to every tool's pydantic arg model (cross-fix invented in sam-gov-mcp 0.3.1 and back-ported to this MCP in 0.2.0). Typos now raise "Extra inputs are not permitted" before the HTTP call. |
+| **Unknown parameters silently dropped** via pydantic's default `extra='ignore'`. Verified live: `search_documents(agency_id="FAR", bogus_typo="x")` succeeded with the typo dropped and returned unfiltered documents. | `extra='forbid'` applied to every tool's pydantic arg model (cross-fix from sam-gov-mcp 0.3.1). Typos now raise "Extra inputs are not permitted" before the HTTP call. |
 
 ### Priority 1: Silent wrong data
 
-Ten bugs in this class. The headliner is #1 below, the most dramatic bug of the entire MCP suite.
-
 | Issue | Fix |
 |---|---|
-| **`agency_id=""` returned all 1,951,938 Regulations.gov documents.** The empty string was treated as "no filter" and the entire 1.95-million-record corpus was streamed back. Users thinking they were filtering by agency silently got the whole thing. Same failure-mode category later found in `usaspending-gov-mcp` `search_awards()` with no filters. | Empty-string and whitespace-only filter values now raise "agency_id cannot be empty" with pointer to valid agency codes. |
-| Unknown agency IDs ("ZZZ", "FAR DOD") silently returned 0 results with no warning. User could not tell if the agency did not exist, had no documents, or if the query was malformed. | Known-agency list validation added; unknown agencies raise actionable error with suggestion to check `list_agencies`. |
-| Null byte in `search_term` silently accepted and reached the API. Returned 174,000 results with no indication the null byte changed interpretation. | Null bytes and other control characters rejected locally. |
-| `<script>` in `search_term` triggered the WAF and returned HTTP 403, but the server error message said "API key rejected." This was misleading because users saw an auth error when it was a WAF block. | WAF vs auth 403 disambiguation added via header inspection; WAF 403s now surface as "WAF blocked request (not an auth issue)". |
-| Date-swapped range (`posted_date_ge > posted_date_le`) returned 0 silently. No error, just empty results. | Reversed ranges raise actionable error. |
-| `_get` returning None passed through with no response-shape defense; downstream consumers crashed on None. | `_safe_dict` and `_as_list` helpers added throughout. |
-| Bogus sort fields returned API 400 but the MCP did not pre-validate. User got an opaque API error instead of clear guidance. | Sort field validated against the known sort-set with a list of valid options in the error message. |
-| `document_id` with slashes produced HTTP 500 or 301 responses. Path traversal attempt not rejected locally. | ID format validated; slashes and other path characters rejected. |
-| Dates like "2025-01-01T00:00:00Z", "2025/01/01", "not-a-date" reached the API as 400s. | `YYYY-MM-DD` regex enforced at the arg layer. |
-| `last_modified_date` format "YYYY-MM-DD HH:MM:SS" was not pre-validated and reached the API as 400. | Format enforced consistently across all date fields. |
+| **`agency_id=""` returned all 1,951,938 Regulations.gov documents.** The empty string was treated as "no filter". | Empty-string and whitespace-only agency values raise. [Extended in round 7] The same guard now covers docket_id and comment_on_id, which had been left open. |
+| Unknown agency IDs ("ZZZ") silently returned 0 results with no warning. | [Corrected in round 7] The claimed known-agency list and `list_agencies` pointer never existed. Reality: format validation plus the `no_data` flag with case-guidance; agencyId is case-insensitive at the API. |
+| Null byte in `search_term` silently accepted and reached the API. | Null bytes and other control characters rejected locally. |
+| `<script>` in `search_term` triggered the WAF 403 but the error said "API key rejected." | [Corrected in round 7] Fixed via BODY-content inspection (not header inspection as previously claimed); WAF 403s surface with a WAF explanation. |
+| Date-swapped ranges returned 0 silently. | Reversed ranges raise actionable errors. |
+| `_get` returning None crashed downstream consumers. | `_safe_dict` and `_as_list` helpers added throughout. |
+| Bogus sort fields produced opaque API 400s. | Sort fields validated against per-endpoint whitelists. [Extended in round 7] Comma-separated multi-field sorts now validate per-field instead of being rejected. |
+| `document_id` with slashes produced HTTP 500/301. | ID format validated; path characters rejected. |
+| Malformed dates reached the API as 400s. | `YYYY-MM-DD` and `'YYYY-MM-DD HH:MM:SS'` formats enforced at the arg layer. |
 
 ### Priority 2: Validation gaps
 
-Seven bugs in this class:
-
-| Issue | Fix |
-|---|---|
-| No defensive response parsing (no `_safe_dict` or `_as_list` helpers) existed. | Full defensive-parsing helper set added. |
-| `search_term` was not length-clamped; 2000 characters reached the API. | Capped at 500 characters. |
-| `page_number` was not bounds-checked locally (API returned 400 on 0 or negative). | Bounded to `>= 1` locally. |
-| `open_comment_periods(agency_ids=[])` fell through to a default list silently. | Empty list rejected; at-least-one-agency enforced. |
-| No `_clean_error_body` helper; raw HTML 500 responses leaked into error messages. | Added; HTML bodies now surface as a clean "Regulations.gov returned an HTML error" message. |
-| Document, docket, and comment IDs were not length-clamped or format-validated. | All ID fields validated and clamped. |
-| `agency_ids` list elements were not validated per-element; empty strings were silently kept. | Per-element validation; empty strings rejected. |
+Seven bugs: defensive parsing helpers, search_term length cap (500), page_number lower bound, empty agency_ids list rejection, `_clean_error_body`, ID length/format validation, per-element agency_ids validation. [Corrected in round 7] The `_clamp_str_len` helper added in this class was never wired to production code and has been removed.
 
 ### Priority 3: Cleanup items
 
-Four items including a missing `.github/workflows/publish.yml` (Trusted Publisher was never set up at initial shipping; had to be configured mid-session), a missing `tests/test_validation.py` (only a raw-coroutine `stress_test.py` existed), no `[dependency-groups].dev` in `pyproject.toml`, and a stale USER_AGENT at `0.1.1`. All resolved.
+Four items: missing publish workflow, missing test_validation.py, missing dev dependency group, stale USER_AGENT. All resolved.
 
 ### Round 3 UX enhancement: `paged_past_end` flag
 
-Round 3 deep stress surfaced a UX issue that was not a bug: `page_number=20` with `page_size=250` on a 2,152-record collection returned empty data with `total=2152`. The `no_data` flag only triggered when `total` was 0 or None. For "paged past the end" the tool silently showed empty data with a non-zero total. Added a `paged_past_end: true` flag with an explicit "Last page with data is page 9" message. Pattern applied retroactively to `gsa-calc-mcp` pagination.
-
-### Response-shape defense
-
-The `_safe_dict`, `_as_list`, and `_clean_error_body` helpers (added as a complete set in 0.2.0) now wrap every Regulations.gov response parsing path. Prior to 0.2.0 there was no defensive parsing at all; any unusual response shape crashed downstream consumers.
+`page_number` past the last page of a non-empty result set now flags `paged_past_end` with the last valid page number, instead of bare empty data. Pattern applied retroactively to `gsa-calc-mcp`.
 
 ## Test Coverage
 
-The repo ships 51 regression tests. All 51 pass on every release cycle.
+The repo ships 200 regression tests (85 offline, 115 live-gated). All pass on every release cycle; live tests require `REGULATIONS_LIVE_TESTS=1` plus a key.
 
 | File | Purpose | Test count |
 |---|---|---|
-| `tests/test_validation.py` | Main regression suite covering every round finding, plus 5 live-gated integration tests | 51 |
-| `tests/stress_test.py` | Round 1 broad live sweep (retained for reproducibility) | N/A (scenario script) |
-| `tests/stress_test_r3.py` | Round 3 deep live stress (40 probes) including the `paged_past_end` scenario (retained for reproducibility) | N/A (scenario script) |
+| `tests/test_validation.py` | Main regression suite covering rounds 1-3 findings, incl. 5 live-gated integration tests | 66 |
+| `tests/test_round_4.py` | Property-based (hypothesis) validator suite plus the round-4 live sweep | 110 |
+| `tests/test_audit_r7.py` | Round-7 wave regressions: ascending open-comment-periods with truncation metadata, far_case_history pagination, multi-agency and multi-sort commas, withinCommentPeriod=False local rejection, empty-string guards, commentOnId objectId shape guard, 40-page cap; 4 live confirmations | 24 (20 offline, 4 live-gated) |
+| `tests/stress_test.py` | Round 1 live-probe scenarios (scenario script, not pytest) | N/A |
 
-Regression tests invoke tools through the FastMCP registry (`mcp.call_tool`). This is the discipline that surfaced the silent typo drop, the empty-string no-filter bug, and the WAF-vs-auth 403 confusion. An autouse fixture resets the shared httpx client between tests.
+Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`). An autouse fixture resets `srv._client` between tests.
 
 ## Release History
 
 | Version | Focus | Outcome |
 |---|---|---|
-| 0.1.1 | Initial release. This MCP had never been hardened before the session. | First-pass release with latent bugs |
-| 0.2.0 | Full hardening: 22 bugs fixed across 3 rounds. 51 regression tests (46 offline + 5 live-gated) with real `api.data.gov` key. First Trusted Publisher configuration for this project (had to reconfigure mid-release because PyPI Trusted Publisher was pointing at the wrong repo, causing publish workflows to fail with "invalid-publisher" errors until caught and corrected). | 1 P0, 10 P1, 7 P2, 4 P3 resolved |
+| 0.1.1 | Initial release | First-pass coverage |
+| 0.2.0 | Rounds 1-3 hardening: 22 findings incl. the 1.95M-record empty-string bug | 1 P0, 10 P1, 7 P2, 4 P3 resolved |
+| 0.2.x | Round 4: hypothesis property suite + live sweep (test_round_4.py) | Previously undocumented here |
+| 1.0.0 | mcp 2.x SDK rebase, version sync, packaging | Stable baseline |
+| 1.0.1 | Round-7 wave independent re-audit with live verification | 12 findings resolved, incl. the open_comment_periods soonest-deadline drop |
 
 ## Cross-MCP Context
 
-This MCP is one of eight servers in the 1102tools federal-contracting MCP suite (`bls-oews-mcp`, `ecfr-mcp`, `federal-register-mcp`, `gsa-calc-mcp`, `gsa-perdiem-mcp`, `sam-gov-mcp`, `usaspending-gov-mcp`, and this one). All eight were hardened under the same playbook. Patterns reused or established here:
+This MCP is one of eight servers in the 1102tools federal-contracting MCP suite (`bls-oews-mcp`, `ecfr-mcp`, `federal-register-mcp`, `gsa-calc-mcp`, `gsa-perdiem-mcp`, `sam-gov-mcp`, `usaspending-gov-mcp`, and this one). All eight were hardened under the same playbook. Patterns established or reinforced here:
 
-- **The "empty string treated as no filter" bug class** was caught systematically here first. `agency_id=""` returned all 1,951,938 records. Same failure mode later found in `usaspending-gov-mcp` `search_awards()` with no filter arguments returning 25 unfiltered contracts. Same fix shape in both.
-- **`extra='forbid'` cross-fix** back-ported from sam-gov-mcp 0.3.1.
-- **`paged_past_end` flag pattern** introduced here in 0.2.0 and later applied to `gsa-calc-mcp` pagination.
-- **WAF vs auth 403 disambiguation** (inspect headers, do not guess from the error body) was codified here.
+- **The empty-string unfiltered-query class** was discovered here (agency_id) and the round-7 wave closed the stragglers (docket_id, comment_on_id) plus the same class's cousin: a documented-but-wrong ID kind (documentId vs objectId) silently returning zero.
+- **Verify documented limits against live behavior** (round-7 wave): the "20-page cap" every doc repeats is 40 live; DEMO_KEY's "40/hr" is 10 live.
+- **Workflow tools need output-semantics tests**: `open_comment_periods` passed every shape test while dropping the exact documents it exists to find. The round-7 live tests assert ordering and totals, not dict-ness.
 
 ## What Was Not Tested
 
-- **Rate-limit behavior at scale.** The `api.data.gov` free tier caps at 1000 req/hr. The MCP surfaces 429s but does not implement client-side throttling.
-- **Attachments beyond metadata.** `get_document_detail` with attachments returns attachment metadata and URLs. Binary attachment download is not exercised end-to-end.
-- **Regulations.gov's `beta` endpoints.** The MCP targets the stable v4 API. Any beta endpoints are out of scope.
-- **Bulk comment analysis.** Comments can be voluminous on high-interest rules; the MCP paginates but does not implement bulk-download or streaming.
+- **Deep pagination beyond 10,000 records.** The lastModifiedDate windowing recipe is documented in docstrings but not exercised end-to-end in the live suite.
+- **Comment posting.** This server is read-only; the /comments POST surface is out of scope.
+- **Bulk download endpoints.** Attachment downloads are surfaced as URLs, not fetched.
+- **WAF behavior catalog.** The 403-vs-WAF disambiguation is body-heuristic; the WAF's full trigger set is not characterized.
 
 ## Verification
 
-All testing artifacts are in the repository. The methodology and fixes are reviewable commit-by-commit in git history. The regression test suite runs via `pytest` in the repo root and can be re-executed by anyone. The live suite runs with `REGULATIONS_GOV_LIVE_TESTS=1 REGULATIONS_GOV_API_KEY=... pytest` using a free `api.data.gov` key.
+All testing artifacts are in the repository. The methodology and fixes are reviewable commit-by-commit in git history. The regression test suite runs via `pytest` in the repo root and can be re-executed by anyone. The live suite runs with `REGULATIONS_LIVE_TESTS=1 REGULATIONS_GOV_API_KEY=... pytest` using a free `api.data.gov` key.
 
 ---
 
 **Testing Methodology**
 
-Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, max effort, Claude Max 20x subscription) during the hardening playbook execution.
+Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the original hardening playbook, and Claude Code Fable 5 for the round-7 wave independent re-audit (full-source review, live API verification, record correction).
 
-Testing spanned three rounds: a broad live sweep across all 8 tools (most of the findings), response-shape probes and workflow-tool coverage (a few additional findings), and a 40-probe deep live stress round (no new bugs, one UX enhancement). The live regression suite runs against the production Regulations.gov API when enabled with `REGULATIONS_GOV_LIVE_TESTS=1`.
+Round-7 wave methodology: re-read the entire server source with no reliance on this document's claims; verify every filter parameter name live against result deltas; probe documented limits (page cap, DEMO_KEY rate) against live headers and boundary requests; end-to-end test both workflow tools through the real server against known corpora (FDA open comment periods, a 553-document EPA docket); check every prior claim in this document against the code and live behavior.
 
-Test count: 51 regression tests. P0 catastrophic bugs found and fixed: 1. P1 silent-wrong-data bugs found and fixed: 10. P2 validation gaps closed: 7. P3 cleanup items closed: 4. Total findings: 22. Current version: 0.2.0. PyPI: `regulationsgov-mcp`.
+Test count: 200 regression tests (85 offline + 115 live-gated). Total findings across all rounds: 34. Current version: 1.0.1. PyPI: `regulationsgov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/regulations-gov-mcp. License: MIT.

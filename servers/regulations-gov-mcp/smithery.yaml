@@ -7,7 +7,7 @@ startCommand:
     properties:
       regulationsGovApiKey:
         type: string
-        description: "Free key from https://api.data.gov/signup/. 1,000 req/hr. Same key works for gsa-perdiem-mcp. DEMO_KEY fallback exists but its 30/hr, 50/day limits are too tight for real use."
+        description: "Free key from https://api.data.gov/signup/. 1,000 req/hr. Same key works for gsa-perdiem-mcp. DEMO_KEY fallback exists but its ~10 req/hr limit (live-measured) is too tight for real use."
   commandFunction: |
     (config) => ({
       command: 'uvx',
