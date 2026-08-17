@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+No code changes. Republish to verify the Trusted Publisher pipeline after the repo moved to the 1102tools-dev account.
+
 ## 1.0.1
 
 Round-7 wave: independent full-source re-audit with live verification. 12

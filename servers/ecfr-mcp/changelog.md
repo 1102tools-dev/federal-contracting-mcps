@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3
+
+No code changes. Republish to verify the Trusted Publisher pipeline after the repo moved to the 1102tools-dev account.
+
 ## 1.0.2
 
 Round 6: an external re-audit probed the constants against the live API, the
