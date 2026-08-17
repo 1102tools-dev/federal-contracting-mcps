@@ -20,16 +20,14 @@ import httpx
 from mcp.server import MCPServer
 
 from .constants import (
-    ALL_SB_SET_ASIDE_CODES,
     AWARD_TYPE_GROUPS,
     BASE_URL,
-    COMPETED_CODES,
+    DEFAULT_ASSISTANCE_FIELDS,
     DEFAULT_CONTRACT_FIELDS,
+    DEFAULT_GRANT_FIELDS,
     DEFAULT_IDV_FIELDS,
     DEFAULT_LOAN_FIELDS,
     DEFAULT_TIMEOUT,
-    NOT_COMPETED_CODES,
-    SPENDING_CATEGORIES,
     USER_AGENT,
 )
 
@@ -132,11 +130,24 @@ def _format_http_error(e: httpx.HTTPStatusError) -> str:
             f"API response: {detail}"
         )
     if status == 404:
-        return (
-            f"HTTP 404: resource not found. "
-            f"For award detail endpoints, verify the generated_internal_id is correct. "
-            f"API response: {detail}"
-        )
+        # Tailor the hint to the endpoint family. The award-specific hint used
+        # to fire on EVERY 404 (a federal-account 404 told callers to check
+        # generated_internal_id), which was misleading. Round 10 audit finding.
+        try:
+            req_path = str(e.request.url.path)
+        except Exception:
+            req_path = ""
+        if "/awards/" in req_path or "/idvs/" in req_path:
+            hint = (
+                "Verify the generated_internal_id is correct "
+                "(find it via search_awards)."
+            )
+        else:
+            hint = (
+                "Verify the identifier in the request exists (agency code, "
+                "federal account number, recipient id, FIPS code, etc.)."
+            )
+        return f"HTTP 404: resource not found. {hint} API response: {detail}"
     if status == 429:
         return (
             "HTTP 429: rate limited. "
@@ -351,10 +362,17 @@ def _build_filters(
     if agencies:
         filters["agencies"] = agencies
 
+    # recipient_search_text matches name, UEI, or DUNS. Do NOT send a UEI as
+    # the API's recipient_id filter: that field expects a recipient hash
+    # (UUID + -C/-R/-P suffix) and silently matches nothing for a UEI
+    # (verified live 2026-08-16).
+    recipient_terms: list[str] = []
     if recipient_name:
-        filters["recipient_search_text"] = [recipient_name]
+        recipient_terms.append(recipient_name)
     if recipient_uei:
-        filters["recipient_id"] = recipient_uei
+        recipient_terms.append(recipient_uei.strip().upper())
+    if recipient_terms:
+        filters["recipient_search_text"] = recipient_terms
     coerced_award_ids = _coerce_code_list(award_ids, "award_ids")
     if coerced_award_ids:
         filters["award_ids"] = coerced_award_ids
@@ -364,15 +382,19 @@ def _build_filters(
     coerced_psc = _coerce_code_list(psc_codes, "psc_codes")
     if coerced_psc:
         filters["psc_codes"] = coerced_psc
+    # These three code filters are case-sensitive upstream: lowercase values
+    # return HTTP 200 with zero results (unlike psc_codes, which the API
+    # rejects loudly). Uppercase them, same treatment as
+    # place_of_performance_state. Verified live 2026-08-16.
     coerced_set_aside = _coerce_code_list(set_aside_type_codes, "set_aside_type_codes")
     if coerced_set_aside:
-        filters["set_aside_type_codes"] = coerced_set_aside
+        filters["set_aside_type_codes"] = [c.upper() for c in coerced_set_aside]
     coerced_extent = _coerce_code_list(extent_competed_type_codes, "extent_competed_type_codes")
     if coerced_extent:
-        filters["extent_competed_type_codes"] = coerced_extent
+        filters["extent_competed_type_codes"] = [c.upper() for c in coerced_extent]
     coerced_pricing = _coerce_code_list(contract_pricing_type_codes, "contract_pricing_type_codes")
     if coerced_pricing:
-        filters["contract_pricing_type_codes"] = coerced_pricing
+        filters["contract_pricing_type_codes"] = [c.upper() for c in coerced_pricing]
     if time_period_start or time_period_end:
         start = _validate_date(time_period_start, "time_period_start") if time_period_start else _EARLIEST_SEARCH_DATE
         end = _validate_date(time_period_end, "time_period_end") if time_period_end else "2099-09-30"
@@ -451,6 +473,7 @@ async def search_awards(
     award_amount_max: float | None = None,
     place_of_performance_state: str | None = None,
     award_ids: list[str | int] | None = None,
+    def_codes: list[str | int] | None = None,
     sort: str | None = None,
     order: Literal["asc", "desc"] = "desc",
     limit: int = 25,
@@ -469,6 +492,8 @@ async def search_awards(
     - award_amount_min/max are in USD
     - place_of_performance_state is a 2-letter USPS code (e.g. 'MD', 'VA')
     - For loans, use award_type='loans' and sort='Loan Value'
+    - def_codes filters to Disaster Emergency Fund codes (COVID-19, IIJA,
+      IRA supplementals); see get_def_codes_reference() for the list
 
     Filtering to specific contracting commands (NAVSEA, AFRL, etc.):
     USASpending's subtier level is at the service branch (Department of the
@@ -488,9 +513,22 @@ async def search_awards(
     - contract_pricing_type_codes: J (FFP), Y (T&M), Z (LH), U (CPFF),
       V (CPIF), R (CPAF), L (FP Incentive), M (FP Award Fee)
 
-    IMPORTANT: awarding_agency/funding_agency must be the FULL NAME, not a slug.
-    Use 'Department of the Navy', NOT 'department-of-the-navy'. Slugs silently
-    return zero results. Use list_toptier_agencies() to find exact names.
+    IMPORTANT: awarding_agency/funding_agency must be the FULL TOPTIER NAME,
+    not a slug. Use 'Department of Defense', NOT 'department-of-defense'.
+    Slugs silently return zero results, and so does any name that is not a
+    toptier agency: the military departments are SUBTIERS, so pass
+    awarding_agency='Department of Defense' with
+    awarding_subagency='Department of the Navy' (never 'Department of the
+    Navy' as awarding_agency). A mismatched pair (a subagency that does not
+    belong to the given toptier) also silently returns zero results. Use
+    list_toptier_agencies() and get_agency_sub_agencies() for exact names.
+
+    Result caveats: recipient_name matches corporate affiliations, so a
+    parent-company search can return joint ventures whose display names
+    share no text with the query (a Hanford JV surfaces under 'Leidos');
+    verify names before presenting a definitive list. Large pulls can
+    exceed MCP client payload budgets (limit=100 has measured ~90K
+    characters); page in batches of 25-30 for big result sets.
     """
     codes = _resolve_award_type(award_type)
     limit = _clamp_limit(limit, cap=100)
@@ -522,8 +560,12 @@ async def search_awards(
         fields = list(DEFAULT_IDV_FIELDS)
     elif award_type == "loans":
         fields = list(DEFAULT_LOAN_FIELDS)
+    elif award_type == "grants":
+        fields = list(DEFAULT_GRANT_FIELDS)
     else:
-        fields = list(DEFAULT_CONTRACT_FIELDS)
+        # direct_payments / other: assistance field set ("Award Type",
+        # not the contracts-only "Contract Award Type" which comes back null)
+        fields = list(DEFAULT_ASSISTANCE_FIELDS)
 
     # Default sort differs for loans
     if sort is None:
@@ -551,6 +593,7 @@ async def search_awards(
         award_amount_min=award_amount_min,
         award_amount_max=award_amount_max,
         place_of_performance_state=place_of_performance_state,
+        def_codes=def_codes,
     )
     # award_type_codes is always present because we always set it, but it's
     # a scope not a filter. Require at least one real filter so that empty
@@ -595,6 +638,7 @@ async def get_award_count(
     award_amount_min: float | None = None,
     award_amount_max: float | None = None,
     place_of_performance_state: str | None = None,
+    def_codes: list[str | int] | None = None,
 ) -> dict[str, Any]:
     """Count awards matching filters, broken down by award category.
 
@@ -605,6 +649,9 @@ async def get_award_count(
     Unlike search_awards, this returns total counts across ALL award categories
     in a single call (not just the one specified in award_type). The award_type
     parameter is ignored here; filters apply to the count query directly.
+
+    def_codes filters to Disaster Emergency Fund codes; see
+    get_def_codes_reference().
 
     At least one filter is required (the API rejects empty filter sets with HTTP 400).
     Typical usage: pass time_period_start + time_period_end, or a keywords/agency filter.
@@ -633,6 +680,7 @@ async def get_award_count(
         award_amount_min=award_amount_min,
         award_amount_max=award_amount_max,
         place_of_performance_state=place_of_performance_state,
+        def_codes=def_codes,
     )
     if not filters:
         raise ValueError(
@@ -654,6 +702,7 @@ async def spending_over_time(
     award_type: Literal["contracts", "idvs", "grants", "loans", "direct_payments", "other"] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    def_codes: list[str | int] | None = None,
 ) -> dict[str, Any]:
     """Aggregate spending amounts over time, grouped by fiscal year, quarter, or month.
 
@@ -662,6 +711,12 @@ async def spending_over_time(
 
     Note: The API returns fiscal_year as a STRING. Cast to int for numeric
     comparisons.
+
+    awarding_agency must be a TOPTIER agency name ('Department of Defense').
+    Military departments are subtiers: pass
+    awarding_subagency='Department of the Navy'. A non-toptier name in
+    awarding_agency (or a subagency that does not belong to the given
+    toptier) silently returns all-zero aggregates.
 
     At least one filter is required (the API rejects empty filter sets with HTTP 400).
     Typical usage: pass time_period_start + time_period_end.
@@ -680,8 +735,9 @@ async def spending_over_time(
         psc_codes=psc_codes,
         time_period_start=time_period_start,
         time_period_end=time_period_end,
+        def_codes=def_codes,
     )
-    # award_type_codes alone (without other filters) is not enough — the API
+    # award_type_codes alone (without other filters) is not enough: the API
     # treats award_type_codes as a scope, not a filter, and still 400s.
     has_real_filter = any(k for k in filters if k != "award_type_codes")
     if not has_real_filter:
@@ -711,6 +767,7 @@ async def spending_by_category(
     set_aside_type_codes: list[str | int] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    def_codes: list[str | int] | None = None,
     limit: int = 10,
     page: int = 1,
 ) -> dict[str, Any]:
@@ -727,6 +784,10 @@ async def spending_by_category(
     Note: recipient category returns vendor names in ALL CAPS and may contain
     duplicates (subsidiaries, rebrands, re-registrations). For precise market
     share, apply name normalization to the returned 'name' field.
+
+    At least one filter is required. An unfiltered call would silently
+    aggregate the entire USASpending database (all years, all agencies),
+    which is never what a caller wants.
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
@@ -744,7 +805,17 @@ async def spending_by_category(
         set_aside_type_codes=set_aside_type_codes,
         time_period_start=time_period_start,
         time_period_end=time_period_end,
+        def_codes=def_codes,
     )
+    # Same guard as search_awards: award_type_codes is a scope, not a filter.
+    # Without it an unfiltered call returns an all-time all-agency aggregate
+    # (a $40T "MULTIPLE RECIPIENTS" row) with no hint it is unscoped.
+    has_real_filter = any(k for k in filters if k != "award_type_codes")
+    if not has_real_filter:
+        raise ValueError(
+            "spending_by_category requires at least one filter beyond award_type. "
+            "Typical: time_period_start + time_period_end, or keywords, or awarding_agency."
+        )
     return await _post(
         f"/api/v2/search/spending_by_category/{category}/",
         {"filters": filters, "limit": limit, "page": page},
@@ -766,6 +837,9 @@ async def get_award_detail(generated_award_id: str) -> dict[str, Any]:
     performance, place of performance, NAICS hierarchy, PSC hierarchy,
     base and all options value, and sub-award totals.
 
+    Accepts either a generated award id (CONT_AWD_*, CONT_IDV_*, ASST_NON_*,
+    ASST_AGG_*) or the numeric internal database id from a prior response.
+
     Example generated_award_id format: CONT_AWD_N0002424C0085_9700_N0002421D0001_9700
     """
     if not isinstance(generated_award_id, str) or not generated_award_id.strip():
@@ -774,7 +848,15 @@ async def get_award_detail(generated_award_id: str) -> dict[str, Any]:
             "field from search_awards results (e.g. CONT_AWD_...)."
         )
     _validate_no_control_chars(generated_award_id, field="generated_award_id")
-    return await _get(f"/api/v2/awards/{generated_award_id.strip()}/")
+    award_id = generated_award_id.strip()
+    # The API also accepts the numeric internal award id; anything else must
+    # be a well-formed generated id. Before the round 10 audit this tool did
+    # no format validation at all, so path metacharacters could walk the
+    # request onto arbitrary API endpoints ('../references/toptier_agencies'
+    # returned the agency list dressed up as award detail).
+    if not award_id.isdigit():
+        award_id = _validate_generated_award_id(award_id, field="generated_award_id")
+    return await _get(f"/api/v2/awards/{award_id}/")
 
 
 @mcp.tool(annotations={"title": "Get Transactions", "readOnlyHint": True, "destructiveHint": False})
@@ -866,6 +948,12 @@ async def get_idv_children(
     Field name differences from search_awards: children use 'piid' (not
     'Award ID'), 'obligated_amount' (not 'Award Amount'), and
     'generated_unique_award_id' (not 'generated_internal_id').
+
+    An active vehicle can legitimately return zero children here:
+    USASpending's award cross-linking has gaps. Treat an empty result as a
+    reporting gap, not proof that no orders exist. A search_awards call
+    with keywords=['<IDV PIID>'] sometimes recovers the orders, but it can
+    also be empty on the same vehicle.
     """
     if not isinstance(generated_idv_id, str) or not generated_idv_id.strip():
         raise ValueError("generated_idv_id cannot be empty.")
@@ -1039,8 +1127,10 @@ async def autocomplete_naics(
         )
     limit = _clamp_limit(limit, cap=100)
     # Request more from upstream so the client-side retired filter still yields
-    # enough results. Cap at 50 to avoid runaway.
-    upstream_limit = min(limit * 3, 50) if exclude_retired else limit
+    # enough results. The old cap of 50 silently starved results below the
+    # requested limit (verified live: 58 active codes matched '54' but only
+    # 41 were returned). Cap at 500, the API's autocomplete maximum.
+    upstream_limit = min(limit * 3, 500) if exclude_retired else limit
     response = await _post(
         "/api/v2/autocomplete/naics/",
         {"search_text": search_text, "limit": upstream_limit},
@@ -1070,19 +1160,34 @@ async def list_toptier_agencies() -> dict[str, Any]:
     return await _get("/api/v2/references/toptier_agencies/")
 
 
-def _normalize_toptier(toptier_code: str) -> str:
-    """Normalize a toptier_code: strip, validate numeric, left-pad to 3 digits."""
-    if toptier_code is None:
-        raise ValueError("toptier_code is required.")
-    code = str(toptier_code).strip()
-    if not code or not code.isdigit():
+def _normalize_toptier(toptier_code: str, *, field: str = "toptier_code") -> str:
+    """Normalize a toptier agency code: strip, validate numeric, left-pad to
+    3 digits, require 3-4 digits after padding.
+
+    This is the single normalizer for all eight agency tools. Before the
+    round 10 audit, get_agency_overview and get_agency_awards padded '97' to
+    '097' while the other six agency tools rejected it, so the same input
+    behaved differently across the family.
+    """
+    if toptier_code is None or not str(toptier_code).strip():
         raise ValueError(
-            f"toptier_code must be a numeric agency code (e.g. '097'). "
-            f"Got {toptier_code!r}. Use list_toptier_agencies() to find valid codes."
+            f"{field} cannot be empty: pass a 3-4 digit numeric agency code "
+            f"(e.g. '097' for DoD). Use list_toptier_agencies() to find valid codes."
         )
-    # API expects 3- or 4-digit codes; left-pad shorter numeric inputs to 3.
-    if len(code) < 3:
-        code = code.zfill(3)
+    code = str(toptier_code).strip()
+    if not code.isdigit():
+        raise ValueError(
+            f"{field}={toptier_code!r} must be a 3-4 digit numeric agency code "
+            f"(e.g. '097' for DoD, '075' for HHS); shorter all-digit inputs are "
+            f"zero-padded automatically. Use list_toptier_agencies() to find "
+            f"valid codes."
+        )
+    code = code.zfill(3)
+    if len(code) > 4:
+        raise ValueError(
+            f"{field}={toptier_code!r} has too many digits: toptier codes are "
+            f"a 3-4 digit numeric agency code (e.g. '097' for DoD, '075' for HHS)."
+        )
     return code
 
 
@@ -1159,6 +1264,15 @@ async def get_psc_filter_tree(
     'Service/R/' to get the service professional services tree, or
     'Product/5' for product codes starting with 5.
     """
+    # The drill-down path is interpolated into the URL: '/' is the legitimate
+    # level separator, but '..' segments would walk the request onto other
+    # API endpoints and '%' smuggles encoded forms. Round 10 audit hardening,
+    # same class as the get_award_detail path escape.
+    if path and any(tok in path for tok in ("..", "%", "\\")):
+        raise ValueError(
+            f"path={path!r} contains URL path characters ('..', '%', or '\\\\'). "
+            f"PSC tree paths look like 'Service/R' or 'Product/5'."
+        )
     # P2 bug fix in 0.2.8: USASpending PSC filter tree endpoint requires
     # a trailing slash. Without it, the API returns HTTP 301 redirect.
     # Caught by round 6 live audit.
@@ -1253,6 +1367,10 @@ async def spending_by_subaward_grouped(
     subawards grouped under their primes given a filter set similar to
     search_awards. Useful for FFATA-wide analysis ("show me all DoD
     subcontracts on cyber awards in FY2026").
+
+    sort accepts: award_id, subaward_count, award_generated_internal_id,
+    subaward_obligation. (These differ from search_subawards, which sorts by
+    amount/action_date/etc.) Anything else returns HTTP 400 from the API.
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
@@ -1317,7 +1435,13 @@ async def search_recipients(
     return await _post("/api/v2/recipient/", payload)
 
 
-_RECIPIENT_HASH_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-[CRP]$")
+# Case-insensitive: the API accepts uppercase hex (verified live), and the
+# lowercase-only version of this regex falsely rejected pasted uppercase
+# hashes. We lowercase before sending so the wire format stays canonical.
+_RECIPIENT_HASH_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-[CRP]$",
+    re.IGNORECASE,
+)
 
 
 def _validate_recipient_hash(value: str, *, field: str = "recipient_hash") -> str:
@@ -1330,51 +1454,117 @@ def _validate_recipient_hash(value: str, *, field: str = "recipient_hash") -> st
             f"{field}={value!r} is not a valid recipient hash. "
             f"Expected UUID format with -C/-R/-P suffix (e.g. "
             f"'7fe0d08f-685f-a9cc-f9f6-f9e6c6c20e22-R'). Use search_recipients() "
-            f"or autocomplete_recipient() to find the correct hash."
+            f"to find the correct hash (its results carry it in the 'id' field; "
+            f"autocomplete_recipient does not return hashes)."
         )
-    return s
+    # Canonical wire format: lowercase hex, uppercase level suffix.
+    return s[:-1].lower() + s[-1].upper()
+
+
+def _normalize_year(year: str | int | None, *, field: str = "year") -> str | None:
+    """Coerce the recipient 'year' query param: int 2026 and str '2026' are
+    both fine, as are the keywords 'all' and 'latest'. Returns None for
+    None/blank so the param is omitted entirely."""
+    if year is None:
+        return None
+    s = str(year).strip()
+    return s or None
 
 
 @mcp.tool(annotations={"title": "Get Recipient Profile", "readOnlyHint": True, "destructiveHint": False})
 async def get_recipient_profile(
     recipient_hash: str,
-    year: str | None = None,
+    year: str | int | None = None,
 ) -> dict[str, Any]:
     """Get full profile for a recipient by their USASpending hash.
 
     Returns recipient details: name, UEI, DUNS, business categories, location,
     parent (if any), and lifetime award totals. The hash is the 'id' field
-    returned by search_recipients() or autocomplete_recipient().
+    returned by search_recipients(). (autocomplete_recipient does NOT return
+    hashes; it is a name lookup only.)
 
-    year: optional 'all' or a fiscal year like '2026'. Default is 'latest'.
+    year: optional 'all' or a fiscal year like 2026 (int or str both
+    accepted). Default is 'latest' (trailing 12 months).
     """
     recipient_hash = _validate_recipient_hash(recipient_hash)
     params = {}
-    if year:
-        params["year"] = year.strip()
+    year_str = _normalize_year(year)
+    if year_str:
+        params["year"] = year_str
     return await _get(f"/api/v2/recipient/{recipient_hash}/", params=params)
+
+
+_UEI_RE = re.compile(r"^[A-Z0-9]{12}$", re.IGNORECASE)
+_DUNS_RE = re.compile(r"^\d{9}$")
 
 
 @mcp.tool(annotations={"title": "Get Recipient Children", "readOnlyHint": True, "destructiveHint": False})
 async def get_recipient_children(
-    recipient_hash: str,
-    year: str | None = None,
+    uei_or_duns: str,
+    year: str | int | None = None,
 ) -> dict[str, Any]:
-    """Get the child recipients (subsidiaries) of a parent recipient hash.
+    """Get the child recipients (subsidiaries) of a parent recipient.
 
-    Pass a recipient hash with -P (parent) suffix to retrieve subsidiary
-    recipients. The endpoint returns a list of -C suffixed hashes representing
-    children. For -R (regular, no parent) recipients this returns an empty
-    list or 4xx.
+    Pass the parent recipient's 12-character UEI (or legacy 9-digit DUNS).
+    Do NOT pass a recipient hash: the /recipient/children/ endpoint is the
+    one recipient endpoint keyed by UEI/DUNS, and it rejects hashes with
+    HTTP 400. Get the UEI from search_recipients() results (the 'uei' field
+    of the -P row) or from get_recipient_profile().
 
-    Useful for mapping corporate structures (e.g. Lockheed Martin -P -> all
-    its subsidiaries -C).
+    Returns the child recipients, each with its own -C suffixed recipient_id
+    hash usable with get_recipient_profile(). Useful for mapping corporate
+    structures (e.g. Lockheed Martin parent -> all its subsidiaries).
+
+    year: optional 'all', 'latest', or a fiscal year like 2026.
+
+    The upstream endpoint returns a JSON array; it is wrapped here as
+    {"results": [...], "total": N} to keep the dict-only response invariant.
     """
-    recipient_hash = _validate_recipient_hash(recipient_hash)
+    if not uei_or_duns or not str(uei_or_duns).strip():
+        raise ValueError("uei_or_duns cannot be empty.")
+    ident = str(uei_or_duns).strip()
+    _validate_no_control_chars(ident, field="uei_or_duns")
+    if _RECIPIENT_HASH_RE.match(ident):
+        raise ValueError(
+            f"uei_or_duns={uei_or_duns!r} looks like a recipient hash. The "
+            f"children endpoint takes a UEI or DUNS, not a hash (the API "
+            f"rejects hashes with HTTP 400). Use search_recipients() and pass "
+            f"the 'uei' field of the parent (-P) row instead."
+        )
+    if _DUNS_RE.match(ident):
+        pass  # legacy 9-digit DUNS, send as-is
+    elif _UEI_RE.match(ident):
+        ident = ident.upper()  # UEIs are canonically uppercase
+    else:
+        raise ValueError(
+            f"uei_or_duns={uei_or_duns!r} is not a 12-character UEI or 9-digit "
+            f"DUNS. Find the parent recipient's UEI via search_recipients()."
+        )
     params = {}
-    if year:
-        params["year"] = year.strip()
-    return await _get(f"/api/v2/recipient/children/{recipient_hash}/", params=params)
+    year_str = _normalize_year(year)
+    if year_str:
+        params["year"] = year_str
+    # The endpoint returns a top-level JSON array (like /recipient/state/),
+    # so this tool bypasses _get and wraps the array. Before the round 10
+    # audit this call went through _get, whose dict-only guard would have
+    # rejected every successful response; nobody noticed because the hash
+    # validation above the call meant no request could ever succeed.
+    try:
+        r = await _get_client().get(f"/api/v2/recipient/children/{ident}/", params=params)
+        r.raise_for_status()
+        data = r.json()
+    except httpx.HTTPStatusError as e:
+        raise RuntimeError(_format_http_error(e)) from e
+    except httpx.RequestError as e:
+        raise RuntimeError(f"Network error calling USASpending: {e}") from e
+    if isinstance(data, list):
+        return {"results": data, "total": len(data)}
+    if isinstance(data, dict):
+        return data
+    raise RuntimeError(
+        f"USASpending /recipient/children/ returned an unexpected "
+        f"{type(data).__name__} (expected list or dict)."
+    )
 
 
 @mcp.tool(annotations={"title": "Autocomplete Recipient", "readOnlyHint": True, "destructiveHint": False})
@@ -1382,10 +1572,13 @@ async def autocomplete_recipient(
     search_text: str,
     limit: int = 10,
 ) -> dict[str, Any]:
-    """Find recipient hashes by partial name or UEI/DUNS.
+    """Find recipient names by partial name or UEI/DUNS.
 
-    Returns matching recipients with their hash IDs and metadata. Use the hash
-    from results in get_recipient_profile() or get_recipient_children().
+    NOTE: this endpoint returns recipient NAMES only. It does NOT return the
+    recipient hash needed by get_recipient_profile() and
+    get_recipient_children() (and its uei/duns fields come back null).
+    To get a hash, take a name from here and pass it to search_recipients(),
+    whose results carry the hash in their 'id' field.
     """
     limit = _clamp_limit(limit, cap=500)
     search_text = _validate_no_control_chars(search_text, field="search_text") or ""
@@ -1428,20 +1621,6 @@ async def list_states() -> dict[str, Any]:
 # Agency depth
 # ---------------------------------------------------------------------------
 
-def _validate_toptier_code(code: str, *, field: str = "toptier_code") -> str:
-    """Toptier agency codes are 3-4 numeric digits (e.g. '097' for DoD)."""
-    if not code or not code.strip():
-        raise ValueError(f"{field} cannot be empty.")
-    s = code.strip()
-    if not re.match(r"^\d{3,4}$", s):
-        raise ValueError(
-            f"{field}={code!r} must be a 3-4 digit numeric toptier agency code "
-            f"(e.g. '097' for DoD, '075' for HHS). Use list_toptier_agencies() "
-            f"to find the right code."
-        )
-    return s
-
-
 def _validate_fy(fy: int | str | None, *, field: str = "fiscal_year") -> str | None:
     if fy is None:
         return None
@@ -1449,10 +1628,15 @@ def _validate_fy(fy: int | str | None, *, field: str = "fiscal_year") -> str | N
         fy_int = int(str(fy).strip())
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{field} must be an int year like 2026. Got {fy!r}.") from exc
-    if fy_int < 2017 or fy_int > _current_fiscal_year() + 1:
+    current = _current_fiscal_year()
+    # Cap at the CURRENT fiscal year. The old bound of current + 1 let a
+    # guaranteed-to-fail year through: the API 422s anything above the
+    # current FY ("Field 'fiscal_year' value '2027' is above max '2026'").
+    if fy_int < 2017 or fy_int > current:
         raise ValueError(
-            f"{field}={fy_int} out of range. USASpending agency profile data "
-            f"covers FY2017 through FY{_current_fiscal_year()}."
+            f"{field}={fy_int} out of range. USASpending agency and federal "
+            f"account profile data covers FY2017 through FY{current} "
+            f"(the current fiscal year)."
         )
     return str(fy_int)
 
@@ -1464,7 +1648,7 @@ async def get_agency_budgetary_resources(toptier_code: str) -> dict[str, Any]:
     Returns total budgetary resources, obligations, outlays, and discretionary
     vs mandatory breakdown for each fiscal year on file.
     """
-    toptier_code = _validate_toptier_code(toptier_code)
+    toptier_code = _normalize_toptier(toptier_code)
     return await _get(f"/api/v2/agency/{toptier_code}/budgetary_resources/")
 
 
@@ -1475,15 +1659,19 @@ async def get_agency_sub_agencies(
     page: int = 1,
     limit: int = 25,
     order: Literal["asc", "desc"] = "desc",
-    sort: Literal["name", "total_obligations", "total_outlays", "transaction_count", "new_award_count"] = "total_obligations",
+    sort: Literal["name", "total_obligations", "transaction_count", "new_award_count"] = "total_obligations",
 ) -> dict[str, Any]:
     """List the subordinate (subtier) organizations of a toptier agency.
 
-    Returns each sub-agency with its obligations, outlays, transaction count,
-    and new-award count for the given fiscal year. Useful for finding the
+    Returns each sub-agency with its obligations, transaction count, and
+    new-award count for the given fiscal year. Useful for finding the
     canonical subtier name to pass into search_awards() awarding_subagency.
+
+    sort accepts name, total_obligations, transaction_count, or
+    new_award_count (this endpoint has no outlay column; a former
+    'total_outlays' option was rejected by the API with HTTP 400).
     """
-    toptier_code = _validate_toptier_code(toptier_code)
+    toptier_code = _normalize_toptier(toptier_code)
     fy = _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
@@ -1509,7 +1697,7 @@ async def get_agency_federal_accounts(
     for the given fiscal year. Useful for understanding how an agency's
     money flows through Treasury.
     """
-    toptier_code = _validate_toptier_code(toptier_code)
+    toptier_code = _normalize_toptier(toptier_code)
     fy = _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
@@ -1535,7 +1723,7 @@ async def get_agency_object_classes(
     Contractual Services, Equipment, Grants, etc. Useful for understanding
     what types of expenditures an agency makes.
     """
-    toptier_code = _validate_toptier_code(toptier_code)
+    toptier_code = _normalize_toptier(toptier_code)
     fy = _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
@@ -1561,7 +1749,7 @@ async def get_agency_program_activities(
     (e.g., 'Cybersecurity and Infrastructure Security Agency'). Useful for
     pinpointing which program funds a specific activity.
     """
-    toptier_code = _validate_toptier_code(toptier_code)
+    toptier_code = _normalize_toptier(toptier_code)
     fy = _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
@@ -1583,7 +1771,7 @@ async def get_agency_obligations_by_award_category(
     loans, direct payments, other. Quick way to see what mix of award types
     an agency uses (heavy contractor agency vs grant-issuing agency vs mixed).
     """
-    toptier_code = _validate_toptier_code(toptier_code)
+    toptier_code = _normalize_toptier(toptier_code)
     fy = _validate_fy(fiscal_year)
     params: dict[str, Any] = {}
     if fy:
@@ -1604,6 +1792,18 @@ def _validate_generated_award_id(award_id: str, *, field: str = "award_id") -> s
     if not award_id or not award_id.strip():
         raise ValueError(f"{field} cannot be empty.")
     award_id = _validate_no_control_chars(award_id.strip(), field=field) or ""
+    # These ids are interpolated into URL paths. Reject URL path
+    # metacharacters outright: '..' segments walk the request onto other
+    # API endpoints, '/' splits the path, '%' smuggles encoded forms of
+    # both. Real generated ids never contain any of them. Round 10 audit
+    # finding ('../references/toptier_agencies' returned the agency list
+    # through get_award_detail).
+    if any(tok in award_id for tok in ("/", "\\", "..", "%")):
+        raise ValueError(
+            f"{field}={award_id!r} contains URL path characters "
+            f"('/', '\\\\', '..', or '%'). Generated award ids never contain "
+            f"these; pass the id exactly as returned by search_awards()."
+        )
     if not award_id.startswith(("CONT_AWD_", "CONT_IDV_", "ASST_NON_", "ASST_AGG_")):
         raise ValueError(
             f"{field}={award_id!r} is not a valid generated award id. "
@@ -1686,6 +1886,9 @@ async def spending_by_transaction(
     tracking obligation events over time, ceiling adjustments, deobligations,
     and admin mods.
 
+    recipient_uei is matched through the API's recipient text search (which
+    covers name, UEI, and DUNS), so pass the plain 12-character UEI.
+
     Returns standard transaction fields: Action Date, Mod, Award ID,
     Action Type, Awarding Agency, Recipient Name.
     """
@@ -1730,12 +1933,16 @@ async def spending_by_geography(
     funding_agency: str | None = None,
     naics_codes: list[str | int] | None = None,
     psc_codes: list[str | int] | None = None,
+    def_codes: list[str | int] | None = None,
 ) -> dict[str, Any]:
     """Geographic breakdown of spending.
 
     scope: 'recipient_location' (where the recipient is) or 'place_of_performance'
     (where the work happens).
     geo_layer: 'state', 'county', or 'district'.
+
+    At least one filter is required. The API returns HTTP 500 on an empty
+    filter set, so the requirement is enforced here with a clear error.
     """
     codes = None if award_type == "all" else _resolve_award_type(award_type)
     filters = _build_filters(
@@ -1746,7 +1953,17 @@ async def spending_by_geography(
         psc_codes=psc_codes,
         time_period_start=time_period_start,
         time_period_end=time_period_end,
+        def_codes=def_codes,
     )
+    # Same guard as search_awards. Unfiltered calls 500 upstream; award_type
+    # alone is a scope, not a filter.
+    has_real_filter = any(k for k in filters if k != "award_type_codes")
+    if not has_real_filter:
+        raise ValueError(
+            "spending_by_geography requires at least one filter beyond award_type. "
+            "Typical: time_period_start + time_period_end, or awarding_agency, "
+            "or naics_codes/psc_codes."
+        )
     payload = {"filters": filters, "scope": scope, "geo_layer": geo_layer}
     return await _post("/api/v2/search/spending_by_geography/", payload)
 
@@ -1764,14 +1981,24 @@ async def new_awards_over_time(
     rollup, or -R for a single recipient). Returns counts of new awards
     grouped by month, quarter, or fiscal year.
 
-    The endpoint will reject calls without recipient_id with HTTP 422.
+    The endpoint rejects calls without recipient_id with HTTP 422, and it
+    also requires a time_period. When you omit the dates, a default range
+    covering all searchable data (2007-10-01 through 2099-09-30) is sent
+    automatically.
     """
     recipient_id = _validate_recipient_hash(recipient_id, field="recipient_id")
     filters: dict[str, Any] = {"recipient_id": recipient_id}
-    if time_period_start or time_period_end:
-        start = _validate_date(time_period_start, "time_period_start") if time_period_start else _EARLIEST_SEARCH_DATE
-        end = _validate_date(time_period_end, "time_period_end") if time_period_end else "2099-09-30"
-        filters["time_period"] = [{"start_date": start, "end_date": end}]
+    # The API requires filters.time_period (HTTP 422 "'filters|time_period'
+    # is a required field" otherwise, verified live 2026-08-16), so always
+    # send one, defaulting to the full searchable range.
+    start = _validate_date(time_period_start, "time_period_start") if time_period_start else _EARLIEST_SEARCH_DATE
+    end = _validate_date(time_period_end, "time_period_end") if time_period_end else "2099-09-30"
+    if start > end:
+        raise ValueError(
+            f"time_period_start ({start}) is after time_period_end ({end}). "
+            f"Reverse the values or omit one."
+        )
+    filters["time_period"] = [{"start_date": start, "end_date": end}]
     payload = {"group": group, "filters": filters}
     return await _post("/api/v2/search/new_awards_over_time/", payload)
 
@@ -1834,18 +2061,28 @@ async def get_idv_funding_rollup(award_id: str) -> dict[str, Any]:
 @mcp.tool(annotations={"title": "Get IDV Activity", "readOnlyHint": True, "destructiveHint": False})
 async def get_idv_activity(
     award_id: str,
-    sort: Literal["period_of_performance_start_date", "obligated_amount"] = "period_of_performance_start_date",
-    order: Literal["asc", "desc"] = "desc",
+    hide_edge_cases: bool = False,
     limit: int = 25,
     page: int = 1,
 ) -> dict[str, Any]:
-    """List child task/delivery orders awarded under an IDV."""
+    """List child task/delivery orders awarded under an IDV.
+
+    Results are ALWAYS sorted by obligated amount, descending; the endpoint
+    accepts no sort or order parameters. (Earlier releases exposed sort/order
+    here, but the API silently ignored them: the advertised default of
+    period_of_performance_start_date was never the actual ordering. Round 10
+    audit finding.) For date-ordered children use get_idv_children(), whose
+    endpoint does honor sort/order.
+
+    hide_edge_cases=True filters out child awards missing obligated/awarded
+    amounts or end dates.
+    """
     award_id = _validate_idv_award_id(award_id)
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
     payload = {
-        "award_id": award_id, "sort": sort, "order": order,
+        "award_id": award_id, "hide_edge_cases": hide_edge_cases,
         "limit": limit, "page": page,
     }
     return await _post("/api/v2/idvs/activity/", payload)
@@ -1994,6 +2231,14 @@ async def get_federal_account_detail(account_code: str) -> dict[str, Any]:
 @mcp.tool(annotations={"title": "Get Federal Account Object Classes", "readOnlyHint": True, "destructiveHint": False})
 async def get_federal_account_object_classes(account_code: str) -> dict[str, Any]:
     """Get the object class breakdown of obligations for a federal account.
+
+    IMPORTANT: the returned obligations are CUMULATIVE across all reported
+    fiscal years (FY2017 onward, the DATA Act window), not a single year.
+    They are NOT comparable to get_federal_account_fy_snapshot(), which is
+    single-year (verified live: account 021-0725 summed to $3.38B here vs
+    $0.42B obligated in its FY2024 snapshot). The upstream endpoint has no
+    year control: a fiscal_year body parameter is accepted but ignored, so
+    none is exposed here.
 
     Note: this endpoint requires POST (not GET like the other federal account
     sub-endpoints). Live audit caught this; the body is empty.

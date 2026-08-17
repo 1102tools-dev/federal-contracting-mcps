@@ -199,7 +199,7 @@ def test_live_get_award_funding_pagination():
 
 
 # ===========================================================================
-# B. IDV CHILDREN — all 3 child_types
+# B. IDV CHILDREN: all 3 child_types
 # ===========================================================================
 
 def test_live_get_idv_children_child_awards():

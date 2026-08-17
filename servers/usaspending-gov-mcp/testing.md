@@ -2,23 +2,47 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across nine audit rounds. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 9 added 243 tests (167 offline, 76 live), fixing 1 P1 response-shape bug (list_states returned a JSON array, breaking the dict-only response invariant). The MCP ships with 1,050+ regression tests covering every surface twice (offline shape + live).
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across ten audit rounds. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The MCP ships with 2,151 regression tests covering every surface twice (offline shape + live).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 55 |
-| Total regression tests | 1,050+ (770+ offline, 280+ live-gated) |
-| Tests per tool | 19+ |
-| Audit rounds completed | 9 (rounds 1-8 + v0.3 expansion with live audit) |
+| Total regression tests | 2,151 (1,783 offline, 368 live-gated) |
+| Tests per tool | 39+ |
+| Audit rounds completed | 10 (rounds 1-8, v0.3 expansion, two-family semantic audit) |
 | Initial integration issues (round 1) | 28+ |
-| P1 silent-wrong-data bugs found and fixed | 11 |
-| P2 validation gaps found and fixed | 7 |
+| P1 silent-wrong-data bugs found and fixed | 11 (rounds 1-9) |
+| P2 validation gaps found and fixed | 7 (rounds 1-9) |
 | Round 7 deep live audit findings | 0 |
 | Round 8 Hypothesis property tests findings | 0 |
 | Round 9 (v0.3) live audit findings | 1 (list_states JSON-array response shape) |
-| Release cycles | 10 (v0.1.2 through v0.3.0) |
-| Current release | 0.3.0 |
+| Round 10 (1.0.1) semantic audit findings | 22 (12 search family, 10 entity family), all fixed |
+| Release cycles | 13 (v0.1.2 through v1.0.1) |
+| Current release | 1.0.1 |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## Round 10 (1.0.1): two-family semantic live audit
+
+Two agents audited the full 55-tool surface in parallel against the production API (2026-08-16, Claude Fable 5): one owned the search/spending/autocomplete family, the other the entity/agency/award/reference family. Roughly 100 live probes ran through `mcp.call_tool` (the real client pipeline, pydantic validation included). 22 findings were verified with reproductions and fixed in 1.0.1: 12 in the search family (5 high, 5 medium, 2 low) plus 3 blind-spot follow-ups, and 10 in the entity family (1 high, 2 medium, 2 medium-low, 5 low).
+
+### The methodology lesson
+
+Rounds 1-9 asserted transport success (HTTP 200, dict-shaped response) and validator self-consistency (Hypothesis property tests, ~25,000 random probes). Round 10 asserted parameter SEMANTICS, and that distinction is what surfaced 22 defects in a suite that had just passed 2,076 tests:
+
+- **A zero-result response is not a passing test.** Two search filters could NEVER return data (recipient_uei sent as the API's hash-keyed recipient_id; military departments passed at tier=toptier). Prior rounds recorded "compound filters returning zero" as success. Round 10 root-caused every zero.
+- **A 200 with rows is not proof a parameter works.** get_idv_activity's sort/order were silently ignored by the API: opposite sort directions returned byte-identical results. Detecting ignored parameters requires differential probes (flip one parameter, demand a difference), which no prior round ran.
+- **A validator can be perfectly self-consistent and wrong.** get_recipient_children validated hashes the API always rejects while rejecting the UEI/DUNS the API requires, so the tool had never once succeeded; property tests certified the validator against its own spec, not the API's contract. Same class: the lowercase-only hash regex rejected uppercase hashes the API accepts, and the fiscal-year ceiling admitted a year the API always 422s.
+- **Enum members must be swept against the live API.** get_agency_sub_agencies advertised sort="total_outlays"; the API 400s it. One representative value per parameter was not enough.
+- **Hardcoded code tables drift.** AWARD_TYPE_GROUPS was missing all ten FABS F-codes, silently excluding real awards from every group search. Reference tables are now diffed against the live reference endpoints.
+- **Docstring examples must be executed as written.** The search_awards docstring's own Navy example returned zero results.
+- **Error translation must be re-audited when the surface grows.** The 404 hint written in the 17-tool era told federal-account callers to verify a generated_internal_id.
+- **Path-interpolated inputs need metacharacter rejection, not just control-character rejection.** '../references/toptier_agencies' walked get_award_detail onto the agency list endpoint. Round 2 had hardened these ids against null bytes but never URL metacharacters.
+
+### Fixes landed in 1.0.1
+
+See changelog.md for the complete list. Headlines: get_recipient_children rekeyed to uei_or_duns (it had never worked: the endpoint 400s on hashes and returns a JSON array the dict-only guard would have rejected anyway), dead sort/order removed from get_idv_activity with the real hide_edge_cases exposed, FABS F-codes added to every award-type group, recipient_uei routed through recipient_search_text, case-sensitive code filters uppercased, no-filter guards on spending_by_category and spending_by_geography, path-metacharacter rejection on every path-interpolated id, one toptier normalizer across all eight agency tools, and 404 hints conditioned on the request path.
+
+New regression files: `tests/test_search_family_fixes.py` (29 offline + 8 live-gated) and `tests/test_entity_family_fixes.py` (59 offline + 4 live-gated). Pre-existing tests that encoded the broken behaviors were rewritten to assert the fixed behavior, each carrying a comment naming the round 10 change. Suite after the round: 1,783 offline + 368 live-gated, all green.
 
 ## Round 9 (v0.3.0): API surface expansion
 
@@ -37,7 +61,7 @@ Tripled the tool count from 17 to 55. Added 38 new tools across nine endpoint gr
 | Autocomplete | 4 | 16 | 4 | 11 |
 | Reference data | 4 | 3 | 4 | 4 |
 | Federal accounts | 5 | 12 | 8 | 3 |
-| Stress / connection reuse | — | — | — | 13 |
+| Stress / connection reuse | - | - | - | 13 |
 | **v0.3 totals** | **38** | **121** | **46** | **76** |
 
 ### P1 bug found in live audit
@@ -58,7 +82,7 @@ Department lookups for DoD (097), HHS (075), Treasury (020); recipient-hash chai
 
 ## What Was Tested
 
-The MCP exposes 17 tools spanning the USASpending.gov API surface. Testing covered all of them end-to-end.
+Rounds 1-8 covered the original 17-tool surface end-to-end (the v0.3 expansion to 55 tools and its round 9 audit are described above).
 
 **Search and aggregation:** `search_awards`, `get_award_count`, `spending_over_time`, `spending_by_category`
 
@@ -153,6 +177,10 @@ Regression tests invoke tools through the FastMCP registry (`mcp.call_tool`) rat
 | 0.2.8 | Round 6 live audit: 157 new live-gated tests covering every tool against production USASpending API | 634 total (+157 regressions); 28.1 → 37.3 tests per tool. 2 P2 bugs found and fixed: get_psc_filter_tree trailing-slash 301 redirect; list[str] int coercion mismatch on naics_codes/psc_codes/etc across 4 tools. |
 | 0.2.9 | Round 7 deep live audit: 104 new live-gated tests targeting round-6 gaps (detail tool chaining with real IDs, IDV all 3 child_types, loans, sort/order variations, deep PSC tree, compound filters returning zero, pagination at depth, real prime+agency combos, all 6 award_types) | 738 total (+104 regressions); 37.3 → 43.4 tests per tool. Zero new bugs found. |
 | 0.2.10 | Round 8 Hypothesis-driven property test suite + 10 bonus live tests: 69 new test functions running ~25,000 random probes through every validator (date, clamp, code lists, control chars, toptier normalization, fiscal year, dict response, error body cleaning, strings list); plus async concurrency stress, encoding edge cases (unicode normalization, RTL, BOM, ZWSP, emoji), composite tool deep tests | 807 total (+69 regressions); 43.4 → 47.5 tests per tool. Zero new bugs found - validators clean across the full random input space. |
+| 0.3.0 | Round 9 surface expansion: 17 → 55 tools across nine endpoint groups, with live audit. 1 P1 fixed (list_states JSON-array response shape) | 1,050 total (+243) |
+| 0.3.1 | Mock density expansion for the v0.3 tools: 20 cross-cutting parametrized batteries x 38 tools plus 30 focused list_states mocks | 2,076 total (1,720 offline + 356 live-gated) |
+| 1.0.0 | MCP Python SDK v2 migration (FastMCP → MCPServer), bounded `mcp>=2.0.0,<3` requirement, .mcpb bundles discontinued | 2,076 total, pass counts identical to the 1.x baseline |
+| 1.0.1 | Round 10 two-family semantic live audit: 22 verified findings fixed (see the Round 10 section), uv.lock caught up to the bounded mcp requirement | 2,151 total (1,783 offline + 368 live-gated) |
 
 ## Cross-MCP Context
 
@@ -177,10 +205,10 @@ All testing artifacts are in the repository. The methodology and fixes are revie
 
 **Testing Methodology**
 
-Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, max effort, Claude Max 20x subscription) during the hardening playbook execution.
+Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, max effort, Claude Max 20x subscription) through round 9, and Claude Fable 5 for the round 10 two-family semantic audit.
 
-Testing spanned four rounds from integration stress testing through live API audits and response-shape guards. The live regression suite runs against the USASpending.gov production API when enabled with `USASPENDING_LIVE_TESTS=1`.
+Testing spanned ten rounds from integration stress testing through live API audits, response-shape guards, property testing, and the round 10 semantic audit (parameter effects, enum sweeps, contract-vs-validator diffs). The live regression suite runs against the USASpending.gov production API when enabled with `USASPENDING_LIVE_TESTS=1`.
 
-Test count: 807 regression tests (526 offline + 281 live-gated). Tests per tool: 47.5. P1 bugs found and fixed: 10. P2 validation gaps closed: 7. Round 7 deep live audit findings: 0. Round 8 Hypothesis property tests findings: 0 (validators clean across ~25,000 random probes). Integration issues closed in round 1: 28+. Release cycles: 9. Current version: 0.2.10. PyPI: `usaspending-gov-mcp`.
+Test count: 2,151 regression tests (1,783 offline + 368 live-gated) across 55 tools. Tests per tool: 39+. P1 bugs found and fixed rounds 1-9: 11. P2 validation gaps closed rounds 1-9: 7. Round 10 findings fixed: 22. Integration issues closed in round 1: 28+. Release cycles: 13. Current version: 1.0.1. PyPI: `usaspending-gov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/usaspending-gov-mcp. License: MIT.

@@ -1546,15 +1546,16 @@ def test_spending_by_category_invalid_category():
     )
 
 
-def test_spending_by_category_no_filters_passes_validation():
-    """spending_by_category does NOT enforce a no-filter check (unlike sibling tools).
-    It forwards to the API which may return empty results. Just confirm the
-    validation layer doesn't raise."""
+def test_spending_by_category_no_filters_raises():
+    """spending_by_category enforces the same no-filter guard as its sibling
+    tools since the 2026-08-16 audit: an unfiltered call silently aggregated
+    the entire USASpending database (an all-time multi-trillion row)."""
     try:
         asyncio.run(_call("spending_by_category", category="awarding_agency"))
     except Exception as e:
-        # Network errors are fine; validation errors would indicate a bug
-        assert "filter" not in str(e).lower() or "literal" in str(e).lower()
+        assert "requires at least one filter" in str(e)
+    else:
+        raise AssertionError("spending_by_category with no filters should raise")
 
 
 def test_spending_by_category_limit_above_cap():

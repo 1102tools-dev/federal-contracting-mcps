@@ -1,5 +1,169 @@
 # Changelog
 
+## 1.0.1
+
+Round 10 audit release. Two parallel live audits (search/spending/autocomplete
+family and entity/agency/award family) ran every finding through
+`mcp.call_tool` against the production API and fixed 22 verified findings
+(12 search family, 10 entity family) plus 3 search-family blind-spot
+follow-ups caught in the same pass.
+The headline lesson: rounds 1-9 asserted transport success and validator
+self-consistency; round 10 asserted parameter SEMANTICS (does the parameter
+change the output, does the validator match the API's actual contract).
+
+### Documented (field-evidence caveats)
+
+- `search_awards` recipient_name matching includes corporate affiliations:
+  a parent-company search can return joint ventures whose display names
+  share no text with the query (a Hanford JV surfaced under "Leidos" in
+  field testing). The docstring now says to verify names before presenting
+  a definitive list.
+- Large `search_awards` pulls can exceed MCP client payload budgets (a
+  limit=100 pull measured 89.5K characters in field testing); the
+  docstring now recommends paging in batches of 25-30.
+- `get_idv_children` can return zero children for an active vehicle
+  (upstream cross-linking gap); the docstring now says to treat an empty
+  result as a reporting gap, not proof of no orders.
+
+### Fixed (tools that could never succeed)
+
+- `get_recipient_children` never worked in any release: it validated its
+  input as a recipient hash, but the `/recipient/children/` endpoint is
+  keyed by UEI or DUNS and rejects every hash with HTTP 400 (and the
+  endpoint returns a JSON array, which the dict-only response guard would
+  have rejected even on success). The parameter is now `uei_or_duns`
+  (12-character UEI or legacy 9-digit DUNS, hashes rejected pre-network
+  with routing to search_recipients), and the array response is wrapped as
+  `{"results": [...], "total": N}`. Verified live: Lockheed Martin's UEI
+  and DUNS both return its -C child row.
+- `new_awards_over_time` always failed as documented: the API requires
+  `filters.time_period` (HTTP 422 without it), so the minimal
+  recipient-only call could never run. A default range (2007-10-01 through
+  2099-09-30) is now always sent.
+
+### Fixed (silent wrong data)
+
+- `spending_by_transaction` sent `recipient_uei` as the API's
+  `recipient_id` filter, which expects a hash, so every UEI silently
+  returned zero results. Now sent through `recipient_search_text` (matches
+  name, UEI, or DUNS), uppercased. Verified live: a UEI went from 0 rows to
+  matching rows.
+- `AWARD_TYPE_GROUPS` was missing the newer FABS F-codes: grants F001/F002,
+  loans F003/F004, direct payments F006/F007, other F005/F008/F009/F010.
+  Group searches silently excluded real awards (multi-billion Amtrak F001
+  grants, for example). All F-codes added.
+- `set_aside_type_codes`, `extent_competed_type_codes`, and
+  `contract_pricing_type_codes` are case-sensitive upstream and lowercase
+  values silently returned zero results. All three are now uppercased.
+- `search_awards` with grants/direct_payments/other silently requested
+  contract-only fields (null "Contract Award Type", no "CFDA Number").
+  Grants now use `DEFAULT_GRANT_FIELDS`; direct payments and other use a
+  new `DEFAULT_ASSISTANCE_FIELDS`.
+- `spending_by_category` had no minimum-filter guard: an unfiltered call
+  silently aggregated the entire database (an all-time $40.6T "MULTIPLE
+  RECIPIENTS" row). It now requires at least one real filter, same as
+  search_awards. `spending_by_geography` got the same guard (the API 500s
+  on its empty filter set).
+- `get_idv_activity` exposed sort/order parameters the API silently
+  ignores: results are ALWAYS obligated-amount descending, so the
+  advertised default sort (period_of_performance_start_date) was never the
+  actual ordering. The dead parameters are removed, the real
+  `hide_edge_cases` parameter is exposed, and the fixed ordering is
+  documented. Verified live: opposite sort/order produced byte-identical
+  results before the fix.
+- `autocomplete_naics` with `exclude_retired=True` capped the upstream
+  fetch at 50, silently starving results below the requested limit.
+  Verified live: 58 active codes matched "54" but only 41 came back. Cap
+  raised to 500, the API's maximum.
+
+### Fixed (validation and error hygiene)
+
+- Path safety: `get_award_detail` did no format validation, so
+  `'../references/toptier_agencies'` walked the request onto the agency
+  list endpoint and returned it dressed up as award detail. It now accepts
+  a generated award id (prefix-validated) or the numeric internal id, and
+  every path-interpolated id validator rejects `/`, `\`, `..`, and `%`
+  (including the PSC filter-tree drill-down path, where `/` stays legal as
+  the level separator).
+- `get_agency_sub_agencies` advertised `sort="total_outlays"`, which the
+  API rejects with HTTP 400 (valid: name, total_obligations,
+  transaction_count, new_award_count). Removed from the Literal.
+- Recipient hashes are now accepted case-insensitively and canonicalized
+  to lowercase hex + uppercase suffix. The API accepts uppercase hashes;
+  the lowercase-only regex falsely rejected them.
+- `_validate_fy` allowed current fiscal year + 1, a guaranteed upstream
+  HTTP 422. Capped at the current fiscal year, and the error text now
+  states the real bounds.
+- All eight agency tools share one toptier normalizer: short all-digit
+  codes are zero-padded everywhere ('97' becomes '097'). Previously
+  get_agency_overview and get_agency_awards padded while the other six
+  tools rejected, so the same input behaved differently across the family.
+  Codes longer than 4 digits are now rejected everywhere (the old padding
+  helper accepted them).
+- HTTP 404 translation is conditioned on the request path: award and IDV
+  endpoints keep the generated_internal_id hint, everything else gets a
+  generic identifier hint. A federal-account 404 no longer tells callers
+  to verify a generated_internal_id.
+- `get_recipient_profile` and `get_recipient_children` accept `year` as
+  int or str (an int year previously failed pydantic validation with a
+  raw type error despite the docstring suggesting a year).
+
+### Added
+
+- `def_codes` parameter (Disaster Emergency Fund codes) on `search_awards`,
+  `get_award_count`, `spending_over_time`, `spending_by_category`, and
+  `spending_by_geography`. The plumbing existed but was exposed only on
+  `spending_by_subaward_grouped`. def_codes counts as a real filter for
+  the minimum-filter guards.
+- `hide_edge_cases` on `get_idv_activity` (filters child awards missing
+  obligated/awarded amounts or end dates).
+
+### Documentation
+
+- `search_awards` and `spending_over_time` no longer recommend passing
+  'Department of the Navy' as `awarding_agency`: military departments are
+  SUBTIERS, and a non-toptier name at tier=toptier silently returns zero
+  results. Service branches are routed through `awarding_subagency`, with
+  a warning that mismatched toptier+subtier pairs also silently return
+  zero.
+- `autocomplete_recipient` claimed to return hash IDs. The endpoint
+  returns recipient names only (uei/duns come back null). Its docstring
+  and `get_recipient_profile`'s now route hash acquisition through
+  `search_recipients`, whose results carry the hash in `id`.
+- `get_federal_account_object_classes` now states that its totals are
+  CUMULATIVE across all reported fiscal years (FY2017 onward) and are not
+  comparable to `get_federal_account_fy_snapshot`'s single-year figures.
+  The upstream endpoint accepts but ignores a fiscal_year body parameter,
+  so none is exposed. Verified live: one account summed to $3.38B here vs
+  $0.42B obligated in its FY2024 snapshot.
+- `spending_by_subaward_grouped` documents its valid sort values, which
+  differ from `search_subawards`.
+
+### Removed
+
+- Dead constants `SPENDING_CATEGORIES`, `COMPETED_CODES`,
+  `NOT_COMPETED_CODES`, `ALL_SB_SET_ASIDE_CODES` (imported but never used).
+- `sort`/`order` on `get_idv_activity` and `"total_outlays"` from the
+  `get_agency_sub_agencies` sort Literal (both rejected or ignored
+  upstream; see Fixed).
+- The `recipient_hash` parameter on `get_recipient_children`, replaced by
+  `uei_or_duns`. No compatibility shim: the old parameter had never
+  produced a successful call.
+
+### Housekeeping
+
+- `uv.lock` regenerated, catching the lockfile up to the bounded
+  `mcp>=2.0.0,<3` requirement (same catch-up sam-gov-mcp's 1.0.1 made).
+- Version, `__version__`, and `USER_AGENT` synchronized at 1.0.1.
+
+### Verified
+
+Two new regression files: `tests/test_search_family_fixes.py` (29 offline +
+8 live-gated) and `tests/test_entity_family_fixes.py` (59 offline + 4
+live-gated). Pre-existing tests that encoded the old broken behaviors were
+updated rather than deleted, each with a comment naming the round 10 change.
+Full suite green offline and live-gated after the fixes.
+
 ## 1.0.0
 
 First stable release. The suite is feature-complete for its intended scope and
@@ -466,7 +630,7 @@ paths and 4 P2 validation gaps. All fixed.
 - Negative `award_amount_min` / `award_amount_max` silently ignored
   by USASpending and returned unfiltered default results. Now
   rejected with an explanatory error.
-- `naics_codes=["", "", ""]`, `psc_codes=[""]`, `award_ids=[""]` —
+- `naics_codes=["", "", ""]`, `psc_codes=[""]`, `award_ids=[""]`:
   list-of-empty-strings used to be silently dropped by
   `_coerce_code_list`'s filter, leaving an empty list that applied
   no filter at all. Now rejected with "contains only empty /

@@ -4,7 +4,7 @@
 Three tiers:
   1. Validation tests (offline, exercise pre-network argument parsing)
   2. Mock tests (offline, monkeypatch _post/_get)
-  3. Live tests (gated on USASPENDING_LIVE_TESTS=1) — 10+ per tool
+  3. Live tests (gated on USASPENDING_LIVE_TESTS=1): 10+ per tool
 """
 
 from __future__ import annotations
@@ -152,9 +152,26 @@ def test_get_recipient_profile_bad_suffix():
     ))
 
 
-def test_get_recipient_children_invalid_hash():
+def test_get_recipient_children_rejects_hash():
+    """Round 10: the children endpoint is keyed by UEI/DUNS, not hash.
+    Hashes are rejected pre-network with routing guidance."""
     asyncio.run(_call_expect_error(
-        "get_recipient_children", "not a valid recipient hash",
+        "get_recipient_children", "takes a UEI or DUNS",
+        uei_or_duns=RECIPIENT_HASH_PARENT,
+    ))
+
+
+def test_get_recipient_children_rejects_garbage():
+    asyncio.run(_call_expect_error(
+        "get_recipient_children", "not a 12-character UEI or 9-digit DUNS",
+        uei_or_duns="NOT-AN-ID",
+    ))
+
+
+def test_get_recipient_children_old_param_name_rejected():
+    """The pre-1.0.1 recipient_hash parameter name no longer exists."""
+    asyncio.run(_call_expect_error(
+        "get_recipient_children", "input",
         recipient_hash="QWVJEXMKMFP3",
     ))
 
@@ -189,16 +206,22 @@ def test_agency_endpoints_empty_toptier(tool):
     asyncio.run(_call_expect_error(tool, "cannot be empty", toptier_code=""))
 
 
-@pytest.mark.parametrize("tool", [
-    "get_agency_budgetary_resources",
-    "get_agency_sub_agencies",
-    "get_agency_federal_accounts",
-    "get_agency_object_classes",
-    "get_agency_program_activities",
-    "get_agency_obligations_by_award_category",
+@pytest.mark.parametrize("tool,path_segment", [
+    ("get_agency_budgetary_resources", "/agency/009/budgetary_resources/"),
+    ("get_agency_sub_agencies", "/agency/009/sub_agency/"),
+    ("get_agency_federal_accounts", "/agency/009/federal_account/"),
+    ("get_agency_object_classes", "/agency/009/object_class/"),
+    ("get_agency_program_activities", "/agency/009/program_activity/"),
+    ("get_agency_obligations_by_award_category", "/agency/009/obligations_by_award_category/"),
 ])
-def test_agency_endpoints_too_short_toptier(tool):
-    asyncio.run(_call_expect_error(tool, "3-4 digit", toptier_code="9"))
+def test_agency_endpoints_short_toptier_padded(tool, path_segment, monkeypatch):
+    """Round 10 unification: all eight agency tools share _normalize_toptier,
+    so short all-digit codes are zero-padded (matching get_agency_overview)
+    instead of rejected. '9' goes out on the wire as '009'."""
+    mock = _MockGet({"toptier_code": "009"})
+    monkeypatch.setattr(srv, "_get", mock)
+    asyncio.run(_call(tool, toptier_code="9"))
+    assert path_segment in mock.calls[-1][0]
 
 
 @pytest.mark.parametrize("tool", [
@@ -398,9 +421,12 @@ def test_idv_funding_limit_too_high():
                                     award_id=AWARD_ID_IDV, limit=200))
 
 
-def test_idv_activity_unknown_sort():
+def test_idv_activity_sort_param_removed():
+    """Round 10: the API ignores sort/order on /idvs/activity/ (results are
+    always obligated-amount descending), so the params were removed. Passing
+    sort now fails as an unknown parameter."""
     asyncio.run(_call_expect_error("get_idv_activity", "input",
-                                    award_id=AWARD_ID_IDV, sort="random"))
+                                    award_id=AWARD_ID_IDV, sort="obligated_amount"))
 
 
 # --- autocomplete helpers ---
@@ -602,11 +628,30 @@ def test_get_recipient_profile_mock_year_param(monkeypatch):
 
 
 def test_get_recipient_children_mock_path(monkeypatch):
-    mock = _MockGet({"results": []})
-    monkeypatch.setattr(srv, "_get", mock)
-    asyncio.run(_call("get_recipient_children", recipient_hash=RECIPIENT_HASH_PARENT))
-    path, _ = mock.calls[-1]
-    assert path == f"/api/v2/recipient/children/{RECIPIENT_HASH_PARENT}/"
+    """Round 10: children is keyed by UEI/DUNS and (like list_states) uses
+    _get_client() directly because the endpoint returns a JSON array."""
+    calls = []
+
+    class _Resp:
+        status_code = 200
+        def raise_for_status(self):
+            pass
+        def json(self):
+            return [{"recipient_id": "d7df489c-5a15-3e1b-e7fa-0e93eb94a166-C"}]
+
+    class _MC:
+        async def get(self, path, params=None):
+            calls.append((path, dict(params or {})))
+            return _Resp()
+
+    monkeypatch.setattr(srv, "_get_client", lambda: _MC())
+    r = asyncio.run(_call("get_recipient_children", uei_or_duns="cwm4un76zqw8"))
+    path, _ = calls[-1]
+    # lowercase UEI is canonicalized to uppercase on the wire
+    assert path == "/api/v2/recipient/children/CWM4UN76ZQW8/"
+    d = _payload(r)
+    assert d["total"] == 1
+    assert d["results"][0]["recipient_id"].endswith("-C")
 
 
 def test_autocomplete_recipient_mock(monkeypatch):
@@ -1016,16 +1061,15 @@ def test_live_get_recipient_profile_real():
 
 
 @live
-def test_live_get_recipient_children_no_parent():
-    """Querying children on -R hash should return empty/no parent records."""
-    try:
-        r = asyncio.run(_call("get_recipient_children", recipient_hash=RECIPIENT_HASH_VALID))
-        d = _payload(r)
-        # Either empty list or 4xx; both fine. If we got here, just check shape.
-        assert isinstance(d, (dict, list))
-    except Exception as e:
-        # API often returns 4xx for non-parent recipients - acceptable
-        assert "400" in str(e) or "404" in str(e)
+def test_live_get_recipient_children_by_uei():
+    """Round 10: children takes the parent's UEI. Lockheed Martin's UEI must
+    return at least one -C child row (the old hash-based call could never
+    succeed: the API 400s on hashes)."""
+    r = asyncio.run(_call("get_recipient_children", uei_or_duns="CWM4UN76ZQW8"))
+    d = _payload(r)
+    assert isinstance(d, dict)
+    assert d["total"] >= 1
+    assert any("LOCKHEED" in (row.get("name") or "") for row in d["results"])
 
 
 @live
@@ -1620,7 +1664,9 @@ _POST_TOOLS = [
     ("autocomplete_glossary", {"search_text": "x"}, "/api/v2/autocomplete/glossary/"),
     ("get_award_funding_rollup", {"award_id": AWARD_ID_CONTRACT}, "/api/v2/awards/funding_rollup/"),
     ("spending_by_transaction", {}, "/api/v2/search/spending_by_transaction/"),
-    ("spending_by_geography", {}, "/api/v2/search/spending_by_geography/"),
+    # spending_by_geography requires at least one real filter since the
+    # 2026-08-16 audit (the API 500s on an empty filter set).
+    ("spending_by_geography", {"time_period_start": "2024-01-01"}, "/api/v2/search/spending_by_geography/"),
     ("new_awards_over_time", {"recipient_id": RECIPIENT_HASH_VALID}, "/api/v2/search/new_awards_over_time/"),
     ("get_idv_funding", {"award_id": AWARD_ID_IDV}, "/api/v2/idvs/funding/"),
     ("get_idv_funding_rollup", {"award_id": AWARD_ID_IDV}, "/api/v2/idvs/funding_rollup/"),
@@ -1631,7 +1677,10 @@ _POST_TOOLS = [
 
 _GET_TOOLS = [
     ("get_recipient_profile", {"recipient_hash": RECIPIENT_HASH_VALID}, f"/api/v2/recipient/{RECIPIENT_HASH_VALID}/"),
-    ("get_recipient_children", {"recipient_hash": RECIPIENT_HASH_PARENT}, f"/api/v2/recipient/children/{RECIPIENT_HASH_PARENT}/"),
+    # get_recipient_children is NOT in this battery: since round 10 it is
+    # keyed by UEI/DUNS and, like list_states, calls _get_client() directly
+    # (its endpoint returns a JSON array). Focused mocks live in
+    # test_entity_family_fixes.py.
     ("get_agency_budgetary_resources", {"toptier_code": "097"}, "/api/v2/agency/097/budgetary_resources/"),
     ("get_agency_sub_agencies", {"toptier_code": "097"}, "/api/v2/agency/097/sub_agency/"),
     ("get_agency_federal_accounts", {"toptier_code": "097"}, "/api/v2/agency/097/federal_account/"),

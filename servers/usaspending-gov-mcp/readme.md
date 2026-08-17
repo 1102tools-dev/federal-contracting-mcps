@@ -6,7 +6,7 @@ MCP server for the USASpending.gov federal contract, award, subaward, recipient,
 
 No API key required. Works with any MCP-compatible client (Claude Desktop, Claude Code, Cursor, Cline, Continue, Zed, etc.).
 
-*Tested and hardened through nine rounds of integration testing against the live USASpending.gov API. v0.3 added 38 new tools and 243 tests across the new endpoints (76 live). See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through ten rounds of integration testing against the live USASpending.gov API. 2,151 regression tests (1,783 offline, 368 live-gated); round 10 fixed 25 verified findings across both tool families, including filters that could never match and a tool that had never once succeeded. See [testing.md](testing.md) for the full testing record.*
 
 ## What it does
 
