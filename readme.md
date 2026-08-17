@@ -12,6 +12,10 @@ Website: [1102tools.com](https://1102tools.com)
 
 **[Download the universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf)**, then drop it into Claude, ChatGPT (Codex), Gemini (Antigravity), Copilot, DeepSeek Harness, Grok, Cursor, opencode, or LibreChat and say what you want installed. The AI reads the guide and walks you through every step: free API keys, the exact config for your platform, restart, verify. If 35 pages is more than your chat will accept, paste in just the section for your platform; every option is written to stand alone. Part 9 is troubleshooting built from errors I actually hit while executing every major install path for real.
 
+[![The 1102tools prompt guide: installed, now know what to ask. Copy-paste prompts for competitor intelligence, bid decisions, recompete timing, and pricing. Covers when SAM.gov is the answer, when USASpending beats it, and the combination plays that use both, including the DoD reporting delay. Every pattern was run against the live servers before publishing. August 2026.](docs/prompt-guide-promo.png)](https://1102tools.com/downloads/1102tools-prompt-guide.pdf)
+
+**[Download the prompt guide (PDF)](https://1102tools.com/downloads/1102tools-prompt-guide.pdf)**: what to ask once the servers are in. Competitor intelligence, bid decisions, recompete timing, and pricing, centered on when SAM.gov is the answer and when USASpending beats it. Every prompt pattern was run against the live servers before publishing.
+
 ![Architecture diagram showing how a question travels: your AI client (any of the ten supported clients), to an MCP server launched by uvx on your own machine, to the official federal API using your own free key, back to a deterministic result. Coverage is grouped in three domains. Awards and entities: SAM.gov (19 tools, key) and USASpending (55 tools). Labor and pricing: BLS OEWS (7 tools, key), GSA CALC+ (8 tools), GSA Per Diem (6 tools, key). Regulation and rulemaking: eCFR (13 tools), Federal Register (8 tools), Regulations.gov (8 tools, key).](docs/architecture.png)
 
 ---
