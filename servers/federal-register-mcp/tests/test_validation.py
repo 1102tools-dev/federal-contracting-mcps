@@ -368,7 +368,7 @@ def test_list_agencies_whitespace_query_normalized():
     In 0.1.x, query='   ' returned 0 results (substring matching whitespace)
     while query='' returned all 470. After the fix they behave the same.
     """
-    # No network — just confirm the normalizer returns None
+    # No network, just confirm the normalizer returns None
     from federal_register_mcp.server import _strip_or_none
     assert _strip_or_none("") is None
     assert _strip_or_none("   ") is None

@@ -112,7 +112,17 @@ def _clamp_str_len(value: str | None, *, field: str, maximum: int) -> str | None
     return value
 
 
-_DOC_NUMBER_RE = re.compile(r"^(?:C\d-)?\d{4}-\d{5}$")
+# Document numbers span several era-specific families, all verified against
+# the live archive (round 6):
+#   2026-07731     modern (2011+): 4-digit year, 5-digit sequence
+#   94-16174       1994 through 2000s: 2-digit year, variable-length sequence
+#   E9-12940       2005-2011 electronic-submission era (E prefix)
+#   X94-70302      legacy special series (X and Z prefixes)
+#   C1-2026-01234  corrections (C prefix wrapping any of the above)
+# The pattern is a loose URL-safe shape check (optional correction prefix,
+# up to two letters, 1-4 digit year part, 1-6 digit sequence). Genuinely
+# unknown numbers are left for the API's own 404 to decide.
+_DOC_NUMBER_RE = re.compile(r"^(?:C\d{1,2}-)?[A-Za-z]{0,2}\d{1,4}-\d{1,6}$")
 
 
 def _validate_doc_number(value: str, *, field: str = "document_number") -> str:
@@ -127,8 +137,10 @@ def _validate_doc_number(value: str, *, field: str = "document_number") -> str:
         raise ValueError(f"{field} cannot be empty.")
     if not _DOC_NUMBER_RE.match(stripped):
         raise ValueError(
-            f"{field}={value!r} has invalid format. "
-            f"Expected 'YYYY-NNNNN' (e.g. '2026-07731') or 'CN-YYYY-NNNNN' for corrections."
+            f"{field}={value!r} has invalid format. Accepted shapes: modern "
+            f"'YYYY-NNNNN' (e.g. '2026-07731'), legacy pre-2011 forms such as "
+            f"'E9-12940', 'X94-70302', or '94-16174', and correction numbers "
+            f"like 'C1-2026-01234'."
         )
     return stripped
 
@@ -143,6 +155,43 @@ def _warn_pre_fr_date(value: str | None, field: str) -> str | None:
             f"{_EARLIEST_FR_DATE}). The API will return empty results for pre-1994 dates."
         )
     return value
+
+
+_CFR_PART_RE = re.compile(r"^\d{1,4}(-\d{1,4})?$")
+
+
+def _validate_cfr(
+    cfr_title: int | None, cfr_part: str | int | None
+) -> tuple[str | None, str | None]:
+    """Validate the CFR title/part filter pair.
+
+    The API requires the title whenever a part is given (a part filter
+    without its title is silently ignored upstream). Part accepts a single
+    part ('52') or a range ('1-50'). Returns wire-ready strings.
+    """
+    if cfr_title is None and cfr_part is None:
+        return None, None
+    if cfr_part is not None and cfr_title is None:
+        raise ValueError(
+            "cfr_part requires cfr_title (the API silently ignores a part "
+            "filter without its CFR title). Pass both, e.g. cfr_title=48, "
+            "cfr_part='52'."
+        )
+    title_str: str | None = None
+    if cfr_title is not None:
+        if not 1 <= cfr_title <= 50:
+            raise ValueError(f"cfr_title must be between 1 and 50. Got {cfr_title}.")
+        title_str = str(cfr_title)
+    part_str: str | None = None
+    if cfr_part is not None:
+        part_str = str(cfr_part).strip()
+        if not _CFR_PART_RE.match(part_str):
+            raise ValueError(
+                f"cfr_part={cfr_part!r} must be a part number ('52') or a "
+                f"part range ('1-50'). Section syntax like '52.212-4' is not "
+                f"accepted; pass the part ('52')."
+            )
+    return title_str, part_str
 
 
 _HTML_ERROR_RE = re.compile(r"<(?:!doctype|html)", re.IGNORECASE)
@@ -298,6 +347,8 @@ def _build_search_params(
     effective_date_lte: str | None = None,
     correction: bool | None = None,
     significant: bool | None = None,
+    cfr_title: str | None = None,
+    cfr_part: str | None = None,
     fields: list[str] | None = None,
     per_page: int = 20,
     page: int = 1,
@@ -333,6 +384,10 @@ def _build_search_params(
         params.append(("conditions[correction]", "1" if correction else "0"))
     if significant is not None:
         params.append(("conditions[significant]", "1" if significant else "0"))
+    if cfr_title:
+        params.append(("conditions[cfr][title]", cfr_title))
+    if cfr_part:
+        params.append(("conditions[cfr][part]", cfr_part))
 
     for f in (fields or DEFAULT_FIELDS):
         params.append(("fields[]", f))
@@ -363,6 +418,8 @@ async def search_documents(
     effective_date_lte: str | None = None,
     correction: bool | None = None,
     significant: bool | None = None,
+    cfr_title: int | None = None,
+    cfr_part: str | int | None = None,
     per_page: int = 20,
     page: int = 1,
     order: Literal["newest", "oldest", "relevance", "executive_order_number"] = "newest",
@@ -378,14 +435,18 @@ async def search_documents(
       'federal-procurement-policy-office', 'small-business-administration'
     - doc_types: PRORULE (proposed rule), RULE (final rule), NOTICE, PRESDOCU
     - term: full-text keyword search (strips stop words)
-    - docket_id: docket identifier (substring match). 'FAR Case 2023-008' = exact,
-      'FAR Case 2023' = all 2023 cases
+    - docket_id: docket identifier (token match). 'FAR Case 2023-008' = exact,
+      'FAR Case 2023' = all 2023 cases; partial tokens like 'FAR Case 20'
+      match nothing
     - regulation_id_number: RIN (precise match, e.g., '9000-AO56')
     - pub_date_gte/lte: publication date range (YYYY-MM-DD)
     - comment_date_gte/lte: comment close date range
     - effective_date_gte/lte: effective date range
     - correction: True for modern corrections (C1- prefix documents)
     - significant: True for EO 12866 significant rules only
+    - cfr_title + cfr_part: documents affecting a CFR location, e.g.
+      cfr_title=48, cfr_part='52' for FAR part 52 (part accepts ranges
+      like '1-99'; cfr_part requires cfr_title)
 
     Count caps at 10,000 for broad queries. Use date ranges for accurate counts.
     per_page capped at 100 to stay within MCP response size limits.
@@ -404,7 +465,7 @@ async def search_documents(
         _strip_or_none(regulation_id_number), field="regulation_id_number", maximum=50
     )
     pub_date_gte = _warn_pre_fr_date(_validate_date(pub_date_gte, "pub_date_gte"), "pub_date_gte")
-    pub_date_lte = _validate_date(pub_date_lte, "pub_date_lte")
+    pub_date_lte = _warn_pre_fr_date(_validate_date(pub_date_lte, "pub_date_lte"), "pub_date_lte")
     comment_date_gte = _validate_date(comment_date_gte, "comment_date_gte")
     comment_date_lte = _validate_date(comment_date_lte, "comment_date_lte")
     effective_date_gte = _validate_date(effective_date_gte, "effective_date_gte")
@@ -412,6 +473,7 @@ async def search_documents(
     _check_date_range(pub_date_gte, pub_date_lte, "publication_date")
     _check_date_range(comment_date_gte, comment_date_lte, "comment_date")
     _check_date_range(effective_date_gte, effective_date_lte, "effective_date")
+    cfr_title_str, cfr_part_str = _validate_cfr(cfr_title, cfr_part)
 
     # Require at least one real filter. An unfiltered search_documents() call
     # silently returned the Federal Register's 10,000-doc "most recent"
@@ -422,6 +484,7 @@ async def search_documents(
         comment_date_gte, comment_date_lte,
         effective_date_gte, effective_date_lte,
         correction is not None, significant is not None,
+        cfr_title_str,
     ]):
         raise ValueError(
             "search_documents requires at least one filter. Typical: "
@@ -437,6 +500,7 @@ async def search_documents(
         comment_date_gte=comment_date_gte, comment_date_lte=comment_date_lte,
         effective_date_gte=effective_date_gte, effective_date_lte=effective_date_lte,
         correction=correction, significant=significant,
+        cfr_title=cfr_title_str, cfr_part=cfr_part_str,
         per_page=per_page, page=page, order=order,
     )
     return await _get(f"{BASE_URL}/documents.json?{qs}")
@@ -451,7 +515,8 @@ async def get_document(
     Returns all available fields including full text URLs, docket info,
     RIN details, page views, topics, corrections, and CFR references.
 
-    Document numbers look like '2026-03065' or 'C1-2026-01234' (corrections).
+    Document numbers look like '2026-03065' (modern), 'E9-12940' or
+    'X94-70302' (legacy pre-2011 archive), or 'C1-2026-01234' (corrections).
     """
     dn = _validate_doc_number(document_number)
     return await _get(f"{BASE_URL}/documents/{dn}.json")
@@ -464,6 +529,8 @@ async def get_documents_batch(
     """Fetch multiple documents in one call (up to ~20).
 
     Pass a list of document numbers. More efficient than individual calls.
+    Always returns {count, results, [errors]}; errors.not_found lists any
+    requested numbers the API could not locate.
     """
     if not document_numbers:
         raise ValueError("document_numbers list cannot be empty.")
@@ -473,28 +540,44 @@ async def get_documents_batch(
     validated = [_validate_doc_number(d, field=f"document_numbers[{i}]")
                  for i, d in enumerate(document_numbers)]
     nums = ",".join(validated)
-    return await _get(f"{BASE_URL}/documents/{nums}.json")
+    data = await _get(f"{BASE_URL}/documents/{nums}.json")
+    # Round 6 fix: a 1-document request (or a multi-request deduped to one
+    # by the API) can come back as the bare document object with no
+    # count/results wrapper. Normalize so callers can always iterate
+    # data["results"].
+    if isinstance(data, dict) and "results" not in data:
+        return {"count": 1, "results": [data]}
+    return data
 
 
 @mcp.tool(annotations={"title": "Get Facet Counts", "readOnlyHint": True, "destructiveHint": False})
 async def get_facet_counts(
-    facet: Literal["type", "agency", "topic"],
+    facet: Literal[
+        "type", "agency", "topic",
+        "daily", "weekly", "monthly", "quarterly", "yearly",
+    ],
     agencies: list[str] | None = None,
-    doc_types: list[str] | None = None,
+    doc_types: list[Literal["PRORULE", "RULE", "NOTICE", "PRESDOCU"]] | None = None,
     term: str | None = None,
     pub_date_gte: str | None = None,
     pub_date_lte: str | None = None,
+    cfr_title: int | None = None,
+    cfr_part: str | int | None = None,
 ) -> dict[str, Any]:
-    """Get document counts grouped by type, agency, or topic.
+    """Get document counts grouped by type, agency, topic, or time period.
 
     Accepts the same filter conditions as search_documents. Returns
     aggregated counts without individual document results.
 
-    Useful for understanding the volume of rulemaking by agency or type
-    within a date range before drilling into specific documents.
+    Facets: type, agency, topic (categorical) plus daily, weekly, monthly,
+    quarterly, yearly (publication-date buckets, useful for trend lines).
 
-    At least one filter (agencies, doc_types, term, or pub_date_gte/lte) is
-    required. An unfiltered facet query returns the entire all-time aggregate.
+    Useful for understanding the volume of rulemaking by agency, type, or
+    over time within a date range before drilling into specific documents.
+
+    At least one filter (agencies, doc_types, term, pub_date_gte/lte, or
+    cfr_title) is required. An unfiltered facet query returns the entire
+    all-time aggregate.
     """
     agencies = _reject_empty_list(agencies, "agencies")
     agencies = _reject_empty_strings_in_list(agencies, field="agencies")
@@ -504,13 +587,16 @@ async def get_facet_counts(
     pub_date_gte = _warn_pre_fr_date(
         _validate_date(pub_date_gte, "pub_date_gte"), "pub_date_gte"
     )
-    pub_date_lte = _validate_date(pub_date_lte, "pub_date_lte")
+    pub_date_lte = _warn_pre_fr_date(
+        _validate_date(pub_date_lte, "pub_date_lte"), "pub_date_lte"
+    )
     _check_date_range(pub_date_gte, pub_date_lte, "publication_date")
+    cfr_title_str, cfr_part_str = _validate_cfr(cfr_title, cfr_part)
 
-    if not any([agencies, doc_types, term, pub_date_gte, pub_date_lte]):
+    if not any([agencies, doc_types, term, pub_date_gte, pub_date_lte, cfr_title_str]):
         raise ValueError(
             "get_facet_counts requires at least one filter "
-            "(agencies, doc_types, term, or pub_date_gte/lte). "
+            "(agencies, doc_types, term, pub_date_gte/lte, or cfr_title). "
             "An unfiltered query returns all-time aggregates and is rarely useful."
         )
 
@@ -527,6 +613,10 @@ async def get_facet_counts(
         params.append(("conditions[publication_date][gte]", pub_date_gte))
     if pub_date_lte:
         params.append(("conditions[publication_date][lte]", pub_date_lte))
+    if cfr_title_str:
+        params.append(("conditions[cfr][title]", cfr_title_str))
+    if cfr_part_str:
+        params.append(("conditions[cfr][part]", cfr_part_str))
 
     qs = urllib.parse.urlencode(params) if params else ""
     url = f"{BASE_URL}/documents/facets/{facet}"
@@ -546,14 +636,19 @@ async def get_public_inspection(
     Public inspection documents are FR documents filed for publication but
     not yet published. Updated business days only.
 
-    The PI endpoint does NOT support server-side filtering. This tool
-    fetches all current PI documents and filters client-side by agency
-    slug and/or keyword in the title.
+    The current-PI endpoint does NOT support server-side filtering. This
+    tool fetches all current PI documents and filters client-side by
+    agency and/or keyword in the title.
 
     Useful for getting early notice of upcoming regulatory actions.
 
     Parameters:
-    - agency_filter: substring match against each document's agency slugs
+    - agency_filter: case-insensitive substring match against each
+      document's agency slugs, names, and raw names. CAUTION: PI documents
+      list only the FILING sub-agency, so a parent slug like
+      'defense-department' will not match a Defense Logistics Agency
+      filing. Prefer a short distinctive fragment ('defense', 'acquisition
+      regulations') over a full parent slug.
     - keyword_filter: substring match against document titles
     - limit: max documents returned after filtering (default 50, max 500).
       Unfiltered dumps can exceed 170KB; narrow with filters or raise the cap.
@@ -569,12 +664,24 @@ async def get_public_inspection(
     results = data.get("results", [])
 
     if agency_filter:
+        # Round 6 fix: PI documents carry only the filing sub-agency, and
+        # slug-only matching made parent-agency filters silently return
+        # nothing. Match against slug, name, and raw_name, and also try
+        # the filter with hyphens as spaces so slug-style input can hit
+        # the human-readable names.
         agency_lower = agency_filter.lower()
-        results = [
-            d for d in results
-            if any(agency_lower in (a.get("slug") or "").lower()
-                   for a in d.get("agencies", []))
-        ]
+        agency_spaced = agency_lower.replace("-", " ")
+
+        def _agency_match(doc: dict[str, Any]) -> bool:
+            for a in doc.get("agencies", []):
+                blob = " ".join(
+                    str(a.get(k) or "") for k in ("slug", "name", "raw_name")
+                ).lower()
+                if agency_lower in blob or agency_spaced in blob:
+                    return True
+            return False
+
+        results = [d for d in results if _agency_match(d)]
 
     if keyword_filter:
         kw_lower = keyword_filter.lower()
@@ -659,23 +766,36 @@ async def list_agencies(
 # Workflow tools
 # ---------------------------------------------------------------------------
 
+_OPEN_COMMENT_SCAN_CAP = 500
+_OPEN_COMMENT_PAGE_SIZE = 100
+
+
 @mcp.tool(annotations={"title": "Open Comment Periods", "readOnlyHint": True, "destructiveHint": False})
 async def open_comment_periods(
     agencies: list[str] | None = None,
     term: str | None = None,
     limit: int = 50,
 ) -> dict[str, Any]:
-    """Find proposed rules and notices with currently open comment periods.
+    """Find documents with currently open comment periods, soonest deadline first.
 
-    Filters for documents where the comment close date is today or later.
-    Results sorted by soonest closing deadline first.
+    Covers proposed rules, notices, AND final/interim rules that accept
+    comments (dozens of RULE-type documents have open periods at any time).
+    Queries for comment close date >= today, scans up to 500 matching
+    documents oldest-published first (where the soonest deadlines live),
+    sorts by close date, and returns the first `limit`.
+
+    Honest bound: total_open is the API's true government-wide count;
+    scanned is how many this call examined. When total_open exceeds
+    scanned, narrow with agencies/term for exhaustive coverage. A very
+    recently published document with an unusually short comment window
+    can fall outside the scan in that oversubscribed case.
 
     Default: searches all agencies. Pass agency slugs to narrow scope.
     Common for procurement: ['federal-procurement-policy-office',
     'defense-department', 'general-services-administration']
 
     Parameters:
-    - limit: max documents returned (default 50, max 100).
+    - limit: max documents returned after sorting (default 50, max 100).
       Unfiltered dumps across all agencies can approach 200KB.
     """
     agencies = _reject_empty_list(agencies, "agencies")
@@ -683,63 +803,101 @@ async def open_comment_periods(
 
     today = date.today().isoformat()
 
-    data = await search_documents(
-        agencies=agencies,
-        doc_types=["PRORULE", "NOTICE"],
-        term=term,
-        comment_date_gte=today,
-        per_page=limit,
-        order="newest",
-    )
+    results: list[dict[str, Any]] = []
+    total_open = 0
+    max_pages = _OPEN_COMMENT_SCAN_CAP // _OPEN_COMMENT_PAGE_SIZE
+    for page_num in range(1, max_pages + 1):
+        data = await search_documents(
+            agencies=agencies,
+            doc_types=["PRORULE", "RULE", "NOTICE"],
+            term=term,
+            comment_date_gte=today,
+            per_page=_OPEN_COMMENT_PAGE_SIZE,
+            page=page_num,
+            order="oldest",
+        )
+        total_open = data.get("count", 0)
+        page_results = data.get("results", [])
+        results.extend(page_results)
+        if len(page_results) < _OPEN_COMMENT_PAGE_SIZE or len(results) >= total_open:
+            break
 
-    results = data.get("results", [])
     results.sort(key=lambda x: x.get("comments_close_on") or "9999-99-99")
+    returned = results[:limit]
 
     return {
         "as_of": today,
-        "total_open": len(results),
+        "total_open": total_open,
+        "scanned": len(results),
+        "scan_cap": _OPEN_COMMENT_SCAN_CAP,
+        "returned": len(returned),
         "limit": limit,
-        "documents": results,
+        "documents": returned,
     }
 
 
 @mcp.tool(annotations={"title": "FAR Case History", "readOnlyHint": True, "destructiveHint": False})
 async def far_case_history(docket_id: str) -> dict[str, Any]:
-    """Get all Federal Register documents for a FAR/DFARS case.
+    """Get all Federal Register documents for a FAR/DFARS case or FAC.
 
-    Pass a docket ID like 'FAR Case 2023-008'. Returns all related
-    documents sorted chronologically (oldest first) to show the full
-    rulemaking progression: ANPRM -> proposed rule -> comments -> final rule.
+    Pass a docket ID like 'FAR Case 2023-008' (or a FAC number like
+    'FAC 2025-06'). Runs BOTH a docket-id search and a quoted full-text
+    search, then merges the two result sets (deduped by document number)
+    in chronological order to show the full rulemaking progression:
+    ANPRM -> proposed rule -> final rule -> corrections. The dual query
+    matters: FAC introduction and companion documents often carry only
+    internal docket numbers, so a docket-only search returns a partial set.
 
-    Docket IDs use substring matching, so 'FAR Case 2023' returns all
-    2023 FAR cases. Be specific to avoid false positives.
+    Docket matching is token-based, not substring: 'FAR Case 2023' matches
+    all 2023 cases (token '2023' matches '2023-008'), but a partial token
+    like 'FAR Case 20' matches nothing. Be specific to avoid false positives.
 
-    If the docket_id filter returns 0 results, the tool automatically
-    retries with a term search (quoted phrase) as fallback.
+    Each underlying search returns at most 100 documents. truncated=True
+    flags that one of the searches hit that cap (docket_matches and
+    term_matches carry the API's full counts); narrow the docket_id if so.
 
-    Minimum docket_id length is 3 characters to prevent substring matches that
+    Minimum docket_id length is 3 characters to prevent token matches that
     return unrelated documents (e.g. 'x' matched 65 random dockets in 0.1.x).
     """
     docket_id = _require_min_length(docket_id, field="docket_id", minimum=3)
     docket_id = _clamp_str_len(docket_id, field="docket_id", maximum=200)
 
-    data = await search_documents(
+    docket_data = await search_documents(
         docket_id=docket_id,
         per_page=100,
         order="oldest",
     )
+    term_data = await search_documents(
+        term=f'"{docket_id}"',
+        per_page=100,
+        order="oldest",
+    )
 
-    if data.get("count", 0) == 0:
-        data = await search_documents(
-            term=f'"{docket_id}"',
-            per_page=100,
-            order="oldest",
-        )
+    docket_results = docket_data.get("results", []) or []
+    term_results = term_data.get("results", []) or []
+
+    merged: dict[str, dict[str, Any]] = {}
+    for i, doc in enumerate(docket_results + term_results):
+        key = doc.get("document_number") or f"_missing_number_{i}"
+        if key not in merged:
+            merged[key] = doc
+    documents = sorted(
+        merged.values(), key=lambda d: d.get("publication_date") or "9999-99-99"
+    )
+
+    docket_count = docket_data.get("count", 0)
+    term_count = term_data.get("count", 0)
+    truncated = (
+        docket_count > len(docket_results) or term_count > len(term_results)
+    )
 
     return {
         "docket_id": docket_id,
-        "total_documents": data.get("count", 0),
-        "documents": data.get("results", []),
+        "total_documents": len(documents),
+        "docket_matches": docket_count,
+        "term_matches": term_count,
+        "truncated": truncated,
+        "documents": documents,
     }
 
 

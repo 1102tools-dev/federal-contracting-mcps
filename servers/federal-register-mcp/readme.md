@@ -6,17 +6,17 @@ MCP server for the Federal Register API. Proposed rules, final rules, notices, e
 
 No authentication required.
 
-*Tested and hardened through four rounds of integration testing against the live Federal Register API. 77 regression tests covering 14 P1 items including the `list_agencies` pydantic crash that hit every call, payload bombs, and silent-wrong-data substring matches, plus 10 P2 validation gaps fixed. See [TESTING.md](TESTING.md) for the full testing record.*
+*Tested and hardened through six rounds of integration testing against the live Federal Register API. 228 regression tests (132 offline, 96 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines. See [testing.md](testing.md) for the full testing record.*
 
 ## What it does
 
 Exposes the Federal Register API as 8 MCP tools:
 
 **Core**
-- `search_documents` - Search with flexible filters (agency, type, term, docket, dates, RIN)
+- `search_documents` - Search with flexible filters (agency, type, term, docket, dates, RIN, CFR title/part)
 - `get_document` - Full details for a single document by number
 - `get_documents_batch` - Fetch up to 20 documents in one call
-- `get_facet_counts` - Document counts by type, agency, or topic
+- `get_facet_counts` - Document counts by type, agency, topic, or time bucket (daily through yearly)
 - `get_public_inspection` - Pre-publication documents with client-side filtering
 - `list_agencies` - All ~470 agencies with slugs
 

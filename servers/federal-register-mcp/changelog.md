@@ -1,5 +1,93 @@
 # Changelog
 
+## 1.0.1
+
+Round 6 audit: a fresh live audit against the production API (contract diff
+via the API's own OpenAPI spec plus ~60 live probes) surfaced 12 verified
+findings. All fixed. The recurring theme: earlier rounds hardened inputs
+against junk but never tested legacy-real inputs, and treated payload size
+as the only output risk while result correctness went unchecked.
+
+### Fixed
+
+- **`get_document` / `get_documents_batch` rejected the entire pre-2011
+  archive.** The document-number pattern only accepted modern
+  'YYYY-NNNNN' numbers, but the API serves legacy families going back to
+  1994: 'E9-12940' (2005-2011 electronic era), 'X94-70302' and 'Z9-10645'
+  (special series), and 2-digit-year forms like '94-16174'. All verified
+  retrievable upstream while the tools refused them. The pattern is now a
+  loose URL-safe shape check covering every live-verified family; the
+  API's own 404 decides genuinely unknown numbers.
+- **`open_comment_periods` missed the soonest-closing deadlines.** It
+  fetched only the `limit` most recently PUBLISHED documents and sorted
+  that page, so documents closing today (published months ago) never
+  appeared while the docstring promised "soonest closing deadline first".
+  With 985 open periods live, a default call returned nothing closing
+  before Sep 8 while dockets closed Aug 16-17. Now scans up to 500
+  matching documents oldest-published first, sorts by close date, and
+  returns the first `limit`.
+- **`open_comment_periods` reported the page size as `total_open`.**
+  `total_open: 5` while the API count was 985. Now reports the API's true
+  count plus separate `scanned` and `returned` fields.
+- **`open_comment_periods` excluded RULE-type documents.** Interim and
+  direct final rules accept comments too (41 open live at audit time,
+  including FAA ADs). RULE added to the type filter.
+- **`far_case_history` returned a partial set whenever the docket search
+  partially matched.** The quoted-term fallback only fired on zero docket
+  hits, so 'FAC 2025-06' returned 1 of its 4 documents (the FAC intro and
+  companion documents carry only internal docket numbers). Now always runs
+  both searches and merges the results deduped by document number.
+- **`far_case_history` silently truncated at 100 documents** ('FAR Case'
+  matched 1625, returned 100, no flag). Now returns `truncated` plus
+  `docket_matches` / `term_matches` API counts.
+- **`get_documents_batch` with one document collapsed to the bare document
+  object** (no count/results wrapper), breaking callers that iterate
+  `results`. Single-document responses are now wrapped as
+  `{"count": 1, "results": [doc]}`.
+- **`get_facet_counts` accepted any string in `doc_types` and lowercase or
+  misspelled values silently returned `{}`**, indistinguishable from "zero
+  documents published" (`["rule"]` returned `{}` while `["RULE"]` showed
+  153 in the same window). Now typed with the same PRORULE/RULE/NOTICE/
+  PRESDOCU literal as `search_documents`.
+- **Pre-1994 guard was asymmetric.** `pub_date_lte="1990-01-01"` silently
+  returned an empty set while the gte side raised an actionable error.
+  Both sides now raise, in `search_documents` and `get_facet_counts`.
+- **`get_public_inspection` parent-agency filters silently returned
+  nothing.** PI documents list only the filing sub-agency, and matching
+  was slug-only, so `agency_filter="defense-department"` returned 0 while
+  a Defense sub-agency filing sat in the queue. Matching now covers slug,
+  name, and raw name (with hyphens-as-spaces fallback) and the docstring
+  warns about parent slugs.
+
+### Added
+
+- **CFR location filters.** `cfr_title` + `cfr_part` on both
+  `search_documents` and `get_facet_counts`, mapping to
+  `conditions[cfr][title]` / `conditions[cfr][part]` (part accepts ranges
+  like '1-99'; part requires title, enforced with an actionable error).
+  48 CFR part 52 alone covers 1086 documents that were previously
+  unreachable by filter.
+- **Time-bucket facets.** `get_facet_counts` now accepts daily, weekly,
+  monthly, quarterly, and yearly facets alongside type, agency, and topic.
+
+### Changed
+
+- `far_case_history` response: `total_documents` is now the merged returned
+  count; new `docket_matches`, `term_matches`, and `truncated` fields.
+- `open_comment_periods` response: `total_open` is now the API's true
+  count; new `scanned`, `scan_cap`, and `returned` fields.
+- Docstrings corrected: docket matching described as token-based (not
+  substring; 'FAR Case 20' matches nothing while 'FAR Case 2023' matches
+  all 2023 cases), legacy document-number formats documented.
+
+### Verified
+
+Every fix carries a live repro in the round 6 regression file
+(`tests/test_round_6.py`, offline mocks plus live-gated confirmations).
+Post-fix live confirmation: 'E9-12940' fetches, 'FAC 2025-06' returns all
+4 documents, `open_comment_periods` surfaces deadlines closing within days
+with a truthful government-wide total.
+
 ## 1.0.0
 
 First stable release. The suite is feature-complete for its intended scope and

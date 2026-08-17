@@ -2,15 +2,15 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the Federal Register API as 8 callable tools for rulemaking tracking, FAR case history, comment-period monitoring, and regulatory research since 1994. It was hardened across four audit rounds including an initial hardening pass that fixed 17 findings and a retroactive deep audit that surfaced 12 more hidden bugs. The signature finding was a pydantic validation crash on every `list_agencies` call that was invisible to the prior unit tests because they awaited raw coroutines instead of invoking through the FastMCP pipeline. The MCP ships with 77 regression tests (64 offline plus 13 live-gated).
+This Model Context Protocol server exposes the Federal Register API as 8 callable tools for rulemaking tracking, FAR case history, comment-period monitoring, and regulatory research since 1994. It was hardened across six audit rounds: an initial hardening pass that fixed 17 findings, a retroactive deep audit that surfaced 12 more hidden bugs, a Hypothesis property-testing round, and a round 6 correctness audit against the live archive and the API's own OpenAPI spec that surfaced 12 further verified findings. Two signature findings, one per methodology era: a pydantic validation crash on every `list_agencies` call that was invisible to unit tests awaiting raw coroutines instead of invoking through the FastMCP pipeline, and a document-number validator that rejected the entire pre-2011 archive because prior rounds only ever tested junk inputs, never legacy-real ones. The MCP ships with 228 regression tests (132 offline plus 96 live-gated).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 77 (64 offline, 13 live-gated) |
-| Audit rounds completed | 4 |
-| Total items addressed | 30 (12 P1 plus 3 P2 plus 2 P3 initial, plus 12 more from deep audit) |
-| Current release | 0.2.2 |
+| Total regression tests | 228 (132 offline, 96 live-gated) |
+| Audit rounds completed | 6 |
+| Total items addressed | 44 (17 initial, 1 cross-fix, 12 deep audit, 2 round 5, 12 round 6) |
+| Current release | 1.0.1 |
 | PyPI status | Published as `federal-register-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## What Was Tested
@@ -38,11 +38,14 @@ Prior unit tests in v0.1.x awaited raw coroutines directly, which bypassed the F
 | 0.1.1 | Initial release with unit tests | Smoke test said OK (wrong) |
 | 0.2.0 | First real hardening pass through `mcp.call_tool` pipeline | 17 findings fixed (list_agencies crash, payload bombs, basic validation) |
 | 0.2.1 | Cross-MCP `extra='forbid'` back-port from sam-gov-mcp 0.3.1 | 1 cross-fix applied |
-| 0.2.2 | Retroactive deep audit with live-gated suite | 12 additional findings including `far_case_history` substring match, `get_documents_batch` empty arrays, `get_facet_counts` validation gaps |
+| 0.2.2 | Retroactive deep audit with live-gated suite | 12 additional findings including `far_case_history` docket matching, `get_documents_batch` empty arrays, `get_facet_counts` validation gaps |
+| 0.2.6 | Round 5: Hypothesis property punishment (500 examples per property) plus 100+ live calls | 2 P2 None-handling crashes fixed |
+| 1.0.0 | MCP Python SDK v2 migration, no tool behavior change | Suite re-verified against SDK 2.0 |
+| 1.0.1 | Round 6: correctness audit, contract diff against the API's own OpenAPI spec plus ~60 live probes through `mcp.call_tool` | 12 verified findings fixed (pre-2011 archive lockout, open_comment_periods missing the soonest deadlines, FAC partial history, CFR filters absent) |
 
 ### Live audit status
 
-The repository includes 13 live-gated regression tests executable via `FR_LIVE_TESTS=1 pytest` covering real document search, single-document fetch, batch fetch, facet counts, agency listing, public inspection queue, open comment periods, and FAR case history. Federal Register is a free, public API with no authentication requirement.
+The repository includes 96 live-gated regression tests executable via `FR_LIVE_TESTS=1 pytest` covering real document search, single-document fetch (modern and legacy pre-2011 numbers), batch fetch, facet counts, agency listing, public inspection queue, open comment periods, FAR case history (including the FAC 2025-06 completeness check), and CFR title/part filtering. Federal Register is a free, public API with no authentication requirement.
 
 ## Issues Found and Fixed
 
@@ -69,7 +72,7 @@ Fourteen items in this class across initial hardening and deep audit.
 
 | Issue | Fix |
 |---|---|
-| **`far_case_history(docket_id="x")` returned 65 unrelated documents** via 1-character substring match across all dockets. | Minimum 3-character docket_id enforced; substring match replaced with prefix match for short inputs. |
+| **`far_case_history(docket_id="x")` returned 65 unrelated documents** via 1-character docket match across all dockets. | Minimum 3-character docket_id enforced. (Round 6 correction to this record: upstream docket matching is token-based, not substring, and no prefix-match logic was ever shipped; the earlier version of this row claimed one was.) |
 | **`get_documents_batch` with empty entries `["", "", ""]` sent `,,` to the API** which returned all 10,000 documents. | Empty and whitespace-only entries rejected; at-least-one-non-empty enforced. |
 | **`search_documents` with a 10,000-character term triggered an HTTP 414 URI Too Large** and the raw HTML response body leaked to the caller. | Term length capped at 500 characters; `_clean_error_body` helper strips HTML from error responses. |
 | **`get_facet_counts` accepted any string as a date.** `"2026/01/01"` was silently ignored (filter dropped) and the tool returned unfiltered data. | Date format enforced as `YYYY-MM-DD` with actionable error. |
@@ -104,15 +107,41 @@ Six items including a stale `USER_AGENT = "federal-register-mcp/0.1.1"`, mislead
 
 The 0.2.2 deep audit introduced a consistent set of input and response helpers reused across all 8 tools: `_strip_or_none`, `_require_min_length`, `_clamp_str_len`, `_validate_doc_number`, `_warn_pre_fr_date`, `_clean_error_body`. Extended date validation, empty-list rejection, and page/per_page clamps were propagated into `get_facet_counts`. The `per_page` cap was lowered from 1000 to 100.
 
+### Round 5 (0.2.6): Hypothesis property punishment
+
+500-example property tests over every validator plus 100+ live calls. Two P2 None-handling crashes fixed (`_validate_doc_number` on None input, `_clean_error_body` on non-string bodies).
+
+### Round 6 (1.0.1): correctness audit against the live archive
+
+A fresh audit with a different question: not "does the server reject bad input" but "does it return the right answers for real input". Method: diff the exposed parameter surface against the API's own OpenAPI spec (`/api/v1/documentation.json`), then verify tool output against direct API calls, all through `mcp.call_tool`. Twelve verified findings, every one carrying a live repro:
+
+| Finding | Fix |
+|---|---|
+| **`get_document`/`get_documents_batch` rejected the entire pre-2011 archive.** The document-number pattern accepted only modern 'YYYY-NNNNN'; the live archive serves 'E9-12940', 'X94-70302', 'Z9-10645', and 2-digit-year forms back to 1994, all verified retrievable upstream while the tools refused them. | Loose URL-safe shape check covering every live-verified family; the API's 404 decides unknown numbers. |
+| **`open_comment_periods` missed the soonest-closing deadlines entirely.** It fetched the `limit` most recently PUBLISHED documents; documents closing the same day (published months earlier) never appeared while the docstring promised soonest-first. | Scans up to 500 open documents oldest-published first, sorts by close date, returns the first `limit`. |
+| **`open_comment_periods` reported the page size as `total_open`** (5 claimed, 985 real). | Reports the API's true count plus `scanned` and `returned`. |
+| **`open_comment_periods` excluded RULE-type documents** (41 interim/direct final rules had open periods at audit time). | RULE added to the type filter. |
+| **`far_case_history` returned a partial set on partial docket hits.** The term fallback fired only on zero: 'FAC 2025-06' returned 1 of 4 documents. | Always runs docket AND quoted-term searches, merges deduped by document number. |
+| **`far_case_history` silently truncated at 100** ('FAR Case' matched 1625). | `truncated` flag plus `docket_matches`/`term_matches` counts. |
+| **`get_documents_batch` N=1 collapsed to the bare document** (no count/results wrapper). | Wrapped client-side as `{"count": 1, "results": [doc]}`. |
+| **`get_facet_counts` doc_types was an unvalidated string list**; `["rule"]` silently returned `{}` (reads as "zero documents") while `["RULE"]` showed 153. | Same PRORULE/RULE/NOTICE/PRESDOCU literal as `search_documents`. |
+| **Pre-1994 guard was asymmetric**: lte dates slipped through silently. | Both sides raise in both tools. |
+| **PI parent-agency filters matched nothing** (PI documents carry only the filing sub-agency; matching was slug-only). | Matches slug, name, and raw name with a hyphens-as-spaces fallback; docstring caveat. |
+| **CFR location filters absent** despite being documented upstream (48 CFR part 52 alone covers 1086 documents). | `cfr_title`/`cfr_part` added to `search_documents` and `get_facet_counts`. |
+| **Facet families daily/weekly/monthly/quarterly/yearly unavailable** though live-verified working. | Facet literal extended. |
+
+**Methodology lesson.** Rounds 1 through 5 tested junk inputs exhaustively (control characters, empty strings, reversed ranges) but never legacy-real inputs: the document-number validator that round 4 shipped as a fix is what locked out 17 years of archive. And output risk was framed entirely as payload size (the slim-mode pattern) while result correctness went unchecked: `open_comment_periods` could pass every existing test and still miss every deadline closing this week. Round 6's rule: for each tool, verify at least one known-real answer end-to-end against the upstream API before hardening inputs.
+
 ## Test Coverage
 
-The repo ships 77 regression tests. All 77 pass on every release cycle.
+The repo ships 228 regression tests (132 offline, 96 live-gated). All pass on every release cycle.
 
 | File | Purpose | Test count |
 |---|---|---|
-| `tests/test_validation.py` | Main regression suite covering every round finding, plus 13 live-gated integration tests | 77 |
+| `tests/test_validation.py` | Main regression suite covering rounds 1 through 4 findings, plus live-gated integration tests | 77 |
+| `tests/test_round_5.py` | Round 5 Hypothesis property punishment plus extensive live audit | 105 |
+| `tests/test_round_6.py` | Round 6 correctness findings: legacy document numbers, batch shape, FAR/FAC dual query, open-comment scanning, CFR filters, PI agency matching, plus live confirmations | 46 |
 | `tests/stress_test.py` | Round 1 scenarios (retained for reproducibility) | N/A (scenario script) |
-| `tests/stress_test_deep.py` | 0.2.2 deep-audit scenarios including `far_case_history` substring match, `get_documents_batch` empty arrays, `get_facet_counts` validation (retained for reproducibility) | N/A (scenario script) |
 
 Regression tests invoke tools through the FastMCP registry (`mcp.call_tool`). This is the discipline that surfaced the `list_agencies` pydantic crash. An autouse fixture resets the shared httpx client between tests.
 
@@ -123,7 +152,10 @@ Regression tests invoke tools through the FastMCP registry (`mcp.call_tool`). Th
 | 0.1.1 | Initial release with unit tests awaiting raw coroutines; smoke test reported OK but missed the `list_agencies` crash | Baseline (with latent bug) |
 | 0.2.0 | First real hardening pass through `mcp.call_tool` pipeline: 17 findings fixed including the pydantic crash and payload bombs | List-agencies crash fixed; payload-bomb slim-mode pattern introduced |
 | 0.2.1 | Cross-MCP `extra='forbid'` back-port from sam-gov-mcp 0.3.1 | +1 regression test |
-| 0.2.2 | Retroactive deep audit with live-gated suite: 12 additional findings fixed; 77 regression tests including 13 live-gated | `far_case_history` substring, empty-array batch, facet-count validation gaps resolved |
+| 0.2.2 | Retroactive deep audit with live-gated suite: 12 additional findings fixed | `far_case_history` docket matching, empty-array batch, facet-count validation gaps resolved |
+| 0.2.6 | Round 5 Hypothesis property punishment plus 100+ live tests | 2 P2 None-handling bugs fixed |
+| 1.0.0 | MCP Python SDK v2 migration; versions and USER_AGENT synchronized | Suite re-verified on SDK 2.0, no tool behavior change |
+| 1.0.1 | Round 6 correctness audit: 12 verified findings fixed; suite grown to 228 tests (132 offline, 96 live-gated) | Pre-2011 archive restored, open-comment and FAR/FAC results made complete and truthful, CFR filters added |
 
 ## Cross-MCP Context
 
@@ -151,8 +183,8 @@ All testing artifacts are in the repository. The methodology and fixes are revie
 
 Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, max effort, Claude Max 20x subscription) during the hardening playbook execution.
 
-Testing spanned four rounds from initial hardening (17 findings including the pydantic crash and payload bombs) through cross-MCP `extra='forbid'` application to a retroactive deep audit (12 additional findings). The live regression suite runs against the production Federal Register API when enabled with `FR_LIVE_TESTS=1`.
+Testing spanned six rounds from initial hardening (17 findings including the pydantic crash and payload bombs) through cross-MCP `extra='forbid'` application, a retroactive deep audit (12 additional findings), Hypothesis property punishment (round 5), and a round 6 correctness audit against the live archive and the API's own OpenAPI spec (12 verified findings). The live regression suite runs against the production Federal Register API when enabled with `FR_LIVE_TESTS=1`.
 
-Test count: 77 regression tests. Total items addressed: roughly 30. Current version: 0.2.2. PyPI: `federal-register-mcp`.
+Test count: 228 regression tests. Total items addressed: 44. Current version: 1.0.1. PyPI: `federal-register-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/federal-register-mcp. License: MIT.
