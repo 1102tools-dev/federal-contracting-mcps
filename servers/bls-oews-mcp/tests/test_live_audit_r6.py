@@ -55,7 +55,7 @@ def _payload(result):
 
 
 # ===========================================================================
-# A. NATIONAL WAGE DATA — 30 common occupations
+# A. NATIONAL WAGE DATA: 30 common occupations
 # ===========================================================================
 
 # Common SOC codes used in federal IGCE work
@@ -104,7 +104,7 @@ def test_live_get_wage_data_national_each_soc(soc, name):
 
 
 # ===========================================================================
-# B. STATE-LEVEL WAGE DATA — major states
+# B. STATE-LEVEL WAGE DATA: major states
 # ===========================================================================
 
 # State FIPS codes
@@ -168,7 +168,7 @@ def test_live_get_wage_data_state_no_area_raises():
 
 
 # ===========================================================================
-# C. METRO-LEVEL WAGE DATA — top procurement metros
+# C. METRO-LEVEL WAGE DATA: top procurement metros
 # ===========================================================================
 
 # Top federal procurement metros (5-digit MSA codes)
@@ -241,7 +241,7 @@ def test_live_get_wage_data_metro_no_area_raises():
 
 
 # ===========================================================================
-# D. DATATYPE COVERAGE — all 9 valid codes
+# D. DATATYPE COVERAGE: all 9 valid codes
 # ===========================================================================
 
 # All datatype codes documented in the MCP

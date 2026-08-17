@@ -30,14 +30,15 @@ from .constants import (
     COUNT_DATATYPES,
     DATATYPE_LABELS,
     DEFAULT_TIMEOUT,
-    FULL_DATATYPES,
     HOURLY_DATATYPES,
     IGCE_DATATYPES,
     MAX_SERIES_V1,
     MAX_SERIES_V2,
     OEWS_CURRENT_YEAR,
+    RATIO_DATATYPES,
     SERIES_ID_LENGTH,
     SPECIAL_VALUES,
+    STATE_FIPS,
     USER_AGENT,
 )
 
@@ -300,8 +301,15 @@ async def _query_bls(
     series_ids: list[str],
     start_year: str | None = None,
     end_year: str | None = None,
+    *,
+    latest: bool = False,
 ) -> dict[str, Any]:
-    """POST to BLS timeseries API."""
+    """POST to BLS timeseries API.
+
+    latest=True sends the API's latest=true flag with no year range, which
+    returns whatever the newest available year is. Used by detect_latest_year
+    so a stale OEWS_CURRENT_YEAR cannot mask a newer release.
+    """
     api_key = _get_api_key()
     base_url = BASE_URL_V2 if api_key else BASE_URL_V1
     max_series = MAX_SERIES_V2 if api_key else MAX_SERIES_V1
@@ -313,12 +321,15 @@ async def _query_bls(
             "Split into multiple calls."
         )
 
-    year = start_year or OEWS_CURRENT_YEAR
-    payload: dict[str, Any] = {
-        "seriesid": series_ids,
-        "startyear": year,
-        "endyear": end_year or year,
-    }
+    if latest:
+        payload: dict[str, Any] = {"seriesid": series_ids, "latest": "true"}
+    else:
+        year = start_year or OEWS_CURRENT_YEAR
+        payload = {
+            "seriesid": series_ids,
+            "startyear": year,
+            "endyear": end_year or year,
+        }
     if api_key:
         payload["registrationkey"] = api_key
 
@@ -354,6 +365,14 @@ async def _query_bls(
             messages = data.get("message", [])
             data["_partial"] = True
             data["_warnings"] = messages
+        else:
+            # REQUEST_SUCCEEDED can still carry per-series diagnostics like
+            # "Series does not exist for Series OEU..." or "No Data Available
+            # for Series ... Year: 2025". They are the definitive distinction
+            # between a bad series ID and a real suppression, so keep them.
+            msgs = [str(m) for m in _as_list(data.get("message")) if m]
+            if msgs:
+                data["_messages"] = msgs
         return data
 
     except httpx.HTTPStatusError as e:
@@ -419,6 +438,36 @@ def _normalize_area(area_input: Any) -> str:
     )
 
 
+def _check_area_for_scope(scope: str, area: str, *, field: str = "area_code") -> None:
+    """Catch scope/area mismatches before they burn a query.
+
+    A 2-digit state FIPS normalizes to 'NN00000', which under scope='metro'
+    builds a syntactically valid OEUM series that cannot exist; a 5-digit MSA
+    under scope='state' is the same trap in reverse. Bogus state FIPS codes
+    are rejected against the full OEWS state/territory set.
+    """
+    if scope == "state":
+        if not area.endswith("00000"):
+            raise ValueError(
+                f"{field}={area!r} does not look like a state FIPS code. "
+                f"scope='state' takes a 2-digit FIPS (e.g. '51' for VA). "
+                f"For MSA codes use scope='metro'."
+            )
+        fips = area[:2]
+        if fips not in STATE_FIPS:
+            raise ValueError(
+                f"{field} FIPS {fips!r} is not a state/territory OEWS "
+                f"publishes. Valid FIPS: {', '.join(sorted(STATE_FIPS))}."
+            )
+    elif scope == "metro":
+        if area.endswith("00000"):
+            raise ValueError(
+                f"{field}={area!r} looks like a 2-digit state FIPS, not an "
+                f"MSA code. scope='metro' takes a 5-digit MSA (e.g. '47900' "
+                f"for the DC metro). For states use scope='state'."
+            )
+
+
 def _parse_value(value: Any, datatype: str, footnotes: list[str] | None = None) -> dict[str, Any]:
     """Parse a BLS data value, handling special codes and unusual types."""
     # Normalize: str-coerce non-strings, strip whitespace (BLS sometimes pads)
@@ -431,13 +480,19 @@ def _parse_value(value: Any, datatype: str, footnotes: list[str] | None = None) 
         stripped = str(value).strip()
 
     if stripped in SPECIAL_VALUES or stripped == "":
-        msg = f"[Capped] {footnotes[0]}" if footnotes else f"[Suppressed: {stripped or '(empty)'}]"
+        # BLS attaches a footnote explaining WHY the cell is unpublished
+        # (annual-only occupation, sample too small, etc). Don't editorialize:
+        # wage top-coding ended, so "-" no longer implies a cap.
+        msg = f"[Not published] {footnotes[0]}" if footnotes else f"[Suppressed: {stripped or '(empty)'}]"
         return {"raw": raw, "formatted": msg, "numeric": None, "suppressed": True}
 
     try:
         if datatype in COUNT_DATATYPES:
             n = int(float(stripped))
             return {"raw": raw, "formatted": f"{n:,}", "numeric": n, "suppressed": False}
+        elif datatype in RATIO_DATATYPES:
+            n = float(stripped)
+            return {"raw": raw, "formatted": f"{n:,.2f}", "numeric": n, "suppressed": False}
         elif datatype in HOURLY_DATATYPES:
             n = float(stripped)
             return {"raw": raw, "formatted": f"${n:,.2f}/hr", "numeric": n, "suppressed": False}
@@ -528,8 +583,11 @@ async def get_wage_data(
     - '13' = Annual Median
     - '11' = Annual 10th Percentile
     - '15' = Annual 90th Percentile
-    Other: '01' (Employment), '03' (Hourly Mean), '08' (Hourly Median),
-    '12' (25th Percentile), '14' (75th Percentile).
+    Hourly percentiles: '03' (Mean), '06' (10th), '07' (25th), '08'
+    (Median), '09' (75th), '10' (90th). Annual percentiles: '11' (10th),
+    '12' (25th), '13' (Median), '14' (75th), '15' (90th). Other: '01'
+    (Employment); '16' (Employment per 1,000 Jobs) and '17' (Location
+    Quotient) exist at state/metro scope only.
 
     CRITICAL: Data year defaults to 2025 (May 2025 estimates). Do NOT pass
     2026. OEWS estimates publish about a year in arrears (May 2025 estimates
@@ -537,7 +595,8 @@ async def get_wage_data(
     years are withdrawn once superseded: 2024 now returns no data at all.
     Call detect_latest_year() if you need to confirm the newest published year.
 
-    Values of '-' mean wage >= $239,200/yr (capped). '*' means sample too small.
+    Special values ('-', '*', '#') mean BLS did not publish the cell; the
+    attached footnote says why (annual-only occupation, sample too small).
     """
     occ_code = _validate_soc(occ_code)
     industry = _validate_industry(industry)
@@ -566,6 +625,7 @@ async def get_wage_data(
         if area_code is None or (isinstance(area_code, str) and not area_code.strip()):
             raise ValueError(f"area_code is required for scope='{scope}'.")
         area = _normalize_area(area_code)
+        _check_area_for_scope(scope, area)
 
     if industry != "000000" and scope != "national":
         raise ValueError(
@@ -577,6 +637,8 @@ async def get_wage_data(
     data = await _query_bls(series_ids, start_year=year)
 
     results: dict[str, Any] = {}
+    data_year: str | None = None
+    data_period: str | None = None
     series_list = _as_list(data.get("Results", {}).get("series"))
     for series in series_list:
         if not isinstance(series, dict):
@@ -591,10 +653,17 @@ async def get_wage_data(
             year_val = entry.get("year")
             period_val = entry.get("periodName")
             if year_val is not None:
-                results["_data_year"] = str(year_val)
+                data_year = str(year_val)
             if period_val is not None:
-                results["_period"] = str(period_val)
+                data_period = str(period_val)
         else:
+            results[label] = {"raw": None, "formatted": "No data", "numeric": None, "suppressed": True}
+
+    # Seed any requested datatype BLS omitted from the response entirely so
+    # callers see an explicit "No data" instead of a silently absent key.
+    for dt in validated_datatypes:
+        label = DATATYPE_LABELS.get(dt, dt)
+        if label not in results:
             results[label] = {"raw": None, "formatted": "No data", "numeric": None, "suppressed": True}
 
     response: dict[str, Any] = {
@@ -602,6 +671,8 @@ async def get_wage_data(
         "scope": scope,
         "area_code": area_code if scope != "national" else None,
         "industry": industry,
+        "data_year": data_year,
+        "period": data_period,
         "wages": results,
     }
 
@@ -613,7 +684,7 @@ async def get_wage_data(
         v for v in results.values()
         if isinstance(v, dict) and v.get("numeric") is not None
     ]
-    if results and not wage_values:
+    if not wage_values:
         response["no_data"] = True
         response["no_data_reason"] = (
             f"BLS returned no wage values for occ_code={occ_code} "
@@ -633,6 +704,8 @@ async def get_wage_data(
     if data.get("_partial"):
         response["_partial"] = True
         response["_warnings"] = data.get("_warnings", [])
+    if data.get("_messages"):
+        response["_api_messages"] = data["_messages"]
     return response
 
 
@@ -659,35 +732,31 @@ async def compare_metros(
     if not metro_codes:
         raise ValueError("metro_codes list cannot be empty.")
 
-    # Dedup metros while preserving order (first occurrence wins)
-    deduped: list[Any] = []
-    seen: set[str] = set()
-    for code in metro_codes:
-        key = str(code).strip()
-        if key and key not in seen:
-            seen.add(key)
-            deduped.append(code)
-
+    # Dedup on the NORMALIZED form: '47900' and '0047900' are the same metro
+    # and must collapse to one series (first spelling wins the label).
     series_ids: list[str] = []
     metro_labels: dict[str, str] = {}
-    for code in deduped:
+    collapsed: list[str] = []
+    for code in metro_codes:
+        raw_label = str(code).strip()
         area = _normalize_area(code)
         # Reject state-FIPS-sized inputs in a metros-only context: after
         # normalization a 2-digit state FIPS becomes 'NN00000' which is a
         # valid-looking 7-digit series component, but it means the national
         # state record, not a metro. That silently produces zero-result
         # series. Enforce that metro_codes look like metros.
-        if area.startswith("00") and area[2:].count("0") < 4:
-            pass  # 00NNNNN = real MSA, padded
-        elif area.endswith("00000"):
+        if area.endswith("00000"):
             raise ValueError(
                 f"metro_codes[{code!r}] looks like a 2-digit state FIPS. "
                 f"compare_metros requires MSA codes (5 or 7 digits). "
                 f"For states, use compare_occupations with scope='state' instead."
             )
         sid = _build_series_id("OEUM", area, "000000", occ_code, datatype)
+        if sid in metro_labels:
+            collapsed.append(raw_label)
+            continue
         series_ids.append(sid)
-        metro_labels[sid] = str(code).strip()
+        metro_labels[sid] = raw_label
 
     data = await _query_bls(series_ids, start_year=year)
 
@@ -702,6 +771,11 @@ async def compare_metros(
         if entry:
             metros[code] = _parse_value(entry.get("value"), datatype, _safe_footnotes(entry))
         else:
+            metros[code] = {"raw": None, "formatted": "No data", "numeric": None, "suppressed": True}
+
+    # Seed requested metros missing from the response entirely.
+    for sid, code in metro_labels.items():
+        if code not in metros:
             metros[code] = {"raw": None, "formatted": "No data", "numeric": None, "suppressed": True}
 
     response: dict[str, Any] = {
@@ -721,9 +795,16 @@ async def compare_metros(
             f"metros. Likely cause: the SOC code does not exist, is retired, "
             f"or is not surveyed at MSA level. Verify the SOC at bls.gov/soc."
         )
+    if collapsed:
+        response["_note"] = (
+            f"Inputs {collapsed} normalized to the same series as another "
+            f"input and were collapsed (first spelling wins)."
+        )
     if data.get("_partial"):
         response["_partial"] = True
         response["_warnings"] = data.get("_warnings", [])
+    if data.get("_messages"):
+        response["_api_messages"] = data["_messages"]
     return response
 
 
@@ -757,23 +838,27 @@ async def compare_occupations(
         if area_code is None or (isinstance(area_code, str) and not area_code.strip()):
             raise ValueError(f"area_code required for scope='{scope}'.")
         area = _normalize_area(area_code)
+        _check_area_for_scope(scope, area)
 
-    # Dedup while preserving order
-    seen: set[str] = set()
-    deduped: list[Any] = []
-    for code in occ_codes:
-        key = str(code).strip()
-        if key and key not in seen:
-            seen.add(key)
-            deduped.append(code)
-
+    # Dedup on the NORMALIZED SOC: '15-1252' and '151252' are the same
+    # occupation and must collapse to one series (first spelling wins).
     series_ids: list[str] = []
     occ_labels: dict[str, str] = {}
-    for code in deduped:
+    collapsed: list[str] = []
+    for code in occ_codes:
+        raw_label = str(code).strip()
+        if not raw_label:
+            continue
         validated = _validate_soc(code)
         sid = _build_series_id(prefix, area, "000000", validated, datatype)
+        if sid in occ_labels:
+            collapsed.append(raw_label)
+            continue
         series_ids.append(sid)
         occ_labels[sid] = validated
+
+    if not series_ids:
+        raise ValueError("occ_codes contained no usable SOC codes.")
 
     data = await _query_bls(series_ids, start_year=year)
 
@@ -795,15 +880,45 @@ async def compare_occupations(
                 "raw": None, "formatted": "No data", "numeric": None, "suppressed": True,
             }
 
+    # Seed requested occupations missing from the response entirely.
+    for sid, code in occ_labels.items():
+        label = COMMON_SOC_CODES.get(code, code)
+        key = f"{code} ({label})"
+        if key not in occupations:
+            occupations[key] = {
+                "raw": None, "formatted": "No data", "numeric": None, "suppressed": True,
+            }
+
     response: dict[str, Any] = {
         "scope": scope,
         "area_code": area_code if scope != "national" else None,
         "datatype": DATATYPE_LABELS.get(datatype, datatype),
         "occupations": occupations,
     }
+    # Flag the all-no-data case, mirroring compare_metros: without this,
+    # nonexistent SOCs are indistinguishable from privacy suppressions.
+    occ_with_values = [
+        v for v in occupations.values()
+        if isinstance(v, dict) and v.get("numeric") is not None
+    ]
+    if not occ_with_values:
+        response["no_data"] = True
+        response["no_data_reason"] = (
+            f"No BLS data for any requested occupation at scope={scope} "
+            f"area_code={area_code!r}. Likely causes: nonexistent or retired "
+            f"SOC codes, or SOCs not surveyed at this geographic level. "
+            f"Verify at bls.gov/soc."
+        )
+    if collapsed:
+        response["_note"] = (
+            f"Inputs {collapsed} normalized to the same series as another "
+            f"input and were collapsed (first spelling wins)."
+        )
     if data.get("_partial"):
         response["_partial"] = True
         response["_warnings"] = data.get("_warnings", [])
+    if data.get("_messages"):
+        response["_api_messages"] = data["_messages"]
     return response
 
 
@@ -852,12 +967,21 @@ async def igce_wage_benchmark(
             f"Reasonable max ~4.0x for high-overhead (SCIF/deployed) work."
         )
 
+    # "03" rides along to detect annual-only occupations: BLS suppresses the
+    # hourly mean for jobs that do not work a standard year-round schedule
+    # (pilots, teachers), and a 2080-hour derived rate misstates their cost.
     wage_data = await get_wage_data(
         occ_code=occ_code, scope=scope, area_code=area_code,
-        datatypes=["04", "11", "13", "15"], year=year,
+        datatypes=["03", "04", "11", "13", "15"], year=year,
     )
 
     wages = wage_data.get("wages", {})
+    hourly_mean = wages.get("Hourly Mean Wage", {})
+    annual_mean = wages.get("Annual Mean Wage", {})
+    annual_only = (
+        isinstance(hourly_mean, dict) and hourly_mean.get("numeric") is None
+        and isinstance(annual_mean, dict) and annual_mean.get("numeric") is not None
+    )
     benchmarks: dict[str, Any] = {}
 
     for label in ["Annual Mean Wage", "Annual 10th Percentile", "Annual Median", "Annual 90th Percentile"]:
@@ -886,7 +1010,7 @@ async def igce_wage_benchmark(
         "occ_title": occ_title_lookup or occ_code,
         "scope": scope,
         "area_code": area_code,
-        "data_year": wages.get("_data_year", OEWS_CURRENT_YEAR),
+        "data_year": wage_data.get("data_year") or OEWS_CURRENT_YEAR,
         "burden_range": f"{burden_low}x - {burden_high}x",
         "benchmarks": benchmarks,
         "_note": "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates.",
@@ -897,6 +1021,17 @@ async def igce_wage_benchmark(
     if wage_data.get("no_data"):
         response["no_data"] = True
         response["no_data_reason"] = wage_data.get("no_data_reason")
+    if annual_only:
+        response["annual_only"] = True
+        response["_hourly_warning"] = (
+            "BLS publishes no hourly wage for this occupation because it "
+            "does not generally work a 2080-hour year (think pilots or "
+            "teachers). The hourly figures above are derived as annual/2080 "
+            "and may materially misstate the true hourly rate. Benchmark "
+            "against the annual figures instead."
+        )
+    if wage_data.get("_api_messages"):
+        response["_api_messages"] = wage_data["_api_messages"]
     if title_is_lookup_miss:
         response["_title_warning"] = (
             f"occ_code={occ_code!r} was not found in the built-in SOC title "
@@ -909,30 +1044,52 @@ async def igce_wage_benchmark(
 
 @mcp.tool(annotations={"title": "Detect Latest Year", "readOnlyHint": True, "destructiveHint": False})
 async def detect_latest_year() -> dict[str, Any]:
-    """Probe the BLS API to check if a newer OEWS data year is available.
+    """Ask the BLS API which OEWS data year is the newest available.
 
-    OEWS data releases annually around April/May. The server defaults to
-    2025 (May 2025 estimates). This tool checks whether the next year has
-    been published yet by querying a known-good national series.
+    OEWS releases annually around April/May, and BLS serves ONLY the latest
+    survey year (older years are withdrawn). This probe sends the API's
+    latest=true flag with no year range, so it reports the true newest year
+    even if this package's default has fallen multiple years behind.
 
-    Call this once at the start of an IGCE build to ensure you're using
-    the latest available data.
+    Call this once at the start of an IGCE build to confirm the default
+    year still matches reality.
     """
     probe_series = "OEUN000000000000000000004"  # National all-occupation annual mean
     current = OEWS_CURRENT_YEAR
-    candidate = str(int(current) + 1)
 
     try:
-        data = await _query_bls([probe_series], start_year=candidate, end_year=candidate)
+        data = await _query_bls([probe_series], latest=True)
         series_list = _as_list(data.get("Results", {}).get("series"))
         for s in series_list:
             entry = _extract_first_data_entry(s)
             if entry and str(entry.get("value", "")).strip() not in SPECIAL_VALUES:
+                api_year = str(entry.get("year", "")).strip()
+                if not api_year:
+                    break
+                newer = int(api_year) > int(current)
+                if newer:
+                    msg = (
+                        f"OEWS {api_year} data is available but this server "
+                        f"defaults to {current}. Pass year='{api_year}' "
+                        f"explicitly until the package updates its default."
+                    )
+                elif api_year == current:
+                    msg = (
+                        f"OEWS {current} is the latest available. Next "
+                        f"release expected ~April {int(current) + 2}."
+                    )
+                else:
+                    msg = (
+                        f"BLS reports {api_year} as latest, OLDER than this "
+                        f"server's default {current}. Default-year queries "
+                        f"will return empty; pass year='{api_year}'."
+                    )
                 return {
-                    "latest_year": candidate,
+                    "latest_year": api_year,
                     "default_year": current,
-                    "newer_data_available": True,
-                    "message": f"OEWS {candidate} data is available. Use year='{candidate}' for the latest estimates.",
+                    "newer_data_available": newer,
+                    "api_key": _api_key_status(),
+                    "message": msg,
                 }
     except Exception as e:
         # Don't silently eat the error: surface it so user knows probing failed
@@ -940,9 +1097,10 @@ async def detect_latest_year() -> dict[str, Any]:
             "latest_year": current,
             "default_year": current,
             "newer_data_available": False,
+            "api_key": _api_key_status(),
             "probe_error": str(e),
             "message": (
-                f"Could not probe for newer data (reason: {type(e).__name__}). "
+                f"Could not probe for the latest year (reason: {type(e).__name__}). "
                 f"Defaulting to OEWS {current}. Rate limit, key issue, or BLS downtime "
                 f"can all cause this. Call again later to check."
             ),
@@ -952,7 +1110,11 @@ async def detect_latest_year() -> dict[str, Any]:
         "latest_year": current,
         "default_year": current,
         "newer_data_available": False,
-        "message": f"OEWS {current} is the latest available. Next release expected ~April {int(current) + 2}.",
+        "api_key": _api_key_status(),
+        "message": (
+            f"Probe returned no usable data; assuming OEWS {current} is "
+            f"current. Next release expected ~April {int(current) + 2}."
+        ),
     }
 
 

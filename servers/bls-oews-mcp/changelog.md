@@ -1,5 +1,65 @@
 # Changelog
 
+## 1.0.1
+
+Round 7: independent full-source re-audit with live verification. 13 findings
+fixed, one of them a money bug introduced by an earlier audit round.
+
+### Fixed
+
+- **Hourly percentile datatype labels were shifted one slot.** The 0.2.2
+  "empirical relabel" claimed dt08 was the Hourly 25th Percentile; live
+  cross-footing proves dt08 x 2080 equals the annual median exactly, so dt08
+  IS the Hourly Median. Requesting the hourly median had been returning the
+  75th percentile (26% high for 15-1252). Official mapping restored
+  (06=10th, 07=25th, 08=Median, 09=75th, 10=90th) and pinned by a live
+  cross-foot canary test that fails if BLS semantics ever move.
+- Datatype 06 (Hourly 10th Percentile) added; it was unrequestable.
+- Datatype 16 relabeled from the fictional "Annual 90th Percentile (alt
+  code)" to its real meaning, Employment per 1,000 Jobs; 17 (Location
+  Quotient) added. Both format as ratios, never as truncated dollars.
+- `igce_wage_benchmark` no longer silently fabricates hourly rates for
+  annual-only occupations (pilots, teachers): it now requests the hourly
+  mean alongside the annual set and flags `annual_only: true` with an
+  explicit warning when BLS publishes no hourly wage.
+- Unpublished cells are formatted "[Not published] {footnote}" instead of
+  "[Capped] ...": wage top-coding ended, and the old docstring claim that
+  '-' means "wage >= $239,200" is gone with it.
+- `compare_occupations` gains the all-no-data flag the other tools had, so
+  nonexistent SOCs no longer masquerade as privacy suppressions.
+- Dedup in `compare_metros` and `compare_occupations` now runs on the
+  normalized series ID: '47900'/'0047900' and '15-1252'/'151252' collapse
+  to one series with a `_note` naming the collapsed inputs, instead of
+  sending duplicate series and silently dropping a result label.
+- Per-series diagnostics under REQUEST_SUCCEEDED ("Series does not exist",
+  "No Data Available for ... Year") are surfaced as `_api_messages` instead
+  of being discarded.
+- `detect_latest_year` probes with the API's `latest=true` flag and reports
+  the true newest year at any staleness depth (previously it probed only
+  current+1, so a 2-year-stale default would report itself current). Also
+  reports key mode via the previously-dead `_api_key_status`.
+- An all-empty API response now sets `no_data`; requested datatypes missing
+  from the response are seeded as explicit "No data" entries.
+- `data_year` and `period` are top-level response fields; the `_data_year`
+  and `_period` keys no longer pollute the `wages` mapping.
+- State FIPS codes are validated against the full 54-entry state/territory
+  table; scope/area mismatches (MSA under scope='state', state FIPS under
+  scope='metro') raise actionable errors in both directions and all tools.
+- readme year guidance corrected: it said "defaults to 2024... Do NOT query
+  2025", the exact inversion of reality.
+
+### Removed
+
+- Dead constants `FULL_DATATYPES` and `COMMON_STATES` (never referenced).
+
+### Testing
+
+- `tests/test_audit_r7.py`: 21 offline regressions plus 2 live canaries
+  (cross-foot invariant, latest-year probe). Two 0.2.2 tests that pinned
+  the wrong datatype labels are rewritten to pin the official mapping.
+- testing.md round 7 documents the audit and corrects the prior record
+  (phantom test file, false validation claims, stale counts and version).
+
 ## 1.0.0
 
 First stable release. The suite is feature-complete for its intended scope and
@@ -99,8 +159,8 @@ R. Metro comparisons for diverse roles | 3 | Engineer, Lawyer, PM across multipl
 
 The original 0.2.x audits already did a real-key live audit and found
 10 P1s and 12 response-shape crashes (22 total fixed). Round 6 added a
-much wider live-test surface — 30 SOC codes vs the original ~5, 15 metros
-vs original 3, all 9 datatype codes vs default-only — and found nothing.
+much wider live-test surface: 30 SOC codes vs the original ~5, 15 metros
+vs original 3, all 9 datatype codes vs default-only: and found nothing.
 That's the round 6 finding: the failure surface that the original audits
 hardened was complete enough that a 2.5x test expansion still couldn't
 surface anything new.

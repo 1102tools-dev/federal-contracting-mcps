@@ -85,7 +85,7 @@ The `igce_wage_benchmark` tool applies the multiplier automatically.
 
 ## Data year
 
-OEWS data lags ~2 years. The server defaults to 2024 (May 2024 estimates, released April 2025). Do NOT query 2025 or 2026. Use `detect_latest_year` to check for newer releases.
+OEWS publishes about a year in arrears, and the BLS API serves ONLY the latest survey year. The server defaults to 2025 (May 2025 estimates, released April 2026), which is currently the only year that returns data: older years are withdrawn and raise a clear error here. Omit the year argument in normal use, and call `detect_latest_year` to confirm the newest release.
 
 ## Companion tools
 

@@ -581,24 +581,46 @@ def test_api_key_status_whitespace_flagged():
 
 
 # ---------------------------------------------------------------------------
-# Datatype label semantic fix (round 1 finding)
+# Datatype label map (round 7 finding: the round-1 "empirical" relabel was
+# itself the bug). Official mapping live-verified 2026-08 by cross-footing
+# hourly x 2080 against the annual percentiles: 06=$15.00 x 2080 = $31,200 =
+# dt11 annual 10th; 08=$24.51 x 2080 = $50,980 = dt13 annual median.
 # ---------------------------------------------------------------------------
 
-def test_datatype_08_labeled_as_25th():
-    """Empirical BLS data: dt 08 returns Hourly 25th Pct, not Hourly Median."""
+def test_datatype_hourly_percentile_labels_official():
     from bls_oews_mcp.constants import DATATYPE_LABELS
-    assert DATATYPE_LABELS["08"] == "Hourly 25th Percentile"
+    assert DATATYPE_LABELS["06"] == "Hourly 10th Percentile"
+    assert DATATYPE_LABELS["07"] == "Hourly 25th Percentile"
+    assert DATATYPE_LABELS["08"] == "Hourly Median"
+    assert DATATYPE_LABELS["09"] == "Hourly 75th Percentile"
+    assert DATATYPE_LABELS["10"] == "Hourly 90th Percentile"
 
 
-def test_datatype_09_labeled_as_hourly_median():
+def test_datatype_annual_percentile_labels_official():
     from bls_oews_mcp.constants import DATATYPE_LABELS
-    assert DATATYPE_LABELS["09"] == "Hourly Median"
+    assert DATATYPE_LABELS["11"] == "Annual 10th Percentile"
+    assert DATATYPE_LABELS["12"] == "Annual 25th Percentile"
+    assert DATATYPE_LABELS["13"] == "Annual Median"
+    assert DATATYPE_LABELS["14"] == "Annual 75th Percentile"
+    assert DATATYPE_LABELS["15"] == "Annual 90th Percentile"
 
 
-def test_datatype_labels_have_missing_codes():
-    from bls_oews_mcp.constants import DATATYPE_LABELS
-    for code in ["07", "09", "10"]:
+def test_datatype_labels_have_all_hourly_codes():
+    from bls_oews_mcp.constants import DATATYPE_LABELS, HOURLY_DATATYPES
+    for code in ["03", "06", "07", "08", "09", "10"]:
         assert code in DATATYPE_LABELS, f"missing label for datatype {code}"
+        assert code in HOURLY_DATATYPES, f"datatype {code} not routed as hourly"
+
+
+def test_datatype_16_17_are_ratios_not_dollars():
+    from bls_oews_mcp.constants import DATATYPE_LABELS, RATIO_DATATYPES
+    from bls_oews_mcp.server import _parse_value
+    assert DATATYPE_LABELS["16"] == "Employment per 1,000 Jobs"
+    assert DATATYPE_LABELS["17"] == "Location Quotient"
+    assert RATIO_DATATYPES == {"16", "17"}
+    parsed = _parse_value("21.484", "16")
+    assert parsed["numeric"] == 21.484
+    assert "$" not in parsed["formatted"]
 
 
 # ---------------------------------------------------------------------------

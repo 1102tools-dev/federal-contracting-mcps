@@ -5,7 +5,7 @@
 BASE_URL_V2 = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 BASE_URL_V1 = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = "bls-oews-mcp/1.0.0"
+USER_AGENT = "bls-oews-mcp/1.0.1"
 
 # OEWS publishes about a year in arrears. Do NOT use the calendar year.
 # May 2025 estimates released April 2026. Next: May 2026 estimates in ~April 2027.
@@ -23,30 +23,40 @@ MAX_SERIES_V2 = 50
 
 SPECIAL_VALUES = {"-", "#", "*", "N/A"}
 
+# Official OEWS datatype map, live-verified 2026-08 against national
+# all-occupations data by cross-footing hourly x 2080 against the annual
+# percentiles (06=$15.00 x 2080 = $31,200 = dt11 annual 10th, 08=$24.51
+# x 2080 = $50,980 = dt13 annual median, and so on). Datatypes 16/17 only
+# exist at state/metro scope and are ratios, not dollars.
 DATATYPE_LABELS: dict[str, str] = {
     "01": "Employment",
     "03": "Hourly Mean Wage",
     "04": "Annual Mean Wage",
-    "07": "Hourly 10th Percentile",
-    "08": "Hourly 25th Percentile",
-    "09": "Hourly Median",
-    "10": "Hourly 75th Percentile",
+    "06": "Hourly 10th Percentile",
+    "07": "Hourly 25th Percentile",
+    "08": "Hourly Median",
+    "09": "Hourly 75th Percentile",
+    "10": "Hourly 90th Percentile",
     "11": "Annual 10th Percentile",
     "12": "Annual 25th Percentile",
     "13": "Annual Median",
     "14": "Annual 75th Percentile",
     "15": "Annual 90th Percentile",
-    "16": "Annual 90th Percentile (alt code)",
+    "16": "Employment per 1,000 Jobs",
+    "17": "Location Quotient",
 }
 
 # The set of datatypes we route as HOURLY values in _parse_value
-HOURLY_DATATYPES: set[str] = {"03", "07", "08", "09", "10"}
+HOURLY_DATATYPES: set[str] = {"03", "06", "07", "08", "09", "10"}
 # Datatypes returning COUNTS (not dollars)
 COUNT_DATATYPES: set[str] = {"01"}
+# Datatypes returning RATIOS (not dollars): state/metro only
+RATIO_DATATYPES: set[str] = {"16", "17"}
 
-# Datatypes used for IGCE wage profiles
-IGCE_DATATYPES = ["04", "11", "13", "15"]  # mean, 10th, median, 90th
-FULL_DATATYPES = ["01", "03", "04", "08", "11", "12", "13", "14", "15"]
+# Datatypes used for IGCE wage profiles. "03" rides along so annual-only
+# occupations (pilots, teachers) can be detected: BLS suppresses their
+# hourly mean while publishing annual figures.
+IGCE_DATATYPES = ["04", "11", "13", "15"]
 
 # Common SOC codes for federal IT/professional services
 COMMON_SOC_CODES: dict[str, str] = {
@@ -89,17 +99,17 @@ COMMON_METROS: dict[str, str] = {
     "0019820": "Detroit",
 }
 
-# Common state FIPS codes
-COMMON_STATES: dict[str, str] = {
-    "06": "CA",
-    "11": "DC",
-    "12": "FL",
-    "13": "GA",
-    "24": "MD",
-    "34": "NJ",
-    "36": "NY",
-    "42": "PA",
-    "48": "TX",
-    "51": "VA",
-    "53": "WA",
+# Every state/territory FIPS code OEWS publishes (50 states, DC, GU, PR, VI).
+# Used to validate scope='state' area codes so a bogus FIPS fails fast
+# instead of burning a query on a series that cannot exist.
+STATE_FIPS: dict[str, str] = {
+    "01": "AL", "02": "AK", "04": "AZ", "05": "AR", "06": "CA", "08": "CO",
+    "09": "CT", "10": "DE", "11": "DC", "12": "FL", "13": "GA", "15": "HI",
+    "16": "ID", "17": "IL", "18": "IN", "19": "IA", "20": "KS", "21": "KY",
+    "22": "LA", "23": "ME", "24": "MD", "25": "MA", "26": "MI", "27": "MN",
+    "28": "MS", "29": "MO", "30": "MT", "31": "NE", "32": "NV", "33": "NH",
+    "34": "NJ", "35": "NM", "36": "NY", "37": "NC", "38": "ND", "39": "OH",
+    "40": "OK", "41": "OR", "42": "PA", "44": "RI", "45": "SC", "46": "SD",
+    "47": "TN", "48": "TX", "49": "UT", "50": "VT", "51": "VA", "53": "WA",
+    "54": "WV", "55": "WI", "56": "WY", "66": "GU", "72": "PR", "78": "VI",
 }
