@@ -500,7 +500,7 @@ def test_search_entities_naics_negative():
 
 def test_contract_awards_naics_operators_allowed():
     """Contract Awards documents ~ for OR and ! for NOT. Should pass validation."""
-    # Shouldn't raise — just hits (fake) auth failure later
+    # Shouldn't raise: just hits (fake) auth failure later
     try:
         asyncio.run(_call("search_contract_awards", naics_code="541511~541512", limit=1))
     except Exception as e:
@@ -513,8 +513,10 @@ def test_contract_awards_naics_operators_allowed():
 # ---------------------------------------------------------------------------
 
 def test_search_entities_bad_business_type_code():
+    # Round 9: well-formed 2-char codes pass through (full FDD set); only
+    # malformed shapes are rejected.
     asyncio.run(_call_expect_error(
-        "search_entities", "not a valid code", business_type_code="INVALID"
+        "search_entities", "2-character", business_type_code="INVALID"
     ))
 
 
@@ -523,7 +525,7 @@ def test_search_entities_accepts_business_type_lowercase():
     try:
         asyncio.run(_call("search_entities", business_type_code="qf"))
     except Exception as e:
-        # Reach network error (fake key) or OK — but NOT 'not a valid code'
+        # Reach network error (fake key) or OK: but NOT 'not a valid code'
         assert "not a valid code" not in str(e), f"case normalization failed: {e}"
 
 

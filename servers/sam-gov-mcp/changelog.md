@@ -1,5 +1,66 @@
 # Changelog
 
+## 1.0.2
+
+Round 9: independent full-source re-audit against the official API docs and
+the SAM Functional Data Dictionary. 8 findings fixed; 5 more are documented
+in testing.md pending live confirmation (the audit key's daily quota was
+exhausted across every endpoint family).
+
+### Fixed
+
+- **get_entity_reps_and_certs read the wrong JSON key casings and its
+  default summary mode returned empty clause lists for every entity.** The
+  Entity API documents certifications.fARResponses / dFARResponses (mixed
+  case) with architectEngineerResponses under qualifications; the code
+  read farResponses / dfarsResponses / certifications.architectEngineer-
+  Responses, none of which exist. A CO asking for FAR 52.212-3 or 52.219-1
+  answers was told the entity certified nothing. Survived eight audit
+  rounds because the round-6 live tests asserted only totalRecords
+  presence. Keys now resolve case-insensitively (robust to either casing
+  and future drift) and architectEngineerResponses is sourced from
+  qualifications first. Documented-shape replay tests pin non-empty
+  summaries and clause_filter matching.
+- Opportunities set-asides: the table had 14 of the 18 documented codes.
+  LAS (Local Area), IEE and ISBEE (Buy Indian Act), and BICiv (IHS Buy
+  Indian) were impossible to search; BICiv's documented mixed casing now
+  survives validation and goes on the wire as documented.
+- business_type_code accepts the full FDD set: the 13-code whitelist
+  blocked legitimate filters (NB Native American Owned, JV SDVOSB Joint
+  Venture, A3 Labor Surplus Area, 1E/1S Buy Indian, A7 AbilityOne, M8
+  Educational Institution, ...). Well-formed 2-character codes pass
+  through; SBA certification codes still redirect to
+  sba_business_type_code.
+- purpose_of_registration accepts Z1-Z5: Z3 (IGT Only) and Z4 (Federal
+  Assistance and IGT) were pydantic-rejected, and Z5 was mislabeled
+  "Supplemental grants only" (it is All Awards and IGT).
+- Bracketed date ranges on the Opportunities single-date params no longer
+  pass validation and then crash with "too many values to unpack"; they
+  are rejected with guidance to use the _from/_to pair. Endpoints that
+  genuinely take ranges (Contract Awards, Exclusions) are unchanged.
+- lookup_award_by_piid sorts modifications client-side (numeric mods in
+  numeric order, then alpha mods) and flags truncation with a _note when
+  totalRecords exceeds the 100-record page, instead of returning an
+  unsorted silent first-100 while claiming "all modifications, sorted".
+- Leading zeros survive int coercion: zip_code=6511 now searches 06511
+  (New Haven) and cgac=75 searches 075 (HHS, the readme's own example);
+  both previously searched zero-stripped values that silently return
+  nothing or the wrong org.
+- Version stamps synchronized at 1.0.2 (__version__ had drifted to 1.0.0
+  while pyproject said 1.0.1, one release after the changelog claimed
+  they were "now synchronized"); serverInfo.version is now populated and
+  pinned by a regression test.
+
+### Testing
+
+- tests/test_audit_r9.py: 16 offline regressions including the
+  documented-shape reps-and-certs replay.
+- testing.md round 9 corrects the record (four mutually inconsistent
+  test counts, the 15-tools claim, the phantom coverage table, the
+  363-day test masquerading as the 364-day boundary, the circular
+  set-aside coverage claim) and lists the 5 quota-blocked probes with
+  exact confirming tests.
+
 ## 1.0.1
 
 ### Fixed

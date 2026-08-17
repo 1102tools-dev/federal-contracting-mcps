@@ -29,6 +29,7 @@ from typing import Any, Literal, Union
 import httpx
 from mcp.server import MCPServer
 
+from . import __version__
 from .constants import (
     ASSISTANCE_SUBAWARDS_PATH,
     BASE_URL,
@@ -51,7 +52,7 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = MCPServer("sam-gov")
+mcp = MCPServer("sam-gov", version=__version__)
 
 
 # ---------------------------------------------------------------------------
@@ -82,19 +83,32 @@ def _coerce_str(value: Any, *, field: str) -> str | None:
     )
 
 
-def _validate_date_mmddyyyy(value: str | None, *, field: str) -> str | None:
-    """SAM.gov uses MM/DD/YYYY. Bracketed ranges [MM/DD/YYYY,MM/DD/YYYY] also allowed."""
+def _validate_date_mmddyyyy(
+    value: str | None, *, field: str, allow_range: bool = True
+) -> str | None:
+    """SAM.gov uses MM/DD/YYYY. Bracketed ranges [MM/DD/YYYY,MM/DD/YYYY] are
+    allowed only where the endpoint supports them (allow_range=True). The
+    Opportunities date params take single dates; before 1.0.2 a bracketed
+    range passed validation there and then crashed the range-math with
+    'too many values to unpack'."""
     if value is None:
         return None
     if _MMDDYYYY_RANGE_RE.match(value):
+        if not allow_range:
+            raise ValueError(
+                f"{field} takes a single MM/DD/YYYY date, not a bracketed "
+                f"range. Got {value!r}. Use the matching _from/_to parameter "
+                f"pair to express a range."
+            )
         parts = value.strip("[]").split(",")
         for p in parts:
             _validate_date_mmddyyyy(p, field=f"{field} (range part)")
         return value
     if not _MMDDYYYY_RE.match(value):
+        range_hint = " or bracketed range [MM/DD/YYYY,MM/DD/YYYY]" if allow_range else ""
         raise ValueError(
-            f"{field} must be MM/DD/YYYY (e.g. '01/15/2026') or bracketed range "
-            f"[MM/DD/YYYY,MM/DD/YYYY]. Got {value!r}. ISO 8601 and YYYY-MM-DD are rejected."
+            f"{field} must be MM/DD/YYYY (e.g. '01/15/2026'){range_hint}. "
+            f"Got {value!r}. ISO 8601 and YYYY-MM-DD are rejected."
         )
     try:
         mm, dd, yyyy = value.split("/")
@@ -613,7 +627,7 @@ async def search_entities(
     sba_business_type_code: str | None = None,
     state_code: str | None = None,
     registration_status: Literal["A", "E", "D", "I"] = "A",
-    purpose_of_registration: Literal["Z1", "Z2", "Z5"] | None = None,
+    purpose_of_registration: Literal["Z1", "Z2", "Z3", "Z4", "Z5"] | None = None,
     free_text: str | None = None,
     include_sections: list[str] | None = None,
     page: int = 0,
@@ -632,8 +646,10 @@ async def search_entities(
     - primary_naics matches the entity's designated primary NAICS only.
     - any_naics matches any NAICS the entity has on file.
     - business_type_code covers self-selected types: QF (SDVOSB), A2
-      (Women-Owned), 8W (WOSB), 23 (Minority-Owned). SDVOSB is NOT XS
-      (that's S-Corp).
+      (Women-Owned), 8W (WOSB), 23 (Minority-Owned), NB (Native American
+      Owned), A3 (Labor Surplus Area Firm), and any other 2-character code
+      from the SAM Functional Data Dictionary "Business Types" field: the
+      full FDD set passes through. SDVOSB is NOT XS (that's S-Corp).
     - sba_business_type_code covers SBA-certified programs, which SAM.gov
       filters through a dedicated sbaBusinessTypeCode parameter: A6 (8(a)
       Program Participant), XX (HUBZone), JT (8(a) Joint Venture), A4 (Small
@@ -643,8 +659,10 @@ async def search_entities(
       business_type_code is the broader self-designated WOSB flag. SBA codes
       passed to business_type_code raise a redirect error.
     - state_code is 2-letter USPS.
-    - purpose_of_registration: Z1=Federal Assistance only, Z2=All Awards,
-      Z5=Supplemental grants only.
+    - purpose_of_registration: Z1=Federal Assistance Awards only, Z2=All
+      Awards, Z3=IGT-Only (Intra-Governmental Transactions), Z4=Federal
+      Assistance Awards and IGT, Z5=All Awards and IGT. (Pre-1.0.2
+      releases blocked Z3/Z4 and mislabeled Z5 as "Supplemental grants".)
     - free_text (q parameter) ANDs multiple words together. "cybersecurity cloud"
       returns entities matching BOTH words, not either.
 
@@ -677,10 +695,18 @@ async def search_entities(
                 f"certifications through a separate parameter; pass it as "
                 f"sba_business_type_code instead."
             )
-        business_type_code = _validate_code_in_dict(
-            business_type_code, field="business_type_code",
-            valid_codes=BUSINESS_TYPE_CODES,
-        )
+        # Format check only: the FDD defines dozens of valid codes beyond
+        # our labeled table (NB, JV, A3, 1E, A7, M8, ...), and the old
+        # whitelist blocked all of them (e.g. Native-American-owned
+        # searches were impossible). Well-formed codes pass through.
+        if not re.match(r"^[A-Z0-9]{2}$", probe):
+            sample = ", ".join(list(BUSINESS_TYPE_CODES.keys())[:8])
+            raise ValueError(
+                f"business_type_code={business_type_code!r} must be a "
+                f"2-character code from the SAM Functional Data Dictionary "
+                f"(e.g. {sample}, NB, A3)."
+            )
+        business_type_code = probe
     if sba_business_type_code:
         sba_business_type_code = _validate_code_in_dict(
             sba_business_type_code, field="sba_business_type_code",
@@ -771,6 +797,25 @@ async def get_entity_reps_and_certs(
     if not entity_data:
         return data
 
+    def _ci_get_list(container: Any, *names: str) -> list[Any]:
+        """Case-insensitive key lookup tolerating SAM's mixed-case JSON keys.
+
+        The Entity API documents 'fARResponses' and 'dFARResponses' (mixed
+        case). Pre-1.0.2 code read 'farResponses'/'dfarsResponses', which do
+        not exist, so the default summary mode returned empty clause lists
+        for every entity: a CO asking for FAR 52.212-3 answers was told the
+        entity certified nothing. Scan case-insensitively so either casing
+        (and any future drift) resolves.
+        """
+        if not isinstance(container, dict):
+            return []
+        lowered = {k.lower(): v for k, v in container.items() if isinstance(k, str)}
+        for name in names:
+            v = lowered.get(name.lower())
+            if v is not None:
+                return _as_list(v)
+        return []
+
     for entity in entity_data:
         if not isinstance(entity, dict):
             continue
@@ -780,9 +825,15 @@ async def get_entity_reps_and_certs(
         certifications = rc.get("certifications") or {}
         if not isinstance(certifications, dict):
             certifications = {}
-        far_responses = _as_list(certifications.get("farResponses"))
-        dfars_responses = _as_list(certifications.get("dfarsResponses"))
-        architect_responses = _as_list(certifications.get("architectEngineerResponses"))
+        # architectEngineerResponses lives under qualifications per the
+        # docs, not certifications; check both homes.
+        qualifications = rc.get("qualifications") or {}
+        far_responses = _ci_get_list(certifications, "fARResponses")
+        dfars_responses = _ci_get_list(certifications, "dFARResponses", "dFARSResponses")
+        architect_responses = (
+            _ci_get_list(qualifications, "architectEngineerResponses")
+            or _ci_get_list(certifications, "architectEngineerResponses")
+        )
 
         def _clause_matches(item: dict[str, Any]) -> bool:
             if not clause_filter:
@@ -988,30 +1039,36 @@ async def search_opportunities(
     response_deadline_to.
 
     BROKEN filters (do not use): deptname, subtier. The SAM.gov API silently
-    ignores these. To filter by agency, use agency_keyword — this tool will
+    ignores these. To filter by agency, use agency_keyword: this tool will
     post-filter the results by checking fullParentPathName for a substring match.
 
     PSC code filter (psc_code) requires exact 4-character match. Prefix
     matching (e.g. 'R4') returns 0 results; use 'R425'.
 
     Set-aside codes: SBA, SBP, 8A, 8AN, HZC, HZS, SDVOSBC, SDVOSBS, WOSB,
-    WOSBSS, EDWOSB, EDWOSBSS, VSA, VSS.
+    WOSBSS, EDWOSB, EDWOSBSS, LAS (Local Area), IEE (Buy Indian Act),
+    ISBEE (Buy Indian Act small business), BICiv (IHS Buy Indian),
+    VSA, VSS. Case-insensitive; documented casing goes on the wire.
 
     The 'description' field in each result is a URL, not inline text. Use
     get_opportunity_description() to fetch the actual description HTML.
     """
-    from .constants import SET_ASIDE_CODES
+    from .constants import SET_ASIDE_CODES, SET_ASIDE_WIRE_CASING
 
     limit = _clamp(limit, field="limit", lo=1, hi=OPPORTUNITY_MAX_LIMIT)
     if offset < 0:
         raise ValueError(f"offset must be >= 0. Got {offset}.")
-    posted_from = _validate_date_mmddyyyy(posted_from, field="posted_from")
-    posted_to = _validate_date_mmddyyyy(posted_to, field="posted_to")
+    posted_from = _validate_date_mmddyyyy(
+        posted_from, field="posted_from", allow_range=False
+    )
+    posted_to = _validate_date_mmddyyyy(
+        posted_to, field="posted_to", allow_range=False
+    )
     response_deadline_from = _validate_date_mmddyyyy(
-        response_deadline_from, field="response_deadline_from"
+        response_deadline_from, field="response_deadline_from", allow_range=False
     )
     response_deadline_to = _validate_date_mmddyyyy(
-        response_deadline_to, field="response_deadline_to"
+        response_deadline_to, field="response_deadline_to", allow_range=False
     )
 
     # 364-day cap + reversed-range check (SAM API enforces both; pre-check here)
@@ -1035,6 +1092,10 @@ async def search_opportunities(
     naics_code = _validate_naics(naics_code, field="naics_code")
     psc_code = _coerce_str(psc_code, field="psc_code")
     zip_code = _coerce_str(zip_code, field="zip_code")
+    if zip_code and zip_code.isdigit() and len(zip_code) < 5:
+        # An int zip like 6511 lost its leading zero in coercion; New Haven
+        # is 06511 and the API silently returns nothing for '6511'.
+        zip_code = zip_code.zfill(5)
     if state is not None:
         state = state.strip().upper()
         if not re.match(r"^[A-Z]{2}$", state):
@@ -1042,6 +1103,9 @@ async def search_opportunities(
                 f"state must be 2-letter USPS (e.g. 'VA', 'CA'). Got {state!r}."
             )
     set_aside = _validate_code_in_dict(set_aside, field="set_aside", valid_codes=SET_ASIDE_CODES)
+    if set_aside:
+        # BICiv is documented mixed-case; validation upcased it for lookup.
+        set_aside = SET_ASIDE_WIRE_CASING.get(set_aside, set_aside)
     title = _clamp_str_len(
         _validate_waf_safe(title, field="title"),
         field="title", maximum=500,
@@ -1365,11 +1429,14 @@ async def lookup_award_by_piid(
     piid: str,
     include_sections: str | None = None,
 ) -> dict[str, Any]:
-    """Look up all contract award modifications for a single PIID.
+    """Look up contract award modifications for a single PIID.
 
-    Returns all modification records for the given Procurement Instrument
-    Identifier, sorted by modification number. This is the primary way to
-    get the full history of a contract action.
+    Returns up to 100 modification records for the given Procurement
+    Instrument Identifier, sorted by modification number client-side (the
+    API returns them unsorted). Large IDVs can exceed 100 mods; when
+    totalRecords is larger than the returned list a _note flags the
+    truncation. This is the primary way to get the history of a contract
+    action.
 
     PIIDs are alphanumeric identifiers assigned by the contracting office.
     Format varies by agency (e.g. "GS-35F-0119Y", "W912BV22P0112",
@@ -1399,7 +1466,37 @@ async def lookup_award_by_piid(
         params["includeSections"] = include_sections
 
     result = await _get(CONTRACT_AWARDS_PATH, params)
-    return _normalize_awards_response(result)
+    result = _normalize_awards_response(result)
+
+    def _mod_sort_key(item: Any) -> tuple[int, str]:
+        """Tolerant modification-number extractor: the field lives under
+        contractId in populated records but shapes vary. Numeric mods sort
+        numerically ('2' before '10'), alpha mods (P00001, A) sort after
+        base awards lexically."""
+        if not isinstance(item, dict):
+            return (1, "")
+        contract_id = item.get("contractId")
+        mod = None
+        if isinstance(contract_id, dict):
+            mod = contract_id.get("modificationNumber")
+        if mod is None:
+            mod = item.get("modificationNumber")
+        s = str(mod).strip() if mod is not None else ""
+        if s.isdigit():
+            return (0, s.zfill(10))
+        return (1, s)
+
+    summary = result.get("awardSummary")
+    if isinstance(summary, list) and summary:
+        result["awardSummary"] = sorted(summary, key=_mod_sort_key)
+
+    total = result.get("totalRecords")
+    if isinstance(total, int) and isinstance(summary, list) and total > len(summary):
+        result["_note"] = (
+            f"PIID has {total} modification records; only the first "
+            f"{len(summary)} were returned (API page limit 100). "
+        )
+    return result
 
 
 @mcp.tool(annotations={"title": "Search Deleted Awards", "readOnlyHint": True, "destructiveHint": False})
@@ -1662,6 +1759,10 @@ async def search_federal_organizations(
     fh_org_id = _coerce_str(fh_org_id, field="fh_org_id")
     agency_code = _coerce_str(agency_code, field="agency_code")
     cgac = _coerce_str(cgac, field="cgac")
+    if cgac and cgac.isdigit() and len(cgac) < 3:
+        # CGAC codes are 3 digits with meaningful leading zeros (HHS is
+        # '075'); an int input like 75 lost its zero in coercion.
+        cgac = cgac.zfill(3)
     fh_org_name = _clamp_str_len(
         _validate_waf_safe(fh_org_name, field="fh_org_name"),
         field="fh_org_name", maximum=200,

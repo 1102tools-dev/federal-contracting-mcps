@@ -153,7 +153,7 @@ Once configured:
 
 ## Part of
 
-[federal-contracting-mcps](https://github.com/1102tools/federal-contracting-mcps) — monorepo of 8 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools/federal-contracting-skills).
+[federal-contracting-mcps](https://github.com/1102tools/federal-contracting-mcps): monorepo of 8 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools/federal-contracting-skills).
 
 ## License
 

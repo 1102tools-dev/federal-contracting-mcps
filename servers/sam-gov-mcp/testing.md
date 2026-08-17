@@ -2,208 +2,167 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes seven SAM.gov REST APIs (Entity Management v3, Exclusions v4, Opportunities v2, Contract Awards v1, Federal Hierarchy v1, Acquisition Subaward Reporting, Assistance Subaward Reporting) plus the PSC lookup as 19 callable tools. It was hardened across eight audit rounds. Live audits surfaced seven catastrophic P1 silent-wrong-data bugs that could never have been caught with mocks: three from the original 0.3.1 live audit (apostrophe-rejecting WAF, typo'd-parameter silent drops, empty PIID acceptance), one from the round 6 live audit (search_exclusions sending the wrong API parameter name), and three from the round 8 live audit (Subaward `PIID`/`referencedIdvPIID`/`referencedIDVAgencyID` casings silently ignored — working casings are lowercase `piid`, mixed-case `referencedIDVPIID`, mixed-case `referencedIDVAgencyId`). This MCP is also where the `extra='forbid'` cross-fix pattern was invented, then back-ported to seven other MCPs in the suite. Round 8 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live, 155 offline including Hypothesis property tests on the new validators and normalizers). The MCP ships with 1,094 regression tests, the highest test count in the 1102tools MCP suite.
+This Model Context Protocol server exposes seven SAM.gov REST APIs (Entity Management v3, Exclusions v4, Opportunities v2, Contract Awards v1, Federal Hierarchy v1, Acquisition Subaward Reporting, Assistance Subaward Reporting) plus the PSC lookup as 19 callable tools. It was hardened across nine audit rounds. Live audits surfaced seven catastrophic P1 silent-wrong-data bugs mocks could never catch (apostrophe-rejecting WAF, typo'd-parameter silent drops, empty PIID acceptance, `entityName` vs `exclusionName`, and three Subaward parameter casings). Round 9 (1.0.2), an independent full-source re-audit, found the worst one yet by replaying the documented Entity API response shape through the real pipeline: `get_entity_reps_and_certs` read the wrong JSON key casings, so its default summary mode returned EMPTY clause lists for every entity, and eight prior rounds never noticed because their live assertions only checked `totalRecords`. This MCP is also where the `extra='forbid'` cross-fix pattern was invented and exported to the rest of the suite. The MCP ships with 1,125 regression tests (754 offline, 371 live-gated), the highest count in the 1102tools MCP suite.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 19 |
-| Total regression tests | 1,094 (729 offline, 365 live-gated) |
-| Tests per tool | 57.6 |
-| Audit rounds completed | 8 (rounds 1-4 + density expansion + live audit + Hypothesis property tests + v0.4 Federal Hierarchy & FFATA) |
-| Total items addressed | 54 across multiple releases |
+| Total regression tests | 1,125 (754 offline, 371 live-gated) |
+| Tests per tool | 59.2 |
+| Audit rounds completed | 9 |
+| Total items addressed | 67 across releases |
 | P1 silent-wrong-data bugs (live-audit-only) | 7 |
-| P3 edge cases (Hypothesis-only) | 2 (inf/nan in _safe_int; empty dict in _normalize_awards_response) |
-| Current release | 0.4.0 |
+| Round 9 findings | 13 (8 fixed in 1.0.2, 5 pending live confirmation) |
+| Current release | 1.0.2 |
 | PyPI status | Published as `sam-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## Round 9 (1.0.2): Independent re-audit
+
+Round 9 re-read the full source against the official API documentation and the SAM Functional Data Dictionary, replaying documented response shapes through the real tool pipeline. The SAM key's daily quota was exhausted mid-audit (every endpoint family 429'd), so findings split into two groups.
+
+### Fixed in 1.0.2 (documentary evidence + offline replay)
+
+| # | Finding | Fix |
+|---|---|---|
+| 1 | **`get_entity_reps_and_certs` read wrong JSON keys; default summary mode always returned empty clause lists.** The Entity API documents `certifications.fARResponses` and `certifications.dFARResponses` (mixed case) with `architectEngineerResponses` under `qualifications`; the code read `farResponses`/`dfarsResponses`/`certifications.architectEngineerResponses`, all nonexistent, so `_as_list(None)` produced `[]` for all three and a CO asking for FAR 52.212-3 answers was told the entity certified nothing. Survived 8 rounds because the round-6 live tests asserted only `"totalRecords" in data`. | Case-insensitive key scan resolving the documented casings (and any future drift), with `architectEngineerResponses` sourced from `qualifications` first. Documented-shape replay tests pin non-empty summaries and clause_filter matching. |
+| 2 | Opportunities set-aside table had 14 of the 18 documented codes: LAS (Local Area), IEE and ISBEE (Buy Indian Act), and BICiv were unreachable, and the mixed-case BICiv could never have survived the upcasing validator. | All 18 codes accepted case-insensitively; the documented `BICiv` casing goes on the wire. |
+| 3 | `business_type_code` whitelist covered 13 of the FDD's dozens of codes, blocking legitimate searches (NB Native American Owned, JV SDVOSB Joint Venture, A3 Labor Surplus Area, 1E/1S Buy Indian, A7 AbilityOne, M8 Educational Institution, ...). | Well-formed 2-character codes pass through to the API; the labeled table remains for docs; SBA certification codes still redirect to `sba_business_type_code`. |
+| 4 | `purpose_of_registration` allowed only Z1/Z2/Z5 (Z3 IGT-Only and Z4 Assistance+IGT were pydantic-rejected) and mislabeled Z5 as "Supplemental grants only" (it is All Awards and IGT). | Full Z1-Z5 Literal with corrected descriptions. |
+| 5 | Bracketed date ranges passed validation on the Opportunities single-date params, then crashed range-math with "too many values to unpack (expected 3, got 5)". | `allow_range=False` on the four Opportunities date params with a clean error; Contract Awards/Exclusions ranges unaffected. |
+| 6 | `lookup_award_by_piid` promised "all modifications, sorted" but hardcoded limit=100, never sorted, and hid truncation. | Client-side modification-number sort (numeric mods in numeric order, then alpha) and a `_note` when totalRecords exceeds the returned page. Docstring states the 100-record page honestly. |
+| 7 | Int coercion dropped meaningful leading zeros: `zip_code=6511` searched "6511" (New Haven is 06511), `cgac=75` searched "75" (HHS is 075, the readme's own example). | Digit inputs zero-pad to 5 (zip) and 3 (CGAC). |
+| 8 | `__version__` stale at 1.0.0 while pyproject/USER_AGENT said 1.0.1 (the 1.0.0 changelog had claimed they were "now synchronized"); serverInfo.version unset. | All four synchronized at 1.0.2; MCPServer receives the package version; regression test pins it. |
+
+### Pending live confirmation (quota-blocked; exact probes queued)
+
+| # | Suspicion | Confirming probe |
+|---|---|---|
+| 9 | `search_exclusions` size cap: code allows 100, Exclusions docs say "Allowable values are 1 to 10". The round-6 `max_size_100` live test only asserted `totalRecords` presence, proving nothing about records-per-page. | One live call at size=100 counting `excludedEntity` entries. |
+| 10 | PSC param casing: code sends `searchby`; docs say `searchBy`. If the router is case-sensitive, `lookup_psc_code` is silently doing bare-`q` code-prefix matching (masked, same-looking results) and `search_psc_free_text`'s promised name/description search never worked (its live tests passed on totalRecords=0). | Live `q=engineering` bare vs with `searchBy` variants; `searchby=psc` vs `searchBy=psc` deltas. |
+| 11 | Opportunities date-span cap: local 364-day limit vs the documented "1 year"; the round-6 test named `exactly_364_day_span` actually probed a 363-day window, so the true boundary has never been tested. | One live call at a 365-day span. |
+| 12 | `fiscal_year` floor of 2008 on Contract Awards may reject legitimate older data (docs state no floor). | Live `fiscalYear=2007&limit=1`. |
+| 13 | `registration_status` offers D/I beyond the documented A/E; unknown values may be silently ignored upstream, returning wrongly-filtered data. | Live `registrationStatus=D` vs unfiltered totals. |
+
+### Corrections to the prior record (round 9)
+
+- **Test counts were stale and mutually inconsistent:** the header said 1,094 total (729/365), the coverage section said 448 (441 + 7), the live-audit section said 6 live-gated, and the methodology trailer said 816 (574 + 242) at "version 0.3.7". Actual collection: 1,125 (754 offline + 371 live-gated) at 1.0.2.
+- "The MCP exposes 15 tools covering four SAM.gov REST APIs" contradicted the header's own 19 tools / 7 APIs. It is 19 and 7.
+- The coverage table listed only 5 files, omitting `test_live_audit_r6.py`, `test_round_7.py`, `test_v0_4_features.py`, and `test_sba_business_type.py`; per-file counts were off by one (79 vs 80, 369 vs 368).
+- The round-6 claim of covering the "364-day span boundary" is false: the test uses a 363-day window (04/24/2025 to 04/22/2026). The boundary remains unprobed (round 9 item 11).
+- "All 14 set-aside codes" tested: circular validation against the server's own incomplete list; the API defines 18.
+- The "response-shape guarantees" verification claims were hollow where it mattered most: no test in the repo referenced any fARResponses casing, and the PSC free-text "live" tests pass on zero results or swallowed errors (round 9 items 1 and 10).
+- "Can be re-executed by anyone using a free SAM.gov API key" is misleading: a no-role personal key gets on the order of 10 requests/day per endpoint family, and the live suite needs hundreds of calls. A system account or federal key is realistically required for a full live pass.
 
 ## Round 8 (v0.4.0): Federal Hierarchy and FFATA Subaward Reporting
 
-Added four new tools across three SAM.gov REST APIs that were not previously exposed: Federal Hierarchy (`/orgs`, `/org/hierarchy`), Acquisition Subaward Reporting (`/contract/v1/subcontracts/search`), and Assistance Subaward Reporting (`/assistance/v1/subawards/search`). Added 278 regression tests (155 offline including Hypothesis property tests, 123 live).
-
-### Per-endpoint coverage
-
-| Endpoint | Validation | Mock | Live | Total |
-|---|---|---|---|---|
-| `search_federal_organizations` | 20 | 17 | 35 | 72 |
-| `get_organization_hierarchy` | 10 | 9 | 28 | 47 |
-| `search_acquisition_subawards` | 24 | 17 | 30 | 71 |
-| `search_assistance_subawards` | 17 | 15 | 29 | 61 |
-| Cross-cutting (property tests, normalizer helpers) | 26 | — | — | 26 |
-| **v0.4 totals** | **97** | **58** | **123** | **278** |
+Added four new tools across three SAM.gov REST APIs: Federal Hierarchy (`/orgs`, `/org/hierarchy`), Acquisition Subaward Reporting, and Assistance Subaward Reporting, with 278 regression tests (155 offline including Hypothesis property tests, 123 live).
 
 ### P1 live-audit bugs found and fixed
 
-1. **`PIID` (uppercase) silently ignored.** Documented Subaward parameter name returned the unfiltered total (~2.7M records) regardless of the value passed. Lowercase `piid` is what actually filters. Without live audit, every PIID-scoped subaward query would have silently returned the entire FFATA universe.
+1. **`PIID` (uppercase) silently ignored** by the Subaward API: the documented parameter name returned the unfiltered ~2.7M-record universe. Working casing is lowercase `piid`.
+2. **`referencedIdvPIID` silently ignored.** Working casing is `referencedIDVPIID`.
+3. **`referencedIDVAgencyID` silently ignored.** Working casing is `referencedIDVAgencyId`.
 
-2. **`referencedIdvPIID` silently ignored.** Documented param name dropped on the wire. Working casing is `referencedIDVPIID` (caps on IDV).
+### P2 fixes
 
-3. **`referencedIDVAgencyID` silently ignored.** Documented param name dropped on the wire. Working casing is `referencedIDVAgencyId` (lowercase d at the end).
+4. `fh_org_type` whitelist too strict (real API returns values like `Department/Ind. Agency`); replaced with WAF-safe + length clamp.
+5. `status=ACTIVE` on Federal Hierarchy is a no-op (the API defaults to active-only); `INACTIVE` is the value that changes results. Documented.
 
-### P2 cosmetic fixes
+Live coverage spans 11 department-level lookups, CGAC variants (020/097/075), pagination boundaries, response-shape checks, 5-way concurrent calls, and casing-regression canaries. Hypothesis property tests (300 examples each) target `_validate_date_yyyy_mm_dd`, `_normalize_fh_response`, and `_normalize_subaward_response`. Note (round 9): the three subaward casing claims are recorded as tested by named live tests that exist in the repo; their pass status could not be re-reproduced during round 9 because of quota, so they stand on the round-8 record.
 
-4. **`fh_org_type` whitelist too strict.** Initial code restricted to enum values `{DEPARTMENT, AGENCY, SUB-AGENCY, MAJOR COMMAND, OFFICE, FIELD ACTIVITY}`, but real API returns values like `Department/Ind. Agency`. Whitelist removed in favor of WAF-safe + length-clamp.
-
-5. **`status=ACTIVE` on Federal Hierarchy is a no-op.** API defaults to ACTIVE-only when no status filter is sent. Documented in tool docstring; `INACTIVE` is the value that actually changes the result set.
-
-### Test design notes
-
-Each of the four new tools has 25+ live tests. Live coverage spans: department-level lookups for Treasury (FH 100013311), DoD (100000000), HHS (100004222), State (100012062), Justice (100011955), Energy (100011980), Agriculture (100006809), Veterans (100006568), Homeland Security (100011942), Interior (100010393), Commerce (100035122); CGAC variants (020/097/075); pagination boundaries (offset 0, 50, beyond total); response shape validation (top-level keys, record-level required keys, ISO date format on returned dates, numeric subAwardAmount strings); concurrent calls (5 parallel `asyncio.gather`); regression tests that fail loudly if a working parameter casing reverts (`piid` returns fewer records than baseline; `fain` returns fewer records than baseline; `INACTIVE` status diverges from default). The `live_acq_subaward_real_piid_returns_subs` test pulls a real PIID from a baseline query, then re-queries with that PIID and asserts every returned record has matching piid.
-
-The Hypothesis property tests (300 examples each) target `_validate_date_yyyy_mm_dd`, `_normalize_fh_response`, and `_normalize_subaward_response` to ensure no input — arbitrary text, dicts, lists, infinity, mixed types — crashes them with anything other than `ValueError`.
-
-## What Was Tested
-
-The MCP exposes 15 tools covering four SAM.gov REST APIs plus the PSC lookup.
-
-**Entity Management (v3):** `lookup_entity_by_uei`, `lookup_entity_by_cage`, `search_entities`, `get_entity_reps_and_certs`, `get_entity_integrity_info`
-
-**Exclusions (v4):** `check_exclusion_by_uei`, `search_exclusions`
-
-**Opportunities (v2):** `search_opportunities`, `get_opportunity_description`
-
-**Contract Awards (v1):** `search_contract_awards`, `lookup_award_by_piid`, `search_deleted_awards`
-
-**PSC lookup and workflow:** `lookup_psc_code`, `search_psc_free_text`, `vendor_responsibility_check`
-
-Each tool was exercised for argument validation, input sanitization, WAF filter behavior against real API responses, response-shape guarantees (especially XML-to-JSON collapse edge cases on SOAP-backed endpoints), error translation, pagination, and real-world data handling against the live production API with a real SAM.gov key.
-
-## How It Was Tested
-
-### Testing discipline
-
-Prior unit tests in v0.2.x awaited raw coroutines and relied on mocks that guessed at SAM.gov's WAF and response shapes. The hardening program switched to invoking tools through `mcp.call_tool(name, kwargs)` the way a real MCP client does, paired with a live audit using a real SAM.gov API key. The live audit is the step that surfaced the three most dangerous bugs: mocked WAF rules do not match reality, and pydantic's silent extra-argument dropping is invisible to tests that only check the happy path.
-
-### Audit rounds
+## Audit rounds
 
 | Release | Audit context | Findings class |
 |---|---|---|
-| 0.2.0 | Pre-session baseline hardening | Some baseline validation |
-| 0.2.1 | Applied `extra='forbid'` cross-fix first time | Typo'd-parameter silent drops closed |
-| 0.3.0 | Rounds 1 through 4: full audit covering WAF, response-shape, validation, integrity | 28+ items including 5 response-shape crashes |
-| 0.3.1 | Live audit with a real SAM.gov API key | 3 P1 silent-wrong-data plus 1 P3 |
-| 0.3.5 | Round 5: density expansion with 369 new parameterized tests across 10 failure-mode buckets | No new bugs; coverage lifted from 5.3 to 29.9 tests per tool |
-| 0.3.6 | Round 6: live audit with 235 new live-gated tests covering every tool against production SAM.gov API | 1 P1 silent-bug found and fixed: search_exclusions(entity_name=...) sent invalid API parameter name `entityName`; corrected to `exclusionName`. Coverage lifted to 45.5 tests per tool. |
-| 0.3.7 | Round 7: Hypothesis-driven offline property test suite with 133 new test functions (~25,000 random probes) | 2 P3 edge cases found and fixed: `_safe_int` crashed on inf/nan floats (only caught TypeError/ValueError, not OverflowError); `_normalize_awards_response` returned `{}` unchanged on empty CDN responses (downstream callers expecting `totalRecords` would crash). Coverage lifted to 54.4 tests per tool. |
+| 0.2.0 | Pre-session baseline hardening | Baseline validation |
+| 0.2.1 | First `extra='forbid'` application | Typo'd-parameter silent drops closed |
+| 0.3.0 | Rounds 1-4: WAF, response-shape, validation, integrity | 28+ items incl. 5 response-shape crashes |
+| 0.3.1 | Live audit with a real SAM.gov key | 3 P1 silent-wrong-data plus 1 P3 |
+| 0.3.5 | Round 5: density expansion (368 parameterized tests) | No new bugs; coverage to ~30 tests/tool |
+| 0.3.6 | Round 6: live audit, 235 live-gated tests | 1 P1: `entityName` vs `exclusionName` param |
+| 0.3.7 | Round 7: Hypothesis property suite (~25,000 probes) | 2 P3 edge cases (`_safe_int` inf/nan; empty `_normalize_awards_response`) |
+| 1.0.0/0.4.0 | Round 8: Federal Hierarchy + FFATA tools | 3 P1 casing bugs, 2 P2 |
+| 1.0.1 | sbaBusinessTypeCode exposure; XX/A6 SBA code swap fix | 1 P1 (XX is HUBZone, A6 is 8(a)) |
+| 1.0.2 | Round 9: independent full-source re-audit | 8 fixed, 5 pending live confirmation |
 
-### Live audit status
+## Issues Found and Fixed (rounds 1-7)
 
-All rounds in 0.3.1 included live calls against the production SAM.gov API with a real API key. The repository includes 6 live-gated regression tests executable via `SAM_LIVE_TESTS=1 SAM_API_KEY=... pytest` covering real entity search, exclusion check, opportunity search, contract award search, vendor responsibility check, and the previously-rejected apostrophe case.
-
-## Issues Found and Fixed
-
-### Priority 1: Live-audit silent wrong data (the headliners)
-
-Three bugs in this class, all surfaced only in the live audit with a real API key. These could never have been caught with mocks.
+### Priority 1: Live-audit silent wrong data
 
 | Issue | Fix |
 |---|---|
-| **WAF filter was rejecting McDonald's, L'Oreal, and any apostrophe-containing company name** with a local "WAF triggered" error. SAM.gov's actual API accepts all of them fine as literal search text. The MCP was guessing at WAF rules that did not exist. Even `<script>` returned 27 real entities from the API. Users could not search for any apostrophe-containing company name in 0.3.0. | WAF filter narrowed to null bytes plus tab, carriage return, and line feed only. Regression test includes "McDonald's" and "L'Oreal" as live probes. |
-| **Unknown parameter names silently dropped.** `search_entities(keyword="Lockheed")` (the real param is `free_text`) silently dropped the typo'd argument and ran unfiltered, returning 736,007 entities with no indication anything was wrong. Same failure mode on `search_exclusions`, `search_opportunities`, `search_contract_awards`. | `extra='forbid'` applied to every tool's pydantic arg model. Typos now raise "Extra inputs are not permitted" before the HTTP call. Pattern cross-applied to every other MCP in the suite. |
-| **`lookup_award_by_piid` silently accepted empty PIID.** The tool called the API with an empty string, received an empty result, and returned it with no warning. | Empty PIID raises a clear error with valid-PIID format examples. |
+| **WAF filter rejected McDonald's, L'Oreal, and every apostrophe-containing name** based on guessed WAF rules; the real API accepts them all. | WAF filter narrowed to null bytes plus tab/CR/LF. Live probes include both names. |
+| **Unknown parameters silently dropped** (`search_entities(keyword=...)` ran unfiltered, returning 736,007 entities). | `extra='forbid'` on every tool's arg model; invented here, exported suite-wide. |
+| **`lookup_award_by_piid` accepted empty PIID** and returned an empty result with no warning. | Empty PIID raises with format examples. |
+| **`search_exclusions(entity_name=...)` sent the invalid `entityName` parameter** (round 6). | Corrected to `exclusionName`. |
 
 ### Priority 1: Response-shape crashes
 
-Five bugs in this class, all from round 4 (response-shape fuzzing):
-
-| Issue | Fix |
-|---|---|
-| `_normalize_awards_response`: `int(ar.get("totalRecords", 0))` crashed with `TypeError` when the API returned `totalRecords: null` (key exists with None). Same for `limit` and `offset`. | `_safe_int` helper added. Returns 0 on None or string "0". Pattern now reused across the suite. |
-| `get_entity_reps_and_certs` (slim mode): the API returned `entityData` as a dict instead of a list (XML-to-JSON single-element collapse on the SOAP-backed endpoint). Slim-mode code iterated dict keys (strings) and called `.get()` on them. | `_as_list` normalizer wraps all collection fields. Single dicts are coerced to a length-1 list. |
-| `vendor_responsibility_check`: `KeyError 'entityData'` when the API returned `{"totalRecords": 1}` without `entityData` (malformed partial response). | Guarded with `.get()` and a clear "partial SAM response" error. |
-| `vendor_responsibility_check`: `excludedEntity` returned as a single dict (XML collapse). Code treated it as a list. | Same `_as_list` coercion. |
-| `vendor_responsibility_check`: API returned `totalRecords` as string `"0"` instead of int. `if total == 0` was False (because `"0" != 0`), causing a crash on `entityData[0]`. | `_safe_int` normalizes both cases. |
+Five bugs from round-4 fuzzing: `totalRecords: null` crashes, `entityData` dict-vs-list XML collapse, missing `entityData` on partial responses, `excludedEntity` single-dict collapse, and string `"0"` totalRecords. All guarded via `_safe_int` and `_as_list`, both exported suite-wide.
 
 ### Priority 2: Validation gaps
 
-Representative items from the 0.3.0 round 2 and 3 audits:
-
-| Issue | Fix |
-|---|---|
-| UEI and CAGE format were not validated on `check_exclusion_by_uei`, `get_entity_integrity_info`, and `search_contract_awards.awardee_uei` / `awardee_cage_code`. Bogus UEIs reached the API and wasted rate-limit tokens. | Format regex enforced: 12 alphanumeric for UEI, 5 alphanumeric for CAGE. |
-| `search_opportunities`: 364-day `posted_from` to `posted_to` cap was not pre-checked (API has a documented hard limit). | Date span checked locally. Reversed ranges also raise actionable error. |
-| `search_opportunities.title` / `free_text` / `legal_business_name` / `entity_name` had no length clamp. 2000+ character strings risked HTTP 414. | Capped at 500 characters with guidance. |
-| `search_exclusions.country` lowercase ("usa") was accepted; API wants uppercase. | Normalized to uppercase. |
-| `vendor_responsibility_check`: UEI was stripped but not format-validated. | Now stripped and format-validated. |
-| WAF detection via substring match in the error body silently failed when SAM returned an empty error body. | WAF detection uses HTTP status code plus header inspection, not body substring. |
-| Single quotes, angle brackets, SQL keywords, `../`, and null bytes in search parameters were not pre-rejected locally (they reached the API and got blocked remotely). | Calibrated WAF filter: null bytes plus tab, CR, LF are now the only pre-rejected characters. All other characters reach the API where SAM's actual behavior controls. |
-| `check_exclusion_by_uei` and `get_entity_integrity_info` had no UEI validation at all. | Now format-validated. |
+UEI/CAGE format enforcement everywhere they appear, the opportunities date-span pre-check, length clamps on text filters, country-code uppercasing, WAF detection via status codes rather than body substrings, and calibrated pre-rejection limited to control characters. (Round 9 note: the date-span cap's exact boundary remains unprobed; see pending item 11.)
 
 ### Priority 3: Cleanup items
 
-Ten-plus items including empty-string filters passing through to the API, business type and set-aside code fields not validated against the authoritative code sets in constants, NAICS length (6 digits) not validated with negative ints accepted, and case normalization missing on codes. All resolved. Also: SAM's opaque "Entered search criteria is not found" 404 body is now translated into a helpful message with a PSC manual link.
-
-### Response-shape defense
-
-The `_as_list` normalizer and `_safe_int` helper now wrap every SAM.gov response parsing path. SAM.gov's SOAP-backed Entity Management API occasionally returns single-element collapses and string-vs-int inconsistencies that previously produced type-confusion crashes. Both patterns are now reused across the other MCPs in the suite.
+Empty-string filters, code-set validation, NAICS format, case normalization, and the opaque PSC 404 body translation. (Round 9 revised the code-set philosophy for business types: format-check plus pass-through, because the FDD set is far larger than any local table.)
 
 ## Test Coverage
 
-The repo ships 448 regression tests across the test folder (441 offline + 7 live-gated). All pass on every release cycle.
+The repo ships 1,125 regression tests (754 offline, 371 live-gated). All pass on every release cycle; live tests require `SAM_LIVE_TESTS=1` plus a key with real quota.
 
 | File | Purpose | Test count |
 |---|---|---|
-| `tests/test_validation.py` | Rounds 1-4 plus live-audit regressions covering every documented finding | 79 (73 offline + 6 live-gated) |
-| `tests/test_density_r5.py` | Round 5 density expansion. Parameterized tests across 10 failure-mode buckets. Every UEI-taking tool, every CAGE-taking tool, every date-taking tool, every search tool's pagination, every WAF-protected text input, every tool's `extra='forbid'` enforcement, plus direct unit tests on validator helpers | 369 (369 offline) |
-| `tests/stress_test.py` | Round 1 through 4 scenario scripts (retained for reproducibility) | N/A (scenario scripts) |
-| `tests/stress_test_r2.py` | Round 2 stress scenarios (retained for reproducibility) | N/A (scenario scripts) |
-| `tests/live_test.py` | Live-key audit scenarios including McDonald's, L'Oreal, keyword-vs-free_text typo (retained for reproducibility) | N/A (scenario script) |
+| `tests/test_validation.py` | Rounds 1-4 plus live-audit regressions | 80 (74 offline + 6 live-gated) |
+| `tests/test_density_r5.py` | Round 5 parameterized failure-mode buckets | 368 |
+| `tests/test_live_audit_r6.py` | Round 6 live sweep across every tool | 154 (all live-gated) |
+| `tests/test_round_7.py` | Hypothesis property suite | 133 |
+| `tests/test_v0_4_features.py` | Round 8 Federal Hierarchy + FFATA (incl. 123 live) | 259 |
+| `tests/test_sba_business_type.py` | 1.0.1 SBA code family (validation/mock/live) | 15 |
+| `tests/test_audit_r9.py` | Round 9 regressions: documented-shape reps-and-certs replay, set-aside and business-type expansion, Z1-Z5, bracket-range rejection, zip/CGAC padding, PIID sort, version sync | 16 (all offline) |
+| `tests/stress_test.py`, `tests/stress_test_r2.py`, `tests/live_test.py` | Scenario scripts (retained for reproducibility) | N/A |
 
-### Round 5 failure-mode buckets
-
-Each of the 369 new tests in `test_density_r5.py` falls in exactly one of:
-
-1. **UEI format validation**: 14 invalid format variants × 4 tools that strictly raise + graceful-handling assertions for tools that return empty results
-2. **CAGE format validation**: 12 invalid format variants × 2 tools + normalization assertions
-3. **PIID format validation**: empty/whitespace/control-character variants
-4. **PSC code validation**: format, `active_only` Literal value, length cap, normalization
-5. **Date format validation**: 14 invalid date variants × every date-taking parameter on every search tool, plus leap year correctness for FY2024 vs FY2025
-6. **Pagination boundaries**: zero, negative, just-above-cap, far-above-cap, minimum-valid for every search tool including the previously-untested `search_deleted_awards`
-7. **WAF and control-character safety**: null byte, tab, CR, LF, CRLF rejected; apostrophes, angle brackets, SQL keywords, unicode (CJK, emoji), backslashes, pipes, semicolons explicitly verified as accepted
-8. **`extra='forbid'` enforcement**: parameterized across all 15 tools to confirm typo'd parameter names raise before any HTTP call, with explicit tests for known historical typos (`keyword`, `company_name`, `naics`)
-9. **Filter-code validation**: invalid state codes, NAICS codes (length and character class), business type codes, set-aside codes, fiscal year boundaries (zero, negative, pre-2008, far-future, garbage), 364-day opportunity span cap, country code normalization
-10. **Validator-helper unit tests**: direct tests on `_coerce_str`, `_safe_int`, `_as_list`, `_normalize_awards_response`, `_validate_uei`, `_validate_cage`, `_validate_naics`, `_validate_fiscal_year`, `_validate_date_mmddyyyy`, `_clamp`, `_clean_error_body`, `_validate_waf_safe`, `_clamp_str_len`, `_current_fiscal_year`
-
-Regression tests invoke tools through the FastMCP registry (`mcp.call_tool`) rather than awaiting decorated coroutines directly. An autouse fixture resets `srv._client` between tests so the shared httpx client does not leak across event loops.
+Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`). An autouse fixture resets `srv._client` between tests.
 
 ## Release History
 
 | Version | Focus | Outcome |
 |---|---|---|
-| 0.2.x | Baseline with some validation already in place | Baseline coverage |
-| 0.2.1 | First cross-fix release applying initial extra validation | Baseline hardening |
-| 0.3.0 | Rounds 1 through 4 full audit: 28+ items including WAF calibration, response-shape crashes, input validation | 5 P1 crashes, multiple P2 validation gaps resolved |
-| 0.3.1 | Live audit with a real SAM.gov API key: 3 P1 silent-wrong-data plus 1 P3 translation fix | WAF filter recalibrated against reality; `extra='forbid'` invented and back-ported to all 7 sibling MCPs |
-| 0.3.4 | Tool annotations and per-server repository URLs | No code changes affecting tool behavior |
-| 0.3.5 | Round 5 density expansion: 369 new tests across 10 failure-mode buckets | 79 → 448 tests; 5.3 → 29.9 tests per tool;  |
+| 0.2.x | Baseline | Baseline coverage |
+| 0.3.0 | Rounds 1-4 full audit | 5 P1 crashes, validation gaps resolved |
+| 0.3.1 | First live audit | WAF recalibrated; `extra='forbid'` invented |
+| 0.3.5 | Round 5 density | 368 new tests |
+| 0.3.6 | Round 6 live sweep | `exclusionName` fix |
+| 0.3.7 | Round 7 Hypothesis | 2 P3 edge cases |
+| 0.4.0 | Round 8: FH + FFATA tools | 3 P1 casing bugs |
+| 1.0.0 | mcp 2.x SDK rebase, packaging | Stable baseline |
+| 1.0.1 | SBA business type family | XX/A6 swap fixed, sbaBusinessTypeCode exposed |
+| 1.0.2 | Round 9 independent re-audit | Reps-and-certs key casing (data-destroying), set-aside/business-type/Z-code expansion, bracket-crash, PIID sort, padding; 5 items pending live confirmation |
 
 ## Cross-MCP Context
 
-This MCP is one of eight servers in the 1102tools federal-contracting MCP suite (`bls-oews-mcp`, `ecfr-mcp`, `federal-register-mcp`, `gsa-calc-mcp`, `gsa-perdiem-mcp`, `regulationsgov-mcp`, `usaspending-gov-mcp`, and this one). All eight were hardened under the same playbook. This MCP is where several cross-MCP patterns originated:
-
-- **`extra='forbid'` on every tool's pydantic arg model** was invented here. Pydantic's default `extra='ignore'` silently drops typo'd parameters, and when a search tool drops a filter argument, the tool silently returns unfiltered default results. This fix was applied to all 8 MCPs via x.y.1 patches (`ecfr-mcp` 0.2.1, `usaspending-gov-mcp` 0.2.1, `gsa-calc-mcp` 0.2.1, `gsa-perdiem-mcp` 0.2.1, `bls-oews-mcp` 0.2.1, `federal-register-mcp` 0.2.1, `regulationsgov-mcp` 0.2.0).
-- **WAF filter calibration against reality** was codified here: do not assume what the API blocks, probe it. SAM.gov was rejecting apostrophes locally when the API accepts them. Later, `gsa-calc-mcp` and others had their WAF filters tested against their actual API WAFs, not against guesses.
-- **The `_as_list` normalizer** for XML-to-JSON single-element dict-vs-list collapse (common on SOAP-backed endpoints) was codified here and reused across the suite.
-- **The `_safe_int` helper** for fields that might come back as null, `"0"`, or non-int was codified here and reused.
+This MCP is one of eight servers in the 1102tools federal-contracting MCP suite. Patterns that originated here: `extra='forbid'` on every arg model; WAF calibration against reality instead of guesses; `_as_list` and `_safe_int` response normalizers. Round 9 adds the suite's sharpest lesson: **live tests that assert only shape (totalRecords presence) bless catastrophically wrong data.** The reps-and-certs bug survived eight rounds and ~1,100 tests because nothing ever asserted a non-empty summary for an entity known to have certifications.
 
 ## What Was Not Tested
 
-- **Rate-limit behavior at scale.** SAM.gov has documented rate limits per key tier. The MCP surfaces 429s but does not implement client-side throttling.
-- **OASIS+ and other special transactional endpoints.** This MCP covers the public REST endpoints, not the specialized transactional APIs that require elevated access.
-- **SAM.gov SAML and login-required features.** The MCP covers the public REST endpoints only.
-- **Multi-day opportunity span edge cases near the 364-day API cap.** The local cap check is bounds-safe but upstream behavior at exactly 364 days has not been live-audited.
+- **Rate-limit behavior at scale.** The MCP surfaces 429s but does not throttle client-side. Personal no-role keys get on the order of 10 requests/day per family; a full live pass needs a system or federal key.
+- **OASIS+ and login-required transactional endpoints.** Public REST only.
+- **The opportunities date-span boundary at exactly 364/365 days** (pending round 9 item 11).
+- **The five round-9 pending items** listed above, each with its exact confirming probe, runnable the day quota resets.
 
 ## Verification
 
-All testing artifacts are in the repository. The methodology and fixes are reviewable commit-by-commit in git history. The regression test suite runs via `pytest` in the repo root and can be re-executed by anyone. The live suite runs with `SAM_LIVE_TESTS=1 SAM_API_KEY=... pytest` using a free SAM.gov API key.
+All testing artifacts are in the repository. The methodology and fixes are reviewable commit-by-commit in git history. The regression test suite runs via `pytest` in the repo root. The live suite runs with `SAM_LIVE_TESTS=1 SAM_API_KEY=... pytest`; note the quota caveat above.
 
 ---
 
 **Testing Methodology**
 
-Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, max effort, Claude Max 20x subscription) during the hardening playbook execution.
+Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the hardening playbook (rounds 1-8), and Claude Code Fable 5 for the round 9 independent re-audit (full-source review against official docs and the SAM Functional Data Dictionary, documented-shape replay through the real pipeline, record correction).
 
-Testing spanned four audit rounds in 0.3.0 (WAF, response-shape, validation, integrity) plus a live-key audit round in 0.3.1 that surfaced three catastrophic silent-wrong-data bugs. The live regression suite runs against the production SAM.gov API when enabled with `SAM_LIVE_TESTS=1`.
+Round 9 methodology: re-read the entire server source with no reliance on this document's claims; check every constant table against the FDD and API docs; replay documented response shapes through `mcp.call_tool`; enumerate which prior "live-verified" claims actually asserted semantics vs shape; queue exact confirming probes for everything quota-blocked.
 
-Test count: 816 regression tests (574 offline + 242 live-gated). Tests per tool: 54.4. Total items addressed across releases: 49. P1 silent-bugs surfaced only in live audit: 4 (3 from 0.3.1, 1 from 0.3.6). P3 edge cases surfaced only by Hypothesis property testing: 2 (0.3.7). Response-shape crashes found and fixed: 5. Current version: 0.3.7. PyPI: `sam-gov-mcp`.
+Test count: 1,125 regression tests (754 offline + 371 live-gated). Tests per tool: 59.2. Total items addressed across releases: 67. Current version: 1.0.2. PyPI: `sam-gov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/sam-gov-mcp. License: MIT.

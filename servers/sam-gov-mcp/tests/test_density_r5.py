@@ -883,12 +883,14 @@ def test_naics_negative_rejected():
     )
 
 
-# Bad business type codes
+# Bad business type codes. Round 8: any well-formed 2-char code passes
+# through (the FDD defines dozens beyond the labeled table, and the old
+# whitelist blocked e.g. NB Native-American-Owned searches), so 'ZZ' and
+# '99' are no longer rejected; only malformed shapes are.
 BAD_BUSINESS_TYPE_CASES = [
-    pytest.param("ZZ", id="not_a_code"),
-    pytest.param("99", id="numeric_not_in_list"),
     pytest.param("ABCDEF", id="too_long"),
     pytest.param("X", id="too_short"),
+    pytest.param("%%", id="not_alnum"),
 ]
 
 

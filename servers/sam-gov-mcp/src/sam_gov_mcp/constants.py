@@ -15,7 +15,7 @@ SUBCONTRACTS_PATH = "/prod/contract/v1/subcontracts/search"
 ASSISTANCE_SUBAWARDS_PATH = "/prod/assistance/v1/subawards/search"
 
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = "sam-gov-mcp/1.0.1"
+USER_AGENT = "sam-gov-mcp/1.0.2"
 
 # Hard caps from the SAM.gov API (enforce client-side to give good errors)
 ENTITY_MAX_SIZE = 10          # Entity Management has a hard cap of 10
@@ -38,7 +38,9 @@ NOTICE_TYPES: dict[str, str] = {
     "u": "Justification (J&A)",
 }
 
-# Set-aside type codes for Opportunities
+# Set-aside type codes for Opportunities. All 18 documented typeOfSetAside
+# values (the pre-1.0.2 table had 14, making Local Area, Buy Indian Act, and
+# Indian Small Business Economic Enterprise searches impossible).
 SET_ASIDE_CODES: dict[str, str] = {
     "SBA": "Total Small Business Set-Aside",
     "SBP": "Partial Small Business Set-Aside",
@@ -52,11 +54,29 @@ SET_ASIDE_CODES: dict[str, str] = {
     "WOSBSS": "WOSB Sole Source",
     "EDWOSB": "EDWOSB Set-Aside",
     "EDWOSBSS": "EDWOSB Sole Source",
+    "LAS": "Local Area Set-Aside",
+    "IEE": "Indian Economic Enterprise Set-Aside (Buy Indian Act)",
+    "ISBEE": "Indian Small Business Economic Enterprise Set-Aside (Buy Indian Act)",
+    "BICIV": "Buy Indian Set-Aside (specific to Department of Health and Human Services, Indian Health Services)",
     "VSA": "Veteran Set-Aside",
     "VSS": "Veteran Sole Source",
 }
 
-# Business type codes (validated against live SAM.gov API)
+# The documented wire casing where it differs from the uppercase lookup key.
+# 'BICiv' is the only mixed-case typeOfSetAside value in the docs; validation
+# is case-insensitive but the documented casing goes on the wire.
+SET_ASIDE_WIRE_CASING: dict[str, str] = {
+    "BICIV": "BICiv",
+}
+
+# Business type codes with verified labels. This is NOT the exhaustive set:
+# the SAM Functional Data Dictionary defines dozens more (NB Native American
+# Owned, JV joint-venture variants, A3 Labor Surplus Area Firm, FR/QZ
+# ethnicity codes, 1E/1S Buy Indian Act, A7 AbilityOne, M8 Educational
+# Institution, government types, and so on). Since 1.0.2 any well-formed
+# 2-character code passes through to the API (which accepts the full FDD
+# set); this table only supplies labels and docstring examples. SBA
+# certification codes still redirect to sba_business_type_code.
 BUSINESS_TYPE_CODES: dict[str, str] = {
     "23": "Minority-Owned Business",
     "27": "Self Certified Small Disadvantaged Business",

@@ -1325,11 +1325,13 @@ def test_fh_search_mock_cgac_with_leading_zeros(monkeypatch):
 
 
 def test_fh_search_mock_cgac_int(monkeypatch):
+    # Round 9: CGAC codes are 3 digits with meaningful leading zeros (HHS
+    # is '075'), so int input zero-pads instead of shipping '20'.
     mock = _Mock({"totalrecords": 0, "orglist": []})
     monkeypatch.setattr(srv, "_get", mock)
     asyncio.run(_call("search_federal_organizations", cgac=20))
     _, params = mock.calls[-1]
-    assert params["cgac"] == "20"
+    assert params["cgac"] == "020"
 
 
 def test_fh_search_mock_strips_none_values(monkeypatch):
@@ -3027,7 +3029,7 @@ def test_live_assist_by_agency_code():
 
 @live
 def test_live_assist_real_fain_filter():
-    """Pull a real fain and re-query — should narrow results."""
+    """Pull a real fain and re-query: should narrow results."""
     async def _fetch():
         baseline = await _call(
             "search_assistance_subawards",

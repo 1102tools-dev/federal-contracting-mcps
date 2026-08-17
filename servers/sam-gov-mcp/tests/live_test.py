@@ -51,7 +51,7 @@ results: list[tuple[str, str, str]] = []
 def record(name: str, status: str, detail: str = "") -> None:
     results.append((name, status, detail))
     icon = {"PASS": PASS, "FAIL": FAIL, "SKIP": SKIP, "INFO": INFO}.get(status, status)
-    print(f"  [{icon}] {name}" + (f" — {detail}" if detail else ""))
+    print(f"  [{icon}] {name}" + (f": {detail}" if detail else ""))
 
 
 def summarize() -> int:
