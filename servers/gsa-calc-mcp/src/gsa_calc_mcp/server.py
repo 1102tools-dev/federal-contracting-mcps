@@ -32,7 +32,6 @@ from .constants import (
     MAX_PAGE_SIZE,
     ORDERING_FIELDS,
     USER_AGENT,
-    WORKSITE_VALUES,
 )
 
 mcp = MCPServer("gsa-calc")
@@ -272,19 +271,28 @@ def _validate_education_level(value: str | None) -> str | None:
     return "|".join(parts)
 
 
-def _validate_worksite(value: str | None) -> str | None:
+def _validate_worksite(value: str | None) -> None:
+    """Reject any worksite value: the CALC+ v3 API silently ignores this filter.
+
+    Live-verified in the 1.0.1 audit: every value (the old Customer /
+    Contractor / Both enum, the raw v3 data values Customer_Facility /
+    Contractor_Facility / Virtual, a space form, a top-level worksite=
+    param, and a site: filter) returned identical unfiltered totals.
+    Accepting the parameter meant answering a customer-site-only question
+    with all-site statistics. Raise loudly until GSA supports the filter.
+    """
     if value is None:
         return None
     s = value.strip() if isinstance(value, str) else str(value).strip()
     if not s:
         return None
-    # Case-normalize to match GSA's expected capitalization
-    match = next((v for v in WORKSITE_VALUES if v.lower() == s.lower()), None)
-    if match is None:
-        raise ValueError(
-            f"worksite={value!r} not valid. Valid: {', '.join(sorted(WORKSITE_VALUES))}."
-        )
-    return match
+    raise ValueError(
+        "worksite filtering is not supported by the CALC+ v3 API; the filter "
+        "is silently ignored upstream (every value returns unfiltered "
+        "results). Remove the worksite argument. The underlying data does "
+        "carry a worksite field (Customer_Facility, Contractor_Facility, "
+        "Virtual), so individual hit records still show it."
+    )
 
 
 def _reject_bool_pre(value: Any) -> Any:
@@ -352,8 +360,13 @@ def _validate_price_range(pmin: float | None, pmax: float | None) -> tuple[float
     pmax = _validate_finite(pmax, field="price_max")
     if pmin is not None and pmin < 0:
         raise ValueError(f"price_min must be >= 0. Got {pmin}.")
-    if pmax is not None and pmax < 0:
-        raise ValueError(f"price_max must be >= 0. Got {pmax}.")
+    if pmax is not None and pmax <= 0:
+        # price_max=0 builds price_range:0,0, which matches nothing and
+        # returns a silent zero-result response. Reject locally.
+        raise ValueError(
+            f"price_max must be > 0. Got {pmax}. A zero or negative ceiling "
+            f"matches no rates and returns silent empty results."
+        )
     if pmin is not None and pmax is not None and pmin > pmax:
         raise ValueError(
             f"price_min (${pmin}) must be <= price_max (${pmax})."
@@ -474,7 +487,6 @@ def _build_filters(
     business_size: Literal["S", "O"] | None = None,
     security_clearance: Literal["yes", "no"] | None = None,
     sin: str | None = None,
-    worksite: str | None = None,
 ) -> list[str]:
     """Build filter strings for the CALC+ API.
 
@@ -488,14 +500,20 @@ def _build_filters(
     if experience_min is not None and experience_max is not None:
         filters.append(f"experience_range:{experience_min},{experience_max}")
     elif experience_min is not None:
-        filters.append(f"min_years_experience:{experience_min}")
+        # Must be experience_range, not min_years_experience: the API treats
+        # min_years_experience:N as an exact term match (only records requiring
+        # exactly N years). Live-verified in the 1.0.1 audit:
+        # min_years_experience:5 matched 7,343 records where
+        # experience_range:5,999 matched the expected 29,120. The 999 sentinel
+        # mirrors the price_range approach below.
+        filters.append(f"experience_range:{experience_min},999")
     elif experience_max is not None:
         filters.append(f"experience_range:0,{experience_max}")
     # Price: support either both, min-only, or max-only
     if price_min is not None and price_max is not None:
         filters.append(f"price_range:{price_min},{price_max}")
     elif price_min is not None:
-        # No hardcoded upper bound — use an explicit sentinel that won't truncate real data
+        # No hardcoded upper bound: use an explicit sentinel that won't truncate real data
         filters.append(f"price_range:{price_min},999999")
     elif price_max is not None:
         filters.append(f"price_range:0,{price_max}")
@@ -505,8 +523,6 @@ def _build_filters(
         filters.append(f"security_clearance:{security_clearance}")
     if sin:
         filters.append(f"sin:{sin}")
-    if worksite:
-        filters.append(f"worksite:{worksite}")
     return filters
 
 
@@ -584,7 +600,7 @@ def _build_query_string(
 def _extract_stats(data: Any) -> dict[str, Any]:
     """Extract key statistics from the aggregations in a response.
 
-    Fully defensive — tolerates every GSA CALC+ / ES response shape observed
+    Fully defensive: tolerates every GSA CALC+ / ES response shape observed
     in testing: aggregations as null / list / str, wage_stats as null, percentile
     values as null, std_deviation_bounds as null, bucket items with None entries
     or missing key/doc_count, hits.total as int or None, wage_stats.avg/std as
@@ -701,10 +717,12 @@ async def keyword_search(
     - business_size: 'S' (small) or 'O' (other/large)
     - security_clearance: 'yes' or 'no'
     - sin: Special Item Number (e.g., '54151S' for IT Professional Services)
-    - worksite: 'Customer', 'Contractor', or 'Both'
+    - worksite: NOT supported (the v3 API silently ignores it; passing a
+      value raises so callers are not handed unfiltered data)
 
     ordering: current_price, labor_category, vendor_name, education_level,
-    min_years_experience. sort: 'asc' or 'desc'.
+    min_years_experience, next_year_price, idv_piid, business_size.
+    sort: 'asc' or 'desc'.
 
     exclude: pipe-delimited hit _id values to exclude from results and stats.
     """
@@ -722,7 +740,7 @@ async def keyword_search(
     experience_min, experience_max = _validate_experience_range(experience_min, experience_max)
     price_min, price_max = _validate_price_range(price_min, price_max)
     education_level = _validate_education_level(education_level)
-    worksite = _validate_worksite(worksite)
+    _validate_worksite(worksite)
     sin = _validate_sin(sin)
     ordering = _validate_ordering(ordering)
     sort = _validate_sort(sort)
@@ -735,7 +753,7 @@ async def keyword_search(
         education_level=education_level, experience_min=experience_min,
         experience_max=experience_max, price_min=price_min, price_max=price_max,
         business_size=business_size, security_clearance=security_clearance,
-        sin=sin, worksite=worksite,
+        sin=sin,
     )
     qs = _build_query_string(
         keyword=keyword, filters=filters, page=page, page_size=page_size,
@@ -882,7 +900,7 @@ async def filtered_browse(
     experience_min, experience_max = _validate_experience_range(experience_min, experience_max)
     price_min, price_max = _validate_price_range(price_min, price_max)
     education_level = _validate_education_level(education_level)
-    worksite = _validate_worksite(worksite)
+    _validate_worksite(worksite)
     sin = _validate_sin(sin)
     ordering = _validate_ordering(ordering)
     sort = _validate_sort(sort)
@@ -891,7 +909,7 @@ async def filtered_browse(
         education_level=education_level, experience_min=experience_min,
         experience_max=experience_max, price_min=price_min, price_max=price_max,
         business_size=business_size, security_clearance=security_clearance,
-        sin=sin, worksite=worksite,
+        sin=sin,
     )
     # GSA CALC returns 265k+ records for an unfiltered browse; callers who
     # omit all filters almost always meant to pass something. Require at
@@ -1052,18 +1070,31 @@ async def price_reasonableness_check(
 @mcp.tool(annotations={"title": "Vendor Rate Card", "readOnlyHint": True, "destructiveHint": False})
 async def vendor_rate_card(
     vendor_name: str,
-    page_size: int = 500,
+    page: int = 1,
+    page_size: int = 100,
     ordering: str = "labor_category",
     sort: Literal["asc", "desc"] = "asc",
 ) -> dict[str, Any]:
-    """Get all ceiling rates for a specific vendor.
+    """Get ceiling rates for a specific vendor, one page at a time.
 
     Auto-discovers the exact vendor name via suggest-contains, then pulls
-    all their rate records. Returns labor categories, rates, education
-    levels, experience requirements, SINs, and contract numbers.
+    their rate records. Returns labor categories, rates, education levels,
+    experience requirements, SINs, and contract numbers.
 
     Pass a partial name (e.g., 'booz' for Booz Allen Hamilton). The tool
     finds the exact registered name automatically.
+
+    Large vendors span many pages: Booz Allen Hamilton carries ~1,900 labor
+    categories. The default page_size is 100 (~23KB) because a 500-row page
+    for a vendor that size is ~114KB and overflows MCP client output limits.
+    Rows are ordered by labor_category ascending by default, so a partial
+    card is alphabet-biased; check has_more and keep calling with next_page
+    until it is false before treating the card as complete.
+
+    There is no server-side way to intersect a vendor with a labor-category
+    keyword (the v3 API ignores vendor_name and labor_category as filter
+    fields; live-verified). To find specific categories, page through the
+    full card and match client-side.
 
     If the discovery term matches multiple vendors, this tool picks the one
     with the most rate records and returns a _candidates list so the caller
@@ -1075,7 +1106,9 @@ async def vendor_rate_card(
         raise ValueError("vendor_name must be at least 2 non-whitespace characters.")
     vendor_name = _clamp_text_len(vendor_name, field="vendor_name", maximum=500)
     vendor_name = _validate_waf_safe(vendor_name, field="vendor_name")
+    page = _clamp(page, field="page", lo=1, hi=100_000)
     page_size = _clamp(page_size, field="page_size", lo=1, hi=MAX_PAGE_SIZE)
+    _validate_es_window(page, page_size)
     ordering = _validate_ordering(ordering)
     sort = _validate_sort(sort)
 
@@ -1097,10 +1130,10 @@ async def vendor_rate_card(
             f"isn't the intended vendor, pass a more specific term."
         )
 
-    # Step 2: pull all rates for that vendor
+    # Step 2: pull one page of rates for that vendor
     qs = _build_query_string(
         search_field="vendor_name", search_value=exact_name,
-        page=1, page_size=page_size, ordering=ordering, sort=sort,
+        page=page, page_size=page_size, ordering=ordering, sort=sort,
     )
     data = await _get(qs)
 
@@ -1129,20 +1162,41 @@ async def vendor_rate_card(
     else:
         total = 0
 
+    # Pagination metadata: without it, a 100-row page of a 1,886-row card
+    # presents as the complete rate card (the CALC-3 field finding).
+    returned = len(rates)
+    start_row = (page - 1) * page_size + 1
+    end_row = (page - 1) * page_size + returned
+    has_more = returned > 0 and end_row < total
+
     response: dict[str, Any] = {
         "vendor": exact_name,
         "total_categories": total,
-        "returned": len(rates),
+        "page": page,
+        "returned": returned,
+        "returned_range": f"rows {start_row}-{end_row} of {total}" if returned else None,
+        "has_more": has_more,
+        "next_page": page + 1 if has_more else None,
         "rates": rates,
         "_stats": _extract_stats(data),
     }
+    if has_more:
+        response["_truncation_note"] = (
+            f"Partial rate card: rows are ordered by {ordering} ({sort}), so "
+            f"this slice is biased toward the start of that ordering "
+            f"(alphabetical by labor category with the defaults). Categories "
+            f"later in the ordering, like 'Software Engineer' or 'Systems "
+            f"Engineer', may not appear until later pages. Call again with "
+            f"page={page + 1} to continue; do not present a partial slice as "
+            f"the complete card."
+        )
     if multi_match_note:
         response["_note"] = multi_match_note
         response["_candidates"] = [
             {"value": s.get("value"), "count": s.get("count")}
             for s in suggestions[:10]
         ]
-    return response
+    return _attach_pagination_flags(response, page=page, page_size=page_size, total=total if isinstance(total, int) else None)
 
 
 @mcp.tool(annotations={"title": "SIN Analysis", "readOnlyHint": True, "destructiveHint": False})
@@ -1155,12 +1209,12 @@ async def sin_analysis(
     Returns rate statistics, education breakdown, business size breakdown,
     and sample records for a GSA MAS Special Item Number.
 
-    Common SINs for professional services:
+    Common SINs for professional services (live-verified to return records):
     - 54151S: IT Professional Services
     - 541611: Management and Financial Consulting
     - 541715: Engineering R&D
     - 541330ENG: Engineering Services
-    - 541512: Computer Systems Design
+    - 561210FAC: Facilities Maintenance and Management
     - 611430: Training
     """
     sin_code = _validate_sin(sin_code)
@@ -1176,10 +1230,22 @@ async def sin_analysis(
     data = await _get(qs)
     stats = _extract_stats(data)
 
-    return {
+    result: dict[str, Any] = {
         "sin": sin_code,
         **stats,
     }
+    if not stats.get("total_rates"):
+        # A valid-looking SIN with zero records is usually a retired code,
+        # not an empty market. Live-verified: 541512, 541513, 541610, and
+        # 541519 all return 0 records (absorbed or retired under MAS
+        # consolidation).
+        result["_note"] = (
+            "0 records for this SIN. It may be retired under MAS "
+            "consolidation (for example 541512/541513 work now falls under "
+            "54151S). Verify the current MAS SIN or use keyword_search on "
+            "the labor category instead."
+        )
+    return result
 
 
 # ---------------------------------------------------------------------------

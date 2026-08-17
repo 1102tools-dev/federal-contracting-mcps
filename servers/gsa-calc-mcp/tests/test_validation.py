@@ -227,12 +227,12 @@ def test_worksite_bogus():
     ))
 
 
-def test_worksite_case_normalized():
-    """'customer' should normalize to 'Customer'."""
-    try:
-        asyncio.run(_call("keyword_search", keyword="test", worksite="customer"))
-    except Exception as e:
-        assert "worksite" not in str(e).lower() or "valid" not in str(e).lower()
+def test_worksite_any_value_rejected():
+    """1.0.1: the v3 API silently ignores the worksite filter, so every
+    value (including the formerly valid 'customer') raises locally."""
+    asyncio.run(_call_expect_error(
+        "keyword_search", "not supported", keyword="test", worksite="customer"
+    ))
 
 
 def test_sin_special_chars_rejected():

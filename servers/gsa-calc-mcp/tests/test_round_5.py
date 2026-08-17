@@ -326,18 +326,21 @@ def test_property_validate_education_level_never_crashes(value):
 # G. _validate_worksite
 # ===========================================================================
 
-@pytest.mark.parametrize("ws", ["Customer", "Contractor", "Both"])
-def test_validate_worksite_each_valid(ws):
-    result = _validate_worksite(ws)
-    assert result == ws
-
-
-@pytest.mark.parametrize("ws", ["customer", "CUSTOMER", "  Both  "])
-def test_validate_worksite_normalization(ws):
-    try:
+# 1.0.1: the v3 API silently ignores the worksite filter (live-verified,
+# every value returns unfiltered totals), so every non-empty value must now
+# raise instead of being accepted and dropped upstream.
+@pytest.mark.parametrize("ws", [
+    "Customer", "Contractor", "Both", "customer", "CUSTOMER", "  Both  ",
+    "Customer_Facility", "Virtual",
+])
+def test_validate_worksite_rejects_every_value(ws):
+    with pytest.raises(ValueError, match="not supported"):
         _validate_worksite(ws)
-    except ValueError:
-        pass
+
+
+@pytest.mark.parametrize("ws", [None, "", "   "])
+def test_validate_worksite_none_and_empty_pass(ws):
+    assert _validate_worksite(ws) is None
 
 
 @PUNISHMENT
@@ -372,7 +375,7 @@ def test_property_validate_sin_never_crashes(value):
 
 
 @pytest.mark.parametrize("sin", [
-    "54151S", "541611", "541715", "541330ENG", "541512", "611430",
+    "54151S", "541611", "541715", "541330ENG", "561210FAC", "611430",
 ])
 def test_validate_sin_real_codes(sin):
     result = _validate_sin(sin)
@@ -573,7 +576,7 @@ def test_property_clamp_huge_ints(value):
 
 
 # ===========================================================================
-# N. LIVE TESTS — Real GSA CALC API
+# N. LIVE TESTS: Real GSA CALC API
 # ===========================================================================
 
 # All live tests gate on GSA_CALC_LIVE_TESTS=1
@@ -607,9 +610,10 @@ def test_live_keyword_search_each_common_category(term):
     assert isinstance(data, dict)
 
 
-# Real SINs
+# Real SINs (541512 swapped for 561210FAC in 1.0.1: it returns 0 records,
+# retired under MAS consolidation)
 COMMON_SINS = [
-    "54151S", "541611", "541715", "541330ENG", "541512", "611430",
+    "54151S", "541611", "541715", "541330ENG", "561210FAC", "611430",
     "541330", "541990",
 ]
 
@@ -706,16 +710,16 @@ def test_live_filtered_browse_clearance(clearance):
     assert isinstance(data, dict)
 
 
-@pytest.mark.skipif(not LIVE, reason=LIVE_REASON)
+# 1.0.1: worksite raises locally (the v3 API silently ignores the filter),
+# so this no longer needs the live gate; no HTTP call happens.
 @pytest.mark.parametrize("worksite", ["Customer", "Contractor", "Both"])
-def test_live_filtered_browse_worksite(worksite):
-    r = asyncio.run(mcp.call_tool("filtered_browse", {
-        "worksite": worksite,
-        "education_level": "BA",
-        "page_size": 10,
-    }))
-    data = _payload(r)
-    assert isinstance(data, dict)
+def test_filtered_browse_worksite_rejected(worksite):
+    with pytest.raises(Exception, match="worksite filtering is not supported"):
+        asyncio.run(mcp.call_tool("filtered_browse", {
+            "worksite": worksite,
+            "education_level": "BA",
+            "page_size": 10,
+        }))
 
 
 # exact_search

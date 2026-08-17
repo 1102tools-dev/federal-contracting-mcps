@@ -1,5 +1,87 @@
 # Changelog
 
+## 1.0.1
+
+Round 6 audit: differential live testing (count assertions against the API's
+own aggregation buckets) surfaced two high-severity silent-wrong-data paths
+that five shape-only rounds had missed, plus stale hardcoded SINs; the guide
+field audit added a third high-severity item in the same wave
+(vendor_rate_card could not page past its first slice). The API itself is
+alive and current (nightly index verified 2026-08-17); every finding below
+is a server-side contract mismatch.
+
+### Fixed
+
+- **`worksite` now raises instead of silently returning unfiltered data.**
+  The CALC+ v3 API ignores the worksite filter entirely. Live-verified:
+  Customer, Contractor, Both, the raw v3 data values (Customer_Facility,
+  Contractor_Facility, Virtual), a space form, a top-level `worksite=`
+  param, and a `site:` filter all return identical unfiltered totals
+  (49,090 for keyword=engineer, against worksite buckets of 25,358 /
+  21,245 / 2,487). A caller asking for customer-site-only rates got
+  all-site statistics with no warning. Passing worksite now raises a clear
+  ValueError until GSA supports the filter; a live-gated canary test fails
+  if GSA ever starts honoring it.
+- **`experience_min` alone now filters as a true minimum.** The min-only
+  branch emitted `min_years_experience:N`, which the API treats as an exact
+  term match: experience_min=5 returned only the 7,343 records requiring
+  exactly 5 years and silently dropped the ~21,800 records requiring 6+.
+  Now emits `experience_range:N,999` (29,120 records for the same query),
+  mirroring the price_range sentinel. This also corrects igce_benchmark and
+  price_reasonableness_check statistics whenever only experience_min was
+  supplied.
+- **`price_max<=0` rejected.** price_max=0 built `price_range:0,0`, which
+  matches nothing and returned a silent zero-result response. The 0.2.2
+  testing record claimed a 0.01 minimum was enforced; no such guard existed.
+- **Dead SINs removed from COMMON_SINS and the sin_analysis docstring.**
+  541512, 541513, 541610, and 541519 return 0 records on the live API
+  (retired or absorbed under MAS consolidation). The docstring recommended
+  541512, steering callers into silent empty analyses; 561210FAC (11,925
+  records) replaces it. sin_analysis now appends a "may be retired under
+  MAS consolidation" note whenever a SIN returns 0 records.
+- **keyword_search docstring lists all 8 valid ordering fields.** It named
+  5; next_year_price, idv_piid, and business_size were valid (live-verified
+  to sort correctly) but undocumented.
+- **vendor_rate_card is now pageable.** It accepted page_size but no page
+  parameter, so rows 501+ of a large vendor's card were unreachable at any
+  size, and the 500-row default payload for Booz Allen Hamilton (1,886
+  labor categories) was ~114KB, which overflows MCP client output limits
+  outright. Because rows come back alphabetized, the visible slice was
+  also systematically biased toward the front of the alphabet (Software /
+  Network / Systems Engineer all sorted past the cutoff) while presenting
+  as complete. Surfaced by the guide field audit (CALC-3). Now: a page
+  parameter wired like keyword_search's, default page_size dropped to 100
+  (~23KB for the worst known vendor), and response metadata that makes
+  truncation impossible to miss (returned_range, has_more, next_page, and
+  a truncation note naming the alphabetical bias). Also live-verified that
+  no server-side vendor-plus-category-keyword intersection exists (the API
+  silently ignores vendor_name and labor_category as filter fields), so
+  the docstring states it explicitly: fetch pages and filter client-side.
+
+### Testing
+
+- New `tests/test_round_6.py` in the three-tier style: offline validation
+  tests for the new rejections, offline mock tests asserting the exact wire
+  filters, and live-gated differential tests that assert counts against the
+  response's own aggregation buckets rather than response shape. The round 6
+  methodology lesson: rounds 1-5 asserted `isinstance(data, dict)` on live
+  responses and never compared a filtered total against the unfiltered
+  total or the API's own buckets, which is exactly where both high-severity
+  bugs lived.
+- Round-5 tests updated where they asserted the old worksite acceptance
+  behavior; the dead 541512 swapped out of the real-SIN parametrization.
+- vendor_rate_card pagination regressions in tests/test_round_6.py: mock
+  wire tests (page passthrough, the new 100 default), metadata tests
+  (returned_range, has_more, next_page, truncation note, paged-past-end),
+  and live differential tests (page 2 differs from page 1 with a stable
+  total, the late-alphabet tail of the Booz Allen card is reachable).
+- testing.md corrected: the live-gate env var is `GSA_CALC_LIVE_TESTS=1`
+  (was documented as `CALC_LIVE_TESTS=1`, which silently runs zero live
+  tests), phantom stress_test_r2/r3 files dropped from the coverage table,
+  free-text length caps corrected to 500 (not 200) and sin_code to 20 (not
+  50), the phantom price_max guard claim corrected, release rows updated.
+- USER_AGENT bumped to `gsa-calc-mcp/1.0.1`.
+
 ## 1.0.0
 
 First stable release. The suite is feature-complete for its intended scope and
