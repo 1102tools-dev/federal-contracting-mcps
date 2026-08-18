@@ -16,7 +16,7 @@ Website: [1102tools.com](https://1102tools.com)
 
 **[Download the prompt guide (PDF)](https://1102tools.com/downloads/1102tools-prompt-guide.pdf)**: what to ask once the servers are in. Competitor intelligence, bid decisions, recompete timing, and pricing, centered on when SAM.gov is the answer and when USASpending beats it. Every prompt pattern was run against the live servers before publishing.
 
-![Architecture diagram showing how a question travels: your AI client (any of the ten supported clients), to an MCP server launched by uvx on your own machine, to the official federal API using your own free key, back to a deterministic result. Coverage is grouped in three domains. Awards and entities: SAM.gov (19 tools, key) and USASpending (55 tools). Labor and pricing: BLS OEWS (7 tools, key), GSA CALC+ (8 tools), GSA Per Diem (6 tools, key). Regulation and rulemaking: eCFR (13 tools), Federal Register (8 tools), Regulations.gov (8 tools, key).](docs/architecture.png)
+![Architecture diagram showing how a question travels: your AI client (any of the eleven supported clients), to an MCP server launched by uvx on your own machine, to the official federal API using your own free key, back to a deterministic result. Coverage is grouped in three domains. Awards and entities: SAM.gov (19 tools, key) and USASpending (55 tools). Labor and pricing: BLS OEWS (7 tools, key), GSA CALC+ (8 tools), GSA Per Diem (6 tools, key). Regulation and rulemaking: eCFR (13 tools), Federal Register (8 tools), Regulations.gov (8 tools, key).](docs/architecture.png)
 
 ---
 
@@ -70,27 +70,29 @@ Combined: 124 deterministic tool calls, 4,715 regression tests, 8 audit programs
 
 ## Install
 
-Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/). Works in any MCP client: Claude Desktop, Claude Code, Cursor, Cline, Zed, Continue.
+Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/). MCP is an open standard: these servers run in any MCP client, not just Claude. Every install path was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat.
 
 **1. Register the free API keys you need.** [BLS](https://data.bls.gov/registrationEngine/), [api.data.gov](https://api.data.gov/signup/) (covers Per Diem and Regulations.gov), [SAM.gov](https://sam.gov/). USASpending, GSA CALC+, eCFR, and Federal Register need no key.
 
-**2. Add the servers you want to your client config.** For Claude Desktop that is `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, or `%APPDATA%\Claude\claude_desktop_config.json` on Windows.
+**2. Add the servers you want to your client config.** Most clients take the same `mcpServers` JSON block and differ only in where the config file lives (for Claude Desktop it is `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows). The [universal setup guide](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for all eleven platforms, including the Codex TOML form.
 
 ```json
 {
   "mcpServers": {
     "ecfr": {
       "command": "uvx",
-      "args": ["ecfr-mcp"]
+      "args": ["--refresh-package", "ecfr-mcp", "--from", "ecfr-mcp", "ecfr-mcp"]
     },
     "sam-gov": {
       "command": "uvx",
-      "args": ["sam-gov-mcp"],
+      "args": ["--refresh-package", "sam-gov-mcp", "--from", "sam-gov-mcp", "sam-gov-mcp"],
       "env": { "SAM_API_KEY": "your-key-here" }
     }
   }
 }
 ```
+
+The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes and new tools arrive automatically. Without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup; if your platform enforces a short MCP startup timeout, raise it (the setup guide covers this per platform).
 
 **3. Restart the client.** Each server's README has its own block with the correct package name and environment variable.
 
@@ -119,7 +121,7 @@ Each server directory ships its own `pyproject.toml`, source, regression tests, 
 
 ## Companion repo
 
-[federal-contracting-skills](https://github.com/1102tools/federal-contracting-skills): Claude Skills that orchestrate these MCPs into complete acquisition deliverables: SOW/PWS Builder, three IGCE Builders (FFP, LH/T&M, Cost-Reimbursement), OT Project Description Builder, OT Cost Analysis.
+[federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills): Claude Skills that orchestrate these MCPs into complete acquisition deliverables: SOW/PWS Builder, three IGCE Builders (FFP, LH/T&M, Cost-Reimbursement), OT Project Description Builder, OT Cost Analysis.
 
 MCPs handle data. Skills handle deliverables.
 
@@ -128,7 +130,7 @@ MCPs handle data. Skills handle deliverables.
 - **Deterministic.** MCP servers execute tested Python. Claude does not generate API-call code on the fly. Same input, same output.
 - **Low context cost.** Tool schemas are ~100 tokens each. The deprecated API-data skills cost 500-1000 lines of context per run.
 - **Production-hardened.** Each MCP went through 3-6 audit rounds with live testing against its production API.
-- **Cross-client.** MCP is an open standard. Same servers run in Claude Desktop, Claude Code, Cursor, Cline, Zed, Continue.
+- **Cross-client.** MCP is an open standard. The same servers were executed and verified on eleven platforms in August 2026, from Claude Desktop and Claude Code to Codex, Antigravity, Copilot, Cursor, opencode, and LibreChat.
 
 ## Website
 

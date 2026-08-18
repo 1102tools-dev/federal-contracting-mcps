@@ -4,7 +4,7 @@
 
 MCP server for the BLS Occupational Employment and Wage Statistics (OEWS) API. Market wage data for IGCE development, price analysis, and labor market research.
 
-Optional free API key for higher rate limits. Works without a key at reduced limits.
+Optional free API key for higher rate limits. Works without a key at reduced limits. MCP is an open standard: this server runs in any MCP client, not just Claude. Executed and verified on eleven platforms in August 2026 (see [Configuration](#configuration)).
 
 *Tested and hardened through a 5-round retroactive live audit with a real BLS API key after the initial smoke test reported zero bugs. 60 regression tests covering 1 P0 usability-breaking bug (SOC format), 10 P1 silent-wrong-data bugs, 12 P1 response-shape crash paths, and 7 P2 validation gaps fixed. See [TESTING.md](TESTING.md) for the full testing record.*
 
@@ -35,7 +35,9 @@ Without a key, the server uses BLS v1 API (25 queries/day). With a key, it uses 
 uvx bls-oews-mcp
 ```
 
-## Claude Desktop configuration
+## Configuration
+
+MCP is an open standard, and this config was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat. Most clients take the same JSON block below and differ only in where the config file lives; the [universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for every platform, including the Codex TOML form.
 
 Without key:
 ```json
@@ -43,7 +45,7 @@ Without key:
   "mcpServers": {
     "bls-oews": {
       "command": "uvx",
-      "args": ["bls-oews-mcp"]
+      "args": ["--refresh-package", "bls-oews-mcp", "--from", "bls-oews-mcp", "bls-oews-mcp"]
     }
   }
 }
@@ -55,7 +57,7 @@ With key (recommended):
   "mcpServers": {
     "bls-oews": {
       "command": "uvx",
-      "args": ["bls-oews-mcp"],
+      "args": ["--refresh-package", "bls-oews-mcp", "--from", "bls-oews-mcp", "bls-oews-mcp"],
       "env": {
         "BLS_API_KEY": "your-api-key-here"
       }
@@ -63,6 +65,10 @@ With key (recommended):
   }
 }
 ```
+
+The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes arrive automatically; without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup, so raise your platform's MCP startup timeout if it enforces a short one.
+
+Restart the client and the tools appear.
 
 ## Example prompts
 

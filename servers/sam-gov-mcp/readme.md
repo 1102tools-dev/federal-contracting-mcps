@@ -4,7 +4,7 @@
 
 MCP server for SAM.gov entity registration, exclusion/debarment, contract opportunity, contract award, federal hierarchy, and FFATA subaward data.
 
-Requires a free SAM.gov API key. Works with any MCP-compatible client (Claude Desktop, Claude Code, Cursor, Cline, Continue, Zed, etc.).
+Requires a free SAM.gov API key. MCP is an open standard: this server runs in any MCP client, not just Claude. Executed and verified on eleven platforms in August 2026 (see [Configuration](#configuration)).
 
 *Tested and hardened through eight audit rounds plus live audits with a real SAM.gov key. 1,094 regression tests. v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied to all 8 MCPs in the suite. See [testing.md](testing.md) for the full testing record.*
 
@@ -81,21 +81,21 @@ pip install sam-gov-mcp
 ### From source
 
 ```bash
-git clone https://github.com/1102tools/federal-contracting-mcps.git
+git clone https://github.com/1102tools-dev/federal-contracting-mcps.git
 cd federal-contracting-mcps/servers/sam-gov-mcp
 pip install -e .
 ```
 
-## Claude Desktop configuration
+## Configuration
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+MCP is an open standard, and this config was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat. Most clients take the same JSON block below and differ only in where the config file lives; the [universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for every platform, including the Codex TOML form.
 
 ```json
 {
   "mcpServers": {
     "sam-gov": {
       "command": "uvx",
-      "args": ["sam-gov-mcp"],
+      "args": ["--refresh-package", "sam-gov-mcp", "--from", "sam-gov-mcp", "sam-gov-mcp"],
       "env": {
         "SAM_API_KEY": "SAM-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
       }
@@ -104,7 +104,9 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 }
 ```
 
-Restart Claude Desktop. The server appears in your MCP tools panel.
+The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes arrive automatically; without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup, so raise your platform's MCP startup timeout if it enforces a short one.
+
+Restart the client and the tools appear.
 
 ## Example prompts
 
@@ -129,7 +131,7 @@ Once configured (these mirror the field-tested set in the
 
 ## Design notes
 
-- **Authentication via env var only.** `SAM_API_KEY` is read from the environment on every call. The key never enters Claude's conversation context.
+- **Authentication via env var only.** `SAM_API_KEY` is read from the environment on every call. The key never enters the model's conversation context.
 - **90-day expiration awareness.** 401/403 errors are translated into an actionable "regenerate at sam.gov/profile/details" message with full context.
 - **API quirks baked in as safety rails.**
   - Entity Management hard cap of size=10 is enforced client-side with a clear error
@@ -153,7 +155,7 @@ Once configured (these mirror the field-tested set in the
 
 ## Part of
 
-[federal-contracting-mcps](https://github.com/1102tools/federal-contracting-mcps): monorepo of 8 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools/federal-contracting-skills).
+[federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 8 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills).
 
 ## License
 

@@ -4,7 +4,7 @@
 
 MCP server for the GSA CALC+ Labor Ceiling Rates API. Query awarded GSA MAS schedule hourly rates for IGCE development, price reasonableness analysis, and market research.
 
-No authentication required. Works with any MCP-compatible client.
+No authentication required. MCP is an open standard: this server runs in any MCP client, not just Claude. Executed and verified on eleven platforms in August 2026 (see [Configuration](#configuration)).
 
 *Tested and hardened through six audit rounds against the GSA CALC+ API. 352 regression tests (247 offline, 105 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). See [testing.md](testing.md) for the full testing record.*
 
@@ -37,23 +37,29 @@ uvx gsa-calc-mcp
 Or from source:
 
 ```bash
-git clone https://github.com/1102tools/federal-contracting-mcps.git
+git clone https://github.com/1102tools-dev/federal-contracting-mcps.git
 cd federal-contracting-mcps/servers/gsa-calc-mcp
 pip install -e .
 ```
 
-## Claude Desktop configuration
+## Configuration
+
+MCP is an open standard, and this config was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat. Most clients take the same JSON block below and differ only in where the config file lives; the [universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for every platform, including the Codex TOML form.
 
 ```json
 {
   "mcpServers": {
     "gsa-calc": {
       "command": "uvx",
-      "args": ["gsa-calc-mcp"]
+      "args": ["--refresh-package", "gsa-calc-mcp", "--from", "gsa-calc-mcp", "gsa-calc-mcp"]
     }
   }
 }
 ```
+
+The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes arrive automatically; without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup, so raise your platform's MCP startup timeout if it enforces a short one.
+
+Restart the client and the tools appear.
 
 ## Example prompts
 

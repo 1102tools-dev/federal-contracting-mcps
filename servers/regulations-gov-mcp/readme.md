@@ -4,7 +4,7 @@
 
 MCP server for the Regulations.gov API. Federal rulemaking dockets, proposed rules, final rules, public comments, and comment period tracking.
 
-Optional free API key for higher rate limits.
+Optional free API key for higher rate limits. MCP is an open standard: this server runs in any MCP client, not just Claude. Executed and verified on eleven platforms in August 2026 (see [Configuration](#configuration)).
 
 *Tested and hardened through five rounds of integration testing against the live Regulations.gov API, including a round-7 independent re-audit with live verification. 197 regression tests covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, and 12 round-7 findings fixed. See [testing.md](testing.md) for the full testing record.*
 
@@ -39,7 +39,7 @@ limiting.
 1. Go to [open.gsa.gov/api/regulationsgov/#getting-started](https://open.gsa.gov/api/regulationsgov/#getting-started) (or directly at [api.data.gov/signup](https://api.data.gov/signup/))
 2. Enter your name and email: no approval, no wait
 3. Copy the key from the confirmation page
-4. Paste it into your Claude Desktop config as `REGULATIONS_GOV_API_KEY` (see below)
+4. Paste it into your client config as `REGULATIONS_GOV_API_KEY` (see below)
 
 The same api.data.gov key works for every api.data.gov-backed API
 (Regulations.gov, GSA Per Diem, NASA, FEC, FCC, etc.), so if you already
@@ -51,7 +51,9 @@ have one for another 1102tools MCP you can reuse it.
 uvx regulationsgov-mcp
 ```
 
-## Claude Desktop configuration
+## Configuration
+
+MCP is an open standard, and this config was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat. Most clients take the same JSON block below and differ only in where the config file lives; the [universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for every platform, including the Codex TOML form.
 
 **Recommended (with your own key):**
 ```json
@@ -59,7 +61,7 @@ uvx regulationsgov-mcp
   "mcpServers": {
     "regulationsgov": {
       "command": "uvx",
-      "args": ["regulationsgov-mcp"],
+      "args": ["--refresh-package", "regulationsgov-mcp", "--from", "regulationsgov-mcp", "regulationsgov-mcp"],
       "env": {
         "REGULATIONS_GOV_API_KEY": "paste-your-api-data-gov-key-here"
       }
@@ -74,11 +76,15 @@ uvx regulationsgov-mcp
   "mcpServers": {
     "regulationsgov": {
       "command": "uvx",
-      "args": ["regulationsgov-mcp"]
+      "args": ["--refresh-package", "regulationsgov-mcp", "--from", "regulationsgov-mcp", "regulationsgov-mcp"]
     }
   }
 }
 ```
+
+The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes arrive automatically; without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup, so raise your platform's MCP startup timeout if it enforces a short one.
+
+Restart the client and the tools appear.
 
 ## Example prompts
 

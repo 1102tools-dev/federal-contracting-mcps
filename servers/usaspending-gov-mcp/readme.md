@@ -4,7 +4,7 @@
 
 MCP server for the USASpending.gov federal contract, award, subaward, recipient, agency, and federal account API.
 
-No API key required. Works with any MCP-compatible client (Claude Desktop, Claude Code, Cursor, Cline, Continue, Zed, etc.).
+No API key required. MCP is an open standard: this server runs in any MCP client, not just Claude. Executed and verified on eleven platforms in August 2026 (see [Configuration](#configuration)).
 
 *Tested and hardened through ten rounds of integration testing against the live USASpending.gov API. 2,151 regression tests (1,783 offline, 368 live-gated); round 10 fixed 25 verified findings across both tool families, including filters that could never match and a tool that had never once succeeded. See [testing.md](testing.md) for the full testing record.*
 
@@ -101,25 +101,27 @@ third-party package on PyPI, not this project.
 ### From source
 
 ```bash
-git clone https://github.com/1102tools/federal-contracting-mcps.git
+git clone https://github.com/1102tools-dev/federal-contracting-mcps.git
 cd federal-contracting-mcps/servers/usaspending-gov-mcp
 pip install -e .
 ```
 
-## Claude Desktop configuration
+## Configuration
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+MCP is an open standard, and this config was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat. Most clients take the same JSON block below and differ only in where the config file lives; the [universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for every platform, including the Codex TOML form.
 
 ```json
 {
   "mcpServers": {
     "usaspending": {
       "command": "uvx",
-      "args": ["--from", "usaspending-gov-mcp", "usaspending-mcp"]
+      "args": ["--refresh-package", "usaspending-gov-mcp", "--from", "usaspending-gov-mcp", "usaspending-mcp"]
     }
   }
 }
 ```
+
+The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes arrive automatically; without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup, so raise your platform's MCP startup timeout if it enforces a short one.
 
 If you installed via `pip install -e .` or a regular `pip install`:
 
@@ -134,22 +136,7 @@ If you installed via `pip install -e .` or a regular `pip install`:
 }
 ```
 
-Restart Claude Desktop. The server should appear in the MCP tools panel.
-
-## Claude Code configuration
-
-Add to `~/.claude.json` or your project's `.claude.json`:
-
-```json
-{
-  "mcpServers": {
-    "usaspending": {
-      "command": "uvx",
-      "args": ["--from", "usaspending-gov-mcp", "usaspending-mcp"]
-    }
-  }
-}
-```
+Restart the client and the tools appear.
 
 ## Example prompts
 

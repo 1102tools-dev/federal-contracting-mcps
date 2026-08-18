@@ -4,7 +4,7 @@
 
 MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplement text with no authentication required.
 
-Works with any MCP-compatible client (Claude Desktop, Claude Code, Cursor, Cline, Continue, Zed, etc.).
+MCP is an open standard: this server runs in any MCP client, not just Claude. Executed and verified on eleven platforms in August 2026 (see [Configuration](#configuration)).
 
 *Tested and hardened through six rounds of integration testing against the live eCFR API. 295 regression tests (182 offline, 113 live-gated) covering 2 P0 catastrophic bugs, 26 P1 silent-wrong-data bugs, 32 P2 validation gaps, and the round-6 audit fixes (Title 48 chapter whitelist, table extraction, appendix access). See [testing.md](testing.md) for the full testing record.*
 
@@ -50,27 +50,29 @@ pip install ecfr-mcp
 ### From source
 
 ```bash
-git clone https://github.com/1102tools/federal-contracting-mcps.git
+git clone https://github.com/1102tools-dev/federal-contracting-mcps.git
 cd federal-contracting-mcps/servers/ecfr-mcp
 pip install -e .
 ```
 
-## Claude Desktop configuration
+## Configuration
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+MCP is an open standard, and this config was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat. Most clients take the same JSON block below and differ only in where the config file lives; the [universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for every platform, including the Codex TOML form.
 
 ```json
 {
   "mcpServers": {
     "ecfr": {
       "command": "uvx",
-      "args": ["ecfr-mcp"]
+      "args": ["--refresh-package", "ecfr-mcp", "--from", "ecfr-mcp", "ecfr-mcp"]
     }
   }
 }
 ```
 
-Restart Claude Desktop. The `ecfr` server appears in your MCP tools panel with 13 tools.
+The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes arrive automatically; without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup, so raise your platform's MCP startup timeout if it enforces a short one.
+
+Restart the client. The `ecfr` server appears with 13 tools.
 
 ## Example prompts
 
@@ -85,7 +87,7 @@ Restart Claude Desktop. The `ecfr` server appears in your MCP tools panel with 1
 
 ## Design notes
 
-- **XML parsed server-side.** The eCFR content endpoint returns raw XML. This server parses it into clean text (headings, paragraphs, citations) before returning to Claude, saving significant context tokens.
+- **XML parsed server-side.** The eCFR content endpoint returns raw XML. This server parses it into clean text (headings, paragraphs, citations) before returning to the model, saving significant context tokens.
 - **Automatic date resolution.** eCFR lags 1-2 business days behind the Federal Register. Using today's date on versioner endpoints causes 404 errors. All content tools auto-resolve to the latest available date unless you specify one.
 - **Search defaults to current text.** Without `date=current`, eCFR search returns ALL historical versions including superseded. Default `current_only=True` prevents duplicate results.
 - **Structure endpoint limitation.** The eCFR structure endpoint does not support section-level filtering (returns 400). `list_sections_in_part` works around this by fetching the part structure and walking the tree.
@@ -110,9 +112,9 @@ Restart Claude Desktop. The `ecfr` server appears in your MCP tools panel with 1
 
 All data from [ecfr.gov](https://www.ecfr.gov), the continuously updated online Code of Federal Regulations maintained by the Office of the Federal Register. Updated daily, typically 1-2 business days after Federal Register publication. Not an official legal edition; for official citations reference the annual CFR from GPO.
 
-## Companion skill
+## Part of
 
-This MCP mirrors the `ecfr-api` skill from [1102tools.com](https://1102tools.com). The skill is markdown-based for interactive Claude use; the MCP wraps the same API as deterministic tool calls for agent workflows and automation.
+[federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 8 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills).
 
 ## License
 
