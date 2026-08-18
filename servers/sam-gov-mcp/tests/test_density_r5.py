@@ -934,9 +934,10 @@ def test_fiscal_year_negative_rejected():
     )
 
 
-def test_fiscal_year_2007_boundary_rejected():
-    """SAM Contract Awards starts at FY2008."""
-    asyncio.run(_call_expect_error("search_contract_awards", "out of range", fiscal_year=2007))
+def test_fiscal_year_1969_boundary_rejected():
+    """Round 10 live-verified data back to FY1970; the old FY2008 floor was
+    wrong and walled off four decades (FY1980 alone has 634k records)."""
+    asyncio.run(_call_expect_error("search_contract_awards", "out of range", fiscal_year=1969))
 
 
 def test_fiscal_year_far_future_rejected():

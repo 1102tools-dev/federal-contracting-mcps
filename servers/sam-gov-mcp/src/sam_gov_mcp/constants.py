@@ -15,7 +15,7 @@ SUBCONTRACTS_PATH = "/prod/contract/v1/subcontracts/search"
 ASSISTANCE_SUBAWARDS_PATH = "/prod/assistance/v1/subawards/search"
 
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = "sam-gov-mcp/1.0.2"
+USER_AGENT = "sam-gov-mcp/1.0.4"
 
 # Hard caps from the SAM.gov API (enforce client-side to give good errors)
 ENTITY_MAX_SIZE = 10          # Entity Management has a hard cap of 10
@@ -129,7 +129,9 @@ EXCLUSION_CLASSIFICATIONS = [
     "Special Entity Designation",
 ]
 
-# Registration status codes
+# Registration status codes. Only A and E are usable filter values: D and I
+# were live-verified 2026-08 to return 0 records for every query, so the
+# tools no longer accept them (kept here for reference/response decoding).
 REGISTRATION_STATUS = {
     "A": "Active",
     "E": "Expired",

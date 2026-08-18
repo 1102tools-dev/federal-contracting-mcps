@@ -2,18 +2,19 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes seven SAM.gov REST APIs (Entity Management v3, Exclusions v4, Opportunities v2, Contract Awards v1, Federal Hierarchy v1, Acquisition Subaward Reporting, Assistance Subaward Reporting) plus the PSC lookup as 19 callable tools. It was hardened across nine audit rounds. Live audits surfaced seven catastrophic P1 silent-wrong-data bugs mocks could never catch (apostrophe-rejecting WAF, typo'd-parameter silent drops, empty PIID acceptance, `entityName` vs `exclusionName`, and three Subaward parameter casings). Round 9 (1.0.2), an independent full-source re-audit, found the worst one yet by replaying the documented Entity API response shape through the real pipeline: `get_entity_reps_and_certs` read the wrong JSON key casings, so its default summary mode returned EMPTY clause lists for every entity, and eight prior rounds never noticed because their live assertions only checked `totalRecords`. This MCP is also where the `extra='forbid'` cross-fix pattern was invented and exported to the rest of the suite. The MCP ships with 1,125 regression tests (754 offline, 371 live-gated), the highest count in the 1102tools MCP suite.
+This Model Context Protocol server exposes seven SAM.gov REST APIs (Entity Management v3, Exclusions v4, Opportunities v2, Contract Awards v1, Federal Hierarchy v1, Acquisition Subaward Reporting, Assistance Subaward Reporting) plus the PSC lookup as 19 callable tools. It was hardened across ten audit rounds, the tenth being a ~230-call paced live campaign against production. Live audits surfaced seven catastrophic P1 silent-wrong-data bugs mocks could never catch (apostrophe-rejecting WAF, typo'd-parameter silent drops, empty PIID acceptance, `entityName` vs `exclusionName`, and three Subaward parameter casings). Round 9 (1.0.2), an independent full-source re-audit, found the worst one yet by replaying the documented Entity API response shape through the real pipeline: `get_entity_reps_and_certs` read the wrong JSON key casings, so its default summary mode returned EMPTY clause lists for every entity, and eight prior rounds never noticed because their live assertions only checked `totalRecords`. This MCP is also where the `extra='forbid'` cross-fix pattern was invented and exported to the rest of the suite. The MCP ships with 1,136 regression tests (762 offline, 374 live-gated), the highest count in the 1102tools MCP suite.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 19 |
-| Total regression tests | 1,125 (754 offline, 371 live-gated) |
-| Tests per tool | 59.2 |
-| Audit rounds completed | 9 |
-| Total items addressed | 67 across releases |
+| Total regression tests | 1,136 (762 offline, 374 live-gated) |
+| Tests per tool | 59.8 |
+| Audit rounds completed | 10 |
+| Total items addressed | 77 across releases |
 | P1 silent-wrong-data bugs (live-audit-only) | 7 |
-| Round 9 findings | 13 (8 fixed in 1.0.2, 5 pending live confirmation) |
-| Current release | 1.0.2 |
+| Round 9 findings | 13 (8 fixed in 1.0.2; all 5 pending items live-resolved in round 10) |
+| Round 10 findings | 10 (fixed/documented in 1.0.4 from a ~230-call paced live campaign) |
+| Current release | 1.0.4 |
 | PyPI status | Published as `sam-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## Round 9 (1.0.2): Independent re-audit
@@ -33,15 +34,15 @@ Round 9 re-read the full source against the official API documentation and the S
 | 7 | Int coercion dropped meaningful leading zeros: `zip_code=6511` searched "6511" (New Haven is 06511), `cgac=75` searched "75" (HHS is 075, the readme's own example). | Digit inputs zero-pad to 5 (zip) and 3 (CGAC). |
 | 8 | `__version__` stale at 1.0.0 while pyproject/USER_AGENT said 1.0.1 (the 1.0.0 changelog had claimed they were "now synchronized"); serverInfo.version unset. | All four synchronized at 1.0.2; MCPServer receives the package version; regression test pins it. |
 
-### Pending live confirmation (quota-blocked; exact probes queued)
+### Round-9 pending items: all five live-resolved in round 10
 
-| # | Suspicion | Confirming probe |
+| # | Suspicion | Live verdict (2026-08, fed-role keys) |
 |---|---|---|
-| 9 | `search_exclusions` size cap: code allows 100, Exclusions docs say "Allowable values are 1 to 10". The round-6 `max_size_100` live test only asserted `totalRecords` presence, proving nothing about records-per-page. | One live call at size=100 counting `excludedEntity` entries. |
-| 10 | PSC param casing: code sends `searchby`; docs say `searchBy`. If the router is case-sensitive, `lookup_psc_code` is silently doing bare-`q` code-prefix matching (masked, same-looking results) and `search_psc_free_text`'s promised name/description search never worked (its live tests passed on totalRecords=0). | Live `q=engineering` bare vs with `searchBy` variants; `searchby=psc` vs `searchBy=psc` deltas. |
-| 11 | Opportunities date-span cap: local 364-day limit vs the documented "1 year"; the round-6 test named `exactly_364_day_span` actually probed a 363-day window, so the true boundary has never been tested. | One live call at a 365-day span. |
-| 12 | `fiscal_year` floor of 2008 on Contract Awards may reject legitimate older data (docs state no floor). | Live `fiscalYear=2007&limit=1`. |
-| 13 | `registration_status` offers D/I beyond the documented A/E; unknown values may be silently ignored upstream, returning wrongly-filtered data. | Live `registrationStatus=D` vs unfiltered totals. |
+| 9 | `search_exclusions` size cap: code allows 100, docs say "1 to 10". | REFUTED. size=100 returned 100 records per page (totalRecords 168,188). Code correct; the docs are wrong. |
+| 10 | PSC param casing: code sends `searchby`; docs say `searchBy`. | CLEARED, docs wrong not code. The API honors lowercase `searchby` and IGNORES camelCase `searchBy` (engineering+`searchby` switches to code mode and 404s; engineering+`searchBy` returns the same 126 hits as bare `q`). `lookup_psc_code` is correct; free-text search returns real results. |
+| 11 | Opportunities date-span cap: local 364 vs documented "1 year". | CLEARED. 364-day span returns 200; 365- and 366-day spans return 400 "Date range must be no more than 1 year apart". The local cap is exactly the real boundary. |
+| 12 | `fiscal_year` floor of 2008 may reject legitimate older data. | CONFIRMED BUG, worse than suspected: FY2007 has 4,112,136 records and data reaches back to FY1970 (FY1980: 634,349). Floor moved to 1970 with a 4-digit guard in 1.0.4 (the API silently returns an empty shape for 2-digit years like 24). |
+| 13 | `registration_status` D/I may be silently ignored upstream. | CONFIRMED BUG, opposite failure: D and I are accepted and return 0 records for every query (dead values guaranteeing empty results; A=779,391, E=1,045,202, together the full population). Enum restricted to A/E in 1.0.4. Comma lists like "A,E" also match nothing. |
 
 ### Corrections to the prior record (round 9)
 
@@ -68,7 +69,7 @@ Added four new tools across three SAM.gov REST APIs: Federal Hierarchy (`/orgs`,
 4. `fh_org_type` whitelist too strict (real API returns values like `Department/Ind. Agency`); replaced with WAF-safe + length clamp.
 5. `status=ACTIVE` on Federal Hierarchy is a no-op (the API defaults to active-only); `INACTIVE` is the value that changes results. Documented.
 
-Live coverage spans 11 department-level lookups, CGAC variants (020/097/075), pagination boundaries, response-shape checks, 5-way concurrent calls, and casing-regression canaries. Hypothesis property tests (300 examples each) target `_validate_date_yyyy_mm_dd`, `_normalize_fh_response`, and `_normalize_subaward_response`. Note (round 9): the three subaward casing claims are recorded as tested by named live tests that exist in the repo; their pass status could not be re-reproduced during round 9 because of quota, so they stand on the round-8 record.
+Live coverage spans 11 department-level lookups, CGAC variants (020/097/075), pagination boundaries, response-shape checks, 5-way concurrent calls, and casing-regression canaries. Hypothesis property tests (300 examples each) target `_validate_date_yyyy_mm_dd`, `_normalize_fh_response`, and `_normalize_subaward_response`. Note (round 9): the three subaward casing claims are recorded as tested by named live tests that exist in the repo; their pass status could not be re-reproduced during round 9 because of quota; round 10 re-ran all three live on a fed-role key and they pass.
 
 ## Audit rounds
 
@@ -102,7 +103,7 @@ Five bugs from round-4 fuzzing: `totalRecords: null` crashes, `entityData` dict-
 
 ### Priority 2: Validation gaps
 
-UEI/CAGE format enforcement everywhere they appear, the opportunities date-span pre-check, length clamps on text filters, country-code uppercasing, WAF detection via status codes rather than body substrings, and calibrated pre-rejection limited to control characters. (Round 9 note: the date-span cap's exact boundary remains unprobed; see pending item 11.)
+UEI/CAGE format enforcement everywhere they appear, the opportunities date-span pre-check, length clamps on text filters, country-code uppercasing, WAF detection via status codes rather than body substrings, and calibrated pre-rejection limited to control characters. (Round 10: boundary live-verified exact; 364-day spans pass, 365 rejects.)
 
 ### Priority 3: Cleanup items
 
@@ -110,7 +111,7 @@ Empty-string filters, code-set validation, NAICS format, case normalization, and
 
 ## Test Coverage
 
-The repo ships 1,125 regression tests (754 offline, 371 live-gated). All pass on every release cycle; live tests require `SAM_LIVE_TESTS=1` plus a key with real quota.
+The repo ships 1,136 regression tests (762 offline, 374 live-gated). All pass on every release cycle; live tests require `SAM_LIVE_TESTS=1` plus a key with real quota, are paced 2-4 s apart by `tests/conftest.py` (a round-10 guard: an unpaced full live pass once burned a key's whole daily quota in 105 seconds), and a minimal anchor subset runs via `pytest -m live_smoke`.
 
 | File | Purpose | Test count |
 |---|---|---|
@@ -139,17 +140,34 @@ Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`). 
 | 1.0.0 | mcp 2.x SDK rebase, packaging | Stable baseline |
 | 1.0.1 | SBA business type family | XX/A6 swap fixed, sbaBusinessTypeCode exposed |
 | 1.0.2 | Round 9 independent re-audit | Reps-and-certs key casing (data-destroying), set-aside/business-type/Z-code expansion, bracket-crash, PIID sort, padding; 5 items pending live confirmation |
+| 1.0.4 | Round 10 paced live campaign | Fiscal-year floor 2008 -> 1970 with 4-digit guard; registration_status enum A/E only; offset documented as a zero-based page index on Opportunities and Contract Awards; 400k paging ceiling documented; past-end phantom-row and hang warnings; bare-string 200 bodies raised as errors instead of normalizing to silent zero results; assistance agency_code 4-digit validation; 429 message decoupled from key roles; UEI non-uniqueness documented (1.0.3 was a no-op pipeline-proof bump) |
 
 ## Cross-MCP Context
 
 This MCP is one of eight servers in the 1102tools federal-contracting MCP suite. Patterns that originated here: `extra='forbid'` on every arg model; WAF calibration against reality instead of guesses; `_as_list` and `_safe_int` response normalizers. Round 9 adds the suite's sharpest lesson: **live tests that assert only shape (totalRecords presence) bless catastrophically wrong data.** The reps-and-certs bug survived eight rounds and ~1,100 tests because nothing ever asserted a non-empty summary for an entity known to have certifications.
 
+## Round 10: The Paced Live Campaign (2026-08)
+
+Thirteen serialized probe rounds over two nights, ~230 live calls against production, pacing ratcheted from 12-20 s per call down to 2-4 s, zero throttle events. Every call is a one-line entry in a masked ledger; the harness that enforced the discipline (single-threaded, jittered spacing, hard budget, first-429 kill switch) ships in this repo at `tests/live_audit/`. This was the first full live verification in the project's history: every earlier round was quota-starved.
+
+Method notes worth stealing: superset-vs-pair record fingerprinting settles pagination semantics in three calls; capturing real payloads once and replaying them through the pipeline offline makes every subsequent assertion free; and quota discipline is a finding-multiplier, not a tax, because the key that survives tonight also runs tomorrow.
+
+**Confirmed and fixed/documented in 1.0.4** (beyond the round-9 items above):
+
+- **`offset` is a zero-based page index on Opportunities AND Contract Awards** (offset=1, limit=100 returns records 101-200), while Federal Hierarchy's `offset` is a true record offset. Same parameter name, three APIs, two meanings. REST-convention `offset += limit` on the first two silently skips almost everything. Proven by exact record-fingerprint matching; the honestly named `page`/`pageNumber` families all behave as named.
+- **Opportunities pages past the end return one arbitrary, unstable record instead of an empty page**, so an empty-page loop terminator never fires. Terminate from totalRecords math.
+- **Contract Awards enforces offset x limit < 400,000**: exactly 400,000 returns HTTP 500, beyond it HTTP 400 with a bare-string JSON body. Only the first 400k records of any result set are pageable.
+- **Bare-string JSON error bodies on HTTP 200** previously normalized into `totalRecords: 0`, an API error masquerading as an empty result. Now raised as errors.
+- **Subaward endpoints hang past the last page** (client timeout, not an error response) while in-range pages return instantly.
+- **Assistance `agency_code` requires a four-digit code** (9700, not CGAC 075), now validated client-side with a clear message; Federal Hierarchy accepts 3-digit CGAC for the same concept.
+- **A UEI can return multiple (duplicate) registration records**, and `samRegistered=No` reveals a separate ~614k-record "ID Assigned" population.
+
+**Live-validated as already correct**: the reps-and-certs casing fix on real production data (Lockheed Martin: 22 fARResponses, 11 dFARResponses, no lowercase variant; this closed the wave's only shape-replay-only verification); the SBA certification code redirect (raw `businessTypeCode=A6`/`XX` return 0 records, precisely the silent trap the redirect prevents; real populations 4,874 and 4,551 via `sbaBusinessTypeCode`); the subaward casing quartet and apostrophe WAF handling; every filter honesty check across all seven families (state, city, zip, NAICS, structure, purpose, classification, program, set-asides including mixed-case `BICiv`, ptype partitions summing exactly to window totals); batch-vs-single payload fidelity (byte-identical fingerprints); exact PIID/CAGE/solnum/FAIN roundtrips; case-insensitive and whitespace-tolerant matching; loud failures on malformed dates everywhere; and fed-tier FOUO response shapes through every normalizer offline.
+
 ## What Was Not Tested
 
-- **Rate-limit behavior at scale.** The MCP surfaces 429s but does not throttle client-side. Personal no-role keys get on the order of 10 requests/day per family; a full live pass needs a system or federal key.
 - **OASIS+ and login-required transactional endpoints.** Public REST only.
-- **The opportunities date-span boundary at exactly 364/365 days** (pending round 9 item 11).
-- **The five round-9 pending items** listed above, each with its exact confirming probe, runnable the day quota resets.
+- **Behavior above the default and personal rate plans.** Key quota is a per-key SAM-side rate plan, independent of data role (a federal FOUO key can sit on the 10/day default). Ten-thousand-a-day system-account behavior remains unobserved.
 
 ## Verification
 
@@ -163,6 +181,8 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the hard
 
 Round 9 methodology: re-read the entire server source with no reliance on this document's claims; check every constant table against the FDD and API docs; replay documented response shapes through `mcp.call_tool`; enumerate which prior "live-verified" claims actually asserted semantics vs shape; queue exact confirming probes for everything quota-blocked.
 
-Test count: 1,125 regression tests (754 offline + 371 live-gated). Tests per tool: 59.2. Total items addressed across releases: 67. Current version: 1.0.2. PyPI: `sam-gov-mcp`.
+Round 10 methodology: thirteen paced probe rounds (harness in `tests/live_audit/`), superset-vs-pair fingerprinting for pagination semantics, live capture plus offline pipeline replay for response shapes, boundary and error-path sweeps per endpoint family, and a canonical re-stamp round so every finding carries a fresh timestamp. Conducted with Claude Code Fable 5.
+
+Test count: 1,136 regression tests (762 offline + 374 live-gated). Tests per tool: 59.8. Total items addressed across releases: 77. Current version: 1.0.4. PyPI: `sam-gov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/sam-gov-mcp. License: MIT.

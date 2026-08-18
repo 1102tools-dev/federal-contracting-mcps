@@ -299,13 +299,13 @@ def test_property_validate_fiscal_year_never_crashes(value):
         result = _validate_fiscal_year(value)
         if result is not None:
             assert isinstance(result, str)
-            assert int(result) >= 2008
+            assert int(result) >= 1970  # r10: floor moved to live-verified FY1970
     except ValueError:
         pass
 
 
 @PUNISHMENT
-@given(st.integers(min_value=2008, max_value=2099))
+@given(st.integers(min_value=1970, max_value=2099))
 def test_property_validate_fiscal_year_valid_range(year):
     current = _current_fiscal_year()
     if year <= current:

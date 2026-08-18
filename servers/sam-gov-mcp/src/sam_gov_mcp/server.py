@@ -175,10 +175,15 @@ def _validate_fiscal_year(value: Any, *, field: str = "fiscal_year") -> str | No
             f"{field} must be a year like 2026 (int or str). Got {value!r}."
         ) from exc
     current = _current_fiscal_year()
-    if fy < 2008 or fy > current:
+    # Live-verified 2026-08: data exists back to FY1970 (FY1980 alone has 634k
+    # records); the old 2008 floor silently walled off four decades. Two-digit
+    # years (e.g. 24) are accepted by the API but return an empty shape, so
+    # require a real 4-digit year.
+    if fy < 1970 or fy > current:
         raise ValueError(
-            f"{field}={fy} is out of range. SAM.gov Contract Awards data covers "
-            f"FY2008 through FY{current} (current fiscal year)."
+            f"{field}={fy} is out of range. Use a 4-digit year; SAM.gov Contract "
+            f"Awards data has been observed from FY1970 through FY{current} "
+            f"(current fiscal year). Earlier years return empty results."
         )
     return str(fy)
 
@@ -426,10 +431,12 @@ def _format_error(status: int, body: str) -> str:
         )
     if status == 429:
         return (
-            "HTTP 429: Rate limited. "
-            "Daily API limits: 10/day (no SAM role), 1000/day (personal), "
-            "10000/day (federal system account). "
-            "Wait until the next day or switch to a system account key."
+            "HTTP 429: Rate limited. This key's daily quota is exhausted. "
+            "Quota is a per-key rate plan set on the SAM.gov side and is "
+            "independent of the key's data role (a federal FOUO key can still "
+            "be on the default 10/day plan). Keys reset at 00:00 UTC. "
+            "For real volume, request an elevated rate plan or a system "
+            "account key via SAM.gov/FSD."
         )
     if status == 400:
         # Surface specific 400 patterns
@@ -506,7 +513,16 @@ async def _get(
         # a JSON object with a "description" HTML field.
         content_type = r.headers.get("content-type", "")
         if "json" in content_type:
-            return r.json()
+            data = r.json()
+            # Contract Awards can 200 with a BARE JSON STRING error message
+            # (e.g. '"Max value allowed for parameter \"limit\" is 100"').
+            # Surfacing it as an error beats normalizing it into a silent
+            # zero-result response.
+            if not isinstance(data, dict):
+                raise RuntimeError(
+                    f"SAM.gov returned a non-object JSON response: {str(data)[:500]}"
+                )
+            return data
         # Contract Awards returns plain text for certain errors even on 200
         # (e.g. "Max value allowed for parameter \"limit\" is 100").
         # Also returns HTML for auth errors (e.g. <h1>API_KEY_INVALID</h1>).
@@ -558,6 +574,13 @@ async def lookup_entity_by_uei(
 
     Returns the full entity record from SAM.gov Entity Management v3.
     The UEI is a 12-character alphanumeric identifier assigned by SAM.gov.
+    Matching is case-insensitive and whitespace-tolerant (live-verified).
+
+    A UEI is NOT guaranteed unique: live data contains UEIs with multiple
+    (sometimes duplicate) registration records, so totalRecords can exceed 1;
+    inspect every entityData entry rather than assuming [0] is the only one.
+    sam_registered='No' searches a separate ~614k-record population of
+    "ID Assigned" entities (UEI issued, registration never completed).
 
     include_sections controls response size:
     - entityRegistration: UEI, CAGE, name, status, activation/expiration dates (ALWAYS include)
@@ -626,7 +649,7 @@ async def search_entities(
     business_type_code: str | None = None,
     sba_business_type_code: str | None = None,
     state_code: str | None = None,
-    registration_status: Literal["A", "E", "D", "I"] = "A",
+    registration_status: Literal["A", "E"] = "A",
     purpose_of_registration: Literal["Z1", "Z2", "Z3", "Z4", "Z5"] | None = None,
     free_text: str | None = None,
     include_sections: list[str] | None = None,
@@ -667,6 +690,11 @@ async def search_entities(
       returns entities matching BOTH words, not either.
 
     Default registration_status is 'A' (Active); use 'E' for expired registrations.
+    Only A and E are real filter values: D and I were live-verified 2026-08 to
+    return 0 records for every query (dead values), and comma lists like "A,E"
+    are accepted by the API but match nothing. One value per call.
+    Note: expired records display registrationStatus "Inactive" in payloads
+    even though the filter vocabulary is A/E.
     """
     from .constants import BUSINESS_TYPE_CODES, SBA_BUSINESS_TYPE_CODES
 
@@ -1052,6 +1080,12 @@ async def search_opportunities(
 
     The 'description' field in each result is a URL, not inline text. Use
     get_opportunity_description() to fetch the actual description HTML.
+
+    Pagination (live-verified 2026-08): offset is a ZERO-BASED PAGE INDEX
+    (page size = limit), not a record skip count; offset=1 with limit=100
+    returns records 101-200. Compute the last page from totalRecords and stop
+    there: pages past the end do NOT come back empty, they return one
+    arbitrary record, so an empty-page loop terminator never fires.
     """
     from .constants import SET_ASIDE_CODES, SET_ASIDE_WIRE_CASING
 
@@ -1303,7 +1337,10 @@ async def search_contract_awards(
     """Search contract award records on SAM.gov (FPDS replacement).
 
     This is the replacement for FPDS.gov (decommissioned Feb 2026). Same data,
-    new endpoint. Uses limit/offset pagination (NOT page/size).
+    new endpoint. Uses limit/offset pagination (NOT page/size), and note that
+    despite the name, offset is a ZERO-BASED PAGE INDEX (live-verified 2026-08):
+    offset=1 with limit=100 returns records 101-200. Never advance offset by
+    limit or you will silently skip almost everything.
 
     CRITICAL date format: MM/dd/yyyy for single dates, [MM/dd/yyyy,MM/dd/yyyy]
     for ranges (brackets included). ISO 8601 dates are rejected.
@@ -1323,7 +1360,7 @@ async def search_contract_awards(
     - contracting_office_code: contracting office (e.g. "N00039")
     - date_signed: date of award action. MM/dd/yyyy or [MM/dd/yyyy,MM/dd/yyyy]
     - last_modified_date: when record was last modified. Same format.
-    - fiscal_year: filter by FY (e.g. "2026")
+    - fiscal_year: filter by FY (e.g. "2026"). Data observed back to FY1970.
     - award_or_idv: "AWARD" for contracts/orders, "IDV" for indefinite-delivery vehicles
     - type_of_contract_pricing_code: J=FFP, U=CPFF, etc.
     - type_of_set_aside_code: SBA, 8A, HZC, SDVOSBC, etc.
@@ -1333,7 +1370,10 @@ async def search_contract_awards(
     - free_text: q parameter for full-text search across all fields
     - include_sections: comma-separated: contractId, coreData, awardDetails (default: all)
     - limit: max records per page (1-100, default 10)
-    - offset: 0-based record skip count for pagination
+    - offset: 0-based PAGE index (page size = limit), NOT a record skip count.
+      Hard API ceiling: offset x limit must stay BELOW 400,000 (exactly 400,000
+      returns HTTP 500 upstream; beyond it, HTTP 400). Only the first 400k
+      records of any result set are pageable: narrow with filters, then page.
 
     Returns normalized response with awardSummary list and totalRecords count.
     Each record has up to 3 sections: contractId, coreData, awardDetails.
@@ -1886,11 +1926,12 @@ async def search_acquisition_subawards(
     - piid: Procurement Instrument ID of the prime contract (returns all subs)
     - referenced_idv_piid: prime contract family identifier (parent IDV)
     - referenced_idv_agency_id: agency on the parent IDV
-    - agency_id: numeric agency identifier on the prime
+    - agency_id: four-digit agency code on the prime (e.g. 9700 for DoD)
     - prime_award_type: type of the parent prime award
     - from_date / to_date: yyyy-MM-dd window (filters on subaward report date)
     - status: 'Published' (default) or 'Deleted' for audit trails
-    - page_number: 0-based page index
+    - page_number: 0-based page index. Stay within ceil(totalRecords/page_size):
+      pages past the end HANG upstream until timeout (live-verified 2026-08)
     - page_size: 1-1000, default 100
 
     Response: {totalPages, totalRecords, pageNumber, nextPageLink,
@@ -1981,10 +2022,14 @@ async def search_assistance_subawards(
     Key filters:
     - prime_award_key: business key identifying subawards under a prime grant
     - fain: Federal Award Identification Number for grants
-    - agency_code: numeric agency identifier on the prime
+    - agency_code: FOUR-DIGIT agency code on the prime (e.g. 9700 for DoD,
+      7529 for HHS/IHS). The API rejects anything else with "AgencyCode must
+      be a four digit number"; 3-digit CGAC codes like 075 do NOT work here
+      (unlike the Federal Hierarchy tools, which accept CGAC)
     - from_date / to_date: yyyy-MM-dd window
     - status: 'Published' (default) or 'Deleted'
-    - page_number: 0-based page index
+    - page_number: 0-based page index. Stay within ceil(totalRecords/page_size):
+      pages past the end HANG upstream until timeout (live-verified 2026-08)
     - page_size: 1-1000, default 100
     """
     page_size = _clamp(page_size, field="page_size", lo=1, hi=SUBAWARD_MAX_PAGE_SIZE)
@@ -2012,7 +2057,14 @@ async def search_assistance_subawards(
     if fain:
         params["fain"] = fain
     if agency_code:
-        params["agencyCode"] = agency_code
+        ac = str(agency_code).strip()
+        if not (ac.isdigit() and len(ac) == 4):
+            raise ValueError(
+                f"agency_code must be a four-digit agency code (e.g. 9700 for "
+                f"DoD). Got {agency_code!r}. The Assistance Subawards API "
+                f"rejects 3-digit CGAC codes like 075."
+            )
+        params["agencyCode"] = ac
     if from_date:
         params["fromDate"] = from_date
     if to_date:

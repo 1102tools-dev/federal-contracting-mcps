@@ -60,9 +60,17 @@ def _payload(result):
 # P1: fiscal_year now accepts int OR str (known bug from handoff)
 # ---------------------------------------------------------------------------
 
-def test_fiscal_year_int_rejected_below_2008():
+def test_fiscal_year_int_rejected_below_1970():
+    # r10: floor moved from 2008 (wrong, data exists to FY1970) to 1970
     asyncio.run(_call_expect_error(
-        "search_contract_awards", "out of range", fiscal_year=2007
+        "search_contract_awards", "out of range", fiscal_year=1969
+    ))
+
+
+def test_fiscal_year_two_digit_rejected():
+    # r10: the API accepts fy=24 but returns a silent empty shape
+    asyncio.run(_call_expect_error(
+        "search_contract_awards", "out of range", fiscal_year=24
     ))
 
 
@@ -72,9 +80,9 @@ def test_fiscal_year_int_rejected_future():
     ))
 
 
-def test_fiscal_year_string_below_2008():
+def test_fiscal_year_string_below_1970():
     asyncio.run(_call_expect_error(
-        "search_contract_awards", "out of range", fiscal_year="2007"
+        "search_contract_awards", "out of range", fiscal_year="1969"
     ))
 
 
