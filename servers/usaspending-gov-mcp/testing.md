@@ -2,14 +2,14 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across ten audit rounds. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The MCP ships with 2,151 regression tests covering every surface twice (offline shape + live).
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across eleven audit rounds, the eleventh a ~95-call paced live campaign that found ZERO new defects. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The MCP ships with 2,160 regression tests covering every surface twice (offline shape + live).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 55 |
 | Total regression tests | 2,151 (1,783 offline, 368 live-gated) |
 | Tests per tool | 39+ |
-| Audit rounds completed | 10 (rounds 1-8, v0.3 expansion, two-family semantic audit) |
+| Audit rounds completed | 11 (rounds 1-8, v0.3 expansion, two-family semantic audit, paced live campaign) |
 | Initial integration issues (round 1) | 28+ |
 | P1 silent-wrong-data bugs found and fixed | 11 (rounds 1-9) |
 | P2 validation gaps found and fixed | 7 (rounds 1-9) |
@@ -20,6 +20,50 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Release cycles | 13 (v0.1.2 through v1.0.1) |
 | Current release | 1.0.1 |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## Round 11 (2026-08-18): paced live campaign, zero new defects
+
+Ninety-five serialized production calls at ~1 s spacing (harness pattern from
+sam-gov-mcp round 10; USASpending needed no key and never throttled once,
+consistent with its source code shipping no DRF throttle configuration at
+all). Every round-10 fix was re-stamped against live data and every boundary,
+differential, and partition probe came back clean. This is the first round in
+this server's history to find nothing to fix; the round-10 semantic audit
+appears to have caught the tail.
+
+Re-stamped live: recipient_children returns 217 children for the sample UEI
+(the tool that had never worked before 1.0.1); recipient_search_text routes
+UEIs correctly; the docstring Navy example returns rows; F001/F002 FABS codes
+are valid award_type_codes (8,542 F-code awards in FY24 alone, 624,664 for
+the grants group as the server sends it); sub_agency's sort enum matches the
+API's own valid-values list exactly; uppercase recipient hashes are accepted;
+new_awards_over_time still 422s without recipient_id upstream.
+
+Verified clean: 1-based page semantics (page 2 at limit 2 returns records
+3-4, proven by fingerprint); past-the-end pages are HONEST (empty or absent
+results, hasNext=false), in direct contrast to SAM.gov Opportunities' phantom
+rows; monthly spending_over_time buckets partition the fiscal-year total to
+the cent; sort order differentials actually reorder; agency/NAICS/geography
+filters narrow; every boundary probed fails loud (limit=0/101 and page=0
+return 422, bogus sort and award codes return 400 with the valid values
+enumerated, malformed dates 400, bad toptier 404).
+
+Intel recorded, no code change needed: the search family enforces an
+upstream 2007-10-01 earliest date (422 below it, advisory `messages` above
+it, and search tools pass responses through raw so those advisories reach
+the caller, now pinned by test); responses already stamp
+`spending_level: "awards"` while the server still sends the to-be-superseded
+`subawards: false` flag, so the deprecation posture is pinned by test until a
+deliberate migration; agency overview endpoints can take 20+ seconds against
+the client's 30 s timeout; the full-field limit=100 search response measured
+~72 KB, under the ~95 KB concern threshold; the API follows raw path
+traversal at the HTTP layer (`awards/../references/` returns the agency
+list), confirming the round-10 client-side metacharacter rejection is the
+only real defense.
+
+New: `tests/test_audit_r11.py` (2 offline pins + 7 live_smoke contract
+anchors), suite-wide live pacing via `tests/conftest.py`, scenario scripts
+moved to `tests/scenarios/`, and this file's rate-limit unknown resolved.
 
 ## Round 10 (1.0.1): two-family semantic live audit
 
@@ -192,7 +236,7 @@ This MCP is one of eight servers in the 1102tools federal-contracting MCP suite 
 
 ## What Was Not Tested
 
-- **Rate-limit behavior.** USASpending does not document rate limits publicly. The MCP passes through whatever limits the API enforces but does not implement client-side throttling. Heavy concurrent use may hit limits the MCP cannot anticipate.
+- **Rate-limit behavior: RESOLVED in round 11.** USASpending documents no limits, its open-source Django settings configure no REST Framework throttling at all, and 95 paced calls (plus prior unpaced suite runs) have never seen a 429. Infrastructure-level abuse protection presumably exists; audit-scale use does not approach it.
 - **Historical API changes.** Tests validate behavior against the current USASpending API. Breaking changes to the upstream API (field renames, endpoint deprecations) are not caught by offline tests. Live-gated tests will catch them but must be run manually with `USASPENDING_LIVE_TESTS=1`.
 - **Payload size limits beyond `limit` capping.** Response sizes over ~95KB are theoretically possible on some endpoints if the caller accepts the default shape. The MCP does not enforce an overall payload size ceiling.
 - **Pending API deprecation.** USASpending has signaled that `subawards` award type will be superseded by a `spending_level` parameter. The MCP does not yet expose `spending_level`. When upstream fully deprecates, grants queries may need an adjustment.
