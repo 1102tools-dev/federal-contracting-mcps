@@ -188,3 +188,14 @@ Testing spanned six rounds from initial hardening (17 findings including the pyd
 Test count: 228 regression tests. Total items addressed: 44. Current version: 1.0.1. PyPI: `federal-register-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/federal-register-mcp. License: MIT.
+
+
+## Round 7 (2026-08-18): suite-wide live verification (super-cycle)
+
+The full live-gated suite ran wholesale against production for the first time
+(historically prevented by key quotas): 228 passed (full live pass, 1m22s). No new server
+defects. Added `tests/test_audit_r7.py`: 4
+one-call-per-test live contract anchors re-stamping this server's headline
+fixes against production (all verified green on landing), a suite-wide pacing
+conftest with a `live_smoke` marker, and a per-test client reset so batched
+live runs cannot hit the cached-AsyncClient/closed-event-loop trap.

@@ -6,7 +6,7 @@ MCP server for SAM.gov entity registration, exclusion/debarment, contract opport
 
 Requires a free SAM.gov API key. MCP is an open standard: this server runs in any MCP client, not just Claude. Executed and verified on eleven platforms in August 2026 (see [Configuration](#configuration)).
 
-*Tested and hardened through eight audit rounds plus live audits with a real SAM.gov key. 1,094 regression tests. v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied to all 8 MCPs in the suite. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,136 regression tests. v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied to all 8 MCPs in the suite. See [testing.md](testing.md) for the full testing record.*
 
 ## What it does
 

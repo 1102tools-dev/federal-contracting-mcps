@@ -165,3 +165,14 @@ Round-7 wave methodology: re-read the entire server source with no reliance on t
 Test count: 200 regression tests (85 offline + 115 live-gated). Total findings across all rounds: 34. Current version: 1.0.1. PyPI: `regulationsgov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/regulations-gov-mcp. License: MIT.
+
+
+## Round 8 (2026-08-18): suite-wide live verification (super-cycle)
+
+The full live-gated suite ran wholesale against production for the first time
+(historically prevented by key quotas): 200 passed (full live pass, 2m23s). No new server
+defects. Added `tests/test_audit_r8.py`: 4
+one-call-per-test live contract anchors re-stamping this server's headline
+fixes against production (all verified green on landing), a suite-wide pacing
+conftest with a `live_smoke` marker, and a per-test client reset so batched
+live runs cannot hit the cached-AsyncClient/closed-event-loop trap.

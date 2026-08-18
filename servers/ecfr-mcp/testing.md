@@ -228,3 +228,14 @@ Testing spanned six rounds from integration stress through response-shape fuzzin
 Test count: 295 regression tests. P0 catastrophic bugs found and fixed: 2. P1 bugs found and fixed: 26. P2 validation gaps closed: 32. P3 cleanup items closed: 12. Round 6 findings fixed: 12. Total findings: 84. Current version: 1.0.2. PyPI: `ecfr-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/ecfr-mcp. License: MIT.
+
+
+## Round 7 (2026-08-18): suite-wide live verification (super-cycle)
+
+The full live-gated suite ran wholesale against production for the first time
+(historically prevented by key quotas): 295 passed (full live pass, 2m34s). No new server
+defects. Added `tests/test_audit_r7.py`: 5
+one-call-per-test live contract anchors re-stamping this server's headline
+fixes against production (all verified green on landing), a suite-wide pacing
+conftest with a `live_smoke` marker, and a per-test client reset so batched
+live runs cannot hit the cached-AsyncClient/closed-event-loop trap.

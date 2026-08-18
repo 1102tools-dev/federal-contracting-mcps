@@ -186,3 +186,14 @@ Testing spanned four retroactive rounds plus an initial WAF-calibration pass, a 
 Test count: 343 regression tests (240 offline, 103 live-gated). P1 crashes found and fixed: 19. P1 silent-wrong-data bugs found and fixed: 32. P2 validation gaps closed: 20. P3 cleanup items closed: 6. Retroactive additional findings: 12. Current version: 1.0.1. PyPI: `gsa-calc-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/gsa-calc-mcp. License: MIT.
+
+
+## Round 7 (2026-08-18): suite-wide live verification (super-cycle)
+
+The full live-gated suite ran wholesale against production for the first time
+(historically prevented by key quotas): 352 passed (full live pass, 2m20s). No new server
+defects. Added `tests/test_audit_r7.py`: 4
+one-call-per-test live contract anchors re-stamping this server's headline
+fixes against production (all verified green on landing), a suite-wide pacing
+conftest with a `live_smoke` marker, and a per-test client reset so batched
+live runs cannot hit the cached-AsyncClient/closed-event-loop trap.

@@ -782,7 +782,13 @@ def test_live_typographic_apostrophe_matches_exact():
 def test_live_unmatched_city_flagged():
     """Regression from round 6 P1: querying a city not in any NSA used to
     silently return the first NSA with no warning."""
-    r = asyncio.run(_call("lookup_city_perdiem", city="Santa Rosa Beach", state="FL"))
+    # r8 note: "Santa Rosa Beach, FL" began resolving via the API's own
+    # resolver when FY2027 rates landed (match_type api_resolved, Okaloosa /
+    # Walton county), which is CORRECT server behavior; the old pin was
+    # yesterday's data reality. Muleshoe TX (tiny panhandle town, never an
+    # NSA) keeps this test on its actual purpose: unmatched cities are
+    # flagged, not silently wrong.
+    r = asyncio.run(_call("lookup_city_perdiem", city="Muleshoe", state="TX"))
     data = _payload(r)
     assert data.get("match_type") in ("standard_fallback", "unmatched_nsa")
     assert data.get("match_note")  # must have explanatory note

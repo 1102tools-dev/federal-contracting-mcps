@@ -376,12 +376,30 @@ def test_live_get_wage_data_year_2022_rejected():
 
 
 def test_live_get_wage_data_year_str_or_int():
-    """Year as string or int should both work."""
-    r = asyncio.run(
-        _call("get_wage_data", occ_code="151252", scope="national", year="2024")
-    )
-    data = _payload(r)
-    assert isinstance(data, dict)
+    """Year as string or int should both work (r8: derive the year instead of
+    hardcoding; the 2024 pin went stale the day BLS rolled OEWS to 2025)."""
+    import json as _json
+    import re as _re
+
+    async def _flow():
+        latest_resp = await _call("detect_latest_year")
+        data = _payload(latest_resp)
+        y = None
+        if isinstance(data, dict):
+            for k in ("latest_year", "latest", "year"):
+                if data.get(k):
+                    y = int(str(data[k])[:4])
+                    break
+        if y is None:
+            txt = _json.dumps(data, default=str)
+            m = _re.search(r"latest[^0-9]{0,30}(20\d\d)", txt, _re.I)
+            y = int(m.group(1)) if m else 2025
+        a = await _call("get_wage_data", occ_code="151252", scope="national", year=str(y))
+        b = await _call("get_wage_data", occ_code="151252", scope="national", year=y)
+        return a, b
+
+    ra, rb = asyncio.run(_flow())
+    assert isinstance(_payload(ra), dict) and isinstance(_payload(rb), dict)
 
 
 def test_live_get_wage_data_year_default():

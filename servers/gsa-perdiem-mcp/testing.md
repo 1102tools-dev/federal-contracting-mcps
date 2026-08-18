@@ -185,3 +185,14 @@ Round 7 methodology: re-read the entire server source with no reliance on this d
 Test count: 434 regression tests (183 offline + 251 live-gated). Tests per tool: 72.3. Total findings across all rounds: 69. Current version: 1.0.1. PyPI: `gsa-perdiem-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp. License: MIT.
+
+
+## Round 8 (2026-08-18): suite-wide live verification (super-cycle)
+
+The full live-gated suite ran wholesale against production for the first time
+(historically prevented by key quotas): 435 passed after one drift fix (5m22s). No new server
+defects. Upstream drift caught and fixed: GSA published new-FY rates and 'Santa Rosa Beach, FL' began resolving as a real NSA (api_resolved, Okaloosa/Walton, monthly data), which is correct server behavior; the unmatched-city test now uses a town that will stay unmatched. Added `tests/test_audit_r8.py`: 4
+one-call-per-test live contract anchors re-stamping this server's headline
+fixes against production (all verified green on landing), a suite-wide pacing
+conftest with a `live_smoke` marker, and a per-test client reset so batched
+live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
