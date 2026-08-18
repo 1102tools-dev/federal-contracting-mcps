@@ -1,5 +1,59 @@
 # Changelog
 
+## 1.0.5
+
+Version-marker sync. The 1.0.4 wheel self-reported 1.0.2 in serverInfo:
+`__version__` was still hardcoded and the round-9 "version sync" regression
+test compared serverInfo to that same constant, so both drifted together.
+All version markers (`__version__`, USER_AGENT, serverInfo) now derive from
+installed package metadata with pyproject as the single source of truth, and
+the test pins against `importlib.metadata`.
+
+## 1.0.4
+
+Round 10: a ~230-call paced live campaign against production over two nights
+(13 serialized probe rounds, zero throttle events). All five round-9 pending
+items resolved and ten new findings fixed or documented; full narrative in
+testing.md "Round 10".
+
+### Fixed
+
+- **Contract Awards fiscal_year floor moved from 2008 to 1970.** The API
+  serves data back to FY1970 (FY1980 alone has 634k records); the old floor
+  silently walled off four decades. A 4-digit year guard was added because
+  the API accepts 2-digit years and returns an empty shape for them.
+- **registration_status restricted to A/E.** D and I are accepted by the API
+  but return 0 records for every query, guaranteeing empty results; comma
+  lists like "A,E" also match nothing.
+- **Bare-string JSON error bodies on HTTP 200 now raise instead of
+  normalizing into totalRecords=0** (an API error masquerading as an empty
+  result set).
+- **Assistance subawards agency_code validated as four digits** with a clear
+  message; the API rejects 3-digit CGAC codes like 075.
+- The 429 message no longer implies the key's role determines quota; the
+  rate plan is set per-key on the SAM.gov side and is independent of role.
+
+### Documented
+
+- `offset` is a ZERO-BASED PAGE INDEX on Opportunities and Contract Awards
+  (offset=1 with limit=100 returns records 101-200), while Federal
+  Hierarchy's `offset` is a true record offset. REST-convention
+  `offset += limit` on the first two silently skips almost everything.
+- Opportunities pages past the end return one arbitrary record instead of an
+  empty page; terminate pagination from totalRecords math.
+- Contract Awards enforces offset x limit < 400,000 (exactly 400,000 returns
+  HTTP 500 upstream); only the first 400k records of a result set are
+  pageable.
+- Subaward endpoints hang past the last page rather than erroring.
+- A UEI can return multiple registration records; `samRegistered=No` reaches
+  a separate ~614k-record "ID Assigned" population.
+
+### Testing
+
+- Suite grew to 1,136 (762 offline, 374 live-gated). Live tests are paced
+  2-4 s apart by conftest; a minimal anchor set runs via `-m live_smoke`.
+- The paced live-probe harness behind round 10 ships at `tests/live_audit/`.
+
 ## 1.0.3
 
 No code changes. Republish to verify the Trusted Publisher pipeline after the repo moved to the 1102tools-dev account.

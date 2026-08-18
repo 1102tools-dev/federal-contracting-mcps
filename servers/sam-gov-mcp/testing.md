@@ -122,7 +122,7 @@ The repo ships 1,136 regression tests (762 offline, 374 live-gated). All pass on
 | `tests/test_v0_4_features.py` | Round 8 Federal Hierarchy + FFATA (incl. 123 live) | 259 |
 | `tests/test_sba_business_type.py` | 1.0.1 SBA code family (validation/mock/live) | 15 |
 | `tests/test_audit_r9.py` | Round 9 regressions: documented-shape reps-and-certs replay, set-aside and business-type expansion, Z1-Z5, bracket-range rejection, zip/CGAC padding, PIID sort, version sync | 16 (all offline) |
-| `tests/stress_test.py`, `tests/stress_test_r2.py`, `tests/live_test.py` | Scenario scripts (retained for reproducibility) | N/A |
+| `tests/scenarios/` (stress_test.py, stress_test_r2.py, live_test.py) | Scenario scripts (retained for reproducibility) | N/A |
 
 Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`). An autouse fixture resets `srv._client` between tests.
 
