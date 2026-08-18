@@ -14,7 +14,7 @@ This Model Context Protocol server exposes seven SAM.gov REST APIs (Entity Manag
 | P1 silent-wrong-data bugs (live-audit-only) | 7 |
 | Round 9 findings | 13 (8 fixed in 1.0.2; all 5 pending items live-resolved in round 10) |
 | Round 10 findings | 10 (fixed/documented in 1.0.4 from a ~230-call paced live campaign) |
-| Current release | 1.0.4 |
+| Current release | 1.0.5 |
 | PyPI status | Published as `sam-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## Round 9 (1.0.2): Independent re-audit
@@ -141,6 +141,7 @@ Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`). 
 | 1.0.1 | SBA business type family | XX/A6 swap fixed, sbaBusinessTypeCode exposed |
 | 1.0.2 | Round 9 independent re-audit | Reps-and-certs key casing (data-destroying), set-aside/business-type/Z-code expansion, bracket-crash, PIID sort, padding; 5 items pending live confirmation |
 | 1.0.4 | Round 10 paced live campaign | Fiscal-year floor 2008 -> 1970 with 4-digit guard; registration_status enum A/E only; offset documented as a zero-based page index on Opportunities and Contract Awards; 400k paging ceiling documented; past-end phantom-row and hang warnings; bare-string 200 bodies raised as errors instead of normalizing to silent zero results; assistance agency_code 4-digit validation; 429 message decoupled from key roles; UEI non-uniqueness documented (1.0.3 was a no-op pipeline-proof bump) |
+| 1.0.5 | Version-marker sync | The 1.0.4 wheel self-reported 1.0.2 in serverInfo: the r9 item-8 pin test compared serverInfo to the same hardcoded `__version__` it was meant to guard (circular). All markers now derive from installed package metadata and the test pins against metadata. |
 
 ## Cross-MCP Context
 
@@ -183,6 +184,6 @@ Round 9 methodology: re-read the entire server source with no reliance on this d
 
 Round 10 methodology: thirteen paced probe rounds (harness in `tests/live_audit/`), superset-vs-pair fingerprinting for pagination semantics, live capture plus offline pipeline replay for response shapes, boundary and error-path sweeps per endpoint family, and a canonical re-stamp round so every finding carries a fresh timestamp. Conducted with Claude Code Fable 5.
 
-Test count: 1,136 regression tests (762 offline + 374 live-gated). Tests per tool: 59.8. Total items addressed across releases: 77. Current version: 1.0.4. PyPI: `sam-gov-mcp`.
+Test count: 1,136 regression tests (762 offline + 374 live-gated). Tests per tool: 59.8. Total items addressed across releases: 77. Current version: 1.0.5. PyPI: `sam-gov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/sam-gov-mcp. License: MIT.

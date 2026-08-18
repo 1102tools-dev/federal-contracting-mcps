@@ -289,5 +289,9 @@ def test_piid_lookup_no_note_when_complete(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_server_reports_package_version():
-    assert mcp.version == __version__
-    assert __version__ != ""
+    # r10: pin to INSTALLED METADATA, not to __version__ (the old comparison
+    # was circular and let the 1.0.4 wheel ship reporting 1.0.2).
+    from importlib.metadata import version as _pkg_version
+    real = _pkg_version("sam-gov-mcp")
+    assert mcp.version == real
+    assert __version__ == real

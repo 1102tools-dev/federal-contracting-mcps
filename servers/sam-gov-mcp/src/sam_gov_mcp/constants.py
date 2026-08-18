@@ -15,7 +15,11 @@ SUBCONTRACTS_PATH = "/prod/contract/v1/subcontracts/search"
 ASSISTANCE_SUBAWARDS_PATH = "/prod/assistance/v1/subawards/search"
 
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = "sam-gov-mcp/1.0.4"
+# Derived, not hardcoded: the hardcoded form drifted twice (1.0.2 wheel said
+# 1.0.1; 1.0.4 nearly shipped saying 1.0.2 in serverInfo).
+from sam_gov_mcp import __version__ as _v  # noqa: E402
+
+USER_AGENT = f"sam-gov-mcp/{_v}"
 
 # Hard caps from the SAM.gov API (enforce client-side to give good errors)
 ENTITY_MAX_SIZE = 10          # Entity Management has a hard cap of 10
