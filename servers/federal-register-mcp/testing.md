@@ -7,8 +7,8 @@ This Model Context Protocol server exposes the Federal Register API as 8 callabl
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 228 (132 offline, 96 live-gated) |
-| Audit rounds completed | 6 |
+| Total regression tests | 232 (132 offline, 100 live-gated) |
+| Audit rounds completed | 7 |
 | Total items addressed | 44 (17 initial, 1 cross-fix, 12 deep audit, 2 round 5, 12 round 6) |
 | Current release | 1.0.1 |
 | PyPI status | Published as `federal-register-mcp`, auto-publishes via Trusted Publisher on tag push |

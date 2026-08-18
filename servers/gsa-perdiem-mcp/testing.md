@@ -7,9 +7,9 @@ This Model Context Protocol server exposes the GSA Per Diem Rates API as 6 calla
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 6 |
-| Total regression tests | 434 (183 offline, 251 live-gated) |
+| Total regression tests | 438 (183 offline, 255 live-gated) |
 | Tests per tool | 72.3 |
-| Audit rounds completed | 7 |
+| Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 1 (path traversal) |
 | P1 silent-wrong-data bugs found and fixed | 23 |
 | P2 validation gaps found and fixed | 21 |

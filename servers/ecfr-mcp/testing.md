@@ -7,8 +7,8 @@ This Model Context Protocol server exposes the eCFR (Electronic Code of Federal 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 13 |
-| Total regression tests | 295 (182 offline, 113 live-gated) |
-| Audit rounds completed | 6 |
+| Total regression tests | 300 (182 offline, 118 live-gated) |
+| Audit rounds completed | 7 |
 | P0 catastrophic bugs found and fixed | 2 |
 | P1 silent-wrong-data bugs found and fixed | 26 |
 | P2 validation gaps found and fixed | 32 |

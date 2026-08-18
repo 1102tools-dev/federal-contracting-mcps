@@ -7,8 +7,8 @@ This Model Context Protocol server exposes the Regulations.gov API as 8 callable
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 200 (85 offline, 115 live-gated) |
-| Audit rounds completed | 5 (rounds 1-4 plus the suite-wide round-7 wave) |
+| Total regression tests | 204 (85 offline, 119 live-gated) |
+| Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 1 (`extra='ignore'` silent typo drop) |
 | P1 silent-wrong-data bugs found and fixed | 10 |
 | P2 validation gaps found and fixed | 7 |

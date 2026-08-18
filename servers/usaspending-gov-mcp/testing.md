@@ -7,7 +7,7 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 55 |
-| Total regression tests | 2,151 (1,783 offline, 368 live-gated) |
+| Total regression tests | 2,160 (1,785 offline, 375 live-gated) |
 | Tests per tool | 39+ |
 | Audit rounds completed | 11 (rounds 1-8, v0.3 expansion, two-family semantic audit, paced live campaign) |
 | Initial integration issues (round 1) | 28+ |

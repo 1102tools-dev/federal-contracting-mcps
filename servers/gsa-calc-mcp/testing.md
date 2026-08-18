@@ -7,9 +7,9 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 343 (240 offline, 103 live-gated) |
+| Total regression tests | 356 (247 offline, 109 live-gated) |
 | Tests per tool | 42.9 |
-| Audit rounds completed | 6 (4 retroactive live + initial WAF pass + Hypothesis/live round 5 + differential-count round 6) |
+| Audit rounds completed | 7 |
 | P1 crashes (shape-shift) found and fixed | 19 |
 | P1 silent-wrong-data bugs found and fixed | 33 (30 in 0.2.x, 3 in round 6) |
 | P2 validation gaps found and fixed | 20 (19 in 0.2.x, 1 in round 6) |

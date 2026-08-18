@@ -7,8 +7,8 @@ This Model Context Protocol server exposes the BLS Occupational Employment and W
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 7 |
-| Total regression tests | 243 (82 offline, 161 live-gated) |
-| Audit rounds completed | 7 |
+| Total regression tests | 246 (82 offline, 164 live-gated) |
+| Audit rounds completed | 8 |
 | P0 usability-breaking bugs found and fixed | 1 |
 | P1 silent-wrong-data bugs found and fixed | 14 |
 | P1 response-shape crash paths found and fixed | 12 |
