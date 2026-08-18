@@ -108,23 +108,23 @@ Restart Claude Desktop. The server appears in your MCP tools panel.
 
 ## Example prompts
 
-Once configured:
+Once configured (these mirror the field-tested set in the
+[1102tools prompt guide](https://1102tools.com/downloads/1102tools-prompt-guide.pdf)):
 
-- "Look up Leidos Inc in SAM.gov by UEI QVZMH5JLF274. Check registration status, business types, and whether they have any active exclusions."
-- "Find active SDVOSB firms in Virginia with primary NAICS 541512 that are currently registered in SAM."
-- "Do a full responsibility check on UEI E1K4E4A29SU5 and tell me whether I can award."
-- "Search for all sources sought notices posted in the last 30 days with NAICS 541512."
+- "Run a vendor responsibility check on [UEI] for registration status and exclusions, then pull FAPIIS integrity records separately; the one-pass check does not include those."
+- "Pull [COMPANY]'s registration status, socioeconomic categories, and any exclusions. If SAM returns multiple registrations for one UEI, say so and list them before picking one."
+- "Get [COMPANY]'s FAR 52.212-3 and DFARS 252.204-7016 answers from their reps and certs (summary mode), and flag anything a contracting officer would want to read in full text."
+- "How far back does [COMPANY]'s federal award history actually go? Check contract awards decade by decade, FY1970 forward; volumes thin out before 1980, so read single-digit years as archival traces, not gaps."
+- "Find active 8(a)-certified firms (SBA-certified, not self-designated) in [STATE] under NAICS [NAICS]."
+- "Search sources sought notices from the last 30 days under NAICS [NAICS], response deadlines sorted soonest first."
 - "Show me SDVOSB set-aside solicitations for IT services posted this quarter."
 - "Get the full description of notice ID [paste ID] and summarize the SOW."
-- "Search active exclusions where the excluded party name starts with 'acme'."
-- "Search contract awards for Booz Allen Hamilton in fiscal year 2026."
-- "Look up all modifications for PIID W912BV22P0112."
-- "Find all SDVOSB set-aside contract awards signed this year with NAICS 541512."
-- "Show me deleted contract award records for Department of Defense."
+- "Search exclusions for [NAME]: give me classification (Firm, Individual, Vessel), excluding agency, and whether each record is active."
+- "Search contract awards for [COMPANY] in fiscal year 2026, then look up all modifications for the biggest PIID you find."
+- "Show me deleted contract award records for Department of Defense this fiscal year."
 - "Find the Federal Hierarchy ID for the Department of the Treasury and walk one level of children."
-- "What sub-tier organizations roll up under DoD (FH org id 100000000)?"
-- "Show me FFATA subcontracts on prime PIID W912QR25C0022."
-- "Pull all subawards reported under grant FAIN FA86502125028."
+- "Show me FFATA subcontracts on prime PIID [PIID], and total the subaward amounts."
+- "Pull all subawards reported under grant FAIN [FAIN]."
 - "List the agency-level orgs in CGAC 075 (HHS)."
 
 ## Design notes
