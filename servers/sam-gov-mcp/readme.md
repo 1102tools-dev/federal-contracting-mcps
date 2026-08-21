@@ -157,6 +157,15 @@ Once configured (these mirror the field-tested set in the
 
 [federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 8 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills).
 
+## Request pacing
+
+Every request, including composite-tool subrequests, uses a provisional
+3-second cross-process anti-burst interval by default. The local gate uses a
+one-way key fingerprint and never stores the raw SAM key. It does not create
+additional daily quota or coordinate the same key on another computer.
+Override with `FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately
+disable it, and use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
+
 ## License
 
 MIT

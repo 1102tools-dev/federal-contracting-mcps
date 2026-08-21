@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.4
+
+Suite-wide API safety release. Every BLS request now passes through a
+3-second default cross-process gate, including keyless v1 traffic. The gate
+uses a one-way credential fingerprint, honors provider `Retry-After` without
+automatic retries, and supports the documented pacing environment overrides.
+Package, module, User-Agent, and MCP server versions now share installed
+package metadata. Offline pacing, concurrency, and publication-gate tests
+were added.
+
+## 1.0.3
+
+Added opt-in process-local pacing for credentialed BLS traffic. Version 1.0.4
+supersedes it with default-on, cross-process protection for keyed and keyless
+requests.
+
 ## 1.0.2
 
 No code changes. Republish to verify the Trusted Publisher pipeline after the repo moved to the 1102tools-dev account.

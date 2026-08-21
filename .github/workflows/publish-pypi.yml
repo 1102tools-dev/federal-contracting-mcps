@@ -12,7 +12,34 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish:
+  shared-safety-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Verify synchronized pacing helpers
+        run: python scripts/sync_pacing.py --check
+
+      - name: Run shared offline safety tests
+        run: >-
+          uv run --with pytest --with pytest-asyncio --with httpx
+          --with filelock --with platformdirs
+          pytest -q tests/test_federal_api_pacing.py
+
+      - name: Verify version surfaces
+        run: python scripts/validate_versions.py
+
+  test-and-build:
+    needs: shared-safety-tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -27,9 +54,6 @@ jobs:
           - { dir: "sam-gov-mcp",         pkg: "sam-gov-mcp" }
           - { dir: "usaspending-gov-mcp", pkg: "usaspending-gov-mcp" }
 
-    permissions:
-      id-token: write  # required for Trusted Publisher OIDC
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,6 +63,23 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Run offline package tests
+        working-directory: servers/${{ matrix.server.dir }}
+        env:
+          FEDERAL_API_MIN_INTERVAL_SECONDS: '0'
+          MCP_LIVE_TESTS: '0'
+          BLS_LIVE_TESTS: '0'
+          ECFR_LIVE_TESTS: '0'
+          FR_LIVE_TESTS: '0'
+          GSA_CALC_LIVE_TESTS: '0'
+          REGULATIONS_LIVE_TESTS: '0'
+          SAM_LIVE_TESTS: '0'
+          USASPENDING_LIVE_TESTS: '0'
+        run: uv run pytest -q
+
       - name: Install build tooling
         run: pip install --upgrade build
 
@@ -46,10 +87,44 @@ jobs:
         working-directory: servers/${{ matrix.server.dir }}
         run: python -m build
 
+      - name: Verify pacing helper is packaged
+        working-directory: servers/${{ matrix.server.dir }}
+        run: unzip -l dist/*.whl | grep '_pacing.py'
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.server.pkg }}
+          path: servers/${{ matrix.server.dir }}/dist/
+
+  publish:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        server:
+          - { dir: "bls-oews-mcp",        pkg: "bls-oews-mcp" }
+          - { dir: "ecfr-mcp",            pkg: "ecfr-mcp" }
+          - { dir: "federal-register-mcp", pkg: "federal-register-mcp" }
+          - { dir: "gsa-calc-mcp",        pkg: "gsa-calc-mcp" }
+          - { dir: "gsa-perdiem-mcp",     pkg: "gsa-perdiem-mcp" }
+          - { dir: "regulations-gov-mcp", pkg: "regulationsgov-mcp" }
+          - { dir: "sam-gov-mcp",         pkg: "sam-gov-mcp" }
+          - { dir: "usaspending-gov-mcp", pkg: "usaspending-gov-mcp" }
+    permissions:
+      id-token: write
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ matrix.server.pkg }}
+          path: dist/
+
       - name: Publish to PyPI (${{ matrix.server.pkg }})
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: servers/${{ matrix.server.dir }}/dist/
+          packages-dir: dist/
           skip-existing: true
 
   # Bundles were dropped in 1.0.0, and the .mcpb workflow was what used to

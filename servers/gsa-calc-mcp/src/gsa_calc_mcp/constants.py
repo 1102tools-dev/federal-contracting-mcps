@@ -2,12 +2,13 @@
 # Copyright (c) James Jenrette / 1102tools
 """Constants for the GSA CALC+ MCP server."""
 
+from . import __version__
+
 BASE_URL = "https://api.gsa.gov/acquisition/calc/v3/api/ceilingrates/"
 DEFAULT_TIMEOUT = 15.0
-USER_AGENT = "gsa-calc-mcp/1.0.1"
+USER_AGENT = f"gsa-calc-mcp/{__version__}"
 
 MAX_PAGE_SIZE = 500
-RATE_LIMIT_PER_HOUR = 1000
 
 EDUCATION_LEVELS = {
     "AA": "Associate's",

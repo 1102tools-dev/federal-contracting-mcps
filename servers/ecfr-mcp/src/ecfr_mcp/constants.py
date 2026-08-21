@@ -2,18 +2,14 @@
 # Copyright (c) James Jenrette / 1102tools
 """Constants and reference data for the eCFR MCP server."""
 
+from . import __version__
+
 BASE_URL = "https://www.ecfr.gov"
 DEFAULT_TIMEOUT_JSON = 15.0
 DEFAULT_TIMEOUT_STRUCTURE = 30.0
 DEFAULT_TIMEOUT_CONTENT = 60.0
 
-# Derived from the installed package so it can never go stale again
-# (1.0.1 shipped with this still pinned at 1.0.0).
-try:
-    from importlib.metadata import version as _pkg_version
-    USER_AGENT = f"ecfr-mcp/{_pkg_version('ecfr-mcp')}"
-except Exception:  # pragma: no cover - not installed (vendored copy)
-    USER_AGENT = "ecfr-mcp/1.0.2"
+USER_AGENT = f"ecfr-mcp/{__version__}"
 
 # eCFR point-in-time coverage starts here. Every versioner request for an
 # earlier date is a guaranteed 404.

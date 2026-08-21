@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.4
+
+Suite-wide API safety release. Every request, including DEMO_KEY traffic, now
+passes through a 4-second default cross-process gate. Per Diem and
+Regulations.gov share the same local `api.data.gov` bucket when they use the
+same key. Provider `Retry-After` is honored without automatic retries, and no
+raw credential enters pacing state. Version reporting is synchronized from
+installed package metadata.
+
+## 1.0.3
+
+Added opt-in process-local pacing for personal-key traffic. Version 1.0.4
+supersedes it with default-on, cross-process protection for personal and
+DEMO_KEY requests and shared `api.data.gov` coordination.
+
 ## 1.0.2
 
 No code changes. Republish to verify the Trusted Publisher pipeline after the repo moved to the 1102tools-dev account.

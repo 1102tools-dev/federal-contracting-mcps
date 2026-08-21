@@ -110,6 +110,15 @@ Regulations.gov filter values are CASE-SENSITIVE. Use exact casing:
 
 Together these three cover the full regulatory pipeline from proposal through public comment to codified rule.
 
+## Request pacing
+
+Every request and pagination subrequest uses a provisional 4-second
+cross-process anti-burst interval by default. Regulations.gov and Per Diem
+share a local `api.data.gov` bucket when they use the same key. This does not
+increase provider quota or coordinate the key on another computer. Override
+with `FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it,
+and use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
+
 ## License
 
 MIT

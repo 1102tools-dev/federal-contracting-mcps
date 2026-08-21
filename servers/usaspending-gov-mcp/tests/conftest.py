@@ -24,3 +24,10 @@ def _pace_live_calls(request):
     if LIVE and "live" in request.node.name:
         time.sleep(random.uniform(1.0, 2.0))
     yield
+
+
+@pytest.fixture(autouse=True)
+def _disable_offline_network_pacing(monkeypatch):
+    if not LIVE:
+        monkeypatch.setenv("FEDERAL_API_MIN_INTERVAL_SECONDS", "0")
+    yield

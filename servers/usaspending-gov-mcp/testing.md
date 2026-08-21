@@ -17,9 +17,16 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Round 8 Hypothesis property tests findings | 0 |
 | Round 9 (v0.3) live audit findings | 1 (list_states JSON-array response shape) |
 | Round 10 (1.0.1) semantic audit findings | 22 (12 search family, 10 entity family), all fixed |
-| Release cycles | 13 (v0.1.2 through v1.0.1) |
-| Current release | 1.0.1 |
+| Release cycles | 15 (v0.1.2 through v1.0.3) |
+| Current release | 1.0.3 |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## 1.0.3 Safety Release Verification
+
+The complete offline suite passed 1,785 tests with 375 live tests gated. All
+four upstream request paths are centrally paced. Shared tests verified
+cross-process serialization, keyless-service protection, invalid overrides,
+and `Retry-After` behavior. No federal API was called.
 
 ## Round 11 (2026-08-18): paced live campaign, zero new defects
 
@@ -236,7 +243,7 @@ This MCP is one of eight servers in the 1102tools federal-contracting MCP suite 
 
 ## What Was Not Tested
 
-- **Rate-limit behavior: RESOLVED in round 11.** USASpending documents no limits, its open-source Django settings configure no REST Framework throttling at all, and 95 paced calls (plus prior unpaced suite runs) have never seen a 429. Infrastructure-level abuse protection presumably exists; audit-scale use does not approach it.
+- **Rate-limit behavior.** USASpending documents no numeric limit. Every request now uses a provisional 3-second cross-process gate and honors `Retry-After` without automatic retries. This is a 1102tools anti-burst safeguard, not a provider requirement.
 - **Historical API changes.** Tests validate behavior against the current USASpending API. Breaking changes to the upstream API (field renames, endpoint deprecations) are not caught by offline tests. Live-gated tests will catch them but must be run manually with `USASPENDING_LIVE_TESTS=1`.
 - **Payload size limits beyond `limit` capping.** Response sizes over ~95KB are theoretically possible on some endpoints if the caller accepts the default shape. The MCP does not enforce an overall payload size ceiling.
 - **Pending API deprecation.** USASpending has signaled that `subawards` award type will be superseded by a `spending_level` parameter. The MCP does not yet expose `spending_level`. When upstream fully deprecates, grants queries may need an adjustment.
@@ -253,6 +260,6 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, ma
 
 Testing spanned ten rounds from integration stress testing through live API audits, response-shape guards, property testing, and the round 10 semantic audit (parameter effects, enum sweeps, contract-vs-validator diffs). The live regression suite runs against the USASpending.gov production API when enabled with `USASPENDING_LIVE_TESTS=1`.
 
-Test count: 2,151 regression tests (1,783 offline + 368 live-gated) across 55 tools. Tests per tool: 39+. P1 bugs found and fixed rounds 1-9: 11. P2 validation gaps closed rounds 1-9: 7. Round 10 findings fixed: 22. Integration issues closed in round 1: 28+. Release cycles: 13. Current version: 1.0.1. PyPI: `usaspending-gov-mcp`.
+Test count: 2,160 regression tests (1,785 offline + 375 live-gated) across 55 tools. Tests per tool: 39+. P1 bugs found and fixed rounds 1-9: 11. P2 validation gaps closed rounds 1-9: 7. Round 10 findings fixed: 22. Integration issues closed in round 1: 28+. Release cycles: 15. Current version: 1.0.3. PyPI: `usaspending-gov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/usaspending-gov-mcp. License: MIT.

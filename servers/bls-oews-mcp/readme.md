@@ -67,12 +67,10 @@ With key (recommended):
 }
 ```
 
-`FEDERAL_API_MIN_INTERVAL_SECONDS` is optional. When it is set and a real BLS
-key is active, the server serializes upstream requests and waits that many
-seconds after one request completes before the next starts. The 1102tools agent
-packages set it to `3` as a defense-in-depth safeguard. Keyless BLS v1 traffic
-and standalone installations remain unpaced unless separately controlled by
-the client.
+The server defaults `FEDERAL_API_MIN_INTERVAL_SECONDS` to `3` for keyed and
+keyless requests. The explicit value above documents the intended policy and
+can be changed when you have a documented reason. Multiple local processes
+using the same key share the gate.
 
 The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes arrive automatically; without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup, so raise your platform's MCP startup timeout if it enforces a short one.
 
@@ -104,6 +102,15 @@ OEWS publishes about a year in arrears, and the BLS API serves ONLY the latest s
 ## Companion tools
 
 Use alongside `gsa-calc-mcp` (GSA CALC+ ceiling rates) for complete pricing analysis. BLS provides what the market pays; CALC+ provides what GSA contractors charge. Together they form the IGCE pricing toolkit.
+
+## Request pacing
+
+Every upstream request uses a provisional 3-second cross-process anti-burst
+interval by default. This protects keyed and keyless traffic launched by
+multiple local clients; it does not increase BLS daily quota or coordinate the
+same key on another computer. Override with
+`FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it, and
+use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
 
 ## License
 

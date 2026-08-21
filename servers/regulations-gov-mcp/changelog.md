@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.3
+
+Suite-wide API safety release. Every request and pagination subrequest now
+passes through a 4-second default cross-process gate. Regulations.gov and Per
+Diem share the same local `api.data.gov` bucket when they use the same key.
+Provider `Retry-After` is honored without automatic retries, and version
+reporting is synchronized from installed package metadata.
+
 ## 1.0.2
 
 No code changes. Republish to verify the Trusted Publisher pipeline after the repo moved to the 1102tools-dev account.

@@ -19,7 +19,6 @@ the server returns an actionable regeneration message.
 
 from __future__ import annotations
 
-import asyncio
 import os
 import re
 import urllib.parse
@@ -30,6 +29,7 @@ import httpx
 from mcp.server import MCPServer
 
 from . import __version__
+from ._pacing import FederalApiPacer
 from .constants import (
     ASSISTANCE_SUBAWARDS_PATH,
     BASE_URL,
@@ -409,6 +409,14 @@ def _get_client() -> httpx.AsyncClient:
     return _client
 
 
+def _pacer(api_key: str) -> FederalApiPacer:
+    return FederalApiPacer(
+        bucket="api.sam.gov",
+        default_interval=3.0,
+        credential=api_key,
+    )
+
+
 def _format_error(status: int, body: str) -> str:
     """Translate common SAM.gov errors into actionable messages."""
     cleaned = _clean_error_body(body)
@@ -431,12 +439,10 @@ def _format_error(status: int, body: str) -> str:
         )
     if status == 429:
         return (
-            "HTTP 429: Rate limited. This key's daily quota is exhausted. "
-            "Quota is a per-key rate plan set on the SAM.gov side and is "
-            "independent of the key's data role (a federal FOUO key can still "
-            "be on the default 10/day plan). Keys reset at 00:00 UTC. "
-            "For real volume, request an elevated rate plan or a system "
-            "account key via SAM.gov/FSD."
+            "HTTP 429: SAM.gov rate limited the request. Published daily "
+            "allowances vary by account, while burst and abuse controls are "
+            "not numerically documented. Do not retry automatically. Check "
+            "the key's rate plan and any provider-supplied retry guidance."
         )
     if status == 400:
         # Surface specific 400 patterns
@@ -507,7 +513,14 @@ async def _get(
     full_url = f"{base_url}{path}?{query_str}"
 
     try:
-        r = await _get_client().get(full_url)
+        async with _pacer(api_key).request_slot() as pacing:
+            r = await _get_client().get(full_url)
+            pacing.observe_response(r)
+            pacing.raise_if_rate_limited(
+                r,
+                service="SAM.gov",
+                guidance=_format_error(r.status_code, r.text),
+            )
         r.raise_for_status()
         # Most endpoints return JSON; opportunity description endpoint returns
         # a JSON object with a "description" HTML field.
@@ -1691,9 +1704,6 @@ async def vendor_responsibility_check(uei: str) -> dict[str, Any]:
                 result["flags"].append("REGISTRATION_NOT_ACTIVE")
             if reg.get("exclusionStatusFlag") == "Y":
                 result["flags"].append("EXCLUSION_FLAG_ON_ENTITY")
-
-    # Small courtesy delay between calls
-    await asyncio.sleep(0.3)
 
     # Step 2: Exclusions check
     try:

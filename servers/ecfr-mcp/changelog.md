@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.4
+
+Suite-wide API safety release. Every upstream request, including XML content
+and JSON metadata calls, now passes through a 3-second default cross-process
+gate. Provider `Retry-After` is honored without automatic retries. Version
+reporting now derives consistently from installed package metadata, and the
+release workflow runs the complete offline suite before publishing.
+
 ## 1.0.3
 
 No code changes. Republish to verify the Trusted Publisher pipeline after the repo moved to the 1102tools-dev account.

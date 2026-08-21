@@ -23,6 +23,7 @@ import httpx
 from mcp.server import MCPServer
 
 from . import __version__
+from ._pacing import FederalApiPacer
 from .constants import (
     BASE_URL,
     DEFAULT_PAGE_SIZE,
@@ -341,6 +342,14 @@ def _get_client() -> httpx.AsyncClient:
     return _client
 
 
+def _pacer(api_key: str) -> FederalApiPacer:
+    return FederalApiPacer(
+        bucket="api.data.gov",
+        default_interval=4.0,
+        credential=api_key,
+    )
+
+
 def _format_error(status: int, body: Any) -> str:
     cleaned = _clean_error_body(body)
     low = cleaned.lower() if isinstance(cleaned, str) else ""
@@ -423,7 +432,14 @@ async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any
     query["api_key"] = key
     url = f"{BASE_URL}/{path}?{urllib.parse.urlencode(query)}"
     try:
-        r = await _get_client().get(url)
+        async with _pacer(key).request_slot() as pacing:
+            r = await _get_client().get(url)
+            pacing.observe_response(r)
+            pacing.raise_if_rate_limited(
+                r,
+                service="Regulations.gov",
+                guidance=_format_error(r.status_code, r.text),
+            )
     except httpx.RequestError as e:
         raise RuntimeError(f"Network error calling Regulations.gov: {e}") from e
     if r.status_code >= 400:
@@ -883,7 +899,6 @@ async def far_case_history(docket_id: str) -> dict[str, Any]:
     """
     docket_id = _validate_id(docket_id, field="docket_id")
 
-    import asyncio
     docket = await get_docket_detail(docket_id)
     docket_attrs = _safe_dict(_safe_dict(docket.get("data")).get("attributes"))
 
@@ -891,7 +906,6 @@ async def far_case_history(docket_id: str) -> dict[str, Any]:
     documents: list[dict[str, Any]] = []
     total_documents: Any = None
     for page in range(1, _MAX_DOC_PAGES + 1):
-        await asyncio.sleep(0.3)
         docs_result = await search_documents(
             docket_id=docket_id,
             sort="-postedDate",

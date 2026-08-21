@@ -20,9 +20,36 @@ Website: [1102tools.com](https://1102tools.com)
 
 ---
 
-## 1.0.0 is out (August 2026)
+## Safety release v1.0.9 (August 2026)
 
-**All eight servers move to 1.0.0 together.** This is the first stable release of the suite, and the largest update since it launched. Every package is now marked Production/Stable, tested on Python 3.10 through 3.14, and versioned in lockstep so you never have to work out which combination you are running.
+All eight packages now enforce a provisional, cross-process anti-burst gate
+before every upstream request. SAM.gov, BLS OEWS, USASpending, GSA CALC+,
+eCFR, and Federal Register default to one request every 3 seconds. GSA Per
+Diem and Regulations.gov default to 4 seconds and share one `api.data.gov`
+bucket when they use the same key.
+
+This is a 1102tools safety safeguard, not a statement that every provider
+requires that exact interval. It protects independently launched MCP and agent
+processes on the same computer, honors `Retry-After` without automatically
+retrying, and never writes a raw credential to pacing state. It cannot
+coordinate the same key running on another computer or create additional
+daily quota.
+
+Set `FEDERAL_API_MIN_INTERVAL_SECONDS` to a different finite, non-negative
+number when you have a documented reason. Setting it to `0` deliberately
+disables the local gate. `FEDERAL_API_PACING_DIR` overrides the per-user state
+directory for managed or temporary environments.
+
+The release also makes PyPI publication depend on the complete offline test
+matrix and wheel inspection. Current package versions are listed in each
+server's changelog and the universal setup guide.
+
+## 1.0.0 stable baseline (August 2026)
+
+**All eight servers first reached 1.0.0 together.** That was the first stable
+suite release and the largest update since launch. Packages now version
+independently so a correction to one server does not force no-op releases of
+the other seven.
 
 ### Rebuilt on v2 of the MCP Python SDK
 
@@ -46,7 +73,9 @@ The double-click bundles are gone. They could not be signed in a way Claude Desk
 
 ### Verified before shipping
 
-4,715 regression tests across the eight servers, with pass counts identical to the pre-migration baseline, plus a live protocol handshake against each server confirming all 124 tools register. Per-server detail is in each `changelog.md`.
+5,078 collected regression tests across the eight servers: 3,464 offline tests
+passed and 1,614 live tests remained correctly gated during the v1.0.9 safety
+validation. Per-server detail is in each `testing.md` and `changelog.md`.
 
 ---
 
@@ -66,7 +95,7 @@ All source lives under `servers/<name>/`. Each server is self-contained: code, t
 - [federal-register-mcp](servers/federal-register-mcp): proposed rules, final rules, notices, executive orders, FAR cases
 - [regulations-gov-mcp](servers/regulations-gov-mcp): federal rulemaking dockets, public comments, comment period tracking
 
-Combined: 124 deterministic tool calls, 4,715 regression tests, 8 audit programs, roughly 350 bugs fixed during hardening.
+Combined: 124 deterministic tool calls, 5,078 regression tests, 8 audit programs, roughly 350 bugs fixed during hardening.
 
 ## Install
 

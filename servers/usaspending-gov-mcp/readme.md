@@ -162,6 +162,14 @@ Once configured, try:
 
 All data is sourced from [USASpending.gov](https://www.usaspending.gov), which aggregates FPDS-NG contract data, FAADC assistance data, and agency DATA Act submissions. Data freshness varies by agency: non-DoD contract data is typically available within 5 business days, DoD and USACE procurement data has a 90-day reporting delay in FPDS, and financial assistance data is available within 2 days of submission.
 
+## Request pacing
+
+Every upstream request uses a provisional 3-second cross-process anti-burst
+interval by default. USASpending does not publish a numeric limit, so this is
+a 1102tools safeguard rather than a provider requirement. Override with
+`FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it, and
+use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
+
 ## License
 
 MIT

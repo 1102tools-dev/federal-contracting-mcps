@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the Regulations.gov API as 8 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The MCP ships with 200 regression tests (85 offline plus 115 live-gated).
+This Model Context Protocol server exposes the Regulations.gov API as 8 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The MCP ships with 204 regression tests (85 offline plus 119 live-gated).
 
 | Metric | Value |
 |---|---|
@@ -13,8 +13,15 @@ This Model Context Protocol server exposes the Regulations.gov API as 8 callable
 | P1 silent-wrong-data bugs found and fixed | 10 |
 | P2 validation gaps found and fixed | 7 |
 | Round-7 wave findings | 12 |
-| Current release | 1.0.1 |
+| Current release | 1.0.3 |
 | PyPI status | Published as `regulationsgov-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## 1.0.3 Safety Release Verification
+
+The complete offline suite passed 85 tests with 119 live tests gated. Shared
+pacing tests verified the 4-second default, pagination coverage,
+cross-process serialization, and a shared `api.data.gov` bucket with Per Diem
+for the same key. No federal API was called.
 
 ## What Was Tested
 
@@ -162,7 +169,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round-7 wave methodology: re-read the entire server source with no reliance on this document's claims; verify every filter parameter name live against result deltas; probe documented limits (page cap, DEMO_KEY rate) against live headers and boundary requests; end-to-end test both workflow tools through the real server against known corpora (FDA open comment periods, a 553-document EPA docket); check every prior claim in this document against the code and live behavior.
 
-Test count: 200 regression tests (85 offline + 115 live-gated). Total findings across all rounds: 34. Current version: 1.0.1. PyPI: `regulationsgov-mcp`.
+Test count: 204 regression tests (85 offline + 119 live-gated). Total findings across all rounds: 34. Current version: 1.0.3. PyPI: `regulationsgov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/regulations-gov-mcp. License: MIT.
 

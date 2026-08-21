@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The MCP ships with 343 regression tests (240 offline plus 103 live-gated).
+This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The MCP ships with 356 regression tests (247 offline plus 109 live-gated).
 
 | Metric | Value |
 |---|---|
@@ -17,8 +17,15 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | Round 5 Hypothesis + live findings | 0 (shape-only assertions; see round 6 for what that missed) |
 | Round 6 differential-count findings | 3 high-severity (worksite ignored, experience_min exact-match, vendor_rate_card unpageable) + 4 dead hardcoded SINs + 1 validation gap |
 | Retroactive additional findings | 12 |
-| Current release | 1.0.1 |
+| Current release | 1.0.3 |
 | PyPI status | Published as `gsa-calc-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## 1.0.3 Safety Release Verification
+
+The complete offline suite passed 247 tests with 109 live tests gated. Shared
+pacing tests verified cross-process serialization, keyless-service protection,
+invalid overrides, and `Retry-After` handling. The previously unverified
+1,000/hour claim was removed. No federal API was called.
 
 ## What Was Tested
 
@@ -166,7 +173,7 @@ This MCP is one of eight servers in the 1102tools federal-contracting MCP suite 
 
 ## What Was Not Tested
 
-- **Rate-limit behavior.** The MCP's 429 error message cites 1,000 requests/hour, but that figure has not been verified against public GSA documentation, and no 429 was ever observed in testing (round 6 included ~50 rapid probes). The MCP passes through whatever limits the API enforces but does not implement client-side throttling.
+- **Rate-limit behavior.** GSA does not publish a numeric CALC+ limit. The unverified 1,000/hour claim was removed in 1.0.3. Every request now uses a provisional 3-second cross-process gate and honors `Retry-After` without automatic retries.
 - **WAF drift.** GSA may tighten the CALC+ WAF over time. The MCP's WAF-aware filter was calibrated in April 2026; future WAF changes will be caught only via live-gated tests.
 - **Historical rate data.** CALC+ surfaces current awarded rates. Historical award data requires separate queries that are not exposed by this MCP.
 - **Payload size limits.** Response sizes on `filtered_browse` or `keyword_search` can be large if the caller accepts the default shape. The MCP bounds per-page results but does not enforce an overall payload ceiling.
@@ -183,7 +190,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, ma
 
 Testing spanned four retroactive rounds plus an initial WAF-calibration pass, a Hypothesis-and-live round 5, and a differential-count round 6. Rounds covered live probing across all 8 tools, compound-filter and pagination edge cases, length caps and ES window overflow, response-shape mock fuzzing, and (round 6) count assertions against the API's own aggregation buckets. The live regression suite runs against the production CALC+ API when enabled with `GSA_CALC_LIVE_TESTS=1`.
 
-Test count: 343 regression tests (240 offline, 103 live-gated). P1 crashes found and fixed: 19. P1 silent-wrong-data bugs found and fixed: 32. P2 validation gaps closed: 20. P3 cleanup items closed: 6. Retroactive additional findings: 12. Current version: 1.0.1. PyPI: `gsa-calc-mcp`.
+Test count: 356 regression tests (247 offline, 109 live-gated). P1 crashes found and fixed: 19. P1 silent-wrong-data bugs found and fixed: 32. P2 validation gaps closed: 20. P3 cleanup items closed: 6. Retroactive additional findings: 12. Current version: 1.0.3. PyPI: `gsa-calc-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/gsa-calc-mcp. License: MIT.
 

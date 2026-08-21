@@ -14,8 +14,15 @@ This Model Context Protocol server exposes seven SAM.gov REST APIs (Entity Manag
 | P1 silent-wrong-data bugs (live-audit-only) | 7 |
 | Round 9 findings | 13 (8 fixed in 1.0.2; all 5 pending items live-resolved in round 10) |
 | Round 10 findings | 10 (fixed/documented in 1.0.4 from a ~230-call paced live campaign) |
-| Current release | 1.0.5 |
+| Current release | 1.0.6 |
 | PyPI status | Published as `sam-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## 1.0.6 Safety Release Verification
+
+The complete offline suite passed 762 tests with 374 live tests gated. Shared
+pacing tests verified same-key cross-process serialization, distinct-key
+isolation, invalid overrides, and `Retry-After` behavior. Composite tools now
+receive the same central pacing as direct tools. No SAM.gov request was made.
 
 ## Round 9 (1.0.2): Independent re-audit
 
@@ -184,6 +191,6 @@ Round 9 methodology: re-read the entire server source with no reliance on this d
 
 Round 10 methodology: thirteen paced probe rounds (harness in `tests/live_audit/`), superset-vs-pair fingerprinting for pagination semantics, live capture plus offline pipeline replay for response shapes, boundary and error-path sweeps per endpoint family, and a canonical re-stamp round so every finding carries a fresh timestamp. Conducted with Claude Code Fable 5.
 
-Test count: 1,136 regression tests (762 offline + 374 live-gated). Tests per tool: 59.8. Total items addressed across releases: 77. Current version: 1.0.5. PyPI: `sam-gov-mcp`.
+Test count: 1,136 regression tests (762 offline + 374 live-gated). Tests per tool: 59.8. Total items addressed across releases: 77. Current version: 1.0.6. PyPI: `sam-gov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/sam-gov-mcp. License: MIT.

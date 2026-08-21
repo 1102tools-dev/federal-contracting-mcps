@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.3
+
+Suite-wide API safety release. All four upstream request paths now pass
+through a 3-second default cross-process anti-burst gate. Provider
+`Retry-After` is honored without automatic retries. Version reporting now
+derives consistently from installed package metadata, and publication is
+blocked unless offline tests and wheel inspection pass.
+
 ## 1.0.2
 
 No code changes. Republish to verify the Trusted Publisher pipeline after the repo moved to the 1102tools-dev account.

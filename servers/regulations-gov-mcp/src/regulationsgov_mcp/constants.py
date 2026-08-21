@@ -2,9 +2,11 @@
 # Copyright (c) James Jenrette / 1102tools
 """Constants for the Regulations.gov MCP server."""
 
+from . import __version__
+
 BASE_URL = "https://api.regulations.gov/v4"
 DEFAULT_TIMEOUT = 15.0
-USER_AGENT = "regulationsgov-mcp/1.0.1"
+USER_AGENT = f"regulationsgov-mcp/{__version__}"
 
 MIN_PAGE_SIZE = 5
 MAX_PAGE_SIZE = 250

@@ -15,18 +15,16 @@ OEWS data lags ~2 years. The server defaults to the correct data year
 
 from __future__ import annotations
 
-import asyncio
 import json
-import math
 import os
 import re
-import time
-from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Literal, Union
+from typing import Any, Literal, Union
 
 import httpx
 from mcp.server import MCPServer
 
+from . import __version__
+from ._pacing import FederalApiPacer
 from .constants import (
     BASE_URL_V1,
     BASE_URL_V2,
@@ -46,7 +44,7 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = MCPServer("bls-oews")
+mcp = MCPServer("bls-oews", version=__version__)
 
 
 # ---------------------------------------------------------------------------
@@ -269,9 +267,6 @@ def _api_key_status() -> dict[str, Any]:
 
 
 _client: httpx.AsyncClient | None = None
-_pacing_lock: asyncio.Lock | None = None
-_last_credentialed_request_completed: float | None = None
-_PACING_ENV = "FEDERAL_API_MIN_INTERVAL_SECONDS"
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -284,46 +279,12 @@ def _get_client() -> httpx.AsyncClient:
     return _client
 
 
-def _configured_min_interval() -> float:
-    """Return the opt-in delay between credentialed upstream requests."""
-    raw = os.environ.get(_PACING_ENV)
-    if raw is None or not raw.strip():
-        return 0.0
-    try:
-        value = float(raw)
-    except ValueError as exc:
-        raise RuntimeError(f"{_PACING_ENV} must be a non-negative number of seconds.") from exc
-    if not math.isfinite(value) or value < 0:
-        raise RuntimeError(f"{_PACING_ENV} must be a finite, non-negative number of seconds.")
-    return value
-
-
-def _get_pacing_lock() -> asyncio.Lock:
-    global _pacing_lock
-    if _pacing_lock is None:
-        _pacing_lock = asyncio.Lock()
-    return _pacing_lock
-
-
-@asynccontextmanager
-async def _credentialed_request_slot(enabled: bool) -> AsyncIterator[None]:
-    """Serialize real-key traffic and wait after the prior request completes."""
-    global _last_credentialed_request_completed
-
-    interval = _configured_min_interval() if enabled else 0.0
-    if interval <= 0:
-        yield
-        return
-
-    async with _get_pacing_lock():
-        if _last_credentialed_request_completed is not None:
-            remaining = interval - (time.monotonic() - _last_credentialed_request_completed)
-            if remaining > 0:
-                await asyncio.sleep(remaining)
-        try:
-            yield
-        finally:
-            _last_credentialed_request_completed = time.monotonic()
+def _pacer(api_key: str | None) -> FederalApiPacer:
+    return FederalApiPacer(
+        bucket="api.bls.gov",
+        default_interval=3.0,
+        credential=api_key,
+    )
 
 
 def _format_error(status: int, body: str) -> str:
@@ -332,9 +293,10 @@ def _format_error(status: int, body: str) -> str:
         key = _get_api_key()
         limit = "500/day (v2)" if key else "25/day (v1)"
         return (
-            f"HTTP 429: BLS rate limit exceeded ({limit}). "
-            "Wait until tomorrow or register a free v2 key at "
-            "https://data.bls.gov/registrationEngine/ for 500 queries/day."
+            f"HTTP 429: BLS rate limit exceeded ({limit}, plus published "
+            "short-window limits). Do not retry in a burst. Register a free "
+            "v2 key at https://data.bls.gov/registrationEngine/ for the "
+            "higher published allowance."
         )
     if status == 400:
         return f"HTTP 400: Bad request. Check series ID format (must be exactly 25 chars). API response: {cleaned}"
@@ -383,8 +345,14 @@ async def _query_bls(
         payload["registrationkey"] = api_key
 
     try:
-        async with _credentialed_request_slot(api_key is not None):
+        async with _pacer(api_key).request_slot() as pacing:
             r = await _get_client().post(base_url, content=json.dumps(payload))
+            pacing.observe_response(r)
+            pacing.raise_if_rate_limited(
+                r,
+                service="BLS",
+                guidance=_format_error(r.status_code, r.text),
+            )
         r.raise_for_status()
 
         try:

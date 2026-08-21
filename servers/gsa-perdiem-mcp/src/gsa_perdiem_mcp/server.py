@@ -16,21 +16,18 @@ set by DoD (DTMO); foreign rates by the State Department.
 
 from __future__ import annotations
 
-import asyncio
 import json as _json
-import math
 import os
 import re
-import time
 import urllib.parse
-from contextlib import asynccontextmanager
 from datetime import date as _date
-from typing import Any, AsyncIterator
+from typing import Any
 
 import httpx
 from mcp.server import MCPServer
 
 from . import __version__
+from ._pacing import FederalApiPacer
 from .constants import BASE_URL, DEFAULT_TIMEOUT, USER_AGENT
 
 mcp = MCPServer("gsa-perdiem", version=__version__)
@@ -286,9 +283,6 @@ def _get_api_key() -> str:
 
 
 _client: httpx.AsyncClient | None = None
-_pacing_lock: asyncio.Lock | None = None
-_last_credentialed_request_completed: float | None = None
-_PACING_ENV = "FEDERAL_API_MIN_INTERVAL_SECONDS"
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -301,46 +295,12 @@ def _get_client() -> httpx.AsyncClient:
     return _client
 
 
-def _configured_min_interval() -> float:
-    """Return the opt-in delay between credentialed upstream requests."""
-    raw = os.environ.get(_PACING_ENV)
-    if raw is None or not raw.strip():
-        return 0.0
-    try:
-        value = float(raw)
-    except ValueError as exc:
-        raise RuntimeError(f"{_PACING_ENV} must be a non-negative number of seconds.") from exc
-    if not math.isfinite(value) or value < 0:
-        raise RuntimeError(f"{_PACING_ENV} must be a finite, non-negative number of seconds.")
-    return value
-
-
-def _get_pacing_lock() -> asyncio.Lock:
-    global _pacing_lock
-    if _pacing_lock is None:
-        _pacing_lock = asyncio.Lock()
-    return _pacing_lock
-
-
-@asynccontextmanager
-async def _credentialed_request_slot(enabled: bool) -> AsyncIterator[None]:
-    """Serialize real-key traffic and wait after the prior request completes."""
-    global _last_credentialed_request_completed
-
-    interval = _configured_min_interval() if enabled else 0.0
-    if interval <= 0:
-        yield
-        return
-
-    async with _get_pacing_lock():
-        if _last_credentialed_request_completed is not None:
-            remaining = interval - (time.monotonic() - _last_credentialed_request_completed)
-            if remaining > 0:
-                await asyncio.sleep(remaining)
-        try:
-            yield
-        finally:
-            _last_credentialed_request_completed = time.monotonic()
+def _pacer(api_key: str) -> FederalApiPacer:
+    return FederalApiPacer(
+        bucket="api.data.gov",
+        default_interval=4.0,
+        credential=api_key,
+    )
 
 
 def _format_error(status: int, body: Any) -> str:
@@ -379,8 +339,14 @@ async def _get(path: str) -> Any:
     sep = "&" if "?" in path else "?"
     url = f"{BASE_URL}/{path}{sep}api_key={encoded_key}"
     try:
-        async with _credentialed_request_slot(key != "DEMO_KEY"):
+        async with _pacer(key).request_slot() as pacing:
             r = await _get_client().get(url)
+            pacing.observe_response(r)
+            pacing.raise_if_rate_limited(
+                r,
+                service="GSA Per Diem",
+                guidance=_format_error(r.status_code, r.text),
+            )
     except httpx.RequestError as e:
         raise RuntimeError(f"Network error calling GSA Per Diem API: {e}") from e
     if r.status_code >= 400:
@@ -1059,7 +1025,6 @@ async def compare_locations(
                 "location": label,
                 "error": str(e)[:200],
             })
-        await asyncio.sleep(0.3)
 
     results.sort(key=lambda x: x.get("max_daily_total", 0), reverse=True)
     return {"fiscal_year": year, "locations": results}

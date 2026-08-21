@@ -19,6 +19,8 @@ from typing import Any, Literal
 import httpx
 from mcp.server import MCPServer
 
+from . import __version__
+from ._pacing import FederalApiPacer
 from .constants import (
     BASE_URL,
     DEFAULT_FIELDS,
@@ -27,7 +29,7 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = MCPServer("federal-register")
+mcp = MCPServer("federal-register", version=__version__)
 
 
 # ---------------------------------------------------------------------------
@@ -226,6 +228,7 @@ def _clean_error_body(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 _client: httpx.AsyncClient | None = None
+_pacer = FederalApiPacer(bucket="www.federalregister.gov", default_interval=3.0)
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -286,7 +289,14 @@ def _ensure_json_container(data: Any, *, url: str) -> dict[str, Any] | list[Any]
 
 async def _get(url: str) -> Any:
     try:
-        r = await _get_client().get(url)
+        async with _pacer.request_slot() as pacing:
+            r = await _get_client().get(url)
+            pacing.observe_response(r)
+            pacing.raise_if_rate_limited(
+                r,
+                service="Federal Register",
+                guidance=_format_error(r.status_code, r.text[:500]),
+            )
         r.raise_for_status()
         return _ensure_json_container(r.json(), url=url)
     except httpx.HTTPStatusError as e:

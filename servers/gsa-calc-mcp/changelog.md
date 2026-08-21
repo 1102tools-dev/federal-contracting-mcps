@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.3
+
+Suite-wide API safety release. Every CALC+ request now passes through a
+3-second default cross-process anti-burst gate. Provider `Retry-After` is
+honored without automatic retries. The undocumented 1,000/hour claim was
+removed from code and documentation. Version reporting now derives from
+installed package metadata, and publication requires the offline test matrix.
+
 ## 1.0.2
 
 No code changes. Republish to verify the Trusted Publisher pipeline after the repo moved to the 1102tools-dev account.

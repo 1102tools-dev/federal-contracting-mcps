@@ -21,6 +21,8 @@ from typing import Any
 import httpx
 from mcp.server import MCPServer
 
+from . import __version__
+from ._pacing import FederalApiPacer
 from .constants import (
     BASE_URL,
     COMMON_FAR_SECTIONS,
@@ -35,7 +37,7 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = MCPServer("ecfr")
+mcp = MCPServer("ecfr", version=__version__)
 
 
 # ---------------------------------------------------------------------------
@@ -300,6 +302,7 @@ def _validate_query_safe(value: str, *, field: str) -> str:
 # ---------------------------------------------------------------------------
 
 _client: httpx.AsyncClient | None = None
+_pacer = FederalApiPacer(bucket="www.ecfr.gov", default_interval=3.0)
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -363,7 +366,14 @@ async def _get_json(
 ) -> dict[str, Any]:
     """GET helper for JSON endpoints. Always returns a dict (empty if API returned null)."""
     try:
-        r = await _get_client().get(path, params=params or {}, timeout=timeout)
+        async with _pacer.request_slot() as pacing:
+            r = await _get_client().get(path, params=params or {}, timeout=timeout)
+            pacing.observe_response(r)
+            pacing.raise_if_rate_limited(
+                r,
+                service="eCFR",
+                guidance=_format_error(r.status_code, r.text),
+            )
     except httpx.RequestError as e:
         raise RuntimeError(f"Network error calling eCFR: {e}") from e
     if r.status_code >= 400:
@@ -389,9 +399,16 @@ async def _get_json(
 async def _get_xml(path: str, params: dict[str, Any] | None = None) -> str:
     """GET helper for XML content endpoints. Returns raw XML string."""
     try:
-        r = await _get_client().get(
-            path, params=params or {}, timeout=DEFAULT_TIMEOUT_CONTENT
-        )
+        async with _pacer.request_slot() as pacing:
+            r = await _get_client().get(
+                path, params=params or {}, timeout=DEFAULT_TIMEOUT_CONTENT
+            )
+            pacing.observe_response(r)
+            pacing.raise_if_rate_limited(
+                r,
+                service="eCFR",
+                guidance=_format_error(r.status_code, r.text),
+            )
     except httpx.RequestError as e:
         raise RuntimeError(f"Network error calling eCFR: {e}") from e
     if r.status_code >= 400:

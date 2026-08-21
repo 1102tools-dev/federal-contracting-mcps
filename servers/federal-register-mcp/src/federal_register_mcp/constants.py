@@ -2,9 +2,11 @@
 # Copyright (c) James Jenrette / 1102tools
 """Constants for the Federal Register MCP server."""
 
+from . import __version__
+
 BASE_URL = "https://www.federalregister.gov/api/v1"
 DEFAULT_TIMEOUT = 15.0
-USER_AGENT = "federal-register-mcp/1.0.1"
+USER_AGENT = f"federal-register-mcp/{__version__}"
 
 DOCUMENT_TYPES = {
     "PRORULE": "Proposed Rule",

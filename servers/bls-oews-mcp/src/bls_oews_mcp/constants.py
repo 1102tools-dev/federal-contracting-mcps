@@ -2,10 +2,12 @@
 # Copyright (c) James Jenrette / 1102tools
 """Constants for the BLS OEWS MCP server."""
 
+from . import __version__
+
 BASE_URL_V2 = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 BASE_URL_V1 = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = "bls-oews-mcp/1.0.1"
+USER_AGENT = f"bls-oews-mcp/{__version__}"
 
 # OEWS publishes about a year in arrears. Do NOT use the calendar year.
 # May 2025 estimates released April 2026. Next: May 2026 estimates in ~April 2027.

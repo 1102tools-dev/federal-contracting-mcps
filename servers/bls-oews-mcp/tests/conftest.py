@@ -25,6 +25,13 @@ def _pace_live_calls(request):
     yield
 
 
+@pytest.fixture(autouse=True)
+def _disable_offline_network_pacing(monkeypatch):
+    if not LIVE:
+        monkeypatch.setenv("FEDERAL_API_MIN_INTERVAL_SECONDS", "0")
+    yield
+
+
 # Each test runs in its own event loop (asyncio.run), but the server caches
 # an AsyncClient bound to the first loop; reset it so every test gets a
 # fresh client (same pattern as the per-file _reset_client fixtures).

@@ -26,7 +26,7 @@ Exposes the GSA CALC+ API as 8 MCP tools:
 
 ## No authentication required
 
-The GSA CALC+ API is public. 1,000 requests/hour rate limit.
+The GSA CALC+ API is public. GSA does not publish a numeric limit for this endpoint. The MCP applies a provisional 3-second cross-process anti-burst interval by default.
 
 ## Installation
 
@@ -80,6 +80,14 @@ CALC+ data represents the maximum hourly rate a contractor can charge under thei
 - From vendor Price Proposal Tables (self-reported by contractors)
 
 Always note sample size and remind users these are ceiling rates when presenting analysis.
+
+## Request pacing
+
+Every upstream request uses a provisional 3-second cross-process anti-burst
+interval by default. GSA does not publish a numeric CALC+ limit, so this is a
+1102tools safeguard rather than a provider requirement. Override with
+`FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it, and
+use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
 
 ## License
 

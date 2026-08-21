@@ -19,6 +19,8 @@ from typing import Any, Literal
 import httpx
 from mcp.server import MCPServer
 
+from . import __version__
+from ._pacing import FederalApiPacer
 from .constants import (
     AWARD_TYPE_GROUPS,
     BASE_URL,
@@ -31,7 +33,7 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = MCPServer("usaspending")
+mcp = MCPServer("usaspending", version=__version__)
 
 
 # ---------------------------------------------------------------------------
@@ -39,6 +41,7 @@ mcp = MCPServer("usaspending")
 # ---------------------------------------------------------------------------
 
 _client: httpx.AsyncClient | None = None
+_pacer = FederalApiPacer(bucket="api.usaspending.gov", default_interval=3.0)
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -181,7 +184,18 @@ def _ensure_dict_response(data: Any, *, path: str) -> dict[str, Any]:
 async def _post(path: str, json: dict[str, Any]) -> dict[str, Any]:
     """POST helper with actionable error translation."""
     try:
-        r = await _get_client().post(path, json=json)
+        async with _pacer.request_slot() as pacing:
+            r = await _get_client().post(path, json=json)
+            pacing.observe_response(r)
+            if getattr(r, "status_code", 200) == 429:
+                try:
+                    r.raise_for_status()
+                except httpx.HTTPStatusError as exc:
+                    pacing.raise_if_rate_limited(
+                        r,
+                        service="USASpending",
+                        guidance=_format_http_error(exc),
+                    )
         r.raise_for_status()
         return _ensure_dict_response(r.json(), path=path)
     except httpx.HTTPStatusError as e:
@@ -193,7 +207,18 @@ async def _post(path: str, json: dict[str, Any]) -> dict[str, Any]:
 async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """GET helper with actionable error translation."""
     try:
-        r = await _get_client().get(path, params=params or {})
+        async with _pacer.request_slot() as pacing:
+            r = await _get_client().get(path, params=params or {})
+            pacing.observe_response(r)
+            if getattr(r, "status_code", 200) == 429:
+                try:
+                    r.raise_for_status()
+                except httpx.HTTPStatusError as exc:
+                    pacing.raise_if_rate_limited(
+                        r,
+                        service="USASpending",
+                        guidance=_format_http_error(exc),
+                    )
         r.raise_for_status()
         return _ensure_dict_response(r.json(), path=path)
     except httpx.HTTPStatusError as e:
@@ -1550,7 +1575,20 @@ async def get_recipient_children(
     # rejected every successful response; nobody noticed because the hash
     # validation above the call meant no request could ever succeed.
     try:
-        r = await _get_client().get(f"/api/v2/recipient/children/{ident}/", params=params)
+        async with _pacer.request_slot() as pacing:
+            r = await _get_client().get(
+                f"/api/v2/recipient/children/{ident}/", params=params
+            )
+            pacing.observe_response(r)
+            if getattr(r, "status_code", 200) == 429:
+                try:
+                    r.raise_for_status()
+                except httpx.HTTPStatusError as exc:
+                    pacing.raise_if_rate_limited(
+                        r,
+                        service="USASpending",
+                        guidance=_format_http_error(exc),
+                    )
         r.raise_for_status()
         data = r.json()
     except httpx.HTTPStatusError as e:
@@ -1600,7 +1638,18 @@ async def list_states() -> dict[str, Any]:
     with every other endpoint in this MCP.
     """
     try:
-        r = await _get_client().get("/api/v2/recipient/state/")
+        async with _pacer.request_slot() as pacing:
+            r = await _get_client().get("/api/v2/recipient/state/")
+            pacing.observe_response(r)
+            if getattr(r, "status_code", 200) == 429:
+                try:
+                    r.raise_for_status()
+                except httpx.HTTPStatusError as exc:
+                    pacing.raise_if_rate_limited(
+                        r,
+                        service="USASpending",
+                        guidance=_format_http_error(exc),
+                    )
         r.raise_for_status()
         data = r.json()
     except httpx.HTTPStatusError as e:

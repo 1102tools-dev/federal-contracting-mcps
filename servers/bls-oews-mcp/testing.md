@@ -7,15 +7,22 @@ This Model Context Protocol server exposes the BLS Occupational Employment and W
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 7 |
-| Total regression tests | 246 (82 offline, 164 live-gated) |
+| Total regression tests | 249 (85 offline, 164 live-gated) |
 | Audit rounds completed | 8 |
 | P0 usability-breaking bugs found and fixed | 1 |
 | P1 silent-wrong-data bugs found and fixed | 14 |
 | P1 response-shape crash paths found and fixed | 12 |
 | P2 validation gaps found and fixed | 12 |
 | P3 cleanup items found and fixed | 8 |
-| Current release | 1.0.1 |
+| Current release | 1.0.4 |
 | PyPI status | Published as `bls-oews-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## 1.0.4 Safety Release Verification
+
+The complete offline suite passed 85 tests with 164 live tests gated. Shared
+pacing tests additionally verified 3- and 4-second fake-clock intervals,
+cross-process serialization, key isolation, shared `api.data.gov` buckets,
+invalid overrides, and all `Retry-After` forms. No federal API was called.
 
 ## What Was Tested
 
@@ -201,7 +208,7 @@ This MCP is one of eight servers in the 1102tools federal-contracting MCP suite 
 
 ## What Was Not Tested
 
-- **Rate-limit behavior beyond 500 queries per day.** The BLS v2 free tier is capped at 500 queries per day. The MCP surfaces 429s and supports opt-in minimum-interval pacing, but it does not create more provider quota or retry a depleted daily allowance.
+- **Rate-limit behavior beyond published quotas.** All requests now use a provisional 3-second cross-process gate by default and honor `Retry-After` without an automatic retry. The safeguard does not create more provider quota or coordinate the same key on another computer.
 - **Historical data years.** BLS's public API only serves the current year. Users needing historical data are directed to `bls.gov/oes/tables.htm`.
 - **Wage data during the annual BLS data release window.** BLS publishes new OEWS data roughly in April each year; the window when the new year's data appears and stabilizes has not been live-audited. `detect_latest_year` now reports the true served year whenever it runs.
 - **v1 (legacy) API endpoints.** This MCP uses v2 only (v1 fallback exists for keyless operation but is not live-audited).
@@ -218,7 +225,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round 7 methodology: re-read the entire server source with no reliance on this document's claims; verify every constant table and datatype code against production BLS responses; recompute composite-tool math by hand; replay documented API shapes through the real tool pipeline; check every prior claim in this document against the code and live behavior.
 
-Test count: 243 regression tests (82 offline, 161 live-gated). Total findings across all rounds: 35. Current version: 1.0.1. PyPI: `bls-oews-mcp`.
+Test count: 249 regression tests (85 offline, 164 live-gated). Total findings across all rounds: 35. Current version: 1.0.4. PyPI: `bls-oews-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/bls-oews-mcp. License: MIT.
 

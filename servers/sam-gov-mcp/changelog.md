@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.6
+
+Suite-wide API safety release. Every SAM.gov request, including subrequests
+inside composite tools, now passes through a 3-second default cross-process
+gate keyed by a one-way credential fingerprint. Provider `Retry-After` is
+honored without automatic retries. The 429 message no longer assumes every
+limit is a depleted daily quota, and publication now requires the complete
+offline test matrix and wheel inspection.
+
 ## 1.0.5
 
 Version-marker sync. The 1.0.4 wheel self-reported 1.0.2 in serverInfo:

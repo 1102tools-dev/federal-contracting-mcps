@@ -2,9 +2,11 @@
 # Copyright (c) James Jenrette / 1102tools
 """Constants and reference data for the USASpending API."""
 
+from . import __version__
+
 BASE_URL = "https://api.usaspending.gov"
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = "usaspending-gov-mcp/1.0.1"
+USER_AGENT = f"usaspending-gov-mcp/{__version__}"
 
 # Award type code groups. These MUST NOT be mixed in a single request
 # (the API returns HTTP 422 otherwise).

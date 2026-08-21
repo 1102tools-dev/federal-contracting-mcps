@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across six audit rounds that surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, and (in round 6) a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. The MCP ships with 295 regression tests (182 offline plus 113 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
+This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across six audit rounds that surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, and (in round 6) a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. The MCP ships with 300 regression tests (182 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
 
 | Metric | Value |
 |---|---|
@@ -14,8 +14,15 @@ This Model Context Protocol server exposes the eCFR (Electronic Code of Federal 
 | P2 validation gaps found and fixed | 32 |
 | P3 cleanup items found and fixed | 12 |
 | Round 6 external re-audit findings, fixed in 1.0.2 | 12 (2 high, 5 medium, 5 low) |
-| Current release | 1.0.2 |
+| Current release | 1.0.4 |
 | PyPI status | Published as `ecfr-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## 1.0.4 Safety Release Verification
+
+The complete offline suite passed 182 tests with 118 live tests gated. Shared
+pacing tests additionally verified cross-process serialization, override
+validation, credential isolation, cooldown persistence, and `Retry-After`
+handling. No federal API was called.
 
 ## What Was Tested
 
@@ -208,7 +215,7 @@ This MCP is one of eight servers in the 1102tools federal-contracting MCP suite 
 
 ## What Was Not Tested
 
-- **Rate-limit behavior.** eCFR does not document rate limits publicly. The MCP passes through whatever limits the API enforces but does not implement client-side throttling. Heavy concurrent use may hit limits the MCP cannot anticipate.
+- **Rate-limit behavior.** eCFR does not document numeric limits publicly. The MCP now applies a provisional 3-second cross-process gate to every request and honors `Retry-After` without automatic retries. This is a 1102tools safeguard, not a provider guarantee.
 - **Historical API changes.** Tests validate behavior against the current eCFR API. Breaking changes upstream (field renames, endpoint deprecations) are not caught by offline tests. Live-gated tests will catch them but must be run manually.
 - **Titles outside 1 through 50.** The API's reserved-title list may shift if Congress enacts legislation reactivating a reserved title. The MCP's reserved-title check lags API changes until refreshed.
 - **Historical dates before 2017.** eCFR's daily snapshot coverage is thinner in older years. The MCP surfaces upstream 404s but does not predict which dates are missing.
@@ -225,7 +232,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, ma
 
 Testing spanned six rounds from integration stress through response-shape fuzzing, XML parser pathological inputs, URL and injection probes, concurrency stability, and an external re-audit that checked the constants against the live authority, the parser against real section archetypes, and this document's claims against the shipped code. The live regression suite runs against the production eCFR API when enabled with `MCP_LIVE_TESTS=1` (or `ECFR_LIVE_TESTS=1`).
 
-Test count: 295 regression tests. P0 catastrophic bugs found and fixed: 2. P1 bugs found and fixed: 26. P2 validation gaps closed: 32. P3 cleanup items closed: 12. Round 6 findings fixed: 12. Total findings: 84. Current version: 1.0.2. PyPI: `ecfr-mcp`.
+Test count: 300 regression tests (182 offline, 118 live-gated). P0 catastrophic bugs found and fixed: 2. P1 bugs found and fixed: 26. P2 validation gaps closed: 32. P3 cleanup items closed: 12. Round 6 findings fixed: 12. Total findings: 84. Current version: 1.0.4. PyPI: `ecfr-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/ecfr-mcp. License: MIT.
 

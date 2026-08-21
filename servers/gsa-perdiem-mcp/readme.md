@@ -60,18 +60,17 @@ MCP is an open standard, and this config was executed and verified in August 202
       "args": ["--refresh-package", "gsa-perdiem-mcp", "--from", "gsa-perdiem-mcp", "gsa-perdiem-mcp"],
       "env": {
         "PERDIEM_API_KEY": "paste-your-api-data-gov-key-here",
-        "FEDERAL_API_MIN_INTERVAL_SECONDS": "3"
+        "FEDERAL_API_MIN_INTERVAL_SECONDS": "4"
       }
     }
   }
 }
 ```
 
-`FEDERAL_API_MIN_INTERVAL_SECONDS` is optional. When it is set and a personal
-key is active, the server serializes upstream requests and waits that many
-seconds after one request completes before the next starts. The 1102tools agent
-packages set it to `3`. Shared `DEMO_KEY` traffic and standalone installations
-remain unpaced unless separately controlled by the client.
+The server defaults `FEDERAL_API_MIN_INTERVAL_SECONDS` to `4` for personal-key
+and DEMO_KEY requests. The explicit value above documents the intended policy
+and can be changed when you have a documented reason. Per Diem and
+Regulations.gov processes using the same `api.data.gov` key share the gate.
 
 **Without a key** (works for a handful of calls per hour, then 429s until the hour rolls over):
 ```json
@@ -105,6 +104,15 @@ Per diem rates are federal reimbursement ceilings per 41 CFR 301-11. They are no
 ## Companion tools
 
 Use alongside `bls-oews-mcp` (wage data) and `gsa-calc-mcp` (ceiling rates) for complete IGCE development. Per diem covers the travel component; BLS and CALC+ cover labor.
+
+## Request pacing
+
+Every request, including DEMO_KEY traffic, uses a provisional 4-second
+cross-process anti-burst interval by default. Per Diem and Regulations.gov
+share a local `api.data.gov` bucket when they use the same key. This does not
+increase provider quota or coordinate the key on another computer. Override
+with `FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it,
+and use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
 
 ## License
 

@@ -116,6 +116,14 @@ All data from [ecfr.gov](https://www.ecfr.gov), the continuously updated online 
 
 [federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 8 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills).
 
+## Request pacing
+
+Every upstream request uses a provisional 3-second cross-process anti-burst
+interval by default. eCFR does not publish a numeric limit, so this is a
+1102tools safeguard rather than a provider requirement. Override with
+`FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it, and
+use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
+
 ## License
 
 MIT

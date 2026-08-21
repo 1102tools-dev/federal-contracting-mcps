@@ -33,14 +33,10 @@ class _Client:
 
 
 @pytest.fixture(autouse=True)
-def _reset_pacing(monkeypatch: pytest.MonkeyPatch):
+def _reset_pacing(monkeypatch: pytest.MonkeyPatch, tmp_path):
     monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
-    monkeypatch.delenv("FEDERAL_API_MIN_INTERVAL_SECONDS", raising=False)
-    srv._pacing_lock = None
-    srv._last_credentialed_request_completed = None
-    yield
-    srv._pacing_lock = None
-    srv._last_credentialed_request_completed = None
+    monkeypatch.setenv("FEDERAL_API_MIN_INTERVAL_SECONDS", "0")
+    monkeypatch.setenv("FEDERAL_API_PACING_DIR", str(tmp_path))
 
 
 @pytest.mark.asyncio
@@ -57,14 +53,14 @@ async def test_real_key_requests_wait_after_prior_completion(monkeypatch: pytest
 
 
 @pytest.mark.asyncio
-async def test_demo_key_preserves_unpaced_default(monkeypatch: pytest.MonkeyPatch):
+async def test_demo_key_is_also_paced(monkeypatch: pytest.MonkeyPatch):
     client = _Client()
     monkeypatch.setenv("FEDERAL_API_MIN_INTERVAL_SECONDS", "0.03")
     monkeypatch.setattr(srv, "_get_client", lambda: client)
 
     await asyncio.gather(srv._get("rates/a"), srv._get("rates/b"))
 
-    assert client.starts[1] < client.ends[0]
+    assert client.starts[1] - client.ends[0] >= 0.025
 
 
 @pytest.mark.asyncio

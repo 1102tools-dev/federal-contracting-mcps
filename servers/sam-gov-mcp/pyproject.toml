@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sam-gov-mcp"
-version = "1.0.5"
+version = "1.0.6"
 description = "MCP server for SAM.gov entity registration, exclusion, contract opportunity, and contract award data"
 readme = "readme.md"
 requires-python = ">=3.10"
@@ -29,6 +29,8 @@ classifiers = [
 dependencies = [
     "mcp>=2.0.0,<3",
     "httpx>=0.27.0",
+    "filelock>=3.13",
+    "platformdirs>=4.0",
 ]
 
 [project.urls]

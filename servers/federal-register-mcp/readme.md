@@ -70,6 +70,14 @@ Restart the client and the tools appear.
 
 Together they cover the full regulatory pipeline. Use `far_case_history` to trace a rulemaking from proposal through final rule, then `ecfr-mcp` to read the codified result.
 
+## Request pacing
+
+Every upstream request uses a provisional 3-second cross-process anti-burst
+interval by default. Federal Register does not publish a numeric limit, so
+this is a 1102tools safeguard rather than a provider requirement. Override
+with `FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it,
+and use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
+
 ## License
 
 MIT

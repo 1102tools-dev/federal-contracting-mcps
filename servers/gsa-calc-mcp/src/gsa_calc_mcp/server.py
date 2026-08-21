@@ -25,6 +25,8 @@ from mcp.server import MCPServer
 from pydantic import BeforeValidator
 from typing_extensions import Annotated
 
+from . import __version__
+from ._pacing import FederalApiPacer
 from .constants import (
     BASE_URL,
     DEFAULT_TIMEOUT,
@@ -34,7 +36,7 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = MCPServer("gsa-calc")
+mcp = MCPServer("gsa-calc", version=__version__)
 
 
 # ---------------------------------------------------------------------------
@@ -400,6 +402,7 @@ def _clean_error_body(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 _client: httpx.AsyncClient | None = None
+_pacer = FederalApiPacer(bucket="api.gsa.gov:calc", default_interval=3.0)
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -431,8 +434,9 @@ def _format_error(status: int, body: str) -> str:
         )
     if status == 429:
         return (
-            "HTTP 429: Rate limited. GSA CALC+ allows 1,000 requests/hour. "
-            "Add delays between batch requests and reduce page_size."
+            "HTTP 429: GSA CALC+ rate limited the request. The provider does "
+            "not publish a numeric limit for this endpoint. Do not retry in a "
+            "burst; wait for provider guidance and reduce batch concurrency."
         )
     if status == 503:
         return (
@@ -449,7 +453,14 @@ async def _get(params_str: str) -> dict[str, Any]:
     """GET helper. Builds full URL from query string."""
     url = f"{BASE_URL}?{params_str}"
     try:
-        r = await _get_client().get(url)
+        async with _pacer.request_slot() as pacing:
+            r = await _get_client().get(url)
+            pacing.observe_response(r)
+            pacing.raise_if_rate_limited(
+                r,
+                service="GSA CALC+",
+                guidance=_format_error(r.status_code, r.text[:500]),
+            )
         r.raise_for_status()
         try:
             data = r.json()

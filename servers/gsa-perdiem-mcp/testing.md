@@ -2,21 +2,28 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the GSA Per Diem Rates API as 6 callable tools for federal travel lodging and M&IE rate lookups used in IGCEs and travel cost estimation. It was hardened across seven audit rounds, three of them live audits against the production API. The 0.2.x program surfaced 55 bugs. Round 7 (1.0.1), an independent full-source re-audit with live verification, found 14 more and overturned a round-6 headline: the "catastrophic silent-wrong-data" cases (Penasco returning Taos, Santa Rosa Beach returning Fort Walton Beach) were actually the API's CORRECT city-to-county rate-area resolution, and the round-6 "fix" had been stamping false WARNINGs on right answers, including the tool's own recommended Washington, DC query. The MCP ships with 434 regression tests (183 offline plus 251 live-gated) at 72.3 tests per tool.
+This Model Context Protocol server exposes the GSA Per Diem Rates API as 6 callable tools for federal travel lodging and M&IE rate lookups used in IGCEs and travel cost estimation. It was hardened across seven audit rounds, three of them live audits against the production API. The 0.2.x program surfaced 55 bugs. Round 7 (1.0.1), an independent full-source re-audit with live verification, found 14 more and overturned a round-6 headline: the "catastrophic silent-wrong-data" cases (Penasco returning Taos, Santa Rosa Beach returning Fort Walton Beach) were actually the API's CORRECT city-to-county rate-area resolution, and the round-6 "fix" had been stamping false WARNINGs on right answers, including the tool's own recommended Washington, DC query. The MCP ships with 441 regression tests (186 offline plus 255 live-gated) at 73.5 tests per tool.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 6 |
-| Total regression tests | 438 (183 offline, 255 live-gated) |
-| Tests per tool | 72.3 |
+| Total regression tests | 441 (186 offline, 255 live-gated) |
+| Tests per tool | 73.5 |
 | Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 1 (path traversal) |
 | P1 silent-wrong-data bugs found and fixed | 23 |
 | P2 validation gaps found and fixed | 21 |
 | P3 cleanup items found and fixed | 10 |
 | Round 7 (independent re-audit) findings | 14 |
-| Current release | 1.0.1 |
+| Current release | 1.0.4 |
 | PyPI status | Published as `gsa-perdiem-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## 1.0.4 Safety Release Verification
+
+The complete offline suite passed 186 tests with 255 live tests gated. Shared
+pacing tests verified the 4-second default, cross-process serialization, and a
+shared `api.data.gov` bucket with Regulations.gov when both use the same key.
+No federal API was called.
 
 ## What Was Tested
 
@@ -167,7 +174,7 @@ This MCP is one of eight servers in the 1102tools federal-contracting MCP suite 
 ## What Was Not Tested
 
 - **OCONUS rates.** This MCP covers CONUS per diem only. Non-foreign OCONUS (AK/HI/territories) rates are DoD (DTMO); foreign rates are State Dept. The tools now say so instead of returning empty successes.
-- **Rate-limit behavior at scale.** DEMO_KEY is 10 req/hr (live-measured); a real `api.data.gov` key is 1,000 req/hr. Personal-key traffic supports opt-in minimum-interval pacing. There is deliberately no automatic retry on 429, and shared DEMO_KEY traffic is not paced by this control.
+- **Rate-limit behavior at scale.** DEMO_KEY is for exploration; a registered `api.data.gov` key has the published 1,000/hour allowance. Every request now uses a provisional 4-second cross-process gate, shared with Regulations.gov for the same key, and honors `Retry-After` without automatic retries.
 - **Fiscal year transition day.** October 1 rollover behavior was tested in principle but not live-audited across a real FY transition.
 - **The multi-row ordering contract.** When the API returns several resolved rate areas, round 7 prefers the county mentioning the query and surfaces the rest as `other_candidates`; the upstream ordering itself is undocumented.
 
@@ -183,7 +190,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round 7 methodology: re-read the entire server source with no reliance on this document's claims; verify match behavior against live API resolution for a dozen city shapes; recompute FTR 301-11.101 estimate math by hand; probe dead fiscal years and OCONUS states live; check every prior claim in this document against the code and live behavior.
 
-Test count: 434 regression tests (183 offline + 251 live-gated). Tests per tool: 72.3. Total findings across all rounds: 69. Current version: 1.0.1. PyPI: `gsa-perdiem-mcp`.
+Test count: 441 regression tests (186 offline + 255 live-gated). Tests per tool: 73.5. Total findings across all rounds: 69. Current version: 1.0.4. PyPI: `gsa-perdiem-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp. License: MIT.
 
