@@ -59,12 +59,20 @@ With key (recommended):
       "command": "uvx",
       "args": ["--refresh-package", "bls-oews-mcp", "--from", "bls-oews-mcp", "bls-oews-mcp"],
       "env": {
-        "BLS_API_KEY": "your-api-key-here"
+        "BLS_API_KEY": "your-api-key-here",
+        "FEDERAL_API_MIN_INTERVAL_SECONDS": "3"
       }
     }
   }
 }
 ```
+
+`FEDERAL_API_MIN_INTERVAL_SECONDS` is optional. When it is set and a real BLS
+key is active, the server serializes upstream requests and waits that many
+seconds after one request completes before the next starts. The 1102tools agent
+packages set it to `3` as a defense-in-depth safeguard. Keyless BLS v1 traffic
+and standalone installations remain unpaced unless separately controlled by
+the client.
 
 The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes arrive automatically; without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup, so raise your platform's MCP startup timeout if it enforces a short one.
 

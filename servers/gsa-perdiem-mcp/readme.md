@@ -59,12 +59,19 @@ MCP is an open standard, and this config was executed and verified in August 202
       "command": "uvx",
       "args": ["--refresh-package", "gsa-perdiem-mcp", "--from", "gsa-perdiem-mcp", "gsa-perdiem-mcp"],
       "env": {
-        "PERDIEM_API_KEY": "paste-your-api-data-gov-key-here"
+        "PERDIEM_API_KEY": "paste-your-api-data-gov-key-here",
+        "FEDERAL_API_MIN_INTERVAL_SECONDS": "3"
       }
     }
   }
 }
 ```
+
+`FEDERAL_API_MIN_INTERVAL_SECONDS` is optional. When it is set and a personal
+key is active, the server serializes upstream requests and waits that many
+seconds after one request completes before the next starts. The 1102tools agent
+packages set it to `3`. Shared `DEMO_KEY` traffic and standalone installations
+remain unpaced unless separately controlled by the client.
 
 **Without a key** (works for a handful of calls per hour, then 429s until the hour rolls over):
 ```json

@@ -26,8 +26,12 @@ def _reset_client():
     """Reset the shared httpx client before every test so we don't reuse
     a stale client across asyncio event loops."""
     srv._client = None
+    srv._pacing_lock = None
+    srv._last_credentialed_request_completed = None
     yield
     srv._client = None
+    srv._pacing_lock = None
+    srv._last_credentialed_request_completed = None
 
 
 async def _call(name: str, **kwargs):

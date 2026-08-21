@@ -188,6 +188,7 @@ Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`). 
 | 0.2.2 | Full retroactive live audit with real BLS key | 22 findings resolved |
 | 1.0.0 | mcp 2.x SDK rebase, version sync, packaging | Stable baseline |
 | 1.0.1 | Round 7 independent re-audit with live verification | 13 findings resolved, incl. the datatype label shift money bug; live cross-foot canary added |
+| 1.0.3 | Opt-in production pacing for real-key traffic | Concurrent upstream calls serialize and wait after completion; offline concurrency regressions added |
 
 ## Cross-MCP Context
 
@@ -200,7 +201,7 @@ This MCP is one of eight servers in the 1102tools federal-contracting MCP suite 
 
 ## What Was Not Tested
 
-- **Rate-limit behavior beyond 500 queries per day.** The BLS v2 free tier is capped at 500 queries per day. The MCP surfaces 429s but does not implement client-side throttling.
+- **Rate-limit behavior beyond 500 queries per day.** The BLS v2 free tier is capped at 500 queries per day. The MCP surfaces 429s and supports opt-in minimum-interval pacing, but it does not create more provider quota or retry a depleted daily allowance.
 - **Historical data years.** BLS's public API only serves the current year. Users needing historical data are directed to `bls.gov/oes/tables.htm`.
 - **Wage data during the annual BLS data release window.** BLS publishes new OEWS data roughly in April each year; the window when the new year's data appears and stabilizes has not been live-audited. `detect_latest_year` now reports the true served year whenever it runs.
 - **v1 (legacy) API endpoints.** This MCP uses v2 only (v1 fallback exists for keyless operation but is not live-audited).

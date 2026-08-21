@@ -153,6 +153,7 @@ Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`). 
 | 0.2.5 | 240-test live sweep (round 6 second pass) | Density lifted to 68.8 tests/tool; shape-only assertions (see round 7) |
 | 1.0.0 | mcp 2.x SDK rebase, version sync, packaging | Stable baseline |
 | 1.0.1 | Round 7 independent re-audit with live verification | 14 findings resolved, incl. reversal of the round-6 unmatched-city diagnosis |
+| 1.0.3 | Opt-in production pacing for personal-key traffic | Multi-request and concurrent operations share a completion-to-start gate; offline regressions added |
 
 ## Cross-MCP Context
 
@@ -166,7 +167,7 @@ This MCP is one of eight servers in the 1102tools federal-contracting MCP suite 
 ## What Was Not Tested
 
 - **OCONUS rates.** This MCP covers CONUS per diem only. Non-foreign OCONUS (AK/HI/territories) rates are DoD (DTMO); foreign rates are State Dept. The tools now say so instead of returning empty successes.
-- **Rate-limit behavior at scale.** DEMO_KEY is 10 req/hr (live-measured); a real `api.data.gov` key is 1,000 req/hr. No client-side throttling beyond compare_locations' pacing sleep; no retry on 429 (deliberate).
+- **Rate-limit behavior at scale.** DEMO_KEY is 10 req/hr (live-measured); a real `api.data.gov` key is 1,000 req/hr. Personal-key traffic supports opt-in minimum-interval pacing. There is deliberately no automatic retry on 429, and shared DEMO_KEY traffic is not paced by this control.
 - **Fiscal year transition day.** October 1 rollover behavior was tested in principle but not live-audited across a real FY transition.
 - **The multi-row ordering contract.** When the API returns several resolved rate areas, round 7 prefers the county mentioning the query and surfaces the rest as `other_candidates`; the upstream ordering itself is undocumented.
 

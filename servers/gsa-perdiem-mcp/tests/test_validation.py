@@ -21,8 +21,12 @@ LIVE = os.environ.get("MCP_LIVE_TESTS") == "1"
 @pytest.fixture(autouse=True)
 def _reset_client():
     srv._client = None
+    srv._pacing_lock = None
+    srv._last_credentialed_request_completed = None
     yield
     srv._client = None
+    srv._pacing_lock = None
+    srv._last_credentialed_request_completed = None
 
 
 async def _call(name: str, **kwargs):
