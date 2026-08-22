@@ -69,7 +69,7 @@ The double-click bundles are gone. They could not be signed in a way Claude Desk
 
 ### Verified before shipping
 
-The original eight recorded 5,078 collected regression tests during the v1.0.9 safety validation. Acquisition.gov adds 20 collected tests: 19 deterministic checks pass and one serialized live gate remains opt-in. Its 2026-08-21 live record notes an upstream CDN timeout on linked RFO pages after the index succeeded. Per-server detail is in each `testing.md` and `changelog.md`.
+The original eight recorded 5,078 collected regression tests during the v1.0.9 safety validation. Acquisition.gov adds 21 collected tests: 20 deterministic checks pass and one serialized live gate remains opt-in. Its 2026-08-22 release check passed against the index, one model part, one indexed agency PDF, and the FAQ. Per-server detail is in each `testing.md` and `changelog.md`.
 
 ---
 
@@ -90,7 +90,7 @@ All source lives under `servers/<name>/`. Each server is self-contained: code, t
 - [regulations-gov-mcp](servers/regulations-gov-mcp): federal rulemaking dockets, public comments, comment period tracking
 - [acquisition-gov-mcp](servers/acquisition-gov-mcp): RFO model-part pages, the official posted agency-deviation index, indexed deviation PDFs, and approved RFO guidance
 
-Combined: 129 deterministic tool calls and 5,098 collected package tests. The Acquisition.gov live source gate remains explicitly open while linked upstream pages time out.
+Combined: 129 deterministic tool calls and 5,099 collected package tests. The Acquisition.gov live source gate passed on 2026-08-22; future releases must repeat it because upstream content and availability can change.
 
 ## Install
 

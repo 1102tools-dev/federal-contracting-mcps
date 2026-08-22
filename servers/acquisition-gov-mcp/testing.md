@@ -37,7 +37,14 @@ ACQUISITION_GOV_LIVE_TESTS=1 uv run pytest tests/test_live.py -q
 
 The live gate retrieves the official deviation index, one model part, one indexed agency PDF page, and the FAQ. It records the page hashes returned by the tools, so upstream changes are observable. Live content must be reviewed before release when fixture and upstream hashes or structure diverge.
 
-As of 2026-08-21, the index retrieval succeeds, but the linked model-part, PDF, and FAQ routes intermittently time out at the Acquisition.gov CDN before returning response headers. This is an open upstream live-release gate; the deterministic parser and safety suites remain green.
+On 2026-08-22, the serialized live gate passed. The index, Part 10 model page, an indexed four-page NSF deviation PDF, and the FAQ each returned HTTP 200 with complete text extraction. A second serialized evidence capture also passed and recorded these upstream hashes:
+
+- deviation index: `a62f55032e15bc1a3cc1e01df6ba8a7f30fc3056f7cbec4aacb4b4cad6402989`
+- Part 10 model page: `65a41a3e8235cd0ceac42a8e8aaf4027459ce201fc1237357ecbf27437046c3a`
+- indexed NSF deviation PDF: `eb571869435327f78fd683212f5ebe956b6547a84dcf939f2fe7c83e84d02417`
+- FAQ: `b29b815050c94f5bb205ffd915dac4a02300c3da292b1ef8b15ab7f9472c7670`
+
+These hashes are observations, not permanent expected values. A future hash change requires source review rather than automatic rejection.
 
 ## Release boundary
 
