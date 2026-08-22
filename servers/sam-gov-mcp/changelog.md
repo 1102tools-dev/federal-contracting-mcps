@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.7
+
+Host-neutral credential guidance. The missing-key error no longer names a
+specific client application or configuration file. It now states which
+environment variable to set and points to the client's own MCP credential
+configuration, so the message is correct for any MCP host rather than one
+desktop application. No tool, parameter, or response behavior changed.
+
 ## 1.0.6
 
 Suite-wide API safety release. Every SAM.gov request, including subrequests

@@ -378,10 +378,10 @@ def _get_api_key() -> str:
     key = os.environ.get("SAM_API_KEY", "").strip()
     if not key:
         raise RuntimeError(
-            "SAM_API_KEY environment variable is not set. "
+            "SAM_API_KEY is not set. Set SAM_API_KEY in the launching "
+            "environment or your client's MCP credential configuration. "
             "Get a free API key at https://sam.gov/profile/details "
-            "(Public API Key section) and set it in your Claude Desktop "
-            "mcpServers config under 'env'."
+            "(Public API Key section)."
         )
     if not key.startswith("SAM-"):
         raise RuntimeError(
