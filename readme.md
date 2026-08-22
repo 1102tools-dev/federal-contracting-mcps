@@ -1,20 +1,16 @@
 # federal-contracting-mcps
 
-Nine free and open source MCP servers for federal contracting data and policy tracking. SAM.gov, USASpending, GSA CALC+, BLS OEWS, per diem, eCFR, Federal Register, Regulations.gov, and Acquisition.gov, exposed as 129 deterministic tool calls.
+Free and open source MCP servers for federal contracting data and policy tracking. SAM.gov, USASpending, GSA CALC+, BLS OEWS, per diem, eCFR, Federal Register, Regulations.gov, and Acquisition.gov are exposed through deterministic tool calls.
 
 Your assistant queries the real APIs instead of recalling what it thinks the FAR says. Same input, same output, every time.
 
 Website: [1102tools.com](https://1102tools.com)
 
-## The fastest install: hand this PDF to your AI
+## Most users should start with an agent
 
-[![The 1102tools universal setup guide covers agent marketplace and standalone MCP installation across supported AI clients, with tested surfaces and open limits stated.](docs/setup-guide-promo.png?v=2)](https://1102tools.com/downloads/1102tools-universal-setup.pdf)
+The packaged [1102tools agents](https://github.com/1102tools-dev/federal-contracting-agents) already include the source connections required by each guided job. The beginner-facing [Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers Codex, Claude Code, and DeepSeek Harness.
 
-**[Download the universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf)**, then drop it into Claude, ChatGPT (Codex), Gemini (Antigravity), Copilot, DeepSeek Harness, Grok, Cursor, opencode, or LibreChat and say what you want installed. The AI reads the guide and walks you through agent marketplace installation, free API keys, exact standalone configuration, restart, verification, updates, and removal. If 39 pages is more than your chat will accept, paste in just the section for your platform; every option is written to stand alone. The guide distinguishes tested surfaces from pending ones, and Part 9 is troubleshooting built from errors I actually encountered.
-
-[![The 1102tools prompt guide: installed, now know what to ask. Copy-paste prompts for competitor intelligence, bid decisions, recompete timing, and pricing. Covers when SAM.gov is the answer, when USASpending beats it, and the combination plays that use both, including the DoD reporting delay. Every pattern was run against the live servers before publishing. August 2026.](docs/prompt-guide-promo.png?v=3)](https://1102tools.com/downloads/1102tools-prompt-guide.pdf)
-
-**[Download the prompt guide (PDF)](https://1102tools.com/downloads/1102tools-prompt-guide.pdf)**: what to ask once the servers are in. Competitor intelligence, bid decisions, recompete timing, and pricing, centered on when SAM.gov is the answer and when USASpending beats it. Every prompt pattern was run against the live servers before publishing. The library also lives as a repo now, and that is its canonical home: [federal-contracting-prompts](https://github.com/1102tools-dev/federal-contracting-prompts), all 60 prompts as browsable markdown with a copy button on every one; the PDF is rebuilt from it.
+Use this repository when you specifically want standalone source servers or custom MCP configurations. Follow each selected server's README and testing record; standalone setup is advanced and self-supported. The MCP-oriented [request library](https://github.com/1102tools-dev/federal-contracting-prompts) remains available as a repository, not a maintained PDF product.
 
 ![Architecture diagram showing how a question travels from an AI client to a local MCP server and an official federal source. Regulatory and rulemaking coverage now includes eCFR, Federal Register, Regulations.gov, and Acquisition.gov.](docs/architecture.png)
 
@@ -22,7 +18,7 @@ Website: [1102tools.com](https://1102tools.com)
 
 ## Safety release v1.0.9 (August 2026)
 
-All nine packages enforce a provisional, cross-process anti-burst gate
+Every package enforces a provisional, cross-process anti-burst gate
 before every upstream request. SAM.gov, BLS OEWS, USASpending, GSA CALC+,
 eCFR, Federal Register, and Acquisition.gov default to one request every 3 seconds. GSA Per
 Diem and Regulations.gov default to 4 seconds and share one `api.data.gov`
@@ -42,7 +38,7 @@ directory for managed or temporary environments.
 
 The release also makes PyPI publication depend on the complete offline test
 matrix and wheel inspection. Current package versions are listed in each
-server's changelog and the universal setup guide.
+server's changelog and README.
 
 ## 1.0.0 stable baseline (August 2026)
 
@@ -53,7 +49,7 @@ the others.
 
 ### Rebuilt on v2 of the MCP Python SDK
 
-The MCP Python SDK, the library every one of these servers is built on, released version 2.0 in July. It renamed its high-level server class from `FastMCP` to `MCPServer` and removed the old module entirely. All nine servers use it.
+The MCP Python SDK, the library every one of these servers is built on, released version 2.0 in July. It renamed its high-level server class from `FastMCP` to `MCPServer` and removed the old module entirely. Every server uses it.
 
 The original eight retain the same 124 tools, parameters, and responses. Acquisition.gov adds five source-specific tools, bringing the catalog to 129. The dependency is bounded at `mcp>=2.0.0,<3`, so the next major SDK release produces a clean error at install time instead of a crash at startup.
 
@@ -77,7 +73,7 @@ The original eight recorded 5,078 collected regression tests during the v1.0.9 s
 
 ---
 
-## The nine MCPs
+## Server catalog
 
 All source lives under `servers/<name>/`. Each server is self-contained: code, tests, per-server README with a copy-paste config block.
 
@@ -98,11 +94,11 @@ Combined: 129 deterministic tool calls and 5,098 collected package tests. The Ac
 
 ## Install
 
-Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/). MCP is an open standard: these servers run in any MCP client, not just Claude. Every install path was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat.
+Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/). MCP is an open standard, but standalone client setup is outside the beginner support path. Use the exact configuration and current evidence in the selected server directory.
 
 **1. Register the free API keys you need.** [BLS](https://data.bls.gov/registrationEngine/), [api.data.gov](https://api.data.gov/signup/) (covers Per Diem and Regulations.gov), [SAM.gov](https://sam.gov/). USASpending, GSA CALC+, eCFR, Federal Register, and Acquisition.gov need no key.
 
-**2. Add the servers you want to your client config.** Most clients take the same `mcpServers` JSON block and differ only in where the config file lives (for Claude Desktop it is `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows). The [universal setup guide](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for all eleven platforms, including the Codex TOML form.
+**2. Add the servers you want to your client config.** Configuration surfaces differ by client. Use the selected server's README as the source of truth, verify the server starts, and confirm its tools are actually visible before relying on it.
 
 ```json
 {
@@ -159,7 +155,7 @@ MCPs handle data. Skills handle deliverables.
 - **Deterministic.** MCP servers execute tested Python. Claude does not generate API-call code on the fly. Same input, same output.
 - **Low context cost.** Tool schemas are ~100 tokens each. The deprecated API-data skills cost 500-1000 lines of context per run.
 - **Production-hardened.** Each MCP went through 3-6 audit rounds with live testing against its production API.
-- **Cross-client.** MCP is an open standard. The same servers were executed and verified on eleven platforms in August 2026, from Claude Desktop and Claude Code to Codex, Antigravity, Copilot, Cursor, opencode, and LibreChat.
+- **Portable protocol.** MCP is an open standard, so the same source server can be configured in multiple compatible clients. Current support claims remain bounded by each server's testing record.
 
 ## Website
 
