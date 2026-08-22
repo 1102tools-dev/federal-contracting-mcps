@@ -4,7 +4,7 @@
 
 MCP server for the GSA Per Diem Rates API. Federal travel lodging and M&IE rates for IGCEs and travel cost estimation.
 
-Works without configuration using DEMO_KEY. Optional free API key for higher rate limits. MCP is an open standard: this server runs in any MCP client, not just Claude. Executed and verified on eleven platforms in August 2026 (see [Configuration](#configuration)).
+Works without configuration using DEMO_KEY. Optional free API key for higher rate limits. Standalone MCP use is an advanced, self-supported path; packaged agents are the maintained beginner path.
 
 *Tested and hardened through seven rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 437 regression tests covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, and 14 round-7 findings fixed. See [testing.md](testing.md) for the full testing record.*
 
@@ -49,7 +49,7 @@ uvx gsa-perdiem-mcp
 
 ## Configuration
 
-MCP is an open standard, and this config was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat. Most clients take the same JSON block below and differ only in where the config file lives; the [universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for every platform, including the Codex TOML form.
+MCP is an open standard, and compatible clients can run this server. The maintained [1102tools Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers packaged agents in Codex and Claude Code, not standalone server configuration. Use the block below as the server definition and adapt its placement to your client.
 
 **Recommended (with your own key):**
 ```json

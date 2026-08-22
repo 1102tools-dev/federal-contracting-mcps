@@ -4,7 +4,7 @@
 
 MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplement text with no authentication required.
 
-MCP is an open standard: this server runs in any MCP client, not just Claude. Executed and verified on eleven platforms in August 2026 (see [Configuration](#configuration)).
+Standalone MCP use is an advanced, self-supported path; packaged agents are the maintained beginner path.
 
 *Tested and hardened through six rounds of integration testing against the live eCFR API. 295 regression tests (182 offline, 113 live-gated) covering 2 P0 catastrophic bugs, 26 P1 silent-wrong-data bugs, 32 P2 validation gaps, and the round-6 audit fixes (Title 48 chapter whitelist, table extraction, appendix access). See [testing.md](testing.md) for the full testing record.*
 
@@ -57,7 +57,7 @@ pip install -e .
 
 ## Configuration
 
-MCP is an open standard, and this config was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat. Most clients take the same JSON block below and differ only in where the config file lives; the [universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for every platform, including the Codex TOML form.
+MCP is an open standard, and compatible clients can run this server. The maintained [1102tools Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers packaged agents in Codex and Claude Code, not standalone server configuration. Use the block below as the server definition and adapt its placement to your client.
 
 ```json
 {
@@ -114,7 +114,7 @@ All data from [ecfr.gov](https://www.ecfr.gov), the continuously updated online 
 
 ## Part of
 
-[federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 8 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills).
+[federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 9 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills).
 
 ## Request pacing
 

@@ -4,7 +4,7 @@
 
 MCP server for the USASpending.gov federal contract, award, subaward, recipient, agency, and federal account API.
 
-No API key required. MCP is an open standard: this server runs in any MCP client, not just Claude. Executed and verified on eleven platforms in August 2026 (see [Configuration](#configuration)).
+No API key required. Standalone MCP use is an advanced, self-supported path; packaged agents are the maintained beginner path.
 
 *Tested and hardened through ten rounds of integration testing against the live USASpending.gov API. 2,151 regression tests (1,783 offline, 368 live-gated); round 10 fixed 25 verified findings across both tool families, including filters that could never match and a tool that had never once succeeded. See [testing.md](testing.md) for the full testing record.*
 
@@ -108,7 +108,7 @@ pip install -e .
 
 ## Configuration
 
-MCP is an open standard, and this config was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat. Most clients take the same JSON block below and differ only in where the config file lives; the [universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for every platform, including the Codex TOML form.
+MCP is an open standard, and compatible clients can run this server. The maintained [1102tools Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers packaged agents in Codex and Claude Code, not standalone server configuration. Use the block below as the server definition and adapt its placement to your client.
 
 ```json
 {

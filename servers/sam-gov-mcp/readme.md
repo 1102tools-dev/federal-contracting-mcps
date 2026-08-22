@@ -4,7 +4,7 @@
 
 MCP server for SAM.gov entity registration, exclusion/debarment, contract opportunity, contract award, federal hierarchy, and FFATA subaward data.
 
-Requires a free SAM.gov API key. MCP is an open standard: this server runs in any MCP client, not just Claude. Executed and verified on eleven platforms in August 2026 (see [Configuration](#configuration)).
+Requires a free SAM.gov API key. Standalone MCP use is an advanced, self-supported path; packaged agents are the maintained beginner path.
 
 *Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,136 regression tests. v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied to all 8 MCPs in the suite. See [testing.md](testing.md) for the full testing record.*
 
@@ -88,7 +88,7 @@ pip install -e .
 
 ## Configuration
 
-MCP is an open standard, and this config was executed and verified in August 2026 on eleven platforms: Claude Desktop, Claude Code, Codex Desktop and CLI, Gemini via Antigravity, GitHub Copilot CLI, DeepSeek Harness, Grok Build, Cursor, opencode, and LibreChat. Most clients take the same JSON block below and differ only in where the config file lives; the [universal setup guide (PDF)](https://1102tools.com/downloads/1102tools-universal-setup.pdf) has the exact file path and format for every platform, including the Codex TOML form.
+MCP is an open standard, and compatible clients can run this server. The maintained [1102tools Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers packaged agents in Codex and Claude Code, not standalone server configuration. Use the block below as the server definition and adapt its placement to your client.
 
 ```json
 {
@@ -110,8 +110,7 @@ Restart the client and the tools appear.
 
 ## Example prompts
 
-Once configured (these mirror the field-tested set in the
-[1102tools prompt guide](https://1102tools.com/downloads/1102tools-prompt-guide.pdf)):
+Once configured, these examples illustrate the server's advanced standalone use. The maintained [MCP-oriented request library](https://github.com/1102tools-dev/federal-contracting-prompts) contains the broader collection:
 
 - "Run a vendor responsibility check on [UEI] for registration status and exclusions, then pull FAPIIS integrity records separately; the one-pass check does not include those."
 - "Pull [COMPANY]'s registration status, socioeconomic categories, and any exclusions. If SAM returns multiple registrations for one UEI, say so and list them before picking one."
@@ -155,7 +154,7 @@ Once configured (these mirror the field-tested set in the
 
 ## Part of
 
-[federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 8 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills).
+[federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 9 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills).
 
 ## Request pacing
 
