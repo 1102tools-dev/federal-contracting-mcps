@@ -232,7 +232,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, ma
 
 Testing spanned six rounds from integration stress through response-shape fuzzing, XML parser pathological inputs, URL and injection probes, concurrency stability, and an external re-audit that checked the constants against the live authority, the parser against real section archetypes, and this document's claims against the shipped code. The live regression suite runs against the production eCFR API when enabled with `MCP_LIVE_TESTS=1` (or `ECFR_LIVE_TESTS=1`).
 
-Test count: 300 regression tests (182 offline, 118 live-gated). P0 catastrophic bugs found and fixed: 2. P1 bugs found and fixed: 26. P2 validation gaps closed: 32. P3 cleanup items closed: 12. Round 6 findings fixed: 12. Total findings: 84. Current version: 1.0.4. PyPI: `ecfr-mcp`.
+Test count: 300 regression tests (182 offline, 118 live-gated). P0 catastrophic bugs found and fixed: 2. P1 bugs found and fixed: 26. P2 validation gaps closed: 32. P3 cleanup items closed: 12. Round 6 findings fixed: 12. Total findings: 84. Current version: 1.0.5. PyPI: `ecfr-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/ecfr-mcp. License: MIT.
 
@@ -246,3 +246,7 @@ one-call-per-test live contract anchors re-stamping this server's headline
 fixes against production (all verified green on landing), a suite-wide pacing
 conftest with a `live_smoke` marker, and a per-test client reset so batched
 live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
+
+## RC5 pacing remediation (2026-08-22)
+
+Version 1.0.5 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (182 tests; 118 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 13 tools.

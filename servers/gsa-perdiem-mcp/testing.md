@@ -190,7 +190,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round 7 methodology: re-read the entire server source with no reliance on this document's claims; verify match behavior against live API resolution for a dozen city shapes; recompute FTR 301-11.101 estimate math by hand; probe dead fiscal years and OCONUS states live; check every prior claim in this document against the code and live behavior.
 
-Test count: 441 regression tests (186 offline + 255 live-gated). Tests per tool: 73.5. Total findings across all rounds: 69. Current version: 1.0.4. PyPI: `gsa-perdiem-mcp`.
+Test count: 441 regression tests (186 offline + 255 live-gated). Tests per tool: 73.5. Total findings across all rounds: 69. Current version: 1.0.5. PyPI: `gsa-perdiem-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp. License: MIT.
 
@@ -204,3 +204,7 @@ one-call-per-test live contract anchors re-stamping this server's headline
 fixes against production (all verified green on landing), a suite-wide pacing
 conftest with a `live_smoke` marker, and a per-test client reset so batched
 live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
+
+## RC5 pacing remediation (2026-08-22)
+
+Version 1.0.5 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (186 tests; 255 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 6 tools.

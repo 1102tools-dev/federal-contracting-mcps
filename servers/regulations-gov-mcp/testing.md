@@ -169,7 +169,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round-7 wave methodology: re-read the entire server source with no reliance on this document's claims; verify every filter parameter name live against result deltas; probe documented limits (page cap, DEMO_KEY rate) against live headers and boundary requests; end-to-end test both workflow tools through the real server against known corpora (FDA open comment periods, a 553-document EPA docket); check every prior claim in this document against the code and live behavior.
 
-Test count: 204 regression tests (85 offline + 119 live-gated). Total findings across all rounds: 34. Current version: 1.0.3. PyPI: `regulationsgov-mcp`.
+Test count: 204 regression tests (85 offline + 119 live-gated). Total findings across all rounds: 34. Current version: 1.0.4. PyPI: `regulationsgov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/regulations-gov-mcp. License: MIT.
 
@@ -183,3 +183,7 @@ one-call-per-test live contract anchors re-stamping this server's headline
 fixes against production (all verified green on landing), a suite-wide pacing
 conftest with a `live_smoke` marker, and a per-test client reset so batched
 live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
+
+## RC5 pacing remediation (2026-08-22)
+
+Version 1.0.4 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (85 tests; 119 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 8 tools.

@@ -260,6 +260,10 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, ma
 
 Testing spanned ten rounds from integration stress testing through live API audits, response-shape guards, property testing, and the round 10 semantic audit (parameter effects, enum sweeps, contract-vs-validator diffs). The live regression suite runs against the USASpending.gov production API when enabled with `USASPENDING_LIVE_TESTS=1`.
 
-Test count: 2,160 regression tests (1,785 offline + 375 live-gated) across 55 tools. Tests per tool: 39+. P1 bugs found and fixed rounds 1-9: 11. P2 validation gaps closed rounds 1-9: 7. Round 10 findings fixed: 22. Integration issues closed in round 1: 28+. Release cycles: 15. Current version: 1.0.3. PyPI: `usaspending-gov-mcp`.
+Test count: 2,163 regression tests (1,788 offline + 375 live-gated) across 55 tools. Tests per tool: 39+. P1 bugs found and fixed rounds 1-9: 11. P2 validation gaps closed rounds 1-9: 7. Round 10 findings fixed: 22. Integration issues closed in round 1: 28+. Release cycles: 16. Current version: 1.0.4. PyPI: `usaspending-gov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/usaspending-gov-mcp. License: MIT.
+
+## RC5 pacing and tool-profile remediation (2026-08-22)
+
+Version 1.0.4 carries the suite-wide asynchronous pacing-lock correction and the `acquisition-agent` tool profile. The full offline lane passed (1,788 tests; 375 live-gated tests skipped). Isolated published-wheel verification confirmed the standalone default still exposes all 55 tools and the acquisition profile exposes the documented 20-tool allowlist.

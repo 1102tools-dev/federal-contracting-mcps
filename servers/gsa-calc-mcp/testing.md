@@ -190,7 +190,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, ma
 
 Testing spanned four retroactive rounds plus an initial WAF-calibration pass, a Hypothesis-and-live round 5, and a differential-count round 6. Rounds covered live probing across all 8 tools, compound-filter and pagination edge cases, length caps and ES window overflow, response-shape mock fuzzing, and (round 6) count assertions against the API's own aggregation buckets. The live regression suite runs against the production CALC+ API when enabled with `GSA_CALC_LIVE_TESTS=1`.
 
-Test count: 356 regression tests (247 offline, 109 live-gated). P1 crashes found and fixed: 19. P1 silent-wrong-data bugs found and fixed: 32. P2 validation gaps closed: 20. P3 cleanup items closed: 6. Retroactive additional findings: 12. Current version: 1.0.3. PyPI: `gsa-calc-mcp`.
+Test count: 356 regression tests (247 offline, 109 live-gated). P1 crashes found and fixed: 19. P1 silent-wrong-data bugs found and fixed: 32. P2 validation gaps closed: 20. P3 cleanup items closed: 6. Retroactive additional findings: 12. Current version: 1.0.4. PyPI: `gsa-calc-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/gsa-calc-mcp. License: MIT.
 
@@ -204,3 +204,7 @@ one-call-per-test live contract anchors re-stamping this server's headline
 fixes against production (all verified green on landing), a suite-wide pacing
 conftest with a `live_smoke` marker, and a per-test client reset so batched
 live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
+
+## RC5 pacing remediation (2026-08-22)
+
+Version 1.0.4 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (247 tests; 109 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 8 tools.

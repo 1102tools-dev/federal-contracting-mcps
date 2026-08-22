@@ -225,7 +225,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round 7 methodology: re-read the entire server source with no reliance on this document's claims; verify every constant table and datatype code against production BLS responses; recompute composite-tool math by hand; replay documented API shapes through the real tool pipeline; check every prior claim in this document against the code and live behavior.
 
-Test count: 249 regression tests (85 offline, 164 live-gated). Total findings across all rounds: 35. Current version: 1.0.4. PyPI: `bls-oews-mcp`.
+Test count: 249 regression tests (85 offline, 164 live-gated). Total findings across all rounds: 35. Current version: 1.0.5. PyPI: `bls-oews-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/bls-oews-mcp. License: MIT.
 
@@ -239,3 +239,7 @@ one-call-per-test live contract anchors re-stamping this server's headline
 fixes against production (all verified green on landing), a suite-wide pacing
 conftest with a `live_smoke` marker, and a per-test client reset so batched
 live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
+
+## RC5 pacing remediation (2026-08-22)
+
+Version 1.0.5 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (85 tests; 164 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 7 tools.

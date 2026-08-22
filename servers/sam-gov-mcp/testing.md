@@ -191,6 +191,10 @@ Round 9 methodology: re-read the entire server source with no reliance on this d
 
 Round 10 methodology: thirteen paced probe rounds (harness in `tests/live_audit/`), superset-vs-pair fingerprinting for pagination semantics, live capture plus offline pipeline replay for response shapes, boundary and error-path sweeps per endpoint family, and a canonical re-stamp round so every finding carries a fresh timestamp. Conducted with Claude Code Fable 5.
 
-Test count: 1,136 regression tests (762 offline + 374 live-gated). Tests per tool: 59.8. Total items addressed across releases: 77. Current version: 1.0.6. PyPI: `sam-gov-mcp`.
+Test count: 1,142 regression tests (768 offline + 374 live-gated). Tests per tool: 60.1. Total items addressed across releases: 77. Current version: 1.0.8. PyPI: `sam-gov-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/sam-gov-mcp. License: MIT.
+
+## RC5 pacing remediation (2026-08-22)
+
+Version 1.0.8 carries the suite-wide asynchronous pacing-lock correction on top of the host-neutral missing-key message released in 1.0.7. The full offline lane passed (768 tests; 374 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 19 tools.

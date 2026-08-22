@@ -192,7 +192,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, ma
 
 Testing spanned six rounds from initial hardening (17 findings including the pydantic crash and payload bombs) through cross-MCP `extra='forbid'` application, a retroactive deep audit (12 additional findings), Hypothesis property punishment (round 5), and a round 6 correctness audit against the live archive and the API's own OpenAPI spec (12 verified findings). The live regression suite runs against the production Federal Register API when enabled with `FR_LIVE_TESTS=1`.
 
-Test count: 232 regression tests (132 offline, 100 live-gated). Total items addressed: 44. Current version: 1.0.3. PyPI: `federal-register-mcp`.
+Test count: 232 regression tests (132 offline, 100 live-gated). Total items addressed: 44. Current version: 1.0.4. PyPI: `federal-register-mcp`.
 
 Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/federal-register-mcp. License: MIT.
 
@@ -206,3 +206,7 @@ one-call-per-test live contract anchors re-stamping this server's headline
 fixes against production (all verified green on landing), a suite-wide pacing
 conftest with a `live_smoke` marker, and a per-test client reset so batched
 live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
+
+## RC5 pacing remediation (2026-08-22)
+
+Version 1.0.4 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (132 tests; 100 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 8 tools.

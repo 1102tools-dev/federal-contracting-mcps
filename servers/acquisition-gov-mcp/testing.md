@@ -49,3 +49,7 @@ These hashes are observations, not permanent expected values. A future hash chan
 ## Release boundary
 
 Package tests establish deterministic parsing and current upstream reachability. They do not establish that a deviation applies to a particular acquisition. That determination remains outside the server.
+
+## RC5 pacing remediation (2026-08-22)
+
+Version 1.0.1 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (20 tests; 1 live-gated test skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 5 tools.
