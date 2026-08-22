@@ -8,7 +8,7 @@ Website: [1102tools.com](https://1102tools.com)
 
 ## Most users should start with an agent
 
-The packaged [1102tools agents](https://github.com/1102tools-dev/federal-contracting-agents) already include the source connections required by each guided job. The beginner-facing [Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers Codex, Claude Code, and DeepSeek Harness.
+The packaged [1102tools agents](https://github.com/1102tools-dev/federal-contracting-agents) already include the source connections required by each guided job. The beginner-facing [Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers Codex and Claude Code.
 
 Use this repository when you specifically want standalone source servers or custom MCP configurations. Follow each selected server's README and testing record; standalone setup is advanced and self-supported. The MCP-oriented [request library](https://github.com/1102tools-dev/federal-contracting-prompts) remains available as a repository, not a maintained PDF product.
 
