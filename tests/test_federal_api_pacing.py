@@ -133,6 +133,7 @@ asyncio.run(main())
 
 def test_all_http_sites_are_paced_and_helpers_are_synchronized() -> None:
     expected_counts = {
+        "acquisition-gov-mcp/src/acquisition_gov_mcp/server.py": 1,
         "bls-oews-mcp/src/bls_oews_mcp/server.py": 1,
         "ecfr-mcp/src/ecfr_mcp/server.py": 2,
         "federal-register-mcp/src/federal_register_mcp/server.py": 1,

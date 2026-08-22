@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy or verify the canonical pacing helper in all eight Python packages."""
+"""Copy or verify the canonical pacing helper in all nine Python packages."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "shared" / "federal_api_pacing.py"
 TARGETS = (
+    ROOT / "servers" / "acquisition-gov-mcp" / "src" / "acquisition_gov_mcp" / "_pacing.py",
     ROOT / "servers" / "bls-oews-mcp" / "src" / "bls_oews_mcp" / "_pacing.py",
     ROOT / "servers" / "ecfr-mcp" / "src" / "ecfr_mcp" / "_pacing.py",
     ROOT / "servers" / "federal-register-mcp" / "src" / "federal_register_mcp" / "_pacing.py",

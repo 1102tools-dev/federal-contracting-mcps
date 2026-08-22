@@ -45,6 +45,7 @@ jobs:
       fail-fast: false
       matrix:
         server:
+          - { dir: "acquisition-gov-mcp", pkg: "acquisition-gov-mcp" }
           - { dir: "bls-oews-mcp",        pkg: "bls-oews-mcp" }
           - { dir: "ecfr-mcp",            pkg: "ecfr-mcp" }
           - { dir: "federal-register-mcp", pkg: "federal-register-mcp" }
@@ -78,6 +79,7 @@ jobs:
           REGULATIONS_LIVE_TESTS: '0'
           SAM_LIVE_TESTS: '0'
           USASPENDING_LIVE_TESTS: '0'
+          ACQUISITION_GOV_LIVE_TESTS: '0'
         run: uv run pytest -q
 
       - name: Install build tooling
@@ -104,6 +106,7 @@ jobs:
       fail-fast: false
       matrix:
         server:
+          - { dir: "acquisition-gov-mcp", pkg: "acquisition-gov-mcp" }
           - { dir: "bls-oews-mcp",        pkg: "bls-oews-mcp" }
           - { dir: "ecfr-mcp",            pkg: "ecfr-mcp" }
           - { dir: "federal-register-mcp", pkg: "federal-register-mcp" }

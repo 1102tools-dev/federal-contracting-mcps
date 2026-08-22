@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGES = {
+    "acquisition-gov-mcp": ("acquisition_gov_mcp", "acquisition-gov-mcp"),
     "bls-oews-mcp": ("bls_oews_mcp", "bls-oews-mcp"),
     "ecfr-mcp": ("ecfr_mcp", "ecfr-mcp"),
     "federal-register-mcp": ("federal_register_mcp", "federal-register-mcp"),

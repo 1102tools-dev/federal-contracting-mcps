@@ -1,0 +1,12 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+    required: []
+  commandFunction: |
+    (config) => ({
+      command: 'uvx',
+      args: ['acquisition-gov-mcp==1.0.0']
+    })
+
