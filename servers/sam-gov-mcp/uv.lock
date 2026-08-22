@@ -821,7 +821,7 @@ wheels = [
 
 [[package]]
 name = "sam-gov-mcp"
-version = "1.0.7"
+version = "1.0.8"
 source = { editable = "." }
 dependencies = [
     { name = "filelock" },

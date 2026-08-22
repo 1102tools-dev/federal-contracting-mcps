@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4
+
+Serializes concurrent same-process requests by API identity before acquiring
+the existing cross-process file lock. Adds an opt-in `acquisition-agent` tool
+profile with a stable 20-tool acquisition subset while preserving the complete
+55-tool catalog as the standalone default.
+
 ## 1.0.3
 
 Suite-wide API safety release. All four upstream request paths now pass

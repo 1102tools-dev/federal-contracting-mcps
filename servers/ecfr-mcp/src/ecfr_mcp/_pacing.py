@@ -10,7 +10,9 @@ import json
 import math
 import os
 import tempfile
+import threading
 import time
+import weakref
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, MutableMapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -24,6 +26,26 @@ from platformdirs import user_cache_path
 
 MIN_INTERVAL_ENV = "FEDERAL_API_MIN_INTERVAL_SECONDS"
 PACING_DIR_ENV = "FEDERAL_API_PACING_DIR"
+
+_PROCESS_LOCKS: weakref.WeakKeyDictionary[
+    asyncio.AbstractEventLoop, dict[str, asyncio.Lock]
+] = weakref.WeakKeyDictionary()
+_PROCESS_LOCKS_GUARD = threading.Lock()
+
+
+def _process_lock(key: str) -> asyncio.Lock:
+    """Return one same-loop lock for a pacing identity.
+
+    ``filelock`` instances coordinate separate processes, but distinct lock
+    objects for the same path can deadlock when concurrent coroutines acquire
+    them from the same process. This registry serializes those coroutines
+    before any file-lock acquisition while retaining the cross-process gate.
+    """
+
+    loop = asyncio.get_running_loop()
+    with _PROCESS_LOCKS_GUARD:
+        loop_locks = _PROCESS_LOCKS.setdefault(loop, {})
+        return loop_locks.setdefault(key, asyncio.Lock())
 
 
 def _finite_non_negative(raw: str, *, variable: str) -> float:
@@ -211,31 +233,33 @@ class FederalApiPacer:
             return
         root = self._root()
         identity = self._identity()
-        lock = FileLock(str(root / f"{identity}.lock"), mode=0o600)
         state_path = root / f"{identity}.json"
+        process_lock = _process_lock(f"{root.resolve()}::{identity}")
 
-        await asyncio.to_thread(lock.acquire)
-        slot = RequestSlot(now=self.clock)
-        state: dict[str, float] = {}
-        try:
-            state = self._read_state(state_path)
-            now = self.clock()
-            ready_at = max(
-                state.get("last_completed", 0.0) + interval,
-                state.get("cooldown_until", 0.0),
-            )
-            if ready_at > now:
-                await self.sleep(ready_at - now)
-            yield slot
-        finally:
-            state["last_completed"] = self.clock()
-            state["cooldown_until"] = max(
-                state.get("cooldown_until", 0.0), slot.cooldown_until
-            )
+        async with process_lock:
+            lock = FileLock(str(root / f"{identity}.lock"), mode=0o600)
+            await asyncio.to_thread(lock.acquire)
+            slot = RequestSlot(now=self.clock)
+            state: dict[str, float] = {}
             try:
-                await asyncio.to_thread(self._write_state, state_path, state)
+                state = self._read_state(state_path)
+                now = self.clock()
+                ready_at = max(
+                    state.get("last_completed", 0.0) + interval,
+                    state.get("cooldown_until", 0.0),
+                )
+                if ready_at > now:
+                    await self.sleep(ready_at - now)
+                yield slot
             finally:
-                await asyncio.to_thread(lock.release)
+                state["last_completed"] = self.clock()
+                state["cooldown_until"] = max(
+                    state.get("cooldown_until", 0.0), slot.cooldown_until
+                )
+                try:
+                    await asyncio.to_thread(self._write_state, state_path, state)
+                finally:
+                    await asyncio.to_thread(lock.release)
 
 
 def utc_timestamp(epoch: float) -> str:

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5
+
+Serializes concurrent same-process requests by API identity before acquiring
+the existing cross-process file lock. This preserves configured pacing while
+preventing same-process lock contention from deadlocking concurrent calls.
+
 ## 1.0.4
 
 Suite-wide API safety release. Every upstream request, including XML content

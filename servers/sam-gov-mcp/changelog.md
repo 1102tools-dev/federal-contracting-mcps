@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.8
+
+Serializes concurrent same-process requests by API identity before acquiring
+the existing cross-process file lock. This preserves configured pacing while
+preventing same-process lock contention from deadlocking concurrent calls.
+
 ## 1.0.7
 
 Host-neutral credential guidance. The missing-key error no longer names a

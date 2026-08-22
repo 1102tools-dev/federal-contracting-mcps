@@ -234,7 +234,7 @@ wheels = [
 
 [[package]]
 name = "federal-register-mcp"
-version = "1.0.3"
+version = "1.0.4"
 source = { editable = "." }
 dependencies = [
     { name = "filelock" },

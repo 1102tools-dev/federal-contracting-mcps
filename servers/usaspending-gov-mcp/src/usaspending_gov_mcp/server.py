@@ -12,6 +12,7 @@ defaults matching common federal acquisition workflows.
 
 from __future__ import annotations
 
+import os
 import re
 from datetime import date
 from typing import Any, Literal
@@ -34,6 +35,32 @@ from .constants import (
 )
 
 mcp = MCPServer("usaspending", version=__version__)
+
+USASPENDING_TOOL_PROFILE_ENV = "USASPENDING_TOOL_PROFILE"
+ACQUISITION_AGENT_TOOLS = frozenset(
+    {
+        "search_awards",
+        "get_award_count",
+        "spending_over_time",
+        "spending_by_category",
+        "get_award_detail",
+        "get_transactions",
+        "get_award_funding",
+        "get_idv_children",
+        "lookup_piid",
+        "autocomplete_psc",
+        "autocomplete_naics",
+        "list_toptier_agencies",
+        "get_agency_overview",
+        "get_agency_awards",
+        "get_naics_details",
+        "get_psc_filter_tree",
+        "search_subawards",
+        "search_recipients",
+        "get_recipient_profile",
+        "awards_last_updated",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
@@ -2344,6 +2371,27 @@ async def get_federal_account_fy_snapshot(
 # Strict parameter validation
 # ---------------------------------------------------------------------------
 
+def _apply_tool_profile() -> None:
+    """Expose either the complete catalog or the acquisition-agent subset."""
+    profile = os.environ.get(USASPENDING_TOOL_PROFILE_ENV, "full").strip() or "full"
+    if profile == "full":
+        return
+    if profile != "acquisition-agent":
+        raise RuntimeError(
+            f"Unknown {USASPENDING_TOOL_PROFILE_ENV}={profile!r}. "
+            "Supported profiles are 'full' and 'acquisition-agent'."
+        )
+
+    registered = {tool.name for tool in mcp._tool_manager.list_tools()}
+    missing = ACQUISITION_AGENT_TOOLS - registered
+    if missing:
+        raise RuntimeError(
+            "The acquisition-agent USASpending profile references unregistered "
+            f"tools: {', '.join(sorted(missing))}."
+        )
+    for tool_name in registered - ACQUISITION_AGENT_TOOLS:
+        mcp.remove_tool(tool_name)
+
 def _forbid_extra_params_on_all_tools() -> None:
     """Set extra='forbid' on every registered tool's pydantic arg model.
 
@@ -2359,6 +2407,7 @@ def _forbid_extra_params_on_all_tools() -> None:
         am.model_rebuild(force=True)
 
 
+_apply_tool_profile()
 _forbid_extra_params_on_all_tools()
 
 

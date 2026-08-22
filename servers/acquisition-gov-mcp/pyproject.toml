@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "acquisition-gov-mcp"
-version = "1.0.0"
+version = "1.0.1"
 description = "Deterministic MCP access to Acquisition.gov FAR Overhaul model text, guidance, and posted agency deviations."
 readme = "readme.md"
 requires-python = ">=3.10"
@@ -51,4 +51,3 @@ packages = ["src/acquisition_gov_mcp"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-

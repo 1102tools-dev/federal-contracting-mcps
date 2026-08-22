@@ -15,6 +15,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "shared"))
 
+import federal_api_pacing as pacing_module  # noqa: E402
 from federal_api_pacing import FederalApiPacer, RequestSlot  # noqa: E402
 
 
@@ -129,6 +130,55 @@ asyncio.run(main())
         assert process.wait(timeout=10) == 0
     starts = sorted(json.loads(line)["started"] for line in output.read_text().splitlines())
     assert starts[1] - starts[0] >= 0.18
+
+
+@pytest.mark.asyncio
+async def test_same_process_concurrent_requests_serialize_before_file_lock(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class OverlapRejectingFileLock:
+        active = False
+
+        def __init__(self, *_args, **_kwargs) -> None:
+            self.held = False
+
+        def acquire(self) -> None:
+            if type(self).active:
+                raise RuntimeError("overlapping same-process file-lock acquisition")
+            type(self).active = True
+            self.held = True
+
+        def release(self) -> None:
+            if self.held:
+                type(self).active = False
+                self.held = False
+
+    monkeypatch.setattr(pacing_module, "FileLock", OverlapRejectingFileLock)
+    entered = asyncio.Event()
+    release_first = asyncio.Event()
+    order: list[str] = []
+    first_pacer = FederalApiPacer(bucket="example.gov", default_interval=0.01, pacing_dir=tmp_path)
+    second_pacer = FederalApiPacer(bucket="example.gov", default_interval=0.01, pacing_dir=tmp_path)
+
+    async def first() -> None:
+        async with first_pacer.request_slot():
+            order.append("first")
+            entered.set()
+            await release_first.wait()
+
+    async def second() -> None:
+        await entered.wait()
+        async with second_pacer.request_slot():
+            order.append("second")
+
+    first_task = asyncio.create_task(first())
+    second_task = asyncio.create_task(second())
+    await entered.wait()
+    await asyncio.sleep(0.02)
+    assert order == ["first"]
+    release_first.set()
+    await asyncio.gather(first_task, second_task)
+    assert order == ["first", "second"]
 
 
 def test_all_http_sites_are_paced_and_helpers_are_synchronized() -> None:

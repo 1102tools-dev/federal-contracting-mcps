@@ -138,6 +138,15 @@ If you installed via `pip install -e .` or a regular `pip install`:
 
 Restart the client and the tools appear.
 
+### Tool profiles
+
+Standalone use defaults to `USASPENDING_TOOL_PROFILE=full`, which exposes all
+55 tools. Packaged acquisition agents set
+`USASPENDING_TOOL_PROFILE=acquisition-agent` to expose a stable 20-tool subset
+covering core award search, spending, agency, recipient, NAICS, PSC,
+transaction, and subaward operations. An unknown profile stops startup with a
+clear error instead of silently changing the catalog.
+
 ## Example prompts
 
 Once configured, try:
