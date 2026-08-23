@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.5
+
+Redacts raw and URL-encoded Regulations.gov API credentials from upstream
+bodies, parsed payloads, malformed-response previews, network exceptions, and
+model-visible errors. Offline regressions cover body, JSON, and URL-bearing
+failure paths.
+
 ## 1.0.4
 
 Serializes concurrent same-process requests by API identity before acquiring

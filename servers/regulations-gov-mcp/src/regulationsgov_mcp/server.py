@@ -68,7 +68,36 @@ _TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 _H1_RE = re.compile(r"<h1[^>]*>(.*?)</h1>", re.IGNORECASE | re.DOTALL)
 
 
-def _clean_error_body(text: Any) -> str:
+def _redact_sensitive_text(text: str, api_key: str | None = None) -> str:
+    """Remove raw and URL-encoded credential values from untrusted text."""
+    result = text
+    if api_key:
+        variants = {
+            api_key,
+            urllib.parse.quote(api_key, safe=""),
+            urllib.parse.quote_plus(api_key),
+        }
+        for value in sorted(variants, key=len, reverse=True):
+            result = result.replace(value, "[REDACTED]")
+    return result
+
+
+def _redact_sensitive_payload(value: Any, api_key: str | None = None) -> Any:
+    if isinstance(value, str):
+        return _redact_sensitive_text(value, api_key)
+    if isinstance(value, dict):
+        return {
+            key: _redact_sensitive_payload(item, api_key)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_sensitive_payload(item, api_key) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_sensitive_payload(item, api_key) for item in value)
+    return value
+
+
+def _clean_error_body(text: Any, api_key: str | None = None) -> str:
     if text is None:
         return "(empty body)"
     if isinstance(text, bytes):
@@ -78,6 +107,7 @@ def _clean_error_body(text: Any) -> str:
             text = repr(text)
     if not isinstance(text, str):
         text = str(text)
+    text = _redact_sensitive_text(text, api_key)
     if not _HTML_MARK_RE.search(text):
         return text[:400]
     pieces: list[str] = []
@@ -350,8 +380,8 @@ def _pacer(api_key: str) -> FederalApiPacer:
     )
 
 
-def _format_error(status: int, body: Any) -> str:
-    cleaned = _clean_error_body(body)
+def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
+    cleaned = _clean_error_body(body, api_key)
     low = cleaned.lower() if isinstance(cleaned, str) else ""
     if status == 403:
         # 403 from api.data.gov means key rejected. 403 from regulations.gov
@@ -438,21 +468,23 @@ async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any
             pacing.raise_if_rate_limited(
                 r,
                 service="Regulations.gov",
-                guidance=_format_error(r.status_code, r.text),
+                guidance=_format_error(r.status_code, r.text, key),
             )
     except httpx.RequestError as e:
-        raise RuntimeError(f"Network error calling Regulations.gov: {e}") from e
+        safe_error = _redact_sensitive_text(str(e), key)
+        raise RuntimeError(f"Network error calling Regulations.gov: {safe_error}") from e
     if r.status_code >= 400:
-        raise RuntimeError(_format_error(r.status_code, r.text))
+        raise RuntimeError(_format_error(r.status_code, r.text, key))
     try:
         data = r.json()
     except (ValueError, _json.JSONDecodeError) as e:
-        preview = _clean_error_body(r.text or "(empty body)")[:200]
+        preview = _clean_error_body(r.text or "(empty body)", key)[:200]
         ct = r.headers.get("content-type", "?")
         raise RuntimeError(
             f"Regulations.gov returned a non-JSON response (status {r.status_code}, "
             f"content-type={ct!r}): {preview}"
         ) from e
+    data = _redact_sensitive_payload(data, key)
     if data is None:
         return {}
     if not isinstance(data, dict):

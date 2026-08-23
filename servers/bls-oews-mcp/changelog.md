@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.6
+
+Redacts the active BLS registration key from upstream response bodies,
+structured messages, exceptions, and model-visible tool errors. Invalid-key
+responses now remain actionable without copying credential values into client
+transcripts. Deterministic regressions cover rejected, partial, HTML, and
+generic HTTP error paths.
+
 ## 1.0.5
 
 Serializes concurrent same-process requests by API identity before acquiring

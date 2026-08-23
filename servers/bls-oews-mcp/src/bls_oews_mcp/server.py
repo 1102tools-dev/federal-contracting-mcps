@@ -223,8 +223,39 @@ _TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 _H1_RE = re.compile(r"<h1[^>]*>(.*?)</h1>", re.IGNORECASE | re.DOTALL)
 
 
-def _clean_error_body(text: str) -> str:
-    """Strip HTML bodies from upstream error responses so error messages stay readable."""
+def _redact_sensitive_text(text: str, secrets: tuple[str | None, ...] = ()) -> str:
+    """Remove active credentials from upstream-controlled text in memory."""
+    result = text
+    for secret in sorted(
+        {item for item in secrets if item}, key=len, reverse=True
+    ):
+        result = result.replace(secret, "[REDACTED]")
+    return result
+
+
+def _redact_sensitive_payload(
+    value: Any, secrets: tuple[str | None, ...] = ()
+) -> Any:
+    """Recursively redact credentials before an upstream payload is returned."""
+    if isinstance(value, str):
+        return _redact_sensitive_text(value, secrets)
+    if isinstance(value, dict):
+        return {
+            key: _redact_sensitive_payload(item, secrets)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_sensitive_payload(item, secrets) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_sensitive_payload(item, secrets) for item in value)
+    return value
+
+
+def _clean_error_body(
+    text: str, secrets: tuple[str | None, ...] = ()
+) -> str:
+    """Redact credentials and compact upstream error bodies for safe display."""
+    text = _redact_sensitive_text(text, secrets)
     if not _HTML_ERROR_RE.search(text):
         return text[:400]
     pieces: list[str] = []
@@ -287,8 +318,8 @@ def _pacer(api_key: str | None) -> FederalApiPacer:
     )
 
 
-def _format_error(status: int, body: str) -> str:
-    cleaned = _clean_error_body(body)
+def _format_error(status: int, body: str, api_key: str | None = None) -> str:
+    cleaned = _clean_error_body(body, (api_key,))
     if status == 429:
         key = _get_api_key()
         limit = "500/day (v2)" if key else "25/day (v1)"
@@ -351,14 +382,16 @@ async def _query_bls(
             pacing.raise_if_rate_limited(
                 r,
                 service="BLS",
-                guidance=_format_error(r.status_code, r.text),
+                guidance=_format_error(r.status_code, r.text, api_key),
             )
         r.raise_for_status()
 
         try:
             data = r.json()
         except json.JSONDecodeError as e:
-            body_preview = _clean_error_body(r.text or "(empty body)")
+            body_preview = _clean_error_body(
+                r.text or "(empty body)", (api_key,)
+            )
             raise RuntimeError(
                 f"BLS returned non-JSON response on 200 OK. "
                 f"This often happens during API maintenance or when an HTML "
@@ -366,6 +399,7 @@ async def _query_bls(
                 f"Body: {body_preview}"
             ) from e
 
+        data = _redact_sensitive_payload(data, (api_key,))
         if not isinstance(data, dict):
             raise RuntimeError(
                 f"BLS response was not a JSON object. Got {type(data).__name__}: {str(data)[:200]}"
@@ -394,9 +428,12 @@ async def _query_bls(
         return data
 
     except httpx.HTTPStatusError as e:
-        raise RuntimeError(_format_error(e.response.status_code, e.response.text[:500])) from e
+        raise RuntimeError(
+            _format_error(e.response.status_code, e.response.text[:500], api_key)
+        ) from e
     except httpx.RequestError as e:
-        raise RuntimeError(f"Network error calling BLS: {e}") from e
+        safe_error = _redact_sensitive_text(str(e), (api_key,))
+        raise RuntimeError(f"Network error calling BLS: {safe_error}") from e
 
 
 # ---------------------------------------------------------------------------

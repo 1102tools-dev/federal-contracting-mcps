@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.9
+
+Redacts raw and URL-encoded SAM.gov credentials from upstream bodies, parsed
+payloads, raw-response fallbacks, HTTP and network exceptions, and structured
+tool results. Invalid-format guidance no longer echoes even a credential
+prefix. Deterministic regressions cover each model-visible failure path.
+
 ## 1.0.8
 
 Serializes concurrent same-process requests by API identity before acquiring

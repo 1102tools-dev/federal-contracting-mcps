@@ -203,8 +203,38 @@ _TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 _H1_RE = re.compile(r"<h1[^>]*>(.*?)</h1>", re.IGNORECASE | re.DOTALL)
 
 
-def _clean_error_body(text: str) -> str:
-    """Strip HTML bodies from upstream error responses so messages stay readable."""
+def _redact_sensitive_text(text: str, api_key: str | None = None) -> str:
+    """Remove raw and URL-encoded credential values from untrusted text."""
+    result = text
+    if api_key:
+        variants = {
+            api_key,
+            urllib.parse.quote(api_key, safe=""),
+            urllib.parse.quote_plus(api_key),
+        }
+        for value in sorted(variants, key=len, reverse=True):
+            result = result.replace(value, "[REDACTED]")
+    return result
+
+
+def _redact_sensitive_payload(value: Any, api_key: str | None = None) -> Any:
+    if isinstance(value, str):
+        return _redact_sensitive_text(value, api_key)
+    if isinstance(value, dict):
+        return {
+            key: _redact_sensitive_payload(item, api_key)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_sensitive_payload(item, api_key) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_sensitive_payload(item, api_key) for item in value)
+    return value
+
+
+def _clean_error_body(text: str, api_key: str | None = None) -> str:
+    """Redact credentials and compact upstream error bodies for safe display."""
+    text = _redact_sensitive_text(text, api_key)
     if not _HTML_ERROR_RE.search(text):
         return text[:500]
     pieces: list[str] = []
@@ -385,9 +415,8 @@ def _get_api_key() -> str:
         )
     if not key.startswith("SAM-"):
         raise RuntimeError(
-            f"SAM_API_KEY is set but has an unexpected format "
-            f"(expected SAM-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx, "
-            f"got something starting with {key[:10]!r}). "
+            "SAM_API_KEY is set but has an unexpected format "
+            "(expected SAM-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx). "
             "Verify the key at https://sam.gov/profile/details."
         )
     return key
@@ -417,9 +446,11 @@ def _pacer(api_key: str) -> FederalApiPacer:
     )
 
 
-def _format_error(status: int, body: str) -> str:
+def _format_error(
+    status: int, body: str, api_key: str | None = None
+) -> str:
     """Translate common SAM.gov errors into actionable messages."""
-    cleaned = _clean_error_body(body)
+    cleaned = _clean_error_body(body, api_key)
     # 401/403: key expired or invalid. Response is often HTML, not JSON.
     if status in (401, 403):
         return (
@@ -446,7 +477,7 @@ def _format_error(status: int, body: str) -> str:
         )
     if status == 400:
         # Surface specific 400 patterns
-        lower = body.lower()
+        lower = cleaned.lower()
         if "size cannot exceed 10" in lower:
             return (
                 "HTTP 400: Entity Management has a hard cap of size=10 per request. "
@@ -519,14 +550,14 @@ async def _get(
             pacing.raise_if_rate_limited(
                 r,
                 service="SAM.gov",
-                guidance=_format_error(r.status_code, r.text),
+                guidance=_format_error(r.status_code, r.text, api_key),
             )
         r.raise_for_status()
         # Most endpoints return JSON; opportunity description endpoint returns
         # a JSON object with a "description" HTML field.
         content_type = r.headers.get("content-type", "")
         if "json" in content_type:
-            data = r.json()
+            data = _redact_sensitive_payload(r.json(), api_key)
             # Contract Awards can 200 with a BARE JSON STRING error message
             # (e.g. '"Max value allowed for parameter \"limit\" is 100"').
             # Surfacing it as an error beats normalizing it into a silent
@@ -539,15 +570,18 @@ async def _get(
         # Contract Awards returns plain text for certain errors even on 200
         # (e.g. "Max value allowed for parameter \"limit\" is 100").
         # Also returns HTML for auth errors (e.g. <h1>API_KEY_INVALID</h1>).
-        body = r.text.strip()
+        body = _redact_sensitive_text(r.text.strip(), api_key)
         if body and not body.startswith("{"):
             raise RuntimeError(f"SAM.gov returned non-JSON response: {body[:500]}")
         # Sometimes SAM.gov returns text/html for errors even on 200
-        return {"raw_response": r.text}
+        return {"raw_response": _redact_sensitive_text(r.text, api_key)}
     except httpx.HTTPStatusError as e:
-        raise RuntimeError(_format_error(e.response.status_code, e.response.text)) from e
+        raise RuntimeError(
+            _format_error(e.response.status_code, e.response.text, api_key)
+        ) from e
     except httpx.RequestError as e:
-        err_str = str(e).lower()
+        safe_error = _redact_sensitive_text(str(e), api_key)
+        err_str = safe_error.lower()
         # SAM's WAF drops the connection silently for bad chars; sometimes httpx
         # surfaces this as an empty error string, other times as reset/closed/eof.
         waf_signals = ["reset", "closed", "connection", "timeout", "eof"]
@@ -558,9 +592,9 @@ async def _get(
                 f"firewall (single quotes, angle brackets, SQL keywords, path "
                 f"traversal sequences like '../'). Remove special characters "
                 f"from your search parameters and try again. "
-                f"Original error: {e!r}"
+                f"Original error: {safe_error or type(e).__name__}"
             ) from e
-        raise RuntimeError(f"Network error calling SAM.gov: {e}") from e
+        raise RuntimeError(f"Network error calling SAM.gov: {safe_error}") from e
 
 
 # ---------------------------------------------------------------------------
