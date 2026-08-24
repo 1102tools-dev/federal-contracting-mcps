@@ -155,7 +155,14 @@ jobs:
         run: |
           for manifest in servers/*/server.json; do
             mcp-publisher validate "${manifest}"
-            mcp-publisher publish "${manifest}"
+            if output=$(mcp-publisher publish "${manifest}" 2>&1); then
+              printf '%s\n' "${output}"
+            elif grep -Fq 'invalid version: cannot publish duplicate version' <<<"${output}"; then
+              echo "Registry already contains $(basename "$(dirname "${manifest}")"); skipping unchanged version."
+            else
+              printf '%s\n' "${output}" >&2
+              exit 1
+            fi
           done
 
   # Bundles were dropped in 1.0.0, and the .mcpb workflow was what used to
