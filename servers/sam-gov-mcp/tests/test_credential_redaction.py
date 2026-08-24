@@ -7,6 +7,7 @@ import asyncio
 
 import httpx
 import pytest
+from mcp.server.mcpserver.exceptions import ToolError
 
 import sam_gov_mcp.server as srv
 
@@ -37,7 +38,7 @@ def test_invalid_format_guidance_never_echoes_prefix(
 ) -> None:
     invalid = "definitely-not-a-sam-key"
     monkeypatch.setenv("SAM_API_KEY", invalid)
-    with pytest.raises(RuntimeError) as captured:
+    with pytest.raises(ToolError) as captured:
         srv._get_api_key()
     assert invalid not in str(captured.value)
     assert invalid[:10] not in str(captured.value)
@@ -70,7 +71,7 @@ def test_network_error_url_never_echoes_key(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(srv, "_get_client", lambda: _Client())
-    with pytest.raises(RuntimeError) as captured:
+    with pytest.raises(ToolError) as captured:
         asyncio.run(srv._get("/test", {"q": "value"}))
     assert SECRET not in str(captured.value)
     assert "[REDACTED]" in str(captured.value)

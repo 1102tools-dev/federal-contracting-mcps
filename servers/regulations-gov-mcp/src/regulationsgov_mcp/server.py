@@ -21,6 +21,7 @@ from typing import Any, Literal
 
 import httpx
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__
 from ._pacing import FederalApiPacer
@@ -34,7 +35,15 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = MCPServer("regulationsgov", version=__version__)
+mcp = MCPServer(
+    "regulationsgov",
+    version=__version__,
+    instructions=(
+        "Before the first Regulations.gov data call in a session, call "
+        "get_access_status and disclose the DEMO_KEY limit when "
+        "REGULATIONS_GOV_API_KEY is not configured."
+    ),
+)
 
 
 # ---------------------------------------------------------------------------
@@ -359,6 +368,31 @@ def _get_api_key() -> str:
     return os.environ.get("REGULATIONS_GOV_API_KEY", "").strip() or "DEMO_KEY"
 
 
+@mcp.tool(
+    annotations={
+        "title": "Check Regulations.gov Data Access",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+    }
+)
+def get_access_status() -> dict[str, Any]:
+    """Check Regulations.gov credential presence without returning or validating it."""
+    configured = bool(os.environ.get("REGULATIONS_GOV_API_KEY", "").strip())
+    return {
+        "service": "Regulations.gov API",
+        "status": "configured_unverified" if configured else "limited_fallback",
+        "credential_env": "REGULATIONS_GOV_API_KEY",
+        "required_for": ["higher-volume Regulations.gov docket and comment research"],
+        "fallback": None if configured else {
+            "mode": "api.data.gov DEMO_KEY",
+            "limit": "approximately 10 requests per hour (live-measured)",
+        },
+        "setup_url": "https://open.gsa.gov/api/regulationsgov/#getting-started",
+        "validation": "presence_only",
+        "restart_required": True,
+    }
+
+
 _client: httpx.AsyncClient | None = None
 
 
@@ -472,15 +506,18 @@ async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any
             )
     except httpx.RequestError as e:
         safe_error = _redact_sensitive_text(str(e), key)
-        raise RuntimeError(f"Network error calling Regulations.gov: {safe_error}") from e
+        raise ToolError(f"Network error calling Regulations.gov: {safe_error}") from e
+    except RuntimeError as e:
+        redact_key = None if key == "DEMO_KEY" else key
+        raise ToolError(_redact_sensitive_text(str(e), redact_key)) from e
     if r.status_code >= 400:
-        raise RuntimeError(_format_error(r.status_code, r.text, key))
+        raise ToolError(_format_error(r.status_code, r.text, key))
     try:
         data = r.json()
     except (ValueError, _json.JSONDecodeError) as e:
         preview = _clean_error_body(r.text or "(empty body)", key)[:200]
         ct = r.headers.get("content-type", "?")
-        raise RuntimeError(
+        raise ToolError(
             f"Regulations.gov returned a non-JSON response (status {r.status_code}, "
             f"content-type={ct!r}): {preview}"
         ) from e
@@ -488,7 +525,7 @@ async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any
     if data is None:
         return {}
     if not isinstance(data, dict):
-        raise RuntimeError(
+        raise ToolError(
             f"Regulations.gov returned unexpected JSON type {type(data).__name__}: "
             f"{str(data)[:200]}"
         )

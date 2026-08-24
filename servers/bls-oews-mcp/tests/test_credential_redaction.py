@@ -7,6 +7,7 @@ import asyncio
 
 import httpx
 import pytest
+from mcp.server.mcpserver.exceptions import ToolError
 
 import bls_oews_mcp.server as srv
 
@@ -57,7 +58,7 @@ def test_request_not_processed_never_echoes_active_key(
     )
     monkeypatch.setattr(srv, "_get_client", lambda: _Client(response))
 
-    with pytest.raises(RuntimeError) as captured:
+    with pytest.raises(ToolError) as captured:
         asyncio.run(srv._query_bls(SERIES))
 
     rendered = str(captured.value)
@@ -107,7 +108,7 @@ def test_http_status_error_path_redacts_active_key(
     )
     monkeypatch.setattr(srv, "_get_client", lambda: _Client(response))
 
-    with pytest.raises(RuntimeError) as captured:
+    with pytest.raises(ToolError) as captured:
         asyncio.run(srv._query_bls(SERIES))
 
     assert SECRET not in str(captured.value)

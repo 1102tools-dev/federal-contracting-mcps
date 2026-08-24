@@ -10,7 +10,7 @@ Requires a free SAM.gov API key. Standalone MCP use is an advanced, self-support
 
 ## What it does
 
-Exposes seven SAM.gov REST APIs as 19 MCP tools:
+Exposes seven SAM.gov REST APIs plus a credential-readiness check as 20 MCP tools:
 
 **Entity Management (v3)**
 - `lookup_entity_by_uei` - Single UEI lookup with configurable response sections
@@ -53,7 +53,7 @@ Exposes seven SAM.gov REST APIs as 19 MCP tools:
 
 Requires a SAM.gov API key set via the `SAM_API_KEY` environment variable.
 
-Get a free key at [sam.gov/profile/details](https://sam.gov/profile/details) under "Public API Key."
+Get a free personal API key by signing in and following the Public API Key instructions at [SAM.gov Help](https://sam.gov/help).
 
 | Account Type | Daily Limit |
 |---|---|
@@ -62,7 +62,7 @@ Get a free key at [sam.gov/profile/details](https://sam.gov/profile/details) und
 | Federal personal | 1,000/day |
 | Federal system account | 10,000/day |
 
-**Important: SAM.gov API keys expire every 90 days.** Regenerate at the same profile page and update your env var. This server returns a clear actionable error on 401/403 with regeneration instructions.
+**Important: SAM.gov API keys expire every 90 days.** Use SAM.gov Help to verify or regenerate the key and update your env var. This server returns a clear actionable error on 401/403 with regeneration instructions.
 
 ## Installation
 
@@ -131,7 +131,7 @@ Once configured, these examples illustrate the server's advanced standalone use.
 ## Design notes
 
 - **Authentication via env var only.** `SAM_API_KEY` is read from the environment on every call. The key never enters the model's conversation context.
-- **90-day expiration awareness.** 401/403 errors are translated into an actionable "regenerate at sam.gov/profile/details" message with full context.
+- **90-day expiration awareness.** 401/403 errors are translated into an actionable regeneration message with the current SAM.gov Help link.
 - **API quirks baked in as safety rails.**
   - Entity Management hard cap of size=10 is enforced client-side with a clear error
   - Exclusions uses `size` not `limit` (different from other SAM endpoints)

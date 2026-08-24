@@ -7,6 +7,7 @@ import asyncio
 import time
 
 import pytest
+from mcp.server.mcpserver.exceptions import ToolError
 
 import bls_oews_mcp.server as srv
 
@@ -80,6 +81,6 @@ async def test_invalid_interval_stops_before_network(monkeypatch: pytest.MonkeyP
     monkeypatch.setenv("FEDERAL_API_MIN_INTERVAL_SECONDS", "-1")
     monkeypatch.setattr(srv, "_get_client", lambda: client)
 
-    with pytest.raises(RuntimeError, match="finite, non-negative"):
+    with pytest.raises(ToolError, match="finite, non-negative"):
         await srv._query_bls(["OEUN000000000000015125200"])
     assert client.starts == []

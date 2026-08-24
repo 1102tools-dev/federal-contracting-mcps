@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 
 import pytest
+from mcp.server.mcpserver.exceptions import ToolError
 
 os.environ.setdefault("SAM_API_KEY", "SAM-00000000-0000-0000-0000-000000000000")
 
@@ -38,7 +39,7 @@ FORBIDDEN_HOST_NAMES = (
 
 def _missing_key_message(monkeypatch) -> str:
     monkeypatch.delenv("SAM_API_KEY", raising=False)
-    with pytest.raises(RuntimeError) as excinfo:
+    with pytest.raises(ToolError) as excinfo:
         srv._get_api_key()
     return str(excinfo.value)
 
@@ -62,13 +63,13 @@ def test_missing_key_message_points_at_generic_credential_config(monkeypatch):
     assert "mcp credential configuration" in message
 
 
-def test_missing_key_message_still_links_the_key_source(monkeypatch):
-    assert "https://sam.gov/profile/details" in _missing_key_message(monkeypatch)
+def test_missing_key_message_links_current_help_source(monkeypatch):
+    assert "https://sam.gov/help" in _missing_key_message(monkeypatch)
 
 
 def test_malformed_key_message_names_no_specific_host(monkeypatch):
     monkeypatch.setenv("SAM_API_KEY", "not-a-sam-key")
-    with pytest.raises(RuntimeError) as excinfo:
+    with pytest.raises(ToolError) as excinfo:
         srv._get_api_key()
     message = str(excinfo.value).lower()
     for name in FORBIDDEN_HOST_NAMES:

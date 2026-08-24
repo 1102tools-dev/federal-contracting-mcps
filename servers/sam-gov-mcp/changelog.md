@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.11
+
+Adds a presence-only `get_access_status` tool and server instructions that make
+the required `SAM_API_KEY` check the first step before SAM.gov data calls.
+Missing, rejected, rate-limited, network, and sanitized upstream failures now
+raise MCP `ToolError`, preserving actionable text for the model instead of the
+generic `Error executing tool` response. Credential values remain redacted.
+The retired profile URL is replaced by the current SAM.gov Help entry point.
+
 ## 1.0.10
 
 Publishes the package under the domain-verified

@@ -7,6 +7,7 @@ import asyncio
 
 import httpx
 import pytest
+from mcp.server.mcpserver.exceptions import ToolError
 
 import regulationsgov_mcp.server as srv
 
@@ -61,7 +62,7 @@ def test_network_error_url_never_echoes_key(
             raise httpx.ConnectError(f"failed request {url}", request=request)
 
     monkeypatch.setattr(srv, "_get_client", lambda: FailingClient())
-    with pytest.raises(RuntimeError) as captured:
+    with pytest.raises(ToolError) as captured:
         asyncio.run(srv._get("documents", {"filter[searchTerm]": "FAR"}))
     assert SECRET not in str(captured.value)
     assert "rc5-regulations-secret%2Fvalue" not in str(captured.value)

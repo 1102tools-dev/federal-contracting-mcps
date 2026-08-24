@@ -10,7 +10,7 @@ Works without configuration using DEMO_KEY. Optional free API key for higher rat
 
 ## What it does
 
-Exposes the GSA Per Diem API as 6 MCP tools:
+Exposes the GSA Per Diem API plus a credential-readiness check as 7 MCP tools:
 
 **Core lookups**
 - `lookup_city_perdiem` - Rates by city/state (auto-selects best NSA match)

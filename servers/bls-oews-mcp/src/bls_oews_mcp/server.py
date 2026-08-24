@@ -22,6 +22,7 @@ from typing import Any, Literal, Union
 
 import httpx
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__
 from ._pacing import FederalApiPacer
@@ -44,7 +45,14 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = MCPServer("bls-oews", version=__version__)
+mcp = MCPServer(
+    "bls-oews",
+    version=__version__,
+    instructions=(
+        "Before the first BLS data call in a session, call get_access_status and "
+        "disclose the 25-requests-per-day v1 fallback when no BLS_API_KEY is configured."
+    ),
+)
 
 
 # ---------------------------------------------------------------------------
@@ -297,6 +305,31 @@ def _api_key_status() -> dict[str, Any]:
     return {"set": True, "mode": "v2", "note": "v2 mode (500/day)"}
 
 
+@mcp.tool(
+    annotations={
+        "title": "Check BLS Data Access",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+    }
+)
+def get_access_status() -> dict[str, Any]:
+    """Check BLS credential presence without returning or validating its value."""
+    configured = bool(os.environ.get("BLS_API_KEY", "").strip())
+    return {
+        "service": "BLS Public Data API",
+        "status": "configured_unverified" if configured else "limited_fallback",
+        "credential_env": "BLS_API_KEY",
+        "required_for": ["higher-volume BLS v2 wage-data requests"],
+        "fallback": None if configured else {
+            "mode": "BLS v1 unauthenticated",
+            "limit": "25 requests per day and 10 years per query",
+        },
+        "setup_url": "https://data.bls.gov/registrationEngine/",
+        "validation": "presence_only",
+        "restart_required": True,
+    }
+
+
 _client: httpx.AsyncClient | None = None
 
 
@@ -392,7 +425,7 @@ async def _query_bls(
             body_preview = _clean_error_body(
                 r.text or "(empty body)", (api_key,)
             )
-            raise RuntimeError(
+            raise ToolError(
                 f"BLS returned non-JSON response on 200 OK. "
                 f"This often happens during API maintenance or when an HTML "
                 f"error page is served without an error status. "
@@ -401,14 +434,14 @@ async def _query_bls(
 
         data = _redact_sensitive_payload(data, (api_key,))
         if not isinstance(data, dict):
-            raise RuntimeError(
+            raise ToolError(
                 f"BLS response was not a JSON object. Got {type(data).__name__}: {str(data)[:200]}"
             )
 
         status = data.get("status")
         if status == "REQUEST_NOT_PROCESSED":
             messages = data.get("message", [])
-            raise RuntimeError(
+            raise ToolError(
                 f"BLS API refused the request: {messages}. "
                 "Common cause: rate limit exceeded or malformed series IDs."
             )
@@ -428,12 +461,14 @@ async def _query_bls(
         return data
 
     except httpx.HTTPStatusError as e:
-        raise RuntimeError(
+        raise ToolError(
             _format_error(e.response.status_code, e.response.text[:500], api_key)
         ) from e
     except httpx.RequestError as e:
         safe_error = _redact_sensitive_text(str(e), (api_key,))
-        raise RuntimeError(f"Network error calling BLS: {safe_error}") from e
+        raise ToolError(f"Network error calling BLS: {safe_error}") from e
+    except RuntimeError as e:
+        raise ToolError(_redact_sensitive_text(str(e), (api_key,))) from e
 
 
 # ---------------------------------------------------------------------------

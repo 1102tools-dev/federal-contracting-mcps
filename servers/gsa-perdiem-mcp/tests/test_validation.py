@@ -11,6 +11,7 @@ import asyncio
 import json
 import os
 import pytest
+from mcp.server.mcpserver.exceptions import ToolError
 
 import gsa_perdiem_mcp.server as srv
 from gsa_perdiem_mcp.server import mcp
@@ -672,44 +673,44 @@ def _install_fake_client(resp_or_exc):
 
 def test_get_handles_html_200():
     _install_fake_client(_FakeResp(200, "<html>maint</html>", "text/html"))
-    with pytest.raises(RuntimeError, match="non-JSON"):
+    with pytest.raises(ToolError, match="non-JSON"):
         asyncio.run(srv._get("x"))
 
 
 def test_get_handles_empty_200():
     _install_fake_client(_FakeResp(200, "", "application/json"))
-    with pytest.raises(RuntimeError, match="non-JSON"):
+    with pytest.raises(ToolError, match="non-JSON"):
         asyncio.run(srv._get("x"))
 
 
 def test_get_handles_truncated_json():
     _install_fake_client(_FakeResp(200, "{\"rates\":[{", "application/json"))
-    with pytest.raises(RuntimeError, match="non-JSON"):
+    with pytest.raises(ToolError, match="non-JSON"):
         asyncio.run(srv._get("x"))
 
 
 def test_get_handles_timeout():
     import httpx
     _install_fake_client(httpx.TimeoutException("timed out"))
-    with pytest.raises(RuntimeError, match="Network error"):
+    with pytest.raises(ToolError, match="Network error"):
         asyncio.run(srv._get("x"))
 
 
 def test_get_formats_403():
     _install_fake_client(_FakeResp(403, "{}", "application/json"))
-    with pytest.raises(RuntimeError, match="API key rejected"):
+    with pytest.raises(ToolError, match="API key rejected"):
         asyncio.run(srv._get("x"))
 
 
 def test_get_formats_429():
     _install_fake_client(_FakeResp(429, '{"error":{}}', "application/json"))
-    with pytest.raises(RuntimeError, match="Rate limited"):
+    with pytest.raises(ToolError, match="Rate limited"):
         asyncio.run(srv._get("x"))
 
 
 def test_get_formats_500():
     _install_fake_client(_FakeResp(500, "internal error", "text/plain"))
-    with pytest.raises(RuntimeError, match="server error"):
+    with pytest.raises(ToolError, match="server error"):
         asyncio.run(srv._get("x"))
 
 

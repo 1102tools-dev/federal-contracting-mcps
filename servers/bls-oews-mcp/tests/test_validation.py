@@ -13,6 +13,7 @@ import asyncio
 import os
 
 import pytest
+from mcp.server.mcpserver.exceptions import ToolError
 
 import bls_oews_mcp.server as srv  # noqa: E402
 from bls_oews_mcp.server import mcp  # noqa: E402
@@ -449,8 +450,8 @@ def test_query_bls_handles_non_json_200():
     try:
         try:
             asyncio.run(S._query_bls(["OEUN000000000000000000004"]))
-            raise AssertionError("expected RuntimeError on non-JSON 200")
-        except RuntimeError as e:
+            raise AssertionError("expected ToolError on non-JSON 200")
+        except ToolError as e:
             assert "non-JSON" in str(e)
     finally:
         S._get_client = orig

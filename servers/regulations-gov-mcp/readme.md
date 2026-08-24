@@ -10,7 +10,7 @@ Optional free API key for higher rate limits. Standalone MCP use is an advanced,
 
 ## What it does
 
-Exposes the Regulations.gov API as 8 MCP tools:
+Exposes the Regulations.gov API plus a credential-readiness check as 9 MCP tools:
 
 **Core**
 - `search_documents` - Search proposed rules, final rules, notices with flexible filters

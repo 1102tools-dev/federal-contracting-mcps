@@ -27,6 +27,7 @@ from typing import Any, Literal, Union
 
 import httpx
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__
 from ._pacing import FederalApiPacer
@@ -52,7 +53,15 @@ from .constants import (
     USER_AGENT,
 )
 
-mcp = MCPServer("sam-gov", version=__version__)
+mcp = MCPServer(
+    "sam-gov",
+    version=__version__,
+    instructions=(
+        "Before the first SAM.gov data call in a session, call get_access_status. "
+        "If it reports missing_required, tell the user SAM_API_KEY is not configured "
+        "and do not call or retry SAM.gov data tools until setup is corrected."
+    ),
+)
 
 
 # ---------------------------------------------------------------------------
@@ -407,19 +416,51 @@ def _get_api_key() -> str:
     """
     key = os.environ.get("SAM_API_KEY", "").strip()
     if not key:
-        raise RuntimeError(
-            "SAM_API_KEY is not set. Set SAM_API_KEY in the launching "
-            "environment or your client's MCP credential configuration. "
-            "Get a free API key at https://sam.gov/profile/details "
-            "(Public API Key section)."
+        raise ToolError(
+            "Missing required credential: SAM_API_KEY is not configured. "
+            "SAM.gov entity, exclusion, opportunity, award, hierarchy, and "
+            "subaward tools will not work until it is configured. Get a free "
+            "personal API key by signing in and following the Public API Key "
+            "instructions at https://sam.gov/help. Configure it in the launching "
+            "environment or your client's MCP credential configuration, restart the client, and run "
+            "get_access_status again. Do not paste the key into chat."
         )
     if not key.startswith("SAM-"):
-        raise RuntimeError(
-            "SAM_API_KEY is set but has an unexpected format "
+        raise ToolError(
+            "Configured credential rejected before use: SAM_API_KEY has an unexpected format "
             "(expected SAM-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx). "
-            "Verify the key at https://sam.gov/profile/details."
+            "Verify or regenerate the personal Public API Key using "
+            "https://sam.gov/help, update the launching environment, restart the "
+            "client, and run get_access_status again. Do not paste the key into chat."
         )
     return key
+
+
+@mcp.tool(
+    annotations={
+        "title": "Check SAM.gov Data Access",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+    }
+)
+def get_access_status() -> dict[str, Any]:
+    """Check SAM.gov credential presence without returning or validating its value."""
+    if not os.environ.get("SAM_API_KEY", "").strip():
+        status = "missing_required"
+    else:
+        status = "configured_unverified"
+    return {
+        "service": "sam.gov",
+        "status": status,
+        "credential_env": "SAM_API_KEY",
+        "required_for": [
+            "SAM.gov entity, exclusion, opportunity, award, hierarchy, and subaward operations"
+        ],
+        "fallback": None,
+        "setup_url": "https://sam.gov/help",
+        "validation": "presence_only",
+        "restart_required": True,
+    }
 
 
 _client: httpx.AsyncClient | None = None
@@ -454,11 +495,11 @@ def _format_error(
     # 401/403: key expired or invalid. Response is often HTML, not JSON.
     if status in (401, 403):
         return (
-            f"HTTP {status}: SAM.gov API key rejected. "
+            f"Configured credential rejected: SAM.gov returned HTTP {status}. "
             "SAM.gov keys expire every 90 days. "
-            "Log into sam.gov, go to Profile > Public API Key, and "
-            "regenerate the key. Then update your SAM_API_KEY env var "
-            "(in Claude Desktop mcpServers config or your shell profile)."
+            "Use https://sam.gov/help to verify or regenerate the personal Public "
+            "API Key. Then update SAM_API_KEY in the launching environment, restart "
+            "the client, and run get_access_status again. Do not paste the key into chat."
         )
     if status == 406:
         return (
@@ -563,7 +604,7 @@ async def _get(
             # Surfacing it as an error beats normalizing it into a silent
             # zero-result response.
             if not isinstance(data, dict):
-                raise RuntimeError(
+                raise ToolError(
                     f"SAM.gov returned a non-object JSON response: {str(data)[:500]}"
                 )
             return data
@@ -572,11 +613,11 @@ async def _get(
         # Also returns HTML for auth errors (e.g. <h1>API_KEY_INVALID</h1>).
         body = _redact_sensitive_text(r.text.strip(), api_key)
         if body and not body.startswith("{"):
-            raise RuntimeError(f"SAM.gov returned non-JSON response: {body[:500]}")
+            raise ToolError(f"SAM.gov returned non-JSON response: {body[:500]}")
         # Sometimes SAM.gov returns text/html for errors even on 200
         return {"raw_response": _redact_sensitive_text(r.text, api_key)}
     except httpx.HTTPStatusError as e:
-        raise RuntimeError(
+        raise ToolError(
             _format_error(e.response.status_code, e.response.text, api_key)
         ) from e
     except httpx.RequestError as e:
@@ -586,7 +627,7 @@ async def _get(
         # surfaces this as an empty error string, other times as reset/closed/eof.
         waf_signals = ["reset", "closed", "connection", "timeout", "eof"]
         if not err_str or any(x in err_str for x in waf_signals):
-            raise RuntimeError(
+            raise ToolError(
                 f"SAM.gov dropped the connection. This often happens when the "
                 f"request URL contains characters that trigger their web application "
                 f"firewall (single quotes, angle brackets, SQL keywords, path "
@@ -594,7 +635,10 @@ async def _get(
                 f"from your search parameters and try again. "
                 f"Original error: {safe_error or type(e).__name__}"
             ) from e
-        raise RuntimeError(f"Network error calling SAM.gov: {safe_error}") from e
+        raise ToolError(f"Network error calling SAM.gov: {safe_error}") from e
+    except RuntimeError as e:
+        # FederalApiPacer uses RuntimeError for anticipated local pacing failures.
+        raise ToolError(_redact_sensitive_text(str(e), api_key)) from e
 
 
 # ---------------------------------------------------------------------------

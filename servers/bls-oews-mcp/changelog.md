@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.8
+
+Adds a presence-only `get_access_status` tool that distinguishes configured
+but unverified v2 access from the unauthenticated v1 fallback and its published
+25-request-per-day limit. Anticipated rate, authentication, network, and
+sanitized upstream failures now remain model-visible through MCP `ToolError`.
+
 ## 1.0.7
 
 Publishes the package under the domain-verified

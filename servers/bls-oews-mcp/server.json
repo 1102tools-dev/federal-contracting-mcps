@@ -1,21 +1,21 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.1102tools/bls-oews-mcp",
-  "description": "BLS Occupational Employment and Wage Statistics market wages. 7 tools.",
+  "description": "BLS access readiness and Occupational Employment and Wage Statistics market wages. 8 tools.",
   "title": "BLS OEWS",
   "repository": {
     "url": "https://github.com/1102tools-dev/federal-contracting-mcps",
     "source": "github",
     "subfolder": "servers/bls-oews-mcp"
   },
-  "version": "1.0.7",
+  "version": "1.0.8",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "bls-oews-mcp",
-      "version": "1.0.7",
+      "version": "1.0.8",
       "transport": {
         "type": "stdio"
       },

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.8
+
+Adds a presence-only `get_access_status` tool that distinguishes configured
+but unverified access from the shared `DEMO_KEY` fallback and its live-measured
+limit. Anticipated rate, authentication, network, and sanitized upstream
+failures now remain model-visible through MCP `ToolError`.
+
 ## 1.0.7
 
 Publishes the package under the domain-verified

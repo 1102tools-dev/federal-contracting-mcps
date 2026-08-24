@@ -10,7 +10,7 @@ Optional free API key for higher rate limits. Works without a key at reduced lim
 
 ## What it does
 
-Exposes the BLS OEWS API as 7 MCP tools:
+Exposes the BLS OEWS API plus a credential-readiness check as 8 MCP tools:
 
 **Core**
 - `get_wage_data` - Wage statistics for an occupation by SOC code (national, state, or metro)

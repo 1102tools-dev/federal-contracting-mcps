@@ -25,12 +25,20 @@ from typing import Any
 
 import httpx
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__
 from ._pacing import FederalApiPacer
 from .constants import BASE_URL, DEFAULT_TIMEOUT, USER_AGENT
 
-mcp = MCPServer("gsa-perdiem", version=__version__)
+mcp = MCPServer(
+    "gsa-perdiem",
+    version=__version__,
+    instructions=(
+        "Before the first Per Diem data call in a session, call get_access_status "
+        "and disclose the DEMO_KEY limit when PERDIEM_API_KEY is not configured."
+    ),
+)
 
 
 # ---------------------------------------------------------------------------
@@ -312,6 +320,31 @@ def _get_api_key() -> str:
     return os.environ.get("PERDIEM_API_KEY", "").strip() or "DEMO_KEY"
 
 
+@mcp.tool(
+    annotations={
+        "title": "Check GSA Per Diem Data Access",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+    }
+)
+def get_access_status() -> dict[str, Any]:
+    """Check Per Diem credential presence without returning or validating its value."""
+    configured = bool(os.environ.get("PERDIEM_API_KEY", "").strip())
+    return {
+        "service": "GSA Per Diem API",
+        "status": "configured_unverified" if configured else "limited_fallback",
+        "credential_env": "PERDIEM_API_KEY",
+        "required_for": ["higher-volume GSA Per Diem travel-pricing requests"],
+        "fallback": None if configured else {
+            "mode": "api.data.gov DEMO_KEY",
+            "limit": "approximately 10 requests per hour (live-measured)",
+        },
+        "setup_url": "https://api.data.gov/signup/",
+        "validation": "presence_only",
+        "restart_required": True,
+    }
+
+
 _client: httpx.AsyncClient | None = None
 
 
@@ -379,17 +412,20 @@ async def _get(path: str) -> Any:
             )
     except httpx.RequestError as e:
         safe_error = _redact_sensitive_text(str(e), key)
-        raise RuntimeError(
+        raise ToolError(
             f"Network error calling GSA Per Diem API: {safe_error}"
         ) from e
+    except RuntimeError as e:
+        redact_key = None if key == "DEMO_KEY" else key
+        raise ToolError(_redact_sensitive_text(str(e), redact_key)) from e
     if r.status_code >= 400:
-        raise RuntimeError(_format_error(r.status_code, r.text, key))
+        raise ToolError(_format_error(r.status_code, r.text, key))
     try:
         return _redact_sensitive_payload(r.json(), key)
     except (ValueError, _json.JSONDecodeError) as e:
         preview = _clean_error_body(r.text or "(empty body)", key)[:200]
         ct = r.headers.get("content-type", "?")
-        raise RuntimeError(
+        raise ToolError(
             f"GSA Per Diem returned a non-JSON response (status {r.status_code}, "
             f"content-type={ct!r}): {preview}"
         ) from e
@@ -1053,7 +1089,7 @@ async def compare_locations(
                     "location": label,
                     "error": "no rates found" + _no_rates_hint(year),
                 })
-        except RuntimeError as e:
+        except (RuntimeError, ToolError) as e:
             results.append({
                 "location": label,
                 "error": str(e)[:200],

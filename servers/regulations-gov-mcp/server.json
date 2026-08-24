@@ -1,21 +1,21 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.1102tools/regulations-gov-mcp",
-  "description": "Regulations.gov rulemaking dockets, documents, public comments, and comment periods. 8 tools.",
+  "description": "Regulations.gov access readiness, rulemaking dockets, documents, public comments, and comment periods. 9 tools.",
   "title": "Regulations.gov",
   "repository": {
     "url": "https://github.com/1102tools-dev/federal-contracting-mcps",
     "source": "github",
     "subfolder": "servers/regulations-gov-mcp"
   },
-  "version": "1.0.6",
+  "version": "1.0.7",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "regulationsgov-mcp",
-      "version": "1.0.6",
+      "version": "1.0.7",
       "transport": {
         "type": "stdio"
       },
