@@ -1,0 +1,24 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.1102tools/gsa-calc-mcp",
+  "description": "GSA CALC+ awarded labor ceiling rates from more than 230,000 MAS contract records. 8 tools.",
+  "title": "GSA CALC+",
+  "repository": {
+    "url": "https://github.com/1102tools-dev/federal-contracting-mcps",
+    "source": "github",
+    "subfolder": "servers/gsa-calc-mcp"
+  },
+  "version": "1.0.5",
+  "websiteUrl": "https://1102tools.com",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "gsa-calc-mcp",
+      "version": "1.0.5",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

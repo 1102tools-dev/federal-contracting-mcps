@@ -262,7 +262,7 @@ Testing spanned ten rounds from integration stress testing through live API audi
 
 Test count: 2,163 regression tests (1,788 offline + 375 live-gated) across 55 tools. Tests per tool: 39+. P1 bugs found and fixed rounds 1-9: 11. P2 validation gaps closed rounds 1-9: 7. Round 10 findings fixed: 22. Integration issues closed in round 1: 28+. Release cycles: 16. Current version: 1.0.4. PyPI: `usaspending-gov-mcp`.
 
-Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/usaspending-gov-mcp. License: MIT.
+Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/usaspending-gov-mcp. License: MIT.
 
 ## RC5 pacing and tool-profile remediation (2026-08-22)
 

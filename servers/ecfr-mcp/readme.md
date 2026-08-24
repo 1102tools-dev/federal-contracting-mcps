@@ -1,6 +1,6 @@
 # ecfr-mcp
 
-<!-- mcp-name: io.github.1102tools/ecfr-mcp -->
+<!-- mcp-name: com.1102tools/ecfr-mcp -->
 
 MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplement text with no authentication required.
 

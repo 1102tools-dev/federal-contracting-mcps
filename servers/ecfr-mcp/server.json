@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.1102tools/ecfr-mcp",
+  "description": "Electronic Code of Federal Regulations including FAR, DFARS, and agency supplements. 13 tools.",
+  "title": "eCFR",
+  "repository": {
+    "url": "https://github.com/1102tools-dev/federal-contracting-mcps",
+    "source": "github",
+    "subfolder": "servers/ecfr-mcp"
+  },
+  "version": "1.0.6",
+  "websiteUrl": "https://1102tools.com",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "ecfr-mcp",
+      "version": "1.0.6",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

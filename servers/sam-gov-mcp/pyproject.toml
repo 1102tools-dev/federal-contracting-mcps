@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sam-gov-mcp"
-version = "1.0.9"
+version = "1.0.10"
 description = "MCP server for SAM.gov entity registration, exclusion, contract opportunity, and contract award data"
 readme = "readme.md"
 requires-python = ">=3.10"
@@ -35,8 +35,8 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://1102tools.com"
-Repository = "https://github.com/1102tools/federal-contracting-mcps"
-Issues = "https://github.com/1102tools/federal-contracting-mcps/issues"
+Repository = "https://github.com/1102tools-dev/federal-contracting-mcps"
+Issues = "https://github.com/1102tools-dev/federal-contracting-mcps/issues"
 
 [project.scripts]
 sam-gov-mcp = "sam_gov_mcp.server:main"

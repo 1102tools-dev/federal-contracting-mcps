@@ -1,6 +1,6 @@
 # bls-oews-mcp
 
-<!-- mcp-name: io.github.1102tools/bls-oews-mcp -->
+<!-- mcp-name: com.1102tools/bls-oews-mcp -->
 
 MCP server for the BLS Occupational Employment and Wage Statistics (OEWS) API. Market wage data for IGCE development, price analysis, and labor market research.
 

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.1102tools/sam-gov-mcp",
+  "description": "SAM.gov entities, exclusions, opportunities, awards, hierarchy, and subawards. 19 tools.",
+  "title": "SAM.gov",
+  "repository": {
+    "url": "https://github.com/1102tools-dev/federal-contracting-mcps",
+    "source": "github",
+    "subfolder": "servers/sam-gov-mcp"
+  },
+  "version": "1.0.10",
+  "websiteUrl": "https://1102tools.com",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "sam-gov-mcp",
+      "version": "1.0.10",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Free SAM.gov API key, which expires every 90 days.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string",
+          "name": "SAM_API_KEY"
+        }
+      ]
+    }
+  ]
+}

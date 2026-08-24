@@ -130,6 +130,34 @@ jobs:
           packages-dir: dist/
           skip-existing: true
 
+  publish-registry:
+    needs: publish
+    runs-on: ubuntu-latest
+    environment: mcp-registry-publish
+    env:
+      MCP_PRIVATE_KEY: ${{ secrets.MCP_PRIVATE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pinned MCP publisher
+        run: |
+          curl -fsSLO https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz
+          echo "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc  mcp-publisher_linux_amd64.tar.gz" | sha256sum --check
+          mkdir -p "${RUNNER_TEMP}/mcp-publisher"
+          tar -xzf mcp-publisher_linux_amd64.tar.gz -C "${RUNNER_TEMP}/mcp-publisher"
+          echo "${RUNNER_TEMP}/mcp-publisher" >> "${GITHUB_PATH}"
+
+      - name: Authenticate the com.1102tools namespace
+        run: mcp-publisher login http --domain 1102tools.com --private-key "${MCP_PRIVATE_KEY}"
+
+      - name: Validate and publish all nine servers
+        run: |
+          for manifest in servers/*/server.json; do
+            mcp-publisher validate "${manifest}"
+            mcp-publisher publish "${manifest}"
+          done
+
   # Bundles were dropped in 1.0.0, and the .mcpb workflow was what used to
   # create the GitHub Release. This keeps a Release (notes only, no assets)
   # for every tag so the Releases page stays the changelog landing spot.

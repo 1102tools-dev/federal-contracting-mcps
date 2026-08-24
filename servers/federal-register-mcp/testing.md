@@ -194,7 +194,7 @@ Testing spanned six rounds from initial hardening (17 findings including the pyd
 
 Test count: 232 regression tests (132 offline, 100 live-gated). Total items addressed: 44. Current version: 1.0.4. PyPI: `federal-register-mcp`.
 
-Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/federal-register-mcp. License: MIT.
+Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/federal-register-mcp. License: MIT.
 
 
 ## Round 7 (2026-08-18): suite-wide live verification (super-cycle)

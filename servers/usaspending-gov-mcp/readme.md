@@ -1,6 +1,6 @@
 # usaspending-gov-mcp
 
-<!-- mcp-name: io.github.1102tools/usaspending-gov-mcp -->
+<!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
 MCP server for the USASpending.gov federal contract, award, subaward, recipient, agency, and federal account API.
 

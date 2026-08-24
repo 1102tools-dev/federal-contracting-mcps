@@ -192,7 +192,7 @@ Testing spanned four retroactive rounds plus an initial WAF-calibration pass, a 
 
 Test count: 356 regression tests (247 offline, 109 live-gated). P1 crashes found and fixed: 19. P1 silent-wrong-data bugs found and fixed: 32. P2 validation gaps closed: 20. P3 cleanup items closed: 6. Retroactive additional findings: 12. Current version: 1.0.4. PyPI: `gsa-calc-mcp`.
 
-Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/gsa-calc-mcp. License: MIT.
+Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/gsa-calc-mcp. License: MIT.
 
 
 ## Round 7 (2026-08-18): suite-wide live verification (super-cycle)

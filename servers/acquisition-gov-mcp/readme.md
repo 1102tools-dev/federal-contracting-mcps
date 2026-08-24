@@ -1,5 +1,7 @@
 # Acquisition.gov MCP
 
+<!-- mcp-name: com.1102tools/acquisition-gov-mcp -->
+
 Read-only, deterministic MCP access to the official Acquisition.gov FAR Overhaul (RFO) model-part pages, the posted agency-deviation index, official deviation PDFs, and a small allowlist of RFO guidance resources.
 
 This server reports source content and metadata. It does **not** decide which rule governs a procurement. In particular, model deviation text is not treated as operative for an agency without that agency's posted deviation.
@@ -7,7 +9,7 @@ This server reports source content and metadata. It does **not** decide which ru
 ## Install
 
 ```bash
-uvx acquisition-gov-mcp==1.0.1
+uvx acquisition-gov-mcp==1.0.2
 ```
 
 The server uses stdio, requires no credentials, and defaults to a three-second cross-process interval between Acquisition.gov requests. `FEDERAL_API_MIN_INTERVAL_SECONDS` may increase or decrease that interval for controlled testing; production clients should retain three seconds.

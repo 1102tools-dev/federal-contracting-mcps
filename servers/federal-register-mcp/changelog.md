@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.5
+
+Publishes the package under the domain-verified
+`com.1102tools/federal-register-mcp` MCP Registry identity and updates
+project links to the `1102tools-dev` GitHub repository. No tool behavior
+changed.
+
 ## 1.0.4
 
 Serializes concurrent same-process requests by API identity before acquiring

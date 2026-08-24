@@ -193,7 +193,7 @@ Round 10 methodology: thirteen paced probe rounds (harness in `tests/live_audit/
 
 Test count: 1,142 regression tests (768 offline + 374 live-gated). Tests per tool: 60.1. Total items addressed across releases: 77. Current version: 1.0.8. PyPI: `sam-gov-mcp`.
 
-Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/sam-gov-mcp. License: MIT.
+Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/sam-gov-mcp. License: MIT.
 
 ## RC5 pacing remediation (2026-08-22)
 

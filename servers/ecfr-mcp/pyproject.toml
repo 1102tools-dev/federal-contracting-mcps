@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ecfr-mcp"
-version = "1.0.5"
+version = "1.0.6"
 description = "MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplements."
 readme = "readme.md"
 requires-python = ">=3.10"
@@ -42,8 +42,8 @@ dev = [
 
 [project.urls]
 Homepage = "https://1102tools.com"
-Repository = "https://github.com/1102tools/federal-contracting-mcps"
-Issues = "https://github.com/1102tools/federal-contracting-mcps/issues"
+Repository = "https://github.com/1102tools-dev/federal-contracting-mcps"
+Issues = "https://github.com/1102tools-dev/federal-contracting-mcps/issues"
 
 [project.scripts]
 ecfr-mcp = "ecfr_mcp.server:main"

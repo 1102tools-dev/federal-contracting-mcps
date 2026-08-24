@@ -171,7 +171,7 @@ Round-7 wave methodology: re-read the entire server source with no reliance on t
 
 Test count: 204 regression tests (85 offline + 119 live-gated). Total findings across all rounds: 34. Current version: 1.0.4. PyPI: `regulationsgov-mcp`.
 
-Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/regulations-gov-mcp. License: MIT.
+Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/regulations-gov-mcp. License: MIT.
 
 
 ## Round 8 (2026-08-18): suite-wide live verification (super-cycle)

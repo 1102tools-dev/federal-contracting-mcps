@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2
+
+Publishes the package under the domain-verified
+`com.1102tools/acquisition-gov-mcp` MCP Registry identity and updates
+project links to the `1102tools-dev` GitHub repository. No tool behavior
+changed.
+
 ## 1.0.1
 
 Serializes concurrent same-process requests by API identity before acquiring

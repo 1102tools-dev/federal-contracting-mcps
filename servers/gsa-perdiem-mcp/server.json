@@ -1,0 +1,33 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.1102tools/gsa-perdiem-mcp",
+  "description": "GSA Per Diem federal travel lodging and meals and incidental expense rates. 6 tools.",
+  "title": "GSA Per Diem",
+  "repository": {
+    "url": "https://github.com/1102tools-dev/federal-contracting-mcps",
+    "source": "github",
+    "subfolder": "servers/gsa-perdiem-mcp"
+  },
+  "version": "1.0.7",
+  "websiteUrl": "https://1102tools.com",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "gsa-perdiem-mcp",
+      "version": "1.0.7",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Optional free api.data.gov key for higher request limits.",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string",
+          "name": "PERDIEM_API_KEY"
+        }
+      ]
+    }
+  ]
+}

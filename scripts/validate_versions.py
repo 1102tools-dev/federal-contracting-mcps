@@ -33,6 +33,45 @@ def main() -> int:
             failures.append(f"{directory}: project version not found")
             continue
         expected = match.group(1)
+        if "https://github.com/1102tools/" in pyproject:
+            failures.append(f"{directory}: pyproject contains stale GitHub URLs")
+        registry_name = f"com.1102tools/{directory}"
+        readme = (project / "readme.md").read_text(encoding="utf-8")
+        if f"mcp-name: {registry_name}" not in readme:
+            failures.append(
+                f"{directory}: README MCP name does not match {registry_name}"
+            )
+        manifest_path = project / "server.json"
+        if not manifest_path.is_file():
+            failures.append(f"{directory}: server.json not found")
+        else:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            packages = manifest.get("packages", [])
+            package = packages[0] if len(packages) == 1 else {}
+            if manifest.get("name") != registry_name:
+                failures.append(
+                    f"{directory}: registry name={manifest.get('name')!r}, "
+                    f"expected={registry_name!r}"
+                )
+            if manifest.get("version") != expected:
+                failures.append(
+                    f"{directory}: registry version={manifest.get('version')!r}, "
+                    f"expected={expected!r}"
+                )
+            if package.get("identifier") != distribution:
+                failures.append(
+                    f"{directory}: registry package={package.get('identifier')!r}, "
+                    f"expected={distribution!r}"
+                )
+            if package.get("version") != expected:
+                failures.append(
+                    f"{directory}: registry package version={package.get('version')!r}, "
+                    f"expected={expected!r}"
+                )
+            if manifest.get("repository", {}).get("url") != (
+                "https://github.com/1102tools-dev/federal-contracting-mcps"
+            ):
+                failures.append(f"{directory}: registry repository URL is stale")
         code = (
             "import json, importlib.metadata as m; "
             f"import {module} as p; from {module}.constants import USER_AGENT; "

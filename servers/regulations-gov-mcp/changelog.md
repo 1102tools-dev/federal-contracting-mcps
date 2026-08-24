@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.6
+
+Publishes the package under the domain-verified
+`com.1102tools/regulations-gov-mcp` MCP Registry identity and updates
+project links to the `1102tools-dev` GitHub repository. No tool behavior
+changed.
+
 ## 1.0.5
 
 Redacts raw and URL-encoded Regulations.gov API credentials from upstream

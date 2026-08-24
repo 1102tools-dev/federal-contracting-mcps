@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.7
+
+Publishes the package under the domain-verified
+`com.1102tools/bls-oews-mcp` MCP Registry identity and updates project
+links to the `1102tools-dev` GitHub repository. No tool behavior changed.
+
 ## 1.0.6
 
 Redacts the active BLS registration key from upstream response bodies,

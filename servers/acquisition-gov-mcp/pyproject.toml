@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "acquisition-gov-mcp"
-version = "1.0.1"
+version = "1.0.2"
 description = "Deterministic MCP access to Acquisition.gov FAR Overhaul model text, guidance, and posted agency deviations."
 readme = "readme.md"
 requires-python = ">=3.10"
@@ -33,8 +33,8 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://1102tools.com"
-Repository = "https://github.com/1102tools/federal-contracting-mcps"
-Issues = "https://github.com/1102tools/federal-contracting-mcps/issues"
+Repository = "https://github.com/1102tools-dev/federal-contracting-mcps"
+Issues = "https://github.com/1102tools-dev/federal-contracting-mcps/issues"
 
 [project.scripts]
 acquisition-gov-mcp = "acquisition_gov_mcp.server:main"

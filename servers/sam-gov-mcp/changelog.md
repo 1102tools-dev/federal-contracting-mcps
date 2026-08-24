@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.10
+
+Publishes the package under the domain-verified
+`com.1102tools/sam-gov-mcp` MCP Registry identity, updates project links
+to the `1102tools-dev` GitHub repository, and corrects the registry tool
+count to 19. No tool behavior changed.
+
 ## 1.0.9
 
 Redacts raw and URL-encoded SAM.gov credentials from upstream bodies, parsed

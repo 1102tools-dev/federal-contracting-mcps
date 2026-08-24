@@ -192,7 +192,7 @@ Round 7 methodology: re-read the entire server source with no reliance on this d
 
 Test count: 441 regression tests (186 offline + 255 live-gated). Tests per tool: 73.5. Total findings across all rounds: 69. Current version: 1.0.5. PyPI: `gsa-perdiem-mcp`.
 
-Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp. License: MIT.
+Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp. License: MIT.
 
 
 ## Round 8 (2026-08-18): suite-wide live verification (super-cycle)

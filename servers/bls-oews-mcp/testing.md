@@ -227,7 +227,7 @@ Round 7 methodology: re-read the entire server source with no reliance on this d
 
 Test count: 249 regression tests (85 offline, 164 live-gated). Total findings across all rounds: 35. Current version: 1.0.5. PyPI: `bls-oews-mcp`.
 
-Source: github.com/1102tools/federal-contracting-mcps/tree/main/servers/bls-oews-mcp. License: MIT.
+Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/bls-oews-mcp. License: MIT.
 
 
 ## Round 8 (2026-08-18): suite-wide live verification (super-cycle)
