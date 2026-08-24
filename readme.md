@@ -8,13 +8,30 @@ Website: [1102tools.com](https://1102tools.com)
 
 ## Most users should start with an agent
 
-The packaged [1102tools agents](https://github.com/1102tools-dev/federal-contracting-agents) already include the source connections required by each guided job. The beginner-facing [Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers Codex and Claude Code.
+The packaged [1102tools agents](https://github.com/1102tools-dev/federal-contracting-agents) include the source integrations required by each guided job. Some federal providers still require a free account or API key. The beginner-facing [HTML setup instructions](https://1102tools.com/setup) and [downloadable Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) cover Codex and Claude Code.
 
 Use this repository when you specifically want standalone source servers or custom MCP configurations. Follow each selected server's README and testing record; standalone setup is advanced and self-supported. The MCP-oriented [request library](https://github.com/1102tools-dev/federal-contracting-prompts) remains available as a repository, not a maintained PDF product.
 
 ![Architecture diagram showing how a question travels from an AI client to a local MCP server and an official federal source. Regulatory and rulemaking coverage now includes eCFR, Federal Register, Regulations.gov, and Acquisition.gov.](docs/architecture.png)
 
 ---
+
+## Credential-readiness correction (August 2026)
+
+SAM.gov `1.0.11`, BLS OEWS `1.0.8`, GSA Per Diem `1.0.8`, and Regulations.gov `1.0.7` expose the same read-only `get_access_status` tool. It checks credential presence locally and never displays, transmits, logs, or validates the value.
+
+| Server | No user key | Reported status |
+|---|---|---|
+| SAM.gov | SAM operations cannot run without `SAM_API_KEY` | `missing_required` |
+| BLS OEWS | v1 fallback: 25 requests/day and 10 years/query | `limited_fallback` |
+| GSA Per Diem | Shared `DEMO_KEY`: approximately 10 requests/hour | `limited_fallback` |
+| Regulations.gov | Shared `DEMO_KEY`: approximately 10 requests/hour | `limited_fallback` |
+
+Expected missing, rejected, authorization, rate-limit, network, malformed-response, and sanitized upstream failures return actionable MCP `ToolError` messages. A missing key is never retried or described as a provider outage. Configure credentials outside chat, restart the client, and rerun `get_access_status`.
+
+- SAM.gov setup: [SAM.gov Help](https://sam.gov/help)
+- BLS setup: [BLS registration](https://data.bls.gov/registrationEngine/)
+- Per Diem and Regulations.gov setup: [api.data.gov signup](https://api.data.gov/signup/)
 
 ## Safety release v1.0.9 (August 2026)
 
@@ -51,7 +68,7 @@ the others.
 
 The MCP Python SDK, the library every one of these servers is built on, released version 2.0 in July. It renamed its high-level server class from `FastMCP` to `MCPServer` and removed the old module entirely. Every server uses it.
 
-The original eight retain the same 124 tools, parameters, and responses. Acquisition.gov adds five source-specific tools, bringing the catalog to 129. The dependency is bounded at `mcp>=2.0.0,<3`, so the next major SDK release produces a clean error at install time instead of a crash at startup.
+The original eight retained the same 124 data tools at the stable baseline. Acquisition.gov added five source-specific tools, bringing that baseline to 129. Four later local readiness tools bring the current catalog to 133. The dependency is bounded at `mcp>=2.0.0,<3`, so the next major SDK release produces a clean error at install time instead of a crash at startup.
 
 ### Two problems this release fixes, and both were affecting people
 
@@ -90,13 +107,13 @@ All source lives under `servers/<name>/`. Each server is self-contained: code, t
 - [regulations-gov-mcp](servers/regulations-gov-mcp): federal rulemaking dockets, public comments, comment period tracking
 - [acquisition-gov-mcp](servers/acquisition-gov-mcp): RFO model-part pages, the official posted agency-deviation index, indexed deviation PDFs, and approved RFO guidance
 
-Combined: 129 deterministic tool calls and 5,099 collected package tests. The Acquisition.gov live source gate passed on 2026-08-22; future releases must repeat it because upstream content and availability can change.
+Combined: 133 deterministic tools. The Acquisition.gov live source gate passed on 2026-08-22; future releases must repeat it because upstream content and availability can change.
 
 ## Install
 
 Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/). MCP is an open standard, but standalone client setup is outside the beginner support path. Use the exact configuration and current evidence in the selected server directory.
 
-**1. Register the free API keys you need.** [BLS](https://data.bls.gov/registrationEngine/), [api.data.gov](https://api.data.gov/signup/) (covers Per Diem and Regulations.gov), [SAM.gov](https://sam.gov/). USASpending, GSA CALC+, eCFR, Federal Register, and Acquisition.gov need no key.
+**1. Register the free API keys you need.** [BLS](https://data.bls.gov/registrationEngine/), [api.data.gov](https://api.data.gov/signup/) (covers Per Diem and Regulations.gov), and [SAM.gov Help](https://sam.gov/help). USASpending, GSA CALC+, eCFR, Federal Register, and Acquisition.gov need no key. Never paste a key into chat.
 
 **2. Add the servers you want to your client config.** Configuration surfaces differ by client. Use the selected server's README as the source of truth, verify the server starts, and confirm its tools are actually visible before relying on it.
 
