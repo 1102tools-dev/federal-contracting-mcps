@@ -865,12 +865,27 @@ def test_cfr_identifier_params_are_typed():
     asyncio.run(_run())
 
 
-def test_decimal_section_survives_as_string():
+def test_decimal_section_survives_as_string(monkeypatch):
     """4.130 and 4.13 are different sections and must not collapse."""
+    observed_sections = []
+
+    async def fake_get_xml(path, params=None):
+        observed_sections.append(params["section"])
+        return "<HEAD>Test section</HEAD><P>Test text.</P>"
+
+    monkeypatch.setattr(srv, "_get_xml", fake_get_xml)
+
     async def _run():
         for sec in ("4.130", "4.13"):
             r = await mcp.call_tool(
-                "get_cfr_content", {"title_number": 38, "part": 4, "section": sec}
+                "get_cfr_content",
+                {
+                    "title_number": 38,
+                    "part": 4,
+                    "section": sec,
+                    "date": "2026-01-01",
+                },
             )
             assert "must be a string or integer" not in json.dumps(_payload(r))
     asyncio.run(_run())
+    assert observed_sections == ["4.130", "4.13"]
