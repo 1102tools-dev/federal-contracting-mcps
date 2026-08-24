@@ -58,6 +58,11 @@ def main() -> int:
                     f"{directory}: registry version={manifest.get('version')!r}, "
                     f"expected={expected!r}"
                 )
+            description = manifest.get("description")
+            if not isinstance(description, str) or len(description) > 100:
+                failures.append(
+                    f"{directory}: registry description must be a string of at most 100 characters"
+                )
             if package.get("identifier") != distribution:
                 failures.append(
                     f"{directory}: registry package={package.get('identifier')!r}, "
