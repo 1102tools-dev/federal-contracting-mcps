@@ -12,6 +12,10 @@ from mcp.server.mcpserver.exceptions import ToolError
 import gsa_perdiem_mcp.server as srv
 
 
+def test_server_suppresses_credential_bearing_http_info_logs() -> None:
+    assert srv.mcp.settings.log_level == "WARNING"
+
+
 SECRET = "rc5-perdiem-secret/value"
 
 

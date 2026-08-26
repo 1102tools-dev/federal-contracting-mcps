@@ -12,6 +12,10 @@ from mcp.server.mcpserver.exceptions import ToolError
 import regulationsgov_mcp.server as srv
 
 
+def test_server_suppresses_credential_bearing_http_info_logs() -> None:
+    assert srv.mcp.settings.log_level == "WARNING"
+
+
 SECRET = "rc5-regulations-secret/value"
 
 

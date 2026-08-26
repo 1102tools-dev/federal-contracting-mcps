@@ -12,6 +12,10 @@ from mcp.server.mcpserver.exceptions import ToolError
 import bls_oews_mcp.server as srv
 
 
+def test_server_suppresses_credential_bearing_http_info_logs() -> None:
+    assert srv.mcp.settings.log_level == "WARNING"
+
+
 SECRET = "rc5-regression-secret"
 SERIES = ["OEUN000000000000015125200"]
 

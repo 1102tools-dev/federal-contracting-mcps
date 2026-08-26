@@ -38,6 +38,9 @@ from .constants import (
 mcp = MCPServer(
     "regulationsgov",
     version=__version__,
+    # Regulations.gov authenticates in the query string and HTTPX logs full
+    # request URLs at INFO. Do not allow credentials into host stderr logs.
+    log_level="WARNING",
     instructions=(
         "Before the first Regulations.gov data call in a session, call "
         "get_access_status and disclose the DEMO_KEY limit when "

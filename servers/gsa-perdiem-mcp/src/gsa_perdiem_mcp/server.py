@@ -34,6 +34,9 @@ from .constants import BASE_URL, DEFAULT_TIMEOUT, USER_AGENT
 mcp = MCPServer(
     "gsa-perdiem",
     version=__version__,
+    # HTTPX INFO logs include request URLs, including query credentials used by
+    # this API. Keep host stderr credential-safe by default.
+    log_level="WARNING",
     instructions=(
         "Before the first Per Diem data call in a session, call get_access_status "
         "and disclose the DEMO_KEY limit when PERDIEM_API_KEY is not configured."

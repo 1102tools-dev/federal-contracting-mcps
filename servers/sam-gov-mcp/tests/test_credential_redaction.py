@@ -44,6 +44,10 @@ def test_invalid_format_guidance_never_echoes_prefix(
     assert invalid[:10] not in str(captured.value)
 
 
+def test_server_suppresses_credential_bearing_http_info_logs() -> None:
+    assert srv.mcp.settings.log_level == "WARNING"
+
+
 def test_error_formatting_redacts_raw_and_encoded_key() -> None:
     body = f"raw={SECRET}&api_key={SECRET}"
     rendered = srv._format_error(400, body, SECRET)

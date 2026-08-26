@@ -48,6 +48,9 @@ from .constants import (
 mcp = MCPServer(
     "bls-oews",
     version=__version__,
+    # Suppress HTTPX INFO request URLs; keyed BLS calls may carry registration
+    # credentials in request data that must never enter host logs.
+    log_level="WARNING",
     instructions=(
         "Before the first BLS data call in a session, call get_access_status and "
         "disclose the 25-requests-per-day v1 fallback when no BLS_API_KEY is configured."

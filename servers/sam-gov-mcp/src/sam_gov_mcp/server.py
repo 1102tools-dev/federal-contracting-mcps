@@ -56,6 +56,9 @@ from .constants import (
 mcp = MCPServer(
     "sam-gov",
     version=__version__,
+    # HTTPX includes query strings in INFO request logs. SAM authenticates in
+    # the query string, so INFO logging would expose the credential to hosts.
+    log_level="WARNING",
     instructions=(
         "Before the first SAM.gov data call in a session, call get_access_status. "
         "If it reports missing_required, tell the user SAM_API_KEY is not configured "
