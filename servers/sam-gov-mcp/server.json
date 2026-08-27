@@ -8,14 +8,14 @@
     "source": "github",
     "subfolder": "servers/sam-gov-mcp"
   },
-  "version": "1.0.11",
+  "version": "1.0.12",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "sam-gov-mcp",
-      "version": "1.0.11",
+      "version": "1.0.12",
       "transport": {
         "type": "stdio"
       },

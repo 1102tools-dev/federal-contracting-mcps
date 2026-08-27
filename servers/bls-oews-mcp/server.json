@@ -8,14 +8,14 @@
     "source": "github",
     "subfolder": "servers/bls-oews-mcp"
   },
-  "version": "1.0.8",
+  "version": "1.0.9",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "bls-oews-mcp",
-      "version": "1.0.8",
+      "version": "1.0.9",
       "transport": {
         "type": "stdio"
       },

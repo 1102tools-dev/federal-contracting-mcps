@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.12
+
+Prevents HTTP client debug logging from recording credential-bearing request
+URLs. Tool schemas, readiness behavior, source routing, and results are
+unchanged.
+
 ## 1.0.11
 
 Adds a presence-only `get_access_status` tool and server instructions that make
