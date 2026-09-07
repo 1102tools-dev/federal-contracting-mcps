@@ -20,5 +20,8 @@
   "openai_version_id": "asdk_app_v_6a9ee669edd4819183ddd827ce25e6fe",
   "domain_verified": true,
   "portal_tools_scanned": 55,
-  "worker_deployment_id": "eb0d2e12060a4e11934a63150ac28297"
+  "worker_deployment_id": "eb0d2e12060a4e11934a63150ac28297",
+  "chatgpt_dev_app_id": "asdk_app_6a9ee7936a3c8191ae6b19e9793a7e1c",
+  "chatgpt_dev_version_id": "asdk_app_v_6a9ee7936a488191b633a0de1d610deb",
+  "chatgpt_demo_conversation": "https://chatgpt.com/c/6a9ee7b6-5ae8-83ea-bd37-c9833a051ac4"
 }

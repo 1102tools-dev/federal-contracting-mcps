@@ -47,3 +47,7 @@ The intermediate Worker update temporarily omitted the containers metadata decla
 - Final settled production run: all 55 distinct tools passed (56 successful calls, including two award bootstrap fixtures), with zero failures. See live-results.json.
 - Official MCP Python client also successfully called awards_last_updated against production.
 - Final Worker TypeScript check and git diff --check passed.
+
+## ChatGPT Developer Mode check
+
+User approved enabling Developer mode and adding this endpoint. Developer mode and CSP enforcement were enabled. ChatGPT confirmed USAspending MCP connected with no authentication and displayed the server tools. A real software-contract query returned five awards with identifiers and amounts, explained FY2025 dates, and distinguished cumulative award obligations from fiscal-year activity. The follow-up also completed successfully, returning the matching generated award ID, five recent transactions, funding records, and a clear distinction between transaction obligations, cumulative obligations, and outlays. No video recording has been captured; opening the macOS recording app through computer-use controls timed out. The conversation is recorded in deployment.json for continuation.
