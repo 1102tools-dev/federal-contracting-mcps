@@ -1,0 +1,14 @@
+{
+  "url": "https://1102tools.com/downloads/gsa-calc-demo-2026-09-07.mp4",
+  "duration_seconds": 127.866667,
+  "sha256": "54781dd6785618dd4099dd55edf13610f90452e821214a401dda4610b2961794",
+  "full_decode": "passed",
+  "public_bytes_match": true,
+  "browser_playback": {
+    "readyState": 4,
+    "paused": false,
+    "currentTime": 15.069466
+  },
+  "chat_url": "https://chatgpt.com/c/6a9ef511-4c78-83ea-adea-703f86c2302e",
+  "submission_status": "draft_pending_owner_attestations"
+}
