@@ -55,3 +55,7 @@ Demo recording: https://1102tools.com/downloads/usaspending-demo-2026-09-07.mp4.
 ## Submission attempt September 7
 
 User explicitly approved all final attestations and Submit for Review. All seven policy checkboxes and the no-adult-content selection persisted after refresh. Three submission attempts returned portal save errors (first Conflict, then Please retry the request). The plugin listing still showed version 1.0.0 as Draft. No successful submission or review-queue confirmation. Authorization remains granted; no need to ask again for the same submission.
+
+## Review confirmed September 7
+
+The user completed submission in the portal. Browser verification confirmed USAspending MCP version 1.0.0 status Review. Earlier save errors are resolved; review approval and publication remain pending.
