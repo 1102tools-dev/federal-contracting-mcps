@@ -1,6 +1,6 @@
 # USAspending MCP submission draft
 
-Status: deployed public pilot; production validation in progress. Not submitted to the directory.
+Status: deployed public pilot; all 55 tools passed production smoke tests. OpenAI draft created, identity and domain verified, and 55 tools scanned. Not submitted for review.
 
 - Publisher: James Jenrette / 1102tools
 - Name: USAspending MCP
@@ -43,3 +43,11 @@ Initial remote pilot of the existing 55-tool USAspending server. Adds stateless 
 
 ## Portal work still required
 Verify publisher identity and Apps Management permission. Generate the domain challenge in the portal and host its exact token. Scan the production endpoint, address findings, run the review cases in a supported client, record the actual demo, and submit accurate attestations. Approval and publication remain separate portal events.
+
+## Portal progress September 7
+
+Draft: https://platform.openai.com/plugins/edit/asdk_app_6a9ee668cc248191a0bdb9911b546799/asdk_app_v_6a9ee669edd4819183ddd827ce25e6fe
+
+Saved listing, verified individual publisher, Data & Analytics category, public URLs, no-auth MCP connection, 165 annotation explanations, three starter prompts, five positive review scenarios, three negative routing examples, and release notes. Default availability remains all supported countries. The portal confirmed domain verification and discovered all 55 tools. No skills uploaded.
+
+Outstanding: actual ChatGPT Developer Mode demo video URL and final user-reviewed policy attestations. No attestations accepted and no submission sent. Negative portal examples are award-record modification, personal bank-budget analysis, and current SAM solicitations/bid submission; the error-handling tests above remain engineering coverage rather than negative routing examples.
