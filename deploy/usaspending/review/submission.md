@@ -2,7 +2,7 @@
 
 Status: deployed public pilot; all 55 tools passed production smoke tests. OpenAI draft created, identity and domain verified, and 55 tools scanned. Not submitted for review.
 
-- Publisher: James Jenrette / 1102tools
+- Publisher: James Prentiss Jenrette (verified individual); 1102tools branding
 - Name: USAspending MCP
 - Short description: Explore federal spending
 - Submission type: With MCP; no custom UI or uploaded skills
@@ -50,4 +50,4 @@ Draft: https://platform.openai.com/plugins/edit/asdk_app_6a9ee668cc248191a0bdb99
 
 Saved listing, verified individual publisher, Data & Analytics category, public URLs, no-auth MCP connection, 165 annotation explanations, three starter prompts, five positive review scenarios, three negative routing examples, and release notes. Default availability remains all supported countries. The portal confirmed domain verification and discovered all 55 tools. No skills uploaded.
 
-Outstanding: actual ChatGPT Developer Mode demo video URL and final user-reviewed policy attestations. No attestations accepted and no submission sent. Negative portal examples are award-record modification, personal bank-budget analysis, and current SAM solicitations/bid submission; the error-handling tests above remain engineering coverage rather than negative routing examples.
+Demo recording: https://1102tools.com/downloads/usaspending-demo-2026-09-07.mp4. Public HTTP 200, video/mp4, byte-identical SHA-256 9d22647480b99198b62859c3e2f572c1a2548a21bb0d982ded75d91209eb2cde; browser playback and complete decode verified. Light/dark directory and composer icons uploaded. Test case 5 uses PSC 7030 with identical FY2025 contract filters. Outstanding: final user-reviewed policy attestations. No attestations accepted and no submission sent. Negative portal examples are award-record modification, personal bank-budget analysis, and current SAM solicitations/bid submission; the error-handling tests above remain engineering coverage rather than negative routing examples.
