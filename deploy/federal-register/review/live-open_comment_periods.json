@@ -1,0 +1,155 @@
+{
+  "as_of": "2026-09-07",
+  "total_open": 67,
+  "scanned": 67,
+  "scan_cap": 500,
+  "returned": 3,
+  "limit": 3,
+  "documents": [
+    {
+      "title": "Energy Conservation Program: Review of DOE's Analytic Methods for Setting Energy Conservation Standards",
+      "document_number": "2026-13673",
+      "publication_date": "2026-07-07",
+      "type": "Proposed Rule",
+      "abstract": "The U.S. Department of Energy (\"DOE\" or the \"Department\") requests comment regarding the assumptions, models, and methodologies that DOE uses in setting energy conservation standards for covered products and equipment. Relatedly, DOE also requests comments on the report summarizing the work conducted by the National Academies of Sciences, Engineering, and Medicine (\"NASEM\") Committee on Review of Methods for Setting Building and Equipment Performance Standards. DOE also welcomes the submission of data, peer-reviewed studies, and other relevant information related to how DOE might implement NASEM report recommendations and to DOE's analytical methodology for evaluating energy conservation standards in general.",
+      "agencies": [
+        {
+          "raw_name": "DEPARTMENT OF ENERGY",
+          "name": "Energy Department",
+          "id": 136,
+          "url": "https://www.federalregister.gov/agencies/energy-department",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/136",
+          "parent_id": null,
+          "slug": "energy-department"
+        }
+      ],
+      "docket_ids": [
+        "EERE-2022-BT-OT-0004"
+      ],
+      "regulation_id_numbers": [],
+      "comment_url": "http://www.regulations.gov/commenton/EERE-2022-BT-OT-0004-0001",
+      "comments_close_on": "2026-09-08",
+      "cfr_references": [
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "430",
+          "title": 10
+        },
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "431",
+          "title": 10
+        }
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/07/07/2026-13673/energy-conservation-program-review-of-does-analytic-methods-for-setting-energy-conservation",
+      "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-07-07/pdf/2026-13673.pdf",
+      "citation": "91 FR 41578",
+      "dates": "Written comments and information are requested and will be accepted on or before September 8, 2026.",
+      "effective_on": null,
+      "action": "Request for information and request for comments.",
+      "significant": null
+    },
+    {
+      "title": "Anti-Money Laundering and Countering the Financing of Terrorism Programs",
+      "document_number": "2026-13919",
+      "publication_date": "2026-07-09",
+      "type": "Proposed Rule",
+      "abstract": "The Board of Governors of the Federal Reserve System (the Board) is inviting comment on a proposed rule that would require its supervised banks to establish and maintain effective anti-money laundering and countering the financing of terrorism (AML/CFT) programs reasonably designed to identify, assess, and mitigate risks of illicit finance. Among other changes, this proposed rule would ensure that Board-supervised banks establish and maintain effective AML/CFT programs that are intended to better achieve the purposes of the Bank Secrecy Act (BSA), culminating in the development of highly useful information related to illicit financial transactions for law enforcement and national security agencies. The amendments are intended to align with changes to AML/CFT program requirements proposed by the Financial Crimes Enforcement Network (FinCEN) to implement provisions of the Anti-Money Laundering Act of 2020 (AML Act) and corresponding changes proposed by the Office of the Comptroller of the Currency (OCC), Federal Deposit Insurance Corporation (FDIC), and the National Credit Union Administration (NCUA) (collectively, \"the Agencies\") on April 10, 2026.",
+      "agencies": [
+        {
+          "raw_name": "FEDERAL RESERVE SYSTEM",
+          "name": "Federal Reserve System",
+          "id": 188,
+          "url": "https://www.federalregister.gov/agencies/federal-reserve-system",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/188",
+          "parent_id": null,
+          "slug": "federal-reserve-system"
+        }
+      ],
+      "docket_ids": [
+        "Docket No. R-1835"
+      ],
+      "regulation_id_numbers": [
+        "7100-AG78"
+      ],
+      "comment_url": null,
+      "comments_close_on": "2026-09-08",
+      "cfr_references": [
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "208",
+          "title": 12
+        }
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/07/09/2026-13919/anti-money-laundering-and-countering-the-financing-of-terrorism-programs",
+      "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-07-09/pdf/2026-13919.pdf",
+      "citation": "91 FR 42363",
+      "dates": "Comments must be submitted on or before September 8, 2026.",
+      "effective_on": null,
+      "action": "Notice of proposed rulemaking.",
+      "significant": null
+    },
+    {
+      "title": "Rescission of Floodplain Management and Protection of Wetlands; Minimum Property Standards for Flood Hazard Exposure; Building to the Federal Flood Risk Management Standard",
+      "document_number": "2026-13939",
+      "publication_date": "2026-07-10",
+      "type": "Proposed Rule",
+      "abstract": "This proposed rule would revise HUD's regulations governing floodplain management and the protection of wetlands in accordance with Executive Order 14148, entitled \"Initial Rescissions of Harmful Executive Orders and Actions.\" Executive Order 14148 revoked an earlier executive order that formed a basis for the final rule that HUD published on April 23, 2024, entitled \"Floodplain Management and Protection of Wetlands; Minimum Property Standards for Flood Hazard Exposure; Building to the Federal Flood Risk Management Standard.\" This proposed rule generally would restore HUD's regulations to their state prior to the publication of the April 23, 2024, final rule, although it would maintain flexibilities from that rule related to floodways, categorical exclusions, exemptions from Part 55 applicability, and the decisionmaking process; it also proposes minor revisions for clarity.",
+      "agencies": [
+        {
+          "raw_name": "DEPARTMENT OF HOUSING AND URBAN DEVELOPMENT",
+          "name": "Housing and Urban Development Department",
+          "id": 228,
+          "url": "https://www.federalregister.gov/agencies/housing-and-urban-development-department",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/228",
+          "parent_id": null,
+          "slug": "housing-and-urban-development-department"
+        }
+      ],
+      "docket_ids": [
+        "Docket No. FR-6527-P-01"
+      ],
+      "regulation_id_numbers": [
+        "2506-AC60"
+      ],
+      "comment_url": "http://www.regulations.gov/commenton/HUD-2026-1090-0001",
+      "comments_close_on": "2026-09-08",
+      "cfr_references": [
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "50",
+          "title": 24
+        },
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "55",
+          "title": 24
+        },
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "58",
+          "title": 24
+        },
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "200",
+          "title": 24
+        }
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/07/10/2026-13939/rescission-of-floodplain-management-and-protection-of-wetlands-minimum-property-standards-for-flood",
+      "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-07-10/pdf/2026-13939.pdf",
+      "citation": "91 FR 42685",
+      "dates": "Comment Due Date: September 8, 2026.",
+      "effective_on": null,
+      "action": "Proposed rule.",
+      "significant": true
+    }
+  ]
+}

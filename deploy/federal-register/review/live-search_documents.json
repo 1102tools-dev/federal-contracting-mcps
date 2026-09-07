@@ -1,0 +1,142 @@
+{
+  "description": "Documents matching 'Federal Acquisition Regulation'",
+  "count": 10000,
+  "total_pages": 50,
+  "next_page_url": "https://www.federalregister.gov/api/v1/documents?conditions%5Bterm%5D=Federal+Acquisition+Regulation&fields%5B%5D=title&fields%5B%5D=document_number&fields%5B%5D=publication_date&fields%5B%5D=type&fields%5B%5D=abstract&fields%5B%5D=agencies&fields%5B%5D=docket_ids&fields%5B%5D=regulation_id_numbers&fields%5B%5D=comment_url&fields%5B%5D=comments_close_on&fields%5B%5D=cfr_references&fields%5B%5D=html_url&fields%5B%5D=pdf_url&fields%5B%5D=citation&fields%5B%5D=dates&fields%5B%5D=effective_on&fields%5B%5D=action&fields%5B%5D=significant&format=json&order=newest&page=2&per_page=3",
+  "results": [
+    {
+      "title": "Car Loan Interest Deduction",
+      "document_number": "2026-18219",
+      "publication_date": "2026-09-08",
+      "type": "Rule",
+      "abstract": "This document contains final regulations regarding the deduction for certain taxpayers for an amount up to $10,000 of qualified passenger vehicle loan interest. This document also contains final regulations regarding new information reporting requirements for certain persons who, in a trade or business, receive from any individual interest aggregating $600 or more for any calendar year on a specified passenger vehicle loan, including applicable penalties for failures to file information returns or furnish payee statements as required. These regulations affect taxpayers that may deduct qualified passenger vehicle loan interest, and also persons subject to these information reporting requirements.",
+      "agencies": [
+        {
+          "raw_name": "DEPARTMENT OF THE TREASURY",
+          "name": "Treasury Department",
+          "id": 497,
+          "url": "https://www.federalregister.gov/agencies/treasury-department",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/497",
+          "parent_id": null,
+          "slug": "treasury-department"
+        },
+        {
+          "raw_name": "Internal Revenue Service",
+          "name": "Internal Revenue Service",
+          "id": 254,
+          "url": "https://www.federalregister.gov/agencies/internal-revenue-service",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/254",
+          "parent_id": 497,
+          "slug": "internal-revenue-service"
+        }
+      ],
+      "docket_ids": [
+        "TD 10054"
+      ],
+      "regulation_id_numbers": [
+        "1545-BR75"
+      ],
+      "comment_url": null,
+      "comments_close_on": null,
+      "cfr_references": [
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "1",
+          "title": 26
+        },
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "301",
+          "title": 26
+        }
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/09/08/2026-18219/car-loan-interest-deduction",
+      "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-08/pdf/2026-18219.pdf",
+      "citation": "91 FR 57214",
+      "dates": "Effective date: The final regulations are effective on November 9, 2026.",
+      "effective_on": "2026-11-09",
+      "action": "Final regulations.",
+      "significant": null
+    },
+    {
+      "title": "Transfer Agent Rules",
+      "document_number": "2026-18190",
+      "publication_date": "2026-09-04",
+      "type": "Proposed Rule",
+      "abstract": "The U.S. Securities and Exchange Commission (\"SEC\" or \"Commission\") is proposing to adopt new rules, amend existing rules, amend the existing form for registration with the Commission as a transfer agent (Form TA-1) and the existing form for reporting activities of transfer agents (Form TA-2), and rescind an existing rule governing registered transfer agents. The proposals are designed to modernize the rules governing registered transfer agents.",
+      "agencies": [
+        {
+          "raw_name": "SECURITIES AND EXCHANGE COMMISSION",
+          "name": "Securities and Exchange Commission",
+          "id": 466,
+          "url": "https://www.federalregister.gov/agencies/securities-and-exchange-commission",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/466",
+          "parent_id": null,
+          "slug": "securities-and-exchange-commission"
+        }
+      ],
+      "docket_ids": [
+        "Release No. 34-106246",
+        "File No. S7-2026-30"
+      ],
+      "regulation_id_numbers": [
+        "3235-AL55"
+      ],
+      "comment_url": null,
+      "comments_close_on": "2026-11-03",
+      "cfr_references": [
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "240",
+          "title": 17
+        },
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "249",
+          "title": 17
+        }
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/09/04/2026-18190/transfer-agent-rules",
+      "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-04/pdf/2026-18190.pdf",
+      "citation": "91 FR 56946",
+      "dates": "This release was published in the Federal Register on September 4, 2026. Comments should be received on or before November 3, 2026.",
+      "effective_on": "2026-09-04",
+      "action": "Proposed rule.",
+      "significant": true
+    },
+    {
+      "title": "Change in Bank Control Notices; Acquisitions of Shares of a Bank or Bank Holding Company",
+      "document_number": "2026-18187",
+      "publication_date": "2026-09-04",
+      "type": "Notice",
+      "abstract": null,
+      "agencies": [
+        {
+          "raw_name": "FEDERAL RESERVE SYSTEM",
+          "name": "Federal Reserve System",
+          "id": 188,
+          "url": "https://www.federalregister.gov/agencies/federal-reserve-system",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/188",
+          "parent_id": null,
+          "slug": "federal-reserve-system"
+        }
+      ],
+      "docket_ids": [],
+      "regulation_id_numbers": [],
+      "comment_url": null,
+      "comments_close_on": null,
+      "cfr_references": [],
+      "html_url": "https://www.federalregister.gov/documents/2026/09/04/2026-18187/change-in-bank-control-notices-acquisitions-of-shares-of-a-bank-or-bank-holding-company",
+      "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-04/pdf/2026-18187.pdf",
+      "citation": "91 FR 56887",
+      "dates": null,
+      "effective_on": null,
+      "action": null,
+      "significant": null
+    }
+  ]
+}

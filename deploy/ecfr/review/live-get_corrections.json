@@ -1,0 +1,84 @@
+{
+  "title": 48,
+  "corrections": [
+    {
+      "id": 53,
+      "cfr_references": [
+        {
+          "cfr_reference": "48 CFR 13.003",
+          "hierarchy": {
+            "title": "48",
+            "chapter": "1",
+            "subchapter": "C",
+            "part": "13",
+            "section": "13.003"
+          }
+        }
+      ],
+      "corrective_action": "(g)(2) amended",
+      "error_corrected": "2005-09-27",
+      "error_occurred": "2004-10-05",
+      "fr_citation": "69 FR 59699",
+      "position": 1,
+      "display_in_toc": false,
+      "title": 48,
+      "year": 2005,
+      "last_modified": "2021-12-22"
+    },
+    {
+      "id": 54,
+      "cfr_references": [
+        {
+          "cfr_reference": "48 CFR 13.005",
+          "hierarchy": {
+            "title": "48",
+            "chapter": "1",
+            "subchapter": "C",
+            "part": "13",
+            "section": "13.005"
+          }
+        }
+      ],
+      "corrective_action": "(a)(3) amended",
+      "error_corrected": "2005-10-14",
+      "error_occurred": "2005-09-30",
+      "fr_citation": "70 FR 57454",
+      "position": 2,
+      "display_in_toc": false,
+      "title": 48,
+      "year": 2005,
+      "last_modified": "2021-12-22"
+    },
+    {
+      "id": 55,
+      "cfr_references": [
+        {
+          "cfr_reference": "48 CFR 52.213-4",
+          "hierarchy": {
+            "title": "48",
+            "chapter": "1",
+            "subchapter": "H",
+            "part": "52",
+            "subpart": "52.2",
+            "section": "52.213-4"
+          }
+        }
+      ],
+      "corrective_action": "(b)(1)(vii) revised",
+      "error_corrected": "2005-08-11",
+      "error_occurred": "2003-07-24",
+      "fr_citation": "68 FR 43870",
+      "position": 3,
+      "display_in_toc": false,
+      "title": 48,
+      "year": 2005,
+      "last_modified": "2021-12-22"
+    }
+  ],
+  "count_returned": 3,
+  "count_filtered": 283,
+  "count_total": 283,
+  "truncated": true,
+  "since_year": null,
+  "limit": 3
+}

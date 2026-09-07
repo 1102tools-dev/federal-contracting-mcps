@@ -1,0 +1,150 @@
+{
+  "results": [
+    {
+      "starts_on": "2022-11-17",
+      "ends_on": null,
+      "type": "Section",
+      "hierarchy": {
+        "title": "48",
+        "subtitle": null,
+        "chapter": "8",
+        "subchapter": "B",
+        "part": "810",
+        "subpart": null,
+        "subject_group": null,
+        "section": "810.001-70",
+        "appendix": null
+      },
+      "hierarchy_headings": {
+        "title": "Title 48",
+        "subtitle": null,
+        "chapter": " Chapter 8",
+        "subchapter": "Subchapter B",
+        "part": "Part 810",
+        "subpart": null,
+        "subject_group": null,
+        "section": "810.001-70",
+        "appendix": null
+      },
+      "headings": {
+        "title": "Federal Acquisition Regulations System",
+        "subtitle": null,
+        "chapter": "Department of Veterans Affairs",
+        "subchapter": "Acquisition Planning",
+        "part": "<strong>Market</strong> <strong>Research</strong>",
+        "subpart": null,
+        "subject_group": null,
+        "section": "<strong>Market</strong> <strong>research</strong> policy\u2014use of VA Vendor Information Pages.",
+        "appendix": null
+      },
+      "full_text_excerpt": "When performing <strong>market</strong> <strong>research</strong>, contracting officers shall review the Vendor Information<span class=\"elipsis\">\u2026</span>or VOSBs identified as a result of <strong>market</strong> <strong>research</strong> are capable of performing the work<span class=\"elipsis\">\u2026</span>The contracting officer shall use the <strong>market</strong> <strong>research</strong> for acquisition planning purposes,",
+      "score": 37.402157,
+      "structure_index": 50347,
+      "reserved": false,
+      "removed": false,
+      "change_types": [
+        "effective",
+        "initial"
+      ]
+    },
+    {
+      "starts_on": "2021-12-06",
+      "ends_on": null,
+      "type": "Section",
+      "hierarchy": {
+        "title": "48",
+        "subtitle": null,
+        "chapter": "1",
+        "subchapter": "H",
+        "part": "52",
+        "subpart": "52.2",
+        "subject_group": null,
+        "section": "52.210-1",
+        "appendix": null
+      },
+      "hierarchy_headings": {
+        "title": "Title 48",
+        "subtitle": null,
+        "chapter": " Chapter 1",
+        "subchapter": "Subchapter H",
+        "part": "Part 52",
+        "subpart": "Subpart 52.2",
+        "subject_group": null,
+        "section": "52.210-1",
+        "appendix": null
+      },
+      "headings": {
+        "title": "Federal Acquisition Regulations System",
+        "subtitle": null,
+        "chapter": "Federal Acquisition Regulation",
+        "subchapter": "Clauses and Forms",
+        "part": "Solicitation Provisions and Contract Clauses",
+        "subpart": "Text of Provisions and Clauses",
+        "subject_group": null,
+        "section": "<strong>Market</strong> <strong>Research</strong>.",
+        "appendix": null
+      },
+      "full_text_excerpt": "10.003, insert the following clause: <strong>Market</strong> <strong>Research</strong> (NOV 2021) (a) Definition. As used<span class=\"elipsis\">\u2026</span>award, the Contractor shall conduct <strong>market</strong> <strong>research</strong> to\u2014 (1) Determine if commercial products",
+      "score": 27.416536,
+      "structure_index": 20085,
+      "reserved": false,
+      "removed": false,
+      "change_types": [
+        "effective_cross_reference"
+      ]
+    },
+    {
+      "starts_on": "2025-10-01",
+      "ends_on": null,
+      "type": "Section",
+      "hierarchy": {
+        "title": "48",
+        "subtitle": null,
+        "chapter": "1",
+        "subchapter": "B",
+        "part": "10",
+        "subpart": null,
+        "subject_group": null,
+        "section": "10.001",
+        "appendix": null
+      },
+      "hierarchy_headings": {
+        "title": "Title 48",
+        "subtitle": null,
+        "chapter": " Chapter 1",
+        "subchapter": "Subchapter B",
+        "part": "Part 10",
+        "subpart": null,
+        "subject_group": null,
+        "section": "10.001",
+        "appendix": null
+      },
+      "headings": {
+        "title": "Federal Acquisition Regulations System",
+        "subtitle": null,
+        "chapter": "Federal Acquisition Regulation",
+        "subchapter": "Acquisition Planning",
+        "part": "<strong>Market</strong> <strong>Research</strong>",
+        "subpart": null,
+        "subject_group": null,
+        "section": "Policy.",
+        "appendix": null
+      },
+      "full_text_excerpt": "that meet those needs; (2) Conduct <strong>market</strong> <strong>research</strong> appropriate to the circumstances\u2014 (i)<span class=\"elipsis\">\u2026</span>practicable) of commercially available <strong>market</strong> <strong>research</strong> methods in order to effectively identify<span class=\"elipsis\">\u2026</span>26.205); and (3) Use the results of <strong>market</strong> <strong>research</strong> to\u2014 (i) Determine if sources capable",
+      "score": 25.307095,
+      "structure_index": 10552,
+      "reserved": false,
+      "removed": false,
+      "change_types": [
+        "effective_cross_reference"
+      ]
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 45,
+    "total_count": 133,
+    "max_score": 37.402157,
+    "description": "Changes to sections matching 'market research' in Title 48"
+  }
+}

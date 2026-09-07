@@ -1,0 +1,637 @@
+{
+  "took": 6,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 58,
+      "relation": "eq"
+    },
+    "max_score": null,
+    "hits": [
+      {
+        "_index": "ceilingrates-2026-09-07_02-00-02",
+        "_id": "1710487810",
+        "_score": null,
+        "_source": {
+          "contract_end": "2027-01-17",
+          "security_clearance": false,
+          "next_year_price": 28.56,
+          "second_year_price": 29.22,
+          "vendor_name": "T47 INTERNATIONAL, INC.",
+          "idv_piid": "47QRAA22D004N",
+          "business_size": "S",
+          "contract_start": "2022-01-18",
+          "data_source": "ACR",
+          "labor_category": "Deputy Program Manager",
+          "schedule": "MAS",
+          "cont_end_dtg": "20270117",
+          "min_years_experience": 3,
+          "sin": "541620,561210FAC",
+          "worksite": "Customer_Facility",
+          "education_level": "High School",
+          "id": 1710487810,
+          "current_price": 27.92,
+          "dt_termg": "",
+          "category": "Security and Protection; Facilities; Miscellaneous; Professional Services",
+          "subcategory": "Facilities Maintenance and Repair; Business Administrative Services; Environmental Services; Security Services; Facilities Services; Complementary SINs",
+          "_timestamp": "2026-09-07T02:00:02Z",
+          "cont_beg_dtg": "20220118"
+        },
+        "sort": [
+          27.92
+        ]
+      },
+      {
+        "_index": "ceilingrates-2026-09-07_02-00-02",
+        "_id": "1741297297",
+        "_score": null,
+        "_source": {
+          "contract_end": "2029-03-06",
+          "security_clearance": true,
+          "next_year_price": 76.2217,
+          "second_year_price": 79.073,
+          "vendor_name": "SOLUTION ONE INDUSTRIES, INC.",
+          "idv_piid": "47QSMS24D0047",
+          "business_size": "S",
+          "contract_start": "2024-03-07",
+          "data_source": "ACR",
+          "labor_category": "Deputy Program Manager",
+          "schedule": "MAS",
+          "cont_end_dtg": "20290306",
+          "min_years_experience": 3,
+          "sin": "561210FAC,541330ENG,541611",
+          "worksite": "Customer_Facility",
+          "education_level": "Bachelors",
+          "id": 1741297297,
+          "current_price": 73.471,
+          "dt_termg": "",
+          "category": "Facilities; Miscellaneous; Professional Services",
+          "subcategory": "Facilities Maintenance and Repair; Business Administrative Services; Technical and Engineering Services (Non IT); Complementary SINs",
+          "_timestamp": "2026-09-07T02:00:02Z",
+          "cont_beg_dtg": "20240307"
+        },
+        "sort": [
+          73.471
+        ]
+      },
+      {
+        "_index": "ceilingrates-2026-09-07_02-00-02",
+        "_id": "1554294932",
+        "_score": null,
+        "_source": {
+          "contract_end": "2028-07-25",
+          "security_clearance": false,
+          "next_year_price": 77.1,
+          "second_year_price": 79.41,
+          "vendor_name": "EIDOS TECHNOLOGIES, LLC",
+          "idv_piid": "47QTCA18D00EY",
+          "business_size": "S",
+          "contract_start": "2018-07-26",
+          "data_source": "ACR",
+          "labor_category": "Deputy Program Manager",
+          "schedule": "MAS",
+          "cont_end_dtg": "20280725",
+          "min_years_experience": 5,
+          "sin": "541611",
+          "worksite": "Contractor_Facility",
+          "education_level": "Bachelors",
+          "id": 1554294932,
+          "current_price": 74.85,
+          "dt_termg": "",
+          "category": "Information Technology; Miscellaneous; Professional Services",
+          "subcategory": "Business Administrative Services; Cloud Services; Complementary SINs; IT Services",
+          "_timestamp": "2026-09-07T02:00:02Z",
+          "cont_beg_dtg": "20180726"
+        },
+        "sort": [
+          74.85
+        ]
+      }
+    ]
+  },
+  "aggregations": {
+    "labor_category": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "Deputy Program Manager",
+          "doc_count": 58
+        }
+      ]
+    },
+    "security_clearance": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "false",
+          "doc_count": 55
+        },
+        {
+          "key": "true",
+          "doc_count": 3
+        }
+      ]
+    },
+    "histogram_percentiles": {
+      "values": {
+        "10.0": 98.3499984741211,
+        "25.0": 107.31156253814697,
+        "30.0": 112.91000366210938,
+        "35.0": 115.02999877929688,
+        "50.0": 133.4329071044922,
+        "65.0": 157.2198944091797,
+        "70.0": 163.7899932861328,
+        "75.0": 172.8000030517578,
+        "90.0": 235.16000366210938
+      }
+    },
+    "min_years_experience": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "5",
+          "doc_count": 20
+        },
+        {
+          "key": "4",
+          "doc_count": 9
+        },
+        {
+          "key": "8",
+          "doc_count": 7
+        },
+        {
+          "key": "12",
+          "doc_count": 6
+        },
+        {
+          "key": "3",
+          "doc_count": 5
+        },
+        {
+          "key": "7",
+          "doc_count": 3
+        },
+        {
+          "key": "14",
+          "doc_count": 2
+        },
+        {
+          "key": "1",
+          "doc_count": 1
+        },
+        {
+          "key": "10",
+          "doc_count": 1
+        },
+        {
+          "key": "13",
+          "doc_count": 1
+        },
+        {
+          "key": "15",
+          "doc_count": 1
+        },
+        {
+          "key": "2",
+          "doc_count": 1
+        },
+        {
+          "key": "6",
+          "doc_count": 1
+        }
+      ]
+    },
+    "worksite": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "Customer_Facility",
+          "doc_count": 38
+        },
+        {
+          "key": "Contractor_Facility",
+          "doc_count": 18
+        },
+        {
+          "key": "Virtual",
+          "doc_count": 2
+        }
+      ]
+    },
+    "wage_histogram": {
+      "buckets": [
+        {
+          "min": 27.920000076293945,
+          "key": 27.920000076293945,
+          "max": 27.920000076293945,
+          "doc_count": 1
+        },
+        {
+          "min": 73.47100067138672,
+          "key": 74.1604995727539,
+          "max": 74.8499984741211,
+          "doc_count": 2
+        },
+        {
+          "min": 92.45999908447266,
+          "key": 92.52999877929688,
+          "max": 92.5999984741211,
+          "doc_count": 2
+        },
+        {
+          "min": 98.3499984741211,
+          "key": 107.06191208783318,
+          "max": 118.36000061035156,
+          "doc_count": 17
+        },
+        {
+          "min": 123.5999984741211,
+          "key": 133.35310774583084,
+          "max": 144.77000427246094,
+          "doc_count": 13
+        },
+        {
+          "min": 157.2198944091797,
+          "key": 159.60239737374442,
+          "max": 165.89480590820312,
+          "doc_count": 7
+        },
+        {
+          "min": 171.5,
+          "key": 176.38177054268974,
+          "max": 182.8000030517578,
+          "doc_count": 7
+        },
+        {
+          "min": 212.3000030517578,
+          "key": 215.38139851888022,
+          "max": 219.2241973876953,
+          "doc_count": 3
+        },
+        {
+          "min": 235.16000366210938,
+          "key": 235.16000366210938,
+          "max": 235.16000366210938,
+          "doc_count": 1
+        },
+        {
+          "min": 257.801513671875,
+          "key": 257.801513671875,
+          "max": 257.801513671875,
+          "doc_count": 1
+        },
+        {
+          "min": 273.82000732421875,
+          "key": 273.82000732421875,
+          "max": 273.82000732421875,
+          "doc_count": 1
+        },
+        {
+          "min": 320.20001220703125,
+          "key": 326.2130635579427,
+          "max": 329.54998779296875,
+          "doc_count": 3
+        }
+      ]
+    },
+    "education_level": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "Bachelors",
+          "doc_count": 49
+        },
+        {
+          "key": "Masters",
+          "doc_count": 4
+        },
+        {
+          "key": "High School",
+          "doc_count": 3
+        },
+        {
+          "key": "Associates",
+          "doc_count": 2
+        }
+      ]
+    },
+    "current_price": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "157.2199",
+          "doc_count": 3
+        },
+        {
+          "key": "103.94",
+          "doc_count": 2
+        },
+        {
+          "key": "106.96",
+          "doc_count": 2
+        },
+        {
+          "key": "112.91",
+          "doc_count": 2
+        },
+        {
+          "key": "125.28",
+          "doc_count": 2
+        },
+        {
+          "key": "176.2262",
+          "doc_count": 2
+        },
+        {
+          "key": "99.34",
+          "doc_count": 2
+        },
+        {
+          "key": "101.61",
+          "doc_count": 1
+        },
+        {
+          "key": "101.81",
+          "doc_count": 1
+        },
+        {
+          "key": "106.86",
+          "doc_count": 1
+        },
+        {
+          "key": "107.7525",
+          "doc_count": 1
+        },
+        {
+          "key": "108.98",
+          "doc_count": 1
+        },
+        {
+          "key": "115.0",
+          "doc_count": 1
+        },
+        {
+          "key": "115.03",
+          "doc_count": 1
+        },
+        {
+          "key": "118.36",
+          "doc_count": 1
+        },
+        {
+          "key": "123.6",
+          "doc_count": 1
+        },
+        {
+          "key": "128.5",
+          "doc_count": 1
+        },
+        {
+          "key": "129.24",
+          "doc_count": 1
+        },
+        {
+          "key": "131.91",
+          "doc_count": 1
+        },
+        {
+          "key": "131.98",
+          "doc_count": 1
+        },
+        {
+          "key": "133.4329",
+          "doc_count": 1
+        },
+        {
+          "key": "135.01",
+          "doc_count": 1
+        },
+        {
+          "key": "139.89",
+          "doc_count": 1
+        },
+        {
+          "key": "141.14",
+          "doc_count": 1
+        },
+        {
+          "key": "143.5575",
+          "doc_count": 1
+        },
+        {
+          "key": "144.77",
+          "doc_count": 1
+        },
+        {
+          "key": "157.65",
+          "doc_count": 1
+        },
+        {
+          "key": "158.2223",
+          "doc_count": 1
+        },
+        {
+          "key": "163.79",
+          "doc_count": 1
+        },
+        {
+          "key": "165.8948",
+          "doc_count": 1
+        },
+        {
+          "key": "171.5",
+          "doc_count": 1
+        },
+        {
+          "key": "172.8",
+          "doc_count": 1
+        },
+        {
+          "key": "177.39",
+          "doc_count": 1
+        },
+        {
+          "key": "177.73",
+          "doc_count": 1
+        },
+        {
+          "key": "182.8",
+          "doc_count": 1
+        },
+        {
+          "key": "212.3",
+          "doc_count": 1
+        },
+        {
+          "key": "214.62",
+          "doc_count": 1
+        },
+        {
+          "key": "219.2242",
+          "doc_count": 1
+        },
+        {
+          "key": "235.16",
+          "doc_count": 1
+        },
+        {
+          "key": "257.8015",
+          "doc_count": 1
+        },
+        {
+          "key": "27.92",
+          "doc_count": 1
+        },
+        {
+          "key": "273.82",
+          "doc_count": 1
+        },
+        {
+          "key": "320.2",
+          "doc_count": 1
+        },
+        {
+          "key": "328.8892",
+          "doc_count": 1
+        },
+        {
+          "key": "329.55",
+          "doc_count": 1
+        },
+        {
+          "key": "73.471",
+          "doc_count": 1
+        },
+        {
+          "key": "74.85",
+          "doc_count": 1
+        },
+        {
+          "key": "92.46",
+          "doc_count": 1
+        },
+        {
+          "key": "92.6",
+          "doc_count": 1
+        },
+        {
+          "key": "98.35",
+          "doc_count": 1
+        }
+      ]
+    },
+    "business_size": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "S",
+          "doc_count": 40
+        },
+        {
+          "key": "O",
+          "doc_count": 18
+        }
+      ]
+    },
+    "wage_stats": {
+      "count": 58,
+      "min": 27.920000076293945,
+      "max": 329.54998779296875,
+      "avg": 149.28272395298399,
+      "sum": 8658.397989273071,
+      "sum_of_squares": 1507626.502865896,
+      "variance": 3708.228723416771,
+      "variance_population": 3708.228723416771,
+      "variance_sampling": 3773.285367687241,
+      "std_deviation": 60.89522742725222,
+      "std_deviation_population": 60.89522742725222,
+      "std_deviation_sampling": 61.42707357254813,
+      "std_deviation_bounds": {
+        "upper": 271.07317880748843,
+        "lower": 27.49226909847954,
+        "upper_population": 271.07317880748843,
+        "lower_population": 27.49226909847954,
+        "upper_sampling": 272.13687109808023,
+        "lower_sampling": 26.428576807887723
+      }
+    },
+    "median_price": {
+      "values": {
+        "50.0": 133.4329071044922
+      }
+    },
+    "education_level_counts": {
+      "buckets": [
+        {
+          "key": "AA",
+          "doc_count": 2
+        },
+        {
+          "key": "BA",
+          "doc_count": 49
+        },
+        {
+          "key": "HS",
+          "doc_count": 3
+        },
+        {
+          "key": "MA",
+          "doc_count": 4
+        },
+        {
+          "key": "PHD",
+          "doc_count": 0
+        },
+        {
+          "key": "TEC",
+          "doc_count": 0
+        }
+      ]
+    }
+  },
+  "_stats": {
+    "total_rates": 58,
+    "hits_capped": false,
+    "min_rate": 27.920000076293945,
+    "max_rate": 329.54998779296875,
+    "avg_rate": 149.28,
+    "std_deviation": 60.9,
+    "percentiles": {
+      "p10": 98.3499984741211,
+      "p25": 107.31156253814697,
+      "p50_median": 133.4329071044922,
+      "p75": 172.8000030517578,
+      "p90": 235.16000366210938
+    },
+    "outlier_bounds_2sigma": {
+      "lower": 27.49226909847954,
+      "upper": 271.07317880748843
+    },
+    "education_breakdown": {
+      "AA": 2,
+      "BA": 49,
+      "HS": 3,
+      "MA": 4,
+      "PHD": 0,
+      "TEC": 0
+    },
+    "business_size_breakdown": {
+      "S": 40,
+      "O": 18
+    }
+  }
+}

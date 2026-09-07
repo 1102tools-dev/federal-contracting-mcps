@@ -1,0 +1,14 @@
+{
+  "name": "Acquisition.gov MCP",
+  "slug": "acquisition-gov",
+  "tools": 5,
+  "endpoint": "https://acquisition-gov.1102tools.com/mcp",
+  "status": "deployed; all tools live validated",
+  "container_application_id": "a03e7823-29ff-4e0c-82ef-1f83bed25b55",
+  "durable_object_namespace_id": "bfe5db5e513a4bd194d11d8c92b1f646",
+  "image": "registry.cloudflare.com/846d3e41e48446abcd3570c0959f9fb5/acquisition-gov-mcp@sha256:36558db95441549b5e922348c8eb29db8cf49fb93647547f2951c24e97b860fa",
+  "offline_tests_passed": 23,
+  "openai_draft_url": "https://platform.openai.com/plugins/edit/asdk_app_6a9ef0f300f48191a98b3dd8205f72c7/asdk_app_v_6a9ef0f3b0a88191ac9cf03d7aa8b838",
+  "openai_domain_verified": true,
+  "openai_status": "draft; recording and final attestations pending"
+}

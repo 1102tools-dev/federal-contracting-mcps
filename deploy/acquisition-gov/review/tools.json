@@ -1,0 +1,268 @@
+[
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "List FAR Overhaul parts"
+    },
+    "description": "List official RFO model parts and counts of posted agency deviations.",
+    "inputSchema": {
+      "properties": {
+        "part": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part"
+        },
+        "agency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agency"
+        },
+        "updated_since": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated Since"
+        }
+      },
+      "type": "object",
+      "title": "list_rfo_partsArguments"
+    },
+    "name": "list_rfo_parts",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "list_rfo_partsDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get FAR Overhaul model part"
+    },
+    "description": "Return parsed, paginated model-deviation text for one FAR part.",
+    "inputSchema": {
+      "properties": {
+        "part": {
+          "title": "Part",
+          "type": "integer"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "cursor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cursor"
+        },
+        "max_characters": {
+          "default": 20000,
+          "title": "Max Characters",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "part"
+      ],
+      "type": "object",
+      "title": "get_rfo_partArguments"
+    },
+    "name": "get_rfo_part",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_rfo_partDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "List posted agency RFO deviations"
+    },
+    "description": "List official agency-deviation links discovered through the RFO index.",
+    "inputSchema": {
+      "properties": {
+        "agency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agency"
+        },
+        "part": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part"
+        },
+        "limit": {
+          "default": 100,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "type": "object",
+      "title": "list_rfo_agency_deviationsArguments"
+    },
+    "name": "list_rfo_agency_deviations",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "list_rfo_agency_deviationsDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get posted agency RFO deviation"
+    },
+    "description": "Resolve an indexed source ID and return page-numbered official PDF text.",
+    "inputSchema": {
+      "properties": {
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "page_start": {
+          "default": 1,
+          "title": "Page Start",
+          "type": "integer"
+        },
+        "page_end": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page End"
+        }
+      },
+      "required": [
+        "source_id"
+      ],
+      "type": "object",
+      "title": "get_rfo_agency_deviationArguments"
+    },
+    "name": "get_rfo_agency_deviation",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_rfo_agency_deviationDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get approved RFO guidance"
+    },
+    "description": "Return an allowlisted Acquisition.gov RFO FAQ or guidance resource.",
+    "inputSchema": {
+      "properties": {
+        "resource": {
+          "enum": [
+            "faq",
+            "policy_and_guidance",
+            "deviation_guidance"
+          ],
+          "title": "Resource",
+          "type": "string"
+        },
+        "heading": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Heading"
+        },
+        "cursor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cursor"
+        }
+      },
+      "required": [
+        "resource"
+      ],
+      "type": "object",
+      "title": "get_rfo_guidanceArguments"
+    },
+    "name": "get_rfo_guidance",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_rfo_guidanceDictOutput"
+    }
+  }
+]

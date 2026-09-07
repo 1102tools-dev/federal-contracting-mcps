@@ -1,0 +1,4513 @@
+{
+  "took": 23,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 9457,
+      "relation": "eq"
+    },
+    "max_score": null,
+    "hits": [
+      {
+        "_index": "ceilingrates-2026-09-07_02-00-02",
+        "_id": "1710487810",
+        "_score": null,
+        "_source": {
+          "contract_end": "2027-01-17",
+          "security_clearance": false,
+          "next_year_price": 28.56,
+          "second_year_price": 29.22,
+          "vendor_name": "T47 INTERNATIONAL, INC.",
+          "idv_piid": "47QRAA22D004N",
+          "business_size": "S",
+          "contract_start": "2022-01-18",
+          "data_source": "ACR",
+          "labor_category": "Deputy Program Manager",
+          "schedule": "MAS",
+          "cont_end_dtg": "20270117",
+          "min_years_experience": 3,
+          "sin": "541620,561210FAC",
+          "worksite": "Customer_Facility",
+          "education_level": "High School",
+          "id": 1710487810,
+          "current_price": 27.92,
+          "dt_termg": "",
+          "category": "Security and Protection; Facilities; Miscellaneous; Professional Services",
+          "subcategory": "Facilities Maintenance and Repair; Business Administrative Services; Environmental Services; Security Services; Facilities Services; Complementary SINs",
+          "_timestamp": "2026-09-07T02:00:02Z",
+          "cont_beg_dtg": "20220118"
+        },
+        "sort": [
+          27.92
+        ]
+      },
+      {
+        "_index": "ceilingrates-2026-09-07_02-00-02",
+        "_id": "1451730831",
+        "_score": null,
+        "_source": {
+          "contract_end": "2027-09-20",
+          "security_clearance": false,
+          "next_year_price": 35.9569,
+          "second_year_price": 37.3233,
+          "vendor_name": "PERATON INC.",
+          "idv_piid": "GS35F694GA",
+          "business_size": "O",
+          "contract_start": "2017-09-21",
+          "data_source": "ACR",
+          "labor_category": "Program Manager SL 1",
+          "schedule": "MAS",
+          "cont_end_dtg": "20270920",
+          "min_years_experience": 10,
+          "sin": "541380",
+          "worksite": "Contractor_Facility",
+          "education_level": "High School",
+          "id": 1451730831,
+          "current_price": 34.6406,
+          "dt_termg": "",
+          "category": "Information Technology; Scientific Management and Solutions; Miscellaneous; Professional Services",
+          "subcategory": "Business Administrative Services; Cloud Services; Logistical Services; Technical and Engineering Services (Non IT); Testing and Analysis; IT Solutions; Complementary SINs; Training; IT Services",
+          "_timestamp": "2026-09-07T02:00:02Z",
+          "cont_beg_dtg": "20170921"
+        },
+        "sort": [
+          34.6406
+        ]
+      },
+      {
+        "_index": "ceilingrates-2026-09-07_02-00-02",
+        "_id": "1451731486",
+        "_score": null,
+        "_source": {
+          "contract_end": "2027-09-20",
+          "security_clearance": false,
+          "next_year_price": 35.9569,
+          "second_year_price": 37.3233,
+          "vendor_name": "PERATON INC.",
+          "idv_piid": "GS35F694GA",
+          "business_size": "O",
+          "contract_start": "2017-09-21",
+          "data_source": "ACR",
+          "labor_category": "Program Manager SL 1",
+          "schedule": "MAS",
+          "cont_end_dtg": "20270920",
+          "min_years_experience": 10,
+          "sin": "541715",
+          "worksite": "Contractor_Facility",
+          "education_level": "High School",
+          "id": 1451731486,
+          "current_price": 34.6406,
+          "dt_termg": "",
+          "category": "Information Technology; Scientific Management and Solutions; Miscellaneous; Professional Services",
+          "subcategory": "Business Administrative Services; Cloud Services; Logistical Services; Technical and Engineering Services (Non IT); Testing and Analysis; IT Solutions; Complementary SINs; Training; IT Services",
+          "_timestamp": "2026-09-07T02:00:02Z",
+          "cont_beg_dtg": "20170921"
+        },
+        "sort": [
+          34.6406
+        ]
+      }
+    ]
+  },
+  "aggregations": {
+    "labor_category": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 1717,
+      "buckets": [
+        {
+          "key": "Program Manager",
+          "doc_count": 2179
+        },
+        {
+          "key": "Program Manager II",
+          "doc_count": 550
+        },
+        {
+          "key": "Program Manager I",
+          "doc_count": 533
+        },
+        {
+          "key": "Program Manager III",
+          "doc_count": 392
+        },
+        {
+          "key": "Senior Program Manager",
+          "doc_count": 301
+        },
+        {
+          "key": "IT Program Manager",
+          "doc_count": 199
+        },
+        {
+          "key": "Program Manager IV",
+          "doc_count": 165
+        },
+        {
+          "key": "Cloud Program Manager",
+          "doc_count": 153
+        },
+        {
+          "key": "Program Manager 2",
+          "doc_count": 128
+        },
+        {
+          "key": "Program Manager 1",
+          "doc_count": 117
+        },
+        {
+          "key": "Sr. Program Manager",
+          "doc_count": 103
+        },
+        {
+          "key": "Program Manager 3",
+          "doc_count": 97
+        },
+        {
+          "key": "Health IT Program Manager",
+          "doc_count": 81
+        },
+        {
+          "key": "Program Manager V",
+          "doc_count": 75
+        },
+        {
+          "key": "Deputy Program Manager",
+          "doc_count": 58
+        },
+        {
+          "key": "IT Program Manager II",
+          "doc_count": 52
+        },
+        {
+          "key": "IT Program Manager III",
+          "doc_count": 51
+        },
+        {
+          "key": "Program Manager 4",
+          "doc_count": 50
+        },
+        {
+          "key": "Cybersecurity Program Manager",
+          "doc_count": 44
+        },
+        {
+          "key": "IT Program Manager I",
+          "doc_count": 44
+        },
+        {
+          "key": "Program Manager - Senior",
+          "doc_count": 39
+        },
+        {
+          "key": "Cloud Program Manager I",
+          "doc_count": 37
+        },
+        {
+          "key": "Technical Program Manager",
+          "doc_count": 36
+        },
+        {
+          "key": "Cloud Program Manager II",
+          "doc_count": 35
+        },
+        {
+          "key": "Program Manager, Senior",
+          "doc_count": 34
+        },
+        {
+          "key": "Cyber Program Manager",
+          "doc_count": 31
+        },
+        {
+          "key": "Cloud Program Manager III",
+          "doc_count": 29
+        },
+        {
+          "key": "PROGRAM MANAGER",
+          "doc_count": 29
+        },
+        {
+          "key": "Junior Program Manager",
+          "doc_count": 27
+        },
+        {
+          "key": "Program Manager 5",
+          "doc_count": 25
+        },
+        {
+          "key": "Program Manager Level 2",
+          "doc_count": 24
+        },
+        {
+          "key": "Program Manager Senior",
+          "doc_count": 23
+        },
+        {
+          "key": "Health IT Program Manager II",
+          "doc_count": 22
+        },
+        {
+          "key": "Program Manager Level 3",
+          "doc_count": 22
+        },
+        {
+          "key": "Executive Program Manager",
+          "doc_count": 21
+        },
+        {
+          "key": "Cyber Security Program Manager",
+          "doc_count": 20
+        },
+        {
+          "key": "Health IT Program Manager I",
+          "doc_count": 20
+        },
+        {
+          "key": "Cloud Program Manager 1",
+          "doc_count": 19
+        },
+        {
+          "key": "Health IT Program Manager III",
+          "doc_count": 19
+        },
+        {
+          "key": "Program Manager Level 1",
+          "doc_count": 19
+        },
+        {
+          "key": "HIT Program Manager",
+          "doc_count": 18
+        },
+        {
+          "key": "IT Program Manager IV",
+          "doc_count": 18
+        },
+        {
+          "key": "Cloud Program Manager 2",
+          "doc_count": 17
+        },
+        {
+          "key": "Health Program Manager",
+          "doc_count": 17
+        },
+        {
+          "key": "Program Manager, Sr.",
+          "doc_count": 17
+        },
+        {
+          "key": "Technical Program Manager III",
+          "doc_count": 17
+        },
+        {
+          "key": "Assistant Program Manager",
+          "doc_count": 16
+        },
+        {
+          "key": "Cloud Program Manager 3",
+          "doc_count": 16
+        },
+        {
+          "key": "Program Manager SL 1",
+          "doc_count": 16
+        },
+        {
+          "key": "Program Manager SL 3",
+          "doc_count": 16
+        },
+        {
+          "key": "Program Manager SL 4",
+          "doc_count": 16
+        },
+        {
+          "key": "Program Manager Level 4",
+          "doc_count": 15
+        },
+        {
+          "key": "Program Manager Level II",
+          "doc_count": 15
+        },
+        {
+          "key": "Program Manager SL 2",
+          "doc_count": 14
+        },
+        {
+          "key": "Program Manager SL 5",
+          "doc_count": 14
+        },
+        {
+          "key": "Technical Program Manager II",
+          "doc_count": 14
+        },
+        {
+          "key": "Cloud Program Manager IV",
+          "doc_count": 13
+        },
+        {
+          "key": "Logistics Program Manager",
+          "doc_count": 13
+        },
+        {
+          "key": "Program Manager - Junior",
+          "doc_count": 13
+        },
+        {
+          "key": "Senior Program Manager I",
+          "doc_count": 13
+        },
+        {
+          "key": "Cyber Program Manager I",
+          "doc_count": 12
+        },
+        {
+          "key": "Cyber Program Manager II",
+          "doc_count": 12
+        },
+        {
+          "key": "Lead Program Manager",
+          "doc_count": 12
+        },
+        {
+          "key": "Principal Program Manager",
+          "doc_count": 12
+        },
+        {
+          "key": "Program Manager - Level 2",
+          "doc_count": 12
+        },
+        {
+          "key": "Program Manager SME",
+          "doc_count": 12
+        },
+        {
+          "key": "Senior IT Program Manager",
+          "doc_count": 12
+        },
+        {
+          "key": "Cloud IT Program Manager",
+          "doc_count": 11
+        },
+        {
+          "key": "Program Manager VI",
+          "doc_count": 11
+        },
+        {
+          "key": "Security Program Manager",
+          "doc_count": 11
+        },
+        {
+          "key": "Engineering Program Manager",
+          "doc_count": 10
+        },
+        {
+          "key": "IT Program Manager V",
+          "doc_count": 10
+        },
+        {
+          "key": "Program Manager Jr",
+          "doc_count": 10
+        },
+        {
+          "key": "Program Manager Level III",
+          "doc_count": 10
+        },
+        {
+          "key": "HACS Program Manager",
+          "doc_count": 9
+        },
+        {
+          "key": "Health IT Program Manager IV",
+          "doc_count": 9
+        },
+        {
+          "key": "Program Manager - Level 3",
+          "doc_count": 9
+        },
+        {
+          "key": "Program Manager - Level II",
+          "doc_count": 9
+        },
+        {
+          "key": "Program Manager Level I",
+          "doc_count": 9
+        },
+        {
+          "key": "Program Manager Sr",
+          "doc_count": 9
+        },
+        {
+          "key": "Cloud Senior Program Manager",
+          "doc_count": 8
+        },
+        {
+          "key": "Contact Center Program Manager",
+          "doc_count": 8
+        },
+        {
+          "key": "Contract Program Manager",
+          "doc_count": 8
+        },
+        {
+          "key": "Cyber Senior Program Manager",
+          "doc_count": 8
+        },
+        {
+          "key": "ICAM Program Manager",
+          "doc_count": 8
+        },
+        {
+          "key": "IT Program Manager 2",
+          "doc_count": 8
+        },
+        {
+          "key": "IT Program Manager, Level I",
+          "doc_count": 8
+        },
+        {
+          "key": "IT Program Manager, Level II",
+          "doc_count": 8
+        },
+        {
+          "key": "IT Program Manager, Level III",
+          "doc_count": 8
+        },
+        {
+          "key": "IT Senior Program Manager",
+          "doc_count": 8
+        },
+        {
+          "key": "Professional Services Program Manager",
+          "doc_count": 8
+        },
+        {
+          "key": "Program Manager (IT)",
+          "doc_count": 8
+        },
+        {
+          "key": "Program Manager - Intermediate",
+          "doc_count": 8
+        },
+        {
+          "key": "Program Manager - Level 1",
+          "doc_count": 8
+        },
+        {
+          "key": "Program Manager 6",
+          "doc_count": 8
+        },
+        {
+          "key": "Cyber Program Manager III",
+          "doc_count": 7
+        },
+        {
+          "key": "Cyber Security Program Manager II",
+          "doc_count": 7
+        },
+        {
+          "key": "HACS Program Manager II",
+          "doc_count": 7
+        },
+        {
+          "key": "Healthcare Program Manager",
+          "doc_count": 7
+        },
+        {
+          "key": "Program Manager (Senior)",
+          "doc_count": 7
+        },
+        {
+          "key": "Program Manager - Level I",
+          "doc_count": 7
+        },
+        {
+          "key": "Program Manager - Mid-Level",
+          "doc_count": 7
+        },
+        {
+          "key": "Program Manager - Subject Matter Expert",
+          "doc_count": 7
+        },
+        {
+          "key": "Program Manager Sr.",
+          "doc_count": 7
+        },
+        {
+          "key": "Sr Program Manager",
+          "doc_count": 7
+        },
+        {
+          "key": "Technical Program Manager I",
+          "doc_count": 7
+        },
+        {
+          "key": "Training Program Manager",
+          "doc_count": 7
+        },
+        {
+          "key": "Business Program Manager",
+          "doc_count": 6
+        },
+        {
+          "key": "Cloud Program Manager 4",
+          "doc_count": 6
+        },
+        {
+          "key": "Deputy Program Manager & DIV Coordinator- Petroleum Systems",
+          "doc_count": 6
+        },
+        {
+          "key": "Development Program Manager",
+          "doc_count": 6
+        },
+        {
+          "key": "Environmental Program Manager",
+          "doc_count": 6
+        },
+        {
+          "key": "HACS Program Manager III",
+          "doc_count": 6
+        },
+        {
+          "key": "Health IT Program Manager 1",
+          "doc_count": 6
+        },
+        {
+          "key": "Health IT Program Manager 2",
+          "doc_count": 6
+        },
+        {
+          "key": "Health IT Program Manager 3",
+          "doc_count": 6
+        },
+        {
+          "key": "Jr. Program Manager",
+          "doc_count": 6
+        },
+        {
+          "key": "Program Manager (Contract Level)",
+          "doc_count": 6
+        },
+        {
+          "key": "Program Manager - Cloud",
+          "doc_count": 6
+        },
+        {
+          "key": "Program Manager - Level 4",
+          "doc_count": 6
+        },
+        {
+          "key": "Program Manager - Level 5",
+          "doc_count": 6
+        },
+        {
+          "key": "Program Manager - Level IV",
+          "doc_count": 6
+        },
+        {
+          "key": "Program Manager I -BCA Services",
+          "doc_count": 6
+        },
+        {
+          "key": "Program Manager II-BCA Services",
+          "doc_count": 6
+        },
+        {
+          "key": "Program Manager III -BCA Services",
+          "doc_count": 6
+        },
+        {
+          "key": "Program Manager, Mid",
+          "doc_count": 6
+        },
+        {
+          "key": "Program Manager, Principal",
+          "doc_count": 6
+        },
+        {
+          "key": "Project/Program Manager",
+          "doc_count": 6
+        },
+        {
+          "key": "Sr. IT Program Manager",
+          "doc_count": 6
+        },
+        {
+          "key": "Cyber Security Program Manager I",
+          "doc_count": 5
+        },
+        {
+          "key": "Cybersecurity Program Manager II",
+          "doc_count": 5
+        },
+        {
+          "key": "Financial Program Manager",
+          "doc_count": 5
+        },
+        {
+          "key": "GIS Program Manager",
+          "doc_count": 5
+        },
+        {
+          "key": "HACS Program Manager I",
+          "doc_count": 5
+        },
+        {
+          "key": "Health IT - Program Manager",
+          "doc_count": 5
+        },
+        {
+          "key": "Health IT Program Manager 4",
+          "doc_count": 5
+        },
+        {
+          "key": "IT Program Manager 3",
+          "doc_count": 5
+        },
+        {
+          "key": "PROGRAM MANAGER I",
+          "doc_count": 5
+        },
+        {
+          "key": "PROGRAM MANAGER II",
+          "doc_count": 5
+        },
+        {
+          "key": "Program Manager (Professional Services)",
+          "doc_count": 5
+        },
+        {
+          "key": "Program Manager Intermediate",
+          "doc_count": 5
+        },
+        {
+          "key": "Program Manager Level IV",
+          "doc_count": 5
+        },
+        {
+          "key": "Program Manager VII",
+          "doc_count": 5
+        },
+        {
+          "key": "Program Manager \u2013 Senior",
+          "doc_count": 5
+        },
+        {
+          "key": "Quantech Services - Program Manager I",
+          "doc_count": 5
+        },
+        {
+          "key": "Quantech Services - Program Manager II",
+          "doc_count": 5
+        },
+        {
+          "key": "Quantech Services - Program Manager III",
+          "doc_count": 5
+        },
+        {
+          "key": "Quantech Services - Program Manager IV",
+          "doc_count": 5
+        },
+        {
+          "key": "Quantech Services - Program Manager V",
+          "doc_count": 5
+        },
+        {
+          "key": "SENIOR PROGRAM MANAGER",
+          "doc_count": 5
+        },
+        {
+          "key": "CIS Program Manager",
+          "doc_count": 4
+        },
+        {
+          "key": "Chief Scientist / Program Manager",
+          "doc_count": 4
+        },
+        {
+          "key": "Cloud Deputy Program Manager",
+          "doc_count": 4
+        },
+        {
+          "key": "Cloud Program Manager V",
+          "doc_count": 4
+        },
+        {
+          "key": "Cloud Program Manager, Senior",
+          "doc_count": 4
+        },
+        {
+          "key": "Cyber Program Manager 3",
+          "doc_count": 4
+        },
+        {
+          "key": "Cybersecurity Program Manager I",
+          "doc_count": 4
+        },
+        {
+          "key": "Cybersecurity Program Manager III",
+          "doc_count": 4
+        },
+        {
+          "key": "Engineering Program Manager III",
+          "doc_count": 4
+        },
+        {
+          "key": "Executive Project/Program Manager",
+          "doc_count": 4
+        },
+        {
+          "key": "HIT Program Manager II",
+          "doc_count": 4
+        },
+        {
+          "key": "Health IT \u2013 Program Manager 1",
+          "doc_count": 4
+        },
+        {
+          "key": "Health IT \u2013 Program Manager 2",
+          "doc_count": 4
+        },
+        {
+          "key": "Health IT \u2013 Program Manager 3",
+          "doc_count": 4
+        },
+        {
+          "key": "Health IT \u2013 Program Manager 4",
+          "doc_count": 4
+        },
+        {
+          "key": "IT Deputy Program Manager",
+          "doc_count": 4
+        },
+        {
+          "key": "IT Program Manager 1",
+          "doc_count": 4
+        },
+        {
+          "key": "IT Program Manager Senior",
+          "doc_count": 4
+        },
+        {
+          "key": "IT Program Manager, Senior",
+          "doc_count": 4
+        },
+        {
+          "key": "Logistics Program Manager, Level I",
+          "doc_count": 4
+        },
+        {
+          "key": "Logistics Program Manager, Level II",
+          "doc_count": 4
+        },
+        {
+          "key": "Logistics Program Manager, Level III",
+          "doc_count": 4
+        },
+        {
+          "key": "PROGRAM MANAGER III",
+          "doc_count": 4
+        },
+        {
+          "key": "PROJECT/PROGRAM MANAGER 01",
+          "doc_count": 4
+        },
+        {
+          "key": "PROJECT/PROGRAM MANAGER 02",
+          "doc_count": 4
+        },
+        {
+          "key": "PROJECT/PROGRAM MANAGER 03",
+          "doc_count": 4
+        },
+        {
+          "key": "PROJECT/PROGRAM MANAGER 04",
+          "doc_count": 4
+        },
+        {
+          "key": "PROJECT/PROGRAM MANAGER 05",
+          "doc_count": 4
+        },
+        {
+          "key": "PSS Program Manager II",
+          "doc_count": 4
+        },
+        {
+          "key": "Principal/Program Manager",
+          "doc_count": 4
+        },
+        {
+          "key": "Program Manager (101)",
+          "doc_count": 4
+        },
+        {
+          "key": "Program Manager (PM)",
+          "doc_count": 4
+        },
+        {
+          "key": "Program Manager - Engineering",
+          "doc_count": 4
+        },
+        {
+          "key": "Program Manager - Level III",
+          "doc_count": 4
+        },
+        {
+          "key": "Program Manager - Principal",
+          "doc_count": 4
+        },
+        {
+          "key": "Program Manager IV -",
+          "doc_count": 4
+        },
+        {
+          "key": "Program Manager Level 5",
+          "doc_count": 4
+        },
+        {
+          "key": "Program Manager Mid",
+          "doc_count": 4
+        },
+        {
+          "key": "Program Manager, Junior",
+          "doc_count": 4
+        },
+        {
+          "key": "Program Manager, Sr",
+          "doc_count": 4
+        },
+        {
+          "key": "Program Manager/Advisor",
+          "doc_count": 4
+        },
+        {
+          "key": "Project/Program Manager I",
+          "doc_count": 4
+        },
+        {
+          "key": "Project/Program Manager II",
+          "doc_count": 4
+        },
+        {
+          "key": "Remediation Program Manager",
+          "doc_count": 4
+        },
+        {
+          "key": "Senior Program Manager 3",
+          "doc_count": 4
+        },
+        {
+          "key": "Senior Program Manager II",
+          "doc_count": 4
+        },
+        {
+          "key": "Supervisory Program Manager",
+          "doc_count": 4
+        },
+        {
+          "key": "Supply and Value Chain Program Manager, Level I",
+          "doc_count": 4
+        },
+        {
+          "key": "Supply and Value Chain Program Manager, Level II",
+          "doc_count": 4
+        },
+        {
+          "key": "Supply and Value Chain Program Manager, Level III",
+          "doc_count": 4
+        },
+        {
+          "key": "Training Program Manager I",
+          "doc_count": 4
+        },
+        {
+          "key": "Training Program Manager II",
+          "doc_count": 4
+        },
+        {
+          "key": "ACCS Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "ACCS Program Manager II",
+          "doc_count": 3
+        },
+        {
+          "key": "AV Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Acquisition Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Administrative Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Associate Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Cloud Services Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Consultant - IT Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Consulting Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Cyber Security Program Manager, Principal",
+          "doc_count": 3
+        },
+        {
+          "key": "Cyber Security Program Manager, Senior",
+          "doc_count": 3
+        },
+        {
+          "key": "Cybersecurity Program Manager V",
+          "doc_count": 3
+        },
+        {
+          "key": "Delviom - Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Deputy Program Manager 3",
+          "doc_count": 3
+        },
+        {
+          "key": "Deputy Program Manager I",
+          "doc_count": 3
+        },
+        {
+          "key": "Deputy Program Manager II",
+          "doc_count": 3
+        },
+        {
+          "key": "EOS - Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "ERM Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Eng Program Manager II",
+          "doc_count": 3
+        },
+        {
+          "key": "Engineering Program Manager 2",
+          "doc_count": 3
+        },
+        {
+          "key": "Engineering Program Manager I",
+          "doc_count": 3
+        },
+        {
+          "key": "Engineering Program Manager II",
+          "doc_count": 3
+        },
+        {
+          "key": "Financial Management Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "HIT Program Manager I",
+          "doc_count": 3
+        },
+        {
+          "key": "HIT Program Manager III",
+          "doc_count": 3
+        },
+        {
+          "key": "HR Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "HR Program Manager I",
+          "doc_count": 3
+        },
+        {
+          "key": "HR Program Manager II",
+          "doc_count": 3
+        },
+        {
+          "key": "Health IT Program Manager - Level II",
+          "doc_count": 3
+        },
+        {
+          "key": "Health IT Program Manager 5",
+          "doc_count": 3
+        },
+        {
+          "key": "Health IT Program Manager V",
+          "doc_count": 3
+        },
+        {
+          "key": "Health IT Program Manager, Senior",
+          "doc_count": 3
+        },
+        {
+          "key": "Health IT Program Manager/Scrum Master I",
+          "doc_count": 3
+        },
+        {
+          "key": "Health IT Senior Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Health Program Manager I",
+          "doc_count": 3
+        },
+        {
+          "key": "IT Program Manager - Level III",
+          "doc_count": 3
+        },
+        {
+          "key": "IT Program Manager - Level IV",
+          "doc_count": 3
+        },
+        {
+          "key": "IT Program Manager - Senior",
+          "doc_count": 3
+        },
+        {
+          "key": "IT Program Manager, IV",
+          "doc_count": 3
+        },
+        {
+          "key": "IT System Program Manager - SME",
+          "doc_count": 3
+        },
+        {
+          "key": "IT System Program Manager - Senior",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager (Mid-Level)",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager (PSS)",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager - 3",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager - 4",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager - 5",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager - Cleared",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager - Intermediate - Top Secret",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager - Senior - Top Secret",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager Jr.",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager Junior",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager M1",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager M2",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager Mid Level",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager, Journeyman",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager, Jr.",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager, Level I",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager, Mid-level",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager, SME",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager/ Chief Information Security Officer",
+          "doc_count": 3
+        },
+        {
+          "key": "Program Manager/Director",
+          "doc_count": 3
+        },
+        {
+          "key": "Project/Program Manager III",
+          "doc_count": 3
+        },
+        {
+          "key": "Senior Cloud Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Senior Cybersecurity Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Senior Program Manager 1",
+          "doc_count": 3
+        },
+        {
+          "key": "Senior Program Manager 2",
+          "doc_count": 3
+        },
+        {
+          "key": "Senior Technical Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Sr. Program Manager II",
+          "doc_count": 3
+        },
+        {
+          "key": "Strategic Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "Subject Matter Expert III/ Technical Program Manager III",
+          "doc_count": 3
+        },
+        {
+          "key": "TechSur Solutions - Program Manager II",
+          "doc_count": 3
+        },
+        {
+          "key": "Technical Program Manager IV",
+          "doc_count": 3
+        },
+        {
+          "key": "Workplace Program Manager",
+          "doc_count": 3
+        },
+        {
+          "key": "0080 Cyber Security Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "0081 Cyber Security Program Manager - Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "ACCS Program Manager 1",
+          "doc_count": 2
+        },
+        {
+          "key": "ACCS Program Manager 2",
+          "doc_count": 2
+        },
+        {
+          "key": "ACCS Program Manager 3",
+          "doc_count": 2
+        },
+        {
+          "key": "ACCS Program Manager 4",
+          "doc_count": 2
+        },
+        {
+          "key": "ACCS Program Manager 5",
+          "doc_count": 2
+        },
+        {
+          "key": "ACCS Program Manager 6",
+          "doc_count": 2
+        },
+        {
+          "key": "ACCS Program Manager 7",
+          "doc_count": 2
+        },
+        {
+          "key": "ACCS Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "ACT110 Program Manager, Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "ACT110.1 Program Manager, Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "ACT110.2 Program Manager, Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "ACT112 Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "ACT112.1 Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "ACT112.2 Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Accenture Federal Services - Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Acquisition Program Manager, Journeyman",
+          "doc_count": 2
+        },
+        {
+          "key": "Acquisition Program Manager, Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "Advanced Technology Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Alternate Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Applications Systems Analyst / Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Assistive Technology Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Assoc. Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Business Program Manager 2",
+          "doc_count": 2
+        },
+        {
+          "key": "Business Program Manager III",
+          "doc_count": 2
+        },
+        {
+          "key": "Business Program Manager IV",
+          "doc_count": 2
+        },
+        {
+          "key": "CH Cyberspace Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "CIH/Safety Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "CLOUD PROJECT/PROGRAM MANAGER 01",
+          "doc_count": 2
+        },
+        {
+          "key": "CLOUD PROJECT/PROGRAM MANAGER 02",
+          "doc_count": 2
+        },
+        {
+          "key": "CLOUD PROJECT/PROGRAM MANAGER 03",
+          "doc_count": 2
+        },
+        {
+          "key": "CLOUD PROJECT/PROGRAM MANAGER 04",
+          "doc_count": 2
+        },
+        {
+          "key": "CLOUD PROJECT/PROGRAM MANAGER 05",
+          "doc_count": 2
+        },
+        {
+          "key": "CLOUD Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "CSP Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud - Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud IT Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud IT Program Manager II",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud IT Program Manager Jr. Level",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud IT Program Manager Mid Level",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud IT Security Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud PROGRAM MANAGER",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager (Intermediate)",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager (Principal)",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager (Senior)",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager - Level I",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager - Level II",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager - Level III",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager 1 (LI)",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager 2 (LI)",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager 3 (LI)",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager 5",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager III (Softrams, LLC / Mentor)",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager SME",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Program Manager, Principal",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Project / Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud Project/Program Manager - Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "Cloud SME/Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Consultant (Program Manager III)",
+          "doc_count": 2
+        },
+        {
+          "key": "Contact Center Program Manager - 1",
+          "doc_count": 2
+        },
+        {
+          "key": "Contact Center Program Manager - 2",
+          "doc_count": 2
+        },
+        {
+          "key": "Contact Center Program Manager - 3",
+          "doc_count": 2
+        },
+        {
+          "key": "Contact Center Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "Contact Center Program Manager II",
+          "doc_count": 2
+        },
+        {
+          "key": "Contract Manager/Deputy Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Contract Manager/Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Contract Program Manager III",
+          "doc_count": 2
+        },
+        {
+          "key": "Contract/Sr. Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Operations Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Operations Program Manager - Inter-Op.Net, Inc.",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Program Manager 1",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Program Manager 2",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Program Manager 4",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Program Manager 5",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Program Manager V",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Program Manager VI",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Project / Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Security  Project Manager/Program Manager - Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Security Program Manager III",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber Security Strategic Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Cyber/IT Senior Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Cybersecurity Program Manager, Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "DP Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "DPC051 Program Manager (Government Contractor) - Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "DPC052 Program Manager (Government Contractor) - Intermediate",
+          "doc_count": 2
+        },
+        {
+          "key": "DPC053 Program Manager (Government Contractor) - Apprentice",
+          "doc_count": 2
+        },
+        {
+          "key": "Deployment Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Deputy Principal Program Manager/Project Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Deputy Program Manager 1",
+          "doc_count": 2
+        },
+        {
+          "key": "Deputy Program Manager 2",
+          "doc_count": 2
+        },
+        {
+          "key": "Deputy Program Manager 4",
+          "doc_count": 2
+        },
+        {
+          "key": "Deputy Program Manager 5",
+          "doc_count": 2
+        },
+        {
+          "key": "EIT - Deputy Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "ENG Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "ERP Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Educational Support Services - Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Engineer Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "Engineer Program Manager II",
+          "doc_count": 2
+        },
+        {
+          "key": "Engineer Program Manager III",
+          "doc_count": 2
+        },
+        {
+          "key": "Engineering Program Manager - Cleared",
+          "doc_count": 2
+        },
+        {
+          "key": "Engineering Program Manager 1",
+          "doc_count": 2
+        },
+        {
+          "key": "Engineering Program Manager IV",
+          "doc_count": 2
+        },
+        {
+          "key": "Engineering Program Manager Level 1",
+          "doc_count": 2
+        },
+        {
+          "key": "Engineering Program Manager Level 2",
+          "doc_count": 2
+        },
+        {
+          "key": "Engineering Program Manager Level 3",
+          "doc_count": 2
+        },
+        {
+          "key": "Engineering Program Manager Level 4",
+          "doc_count": 2
+        },
+        {
+          "key": "Engineering Program Manager V",
+          "doc_count": 2
+        },
+        {
+          "key": "Entry Level - Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Environmental Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "Environmental Program Manager II",
+          "doc_count": 2
+        },
+        {
+          "key": "Environmental Program Manager III",
+          "doc_count": 2
+        },
+        {
+          "key": "Executive Director / Program Manager IV",
+          "doc_count": 2
+        },
+        {
+          "key": "Executive Engineering Program Manager (EEPM)",
+          "doc_count": 2
+        },
+        {
+          "key": "Executive IT Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Executive Project/Program Manager General Dynamics Information Technology",
+          "doc_count": 2
+        },
+        {
+          "key": "FM Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "FM QSMO Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "FM QSMO Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "FM QSMO Program Manager II",
+          "doc_count": 2
+        },
+        {
+          "key": "FM QSMO Program Manager III",
+          "doc_count": 2
+        },
+        {
+          "key": "Graphics Design Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "Graphics Design Program Manager II",
+          "doc_count": 2
+        },
+        {
+          "key": "Graphics Design Program Manager III",
+          "doc_count": 2
+        },
+        {
+          "key": "HACS - Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "HACS Deputy Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "HACS PROGRAM MANAGER",
+          "doc_count": 2
+        },
+        {
+          "key": "HACS Program Manager 4",
+          "doc_count": 2
+        },
+        {
+          "key": "HACS Program Manager 5",
+          "doc_count": 2
+        },
+        {
+          "key": "HE Cloud Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "HE Cloud Program Manager II",
+          "doc_count": 2
+        },
+        {
+          "key": "HE IT Program Manager, II",
+          "doc_count": 2
+        },
+        {
+          "key": "HIT Program Manager M1",
+          "doc_count": 2
+        },
+        {
+          "key": "HIT Program Manager M2",
+          "doc_count": 2
+        },
+        {
+          "key": "HIT Senior Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "HR Alt Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "HR Director/Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Harmonia Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "Harmonia Program Manager II",
+          "doc_count": 2
+        },
+        {
+          "key": "Harmonia Program Manager III",
+          "doc_count": 2
+        },
+        {
+          "key": "Health & Communications Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT Advanced Technology Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT Applications Systems Analyst / Program Manager (TIAG)",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT PROGRAM MANAGER",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT Program Manager (TIAG)",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT Program Manager - Level I",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT Program Manager - Level III",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT Program Manager - Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT Program Manager 6",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT Program Manager Jr. Level",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT Program Manager Mid Level",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT Program Manager Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "Health IT Program Manager/Scrum Master II",
+          "doc_count": 2
+        },
+        {
+          "key": "Health Information Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Health Program Manager 1",
+          "doc_count": 2
+        },
+        {
+          "key": "Health Program Manager 2",
+          "doc_count": 2
+        },
+        {
+          "key": "Health Program Manager 3",
+          "doc_count": 2
+        },
+        {
+          "key": "Health Program Manager IV",
+          "doc_count": 2
+        },
+        {
+          "key": "Healthcare Program Manager (Senior)",
+          "doc_count": 2
+        },
+        {
+          "key": "Healthcare Project Manager - Senior/Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Healthcare Senior Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "High Level - Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "IAM PROGRAM MANAGER LEVEL 1",
+          "doc_count": 2
+        },
+        {
+          "key": "IAM PROGRAM MANAGER LEVEL 2",
+          "doc_count": 2
+        },
+        {
+          "key": "IAM PROGRAM MANAGER LEVEL 3",
+          "doc_count": 2
+        },
+        {
+          "key": "IAM Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "ICAM Senior Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "IGS : Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "IGS : Program Manager, Senior",
+          "doc_count": 2
+        },
+        {
+          "key": "IR Cyberspace Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "IT - Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager  I",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager  II",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager (Provided by Prot\u00e9g\u00e9, J3 Consulting LLC)",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager - Level 2",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager - Level 3",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager - Level I",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager - Level II",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager - Level V",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager / Project Manager III",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager 4",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager Client Site",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager I-BCA Services",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager II -BCA Services",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager III -BCA Services",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager VI",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager, III",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager/Agile - Karthik Consulting",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Program Manager/Business Analyst, Sr.",
+          "doc_count": 2
+        },
+        {
+          "key": "IT Sr. Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Indev: Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Information Assurance Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Information Assurance Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "Information Assurance Program Manager II",
+          "doc_count": 2
+        },
+        {
+          "key": "Information Systems Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Intelligence - Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "Junior IT Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Junior Program Manager - Cleared",
+          "doc_count": 2
+        },
+        {
+          "key": "L&D Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Leidos, Inc.: Cloud Program Manager 1",
+          "doc_count": 2
+        },
+        {
+          "key": "Leidos, Inc.: Cloud Program Manager 2",
+          "doc_count": 2
+        },
+        {
+          "key": "Leidos, Inc.: Cloud Program Manager 3",
+          "doc_count": 2
+        },
+        {
+          "key": "Leidos, Inc.: Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Leidos, Inc.: Sr. Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Management Consulting Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Management/Operations Business Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Managing Consultant/Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Marketing Research Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "Marketing Research Program Manager II",
+          "doc_count": 2
+        },
+        {
+          "key": "Marketing Research Program Manager III",
+          "doc_count": 2
+        },
+        {
+          "key": "Mid Level - Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Mid Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "Mid-Level Program Manager (AgileTek)",
+          "doc_count": 2
+        },
+        {
+          "key": "Officer (PM) Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "PIV Program Manager",
+          "doc_count": 2
+        },
+        {
+          "key": "PR Program Manager I",
+          "doc_count": 2
+        },
+        {
+          "key": "PR Program Manager II",
+          "doc_count": 2
+        },
+        {
+          "key": "PR Program Manager III",
+          "doc_count": 2
+        },
+        {
+          "key": "PROGRAM MANAGER 05, Core4ce LLC",
+          "doc_count": 2
+        },
+        {
+          "key": "PROGRAM MANAGER IV",
+          "doc_count": 2
+        },
+        {
+          "key": "PROGRAM MANAGER V",
+          "doc_count": 2
+        },
+        {
+          "key": "PROGRAM MANAGER VI",
+          "doc_count": 2
+        },
+        {
+          "key": "PROGRAM MANAGER VII",
+          "doc_count": 2
+        },
+        {
+          "key": "PSS Program Manager I",
+          "doc_count": 2
+        }
+      ]
+    },
+    "security_clearance": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "false",
+          "doc_count": 8708
+        },
+        {
+          "key": "true",
+          "doc_count": 749
+        }
+      ]
+    },
+    "histogram_percentiles": {
+      "values": {
+        "10.0": 118.94913365222274,
+        "25.0": 149.10393579750573,
+        "30.0": 156.10702143503588,
+        "35.0": 163.12953653530053,
+        "50.0": 183.0145249505155,
+        "65.0": 203.6177565438793,
+        "70.0": 211.62915915710698,
+        "75.0": 221.17925934676674,
+        "90.0": 265.33282514822344
+      }
+    },
+    "min_years_experience": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "10",
+          "doc_count": 2178
+        },
+        {
+          "key": "8",
+          "doc_count": 1278
+        },
+        {
+          "key": "5",
+          "doc_count": 1033
+        },
+        {
+          "key": "12",
+          "doc_count": 914
+        },
+        {
+          "key": "15",
+          "doc_count": 900
+        },
+        {
+          "key": "7",
+          "doc_count": 559
+        },
+        {
+          "key": "6",
+          "doc_count": 545
+        },
+        {
+          "key": "3",
+          "doc_count": 408
+        },
+        {
+          "key": "4",
+          "doc_count": 401
+        },
+        {
+          "key": "2",
+          "doc_count": 228
+        },
+        {
+          "key": "20",
+          "doc_count": 206
+        },
+        {
+          "key": "9",
+          "doc_count": 144
+        },
+        {
+          "key": "1",
+          "doc_count": 135
+        },
+        {
+          "key": "14",
+          "doc_count": 96
+        },
+        {
+          "key": "18",
+          "doc_count": 78
+        },
+        {
+          "key": "0",
+          "doc_count": 72
+        },
+        {
+          "key": "11",
+          "doc_count": 66
+        },
+        {
+          "key": "16",
+          "doc_count": 66
+        },
+        {
+          "key": "25",
+          "doc_count": 45
+        },
+        {
+          "key": "13",
+          "doc_count": 28
+        },
+        {
+          "key": "17",
+          "doc_count": 26
+        },
+        {
+          "key": "21",
+          "doc_count": 13
+        },
+        {
+          "key": "30",
+          "doc_count": 12
+        },
+        {
+          "key": "22",
+          "doc_count": 9
+        },
+        {
+          "key": "19",
+          "doc_count": 6
+        },
+        {
+          "key": "28",
+          "doc_count": 4
+        },
+        {
+          "key": "24",
+          "doc_count": 3
+        },
+        {
+          "key": "26",
+          "doc_count": 2
+        },
+        {
+          "key": "40",
+          "doc_count": 2
+        }
+      ]
+    },
+    "worksite": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "Customer_Facility",
+          "doc_count": 4905
+        },
+        {
+          "key": "Contractor_Facility",
+          "doc_count": 4047
+        },
+        {
+          "key": "Virtual",
+          "doc_count": 505
+        }
+      ]
+    },
+    "wage_histogram": {
+      "buckets": [
+        {
+          "min": 27.920000076293945,
+          "key": 41.92626615472742,
+          "max": 60.83999824523926,
+          "doc_count": 74
+        },
+        {
+          "min": 60.83999824523926,
+          "key": 96.76161180248023,
+          "max": 109.42499923706055,
+          "doc_count": 561
+        },
+        {
+          "min": 109.42499923706055,
+          "key": 133.25403577361257,
+          "max": 153.31999969482422,
+          "doc_count": 1863
+        },
+        {
+          "min": 153.31999969482422,
+          "key": 174.45675370201994,
+          "max": 195.0664520263672,
+          "doc_count": 3184
+        },
+        {
+          "min": 195.0664520263672,
+          "key": 215.03594595261137,
+          "max": 244.79500579833984,
+          "doc_count": 2215
+        },
+        {
+          "min": 244.79500579833984,
+          "key": 259.8783790588379,
+          "max": 287.3582000732422,
+          "doc_count": 940
+        },
+        {
+          "min": 287.3582000732422,
+          "key": 290.1959156284671,
+          "max": 303.6217041015625,
+          "doc_count": 169
+        },
+        {
+          "min": 303.6217041015625,
+          "key": 317.25784572024185,
+          "max": 339.0060119628906,
+          "doc_count": 271
+        },
+        {
+          "min": 339.0060119628906,
+          "key": 349.6545208803157,
+          "max": 370.4139404296875,
+          "doc_count": 97
+        },
+        {
+          "min": 370.4139404296875,
+          "key": 387.3075147356306,
+          "max": 415.72430419921875,
+          "doc_count": 42
+        },
+        {
+          "min": 415.72430419921875,
+          "key": 432.90250610351563,
+          "max": 467.933349609375,
+          "doc_count": 25
+        },
+        {
+          "min": 467.933349609375,
+          "key": 486.1809825897217,
+          "max": 499.9100036621094,
+          "doc_count": 16
+        }
+      ]
+    },
+    "education_level": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "Bachelors",
+          "doc_count": 7954
+        },
+        {
+          "key": "Masters",
+          "doc_count": 1199
+        },
+        {
+          "key": "High School",
+          "doc_count": 136
+        },
+        {
+          "key": "Associates",
+          "doc_count": 99
+        },
+        {
+          "key": "PhD",
+          "doc_count": 51
+        },
+        {
+          "key": "High School Equivalent",
+          "doc_count": 8
+        },
+        {
+          "key": "None",
+          "doc_count": 5
+        },
+        {
+          "key": "Other Tech School or Certification",
+          "doc_count": 5
+        }
+      ]
+    },
+    "current_price": {
+      "doc_count_error_upper_bound": 5,
+      "sum_other_doc_count": 7799,
+      "buckets": [
+        {
+          "key": "175.2045",
+          "doc_count": 12
+        },
+        {
+          "key": "113.7815",
+          "doc_count": 10
+        },
+        {
+          "key": "166.64",
+          "doc_count": 10
+        },
+        {
+          "key": "192.1677",
+          "doc_count": 10
+        },
+        {
+          "key": "230.3629",
+          "doc_count": 10
+        },
+        {
+          "key": "237.3512",
+          "doc_count": 10
+        },
+        {
+          "key": "305.7087",
+          "doc_count": 10
+        },
+        {
+          "key": "124.97",
+          "doc_count": 9
+        },
+        {
+          "key": "256.89",
+          "doc_count": 9
+        },
+        {
+          "key": "106.0793",
+          "doc_count": 8
+        },
+        {
+          "key": "108.6946",
+          "doc_count": 8
+        },
+        {
+          "key": "120.3457",
+          "doc_count": 8
+        },
+        {
+          "key": "130.246",
+          "doc_count": 8
+        },
+        {
+          "key": "133.1484",
+          "doc_count": 8
+        },
+        {
+          "key": "168.71",
+          "doc_count": 8
+        },
+        {
+          "key": "185.4661",
+          "doc_count": 8
+        },
+        {
+          "key": "187.96",
+          "doc_count": 8
+        },
+        {
+          "key": "208.29",
+          "doc_count": 8
+        },
+        {
+          "key": "223.49",
+          "doc_count": 8
+        },
+        {
+          "key": "272.1962",
+          "doc_count": 8
+        },
+        {
+          "key": "282.68",
+          "doc_count": 8
+        },
+        {
+          "key": "324.94",
+          "doc_count": 8
+        },
+        {
+          "key": "118.33",
+          "doc_count": 7
+        },
+        {
+          "key": "118.3944",
+          "doc_count": 7
+        },
+        {
+          "key": "127.99",
+          "doc_count": 7
+        },
+        {
+          "key": "135.04",
+          "doc_count": 7
+        },
+        {
+          "key": "136.4036",
+          "doc_count": 7
+        },
+        {
+          "key": "148.36",
+          "doc_count": 7
+        },
+        {
+          "key": "152.6",
+          "doc_count": 7
+        },
+        {
+          "key": "166.71",
+          "doc_count": 7
+        },
+        {
+          "key": "169.57",
+          "doc_count": 7
+        },
+        {
+          "key": "197.23",
+          "doc_count": 7
+        },
+        {
+          "key": "274.43",
+          "doc_count": 7
+        },
+        {
+          "key": "92.8153",
+          "doc_count": 7
+        },
+        {
+          "key": "117.2",
+          "doc_count": 6
+        },
+        {
+          "key": "119.1857",
+          "doc_count": 6
+        },
+        {
+          "key": "124.6049",
+          "doc_count": 6
+        },
+        {
+          "key": "136.14",
+          "doc_count": 6
+        },
+        {
+          "key": "140.2804",
+          "doc_count": 6
+        },
+        {
+          "key": "147.43",
+          "doc_count": 6
+        },
+        {
+          "key": "150.93",
+          "doc_count": 6
+        },
+        {
+          "key": "151.72",
+          "doc_count": 6
+        },
+        {
+          "key": "154.499",
+          "doc_count": 6
+        },
+        {
+          "key": "157.59",
+          "doc_count": 6
+        },
+        {
+          "key": "163.57",
+          "doc_count": 6
+        },
+        {
+          "key": "168.16",
+          "doc_count": 6
+        },
+        {
+          "key": "171.0",
+          "doc_count": 6
+        },
+        {
+          "key": "190.28",
+          "doc_count": 6
+        },
+        {
+          "key": "203.8996",
+          "doc_count": 6
+        },
+        {
+          "key": "264.28",
+          "doc_count": 6
+        },
+        {
+          "key": "38.3221",
+          "doc_count": 6
+        },
+        {
+          "key": "95.2651",
+          "doc_count": 6
+        },
+        {
+          "key": "104.6",
+          "doc_count": 5
+        },
+        {
+          "key": "106.1",
+          "doc_count": 5
+        },
+        {
+          "key": "110.75",
+          "doc_count": 5
+        },
+        {
+          "key": "117.06",
+          "doc_count": 5
+        },
+        {
+          "key": "118.19",
+          "doc_count": 5
+        },
+        {
+          "key": "119.65",
+          "doc_count": 5
+        },
+        {
+          "key": "125.8539",
+          "doc_count": 5
+        },
+        {
+          "key": "134.18",
+          "doc_count": 5
+        },
+        {
+          "key": "145.36",
+          "doc_count": 5
+        },
+        {
+          "key": "148.01",
+          "doc_count": 5
+        },
+        {
+          "key": "148.04",
+          "doc_count": 5
+        },
+        {
+          "key": "153.03",
+          "doc_count": 5
+        },
+        {
+          "key": "158.22",
+          "doc_count": 5
+        },
+        {
+          "key": "162.63",
+          "doc_count": 5
+        },
+        {
+          "key": "164.08",
+          "doc_count": 5
+        },
+        {
+          "key": "165.18",
+          "doc_count": 5
+        },
+        {
+          "key": "165.44",
+          "doc_count": 5
+        },
+        {
+          "key": "167.24",
+          "doc_count": 5
+        },
+        {
+          "key": "179.3",
+          "doc_count": 5
+        },
+        {
+          "key": "180.0775",
+          "doc_count": 5
+        },
+        {
+          "key": "184.58",
+          "doc_count": 5
+        },
+        {
+          "key": "184.71",
+          "doc_count": 5
+        },
+        {
+          "key": "185.16",
+          "doc_count": 5
+        },
+        {
+          "key": "204.93",
+          "doc_count": 5
+        },
+        {
+          "key": "249.34",
+          "doc_count": 5
+        },
+        {
+          "key": "249.95",
+          "doc_count": 5
+        },
+        {
+          "key": "330.36",
+          "doc_count": 5
+        },
+        {
+          "key": "108.65",
+          "doc_count": 4
+        },
+        {
+          "key": "108.87",
+          "doc_count": 4
+        },
+        {
+          "key": "112.91",
+          "doc_count": 4
+        },
+        {
+          "key": "114.23",
+          "doc_count": 4
+        },
+        {
+          "key": "114.73",
+          "doc_count": 4
+        },
+        {
+          "key": "115.34",
+          "doc_count": 4
+        },
+        {
+          "key": "118.87",
+          "doc_count": 4
+        },
+        {
+          "key": "120.24",
+          "doc_count": 4
+        },
+        {
+          "key": "123.43",
+          "doc_count": 4
+        },
+        {
+          "key": "124.33",
+          "doc_count": 4
+        },
+        {
+          "key": "125.28",
+          "doc_count": 4
+        },
+        {
+          "key": "129.67",
+          "doc_count": 4
+        },
+        {
+          "key": "131.92",
+          "doc_count": 4
+        },
+        {
+          "key": "135.43",
+          "doc_count": 4
+        },
+        {
+          "key": "136.39",
+          "doc_count": 4
+        },
+        {
+          "key": "137.53",
+          "doc_count": 4
+        },
+        {
+          "key": "139.1",
+          "doc_count": 4
+        },
+        {
+          "key": "140.64",
+          "doc_count": 4
+        },
+        {
+          "key": "142.78",
+          "doc_count": 4
+        },
+        {
+          "key": "142.9293",
+          "doc_count": 4
+        },
+        {
+          "key": "145.23",
+          "doc_count": 4
+        },
+        {
+          "key": "145.39",
+          "doc_count": 4
+        },
+        {
+          "key": "145.61",
+          "doc_count": 4
+        },
+        {
+          "key": "146.8",
+          "doc_count": 4
+        },
+        {
+          "key": "146.9001",
+          "doc_count": 4
+        },
+        {
+          "key": "147.21",
+          "doc_count": 4
+        },
+        {
+          "key": "147.74",
+          "doc_count": 4
+        },
+        {
+          "key": "148.48",
+          "doc_count": 4
+        },
+        {
+          "key": "148.62",
+          "doc_count": 4
+        },
+        {
+          "key": "149.45",
+          "doc_count": 4
+        },
+        {
+          "key": "149.69",
+          "doc_count": 4
+        },
+        {
+          "key": "149.72",
+          "doc_count": 4
+        },
+        {
+          "key": "150.74",
+          "doc_count": 4
+        },
+        {
+          "key": "152.0541",
+          "doc_count": 4
+        },
+        {
+          "key": "154.81",
+          "doc_count": 4
+        },
+        {
+          "key": "155.74",
+          "doc_count": 4
+        },
+        {
+          "key": "156.0",
+          "doc_count": 4
+        },
+        {
+          "key": "156.35",
+          "doc_count": 4
+        },
+        {
+          "key": "156.95",
+          "doc_count": 4
+        },
+        {
+          "key": "160.5",
+          "doc_count": 4
+        },
+        {
+          "key": "163.67",
+          "doc_count": 4
+        },
+        {
+          "key": "164.3575",
+          "doc_count": 4
+        },
+        {
+          "key": "165.74",
+          "doc_count": 4
+        },
+        {
+          "key": "165.79",
+          "doc_count": 4
+        },
+        {
+          "key": "168.6",
+          "doc_count": 4
+        },
+        {
+          "key": "168.8528",
+          "doc_count": 4
+        },
+        {
+          "key": "173.33",
+          "doc_count": 4
+        },
+        {
+          "key": "173.5319",
+          "doc_count": 4
+        },
+        {
+          "key": "174.09",
+          "doc_count": 4
+        },
+        {
+          "key": "174.87",
+          "doc_count": 4
+        },
+        {
+          "key": "176.08",
+          "doc_count": 4
+        },
+        {
+          "key": "176.16",
+          "doc_count": 4
+        },
+        {
+          "key": "176.28",
+          "doc_count": 4
+        },
+        {
+          "key": "181.46",
+          "doc_count": 4
+        },
+        {
+          "key": "182.18",
+          "doc_count": 4
+        },
+        {
+          "key": "182.62",
+          "doc_count": 4
+        },
+        {
+          "key": "187.53",
+          "doc_count": 4
+        },
+        {
+          "key": "188.12",
+          "doc_count": 4
+        },
+        {
+          "key": "192.17",
+          "doc_count": 4
+        },
+        {
+          "key": "194.01",
+          "doc_count": 4
+        },
+        {
+          "key": "196.99",
+          "doc_count": 4
+        },
+        {
+          "key": "205.75",
+          "doc_count": 4
+        },
+        {
+          "key": "226.6",
+          "doc_count": 4
+        },
+        {
+          "key": "229.15",
+          "doc_count": 4
+        },
+        {
+          "key": "237.27",
+          "doc_count": 4
+        },
+        {
+          "key": "279.64",
+          "doc_count": 4
+        },
+        {
+          "key": "38.6739",
+          "doc_count": 4
+        },
+        {
+          "key": "93.87",
+          "doc_count": 4
+        },
+        {
+          "key": "95.28",
+          "doc_count": 4
+        },
+        {
+          "key": "100.84",
+          "doc_count": 3
+        },
+        {
+          "key": "101.79",
+          "doc_count": 3
+        },
+        {
+          "key": "103.8496",
+          "doc_count": 3
+        },
+        {
+          "key": "104.07",
+          "doc_count": 3
+        },
+        {
+          "key": "108.62",
+          "doc_count": 3
+        },
+        {
+          "key": "110.06",
+          "doc_count": 3
+        },
+        {
+          "key": "111.09",
+          "doc_count": 3
+        },
+        {
+          "key": "112.32",
+          "doc_count": 3
+        },
+        {
+          "key": "115.0",
+          "doc_count": 3
+        },
+        {
+          "key": "115.5692",
+          "doc_count": 3
+        },
+        {
+          "key": "116.75",
+          "doc_count": 3
+        },
+        {
+          "key": "116.88",
+          "doc_count": 3
+        },
+        {
+          "key": "118.3701",
+          "doc_count": 3
+        },
+        {
+          "key": "119.56",
+          "doc_count": 3
+        },
+        {
+          "key": "122.17",
+          "doc_count": 3
+        },
+        {
+          "key": "123.94",
+          "doc_count": 3
+        },
+        {
+          "key": "125.81",
+          "doc_count": 3
+        },
+        {
+          "key": "127.15",
+          "doc_count": 3
+        },
+        {
+          "key": "127.98",
+          "doc_count": 3
+        },
+        {
+          "key": "131.32",
+          "doc_count": 3
+        },
+        {
+          "key": "131.3537",
+          "doc_count": 3
+        },
+        {
+          "key": "131.91",
+          "doc_count": 3
+        },
+        {
+          "key": "132.05",
+          "doc_count": 3
+        },
+        {
+          "key": "132.79",
+          "doc_count": 3
+        },
+        {
+          "key": "133.15",
+          "doc_count": 3
+        },
+        {
+          "key": "133.19",
+          "doc_count": 3
+        },
+        {
+          "key": "133.35",
+          "doc_count": 3
+        },
+        {
+          "key": "134.9446",
+          "doc_count": 3
+        },
+        {
+          "key": "137.2796",
+          "doc_count": 3
+        },
+        {
+          "key": "137.69",
+          "doc_count": 3
+        },
+        {
+          "key": "138.49",
+          "doc_count": 3
+        },
+        {
+          "key": "138.79",
+          "doc_count": 3
+        },
+        {
+          "key": "140.91",
+          "doc_count": 3
+        },
+        {
+          "key": "141.14",
+          "doc_count": 3
+        },
+        {
+          "key": "142.07",
+          "doc_count": 3
+        },
+        {
+          "key": "142.9",
+          "doc_count": 3
+        },
+        {
+          "key": "143.64",
+          "doc_count": 3
+        },
+        {
+          "key": "144.6751",
+          "doc_count": 3
+        },
+        {
+          "key": "144.873",
+          "doc_count": 3
+        },
+        {
+          "key": "145.09",
+          "doc_count": 3
+        },
+        {
+          "key": "145.4333",
+          "doc_count": 3
+        },
+        {
+          "key": "145.84",
+          "doc_count": 3
+        },
+        {
+          "key": "146.54",
+          "doc_count": 3
+        },
+        {
+          "key": "147.18",
+          "doc_count": 3
+        },
+        {
+          "key": "147.51",
+          "doc_count": 3
+        },
+        {
+          "key": "149.0",
+          "doc_count": 3
+        },
+        {
+          "key": "149.2365",
+          "doc_count": 3
+        },
+        {
+          "key": "149.6",
+          "doc_count": 3
+        },
+        {
+          "key": "149.62",
+          "doc_count": 3
+        },
+        {
+          "key": "150.4",
+          "doc_count": 3
+        },
+        {
+          "key": "150.87",
+          "doc_count": 3
+        },
+        {
+          "key": "151.8608",
+          "doc_count": 3
+        },
+        {
+          "key": "152.09",
+          "doc_count": 3
+        },
+        {
+          "key": "152.15",
+          "doc_count": 3
+        },
+        {
+          "key": "152.52",
+          "doc_count": 3
+        },
+        {
+          "key": "152.85",
+          "doc_count": 3
+        },
+        {
+          "key": "152.9242",
+          "doc_count": 3
+        },
+        {
+          "key": "153.1",
+          "doc_count": 3
+        },
+        {
+          "key": "153.6",
+          "doc_count": 3
+        },
+        {
+          "key": "154.1845",
+          "doc_count": 3
+        },
+        {
+          "key": "154.259",
+          "doc_count": 3
+        },
+        {
+          "key": "154.35",
+          "doc_count": 3
+        },
+        {
+          "key": "154.398",
+          "doc_count": 3
+        },
+        {
+          "key": "154.49",
+          "doc_count": 3
+        },
+        {
+          "key": "154.61",
+          "doc_count": 3
+        },
+        {
+          "key": "154.64",
+          "doc_count": 3
+        },
+        {
+          "key": "154.73",
+          "doc_count": 3
+        },
+        {
+          "key": "155.0025",
+          "doc_count": 3
+        },
+        {
+          "key": "155.62",
+          "doc_count": 3
+        },
+        {
+          "key": "156.09",
+          "doc_count": 3
+        },
+        {
+          "key": "156.0944",
+          "doc_count": 3
+        },
+        {
+          "key": "156.18",
+          "doc_count": 3
+        },
+        {
+          "key": "156.62",
+          "doc_count": 3
+        },
+        {
+          "key": "157.2199",
+          "doc_count": 3
+        },
+        {
+          "key": "157.62",
+          "doc_count": 3
+        },
+        {
+          "key": "157.8887",
+          "doc_count": 3
+        },
+        {
+          "key": "157.89",
+          "doc_count": 3
+        },
+        {
+          "key": "158.03",
+          "doc_count": 3
+        },
+        {
+          "key": "158.46",
+          "doc_count": 3
+        },
+        {
+          "key": "158.69",
+          "doc_count": 3
+        },
+        {
+          "key": "159.0961",
+          "doc_count": 3
+        },
+        {
+          "key": "159.22",
+          "doc_count": 3
+        },
+        {
+          "key": "160.0",
+          "doc_count": 3
+        },
+        {
+          "key": "160.38",
+          "doc_count": 3
+        },
+        {
+          "key": "160.65",
+          "doc_count": 3
+        },
+        {
+          "key": "160.76",
+          "doc_count": 3
+        },
+        {
+          "key": "161.88",
+          "doc_count": 3
+        },
+        {
+          "key": "162.05",
+          "doc_count": 3
+        },
+        {
+          "key": "162.47",
+          "doc_count": 3
+        },
+        {
+          "key": "162.49",
+          "doc_count": 3
+        },
+        {
+          "key": "162.79",
+          "doc_count": 3
+        },
+        {
+          "key": "163.25",
+          "doc_count": 3
+        },
+        {
+          "key": "163.41",
+          "doc_count": 3
+        },
+        {
+          "key": "163.48",
+          "doc_count": 3
+        },
+        {
+          "key": "163.55",
+          "doc_count": 3
+        },
+        {
+          "key": "163.71",
+          "doc_count": 3
+        },
+        {
+          "key": "163.81",
+          "doc_count": 3
+        },
+        {
+          "key": "165.5",
+          "doc_count": 3
+        },
+        {
+          "key": "165.62",
+          "doc_count": 3
+        },
+        {
+          "key": "166.15",
+          "doc_count": 3
+        },
+        {
+          "key": "166.16",
+          "doc_count": 3
+        },
+        {
+          "key": "166.5693",
+          "doc_count": 3
+        },
+        {
+          "key": "166.7",
+          "doc_count": 3
+        },
+        {
+          "key": "167.43",
+          "doc_count": 3
+        },
+        {
+          "key": "167.5",
+          "doc_count": 3
+        },
+        {
+          "key": "167.52",
+          "doc_count": 3
+        },
+        {
+          "key": "168.0666",
+          "doc_count": 3
+        },
+        {
+          "key": "168.4718",
+          "doc_count": 3
+        },
+        {
+          "key": "168.49",
+          "doc_count": 3
+        },
+        {
+          "key": "168.85",
+          "doc_count": 3
+        },
+        {
+          "key": "169.18",
+          "doc_count": 3
+        },
+        {
+          "key": "169.23",
+          "doc_count": 3
+        },
+        {
+          "key": "169.37",
+          "doc_count": 3
+        },
+        {
+          "key": "169.42",
+          "doc_count": 3
+        },
+        {
+          "key": "169.65",
+          "doc_count": 3
+        },
+        {
+          "key": "169.79",
+          "doc_count": 3
+        },
+        {
+          "key": "169.88",
+          "doc_count": 3
+        },
+        {
+          "key": "170.02",
+          "doc_count": 3
+        },
+        {
+          "key": "170.3",
+          "doc_count": 3
+        },
+        {
+          "key": "170.37",
+          "doc_count": 3
+        },
+        {
+          "key": "170.4",
+          "doc_count": 3
+        },
+        {
+          "key": "170.48",
+          "doc_count": 3
+        },
+        {
+          "key": "170.61",
+          "doc_count": 3
+        },
+        {
+          "key": "171.5",
+          "doc_count": 3
+        },
+        {
+          "key": "171.6954",
+          "doc_count": 3
+        },
+        {
+          "key": "171.87",
+          "doc_count": 3
+        },
+        {
+          "key": "171.89",
+          "doc_count": 3
+        },
+        {
+          "key": "172.2",
+          "doc_count": 3
+        },
+        {
+          "key": "172.35",
+          "doc_count": 3
+        },
+        {
+          "key": "172.55",
+          "doc_count": 3
+        },
+        {
+          "key": "172.64",
+          "doc_count": 3
+        },
+        {
+          "key": "172.66",
+          "doc_count": 3
+        },
+        {
+          "key": "172.8",
+          "doc_count": 3
+        },
+        {
+          "key": "174.17",
+          "doc_count": 3
+        },
+        {
+          "key": "174.56",
+          "doc_count": 3
+        },
+        {
+          "key": "176.66",
+          "doc_count": 3
+        },
+        {
+          "key": "178.23",
+          "doc_count": 3
+        },
+        {
+          "key": "183.06",
+          "doc_count": 3
+        },
+        {
+          "key": "190.08",
+          "doc_count": 3
+        },
+        {
+          "key": "195.79",
+          "doc_count": 3
+        },
+        {
+          "key": "199.71",
+          "doc_count": 3
+        },
+        {
+          "key": "205.0",
+          "doc_count": 3
+        },
+        {
+          "key": "206.14",
+          "doc_count": 3
+        },
+        {
+          "key": "210.0",
+          "doc_count": 3
+        },
+        {
+          "key": "213.49",
+          "doc_count": 3
+        },
+        {
+          "key": "217.8785",
+          "doc_count": 3
+        },
+        {
+          "key": "219.82",
+          "doc_count": 3
+        },
+        {
+          "key": "228.12",
+          "doc_count": 3
+        },
+        {
+          "key": "234.52",
+          "doc_count": 3
+        },
+        {
+          "key": "234.76",
+          "doc_count": 3
+        },
+        {
+          "key": "235.6329",
+          "doc_count": 3
+        },
+        {
+          "key": "251.69",
+          "doc_count": 3
+        },
+        {
+          "key": "263.28",
+          "doc_count": 3
+        },
+        {
+          "key": "273.9668",
+          "doc_count": 3
+        },
+        {
+          "key": "291.09",
+          "doc_count": 3
+        },
+        {
+          "key": "40.9953",
+          "doc_count": 3
+        },
+        {
+          "key": "93.76",
+          "doc_count": 3
+        },
+        {
+          "key": "100.13",
+          "doc_count": 2
+        },
+        {
+          "key": "100.27",
+          "doc_count": 2
+        },
+        {
+          "key": "100.38",
+          "doc_count": 2
+        },
+        {
+          "key": "101.15",
+          "doc_count": 2
+        },
+        {
+          "key": "101.36",
+          "doc_count": 2
+        },
+        {
+          "key": "102.72",
+          "doc_count": 2
+        },
+        {
+          "key": "103.33",
+          "doc_count": 2
+        },
+        {
+          "key": "103.7063",
+          "doc_count": 2
+        },
+        {
+          "key": "103.94",
+          "doc_count": 2
+        },
+        {
+          "key": "103.9401",
+          "doc_count": 2
+        },
+        {
+          "key": "104.57",
+          "doc_count": 2
+        },
+        {
+          "key": "105.74",
+          "doc_count": 2
+        },
+        {
+          "key": "105.998",
+          "doc_count": 2
+        },
+        {
+          "key": "106.03",
+          "doc_count": 2
+        },
+        {
+          "key": "106.09",
+          "doc_count": 2
+        },
+        {
+          "key": "106.69",
+          "doc_count": 2
+        },
+        {
+          "key": "106.76",
+          "doc_count": 2
+        },
+        {
+          "key": "106.96",
+          "doc_count": 2
+        },
+        {
+          "key": "107.22",
+          "doc_count": 2
+        },
+        {
+          "key": "107.336",
+          "doc_count": 2
+        },
+        {
+          "key": "107.65",
+          "doc_count": 2
+        },
+        {
+          "key": "107.68",
+          "doc_count": 2
+        },
+        {
+          "key": "107.7",
+          "doc_count": 2
+        },
+        {
+          "key": "107.9",
+          "doc_count": 2
+        },
+        {
+          "key": "107.96",
+          "doc_count": 2
+        },
+        {
+          "key": "108.13",
+          "doc_count": 2
+        },
+        {
+          "key": "108.37",
+          "doc_count": 2
+        },
+        {
+          "key": "108.4661",
+          "doc_count": 2
+        },
+        {
+          "key": "108.61",
+          "doc_count": 2
+        },
+        {
+          "key": "109.08",
+          "doc_count": 2
+        },
+        {
+          "key": "109.6121",
+          "doc_count": 2
+        },
+        {
+          "key": "110.16",
+          "doc_count": 2
+        },
+        {
+          "key": "110.42",
+          "doc_count": 2
+        },
+        {
+          "key": "110.82",
+          "doc_count": 2
+        },
+        {
+          "key": "110.84",
+          "doc_count": 2
+        },
+        {
+          "key": "110.9614",
+          "doc_count": 2
+        },
+        {
+          "key": "112.6",
+          "doc_count": 2
+        },
+        {
+          "key": "113.0678",
+          "doc_count": 2
+        },
+        {
+          "key": "113.7128",
+          "doc_count": 2
+        },
+        {
+          "key": "113.92",
+          "doc_count": 2
+        },
+        {
+          "key": "114.13",
+          "doc_count": 2
+        },
+        {
+          "key": "114.1757",
+          "doc_count": 2
+        },
+        {
+          "key": "114.38",
+          "doc_count": 2
+        },
+        {
+          "key": "114.39",
+          "doc_count": 2
+        },
+        {
+          "key": "114.65",
+          "doc_count": 2
+        },
+        {
+          "key": "114.86",
+          "doc_count": 2
+        },
+        {
+          "key": "115.0424",
+          "doc_count": 2
+        },
+        {
+          "key": "115.3976",
+          "doc_count": 2
+        },
+        {
+          "key": "115.65",
+          "doc_count": 2
+        },
+        {
+          "key": "115.87",
+          "doc_count": 2
+        },
+        {
+          "key": "116.28",
+          "doc_count": 2
+        },
+        {
+          "key": "116.59",
+          "doc_count": 2
+        },
+        {
+          "key": "117.32",
+          "doc_count": 2
+        },
+        {
+          "key": "117.37",
+          "doc_count": 2
+        },
+        {
+          "key": "117.4605",
+          "doc_count": 2
+        },
+        {
+          "key": "117.52",
+          "doc_count": 2
+        },
+        {
+          "key": "117.631",
+          "doc_count": 2
+        },
+        {
+          "key": "117.84",
+          "doc_count": 2
+        },
+        {
+          "key": "117.94",
+          "doc_count": 2
+        },
+        {
+          "key": "118.3108",
+          "doc_count": 2
+        },
+        {
+          "key": "118.3663",
+          "doc_count": 2
+        },
+        {
+          "key": "118.3702",
+          "doc_count": 2
+        },
+        {
+          "key": "118.47",
+          "doc_count": 2
+        },
+        {
+          "key": "118.49",
+          "doc_count": 2
+        },
+        {
+          "key": "118.5",
+          "doc_count": 2
+        },
+        {
+          "key": "118.83",
+          "doc_count": 2
+        },
+        {
+          "key": "119.02",
+          "doc_count": 2
+        },
+        {
+          "key": "119.07",
+          "doc_count": 2
+        },
+        {
+          "key": "119.0932",
+          "doc_count": 2
+        },
+        {
+          "key": "119.54",
+          "doc_count": 2
+        },
+        {
+          "key": "119.9245",
+          "doc_count": 2
+        },
+        {
+          "key": "120.0",
+          "doc_count": 2
+        },
+        {
+          "key": "120.5",
+          "doc_count": 2
+        },
+        {
+          "key": "120.75",
+          "doc_count": 2
+        },
+        {
+          "key": "120.77",
+          "doc_count": 2
+        },
+        {
+          "key": "121.09",
+          "doc_count": 2
+        },
+        {
+          "key": "121.2554",
+          "doc_count": 2
+        },
+        {
+          "key": "121.63",
+          "doc_count": 2
+        },
+        {
+          "key": "121.94",
+          "doc_count": 2
+        },
+        {
+          "key": "122.09",
+          "doc_count": 2
+        },
+        {
+          "key": "122.1172",
+          "doc_count": 2
+        },
+        {
+          "key": "122.13",
+          "doc_count": 2
+        },
+        {
+          "key": "122.1598",
+          "doc_count": 2
+        },
+        {
+          "key": "122.23",
+          "doc_count": 2
+        },
+        {
+          "key": "122.27",
+          "doc_count": 2
+        },
+        {
+          "key": "122.5",
+          "doc_count": 2
+        },
+        {
+          "key": "122.71",
+          "doc_count": 2
+        },
+        {
+          "key": "123.0",
+          "doc_count": 2
+        },
+        {
+          "key": "123.06",
+          "doc_count": 2
+        },
+        {
+          "key": "123.2",
+          "doc_count": 2
+        },
+        {
+          "key": "123.42",
+          "doc_count": 2
+        },
+        {
+          "key": "123.5041",
+          "doc_count": 2
+        },
+        {
+          "key": "123.5725",
+          "doc_count": 2
+        },
+        {
+          "key": "123.6102",
+          "doc_count": 2
+        },
+        {
+          "key": "123.7034",
+          "doc_count": 2
+        },
+        {
+          "key": "123.81",
+          "doc_count": 2
+        },
+        {
+          "key": "123.82",
+          "doc_count": 2
+        },
+        {
+          "key": "123.87",
+          "doc_count": 2
+        },
+        {
+          "key": "124.18",
+          "doc_count": 2
+        },
+        {
+          "key": "124.27",
+          "doc_count": 2
+        },
+        {
+          "key": "124.62",
+          "doc_count": 2
+        },
+        {
+          "key": "124.927",
+          "doc_count": 2
+        },
+        {
+          "key": "124.98",
+          "doc_count": 2
+        },
+        {
+          "key": "125.0",
+          "doc_count": 2
+        },
+        {
+          "key": "125.17",
+          "doc_count": 2
+        },
+        {
+          "key": "125.22",
+          "doc_count": 2
+        },
+        {
+          "key": "125.49",
+          "doc_count": 2
+        },
+        {
+          "key": "126.06",
+          "doc_count": 2
+        },
+        {
+          "key": "126.2677",
+          "doc_count": 2
+        },
+        {
+          "key": "126.81",
+          "doc_count": 2
+        },
+        {
+          "key": "126.9",
+          "doc_count": 2
+        },
+        {
+          "key": "126.94",
+          "doc_count": 2
+        },
+        {
+          "key": "127.05",
+          "doc_count": 2
+        },
+        {
+          "key": "127.194",
+          "doc_count": 2
+        },
+        {
+          "key": "127.27",
+          "doc_count": 2
+        },
+        {
+          "key": "127.7582",
+          "doc_count": 2
+        },
+        {
+          "key": "128.0732",
+          "doc_count": 2
+        },
+        {
+          "key": "128.16",
+          "doc_count": 2
+        },
+        {
+          "key": "128.25",
+          "doc_count": 2
+        },
+        {
+          "key": "128.55",
+          "doc_count": 2
+        },
+        {
+          "key": "128.8867",
+          "doc_count": 2
+        },
+        {
+          "key": "129.0582",
+          "doc_count": 2
+        },
+        {
+          "key": "129.21",
+          "doc_count": 2
+        },
+        {
+          "key": "129.22",
+          "doc_count": 2
+        },
+        {
+          "key": "129.6",
+          "doc_count": 2
+        },
+        {
+          "key": "129.83",
+          "doc_count": 2
+        },
+        {
+          "key": "129.8627",
+          "doc_count": 2
+        },
+        {
+          "key": "129.9157",
+          "doc_count": 2
+        },
+        {
+          "key": "129.96",
+          "doc_count": 2
+        },
+        {
+          "key": "129.97",
+          "doc_count": 2
+        },
+        {
+          "key": "130.02",
+          "doc_count": 2
+        },
+        {
+          "key": "130.0581",
+          "doc_count": 2
+        },
+        {
+          "key": "130.0612",
+          "doc_count": 2
+        },
+        {
+          "key": "130.16",
+          "doc_count": 2
+        },
+        {
+          "key": "130.29",
+          "doc_count": 2
+        },
+        {
+          "key": "130.3",
+          "doc_count": 2
+        },
+        {
+          "key": "130.4853",
+          "doc_count": 2
+        },
+        {
+          "key": "130.59",
+          "doc_count": 2
+        },
+        {
+          "key": "130.68",
+          "doc_count": 2
+        },
+        {
+          "key": "130.8247",
+          "doc_count": 2
+        },
+        {
+          "key": "131.1637",
+          "doc_count": 2
+        },
+        {
+          "key": "131.51",
+          "doc_count": 2
+        },
+        {
+          "key": "132.01",
+          "doc_count": 2
+        },
+        {
+          "key": "132.1",
+          "doc_count": 2
+        },
+        {
+          "key": "132.15",
+          "doc_count": 2
+        },
+        {
+          "key": "132.2728",
+          "doc_count": 2
+        },
+        {
+          "key": "132.32",
+          "doc_count": 2
+        },
+        {
+          "key": "132.33",
+          "doc_count": 2
+        },
+        {
+          "key": "132.3832",
+          "doc_count": 2
+        },
+        {
+          "key": "132.52",
+          "doc_count": 2
+        },
+        {
+          "key": "132.66",
+          "doc_count": 2
+        },
+        {
+          "key": "132.8",
+          "doc_count": 2
+        },
+        {
+          "key": "132.806",
+          "doc_count": 2
+        },
+        {
+          "key": "133.0583",
+          "doc_count": 2
+        },
+        {
+          "key": "133.06",
+          "doc_count": 2
+        },
+        {
+          "key": "133.49",
+          "doc_count": 2
+        },
+        {
+          "key": "133.67",
+          "doc_count": 2
+        },
+        {
+          "key": "134.06",
+          "doc_count": 2
+        },
+        {
+          "key": "134.1575",
+          "doc_count": 2
+        },
+        {
+          "key": "134.2267",
+          "doc_count": 2
+        },
+        {
+          "key": "134.56",
+          "doc_count": 2
+        },
+        {
+          "key": "134.78",
+          "doc_count": 2
+        },
+        {
+          "key": "135.12",
+          "doc_count": 2
+        },
+        {
+          "key": "135.24",
+          "doc_count": 2
+        },
+        {
+          "key": "135.49",
+          "doc_count": 2
+        },
+        {
+          "key": "135.56",
+          "doc_count": 2
+        },
+        {
+          "key": "135.66",
+          "doc_count": 2
+        },
+        {
+          "key": "135.73",
+          "doc_count": 2
+        },
+        {
+          "key": "135.8532",
+          "doc_count": 2
+        },
+        {
+          "key": "136.02",
+          "doc_count": 2
+        },
+        {
+          "key": "136.17",
+          "doc_count": 2
+        },
+        {
+          "key": "136.4",
+          "doc_count": 2
+        },
+        {
+          "key": "136.4232",
+          "doc_count": 2
+        },
+        {
+          "key": "136.45",
+          "doc_count": 2
+        },
+        {
+          "key": "136.73",
+          "doc_count": 2
+        },
+        {
+          "key": "136.84",
+          "doc_count": 2
+        },
+        {
+          "key": "136.88",
+          "doc_count": 2
+        },
+        {
+          "key": "137.1279",
+          "doc_count": 2
+        },
+        {
+          "key": "137.1472",
+          "doc_count": 2
+        },
+        {
+          "key": "137.2",
+          "doc_count": 2
+        },
+        {
+          "key": "137.3543",
+          "doc_count": 2
+        },
+        {
+          "key": "137.59",
+          "doc_count": 2
+        },
+        {
+          "key": "137.64",
+          "doc_count": 2
+        },
+        {
+          "key": "137.71",
+          "doc_count": 2
+        },
+        {
+          "key": "137.77",
+          "doc_count": 2
+        },
+        {
+          "key": "137.86",
+          "doc_count": 2
+        },
+        {
+          "key": "138.0",
+          "doc_count": 2
+        },
+        {
+          "key": "138.123",
+          "doc_count": 2
+        },
+        {
+          "key": "138.1848",
+          "doc_count": 2
+        },
+        {
+          "key": "138.1913",
+          "doc_count": 2
+        },
+        {
+          "key": "138.23",
+          "doc_count": 2
+        },
+        {
+          "key": "138.29",
+          "doc_count": 2
+        },
+        {
+          "key": "138.3044",
+          "doc_count": 2
+        },
+        {
+          "key": "138.38",
+          "doc_count": 2
+        },
+        {
+          "key": "138.46",
+          "doc_count": 2
+        }
+      ]
+    },
+    "business_size": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "S",
+          "doc_count": 6741
+        },
+        {
+          "key": "O",
+          "doc_count": 2716
+        }
+      ]
+    },
+    "wage_stats": {
+      "count": 9457,
+      "min": 27.920000076293945,
+      "max": 499.9100036621094,
+      "avg": 188.80231843080912,
+      "sum": 1785503.5254001617,
+      "sum_of_squares": 371399689.2979981,
+      "variance": 3626.1482643612635,
+      "variance_population": 3626.1482643612635,
+      "variance_sampling": 3626.5317402775454,
+      "std_deviation": 60.217507955421596,
+      "std_deviation_population": 60.217507955421596,
+      "std_deviation_sampling": 60.220691961131976,
+      "std_deviation_bounds": {
+        "upper": 309.2373343416523,
+        "lower": 68.36730251996593,
+        "upper_population": 309.2373343416523,
+        "lower_population": 68.36730251996593,
+        "upper_sampling": 309.2437023530731,
+        "lower_sampling": 68.36093450854517
+      }
+    },
+    "median_price": {
+      "values": {
+        "50.0": 183.0145249505155
+      }
+    },
+    "education_level_counts": {
+      "buckets": [
+        {
+          "key": "AA",
+          "doc_count": 99
+        },
+        {
+          "key": "BA",
+          "doc_count": 7954
+        },
+        {
+          "key": "HS",
+          "doc_count": 144
+        },
+        {
+          "key": "MA",
+          "doc_count": 1199
+        },
+        {
+          "key": "PHD",
+          "doc_count": 51
+        },
+        {
+          "key": "TEC",
+          "doc_count": 5
+        }
+      ]
+    }
+  },
+  "_stats": {
+    "total_rates": 9457,
+    "hits_capped": false,
+    "min_rate": 27.920000076293945,
+    "max_rate": 499.9100036621094,
+    "avg_rate": 188.8,
+    "std_deviation": 60.22,
+    "percentiles": {
+      "p10": 118.94913365222274,
+      "p25": 149.10393579750573,
+      "p50_median": 183.0145249505155,
+      "p75": 221.17925934676674,
+      "p90": 265.33282514822344
+    },
+    "outlier_bounds_2sigma": {
+      "lower": 68.36730251996593,
+      "upper": 309.2373343416523
+    },
+    "education_breakdown": {
+      "AA": 99,
+      "BA": 7954,
+      "HS": 144,
+      "MA": 1199,
+      "PHD": 51,
+      "TEC": 5
+    },
+    "business_size_breakdown": {
+      "S": 6741,
+      "O": 2716
+    }
+  }
+}

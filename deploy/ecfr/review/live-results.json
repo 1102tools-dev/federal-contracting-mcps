@@ -1,0 +1,111 @@
+{
+  "endpoint": "https://ecfr.1102tools.com/mcp",
+  "results": [
+    {
+      "tool": "get_latest_date",
+      "ok": true,
+      "seconds": 6.39,
+      "arguments": {}
+    },
+    {
+      "tool": "get_cfr_content",
+      "ok": true,
+      "seconds": 6.21,
+      "arguments": {
+        "section": "1.102"
+      }
+    },
+    {
+      "tool": "get_cfr_structure",
+      "ok": true,
+      "seconds": 6.2,
+      "arguments": {
+        "part": "1"
+      }
+    },
+    {
+      "tool": "get_version_history",
+      "ok": true,
+      "seconds": 3.09,
+      "arguments": {
+        "section": "1.102"
+      }
+    },
+    {
+      "tool": "get_ancestry",
+      "ok": true,
+      "seconds": 6.24,
+      "arguments": {
+        "section": "1.102"
+      }
+    },
+    {
+      "tool": "search_cfr",
+      "ok": true,
+      "seconds": 3.24,
+      "arguments": {
+        "query": "market research",
+        "title": 48,
+        "per_page": 3
+      }
+    },
+    {
+      "tool": "list_agencies",
+      "ok": true,
+      "seconds": 3.41,
+      "arguments": {}
+    },
+    {
+      "tool": "get_corrections",
+      "ok": true,
+      "seconds": 2.88,
+      "arguments": {
+        "limit": 3
+      }
+    },
+    {
+      "tool": "lookup_far_clause",
+      "ok": true,
+      "seconds": 6.23,
+      "arguments": {
+        "section_id": "52.212-4"
+      }
+    },
+    {
+      "tool": "compare_versions",
+      "ok": true,
+      "seconds": 5.98,
+      "arguments": {
+        "section_id": "1.102",
+        "date_before": "2025-01-01",
+        "date_after": "2026-01-01"
+      }
+    },
+    {
+      "tool": "list_sections_in_part",
+      "ok": true,
+      "seconds": 6.24,
+      "arguments": {
+        "part_number": 10
+      }
+    },
+    {
+      "tool": "find_far_definition",
+      "ok": true,
+      "seconds": 6.45,
+      "arguments": {
+        "term": "commercial product",
+        "max_matches": 3
+      }
+    },
+    {
+      "tool": "find_recent_changes",
+      "ok": true,
+      "seconds": 2.82,
+      "arguments": {
+        "since_date": "2026-08-01",
+        "per_page": 3
+      }
+    }
+  ]
+}

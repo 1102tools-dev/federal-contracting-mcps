@@ -1,0 +1,91 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "federal-register-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "account_id": "846d3e41e48446abcd3570c0959f9fb5",
+  "workers_dev": true,
+  "containers": [
+    {
+      "class_name": "FederalRegister",
+      "image": "registry.cloudflare.com/846d3e41e48446abcd3570c0959f9fb5/federal-register-mcp@sha256:4db3471e6b47d4d9d1f7f93faec267e131dbee6411bfe3b9e23a21c9fd4a30a7",
+      "instance_type": "lite",
+      "max_instances": 1,
+      "name": "federal-register-mcp-public"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "FederalRegister",
+        "name": "BACKEND"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "FederalRegister"
+      ]
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "REQUEST_LIMITER",
+      "namespace_id": "110262",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  },
+  "env": {
+    "production": {
+      "name": "federal-register-mcp",
+      "routes": [
+        {
+          "pattern": "federal-register.1102tools.com",
+          "custom_domain": true
+        }
+      ],
+      "containers": [
+        {
+          "class_name": "FederalRegister",
+          "image": "registry.cloudflare.com/846d3e41e48446abcd3570c0959f9fb5/federal-register-mcp@sha256:4db3471e6b47d4d9d1f7f93faec267e131dbee6411bfe3b9e23a21c9fd4a30a7",
+          "instance_type": "lite",
+          "max_instances": 1,
+          "name": "federal-register-mcp-public"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "FederalRegister",
+            "name": "BACKEND"
+          }
+        ]
+      },
+      "ratelimits": [
+        {
+          "name": "REQUEST_LIMITER",
+          "namespace_id": "110262",
+          "simple": {
+            "limit": 60,
+            "period": 60
+          }
+        }
+      ]
+    }
+  }
+}

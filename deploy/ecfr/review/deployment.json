@@ -1,0 +1,14 @@
+{
+  "name": "eCFR MCP",
+  "slug": "ecfr",
+  "tools": 13,
+  "endpoint": "https://ecfr.1102tools.com/mcp",
+  "status": "deployed; all tools live validated",
+  "container_application_id": "a03aa868-dd6a-4355-bf3e-6ee7d06a5958",
+  "durable_object_namespace_id": "cd904a4c525d4ad4a9fd7b38e53b9a10",
+  "image": "registry.cloudflare.com/846d3e41e48446abcd3570c0959f9fb5/ecfr-mcp@sha256:d482d2a128a0a2b685b9f3c8b4e3e00d7d6ae506dc64e3be155c186e60240d20",
+  "offline_tests_passed": 185,
+  "openai_draft_url": "https://platform.openai.com/plugins/edit/asdk_app_6a9ef0341b04819192935fd4e5cd9b34/asdk_app_v_6a9ef034b1248191ac88e74e895209d7",
+  "openai_domain_verified": true,
+  "openai_status": "draft; recording and final attestations pending"
+}

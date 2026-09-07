@@ -1,0 +1,72 @@
+{
+  "ancestors": [
+    {
+      "identifier": "48",
+      "label": "Title 48\u2014Federal Acquisition Regulations System",
+      "label_level": "Title 48",
+      "label_description": "Federal Acquisition Regulations System",
+      "reserved": false,
+      "type": "title",
+      "size": 22301105
+    },
+    {
+      "identifier": "1",
+      "label": " Chapter 1\u2014Federal Acquisition Regulation",
+      "label_level": " Chapter 1",
+      "label_description": "Federal Acquisition Regulation",
+      "reserved": false,
+      "type": "chapter",
+      "size": 7855104,
+      "descendant_range": "1 \u2013 99"
+    },
+    {
+      "identifier": "A",
+      "label": "Subchapter A\u2014General",
+      "label_level": "Subchapter A",
+      "label_description": "General",
+      "reserved": false,
+      "type": "subchapter",
+      "size": 569356,
+      "descendant_range": "1 \u2013 4"
+    },
+    {
+      "identifier": "1",
+      "label": "Part 1\u2014Federal Acquisition Regulations System",
+      "label_level": "Part 1",
+      "label_description": "Federal Acquisition Regulations System",
+      "reserved": false,
+      "type": "part",
+      "volumes": [
+        "1"
+      ],
+      "size": 103352,
+      "descendant_range": "1.000 \u2013 1.707"
+    },
+    {
+      "identifier": "1.1",
+      "label": "Subpart 1.1\u2014Purpose, Authority, Issuance",
+      "label_level": "Subpart 1.1",
+      "label_description": "Purpose, Authority, Issuance",
+      "reserved": false,
+      "type": "subpart",
+      "volumes": [
+        "1"
+      ],
+      "size": 58363,
+      "descendant_range": "1.101 \u2013 1.110"
+    },
+    {
+      "identifier": "1.102",
+      "label": "1.102 Statement of guiding principles for the Federal Acquisition System.",
+      "label_level": "1.102",
+      "label_description": "Statement of guiding principles for the Federal Acquisition System.",
+      "reserved": false,
+      "type": "section",
+      "volumes": [
+        "1"
+      ],
+      "received_on": "2023-04-06T21:50:15-0400",
+      "size": 2242
+    }
+  ]
+}

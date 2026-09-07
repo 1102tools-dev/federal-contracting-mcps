@@ -1,0 +1,91 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "gsa-calc-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "account_id": "846d3e41e48446abcd3570c0959f9fb5",
+  "workers_dev": true,
+  "containers": [
+    {
+      "class_name": "GSACalc",
+      "image": "registry.cloudflare.com/846d3e41e48446abcd3570c0959f9fb5/gsa-calc-mcp@sha256:b1f4910760d6b4357f0963c17ce08b202ff722434eee9adc87fc77c59b121144",
+      "instance_type": "lite",
+      "max_instances": 1,
+      "name": "gsa-calc-mcp-public"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "GSACalc",
+        "name": "BACKEND"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "GSACalc"
+      ]
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "REQUEST_LIMITER",
+      "namespace_id": "110260",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  },
+  "env": {
+    "production": {
+      "name": "gsa-calc-mcp",
+      "routes": [
+        {
+          "pattern": "gsa-calc.1102tools.com",
+          "custom_domain": true
+        }
+      ],
+      "containers": [
+        {
+          "class_name": "GSACalc",
+          "image": "registry.cloudflare.com/846d3e41e48446abcd3570c0959f9fb5/gsa-calc-mcp@sha256:b1f4910760d6b4357f0963c17ce08b202ff722434eee9adc87fc77c59b121144",
+          "instance_type": "lite",
+          "max_instances": 1,
+          "name": "gsa-calc-mcp-public"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "GSACalc",
+            "name": "BACKEND"
+          }
+        ]
+      },
+      "ratelimits": [
+        {
+          "name": "REQUEST_LIMITER",
+          "namespace_id": "110260",
+          "simple": {
+            "limit": 60,
+            "period": 60
+          }
+        }
+      ]
+    }
+  }
+}

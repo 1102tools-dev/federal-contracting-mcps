@@ -1,0 +1,18 @@
+{
+  "NOTICE": {
+    "count": 27753,
+    "name": "Notice"
+  },
+  "RULE": {
+    "count": 10250,
+    "name": "Rule"
+  },
+  "PRORULE": {
+    "count": 6348,
+    "name": "Proposed Rule"
+  },
+  "PRESDOCU": {
+    "count": 165,
+    "name": "Presidential Document"
+  }
+}

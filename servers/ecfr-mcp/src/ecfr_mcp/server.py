@@ -617,7 +617,7 @@ async def _resolve_date(title_number: int) -> str:
 # Core tools
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Get Latest Date", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Latest Date", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_latest_date(title_number: int = 48) -> dict[str, Any]:
     """Get the most recent available date for a CFR title.
 
@@ -656,7 +656,7 @@ async def get_latest_date(title_number: int = 48) -> dict[str, Any]:
     raise ValueError(f"Title {title_number} not found.")
 
 
-@mcp.tool(annotations={"title": "Get CFR Content", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get CFR Content", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_cfr_content(
     title_number: int = 48,
     date: str | None = None,
@@ -747,7 +747,7 @@ async def get_cfr_content(
     return parsed
 
 
-@mcp.tool(annotations={"title": "Get CFR Structure", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get CFR Structure", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_cfr_structure(
     title_number: int = 48,
     date: str | None = None,
@@ -800,7 +800,7 @@ async def get_cfr_structure(
     return await _get_json(path, params, timeout=DEFAULT_TIMEOUT_STRUCTURE)
 
 
-@mcp.tool(annotations={"title": "Get Version History", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Version History", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_version_history(
     title_number: int = 48,
     part: str | int | None = None,
@@ -841,7 +841,7 @@ async def get_version_history(
     return await _get_json(path, params)
 
 
-@mcp.tool(annotations={"title": "Get Ancestry", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Ancestry", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_ancestry(
     title_number: int = 48,
     date: str | None = None,
@@ -878,7 +878,7 @@ async def get_ancestry(
     return await _get_json(path, params)
 
 
-@mcp.tool(annotations={"title": "Search CFR", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Search CFR", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def search_cfr(
     query: str,
     title: int | None = None,
@@ -996,7 +996,7 @@ def _agency_refs_with_children(agency: dict[str, Any]) -> list[dict[str, Any]]:
     return refs
 
 
-@mcp.tool(annotations={"title": "List Agencies", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "List Agencies", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def list_agencies(summary_only: bool = True) -> dict[str, Any]:
     """List all agencies with their CFR title and chapter references.
 
@@ -1034,7 +1034,7 @@ async def list_agencies(summary_only: bool = True) -> dict[str, Any]:
     }
 
 
-@mcp.tool(annotations={"title": "Get Corrections", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Corrections", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_corrections(
     title_number: int = 48,
     limit: int = 50,
@@ -1089,7 +1089,7 @@ async def get_corrections(
 # Workflow / convenience tools
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Lookup FAR Clause", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Lookup FAR Clause", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def lookup_far_clause(
     section_id: str | int,
     chapter: str | int = "1",
@@ -1125,7 +1125,7 @@ async def lookup_far_clause(
     )
 
 
-@mcp.tool(annotations={"title": "Compare Versions", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Compare Versions", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def compare_versions(
     section_id: str | int,
     date_before: str,
@@ -1195,7 +1195,7 @@ async def compare_versions(
     }
 
 
-@mcp.tool(annotations={"title": "List Sections in Part", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "List Sections in Part", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def list_sections_in_part(
     part_number: str | int,
     chapter: str | int = "1",
@@ -1243,7 +1243,7 @@ async def list_sections_in_part(
     }
 
 
-@mcp.tool(annotations={"title": "Find FAR Definition", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Find FAR Definition", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def find_far_definition(
     term: str,
     date: str | None = None,
@@ -1312,7 +1312,7 @@ async def find_far_definition(
     }
 
 
-@mcp.tool(annotations={"title": "Find Recent Changes", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Find Recent Changes", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def find_recent_changes(
     since_date: str,
     title: int = 48,

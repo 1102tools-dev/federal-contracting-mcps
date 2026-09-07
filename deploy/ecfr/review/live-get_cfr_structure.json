@@ -1,0 +1,909 @@
+{
+  "identifier": "48",
+  "label": "Title 48\u2014Federal Acquisition Regulations System",
+  "label_level": "Title 48",
+  "label_description": "Federal Acquisition Regulations System",
+  "reserved": false,
+  "type": "title",
+  "size": 22301105,
+  "children": [
+    {
+      "identifier": "1",
+      "label": " Chapter 1\u2014Federal Acquisition Regulation",
+      "label_level": " Chapter 1",
+      "label_description": "Federal Acquisition Regulation",
+      "reserved": false,
+      "type": "chapter",
+      "size": 7855104,
+      "children": [
+        {
+          "identifier": "A",
+          "label": "Subchapter A\u2014General",
+          "label_level": "Subchapter A",
+          "label_description": "General",
+          "reserved": false,
+          "type": "subchapter",
+          "size": 569356,
+          "children": [
+            {
+              "identifier": "1",
+              "label": "Part 1\u2014Federal Acquisition Regulations System",
+              "label_level": "Part 1",
+              "label_description": "Federal Acquisition Regulations System",
+              "reserved": false,
+              "type": "part",
+              "volumes": [
+                "1"
+              ],
+              "size": 103352,
+              "children": [
+                {
+                  "identifier": "1.000",
+                  "label": "1.000 Scope of part.",
+                  "label_level": "1.000",
+                  "label_description": "Scope of part.",
+                  "reserved": false,
+                  "type": "section",
+                  "volumes": [
+                    "1"
+                  ],
+                  "received_on": "2017-01-07T00:00:00-0500",
+                  "size": 653
+                },
+                {
+                  "identifier": "1.1",
+                  "label": "Subpart 1.1\u2014Purpose, Authority, Issuance",
+                  "label_level": "Subpart 1.1",
+                  "label_description": "Purpose, Authority, Issuance",
+                  "reserved": false,
+                  "type": "subpart",
+                  "volumes": [
+                    "1"
+                  ],
+                  "size": 58363,
+                  "children": [
+                    {
+                      "identifier": "1.101",
+                      "label": "1.101 Purpose.",
+                      "label_level": "1.101",
+                      "label_description": "Purpose.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 836
+                    },
+                    {
+                      "identifier": "1.102",
+                      "label": "1.102 Statement of guiding principles for the Federal Acquisition System.",
+                      "label_level": "1.102",
+                      "label_description": "Statement of guiding principles for the Federal Acquisition System.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 2242
+                    },
+                    {
+                      "identifier": "1.102-1",
+                      "label": "1.102-1 Discussion.",
+                      "label_level": "1.102-1",
+                      "label_description": "Discussion.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 1153
+                    },
+                    {
+                      "identifier": "1.102-2",
+                      "label": "1.102-2 Performance standards.",
+                      "label_level": "1.102-2",
+                      "label_description": "Performance standards.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-01-03T21:40:12-0500",
+                      "size": 4854
+                    },
+                    {
+                      "identifier": "1.102-3",
+                      "label": "1.102-3 Evaluating agency acquisition processes.",
+                      "label_level": "1.102-3",
+                      "label_description": "Evaluating agency acquisition processes.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-09-25T19:50:06-0400",
+                      "size": 1375
+                    },
+                    {
+                      "identifier": "1.102-4",
+                      "label": "1.102-4 Acquisition team.",
+                      "label_level": "1.102-4",
+                      "label_description": "Acquisition team.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-09-25T19:50:06-0400",
+                      "size": 916
+                    },
+                    {
+                      "identifier": "1.102-5",
+                      "label": "1.102-5 Role of the acquisition team.",
+                      "label_level": "1.102-5",
+                      "label_description": "Role of the acquisition team.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-09-25T19:50:06-0400",
+                      "size": 2438
+                    },
+                    {
+                      "identifier": "1.103",
+                      "label": "1.103 Authority.",
+                      "label_level": "1.103",
+                      "label_description": "Authority.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 884
+                    },
+                    {
+                      "identifier": "1.104",
+                      "label": "1.104 Applicability.",
+                      "label_level": "1.104",
+                      "label_description": "Applicability.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 476
+                    },
+                    {
+                      "identifier": "1.105",
+                      "label": "1.105 Issuance.",
+                      "label_level": "1.105",
+                      "label_description": "Issuance.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 266
+                    },
+                    {
+                      "identifier": "1.105-1",
+                      "label": "1.105-1 Publication and code arrangement.",
+                      "label_level": "1.105-1",
+                      "label_description": "Publication and code arrangement.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 1240
+                    },
+                    {
+                      "identifier": "1.105-2",
+                      "label": "1.105-2 Arrangement of regulations.",
+                      "label_level": "1.105-2",
+                      "label_description": "Arrangement of regulations.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 2490
+                    },
+                    {
+                      "identifier": "1.105-3",
+                      "label": "1.105-3 Copies.",
+                      "label_level": "1.105-3",
+                      "label_description": "Copies.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2019-05-07T22:00:05-0400",
+                      "size": 462
+                    },
+                    {
+                      "identifier": "1.106",
+                      "label": "1.106 OMB approval under the Paperwork Reduction Act.",
+                      "label_level": "1.106",
+                      "label_description": "OMB approval under the Paperwork Reduction Act.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2025-01-07T19:51:05-0500",
+                      "size": 28442
+                    },
+                    {
+                      "identifier": "1.107",
+                      "label": "1.107 Certifications.",
+                      "label_level": "1.107",
+                      "label_description": "Certifications.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 857
+                    },
+                    {
+                      "identifier": "1.108",
+                      "label": "1.108 FAR conventions.",
+                      "label_level": "1.108",
+                      "label_description": "FAR conventions.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-09-25T19:50:06-0400",
+                      "size": 2541
+                    },
+                    {
+                      "identifier": "1.109",
+                      "label": "1.109 Statutory acquisition-related dollar thresholds\u2014adjustment for inflation.",
+                      "label_level": "1.109",
+                      "label_description": "Statutory acquisition-related dollar thresholds\u2014adjustment for inflation.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2025-11-17T17:50:12-0500",
+                      "size": 2716
+                    },
+                    {
+                      "identifier": "1.110",
+                      "label": "1.110 Positive law codification.",
+                      "label_level": "1.110",
+                      "label_description": "Positive law codification.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2024-06-04T18:40:20-0400",
+                      "size": 4175
+                    }
+                  ],
+                  "descendant_range": "1.101 \u2013 1.110"
+                },
+                {
+                  "identifier": "1.2",
+                  "label": "Subpart 1.2\u2014Administration",
+                  "label_level": "Subpart 1.2",
+                  "label_description": "Administration",
+                  "reserved": false,
+                  "type": "subpart",
+                  "volumes": [
+                    "1"
+                  ],
+                  "size": 4963,
+                  "children": [
+                    {
+                      "identifier": "1.201",
+                      "label": "1.201 Maintenance of the FAR.",
+                      "label_level": "1.201",
+                      "label_description": "Maintenance of the FAR.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 280
+                    },
+                    {
+                      "identifier": "1.201-1",
+                      "label": "1.201-1 The two councils.",
+                      "label_level": "1.201-1",
+                      "label_description": "The two councils.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 3046
+                    },
+                    {
+                      "identifier": "1.201-2",
+                      "label": "1.201-2 FAR Secretariat.",
+                      "label_level": "1.201-2",
+                      "label_description": "FAR Secretariat.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 1064
+                    },
+                    {
+                      "identifier": "1.202",
+                      "label": "1.202 Agency compliance with the FAR.",
+                      "label_level": "1.202",
+                      "label_description": "Agency compliance with the FAR.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 573
+                    }
+                  ],
+                  "descendant_range": "1.201 \u2013 1.202"
+                },
+                {
+                  "identifier": "1.3",
+                  "label": "Subpart 1.3\u2014Agency Acquisition Regulations",
+                  "label_level": "Subpart 1.3",
+                  "label_description": "Agency Acquisition Regulations",
+                  "reserved": false,
+                  "type": "subpart",
+                  "volumes": [
+                    "1"
+                  ],
+                  "size": 6332,
+                  "children": [
+                    {
+                      "identifier": "1.301",
+                      "label": "1.301 Policy.",
+                      "label_level": "1.301",
+                      "label_description": "Policy.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 3144
+                    },
+                    {
+                      "identifier": "1.302",
+                      "label": "1.302 Limitations.",
+                      "label_level": "1.302",
+                      "label_description": "Limitations.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 579
+                    },
+                    {
+                      "identifier": "1.303",
+                      "label": "1.303 Publication and codification.",
+                      "label_level": "1.303",
+                      "label_description": "Publication and codification.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 1311
+                    },
+                    {
+                      "identifier": "1.304",
+                      "label": "1.304 Agency control and compliance procedures.",
+                      "label_level": "1.304",
+                      "label_description": "Agency control and compliance procedures.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 1298
+                    }
+                  ],
+                  "descendant_range": "1.301 \u2013 1.304"
+                },
+                {
+                  "identifier": "1.4",
+                  "label": "Subpart 1.4\u2014Deviations from the FAR",
+                  "label_level": "Subpart 1.4",
+                  "label_description": "Deviations from the FAR",
+                  "reserved": false,
+                  "type": "subpart",
+                  "volumes": [
+                    "1"
+                  ],
+                  "size": 7652,
+                  "children": [
+                    {
+                      "identifier": "1.400",
+                      "label": "1.400 Scope of subpart.",
+                      "label_level": "1.400",
+                      "label_description": "Scope of subpart.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 490
+                    },
+                    {
+                      "identifier": "1.401",
+                      "label": "1.401 Definition.",
+                      "label_level": "1.401",
+                      "label_description": "Definition.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2025-06-12T19:00:06-0400",
+                      "size": 1865
+                    },
+                    {
+                      "identifier": "1.402",
+                      "label": "1.402 Policy.",
+                      "label_level": "1.402",
+                      "label_description": "Policy.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2020-11-24T21:00:09-0500",
+                      "size": 1349
+                    },
+                    {
+                      "identifier": "1.403",
+                      "label": "1.403 Individual deviations.",
+                      "label_level": "1.403",
+                      "label_description": "Individual deviations.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 565
+                    },
+                    {
+                      "identifier": "1.404",
+                      "label": "1.404 Class deviations.",
+                      "label_level": "1.404",
+                      "label_description": "Class deviations.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 1831
+                    },
+                    {
+                      "identifier": "1.405",
+                      "label": "1.405 Deviations pertaining to treaties and executive agreements.",
+                      "label_level": "1.405",
+                      "label_description": "Deviations pertaining to treaties and executive agreements.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 1552
+                    }
+                  ],
+                  "descendant_range": "1.400 \u2013 1.405"
+                },
+                {
+                  "identifier": "1.5",
+                  "label": "Subpart 1.5\u2014Agency and Public Participation",
+                  "label_level": "Subpart 1.5",
+                  "label_description": "Agency and Public Participation",
+                  "reserved": false,
+                  "type": "subpart",
+                  "volumes": [
+                    "1"
+                  ],
+                  "size": 4051,
+                  "children": [
+                    {
+                      "identifier": "1.501",
+                      "label": "1.501 Solicitation of agency and public views.",
+                      "label_level": "1.501",
+                      "label_description": "Solicitation of agency and public views.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 297
+                    },
+                    {
+                      "identifier": "1.501-1",
+                      "label": "1.501-1 Definition.",
+                      "label_level": "1.501-1",
+                      "label_description": "Definition.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 853
+                    },
+                    {
+                      "identifier": "1.501-2",
+                      "label": "1.501-2 Opportunity for public comments.",
+                      "label_level": "1.501-2",
+                      "label_description": "Opportunity for public comments.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 1207
+                    },
+                    {
+                      "identifier": "1.501-3",
+                      "label": "1.501-3 Exceptions.",
+                      "label_level": "1.501-3",
+                      "label_description": "Exceptions.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 783
+                    },
+                    {
+                      "identifier": "1.502",
+                      "label": "1.502 Unsolicited proposed revisions.",
+                      "label_level": "1.502",
+                      "label_description": "Unsolicited proposed revisions.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 473
+                    },
+                    {
+                      "identifier": "1.503",
+                      "label": "1.503 Public meetings.",
+                      "label_level": "1.503",
+                      "label_description": "Public meetings.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 438
+                    }
+                  ],
+                  "descendant_range": "1.501 \u2013 1.503"
+                },
+                {
+                  "identifier": "1.6",
+                  "label": "Subpart 1.6\u2014Career Development, Contracting Authority, and Responsibilities",
+                  "label_level": "Subpart 1.6",
+                  "label_description": "Career Development, Contracting Authority, and Responsibilities",
+                  "reserved": false,
+                  "type": "subpart",
+                  "volumes": [
+                    "1"
+                  ],
+                  "size": 14591,
+                  "children": [
+                    {
+                      "identifier": "1.601",
+                      "label": "1.601 General.",
+                      "label_level": "1.601",
+                      "label_description": "General.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 1266
+                    },
+                    {
+                      "identifier": "1.602",
+                      "label": "1.602 Contracting officers.",
+                      "label_level": "1.602",
+                      "label_description": "Contracting officers.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 278
+                    },
+                    {
+                      "identifier": "1.602-1",
+                      "label": "1.602-1 Authority.",
+                      "label_level": "1.602-1",
+                      "label_description": "Authority.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 1031
+                    },
+                    {
+                      "identifier": "1.602-2",
+                      "label": "1.602-2 Responsibilities.",
+                      "label_level": "1.602-2",
+                      "label_description": "Responsibilities.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 3253
+                    },
+                    {
+                      "identifier": "1.602-3",
+                      "label": "1.602-3 Ratification of unauthorized commitments.",
+                      "label_level": "1.602-3",
+                      "label_description": "Ratification of unauthorized commitments.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 3608
+                    },
+                    {
+                      "identifier": "1.603",
+                      "label": "1.603 Selection, appointment, and termination of appointment for contracting officers.",
+                      "label_level": "1.603",
+                      "label_description": "Selection, appointment, and termination of appointment for contracting officers.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 337
+                    },
+                    {
+                      "identifier": "1.603-1",
+                      "label": "1.603-1 General.",
+                      "label_level": "1.603-1",
+                      "label_description": "General.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 1058
+                    },
+                    {
+                      "identifier": "1.603-2",
+                      "label": "1.603-2 Selection.",
+                      "label_level": "1.603-2",
+                      "label_description": "Selection.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 1066
+                    },
+                    {
+                      "identifier": "1.603-3",
+                      "label": "1.603-3 Appointment.",
+                      "label_level": "1.603-3",
+                      "label_description": "Appointment.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 1091
+                    },
+                    {
+                      "identifier": "1.603-4",
+                      "label": "1.603-4 Termination.",
+                      "label_level": "1.603-4",
+                      "label_description": "Termination.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 601
+                    },
+                    {
+                      "identifier": "1.604",
+                      "label": "1.604 Contracting Officer's Representative (COR).",
+                      "label_level": "1.604",
+                      "label_description": "Contracting Officer's Representative (COR).",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2023-04-06T21:50:15-0400",
+                      "size": 1002
+                    }
+                  ],
+                  "descendant_range": "1.601 \u2013 1.604"
+                },
+                {
+                  "identifier": "1.7",
+                  "label": "Subpart 1.7\u2014Determinations and Findings",
+                  "label_level": "Subpart 1.7",
+                  "label_description": "Determinations and Findings",
+                  "reserved": false,
+                  "type": "subpart",
+                  "volumes": [
+                    "1"
+                  ],
+                  "size": 6747,
+                  "children": [
+                    {
+                      "identifier": "1.700",
+                      "label": "1.700 Scope of subpart.",
+                      "label_level": "1.700",
+                      "label_description": "Scope of subpart.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 488
+                    },
+                    {
+                      "identifier": "1.701",
+                      "label": "1.701 Definition.",
+                      "label_level": "1.701",
+                      "label_description": "Definition.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 844
+                    },
+                    {
+                      "identifier": "1.702",
+                      "label": "1.702 General.",
+                      "label_level": "1.702",
+                      "label_description": "General.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 953
+                    },
+                    {
+                      "identifier": "1.703",
+                      "label": "1.703 Class determinations and findings.",
+                      "label_level": "1.703",
+                      "label_description": "Class determinations and findings.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 1050
+                    },
+                    {
+                      "identifier": "1.704",
+                      "label": "1.704 Content.",
+                      "label_level": "1.704",
+                      "label_description": "Content.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 1364
+                    },
+                    {
+                      "identifier": "1.705",
+                      "label": "1.705 Supersession and modification.",
+                      "label_level": "1.705",
+                      "label_description": "Supersession and modification.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 717
+                    },
+                    {
+                      "identifier": "1.706",
+                      "label": "1.706 Expiration.",
+                      "label_level": "1.706",
+                      "label_description": "Expiration.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 817
+                    },
+                    {
+                      "identifier": "1.707",
+                      "label": "1.707 Signatory authority.",
+                      "label_level": "1.707",
+                      "label_description": "Signatory authority.",
+                      "reserved": false,
+                      "type": "section",
+                      "volumes": [
+                        "1"
+                      ],
+                      "received_on": "2017-01-07T00:00:00-0500",
+                      "size": 514
+                    }
+                  ],
+                  "descendant_range": "1.700 \u2013 1.707"
+                }
+              ],
+              "descendant_range": "1.000 \u2013 1.707"
+            }
+          ],
+          "descendant_range": "1 \u2013 4"
+        }
+      ],
+      "descendant_range": "1 \u2013 99"
+    }
+  ]
+}

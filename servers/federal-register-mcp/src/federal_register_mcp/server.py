@@ -413,7 +413,7 @@ def _build_search_params(
 # Core tools
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Search Documents", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Search Documents", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def search_documents(
     agencies: list[str] | None = None,
     doc_types: list[Literal["PRORULE", "RULE", "NOTICE", "PRESDOCU"]] | None = None,
@@ -516,7 +516,7 @@ async def search_documents(
     return await _get(f"{BASE_URL}/documents.json?{qs}")
 
 
-@mcp.tool(annotations={"title": "Get Document", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Document", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_document(
     document_number: str,
 ) -> dict[str, Any]:
@@ -532,7 +532,7 @@ async def get_document(
     return await _get(f"{BASE_URL}/documents/{dn}.json")
 
 
-@mcp.tool(annotations={"title": "Get Documents Batch", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Documents Batch", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_documents_batch(
     document_numbers: list[str],
 ) -> dict[str, Any]:
@@ -560,7 +560,7 @@ async def get_documents_batch(
     return data
 
 
-@mcp.tool(annotations={"title": "Get Facet Counts", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Facet Counts", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_facet_counts(
     facet: Literal[
         "type", "agency", "topic",
@@ -635,7 +635,7 @@ async def get_facet_counts(
     return await _get(url)
 
 
-@mcp.tool(annotations={"title": "Get Public Inspection", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Public Inspection", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_public_inspection(
     agency_filter: str | None = None,
     keyword_filter: str | None = None,
@@ -718,7 +718,7 @@ async def get_public_inspection(
     }
 
 
-@mcp.tool(annotations={"title": "List Agencies", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "List Agencies", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def list_agencies(
     query: str | None = None,
     include_detail: bool = False,
@@ -780,7 +780,7 @@ _OPEN_COMMENT_SCAN_CAP = 500
 _OPEN_COMMENT_PAGE_SIZE = 100
 
 
-@mcp.tool(annotations={"title": "Open Comment Periods", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Open Comment Periods", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def open_comment_periods(
     agencies: list[str] | None = None,
     term: str | None = None,
@@ -846,7 +846,7 @@ async def open_comment_periods(
     }
 
 
-@mcp.tool(annotations={"title": "FAR Case History", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "FAR Case History", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def far_case_history(docket_id: str) -> dict[str, Any]:
     """Get all Federal Register documents for a FAR/DFARS case or FAC.
 

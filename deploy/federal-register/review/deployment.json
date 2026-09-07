@@ -1,0 +1,14 @@
+{
+  "name": "Federal Register MCP",
+  "slug": "federal-register",
+  "tools": 8,
+  "endpoint": "https://federal-register.1102tools.com/mcp",
+  "status": "deployed; all tools live validated",
+  "container_application_id": "a038891c-fed9-4296-8ed3-43e36827359f",
+  "durable_object_namespace_id": "cdac4fc1c07145f5b0472b03b8fe5a8a",
+  "image": "registry.cloudflare.com/846d3e41e48446abcd3570c0959f9fb5/federal-register-mcp@sha256:4db3471e6b47d4d9d1f7f93faec267e131dbee6411bfe3b9e23a21c9fd4a30a7",
+  "offline_tests_passed": 135,
+  "openai_draft_url": "https://platform.openai.com/plugins/edit/asdk_app_6a9ef0c35d788191959b35ccf0a0862b/asdk_app_v_6a9ef0c55d888191bb54c69288bae379",
+  "openai_domain_verified": true,
+  "openai_status": "draft; recording and final attestations pending"
+}
