@@ -1,16 +1,18 @@
 # USAspending MCP submission draft
 
-Status: engineering validation in progress. No public endpoint or directory approval yet.
+Status: deployed public pilot; production validation in progress. Not submitted to the directory.
 
 - Publisher: James Jenrette / 1102tools
 - Name: USAspending MCP
 - Short description: Explore federal spending
 - Submission type: With MCP; no custom UI or uploaded skills
-- Planned endpoint: https://usaspending.1102tools.com/mcp
+- Endpoint: https://usaspending.1102tools.com/mcp
 - Authentication: none; public data, no user API key
 - Source: https://api.usaspending.gov
 - Website: https://1102tools.com
-- Support: james@1102tools.com and the repository issue tracker
+- Support URL: https://usaspending.1102tools.com/support
+- Privacy URL: https://usaspending.1102tools.com/privacy
+- Terms URL: https://usaspending.1102tools.com/terms
 - Tool surface: all 55 existing USAspending tools
 
 ## Description
@@ -40,4 +42,4 @@ All tools read public USAspending data. Set readOnlyHint=true, destructiveHint=f
 Initial remote pilot of the existing 55-tool USAspending server. Adds stateless Streamable HTTP, explicit external-data annotations, request guards, bounded concurrency, and a Cloudflare container deployment. Existing stdio command remains available.
 
 ## Portal work still required
-Verify publisher identity and Apps Management permission. Publish final support/privacy/terms pages. Generate the domain challenge in the portal and host its exact token. Scan the production endpoint, address findings, run the review cases in a supported client, record the actual demo, and submit accurate attestations. Approval and publication remain separate portal events.
+Verify publisher identity and Apps Management permission. Generate the domain challenge in the portal and host its exact token. Scan the production endpoint, address findings, run the review cases in a supported client, record the actual demo, and submit accurate attestations. Approval and publication remain separate portal events.

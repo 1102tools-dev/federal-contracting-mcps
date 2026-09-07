@@ -21,7 +21,7 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any
 
-from filelock import FileLock
+from filelock import FileLock, Timeout as FileLockTimeout
 from platformdirs import user_cache_path
 
 MIN_INTERVAL_ENV = "FEDERAL_API_MIN_INTERVAL_SECONDS"
@@ -237,8 +237,16 @@ class FederalApiPacer:
         process_lock = _process_lock(f"{root.resolve()}::{identity}")
 
         async with process_lock:
+            # Acquire/release on the event-loop thread: filelock tracks ownership
+            # and deadlock detection per thread. Nonblocking polling avoids both
+            # event-loop blocking and orphaned acquisitions on cancellation.
             lock = FileLock(str(root / f"{identity}.lock"), mode=0o600)
-            await asyncio.to_thread(lock.acquire)
+            while True:
+                try:
+                    lock.acquire(timeout=0)
+                    break
+                except FileLockTimeout:
+                    await asyncio.sleep(0.05)
             slot = RequestSlot(now=self.clock)
             state: dict[str, float] = {}
             try:
@@ -259,7 +267,7 @@ class FederalApiPacer:
                 try:
                     await asyncio.to_thread(self._write_state, state_path, state)
                 finally:
-                    await asyncio.to_thread(lock.release)
+                    lock.release()
 
 
 def utc_timestamp(epoch: float) -> str:

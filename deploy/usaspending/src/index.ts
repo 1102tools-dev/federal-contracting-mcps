@@ -1,3 +1,4 @@
+import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
 
 export class USASpending extends Container {
@@ -8,6 +9,7 @@ export class USASpending extends Container {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    if (publicDocs[url.pathname] && request.method === "GET") return new Response(publicDocs[url.pathname], {headers: {"Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff"}});
     if (url.pathname !== "/mcp" && url.pathname !== "/health") {
       return new Response("USAspending MCP by 1102tools. Connect at /mcp.", {status: url.pathname === "/" ? 200 : 404});
     }
@@ -31,8 +33,8 @@ export default {
       });
       // A single named instance preserves process/file pacing across all users.
       return await getContainer(env.BACKEND, "public-usaspending").fetch(forwarded);
-    } catch {
-      console.log(JSON.stringify({event: "backend_unavailable"}));
+    } catch (error) {
+      console.log(JSON.stringify({event: "backend_unavailable", reason: error instanceof Error ? error.message.slice(0, 200) : "unknown"}));
       return Response.json({error: "USAspending service temporarily unavailable."}, {status: 503, headers: {"Retry-After": "15"}});
     }
   },
