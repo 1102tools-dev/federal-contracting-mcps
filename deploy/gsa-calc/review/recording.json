@@ -10,5 +10,7 @@
     "currentTime": 15.069466
   },
   "chat_url": "https://chatgpt.com/c/6a9ef511-4c78-83ea-adea-703f86c2302e",
-  "submission_status": "draft_pending_owner_attestations"
+  "submission_status": "review",
+  "review_status_verified_on": "2026-09-07",
+  "owner_attestations_authorized": true
 }

@@ -10,5 +10,7 @@
   "offline_tests_passed": 185,
   "openai_draft_url": "https://platform.openai.com/plugins/edit/asdk_app_6a9ef0341b04819192935fd4e5cd9b34/asdk_app_v_6a9ef034b1248191ac88e74e895209d7",
   "openai_domain_verified": true,
-  "openai_status": "draft; recording and final attestations pending"
+  "openai_status": "draft; recording and final attestations pending",
+  "openai_submission_status": "review",
+  "openai_review_verified_on": "2026-09-07"
 }
