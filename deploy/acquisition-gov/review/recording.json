@@ -1,0 +1,15 @@
+{
+  "url": "https://1102tools.com/downloads/acquisition-gov-demo-2026-09-07.mp4",
+  "duration_seconds": 147.45,
+  "bytes": 5759592,
+  "sha256": "40142508c58683087e6add07fdd17829e6228aa76a472ed287c5ad1709595984",
+  "full_decode": "passed",
+  "public_bytes_match": true,
+  "browser_playback": {
+    "readyState": 4,
+    "paused": false,
+    "currentTime": 4.161852
+  },
+  "chat_url": "https://chatgpt.com/c/6a9efc9b-90e0-83e9-929d-b02449603172",
+  "submission_status": "draft_pending_owner_attestations"
+}
