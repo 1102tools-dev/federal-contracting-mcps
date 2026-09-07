@@ -506,7 +506,7 @@ def _resolve_award_type(
 # Search tools
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Search Awards", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Search Awards", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def search_awards(
     award_type: Literal["contracts", "idvs", "grants", "loans", "direct_payments", "other"] = "contracts",
     keywords: list[str] | None = None,
@@ -672,7 +672,7 @@ async def search_awards(
     return await _post("/api/v2/search/spending_by_award/", payload)
 
 
-@mcp.tool(annotations={"title": "Get Award Count", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Award Count", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_award_count(
     award_type: Literal["contracts", "idvs", "grants", "loans", "direct_payments", "other"] = "contracts",
     keywords: list[str] | None = None,
@@ -742,7 +742,7 @@ async def get_award_count(
     return await _post("/api/v2/search/spending_by_award_count/", {"filters": filters})
 
 
-@mcp.tool(annotations={"title": "Spending Over Time", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Spending Over Time", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def spending_over_time(
     group: Literal["fiscal_year", "quarter", "month"] = "fiscal_year",
     keywords: list[str] | None = None,
@@ -803,7 +803,7 @@ async def spending_over_time(
     )
 
 
-@mcp.tool(annotations={"title": "Spending by Category", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Spending by Category", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def spending_by_category(
     category: Literal[
         "awarding_agency", "awarding_subagency", "funding_agency", "funding_subagency",
@@ -878,7 +878,7 @@ async def spending_by_category(
 # Detail tools
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Get Award Detail", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Award Detail", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_award_detail(generated_award_id: str) -> dict[str, Any]:
     """Fetch full details for a single award by its generated_internal_id.
 
@@ -911,7 +911,7 @@ async def get_award_detail(generated_award_id: str) -> dict[str, Any]:
     return await _get(f"/api/v2/awards/{award_id}/")
 
 
-@mcp.tool(annotations={"title": "Get Transactions", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Transactions", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_transactions(
     generated_award_id: str,
     limit: int = 100,
@@ -947,7 +947,7 @@ async def get_transactions(
     )
 
 
-@mcp.tool(annotations={"title": "Get Award Funding", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Award Funding", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_award_funding(
     generated_award_id: str,
     limit: int = 50,
@@ -982,7 +982,7 @@ async def get_award_funding(
     )
 
 
-@mcp.tool(annotations={"title": "Get IDV Children", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get IDV Children", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_idv_children(
     generated_idv_id: str,
     child_type: Literal["child_awards", "child_idvs", "grandchild_awards"] = "child_awards",
@@ -1030,7 +1030,7 @@ async def get_idv_children(
 # Workflow / convenience tools
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Lookup PIID", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Lookup PIID", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def lookup_piid(piid: str, limit: int = 5) -> dict[str, Any]:
     """Look up awards by PIID or PIID prefix with automatic award-type detection.
 
@@ -1116,7 +1116,7 @@ async def lookup_piid(piid: str, limit: int = 5) -> dict[str, Any]:
 # Autocomplete tools
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Autocomplete PSC", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Autocomplete PSC", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def autocomplete_psc(search_text: str, limit: int = 10) -> dict[str, Any]:
     """Autocomplete lookup for Product/Service Codes (PSC).
 
@@ -1147,7 +1147,7 @@ async def autocomplete_psc(search_text: str, limit: int = 10) -> dict[str, Any]:
     )
 
 
-@mcp.tool(annotations={"title": "Autocomplete NAICS", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Autocomplete NAICS", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def autocomplete_naics(
     search_text: str,
     limit: int = 10,
@@ -1202,7 +1202,7 @@ async def autocomplete_naics(
 # Reference tools
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "List Toptier Agencies", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "List Toptier Agencies", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def list_toptier_agencies() -> dict[str, Any]:
     """List all top-tier federal agencies tracked by USASpending.
 
@@ -1257,7 +1257,7 @@ def _validate_fiscal_year(fiscal_year: int) -> int:
     return fiscal_year
 
 
-@mcp.tool(annotations={"title": "Get Agency Overview", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Agency Overview", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_agency_overview(
     toptier_code: str,
     fiscal_year: int | None = None,
@@ -1275,7 +1275,7 @@ async def get_agency_overview(
     return await _get(f"/api/v2/agency/{code}/", params=params)
 
 
-@mcp.tool(annotations={"title": "Get Agency Awards", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Agency Awards", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_agency_awards(
     toptier_code: str,
     fiscal_year: int | None = None,
@@ -1292,7 +1292,7 @@ async def get_agency_awards(
     return await _get(f"/api/v2/agency/{code}/awards/", params=params)
 
 
-@mcp.tool(annotations={"title": "Get NAICS Details", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get NAICS Details", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_naics_details(code: str) -> dict[str, Any]:
     """Get details for a NAICS code (2-6 digits).
 
@@ -1306,7 +1306,7 @@ async def get_naics_details(code: str) -> dict[str, Any]:
     return await _get(f"/api/v2/references/naics/{code.strip()}/")
 
 
-@mcp.tool(annotations={"title": "Get PSC Filter Tree", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get PSC Filter Tree", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_psc_filter_tree(
     path: str = "",
 ) -> dict[str, Any]:
@@ -1334,7 +1334,7 @@ async def get_psc_filter_tree(
     return await _get(endpoint)
 
 
-@mcp.tool(annotations={"title": "Get State Profile", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get State Profile", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_state_profile(state_fips: str) -> dict[str, Any]:
     """Get spending profile for a US state by its 2-digit FIPS code.
 
@@ -1360,7 +1360,7 @@ async def get_state_profile(state_fips: str) -> dict[str, Any]:
 # Subawards (FFATA)
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Search Subawards", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Search Subawards", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def search_subawards(
     award_id: str | None = None,
     sort: Literal["amount", "action_date", "subaward_number", "recipient_name", "description"] = "amount",
@@ -1397,7 +1397,7 @@ async def search_subawards(
     return await _post("/api/v2/subawards/", payload)
 
 
-@mcp.tool(annotations={"title": "Spending by Subaward Grouped", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Spending by Subaward Grouped", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def spending_by_subaward_grouped(
     time_period_start: str | None = None,
     time_period_end: str | None = None,
@@ -1453,7 +1453,7 @@ async def spending_by_subaward_grouped(
 # Recipient depth
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Search Recipients", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Search Recipients", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def search_recipients(
     keyword: str | None = None,
     award_type: Literal["all", "contracts", "grants", "loans", "direct_payments", "other"] = "all",
@@ -1523,7 +1523,7 @@ def _normalize_year(year: str | int | None, *, field: str = "year") -> str | Non
     return s or None
 
 
-@mcp.tool(annotations={"title": "Get Recipient Profile", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Recipient Profile", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_recipient_profile(
     recipient_hash: str,
     year: str | int | None = None,
@@ -1550,7 +1550,7 @@ _UEI_RE = re.compile(r"^[A-Z0-9]{12}$", re.IGNORECASE)
 _DUNS_RE = re.compile(r"^\d{9}$")
 
 
-@mcp.tool(annotations={"title": "Get Recipient Children", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Recipient Children", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_recipient_children(
     uei_or_duns: str,
     year: str | int | None = None,
@@ -1632,7 +1632,7 @@ async def get_recipient_children(
     )
 
 
-@mcp.tool(annotations={"title": "Autocomplete Recipient", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Autocomplete Recipient", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def autocomplete_recipient(
     search_text: str,
     limit: int = 10,
@@ -1653,7 +1653,7 @@ async def autocomplete_recipient(
     return await _post("/api/v2/autocomplete/recipient/", payload)
 
 
-@mcp.tool(annotations={"title": "List States", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "List States", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def list_states() -> dict[str, Any]:
     """List all states with their FIPS codes and award totals.
 
@@ -1717,7 +1717,7 @@ def _validate_fy(fy: int | str | None, *, field: str = "fiscal_year") -> str | N
     return str(fy_int)
 
 
-@mcp.tool(annotations={"title": "Get Agency Budgetary Resources", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Agency Budgetary Resources", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_agency_budgetary_resources(toptier_code: str) -> dict[str, Any]:
     """Get an agency's budgetary resources by fiscal year.
 
@@ -1728,7 +1728,7 @@ async def get_agency_budgetary_resources(toptier_code: str) -> dict[str, Any]:
     return await _get(f"/api/v2/agency/{toptier_code}/budgetary_resources/")
 
 
-@mcp.tool(annotations={"title": "Get Agency Sub-Agencies", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Agency Sub-Agencies", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_agency_sub_agencies(
     toptier_code: str,
     fiscal_year: int | str | None = None,
@@ -1758,7 +1758,7 @@ async def get_agency_sub_agencies(
     return await _get(f"/api/v2/agency/{toptier_code}/sub_agency/", params=params)
 
 
-@mcp.tool(annotations={"title": "Get Agency Federal Accounts", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Agency Federal Accounts", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_agency_federal_accounts(
     toptier_code: str,
     fiscal_year: int | str | None = None,
@@ -1784,7 +1784,7 @@ async def get_agency_federal_accounts(
     return await _get(f"/api/v2/agency/{toptier_code}/federal_account/", params=params)
 
 
-@mcp.tool(annotations={"title": "Get Agency Object Classes", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Agency Object Classes", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_agency_object_classes(
     toptier_code: str,
     fiscal_year: int | str | None = None,
@@ -1810,7 +1810,7 @@ async def get_agency_object_classes(
     return await _get(f"/api/v2/agency/{toptier_code}/object_class/", params=params)
 
 
-@mcp.tool(annotations={"title": "Get Agency Program Activities", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Agency Program Activities", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_agency_program_activities(
     toptier_code: str,
     fiscal_year: int | str | None = None,
@@ -1836,7 +1836,7 @@ async def get_agency_program_activities(
     return await _get(f"/api/v2/agency/{toptier_code}/program_activity/", params=params)
 
 
-@mcp.tool(annotations={"title": "Get Agency Obligations by Award Category", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Agency Obligations by Award Category", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_agency_obligations_by_award_category(
     toptier_code: str,
     fiscal_year: int | str | None = None,
@@ -1889,7 +1889,7 @@ def _validate_generated_award_id(award_id: str, *, field: str = "award_id") -> s
     return award_id
 
 
-@mcp.tool(annotations={"title": "Get Award Funding Rollup", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Award Funding Rollup", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_award_funding_rollup(award_id: str) -> dict[str, Any]:
     """Get a rollup of an award's funding totals.
 
@@ -1901,28 +1901,28 @@ async def get_award_funding_rollup(award_id: str) -> dict[str, Any]:
     return await _post("/api/v2/awards/funding_rollup/", {"award_id": award_id})
 
 
-@mcp.tool(annotations={"title": "Get Award Subaward Count", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Award Subaward Count", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_award_subaward_count(award_id: str) -> dict[str, Any]:
     """Count of subawards (FFATA subcontracts/subawards) reported on an award."""
     award_id = _validate_generated_award_id(award_id)
     return await _get(f"/api/v2/awards/count/subaward/{award_id}/")
 
 
-@mcp.tool(annotations={"title": "Get Award Federal Account Count", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Award Federal Account Count", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_award_federal_account_count(award_id: str) -> dict[str, Any]:
     """Count of distinct federal accounts (TAS) funding an award."""
     award_id = _validate_generated_award_id(award_id)
     return await _get(f"/api/v2/awards/count/federal_account/{award_id}/")
 
 
-@mcp.tool(annotations={"title": "Get Award Transaction Count", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Award Transaction Count", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_award_transaction_count(award_id: str) -> dict[str, Any]:
     """Count of transactions (modifications) on an award."""
     award_id = _validate_generated_award_id(award_id)
     return await _get(f"/api/v2/awards/count/transaction/{award_id}/")
 
 
-@mcp.tool(annotations={"title": "Awards Last Updated", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Awards Last Updated", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def awards_last_updated() -> dict[str, Any]:
     """Get the timestamp of the last USASpending award data refresh.
 
@@ -1936,7 +1936,7 @@ async def awards_last_updated() -> dict[str, Any]:
 # Search depth (transactions, geography, timeline)
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Spending by Transaction", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Spending by Transaction", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def spending_by_transaction(
     award_type: Literal["contracts", "idvs", "grants", "loans", "direct_payments", "other"] = "contracts",
     keywords: list[str] | None = None,
@@ -1998,7 +1998,7 @@ async def spending_by_transaction(
     return await _post("/api/v2/search/spending_by_transaction/", payload)
 
 
-@mcp.tool(annotations={"title": "Spending by Geography", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Spending by Geography", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def spending_by_geography(
     scope: Literal["recipient_location", "place_of_performance"] = "place_of_performance",
     geo_layer: Literal["state", "county", "district"] = "state",
@@ -2044,7 +2044,7 @@ async def spending_by_geography(
     return await _post("/api/v2/search/spending_by_geography/", payload)
 
 
-@mcp.tool(annotations={"title": "New Awards Over Time", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "New Awards Over Time", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def new_awards_over_time(
     recipient_id: str,
     group: Literal["fiscal_year", "quarter", "month"] = "month",
@@ -2095,7 +2095,7 @@ def _validate_idv_award_id(award_id: str, *, field: str = "award_id") -> str:
     return award_id
 
 
-@mcp.tool(annotations={"title": "Get IDV Amounts", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get IDV Amounts", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_idv_amounts(award_id: str) -> dict[str, Any]:
     """Top-line amounts for an Indefinite Delivery Vehicle (IDV).
 
@@ -2107,7 +2107,7 @@ async def get_idv_amounts(award_id: str) -> dict[str, Any]:
     return await _get(f"/api/v2/idvs/amounts/{award_id}/")
 
 
-@mcp.tool(annotations={"title": "Get IDV Funding", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get IDV Funding", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_idv_funding(
     award_id: str,
     sort: Literal["reporting_fiscal_date", "transaction_obligated_amount", "piid"] = "reporting_fiscal_date",
@@ -2127,14 +2127,14 @@ async def get_idv_funding(
     return await _post("/api/v2/idvs/funding/", payload)
 
 
-@mcp.tool(annotations={"title": "Get IDV Funding Rollup", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get IDV Funding Rollup", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_idv_funding_rollup(award_id: str) -> dict[str, Any]:
     """Funding rollup totals for an IDV (single dict, not paginated)."""
     award_id = _validate_idv_award_id(award_id)
     return await _post("/api/v2/idvs/funding_rollup/", {"award_id": award_id})
 
 
-@mcp.tool(annotations={"title": "Get IDV Activity", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get IDV Activity", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_idv_activity(
     award_id: str,
     hide_edge_cases: bool = False,
@@ -2175,7 +2175,7 @@ def _autocomplete_payload(search_text: str, limit: int) -> dict[str, Any]:
     return {"search_text": search_text.strip(), "limit": _clamp_limit(limit, cap=500)}
 
 
-@mcp.tool(annotations={"title": "Autocomplete Awarding Agency", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Autocomplete Awarding Agency", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def autocomplete_awarding_agency(search_text: str, limit: int = 10) -> dict[str, Any]:
     """Find awarding agency names by partial match.
 
@@ -2186,20 +2186,20 @@ async def autocomplete_awarding_agency(search_text: str, limit: int = 10) -> dic
     return await _post("/api/v2/autocomplete/awarding_agency/", _autocomplete_payload(search_text, limit))
 
 
-@mcp.tool(annotations={"title": "Autocomplete Funding Agency", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Autocomplete Funding Agency", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def autocomplete_funding_agency(search_text: str, limit: int = 10) -> dict[str, Any]:
     """Find funding agency names by partial match (companion to awarding agency)."""
     return await _post("/api/v2/autocomplete/funding_agency/", _autocomplete_payload(search_text, limit))
 
 
-@mcp.tool(annotations={"title": "Autocomplete CFDA", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Autocomplete CFDA", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def autocomplete_cfda(search_text: str, limit: int = 10) -> dict[str, Any]:
     """Find CFDA (Catalog of Federal Domestic Assistance) program numbers
     by partial title or program number. CFDA codes are used in grants."""
     return await _post("/api/v2/autocomplete/cfda/", _autocomplete_payload(search_text, limit))
 
 
-@mcp.tool(annotations={"title": "Autocomplete Glossary", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Autocomplete Glossary", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def autocomplete_glossary(search_text: str, limit: int = 10) -> dict[str, Any]:
     """Find glossary terms (acquisition + spending vocabulary) by partial match."""
     return await _post("/api/v2/autocomplete/glossary/", _autocomplete_payload(search_text, limit))
@@ -2209,7 +2209,7 @@ async def autocomplete_glossary(search_text: str, limit: int = 10) -> dict[str, 
 # Reference data
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Get Award Types Reference", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Award Types Reference", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_award_types_reference() -> dict[str, Any]:
     """Return the full mapping of award type codes to descriptions.
 
@@ -2220,7 +2220,7 @@ async def get_award_types_reference() -> dict[str, Any]:
     return await _get("/api/v2/references/award_types/")
 
 
-@mcp.tool(annotations={"title": "Get DEF Codes Reference", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get DEF Codes Reference", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_def_codes_reference() -> dict[str, Any]:
     """Return all Disaster Emergency Fund (DEFC) codes with public laws.
 
@@ -2230,7 +2230,7 @@ async def get_def_codes_reference() -> dict[str, Any]:
     return await _get("/api/v2/references/def_codes/")
 
 
-@mcp.tool(annotations={"title": "Get Glossary", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Glossary", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_glossary(
     page: int = 1,
     limit: int = 50,
@@ -2242,7 +2242,7 @@ async def get_glossary(
     return await _get("/api/v2/references/glossary/", params={"page": str(page), "limit": str(limit)})
 
 
-@mcp.tool(annotations={"title": "Get Submission Periods", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Submission Periods", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_submission_periods() -> dict[str, Any]:
     """Return the list of agency submission periods (when each agency last
     submitted data for each fiscal period). Useful for understanding which
@@ -2269,7 +2269,7 @@ def _validate_tas(tas: str, *, field: str = "account_code") -> str:
     return s
 
 
-@mcp.tool(annotations={"title": "List Federal Accounts", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "List Federal Accounts", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def list_federal_accounts(
     keyword: str | None = None,
     fiscal_year: int | str | None = None,
@@ -2297,14 +2297,14 @@ async def list_federal_accounts(
     return await _post("/api/v2/federal_accounts/", payload)
 
 
-@mcp.tool(annotations={"title": "Get Federal Account Detail", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Federal Account Detail", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_federal_account_detail(account_code: str) -> dict[str, Any]:
     """Get an individual federal account's metadata + budgetary resources."""
     account_code = _validate_tas(account_code)
     return await _get(f"/api/v2/federal_accounts/{account_code}/")
 
 
-@mcp.tool(annotations={"title": "Get Federal Account Object Classes", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Federal Account Object Classes", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_federal_account_object_classes(account_code: str) -> dict[str, Any]:
     """Get the object class breakdown of obligations for a federal account.
 
@@ -2323,7 +2323,7 @@ async def get_federal_account_object_classes(account_code: str) -> dict[str, Any
     return await _post(f"/api/v2/federal_accounts/{account_code}/object_classes/total/", {})
 
 
-@mcp.tool(annotations={"title": "Get Federal Account Program Activities", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Federal Account Program Activities", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_federal_account_program_activities(
     account_code: str,
     fiscal_year: int | str | None = None,
@@ -2339,7 +2339,7 @@ async def get_federal_account_program_activities(
     )
 
 
-@mcp.tool(annotations={"title": "Get Federal Account Fiscal Year Snapshot", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Federal Account Fiscal Year Snapshot", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_federal_account_fy_snapshot(
     account_id: int | str,
     fiscal_year: int | str | None = None,

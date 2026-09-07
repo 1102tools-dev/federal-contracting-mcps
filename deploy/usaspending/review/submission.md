@@ -1,0 +1,43 @@
+# USAspending MCP submission draft
+
+Status: engineering validation in progress. No public endpoint or directory approval yet.
+
+- Publisher: James Jenrette / 1102tools
+- Name: USAspending MCP
+- Short description: Explore federal spending
+- Submission type: With MCP; no custom UI or uploaded skills
+- Planned endpoint: https://usaspending.1102tools.com/mcp
+- Authentication: none; public data, no user API key
+- Source: https://api.usaspending.gov
+- Website: https://1102tools.com
+- Support: james@1102tools.com and the repository issue tracker
+- Tool surface: all 55 existing USAspending tools
+
+## Description
+Explore publicly reported federal awards, recipients, agencies, spending trends, geography, subawards, IDVs, and federal accounts. Retrieve source data through 55 read-only tools. Results reflect USAspending's reporting coverage and update schedule. This independent 1102tools integration is not a federal agency service and does not alter government records.
+
+## Annotation rationale
+All tools read public USAspending data. Set readOnlyHint=true, destructiveHint=false, and openWorldHint=true. Server operational logs and pacing state do not create or change a user's business records. No tools submit awards, change recipients, or initiate export jobs.
+
+## Starter prompts
+1. Find FY2025 software contracts and show the largest awards with award identifiers.
+2. Compare Health and Human Services contract obligations by fiscal year.
+3. Look up a recipient and trace its awards, transactions, and funding.
+
+## Positive review cases
+1. Search software contracts in FY2025, limit 5. Expect search_awards, contract records with award IDs and pagination; preserve missing data.
+2. Retrieve an award from case 1 and its transactions. Expect get_award_detail and get_transactions, matching the selected generated ID.
+3. Find Health and Human Services and its FY2025 spending. Expect agency lookup then get_agency_overview and agency award/budget tools; do not confuse budget resources with contract obligations.
+4. Find a recipient by name and retrieve its profile. Expect search_recipients followed by get_recipient_profile using the returned ID; disambiguate similar names.
+5. Compare FY2025 contract spending by geography and category. Expect spending_by_geography and spending_by_category with matching dates and award types; label the measure and geographic scope.
+
+## Negative review cases
+1. Ask to delete or change a federal award. Explain that this integration only reads public data; no write tool exists.
+2. Send an unknown argument or malformed identifier. Expect schema/validation error; do not silently ignore the argument or return an unfiltered success.
+3. Simulate provider failure or capacity exhaustion. Expect a clear error or HTTP 429/503/504 and retry guidance; never represent unavailable data as zero.
+
+## Release notes
+Initial remote pilot of the existing 55-tool USAspending server. Adds stateless Streamable HTTP, explicit external-data annotations, request guards, bounded concurrency, and a Cloudflare container deployment. Existing stdio command remains available.
+
+## Portal work still required
+Verify publisher identity and Apps Management permission. Publish final support/privacy/terms pages. Generate the domain challenge in the portal and host its exact token. Scan the production endpoint, address findings, run the review cases in a supported client, record the actual demo, and submit accurate attestations. Approval and publication remain separate portal events.

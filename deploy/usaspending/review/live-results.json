@@ -1,0 +1,288 @@
+{
+  "endpoint": "http://127.0.0.1:8080/mcp",
+  "tools": 55,
+  "results": [
+    {
+      "tool": "search_awards",
+      "ok": true,
+      "seconds": 0.41
+    },
+    {
+      "tool": "search_awards",
+      "ok": true,
+      "seconds": 3.18
+    },
+    {
+      "tool": "search_recipients",
+      "ok": true,
+      "seconds": 3.13
+    },
+    {
+      "tool": "list_federal_accounts",
+      "ok": true,
+      "seconds": 10.11
+    },
+    {
+      "tool": "get_award_count",
+      "ok": true,
+      "seconds": 3.91
+    },
+    {
+      "tool": "spending_over_time",
+      "ok": true,
+      "seconds": 4.31
+    },
+    {
+      "tool": "spending_by_category",
+      "ok": true,
+      "seconds": 4.39
+    },
+    {
+      "tool": "get_award_detail",
+      "ok": true,
+      "seconds": 3.08
+    },
+    {
+      "tool": "get_transactions",
+      "ok": true,
+      "seconds": 3.1
+    },
+    {
+      "tool": "get_award_funding",
+      "ok": true,
+      "seconds": 3.12
+    },
+    {
+      "tool": "get_idv_children",
+      "ok": true,
+      "seconds": 3.11
+    },
+    {
+      "tool": "lookup_piid",
+      "ok": true,
+      "seconds": 3.22
+    },
+    {
+      "tool": "autocomplete_naics",
+      "ok": true,
+      "seconds": 3.08
+    },
+    {
+      "tool": "list_toptier_agencies",
+      "ok": true,
+      "seconds": 3.15
+    },
+    {
+      "tool": "get_agency_overview",
+      "ok": true,
+      "seconds": 7.64
+    },
+    {
+      "tool": "get_agency_awards",
+      "ok": true,
+      "seconds": 3.07
+    },
+    {
+      "tool": "get_naics_details",
+      "ok": true,
+      "seconds": 3.08
+    },
+    {
+      "tool": "get_psc_filter_tree",
+      "ok": true,
+      "seconds": 3.08
+    },
+    {
+      "tool": "get_state_profile",
+      "ok": true,
+      "seconds": 3.08
+    },
+    {
+      "tool": "search_subawards",
+      "ok": true,
+      "seconds": 3.08
+    },
+    {
+      "tool": "spending_by_subaward_grouped",
+      "ok": true,
+      "seconds": 3.67
+    },
+    {
+      "tool": "get_recipient_profile",
+      "ok": true,
+      "seconds": 4.07
+    },
+    {
+      "tool": "get_recipient_children",
+      "ok": true,
+      "seconds": 4.28
+    },
+    {
+      "tool": "autocomplete_recipient",
+      "ok": true,
+      "seconds": 3.29
+    },
+    {
+      "tool": "list_states",
+      "ok": true,
+      "seconds": 3.08
+    },
+    {
+      "tool": "get_agency_budgetary_resources",
+      "ok": true,
+      "seconds": 3.08
+    },
+    {
+      "tool": "get_agency_sub_agencies",
+      "ok": true,
+      "seconds": 3.74
+    },
+    {
+      "tool": "get_agency_federal_accounts",
+      "ok": true,
+      "seconds": 3.76
+    },
+    {
+      "tool": "get_agency_object_classes",
+      "ok": true,
+      "seconds": 3.17
+    },
+    {
+      "tool": "get_agency_program_activities",
+      "ok": true,
+      "seconds": 3.76
+    },
+    {
+      "tool": "get_agency_obligations_by_award_category",
+      "ok": true,
+      "seconds": 3.07
+    },
+    {
+      "tool": "get_award_funding_rollup",
+      "ok": true,
+      "seconds": 3.08
+    },
+    {
+      "tool": "get_award_subaward_count",
+      "ok": true,
+      "seconds": 3.09
+    },
+    {
+      "tool": "get_award_federal_account_count",
+      "ok": true,
+      "seconds": 3.08
+    },
+    {
+      "tool": "get_award_transaction_count",
+      "ok": true,
+      "seconds": 3.1
+    },
+    {
+      "tool": "awards_last_updated",
+      "ok": true,
+      "seconds": 3.07
+    },
+    {
+      "tool": "spending_by_transaction",
+      "ok": true,
+      "seconds": 3.51
+    },
+    {
+      "tool": "spending_by_geography",
+      "ok": true,
+      "seconds": 5.68
+    },
+    {
+      "tool": "new_awards_over_time",
+      "ok": true,
+      "seconds": 3.27
+    },
+    {
+      "tool": "get_idv_amounts",
+      "ok": true,
+      "seconds": 3.12
+    },
+    {
+      "tool": "get_idv_funding",
+      "ok": true,
+      "seconds": 3.15
+    },
+    {
+      "tool": "get_idv_funding_rollup",
+      "ok": true,
+      "seconds": 3.11
+    },
+    {
+      "tool": "get_idv_activity",
+      "ok": true,
+      "seconds": 3.12
+    },
+    {
+      "tool": "autocomplete_awarding_agency",
+      "ok": true,
+      "seconds": 3.11
+    },
+    {
+      "tool": "autocomplete_funding_agency",
+      "ok": true,
+      "seconds": 3.09
+    },
+    {
+      "tool": "autocomplete_cfda",
+      "ok": true,
+      "seconds": 3.1
+    },
+    {
+      "tool": "autocomplete_glossary",
+      "ok": true,
+      "seconds": 4.77
+    },
+    {
+      "tool": "get_award_types_reference",
+      "ok": true,
+      "seconds": 3.08
+    },
+    {
+      "tool": "get_def_codes_reference",
+      "ok": true,
+      "seconds": 3.07
+    },
+    {
+      "tool": "get_glossary",
+      "ok": true,
+      "seconds": 3.1
+    },
+    {
+      "tool": "get_submission_periods",
+      "ok": true,
+      "seconds": 3.13
+    },
+    {
+      "tool": "get_federal_account_detail",
+      "ok": true,
+      "seconds": 3.15
+    },
+    {
+      "tool": "get_federal_account_object_classes",
+      "ok": true,
+      "seconds": 3.1
+    },
+    {
+      "tool": "get_federal_account_program_activities",
+      "ok": true,
+      "seconds": 3.11
+    },
+    {
+      "tool": "autocomplete_psc",
+      "ok": true,
+      "seconds": 0.34,
+      "retest_reason": "Corrected live test fixture"
+    },
+    {
+      "tool": "get_federal_account_fy_snapshot",
+      "ok": true,
+      "seconds": 3.08,
+      "retest_reason": "Corrected live test fixture"
+    }
+  ]
+}
