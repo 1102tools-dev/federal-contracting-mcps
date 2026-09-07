@@ -1,0 +1,39 @@
+{
+  "section": "2.101",
+  "date": "2026-09-03",
+  "search_term": "commercial product",
+  "match_count": 3,
+  "total_matches": 6,
+  "truncated": true,
+  "max_matches": 3,
+  "matches": [
+    {
+      "paragraph_index": 23,
+      "context": [
+        "*Bid sample* means a product sample required to be submitted by an offeror to show characteristics of the offered products that cannot adequately be described by specifications, purchase descriptions, or the solicitation (e.g., balance, facility of use, or pattern).",
+        "*Biobased product* means a product determined by the U.S. Department of Agriculture to be a commercial product or industrial product (other than food or feed) that is composed, in whole or in significant part, of biological products, including renewable domestic agricultural materials and forestry materials, or that is an intermediate ingredient or feedstock. The term includes, with respect to forestry materials, forest products that meet biobased content requirements, notwithstanding the market share the product holds, the age of the product, or whether the market for the product is new or emerging. (7 U.S.C. 8101) (7 CFR 3201.2).",
+        "*Broad agency announcement* means a general announcement of an agency's research interest including criteria for selecting proposals and soliciting the participation of all offerors capable of satisfying the Government's needs (see 6.102(d)(2)).",
+        "*Building or work* means construction activity as distinguished from manufacturing, furnishing of materials, or servicing and maintenance work. The terms include, without limitation, buildings, structures, and improvements of all types, such as bridges, dams, plants, highways, parkways, streets, subways, tunnels, sewers, mains, power lines, pumping stations, heavy generators, railways, airports, terminals, docks, piers, wharves, ways, lighthouses, buoys, jetties, breakwaters, levees, canals, dredging, shoring, rehabilitation and reactivation of plants, scaffolding, drilling, blasting, excavating, clearing, and landscaping. The manufacture or furnishing of materials, articles, supplies, or equipment (whether or not a Federal or State agency acquires title to such materials, articles, supplies, or equipment during the course of the manufacture or furnishing, or owns the materials from which they are manufactured or furnished) is not \u201cbuilding\u201d or \u201cwork\u201d within the meaning of this definition unless conducted in connection with and at the site of such building or work as is described in the foregoing sentence, or under the United States Housing Act of 1937 and the Housing Act of 1949 in the construction or development of the project."
+      ]
+    },
+    {
+      "paragraph_index": 51,
+      "context": [
+        "(2) An identifier assigned by a member of the North Atlantic Treaty Organization (NATO) or by the NATO Support and Procurement Agency (NSPA) to entities located outside the United States and its outlying areas that the DLA Commercial and Government Entity (CAGE) Branch records and maintains in the CAGE master file. This type of code is known as a NATO CAGE (NCAGE) code.",
+        "*Commercial component* means any component that is a commercial product.",
+        "*Commercial computer software* means any computer software that is a commercial product or commercial service.",
+        "*Commercial product* means\u2014"
+      ]
+    },
+    {
+      "paragraph_index": 52,
+      "context": [
+        "*Commercial component* means any component that is a commercial product.",
+        "*Commercial computer software* means any computer software that is a commercial product or commercial service.",
+        "*Commercial product* means\u2014",
+        "(1) A product, other than real property, that is of a type customarily used by the general public or by nongovernmental entities for purposes other than governmental purposes, and\u2014"
+      ]
+    }
+  ],
+  "total_paragraphs": 526
+}

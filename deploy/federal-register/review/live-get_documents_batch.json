@@ -1,0 +1,373 @@
+{
+  "count": 3,
+  "results": [
+    {
+      "abstract": "This document contains final regulations regarding the deduction for certain taxpayers for an amount up to $10,000 of qualified passenger vehicle loan interest. This document also contains final regulations regarding new information reporting requirements for certain persons who, in a trade or business, receive from any individual interest aggregating $600 or more for any calendar year on a specified passenger vehicle loan, including applicable penalties for failures to file information returns or furnish payee statements as required. These regulations affect taxpayers that may deduct qualified passenger vehicle loan interest, and also persons subject to these information reporting requirements.",
+      "action": "Final regulations.",
+      "agencies": [
+        {
+          "raw_name": "DEPARTMENT OF THE TREASURY",
+          "name": "Treasury Department",
+          "id": 497,
+          "url": "https://www.federalregister.gov/agencies/treasury-department",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/497",
+          "parent_id": null,
+          "slug": "treasury-department"
+        },
+        {
+          "raw_name": "Internal Revenue Service",
+          "name": "Internal Revenue Service",
+          "id": 254,
+          "url": "https://www.federalregister.gov/agencies/internal-revenue-service",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/254",
+          "parent_id": 497,
+          "slug": "internal-revenue-service"
+        }
+      ],
+      "body_html_url": "https://www.federalregister.gov/documents/full_text/html/2026/09/08/2026-18219.html",
+      "cfr_references": [
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "1",
+          "title": 26
+        },
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "301",
+          "title": 26
+        }
+      ],
+      "citation": "91 FR 57214",
+      "comment_url": null,
+      "comments_close_on": null,
+      "correction_of": null,
+      "corrections": [],
+      "dates": "Effective date: The final regulations are effective on November 9, 2026.",
+      "disposition_notes": null,
+      "docket_ids": [
+        "TD 10054"
+      ],
+      "dockets": [],
+      "document_number": "2026-18219",
+      "effective_on": "2026-11-09",
+      "end_page": 57244,
+      "executive_order_notes": null,
+      "executive_order_number": null,
+      "full_text_xml_url": "https://www.federalregister.gov/documents/full_text/xml/2026/09/08/2026-18219.xml",
+      "html_url": "https://www.federalregister.gov/documents/2026/09/08/2026-18219/car-loan-interest-deduction",
+      "images": {},
+      "images_metadata": {},
+      "json_url": "https://www.federalregister.gov/api/v1/documents/2026-18219?publication_date=2026-09-08",
+      "mods_url": "https://www.govinfo.gov/metadata/granule/FR-2026-09-08/2026-18219/mods.xml",
+      "not_received_for_publication": null,
+      "page_length": 31,
+      "page_views": {
+        "count": 177,
+        "last_updated": "2026-09-07 12:15:04 -0400"
+      },
+      "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-08/pdf/2026-18219.pdf",
+      "presidential_document_number": null,
+      "proclamation_number": null,
+      "public_inspection_pdf_url": "https://public-inspection.federalregister.gov/2026-18219.pdf?1788525910",
+      "publication_date": "2026-09-08",
+      "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/09/08/2026-18219.txt",
+      "regulation_id_number_info": {
+        "1545-BR75": null
+      },
+      "regulation_id_numbers": [
+        "1545-BR75"
+      ],
+      "regulations_dot_gov_info": {
+        "checked_regulationsdotgov_at": "2026-09-05T05:35:29Z"
+      },
+      "regulations_dot_gov_url": null,
+      "significant": null,
+      "signing_date": null,
+      "start_page": 57214,
+      "subtype": null,
+      "title": "Car Loan Interest Deduction",
+      "toc_doc": "Car Loan Interest Deduction",
+      "toc_subject": null,
+      "topics": [
+        "Employment taxes",
+        "Excise taxes",
+        "Income taxes",
+        "Penalties",
+        "Reporting and recordkeeping requirements"
+      ],
+      "type": "Rule",
+      "volume": 91
+    },
+    {
+      "abstract": "The U.S. Securities and Exchange Commission (\"SEC\" or \"Commission\") is proposing to adopt new rules, amend existing rules, amend the existing form for registration with the Commission as a transfer agent (Form TA-1) and the existing form for reporting activities of transfer agents (Form TA-2), and rescind an existing rule governing registered transfer agents. The proposals are designed to modernize the rules governing registered transfer agents.",
+      "action": "Proposed rule.",
+      "agencies": [
+        {
+          "raw_name": "SECURITIES AND EXCHANGE COMMISSION",
+          "name": "Securities and Exchange Commission",
+          "id": 466,
+          "url": "https://www.federalregister.gov/agencies/securities-and-exchange-commission",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/466",
+          "parent_id": null,
+          "slug": "securities-and-exchange-commission"
+        }
+      ],
+      "body_html_url": "https://www.federalregister.gov/documents/full_text/html/2026/09/04/2026-18190.html",
+      "cfr_references": [
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "240",
+          "title": 17
+        },
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "249",
+          "title": 17
+        }
+      ],
+      "citation": "91 FR 56946",
+      "comment_url": null,
+      "comments_close_on": "2026-11-03",
+      "correction_of": null,
+      "corrections": [],
+      "dates": "This release was published in the Federal Register on September 4, 2026. Comments should be received on or before November 3, 2026.",
+      "disposition_notes": null,
+      "docket_ids": [
+        "Release No. 34-106246",
+        "File No. S7-2026-30"
+      ],
+      "dockets": [],
+      "document_number": "2026-18190",
+      "effective_on": "2026-09-04",
+      "end_page": 57061,
+      "executive_order_notes": null,
+      "executive_order_number": null,
+      "full_text_xml_url": "https://www.federalregister.gov/documents/full_text/xml/2026/09/04/2026-18190.xml",
+      "html_url": "https://www.federalregister.gov/documents/2026/09/04/2026-18190/transfer-agent-rules",
+      "images": {
+        "EN04SE26.019": {
+          "large": "https://img.federalregister.gov/EN04SE26.019/EN04SE26.019_large.png",
+          "medium": "https://img.federalregister.gov/EN04SE26.019/EN04SE26.019_medium.png",
+          "original_size": "https://img.federalregister.gov/EN04SE26.019/EN04SE26.019_original_size.png"
+        },
+        "EN04SE26.021": {
+          "large": "https://img.federalregister.gov/EN04SE26.021/EN04SE26.021_large.png",
+          "medium": "https://img.federalregister.gov/EN04SE26.021/EN04SE26.021_medium.png",
+          "original_size": "https://img.federalregister.gov/EN04SE26.021/EN04SE26.021_original_size.png"
+        },
+        "EN04SE26.020": {
+          "large": "https://img.federalregister.gov/EN04SE26.020/EN04SE26.020_large.png",
+          "medium": "https://img.federalregister.gov/EN04SE26.020/EN04SE26.020_medium.png",
+          "original_size": "https://img.federalregister.gov/EN04SE26.020/EN04SE26.020_original_size.png"
+        }
+      },
+      "images_metadata": {
+        "EN04SE26.019": {
+          "large": {
+            "identifier": "EN04SE26.019",
+            "content_type": "image/png",
+            "size": 40135,
+            "width": 823,
+            "sha": "d78b1afe00b319b34faf843e8eea9c4b",
+            "url": "https://img.federalregister.gov/EN04SE26.019/EN04SE26.019_large.png",
+            "height": 486
+          },
+          "medium": {
+            "identifier": "EN04SE26.019",
+            "content_type": "image/png",
+            "size": 11198,
+            "width": 513,
+            "sha": "aea6ace5c399fc441e9bf10c7ffe6a72",
+            "url": "https://img.federalregister.gov/EN04SE26.019/EN04SE26.019_medium.png",
+            "height": 303
+          },
+          "original_size": {
+            "identifier": "EN04SE26.019",
+            "content_type": "image/png",
+            "size": 97313,
+            "width": 1942,
+            "sha": "5216fbaedb4d4f8fda1669ddc1230313",
+            "url": "https://img.federalregister.gov/EN04SE26.019/EN04SE26.019_original_size.png",
+            "height": 1147
+          }
+        },
+        "EN04SE26.021": {
+          "large": {
+            "identifier": "EN04SE26.021",
+            "content_type": "image/png",
+            "size": 27379,
+            "width": 823,
+            "sha": "862485f18f66e7fb60f324558d91e16d",
+            "url": "https://img.federalregister.gov/EN04SE26.021/EN04SE26.021_large.png",
+            "height": 475
+          },
+          "medium": {
+            "identifier": "EN04SE26.021",
+            "content_type": "image/png",
+            "size": 7200,
+            "width": 517,
+            "sha": "756ceb1c54fd8d02e502b37085e2243b",
+            "url": "https://img.federalregister.gov/EN04SE26.021/EN04SE26.021_medium.png",
+            "height": 298
+          },
+          "original_size": {
+            "identifier": "EN04SE26.021",
+            "content_type": "image/png",
+            "size": 95421,
+            "width": 1951,
+            "sha": "c7ec3abdb460732c5e1631fac49157f1",
+            "url": "https://img.federalregister.gov/EN04SE26.021/EN04SE26.021_original_size.png",
+            "height": 1125
+          }
+        },
+        "EN04SE26.020": {
+          "large": {
+            "identifier": "EN04SE26.020",
+            "content_type": "image/png",
+            "size": 27178,
+            "width": 823,
+            "sha": "e9a3bb5cc8c72a5149fc2de35279ec4d",
+            "url": "https://img.federalregister.gov/EN04SE26.020/EN04SE26.020_large.png",
+            "height": 469
+          },
+          "medium": {
+            "identifier": "EN04SE26.020",
+            "content_type": "image/png",
+            "size": 6844,
+            "width": 481,
+            "sha": "8f6fa4dffff871e0ee5955c4a9f59282",
+            "url": "https://img.federalregister.gov/EN04SE26.020/EN04SE26.020_medium.png",
+            "height": 274
+          },
+          "original_size": {
+            "identifier": "EN04SE26.020",
+            "content_type": "image/png",
+            "size": 44609,
+            "width": 1817,
+            "sha": "0855999569f1528bfb8ac8e4f1055a8d",
+            "url": "https://img.federalregister.gov/EN04SE26.020/EN04SE26.020_original_size.png",
+            "height": 1036
+          }
+        }
+      },
+      "json_url": "https://www.federalregister.gov/api/v1/documents/2026-18190?publication_date=2026-09-04",
+      "mods_url": "https://www.govinfo.gov/metadata/granule/FR-2026-09-04/2026-18190/mods.xml",
+      "not_received_for_publication": null,
+      "page_length": 116,
+      "page_views": {
+        "count": 521,
+        "last_updated": "2026-09-07 12:15:04 -0400"
+      },
+      "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-04/pdf/2026-18190.pdf",
+      "presidential_document_number": null,
+      "proclamation_number": null,
+      "public_inspection_pdf_url": "https://public-inspection.federalregister.gov/2026-18190.pdf?1788439518",
+      "publication_date": "2026-09-04",
+      "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/09/04/2026-18190.txt",
+      "regulation_id_number_info": {
+        "3235-AL55": {
+          "issue": "202504",
+          "html_url": "https://www.federalregister.gov/regulations/3235-AL55/transfer-agents",
+          "title": "Transfer Agents",
+          "xml_url": "http://www.reginfo.gov/public/do/eAgendaViewRule?pubId=202504&RIN=3235-AL55&operation=OPERATION_EXPORT_XML",
+          "priority_category": "Economically Significant"
+        }
+      },
+      "regulation_id_numbers": [
+        "3235-AL55"
+      ],
+      "regulations_dot_gov_info": {
+        "comments_count": 0,
+        "agency_id": "SEC",
+        "document_id": "SEC-2026-5516-0001",
+        "checked_regulationsdotgov_at": "2026-09-05T15:55:03Z"
+      },
+      "regulations_dot_gov_url": null,
+      "significant": true,
+      "signing_date": null,
+      "start_page": 56946,
+      "subtype": null,
+      "title": "Transfer Agent Rules",
+      "toc_doc": "Transfer Agent Rules",
+      "toc_subject": null,
+      "topics": [
+        "Reporting and recordkeeping requirements",
+        "Securities"
+      ],
+      "type": "Proposed Rule",
+      "volume": 91
+    },
+    {
+      "abstract": null,
+      "action": null,
+      "agencies": [
+        {
+          "raw_name": "FEDERAL RESERVE SYSTEM",
+          "name": "Federal Reserve System",
+          "id": 188,
+          "url": "https://www.federalregister.gov/agencies/federal-reserve-system",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/188",
+          "parent_id": null,
+          "slug": "federal-reserve-system"
+        }
+      ],
+      "body_html_url": "https://www.federalregister.gov/documents/full_text/html/2026/09/04/2026-18187.html",
+      "cfr_references": [],
+      "citation": "91 FR 56887",
+      "comment_url": null,
+      "comments_close_on": null,
+      "correction_of": null,
+      "corrections": [],
+      "dates": null,
+      "disposition_notes": null,
+      "docket_ids": [],
+      "dockets": [],
+      "document_number": "2026-18187",
+      "effective_on": null,
+      "end_page": 56887,
+      "executive_order_notes": null,
+      "executive_order_number": null,
+      "full_text_xml_url": "https://www.federalregister.gov/documents/full_text/xml/2026/09/04/2026-18187.xml",
+      "html_url": "https://www.federalregister.gov/documents/2026/09/04/2026-18187/change-in-bank-control-notices-acquisitions-of-shares-of-a-bank-or-bank-holding-company",
+      "images": {},
+      "images_metadata": {},
+      "json_url": "https://www.federalregister.gov/api/v1/documents/2026-18187?publication_date=2026-09-04",
+      "mods_url": "https://www.govinfo.gov/metadata/granule/FR-2026-09-04/2026-18187/mods.xml",
+      "not_received_for_publication": null,
+      "page_length": 1,
+      "page_views": {
+        "count": 103,
+        "last_updated": "2026-09-07 12:15:04 -0400"
+      },
+      "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-04/pdf/2026-18187.pdf",
+      "presidential_document_number": null,
+      "proclamation_number": null,
+      "public_inspection_pdf_url": "https://public-inspection.federalregister.gov/2026-18187.pdf?1788439517",
+      "publication_date": "2026-09-04",
+      "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/09/04/2026-18187.txt",
+      "regulation_id_number_info": {},
+      "regulation_id_numbers": [],
+      "regulations_dot_gov_info": {
+        "comments_count": 0,
+        "agency_id": "FRS",
+        "document_id": "FRS-2026-3862-0001",
+        "checked_regulationsdotgov_at": "2026-09-05T15:55:03Z"
+      },
+      "regulations_dot_gov_url": null,
+      "significant": null,
+      "signing_date": null,
+      "start_page": 56887,
+      "subtype": null,
+      "title": "Change in Bank Control Notices; Acquisitions of Shares of a Bank or Bank Holding Company",
+      "toc_doc": "Acquisitions of Shares of a Bank or Bank Holding Company",
+      "toc_subject": "Change in Bank Control",
+      "topics": [],
+      "type": "Notice",
+      "volume": 91
+    }
+  ]
+}

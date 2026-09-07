@@ -1,0 +1,149 @@
+{
+  "results": [
+    {
+      "starts_on": "2026-09-01",
+      "ends_on": null,
+      "type": "Section",
+      "hierarchy": {
+        "title": "48",
+        "subtitle": null,
+        "chapter": "99",
+        "subchapter": "B",
+        "part": "9903",
+        "subpart": "9903.2",
+        "subject_group": null,
+        "section": "9903.201-1",
+        "appendix": null
+      },
+      "hierarchy_headings": {
+        "title": "Title 48",
+        "subtitle": null,
+        "chapter": " Chapter 99",
+        "subchapter": "Subchapter B",
+        "part": "Part 9903",
+        "subpart": "Subpart 9903.2",
+        "subject_group": null,
+        "section": "9903.201-1",
+        "appendix": null
+      },
+      "headings": {
+        "title": "Federal Acquisition Regulations System",
+        "subtitle": null,
+        "chapter": "Cost Accounting Standards Board, Office of Federal Procurement Policy, Office of Management and Budget",
+        "subchapter": "Procurement Practices and Cost Accounting Standards",
+        "part": "Contract Coverage",
+        "subpart": "CAS Program Requirements",
+        "subject_group": null,
+        "section": "CAS applicability.",
+        "appendix": null
+      },
+      "full_text_excerpt": "Link to an amendment published at 91 FR 56060, Sept. 1, 2026. (a) This subsection describes the rules for determining whether a proposed contract or subcontract is exempt from CAS. (See 9904 or 9905, as applicable.) Negotiated contracts not exempt in accordance",
+      "score": 3.0270305,
+      "structure_index": 70630,
+      "reserved": false,
+      "removed": false,
+      "change_types": [
+        "cross_reference"
+      ]
+    },
+    {
+      "starts_on": "2026-09-01",
+      "ends_on": null,
+      "type": "Section",
+      "hierarchy": {
+        "title": "48",
+        "subtitle": null,
+        "chapter": "99",
+        "subchapter": "B",
+        "part": "9903",
+        "subpart": "9903.2",
+        "subject_group": null,
+        "section": "9903.201-2",
+        "appendix": null
+      },
+      "hierarchy_headings": {
+        "title": "Title 48",
+        "subtitle": null,
+        "chapter": " Chapter 99",
+        "subchapter": "Subchapter B",
+        "part": "Part 9903",
+        "subpart": "Subpart 9903.2",
+        "subject_group": null,
+        "section": "9903.201-2",
+        "appendix": null
+      },
+      "headings": {
+        "title": "Federal Acquisition Regulations System",
+        "subtitle": null,
+        "chapter": "Cost Accounting Standards Board, Office of Federal Procurement Policy, Office of Management and Budget",
+        "subchapter": "Procurement Practices and Cost Accounting Standards",
+        "part": "Contract Coverage",
+        "subpart": "CAS Program Requirements",
+        "subject_group": null,
+        "section": "Types of CAS coverage.",
+        "appendix": null
+      },
+      "full_text_excerpt": "Link to an amendment published at 91 FR 56060, Sept. 1, 2026. (a) Full coverage. Full coverage requires that the business unit comply with all of the CAS specified in part 9904 that are in effect on the date of the contract award and with any CAS that become",
+      "score": 3.0277617,
+      "structure_index": 70631,
+      "reserved": false,
+      "removed": false,
+      "change_types": [
+        "cross_reference"
+      ]
+    },
+    {
+      "starts_on": "2026-09-01",
+      "ends_on": null,
+      "type": "Section",
+      "hierarchy": {
+        "title": "48",
+        "subtitle": null,
+        "chapter": "99",
+        "subchapter": "B",
+        "part": "9903",
+        "subpart": "9903.2",
+        "subject_group": null,
+        "section": "9903.201-3",
+        "appendix": null
+      },
+      "hierarchy_headings": {
+        "title": "Title 48",
+        "subtitle": null,
+        "chapter": " Chapter 99",
+        "subchapter": "Subchapter B",
+        "part": "Part 9903",
+        "subpart": "Subpart 9903.2",
+        "subject_group": null,
+        "section": "9903.201-3",
+        "appendix": null
+      },
+      "headings": {
+        "title": "Federal Acquisition Regulations System",
+        "subtitle": null,
+        "chapter": "Cost Accounting Standards Board, Office of Federal Procurement Policy, Office of Management and Budget",
+        "subchapter": "Procurement Practices and Cost Accounting Standards",
+        "part": "Contract Coverage",
+        "subpart": "CAS Program Requirements",
+        "subject_group": null,
+        "section": "Solicitation provisions.",
+        "appendix": null
+      },
+      "full_text_excerpt": "Link to an amendment published at 91 FR 56060, Sept. 1, 2026. (a) Cost Accounting Standards Notices and Certification. (1) The contracting officer shall insert the provision set forth below, Cost Accounting Standards Notices and Certification, in solicitations",
+      "score": 3.027311,
+      "structure_index": 70632,
+      "reserved": false,
+      "removed": false,
+      "change_types": [
+        "cross_reference"
+      ]
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "total_pages": 6,
+    "total_count": 16,
+    "max_score": 3.0277617,
+    "description": "Changes to sections matching '*' in Title 48"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "endpoint": "https://acquisition-gov.1102tools.com/mcp",
+  "results": [
+    {
+      "tool": "list_rfo_parts",
+      "ok": true,
+      "seconds": 15.48,
+      "arguments": {
+        "part": 10
+      }
+    },
+    {
+      "tool": "get_rfo_part",
+      "ok": true,
+      "seconds": 3.08,
+      "arguments": {
+        "part": 10,
+        "max_characters": 4000
+      }
+    },
+    {
+      "tool": "list_rfo_agency_deviations",
+      "ok": true,
+      "seconds": 13.01,
+      "arguments": {
+        "part": 10,
+        "limit": 3
+      }
+    },
+    {
+      "tool": "get_rfo_agency_deviation",
+      "ok": true,
+      "seconds": 11.29,
+      "arguments": {
+        "source_id": "agency-deviation-f318571207c43a8f705e",
+        "page_end": 2
+      }
+    },
+    {
+      "tool": "get_rfo_guidance",
+      "ok": true,
+      "seconds": 8.0,
+      "arguments": {
+        "resource": "faq"
+      }
+    }
+  ]
+}

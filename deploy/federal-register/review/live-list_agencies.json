@@ -1,0 +1,15 @@
+{
+  "total_agencies": 472,
+  "returned": 1,
+  "query": "General Services",
+  "include_detail": false,
+  "agencies": [
+    {
+      "id": 210,
+      "name": "General Services Administration",
+      "short_name": "GSA",
+      "slug": "general-services-administration",
+      "parent_id": null
+    }
+  ]
+}

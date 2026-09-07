@@ -1,0 +1,145 @@
+{
+  "total_pi_documents": 77,
+  "filtered_count": 77,
+  "returned": 3,
+  "truncated": true,
+  "filters_applied": {
+    "agency": null,
+    "keyword": null,
+    "limit": 3
+  },
+  "documents": [
+    {
+      "agencies": [
+        {
+          "raw_name": "Health Resources and Services Administration",
+          "name": "Health Resources and Services Administration",
+          "id": 222,
+          "url": "https://www.federalregister.gov/agencies/health-resources-and-services-administration",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/222",
+          "parent_id": 221,
+          "slug": "health-resources-and-services-administration"
+        }
+      ],
+      "agency_letters": [],
+      "agency_names": [
+        "Health Resources and Services Administration"
+      ],
+      "docket_numbers": [],
+      "document_number": "2026-18235",
+      "editorial_note": null,
+      "excerpts": null,
+      "filed_at": "2026-09-03T16:15:00.000-04:00",
+      "filing_type": "special",
+      "html_url": "https://www.federalregister.gov/public-inspection/2026-18235/agency-information-collection-activities-proposals-submissions-and-approvals-bureau-of-health",
+      "json_url": "https://www.federalregister.gov/api/v1/public_inspection_documents/2026-18235",
+      "last_public_inspection_issue": "2026-09-04",
+      "num_pages": 5,
+      "page_views": {
+        "count": 137,
+        "last_updated": "2026-09-07 12:15:07 -0400"
+      },
+      "pdf_file_name": "2026-18235_PI.pdf",
+      "pdf_file_size": 122427,
+      "pdf_updated_at": "2026-09-03T16:15:07.000-04:00",
+      "pdf_url": "https://public-inspection.federalregister.gov/2026-18235.pdf",
+      "publication_date": "2026-09-08",
+      "raw_text_url": "https://www.federalregister.gov/public-inspection/raw_text/202/618/235.txt",
+      "subject_1": "Agency Information Collection Activities; Proposals, Submissions, and Approvals:",
+      "subject_2": "Bureau of Health Workforce Performance Data Collection",
+      "subject_3": null,
+      "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Bureau of Health Workforce Performance Data Collection ",
+      "toc_doc": "Bureau of Health Workforce Performance Data Collection",
+      "toc_subject": "Agency Information Collection Activities; Proposals, Submissions, and Approvals:",
+      "type": "Notice"
+    },
+    {
+      "agencies": [
+        {
+          "raw_name": "SECURITIES AND EXCHANGE COMMISSION",
+          "name": "Securities and Exchange Commission",
+          "id": 466,
+          "url": "https://www.federalregister.gov/agencies/securities-and-exchange-commission",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/466",
+          "parent_id": null,
+          "slug": "securities-and-exchange-commission"
+        }
+      ],
+      "agency_letters": [],
+      "agency_names": [
+        "Securities and Exchange Commission"
+      ],
+      "docket_numbers": [],
+      "document_number": "2026-18257",
+      "editorial_note": null,
+      "excerpts": null,
+      "filed_at": "2026-09-03T16:15:00.000-04:00",
+      "filing_type": "special",
+      "html_url": "https://www.federalregister.gov/public-inspection/2026-18257/meetings-sunshine-act",
+      "json_url": "https://www.federalregister.gov/api/v1/public_inspection_documents/2026-18257",
+      "last_public_inspection_issue": "2026-09-04",
+      "num_pages": 1,
+      "page_views": {
+        "count": 47,
+        "last_updated": "2026-09-07 12:15:07 -0400"
+      },
+      "pdf_file_name": "2026-18257_PI.pdf",
+      "pdf_file_size": 91884,
+      "pdf_updated_at": "2026-09-03T16:15:07.000-04:00",
+      "pdf_url": "https://public-inspection.federalregister.gov/2026-18257.pdf",
+      "publication_date": "2026-09-08",
+      "raw_text_url": "https://www.federalregister.gov/public-inspection/raw_text/202/618/257.txt",
+      "subject_1": "Meetings; Sunshine Act",
+      "subject_2": null,
+      "subject_3": null,
+      "title": "Meetings; Sunshine Act  ",
+      "toc_doc": "Meetings; Sunshine Act",
+      "toc_subject": "",
+      "type": "Notice"
+    },
+    {
+      "agencies": [
+        {
+          "raw_name": "SECURITIES AND EXCHANGE COMMISSION",
+          "name": "Securities and Exchange Commission",
+          "id": 466,
+          "url": "https://www.federalregister.gov/agencies/securities-and-exchange-commission",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/466",
+          "parent_id": null,
+          "slug": "securities-and-exchange-commission"
+        }
+      ],
+      "agency_letters": [],
+      "agency_names": [
+        "Securities and Exchange Commission"
+      ],
+      "docket_numbers": [],
+      "document_number": "2026-18262",
+      "editorial_note": null,
+      "excerpts": null,
+      "filed_at": "2026-09-03T16:15:00.000-04:00",
+      "filing_type": "special",
+      "html_url": "https://www.federalregister.gov/public-inspection/2026-18262/meetings-sunshine-act",
+      "json_url": "https://www.federalregister.gov/api/v1/public_inspection_documents/2026-18262",
+      "last_public_inspection_issue": "2026-09-04",
+      "num_pages": 2,
+      "page_views": {
+        "count": 34,
+        "last_updated": "2026-09-07 12:15:07 -0400"
+      },
+      "pdf_file_name": "2026-18262_PI.pdf",
+      "pdf_file_size": 90398,
+      "pdf_updated_at": "2026-09-03T16:15:07.000-04:00",
+      "pdf_url": "https://public-inspection.federalregister.gov/2026-18262.pdf",
+      "publication_date": "2026-09-08",
+      "raw_text_url": "https://www.federalregister.gov/public-inspection/raw_text/202/618/262.txt",
+      "subject_1": "Meetings; Sunshine Act",
+      "subject_2": null,
+      "subject_3": null,
+      "title": "Meetings; Sunshine Act  ",
+      "toc_doc": "Meetings; Sunshine Act",
+      "toc_subject": "",
+      "type": "Notice"
+    }
+  ]
+}

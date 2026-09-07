@@ -1,0 +1,797 @@
+[
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Keyword Search"
+    },
+    "description": "Search GSA CALC+ ceiling rates by keyword.\n\n    Performs wildcard matching across labor_category, vendor_name, and\n    idv_piid fields. This is the primary search tool for finding rates.\n\n    Returns matching rate records plus aggregation statistics (wage_stats,\n    percentiles, education breakdown, business size) covering the FULL\n    result set even when individual hits are capped at 10,000.\n\n    Important notes:\n    - These are NTE (not-to-exceed) ceiling rates, not prices paid\n    - Rates are fully burdened hourly rates from GSA MAS contracts\n    - Data refreshes nightly from vendor price proposal tables\n    - Use P50 from percentiles for median (more accurate than median_price)\n\n    Filter parameters:\n    - education_level: AA, BA, HS, MA, PHD, TEC (pipe-delimited for OR: 'BA|MA')\n    - experience_min/max: years of experience range\n    - price_min/max: hourly rate range in USD\n    - business_size: 'S' (small) or 'O' (other/large)\n    - security_clearance: 'yes' or 'no'\n    - sin: Special Item Number (e.g., '54151S' for IT Professional Services)\n    - worksite: NOT supported (the v3 API silently ignores it; passing a\n      value raises so callers are not handed unfiltered data)\n\n    ordering: current_price, labor_category, vendor_name, education_level,\n    min_years_experience, next_year_price, idv_piid, business_size.\n    sort: 'asc' or 'desc'.\n\n    exclude: pipe-delimited hit _id values to exclude from results and stats.\n    ",
+    "inputSchema": {
+      "properties": {
+        "keyword": {
+          "title": "Keyword",
+          "type": "string"
+        },
+        "education_level": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Education Level"
+        },
+        "experience_min": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experience Min"
+        },
+        "experience_max": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experience Max"
+        },
+        "price_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Price Min"
+        },
+        "price_max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Price Max"
+        },
+        "business_size": {
+          "anyOf": [
+            {
+              "enum": [
+                "S",
+                "O"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Business Size"
+        },
+        "security_clearance": {
+          "anyOf": [
+            {
+              "enum": [
+                "yes",
+                "no"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Security Clearance"
+        },
+        "sin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sin"
+        },
+        "worksite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Worksite"
+        },
+        "page": {
+          "default": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "ordering": {
+          "default": "current_price",
+          "title": "Ordering",
+          "type": "string"
+        },
+        "sort": {
+          "default": "asc",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "title": "Sort",
+          "type": "string"
+        },
+        "exclude": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exclude"
+        }
+      },
+      "required": [
+        "keyword"
+      ],
+      "type": "object",
+      "title": "keyword_searchArguments"
+    },
+    "name": "keyword_search",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "keyword_searchDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Exact Search"
+    },
+    "description": "Exact match search on a specific field.\n\n    Use suggest_contains() first to discover the exact field value, then\n    pass it here. The API requires exact string matching -- partial matches\n    return 0 results.\n\n    Fields: labor_category, vendor_name, idv_piid (GSA MAS contract number).\n    ",
+    "inputSchema": {
+      "properties": {
+        "field": {
+          "enum": [
+            "labor_category",
+            "vendor_name",
+            "idv_piid"
+          ],
+          "title": "Field",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        },
+        "education_level": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Education Level"
+        },
+        "experience_min": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experience Min"
+        },
+        "experience_max": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experience Max"
+        },
+        "price_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Price Min"
+        },
+        "price_max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Price Max"
+        },
+        "business_size": {
+          "anyOf": [
+            {
+              "enum": [
+                "S",
+                "O"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Business Size"
+        },
+        "page": {
+          "default": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "ordering": {
+          "default": "current_price",
+          "title": "Ordering",
+          "type": "string"
+        },
+        "sort": {
+          "default": "asc",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "title": "Sort",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field",
+        "value"
+      ],
+      "type": "object",
+      "title": "exact_searchArguments"
+    },
+    "name": "exact_search",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "exact_searchDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Suggest Contains"
+    },
+    "description": "Discover exact field values via autocomplete/contains matching.\n\n    Returns aggregation buckets showing matching values and their record\n    counts. Use this BEFORE exact_search() to find the right value string.\n\n    Minimum 2 characters required for the search term.\n\n    Example workflow:\n    1. suggest_contains('vendor_name', 'booz') -> finds 'Booz Allen Hamilton Inc.'\n    2. exact_search('vendor_name', 'Booz Allen Hamilton Inc.') -> all their rates\n    ",
+    "inputSchema": {
+      "properties": {
+        "field": {
+          "enum": [
+            "labor_category",
+            "vendor_name",
+            "idv_piid"
+          ],
+          "title": "Field",
+          "type": "string"
+        },
+        "term": {
+          "title": "Term",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field",
+        "term"
+      ],
+      "type": "object",
+      "title": "suggest_containsArguments"
+    },
+    "name": "suggest_contains",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "suggest_containsDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Filtered Browse"
+    },
+    "description": "Browse rates with filters only (no search keyword).\n\n    Useful for market segment statistics: \"what do all BA-level rates with\n    5-15 years experience look like across all of GSA MAS?\" Returns rate\n    records plus full aggregation statistics.\n    ",
+    "inputSchema": {
+      "properties": {
+        "education_level": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Education Level"
+        },
+        "experience_min": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experience Min"
+        },
+        "experience_max": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experience Max"
+        },
+        "price_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Price Min"
+        },
+        "price_max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Price Max"
+        },
+        "business_size": {
+          "anyOf": [
+            {
+              "enum": [
+                "S",
+                "O"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Business Size"
+        },
+        "security_clearance": {
+          "anyOf": [
+            {
+              "enum": [
+                "yes",
+                "no"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Security Clearance"
+        },
+        "sin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sin"
+        },
+        "worksite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Worksite"
+        },
+        "page": {
+          "default": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "ordering": {
+          "default": "current_price",
+          "title": "Ordering",
+          "type": "string"
+        },
+        "sort": {
+          "default": "asc",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "title": "Sort",
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "title": "filtered_browseArguments"
+    },
+    "name": "filtered_browse",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "filtered_browseDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "IGCE Benchmark"
+    },
+    "description": "Get ceiling rate benchmarks for IGCE development.\n\n    Returns statistical summary for a labor category: count, min, max, avg,\n    median, standard deviation, percentile distribution (P10-P90), education\n    breakdown, and outlier bounds.\n\n    This is the primary tool for building Independent Government Cost\n    Estimates. The returned statistics represent the market distribution\n    of GSA MAS ceiling rates for comparable labor categories.\n\n    Reminder: these are ceiling rates (max a contractor can charge), not\n    prices paid. Actual task order rates should be lower per FAR 8.405-2(d).\n    ",
+    "inputSchema": {
+      "properties": {
+        "labor_category": {
+          "title": "Labor Category",
+          "type": "string"
+        },
+        "education_level": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Education Level"
+        },
+        "experience_min": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experience Min"
+        },
+        "experience_max": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experience Max"
+        },
+        "business_size": {
+          "anyOf": [
+            {
+              "enum": [
+                "S",
+                "O"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Business Size"
+        },
+        "sin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sin"
+        }
+      },
+      "required": [
+        "labor_category"
+      ],
+      "type": "object",
+      "title": "igce_benchmarkArguments"
+    },
+    "name": "igce_benchmark",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "igce_benchmarkDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Price Reasonableness Check"
+    },
+    "description": "Evaluate a proposed hourly rate against GSA ceiling rate distribution.\n\n    Returns the benchmark statistics plus a positioning analysis: z-score,\n    comparison to median, IQR position, and delta from average.\n\n    Use this for FAR 15.404-1 price analysis: is the proposed rate within\n    the expected range for comparable labor categories on GSA MAS?\n\n    A rate above P75 may be high; above P90 warrants scrutiny. A rate below\n    P25 may indicate an unrealistically low offer (potential performance risk).\n    ",
+    "inputSchema": {
+      "properties": {
+        "labor_category": {
+          "title": "Labor Category",
+          "type": "string"
+        },
+        "proposed_rate": {
+          "title": "Proposed Rate",
+          "type": "number"
+        },
+        "education_level": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Education Level"
+        },
+        "experience_min": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experience Min"
+        },
+        "experience_max": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experience Max"
+        },
+        "business_size": {
+          "anyOf": [
+            {
+              "enum": [
+                "S",
+                "O"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Business Size"
+        }
+      },
+      "required": [
+        "labor_category",
+        "proposed_rate"
+      ],
+      "type": "object",
+      "title": "price_reasonableness_checkArguments"
+    },
+    "name": "price_reasonableness_check",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "price_reasonableness_checkDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Vendor Rate Card"
+    },
+    "description": "Get ceiling rates for a specific vendor, one page at a time.\n\n    Auto-discovers the exact vendor name via suggest-contains, then pulls\n    their rate records. Returns labor categories, rates, education levels,\n    experience requirements, SINs, and contract numbers.\n\n    Pass a partial name (e.g., 'booz' for Booz Allen Hamilton). The tool\n    finds the exact registered name automatically.\n\n    Large vendors span many pages: Booz Allen Hamilton carries ~1,900 labor\n    categories. The default page_size is 100 (~23KB) because a 500-row page\n    for a vendor that size is ~114KB and overflows MCP client output limits.\n    Rows are ordered by labor_category ascending by default, so a partial\n    card is alphabet-biased; check has_more and keep calling with next_page\n    until it is false before treating the card as complete.\n\n    There is no server-side way to intersect a vendor with a labor-category\n    keyword (the v3 API ignores vendor_name and labor_category as filter\n    fields; live-verified). To find specific categories, page through the\n    full card and match client-side.\n\n    If the discovery term matches multiple vendors, this tool picks the one\n    with the most rate records and returns a _candidates list so the caller\n    can re-query with a more specific term if needed.\n    ",
+    "inputSchema": {
+      "properties": {
+        "vendor_name": {
+          "title": "Vendor Name",
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "ordering": {
+          "default": "labor_category",
+          "title": "Ordering",
+          "type": "string"
+        },
+        "sort": {
+          "default": "asc",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "title": "Sort",
+          "type": "string"
+        }
+      },
+      "required": [
+        "vendor_name"
+      ],
+      "type": "object",
+      "title": "vendor_rate_cardArguments"
+    },
+    "name": "vendor_rate_card",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "vendor_rate_cardDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "SIN Analysis"
+    },
+    "description": "Get rate distribution and statistics for a specific SIN.\n\n    Returns rate statistics, education breakdown, business size breakdown,\n    and sample records for a GSA MAS Special Item Number.\n\n    Common SINs for professional services (live-verified to return records):\n    - 54151S: IT Professional Services\n    - 541611: Management and Financial Consulting\n    - 541715: Engineering R&D\n    - 541330ENG: Engineering Services\n    - 561210FAC: Facilities Maintenance and Management\n    - 611430: Training\n    ",
+    "inputSchema": {
+      "properties": {
+        "sin_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Sin Code"
+        },
+        "page_size": {
+          "default": 100,
+          "title": "Page Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sin_code"
+      ],
+      "type": "object",
+      "title": "sin_analysisArguments"
+    },
+    "name": "sin_analysis",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "sin_analysisDictOutput"
+    }
+  }
+]

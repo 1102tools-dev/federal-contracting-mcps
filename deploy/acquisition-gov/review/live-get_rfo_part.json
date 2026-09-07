@@ -1,0 +1,26 @@
+{
+  "source_id": "model-part-3d4014ceb2736ffc3079",
+  "source_kind": "model_deviation",
+  "agency": null,
+  "far_parts": [
+    10
+  ],
+  "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide/far-overhaul-part-10",
+  "issuance_date": null,
+  "updated_date": null,
+  "effective_date": null,
+  "expiration_date": null,
+  "applicability_text": null,
+  "retrieved_at": "2026-09-07T17:05:45+00:00",
+  "content_sha256": "524d91e82e8ffd9ba73375f7d251db255fb34d0621890f8dd9b5a3df27a06050",
+  "text_extraction_status": "complete",
+  "warnings": [
+    "RFO model text is not operative for an agency unless that agency adopts it through a deviation."
+  ],
+  "section": null,
+  "content": "FAR Overhaul - Part 10\nFavorite\nX\nFAR Overhaul - Part 10\nPart 10\n- Market Research\n10.000 Scope of part.\n10.001 Market research requirements.\n10.002 Clause.\n10.000\nScope of part.\nThis part prescribes minimum requirements for conducting market research before procuring supplies and services. See section 887 of Public Law 114-92(\n41 U.S.C. 1703 note\n),\n41 U.S.C. 3306(a)(1)\n,\n41 U.S.C. 3307\n, and\n10 U.S.C. 3453\n.\n10.001\nMarket research requirements.\n(a)\nAgencies must describe their legitimate needs.\n(b)\nAgencies must conduct market research appropriate to the circumstances before\u2014\n(1)\nDeveloping new requirements documents;\n(2)\nSoliciting offers for acquisitions with an estimated value over the simplified acquisition threshold; or\n(3)\nAwarding a task or delivery order over the simplified acquisition threshold.\n(c)\nAgencies should engage in responsible and constructive exchanges with industry. Agencies may use different strategies and methods to gather information, so long as they comply with existing law and regulation and do not provide an unfair competitive advantage to particular firms or violate the procurement integrity requirements (see 3.104).\n(d)\nWhen conducting market research, agencies must not ask potential sources to submit more than the minimum information necessary to make the determinations required in paragraph (f).\n(e)\nAgencies must document the results of market research in a manner that suits the acquisition\u2019s size and complexity.\n(f)\nAgencies must procure commercial products and commercial services to the maximum extent practicable. Using the results of market research, agencies will determine, in the following order of priority, whether\u2014\n(1)\nA commercial product or commercial service on an existing governmentwide contract can meet the agency's requirements;\n(2)\nThe requirements could be modified so the agency could use an existing governmentwide contract;\n(3)\nA commercial product or commercial service is available from another source;\n(4)\nA commercial product or commercial service could be modified to meet the agency's requirements; or\n(5)\nThe requirement can only be satisfied by a nondevelopmental item.\n10.002\nClause.\nThe contracting officer must insert the clause at 52.210-1, Market Research, in solicitations and contracts for noncommercial acquisitions over $7.5 million. This policy was established in\n10 U.S.C. 3453\n(c).\nNon-regulatory Resources\nThe following are non-regulatory resources associated with FAR\n:\nPractitioner Album\nFAR Companion Guide\nCaveat\nThe FAR Council created deviations will include clauses and provisions currently required by statute and Executive Order. OMB and the FAR Council will work with Congress to recommend statutory changes and with the White House to recommend rescission of requirements stemming from prior Executive Orders that are inconsistent with the goals of Executive Order 14275 to stop the inefficient use of American taxpayer dollars in federal procurement. Any changes to Executive Orders or statute will be reflected when the Revolutionary FAR Overhaul turns to rule-making.\n\u00d7\nFAR Overhaul\nRegulations\nTools\nArchives\nSmart Matrix\nRegulations Search\nAcquisition Regulation Comparator (ARC)\nPolicy Network\nCivilian Agency Acquisition Council (CAAC)\nFederal Acquisition Regulatory Council\nInteragency Suspension and Debarment Committee (ISDC)\nSearch",
+  "cursor": "0",
+  "next_cursor": null,
+  "truncated": false,
+  "total_characters": 3355
+}

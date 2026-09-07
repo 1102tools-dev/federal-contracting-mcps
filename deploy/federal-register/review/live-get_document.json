@@ -1,0 +1,99 @@
+{
+  "abstract": "This document contains final regulations regarding the deduction for certain taxpayers for an amount up to $10,000 of qualified passenger vehicle loan interest. This document also contains final regulations regarding new information reporting requirements for certain persons who, in a trade or business, receive from any individual interest aggregating $600 or more for any calendar year on a specified passenger vehicle loan, including applicable penalties for failures to file information returns or furnish payee statements as required. These regulations affect taxpayers that may deduct qualified passenger vehicle loan interest, and also persons subject to these information reporting requirements.",
+  "action": "Final regulations.",
+  "agencies": [
+    {
+      "raw_name": "DEPARTMENT OF THE TREASURY",
+      "name": "Treasury Department",
+      "id": 497,
+      "url": "https://www.federalregister.gov/agencies/treasury-department",
+      "json_url": "https://www.federalregister.gov/api/v1/agencies/497",
+      "parent_id": null,
+      "slug": "treasury-department"
+    },
+    {
+      "raw_name": "Internal Revenue Service",
+      "name": "Internal Revenue Service",
+      "id": 254,
+      "url": "https://www.federalregister.gov/agencies/internal-revenue-service",
+      "json_url": "https://www.federalregister.gov/api/v1/agencies/254",
+      "parent_id": 497,
+      "slug": "internal-revenue-service"
+    }
+  ],
+  "body_html_url": "https://www.federalregister.gov/documents/full_text/html/2026/09/08/2026-18219.html",
+  "cfr_references": [
+    {
+      "chapter": null,
+      "citation_url": null,
+      "part": "1",
+      "title": 26
+    },
+    {
+      "chapter": null,
+      "citation_url": null,
+      "part": "301",
+      "title": 26
+    }
+  ],
+  "citation": "91 FR 57214",
+  "comment_url": null,
+  "comments_close_on": null,
+  "correction_of": null,
+  "corrections": [],
+  "dates": "Effective date: The final regulations are effective on November 9, 2026.",
+  "disposition_notes": null,
+  "docket_ids": [
+    "TD 10054"
+  ],
+  "dockets": [],
+  "document_number": "2026-18219",
+  "effective_on": "2026-11-09",
+  "end_page": 57244,
+  "executive_order_notes": null,
+  "executive_order_number": null,
+  "full_text_xml_url": "https://www.federalregister.gov/documents/full_text/xml/2026/09/08/2026-18219.xml",
+  "html_url": "https://www.federalregister.gov/documents/2026/09/08/2026-18219/car-loan-interest-deduction",
+  "images": {},
+  "images_metadata": {},
+  "json_url": "https://www.federalregister.gov/api/v1/documents/2026-18219?publication_date=2026-09-08",
+  "mods_url": "https://www.govinfo.gov/metadata/granule/FR-2026-09-08/2026-18219/mods.xml",
+  "not_received_for_publication": null,
+  "page_length": 31,
+  "page_views": {
+    "count": 177,
+    "last_updated": "2026-09-07 12:15:04 -0400"
+  },
+  "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-08/pdf/2026-18219.pdf",
+  "presidential_document_number": null,
+  "proclamation_number": null,
+  "public_inspection_pdf_url": "https://public-inspection.federalregister.gov/2026-18219.pdf?1788525910",
+  "publication_date": "2026-09-08",
+  "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/09/08/2026-18219.txt",
+  "regulation_id_number_info": {
+    "1545-BR75": null
+  },
+  "regulation_id_numbers": [
+    "1545-BR75"
+  ],
+  "regulations_dot_gov_info": {
+    "checked_regulationsdotgov_at": "2026-09-05T05:35:29Z"
+  },
+  "regulations_dot_gov_url": null,
+  "significant": null,
+  "signing_date": null,
+  "start_page": 57214,
+  "subtype": null,
+  "title": "Car Loan Interest Deduction",
+  "toc_doc": "Car Loan Interest Deduction",
+  "toc_subject": null,
+  "topics": [
+    "Employment taxes",
+    "Excise taxes",
+    "Income taxes",
+    "Penalties",
+    "Reporting and recordkeeping requirements"
+  ],
+  "type": "Rule",
+  "volume": 91
+}

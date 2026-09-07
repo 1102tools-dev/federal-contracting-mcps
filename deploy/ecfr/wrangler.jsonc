@@ -1,0 +1,91 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ecfr-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "account_id": "846d3e41e48446abcd3570c0959f9fb5",
+  "workers_dev": true,
+  "containers": [
+    {
+      "class_name": "ECFR",
+      "image": "registry.cloudflare.com/846d3e41e48446abcd3570c0959f9fb5/ecfr-mcp@sha256:d482d2a128a0a2b685b9f3c8b4e3e00d7d6ae506dc64e3be155c186e60240d20",
+      "instance_type": "lite",
+      "max_instances": 1,
+      "name": "ecfr-mcp-public"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "ECFR",
+        "name": "BACKEND"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "ECFR"
+      ]
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "REQUEST_LIMITER",
+      "namespace_id": "110261",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  },
+  "env": {
+    "production": {
+      "name": "ecfr-mcp",
+      "routes": [
+        {
+          "pattern": "ecfr.1102tools.com",
+          "custom_domain": true
+        }
+      ],
+      "containers": [
+        {
+          "class_name": "ECFR",
+          "image": "registry.cloudflare.com/846d3e41e48446abcd3570c0959f9fb5/ecfr-mcp@sha256:d482d2a128a0a2b685b9f3c8b4e3e00d7d6ae506dc64e3be155c186e60240d20",
+          "instance_type": "lite",
+          "max_instances": 1,
+          "name": "ecfr-mcp-public"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "ECFR",
+            "name": "BACKEND"
+          }
+        ]
+      },
+      "ratelimits": [
+        {
+          "name": "REQUEST_LIMITER",
+          "namespace_id": "110261",
+          "simple": {
+            "limit": 60,
+            "period": 60
+          }
+        }
+      ]
+    }
+  }
+}

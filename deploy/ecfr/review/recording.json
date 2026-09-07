@@ -1,0 +1,17 @@
+{
+  "url": "https://1102tools.com/downloads/ecfr-demo-2026-09-07.mp4",
+  "duration_seconds": 168.183333,
+  "bytes": 6065284,
+  "sha256": "acebfac7d6ac28579d1c37a1f4ec0fc4fb17b415a5f8112ecd9bb7cf6f83bb6d",
+  "full_decode": "passed",
+  "public_bytes_match": true,
+  "browser_playback": {
+    "readyState": 4,
+    "paused": false,
+    "currentTime": 8.21305
+  },
+  "chat_url": "https://chatgpt.com/c/6a9ef7af-2bdc-83ea-828b-4748adeb2920",
+  "submission_status": "review",
+  "review_status_verified_on": "2026-09-07",
+  "owner_attestations_authorized": true
+}

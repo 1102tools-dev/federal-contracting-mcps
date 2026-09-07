@@ -1,0 +1,79 @@
+{
+  "endpoint": "https://gsa-calc.1102tools.com/mcp",
+  "results": [
+    {
+      "tool": "keyword_search",
+      "ok": true,
+      "seconds": 2.71,
+      "arguments": {
+        "keyword": "program manager",
+        "page_size": 3
+      }
+    },
+    {
+      "tool": "exact_search",
+      "ok": true,
+      "seconds": 2.89,
+      "arguments": {
+        "field": "labor_category",
+        "value": "Deputy Program Manager",
+        "page_size": 3
+      }
+    },
+    {
+      "tool": "suggest_contains",
+      "ok": true,
+      "seconds": 3.37,
+      "arguments": {
+        "field": "labor_category",
+        "term": "program"
+      }
+    },
+    {
+      "tool": "filtered_browse",
+      "ok": true,
+      "seconds": 3.55,
+      "arguments": {
+        "experience_min": 5,
+        "price_min": 50,
+        "price_max": 150,
+        "page_size": 3
+      }
+    },
+    {
+      "tool": "igce_benchmark",
+      "ok": true,
+      "seconds": 3.47,
+      "arguments": {
+        "labor_category": "program manager"
+      }
+    },
+    {
+      "tool": "price_reasonableness_check",
+      "ok": true,
+      "seconds": 3.39,
+      "arguments": {
+        "labor_category": "program manager",
+        "proposed_rate": 150
+      }
+    },
+    {
+      "tool": "vendor_rate_card",
+      "ok": true,
+      "seconds": 6.61,
+      "arguments": {
+        "vendor_name": "T47 INTERNATIONAL, INC.",
+        "page_size": 3
+      }
+    },
+    {
+      "tool": "sin_analysis",
+      "ok": true,
+      "seconds": 3.8,
+      "arguments": {
+        "sin_code": "54151S",
+        "page_size": 3
+      }
+    }
+  ]
+}

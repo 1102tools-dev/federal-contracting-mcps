@@ -1,0 +1,17 @@
+{
+  "url": "https://1102tools.com/downloads/federal-register-demo-2026-09-07.mp4",
+  "duration_seconds": 139.716667,
+  "bytes": 5102472,
+  "sha256": "7341810ba3947e5968e9e4f00073c330dc0378c49cad682a566e47224320f48a",
+  "full_decode": "passed",
+  "public_bytes_match": true,
+  "browser_playback": {
+    "readyState": 4,
+    "paused": false,
+    "currentTime": 5.2626
+  },
+  "chat_url": "https://chatgpt.com/c/6a9efa00-8df8-83ea-aa29-ca2253ed1b1a",
+  "submission_status": "review",
+  "review_status_verified_on": "2026-09-07",
+  "owner_attestations_authorized": true
+}

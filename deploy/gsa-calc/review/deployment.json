@@ -1,0 +1,16 @@
+{
+  "name": "GSA CALC+ MCP",
+  "slug": "gsa-calc",
+  "tools": 8,
+  "endpoint": "https://gsa-calc.1102tools.com/mcp",
+  "status": "deployed; all tools live validated",
+  "container_application_id": "a035fe0f-d8ea-4d62-9bb6-ea7f040f4b35",
+  "durable_object_namespace_id": "43a4ce86c6bd44b59def656d425735d2",
+  "image": "registry.cloudflare.com/846d3e41e48446abcd3570c0959f9fb5/gsa-calc-mcp@sha256:b1f4910760d6b4357f0963c17ce08b202ff722434eee9adc87fc77c59b121144",
+  "offline_tests_passed": 250,
+  "openai_draft_url": "https://platform.openai.com/plugins/edit/asdk_app_6a9eeeebfa8c81918945df0945276cb1/asdk_app_v_6a9eeeec727c8191bfd15108244f0761",
+  "openai_domain_verified": true,
+  "openai_status": "draft; recording and final attestations pending",
+  "openai_submission_status": "review",
+  "openai_review_verified_on": "2026-09-07"
+}

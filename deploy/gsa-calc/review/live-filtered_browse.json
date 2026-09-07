@@ -1,0 +1,4513 @@
+{
+  "took": 38,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 10000,
+      "relation": "gte"
+    },
+    "max_score": null,
+    "hits": [
+      {
+        "_index": "ceilingrates-2026-09-07_02-00-02",
+        "_id": "1710659583",
+        "_score": null,
+        "_source": {
+          "contract_end": "2031-08-31",
+          "security_clearance": false,
+          "next_year_price": 50.0,
+          "second_year_price": 50.0,
+          "vendor_name": "SPN SOLUTIONS INC",
+          "idv_piid": "GS35F483DA",
+          "business_size": "S",
+          "contract_start": "2016-09-01",
+          "data_source": "ACR",
+          "labor_category": "Healthcare Business Requirements Analyst (Junior)",
+          "schedule": "MAS",
+          "cont_end_dtg": "20310831",
+          "min_years_experience": 5,
+          "sin": "54151HEAL",
+          "worksite": "Customer_Facility",
+          "education_level": "Bachelors",
+          "id": 1710659583,
+          "current_price": 50.0,
+          "dt_termg": "",
+          "category": "Information Technology; Miscellaneous",
+          "subcategory": "Complementary SINs; IT Services",
+          "_timestamp": "2026-09-07T02:00:02Z",
+          "cont_beg_dtg": "20160901"
+        },
+        "sort": [
+          50.0
+        ]
+      },
+      {
+        "_index": "ceilingrates-2026-09-07_02-00-02",
+        "_id": "1710659627",
+        "_score": null,
+        "_source": {
+          "contract_end": "2031-08-31",
+          "security_clearance": false,
+          "next_year_price": 50.0,
+          "second_year_price": 50.0,
+          "vendor_name": "SPN SOLUTIONS INC",
+          "idv_piid": "GS35F483DA",
+          "business_size": "S",
+          "contract_start": "2016-09-01",
+          "data_source": "ACR",
+          "labor_category": "Business Requirements Analyst (Junior)",
+          "schedule": "MAS",
+          "cont_end_dtg": "20310831",
+          "min_years_experience": 5,
+          "sin": "54151S",
+          "worksite": "Customer_Facility",
+          "education_level": "Bachelors",
+          "id": 1710659627,
+          "current_price": 50.0,
+          "dt_termg": "",
+          "category": "Information Technology; Miscellaneous",
+          "subcategory": "Complementary SINs; IT Services",
+          "_timestamp": "2026-09-07T02:00:02Z",
+          "cont_beg_dtg": "20160901"
+        },
+        "sort": [
+          50.0
+        ]
+      },
+      {
+        "_index": "ceilingrates-2026-09-07_02-00-02",
+        "_id": "1453505289",
+        "_score": null,
+        "_source": {
+          "contract_end": "2031-02-16",
+          "security_clearance": false,
+          "next_year_price": 51.76,
+          "second_year_price": 53.57,
+          "vendor_name": "WISE WAYS CONSULTING, INC.",
+          "idv_piid": "GS02F0088X",
+          "business_size": "S",
+          "contract_start": "2011-02-17",
+          "data_source": "ACR",
+          "labor_category": "Admins Support Staff II**",
+          "schedule": "MAS",
+          "cont_end_dtg": "20310216",
+          "min_years_experience": 6,
+          "sin": "541611,611430",
+          "worksite": "Contractor_Facility",
+          "education_level": "High School",
+          "id": 1453505289,
+          "current_price": 50.01,
+          "dt_termg": "",
+          "category": "Miscellaneous; Professional Services",
+          "subcategory": "Business Administrative Services; Complementary SINs; Training",
+          "_timestamp": "2026-09-07T02:00:02Z",
+          "cont_beg_dtg": "20110217"
+        },
+        "sort": [
+          50.01
+        ]
+      }
+    ]
+  },
+  "aggregations": {
+    "labor_category": {
+      "doc_count_error_upper_bound": 14,
+      "sum_other_doc_count": 63047,
+      "buckets": [
+        {
+          "key": "Project Manager",
+          "doc_count": 972
+        },
+        {
+          "key": "Program Manager",
+          "doc_count": 454
+        },
+        {
+          "key": "Project Manager II",
+          "doc_count": 297
+        },
+        {
+          "key": "Subject Matter Expert (SME)",
+          "doc_count": 246
+        },
+        {
+          "key": "Analyst III",
+          "doc_count": 225
+        },
+        {
+          "key": "Technical Writer",
+          "doc_count": 191
+        },
+        {
+          "key": "Project Manager I",
+          "doc_count": 184
+        },
+        {
+          "key": "Subject Matter Expert I",
+          "doc_count": 179
+        },
+        {
+          "key": "Systems Engineer",
+          "doc_count": 173
+        },
+        {
+          "key": "Project Manager III",
+          "doc_count": 172
+        },
+        {
+          "key": "Technical Writer III",
+          "doc_count": 165
+        },
+        {
+          "key": "Database Administrator",
+          "doc_count": 152
+        },
+        {
+          "key": "Subject Matter Expert",
+          "doc_count": 148
+        },
+        {
+          "key": "Business Analyst III",
+          "doc_count": 146
+        },
+        {
+          "key": "Subject Matter Expert II",
+          "doc_count": 141
+        },
+        {
+          "key": "Program Manager I",
+          "doc_count": 138
+        },
+        {
+          "key": "Engineer III",
+          "doc_count": 137
+        },
+        {
+          "key": "Network Engineer",
+          "doc_count": 137
+        },
+        {
+          "key": "Program Manager II",
+          "doc_count": 134
+        },
+        {
+          "key": "Business Analyst",
+          "doc_count": 129
+        },
+        {
+          "key": "Analyst II",
+          "doc_count": 125
+        },
+        {
+          "key": "Technical Writer II",
+          "doc_count": 125
+        },
+        {
+          "key": "Senior Project Manager",
+          "doc_count": 120
+        },
+        {
+          "key": "Consultant",
+          "doc_count": 119
+        },
+        {
+          "key": "Senior Analyst",
+          "doc_count": 114
+        },
+        {
+          "key": "Business Analyst II",
+          "doc_count": 111
+        },
+        {
+          "key": "Analyst IV",
+          "doc_count": 110
+        },
+        {
+          "key": "Systems Engineer III",
+          "doc_count": 105
+        },
+        {
+          "key": "Help Desk Manager",
+          "doc_count": 103
+        },
+        {
+          "key": "Quality Assurance Manager",
+          "doc_count": 102
+        },
+        {
+          "key": "Network Engineer III",
+          "doc_count": 98
+        },
+        {
+          "key": "Systems Engineer II",
+          "doc_count": 94
+        },
+        {
+          "key": "Program Analyst",
+          "doc_count": 91
+        },
+        {
+          "key": "Software Engineer III",
+          "doc_count": 91
+        },
+        {
+          "key": "Systems Analyst",
+          "doc_count": 91
+        },
+        {
+          "key": "IT Project Manager",
+          "doc_count": 90
+        },
+        {
+          "key": "Software Engineer",
+          "doc_count": 90
+        },
+        {
+          "key": "Consultant II",
+          "doc_count": 87
+        },
+        {
+          "key": "Software Engineer II",
+          "doc_count": 82
+        },
+        {
+          "key": "Systems Analyst III",
+          "doc_count": 82
+        },
+        {
+          "key": "Analyst",
+          "doc_count": 81
+        },
+        {
+          "key": "Operations Manager",
+          "doc_count": 80
+        },
+        {
+          "key": "Subject Matter Expert III",
+          "doc_count": 79
+        },
+        {
+          "key": "Senior Systems Engineer",
+          "doc_count": 78
+        },
+        {
+          "key": "Consultant III",
+          "doc_count": 76
+        },
+        {
+          "key": "Engineer II",
+          "doc_count": 74
+        },
+        {
+          "key": "Financial Analyst",
+          "doc_count": 74
+        },
+        {
+          "key": "Systems Administrator",
+          "doc_count": 74
+        },
+        {
+          "key": "Database Administrator II",
+          "doc_count": 73
+        },
+        {
+          "key": "Network Administrator",
+          "doc_count": 73
+        },
+        {
+          "key": "Senior Software Engineer",
+          "doc_count": 73
+        },
+        {
+          "key": "Systems Administrator III",
+          "doc_count": 73
+        },
+        {
+          "key": "Technician III",
+          "doc_count": 73
+        },
+        {
+          "key": "Database Administrator III",
+          "doc_count": 71
+        },
+        {
+          "key": "Program Analyst III",
+          "doc_count": 70
+        },
+        {
+          "key": "Technical Writer IV",
+          "doc_count": 69
+        },
+        {
+          "key": "Training Specialist",
+          "doc_count": 69
+        },
+        {
+          "key": "Data Architect",
+          "doc_count": 67
+        },
+        {
+          "key": "Engineer IV",
+          "doc_count": 65
+        },
+        {
+          "key": "Quality Assurance Specialist",
+          "doc_count": 65
+        },
+        {
+          "key": "Data Analyst",
+          "doc_count": 64
+        },
+        {
+          "key": "Senior Consultant",
+          "doc_count": 64
+        },
+        {
+          "key": "Consultant I",
+          "doc_count": 63
+        },
+        {
+          "key": "Network Engineer II",
+          "doc_count": 63
+        },
+        {
+          "key": "Senior Business Analyst",
+          "doc_count": 63
+        },
+        {
+          "key": "Training Specialist II",
+          "doc_count": 63
+        },
+        {
+          "key": "Engineer",
+          "doc_count": 61
+        },
+        {
+          "key": "Quality Assurance Analyst",
+          "doc_count": 61
+        },
+        {
+          "key": "Senior Systems Analyst",
+          "doc_count": 61
+        },
+        {
+          "key": "Systems Architect",
+          "doc_count": 61
+        },
+        {
+          "key": "Senior Engineer",
+          "doc_count": 59
+        },
+        {
+          "key": "Business Analyst IV",
+          "doc_count": 58
+        },
+        {
+          "key": "Functional Analyst",
+          "doc_count": 58
+        },
+        {
+          "key": "Project Engineer",
+          "doc_count": 58
+        },
+        {
+          "key": "Software Developer",
+          "doc_count": 58
+        },
+        {
+          "key": "Training Specialist III",
+          "doc_count": 58
+        },
+        {
+          "key": "Senior Technical Writer",
+          "doc_count": 57
+        },
+        {
+          "key": "Software Engineer IV",
+          "doc_count": 57
+        },
+        {
+          "key": "Systems Analyst II",
+          "doc_count": 57
+        },
+        {
+          "key": "Test Engineer",
+          "doc_count": 56
+        },
+        {
+          "key": "Data Analyst III",
+          "doc_count": 55
+        },
+        {
+          "key": "Senior Network Engineer",
+          "doc_count": 54
+        },
+        {
+          "key": "Analyst 3",
+          "doc_count": 53
+        },
+        {
+          "key": "Technician IV",
+          "doc_count": 52
+        },
+        {
+          "key": "Financial Analyst III",
+          "doc_count": 51
+        },
+        {
+          "key": "Program Manager III",
+          "doc_count": 51
+        },
+        {
+          "key": "System Administrator",
+          "doc_count": 50
+        },
+        {
+          "key": "Systems Administrator II",
+          "doc_count": 50
+        },
+        {
+          "key": "Software Architect",
+          "doc_count": 49
+        },
+        {
+          "key": "Administrative Assistant III",
+          "doc_count": 48
+        },
+        {
+          "key": "Graphic Designer",
+          "doc_count": 47
+        },
+        {
+          "key": "Programmer III",
+          "doc_count": 47
+        },
+        {
+          "key": "Project Manager IV",
+          "doc_count": 47
+        },
+        {
+          "key": "Senior Database Administrator",
+          "doc_count": 47
+        },
+        {
+          "key": "Manager",
+          "doc_count": 46
+        },
+        {
+          "key": "Project Coordinator",
+          "doc_count": 46
+        },
+        {
+          "key": "Configuration Manager",
+          "doc_count": 45
+        },
+        {
+          "key": "Web Developer",
+          "doc_count": 45
+        },
+        {
+          "key": "Management Analyst III",
+          "doc_count": 44
+        },
+        {
+          "key": "System Engineer",
+          "doc_count": 44
+        },
+        {
+          "key": "Business Systems Analyst",
+          "doc_count": 43
+        },
+        {
+          "key": "Project Manager 2",
+          "doc_count": 43
+        },
+        {
+          "key": "Test Engineer III",
+          "doc_count": 43
+        },
+        {
+          "key": "Analyst V",
+          "doc_count": 42
+        },
+        {
+          "key": "Management Analyst",
+          "doc_count": 42
+        },
+        {
+          "key": "Program Analyst II",
+          "doc_count": 42
+        },
+        {
+          "key": "Quality Assurance Specialist III",
+          "doc_count": 42
+        },
+        {
+          "key": "Software Developer III",
+          "doc_count": 42
+        },
+        {
+          "key": "Data Analyst II",
+          "doc_count": 41
+        },
+        {
+          "key": "Help Desk Specialist",
+          "doc_count": 41
+        },
+        {
+          "key": "Senior Financial Analyst",
+          "doc_count": 41
+        },
+        {
+          "key": "Systems Engineer IV",
+          "doc_count": 41
+        },
+        {
+          "key": "Technologist 3",
+          "doc_count": 41
+        },
+        {
+          "key": "Web Designer",
+          "doc_count": 41
+        },
+        {
+          "key": "Administrative Assistant",
+          "doc_count": 40
+        },
+        {
+          "key": "Business Process Consultant",
+          "doc_count": 40
+        },
+        {
+          "key": "Financial Analyst II",
+          "doc_count": 39
+        },
+        {
+          "key": "Functional Analyst II",
+          "doc_count": 39
+        },
+        {
+          "key": "Functional Analyst III",
+          "doc_count": 39
+        },
+        {
+          "key": "Network Engineer IV",
+          "doc_count": 39
+        },
+        {
+          "key": "Scrum Master",
+          "doc_count": 39
+        },
+        {
+          "key": "Sr. Network Engineer",
+          "doc_count": 39
+        },
+        {
+          "key": "Task Manager",
+          "doc_count": 39
+        },
+        {
+          "key": "Trainer",
+          "doc_count": 39
+        },
+        {
+          "key": "Trainer III",
+          "doc_count": 39
+        },
+        {
+          "key": "Engineering Technician III",
+          "doc_count": 38
+        },
+        {
+          "key": "Training Manager",
+          "doc_count": 38
+        },
+        {
+          "key": "Creative Director",
+          "doc_count": 37
+        },
+        {
+          "key": "Management Consultant",
+          "doc_count": 37
+        },
+        {
+          "key": "Technical Specialist III",
+          "doc_count": 37
+        },
+        {
+          "key": "Trainer II",
+          "doc_count": 37
+        },
+        {
+          "key": "Application Developer III",
+          "doc_count": 36
+        },
+        {
+          "key": "Art Director",
+          "doc_count": 36
+        },
+        {
+          "key": "IT Program Manager",
+          "doc_count": 36
+        },
+        {
+          "key": "IT Specialist III",
+          "doc_count": 36
+        },
+        {
+          "key": "Quality Control Manager",
+          "doc_count": 36
+        },
+        {
+          "key": "Scientist III",
+          "doc_count": 36
+        },
+        {
+          "key": "Sr. Software Engineer",
+          "doc_count": 36
+        },
+        {
+          "key": "Configuration Management Specialist",
+          "doc_count": 35
+        },
+        {
+          "key": "Engineering Technician V",
+          "doc_count": 35
+        },
+        {
+          "key": "Programmer",
+          "doc_count": 35
+        },
+        {
+          "key": "Project Director",
+          "doc_count": 35
+        },
+        {
+          "key": "Technical Writer/Editor",
+          "doc_count": 35
+        },
+        {
+          "key": "Developer",
+          "doc_count": 34
+        },
+        {
+          "key": "IT Analyst III",
+          "doc_count": 34
+        },
+        {
+          "key": "Logistician III",
+          "doc_count": 34
+        },
+        {
+          "key": "Technical Writer 3",
+          "doc_count": 34
+        },
+        {
+          "key": "Business Analyst I",
+          "doc_count": 33
+        },
+        {
+          "key": "IT Consultant",
+          "doc_count": 33
+        },
+        {
+          "key": "Technical Writer/Editor III",
+          "doc_count": 33
+        },
+        {
+          "key": "Cloud Project Manager",
+          "doc_count": 32
+        },
+        {
+          "key": "Cost Estimator",
+          "doc_count": 32
+        },
+        {
+          "key": "Engineering Technician IV",
+          "doc_count": 32
+        },
+        {
+          "key": "Enterprise Architect",
+          "doc_count": 32
+        },
+        {
+          "key": "IT Project Manager II",
+          "doc_count": 32
+        },
+        {
+          "key": "Senior Programmer",
+          "doc_count": 32
+        },
+        {
+          "key": "System Administrator II",
+          "doc_count": 32
+        },
+        {
+          "key": "System Administrator III",
+          "doc_count": 32
+        },
+        {
+          "key": "Web Developer II",
+          "doc_count": 32
+        },
+        {
+          "key": "Health IT Project Manager",
+          "doc_count": 31
+        },
+        {
+          "key": "IT Specialist",
+          "doc_count": 31
+        },
+        {
+          "key": "Senior Program Manager",
+          "doc_count": 31
+        },
+        {
+          "key": "Senior Systems Administrator",
+          "doc_count": 31
+        },
+        {
+          "key": "Senior Web Developer",
+          "doc_count": 31
+        },
+        {
+          "key": "Technician II",
+          "doc_count": 31
+        },
+        {
+          "key": "Test Engineer II",
+          "doc_count": 31
+        },
+        {
+          "key": "Analyst 4",
+          "doc_count": 30
+        },
+        {
+          "key": "Business Systems Analyst III",
+          "doc_count": 30
+        },
+        {
+          "key": "Computer Programmer III",
+          "doc_count": 30
+        },
+        {
+          "key": "Database Manager",
+          "doc_count": 30
+        },
+        {
+          "key": "Information Assurance Engineer",
+          "doc_count": 30
+        },
+        {
+          "key": "Project Manager 1",
+          "doc_count": 30
+        },
+        {
+          "key": "Sr. Project Manager",
+          "doc_count": 30
+        },
+        {
+          "key": "Communications Specialist",
+          "doc_count": 29
+        },
+        {
+          "key": "Computer Systems Analyst",
+          "doc_count": 29
+        },
+        {
+          "key": "Consultant 2",
+          "doc_count": 29
+        },
+        {
+          "key": "Engineer 3",
+          "doc_count": 29
+        },
+        {
+          "key": "Manager II",
+          "doc_count": 29
+        },
+        {
+          "key": "Senior Scientist",
+          "doc_count": 29
+        },
+        {
+          "key": "Technical Writer 2",
+          "doc_count": 29
+        },
+        {
+          "key": "Technician V",
+          "doc_count": 29
+        },
+        {
+          "key": "Configuration Management Specialist III",
+          "doc_count": 28
+        },
+        {
+          "key": "DevOps Engineer",
+          "doc_count": 28
+        },
+        {
+          "key": "Program Analyst IV",
+          "doc_count": 28
+        },
+        {
+          "key": "Project Manager 3",
+          "doc_count": 28
+        },
+        {
+          "key": "Scientist II",
+          "doc_count": 28
+        },
+        {
+          "key": "Subject Matter Expert 1",
+          "doc_count": 28
+        },
+        {
+          "key": "System Administrator IV",
+          "doc_count": 28
+        },
+        {
+          "key": "Acquisition Specialist",
+          "doc_count": 27
+        },
+        {
+          "key": "Administrative Assistant II",
+          "doc_count": 27
+        },
+        {
+          "key": "Administrative Support III",
+          "doc_count": 27
+        },
+        {
+          "key": "Architect",
+          "doc_count": 27
+        },
+        {
+          "key": "Chief Engineer",
+          "doc_count": 27
+        },
+        {
+          "key": "Data Scientist",
+          "doc_count": 27
+        },
+        {
+          "key": "Engineer V",
+          "doc_count": 27
+        },
+        {
+          "key": "Scientist IV",
+          "doc_count": 27
+        },
+        {
+          "key": "Senior Functional Analyst",
+          "doc_count": 27
+        },
+        {
+          "key": "Senior Graphic Designer",
+          "doc_count": 27
+        },
+        {
+          "key": "Senior Test Engineer",
+          "doc_count": 27
+        },
+        {
+          "key": "Sr. Systems Engineer",
+          "doc_count": 27
+        },
+        {
+          "key": "Sr. Technical Writer",
+          "doc_count": 27
+        },
+        {
+          "key": "Subject Matter Expert IV",
+          "doc_count": 27
+        },
+        {
+          "key": "System Architect",
+          "doc_count": 27
+        },
+        {
+          "key": "Cloud Engineer II",
+          "doc_count": 26
+        },
+        {
+          "key": "Database Administrator IV",
+          "doc_count": 26
+        },
+        {
+          "key": "Engineer 4",
+          "doc_count": 26
+        },
+        {
+          "key": "IT Project Manager I",
+          "doc_count": 26
+        },
+        {
+          "key": "Senior Computer Systems Analyst",
+          "doc_count": 26
+        },
+        {
+          "key": "Technical Lead",
+          "doc_count": 26
+        },
+        {
+          "key": "Web Developer III",
+          "doc_count": 26
+        },
+        {
+          "key": "Acquisition Specialist III",
+          "doc_count": 25
+        },
+        {
+          "key": "Construction Manager",
+          "doc_count": 25
+        },
+        {
+          "key": "Contracts Admin 4",
+          "doc_count": 25
+        },
+        {
+          "key": "Documentation Specialist",
+          "doc_count": 25
+        },
+        {
+          "key": "Network Engineer - Senior",
+          "doc_count": 25
+        },
+        {
+          "key": "Production Manager",
+          "doc_count": 25
+        },
+        {
+          "key": "Business Analyst 3",
+          "doc_count": 24
+        },
+        {
+          "key": "Business Analyst V",
+          "doc_count": 24
+        },
+        {
+          "key": "Business Process Analyst",
+          "doc_count": 24
+        },
+        {
+          "key": "Civil Engineer",
+          "doc_count": 24
+        },
+        {
+          "key": "Cloud Engineer III",
+          "doc_count": 24
+        },
+        {
+          "key": "Configuration Management Specialist II",
+          "doc_count": 24
+        },
+        {
+          "key": "Cost Analyst",
+          "doc_count": 24
+        },
+        {
+          "key": "Database Management Specialist",
+          "doc_count": 24
+        },
+        {
+          "key": "Database Specialist III",
+          "doc_count": 24
+        },
+        {
+          "key": "Director",
+          "doc_count": 24
+        },
+        {
+          "key": "Engineer I",
+          "doc_count": 24
+        },
+        {
+          "key": "Functional Analyst IV",
+          "doc_count": 24
+        },
+        {
+          "key": "Functional Specialist",
+          "doc_count": 24
+        },
+        {
+          "key": "Graphic Designer II",
+          "doc_count": 24
+        },
+        {
+          "key": "IT Consultant II",
+          "doc_count": 24
+        },
+        {
+          "key": "Management Consultant II",
+          "doc_count": 24
+        },
+        {
+          "key": "Producer",
+          "doc_count": 24
+        },
+        {
+          "key": "Programmer II",
+          "doc_count": 24
+        },
+        {
+          "key": "Security Engineer",
+          "doc_count": 24
+        },
+        {
+          "key": "Senior Software Developer",
+          "doc_count": 24
+        },
+        {
+          "key": "Software Engineer, Senior",
+          "doc_count": 24
+        },
+        {
+          "key": "Sr. Business Analyst",
+          "doc_count": 24
+        },
+        {
+          "key": "Task Leader",
+          "doc_count": 24
+        },
+        {
+          "key": "Technical Editor",
+          "doc_count": 24
+        },
+        {
+          "key": "Technician 3",
+          "doc_count": 24
+        },
+        {
+          "key": "Administrative Assistant IV",
+          "doc_count": 23
+        },
+        {
+          "key": "Business Analyst, Senior",
+          "doc_count": 23
+        },
+        {
+          "key": "Computer Systems Analyst III",
+          "doc_count": 23
+        },
+        {
+          "key": "IT Business Analyst",
+          "doc_count": 23
+        },
+        {
+          "key": "IT Business Analyst III",
+          "doc_count": 23
+        },
+        {
+          "key": "IT Consultant III",
+          "doc_count": 23
+        },
+        {
+          "key": "Logistics Analyst 3",
+          "doc_count": 23
+        },
+        {
+          "key": "Logistics Analyst III",
+          "doc_count": 23
+        },
+        {
+          "key": "Management Analyst IV",
+          "doc_count": 23
+        },
+        {
+          "key": "Senior Data Analyst",
+          "doc_count": 23
+        },
+        {
+          "key": "Software Developer II",
+          "doc_count": 23
+        },
+        {
+          "key": "Application Developer",
+          "doc_count": 22
+        },
+        {
+          "key": "Business Specialist III",
+          "doc_count": 22
+        },
+        {
+          "key": "Certified Industrial Hygienist",
+          "doc_count": 22
+        },
+        {
+          "key": "Developer II",
+          "doc_count": 22
+        },
+        {
+          "key": "Executive Assistant",
+          "doc_count": 22
+        },
+        {
+          "key": "Logistician",
+          "doc_count": 22
+        },
+        {
+          "key": "Management Analyst II",
+          "doc_count": 22
+        },
+        {
+          "key": "Project Analyst",
+          "doc_count": 22
+        },
+        {
+          "key": "Quality Assurance Specialist II",
+          "doc_count": 22
+        },
+        {
+          "key": "Senior Management Analyst",
+          "doc_count": 22
+        },
+        {
+          "key": "Subject Matter Expert 2",
+          "doc_count": 22
+        },
+        {
+          "key": "Systems Administrator IV",
+          "doc_count": 22
+        },
+        {
+          "key": "Account Manager",
+          "doc_count": 21
+        },
+        {
+          "key": "Analyst 2",
+          "doc_count": 21
+        },
+        {
+          "key": "Cloud Architect",
+          "doc_count": 21
+        },
+        {
+          "key": "Cloud Program Manager",
+          "doc_count": 21
+        },
+        {
+          "key": "Consultant 3",
+          "doc_count": 21
+        },
+        {
+          "key": "Electrician",
+          "doc_count": 21
+        },
+        {
+          "key": "Engineering Technician VI",
+          "doc_count": 21
+        },
+        {
+          "key": "Quality Assurance Analyst II",
+          "doc_count": 21
+        },
+        {
+          "key": "Senior Program Analyst",
+          "doc_count": 21
+        },
+        {
+          "key": "Senior Trainer",
+          "doc_count": 21
+        },
+        {
+          "key": "Application Developer II",
+          "doc_count": 20
+        },
+        {
+          "key": "Cloud Engineer",
+          "doc_count": 20
+        },
+        {
+          "key": "Deputy Program Manager",
+          "doc_count": 20
+        },
+        {
+          "key": "Editor",
+          "doc_count": 20
+        },
+        {
+          "key": "Research Analyst III",
+          "doc_count": 20
+        },
+        {
+          "key": "Security Analyst III",
+          "doc_count": 20
+        },
+        {
+          "key": "Senior Analyst I",
+          "doc_count": 20
+        },
+        {
+          "key": "Senior Consultant I",
+          "doc_count": 20
+        },
+        {
+          "key": "Task Lead",
+          "doc_count": 20
+        },
+        {
+          "key": "Technical Analyst III",
+          "doc_count": 20
+        },
+        {
+          "key": "Technical Specialist IV",
+          "doc_count": 20
+        },
+        {
+          "key": "Technical Writer I",
+          "doc_count": 20
+        },
+        {
+          "key": "Administrative Support IV",
+          "doc_count": 19
+        },
+        {
+          "key": "Analyst I",
+          "doc_count": 19
+        },
+        {
+          "key": "Business Process Engineer",
+          "doc_count": 19
+        },
+        {
+          "key": "Computer Systems Analyst II",
+          "doc_count": 19
+        },
+        {
+          "key": "Contract Specialist III",
+          "doc_count": 19
+        },
+        {
+          "key": "Data Engineer",
+          "doc_count": 19
+        },
+        {
+          "key": "Database Engineer",
+          "doc_count": 19
+        },
+        {
+          "key": "Help Desk Specialist III",
+          "doc_count": 19
+        },
+        {
+          "key": "IT Project Manager III",
+          "doc_count": 19
+        },
+        {
+          "key": "Instructor III",
+          "doc_count": 19
+        },
+        {
+          "key": "Network Engineer 2",
+          "doc_count": 19
+        },
+        {
+          "key": "Project Control Specialist",
+          "doc_count": 19
+        },
+        {
+          "key": "Project Manager - Senior",
+          "doc_count": 19
+        },
+        {
+          "key": "Quality Assurance Specialist IV",
+          "doc_count": 19
+        },
+        {
+          "key": "Senior Designer",
+          "doc_count": 19
+        },
+        {
+          "key": "Senior Editor",
+          "doc_count": 19
+        },
+        {
+          "key": "Superintendent",
+          "doc_count": 19
+        },
+        {
+          "key": "Supervisor",
+          "doc_count": 19
+        },
+        {
+          "key": "Training Specialist IV",
+          "doc_count": 19
+        },
+        {
+          "key": "Web Software Developer",
+          "doc_count": 19
+        },
+        {
+          "key": "Acquisition Specialist II",
+          "doc_count": 18
+        },
+        {
+          "key": "Budget Analyst III",
+          "doc_count": 18
+        },
+        {
+          "key": "Contracts Manager",
+          "doc_count": 18
+        },
+        {
+          "key": "Developer III",
+          "doc_count": 18
+        },
+        {
+          "key": "Electrical Engineer",
+          "doc_count": 18
+        },
+        {
+          "key": "Engineer/Scientist III",
+          "doc_count": 18
+        },
+        {
+          "key": "Financial Analyst IV",
+          "doc_count": 18
+        },
+        {
+          "key": "IT Consultant I",
+          "doc_count": 18
+        },
+        {
+          "key": "IT Subject Matter Expert I",
+          "doc_count": 18
+        },
+        {
+          "key": "Information Security Analyst III",
+          "doc_count": 18
+        },
+        {
+          "key": "Manager I",
+          "doc_count": 18
+        },
+        {
+          "key": "Senior Information Security Analyst",
+          "doc_count": 18
+        },
+        {
+          "key": "Senior Systems Architect",
+          "doc_count": 18
+        },
+        {
+          "key": "Senior Technician",
+          "doc_count": 18
+        },
+        {
+          "key": "Systems Administrator - Senior",
+          "doc_count": 18
+        },
+        {
+          "key": "Systems Analyst IV",
+          "doc_count": 18
+        },
+        {
+          "key": "Administrative Specialist III",
+          "doc_count": 17
+        },
+        {
+          "key": "Applications Programmer",
+          "doc_count": 17
+        },
+        {
+          "key": "Business Systems Analyst II",
+          "doc_count": 17
+        },
+        {
+          "key": "Communications Specialist III",
+          "doc_count": 17
+        },
+        {
+          "key": "Computer Programmer II",
+          "doc_count": 17
+        },
+        {
+          "key": "Construction Inspector",
+          "doc_count": 17
+        },
+        {
+          "key": "Cybersecurity Engineer II",
+          "doc_count": 17
+        },
+        {
+          "key": "Data Architect III",
+          "doc_count": 17
+        },
+        {
+          "key": "Graphic Designer III",
+          "doc_count": 17
+        },
+        {
+          "key": "Logistics Analyst",
+          "doc_count": 17
+        },
+        {
+          "key": "Mechanical Engineer",
+          "doc_count": 17
+        },
+        {
+          "key": "Program Financial Control 5",
+          "doc_count": 17
+        },
+        {
+          "key": "Program Manager IV",
+          "doc_count": 17
+        },
+        {
+          "key": "Quality Assurance Analyst III",
+          "doc_count": 17
+        },
+        {
+          "key": "Quality Manager",
+          "doc_count": 17
+        },
+        {
+          "key": "Scheduler",
+          "doc_count": 17
+        },
+        {
+          "key": "Senior Training Specialist",
+          "doc_count": 17
+        },
+        {
+          "key": "Site Manager",
+          "doc_count": 17
+        },
+        {
+          "key": "Software Engineer I",
+          "doc_count": 17
+        },
+        {
+          "key": "Solutions Architect",
+          "doc_count": 17
+        },
+        {
+          "key": "Technical Analyst",
+          "doc_count": 17
+        },
+        {
+          "key": "Test Engineer, Senior",
+          "doc_count": 17
+        },
+        {
+          "key": "Administrative Support II",
+          "doc_count": 16
+        },
+        {
+          "key": "Application Programmer",
+          "doc_count": 16
+        },
+        {
+          "key": "Applications Engineer",
+          "doc_count": 16
+        },
+        {
+          "key": "Budget Analyst II",
+          "doc_count": 16
+        },
+        {
+          "key": "Business Process Analyst III",
+          "doc_count": 16
+        },
+        {
+          "key": "Communications Network Manager",
+          "doc_count": 16
+        },
+        {
+          "key": "Cyber Security Analyst III",
+          "doc_count": 16
+        },
+        {
+          "key": "Database Specialist IV",
+          "doc_count": 16
+        },
+        {
+          "key": "Foreman",
+          "doc_count": 16
+        },
+        {
+          "key": "GIS Specialist",
+          "doc_count": 16
+        },
+        {
+          "key": "Graphic Artist",
+          "doc_count": 16
+        },
+        {
+          "key": "IT Specialist II",
+          "doc_count": 16
+        },
+        {
+          "key": "Management Consultant III",
+          "doc_count": 16
+        },
+        {
+          "key": "Network Administrator III",
+          "doc_count": 16
+        },
+        {
+          "key": "Project Coordinator III",
+          "doc_count": 16
+        },
+        {
+          "key": "Project Lead",
+          "doc_count": 16
+        },
+        {
+          "key": "Senior Developer",
+          "doc_count": 16
+        },
+        {
+          "key": "Senior Logistician",
+          "doc_count": 16
+        },
+        {
+          "key": "Systems Engineer 2",
+          "doc_count": 16
+        },
+        {
+          "key": "Business Analyst 2",
+          "doc_count": 15
+        },
+        {
+          "key": "Business Systems Analyst - Senior",
+          "doc_count": 15
+        },
+        {
+          "key": "Computer Operator V",
+          "doc_count": 15
+        },
+        {
+          "key": "Computer Programmer IV",
+          "doc_count": 15
+        },
+        {
+          "key": "Data Analyst IV",
+          "doc_count": 15
+        },
+        {
+          "key": "Data Entry/Analyst 2",
+          "doc_count": 15
+        },
+        {
+          "key": "Data Management Specialist",
+          "doc_count": 15
+        },
+        {
+          "key": "Engineering Technician",
+          "doc_count": 15
+        },
+        {
+          "key": "Functional Analyst I",
+          "doc_count": 15
+        },
+        {
+          "key": "Health IT Program Manager",
+          "doc_count": 15
+        },
+        {
+          "key": "Health IT Project Manager II",
+          "doc_count": 15
+        },
+        {
+          "key": "Instructional Designer",
+          "doc_count": 15
+        },
+        {
+          "key": "Logistics Specialist",
+          "doc_count": 15
+        },
+        {
+          "key": "SME I",
+          "doc_count": 15
+        },
+        {
+          "key": "SME II",
+          "doc_count": 15
+        },
+        {
+          "key": "Senior Application Engineer",
+          "doc_count": 15
+        },
+        {
+          "key": "Senior Technical Writer/Editor",
+          "doc_count": 15
+        },
+        {
+          "key": "Software Developer IV",
+          "doc_count": 15
+        },
+        {
+          "key": "Sr. Systems Analyst",
+          "doc_count": 15
+        },
+        {
+          "key": "Strategic Planner",
+          "doc_count": 15
+        },
+        {
+          "key": "Administrative Specialist II",
+          "doc_count": 14
+        },
+        {
+          "key": "Applications Programmer III",
+          "doc_count": 14
+        },
+        {
+          "key": "Computer Programmer",
+          "doc_count": 14
+        },
+        {
+          "key": "Cybersecurity Engineer III",
+          "doc_count": 14
+        },
+        {
+          "key": "Data Scientist II",
+          "doc_count": 14
+        },
+        {
+          "key": "Database Analyst",
+          "doc_count": 14
+        },
+        {
+          "key": "Database Architect",
+          "doc_count": 14
+        },
+        {
+          "key": "Electrical Engineer III",
+          "doc_count": 14
+        },
+        {
+          "key": "Engineer/Analyst III",
+          "doc_count": 14
+        },
+        {
+          "key": "Logistics Analyst IV",
+          "doc_count": 14
+        },
+        {
+          "key": "Logistics Manager",
+          "doc_count": 14
+        },
+        {
+          "key": "Operations Research Analyst II",
+          "doc_count": 14
+        },
+        {
+          "key": "Photographer",
+          "doc_count": 14
+        },
+        {
+          "key": "Principal Analyst",
+          "doc_count": 14
+        },
+        {
+          "key": "Program Manager 1",
+          "doc_count": 14
+        },
+        {
+          "key": "Project Coordinator II",
+          "doc_count": 14
+        },
+        {
+          "key": "Security Specialist",
+          "doc_count": 14
+        },
+        {
+          "key": "Senior Network Administrator",
+          "doc_count": 14
+        },
+        {
+          "key": "Statistician",
+          "doc_count": 14
+        },
+        {
+          "key": "Technical Analyst II",
+          "doc_count": 14
+        },
+        {
+          "key": "Technical Manager",
+          "doc_count": 14
+        },
+        {
+          "key": "Technical Specialist",
+          "doc_count": 14
+        },
+        {
+          "key": "Technical Writer - Senior",
+          "doc_count": 14
+        },
+        {
+          "key": "Technical Writer, Senior",
+          "doc_count": 14
+        },
+        {
+          "key": "Administrative Support",
+          "doc_count": 13
+        },
+        {
+          "key": "Analyst 5",
+          "doc_count": 13
+        },
+        {
+          "key": "Application Engineer",
+          "doc_count": 13
+        },
+        {
+          "key": "Assistant Project Manager",
+          "doc_count": 13
+        },
+        {
+          "key": "Computer Operator IV",
+          "doc_count": 13
+        },
+        {
+          "key": "Cyber Security Engineer",
+          "doc_count": 13
+        },
+        {
+          "key": "Data Analyst I",
+          "doc_count": 13
+        },
+        {
+          "key": "Engineering Technician VI**",
+          "doc_count": 13
+        },
+        {
+          "key": "Enterprise Architect II",
+          "doc_count": 13
+        },
+        {
+          "key": "Equipment Specialist",
+          "doc_count": 13
+        },
+        {
+          "key": "Estimator",
+          "doc_count": 13
+        },
+        {
+          "key": "Functional Analyst, Senior",
+          "doc_count": 13
+        },
+        {
+          "key": "IT Engineer III",
+          "doc_count": 13
+        },
+        {
+          "key": "Network Engineer I",
+          "doc_count": 13
+        },
+        {
+          "key": "Principal Investigator",
+          "doc_count": 13
+        },
+        {
+          "key": "Programmer Analyst II",
+          "doc_count": 13
+        },
+        {
+          "key": "Programmer IV",
+          "doc_count": 13
+        },
+        {
+          "key": "Security Analyst",
+          "doc_count": 13
+        },
+        {
+          "key": "Senior Business Intelligence Analyst",
+          "doc_count": 13
+        },
+        {
+          "key": "Senior Consultant II",
+          "doc_count": 13
+        },
+        {
+          "key": "Sr. Analyst",
+          "doc_count": 13
+        },
+        {
+          "key": "Sr. Database Administrator",
+          "doc_count": 13
+        },
+        {
+          "key": "Technical Specialist II",
+          "doc_count": 13
+        },
+        {
+          "key": "Technician 4",
+          "doc_count": 13
+        },
+        {
+          "key": "Accountant III",
+          "doc_count": 12
+        },
+        {
+          "key": "Administrative Specialist IV",
+          "doc_count": 12
+        },
+        {
+          "key": "Architect III",
+          "doc_count": 12
+        },
+        {
+          "key": "Biologist III",
+          "doc_count": 12
+        },
+        {
+          "key": "Business Analyst - Senior",
+          "doc_count": 12
+        },
+        {
+          "key": "Computer Operations Manager",
+          "doc_count": 12
+        },
+        {
+          "key": "Computer Scientist",
+          "doc_count": 12
+        },
+        {
+          "key": "Database Developer",
+          "doc_count": 12
+        },
+        {
+          "key": "Engineer/Analyst IV",
+          "doc_count": 12
+        },
+        {
+          "key": "Facilitator",
+          "doc_count": 12
+        },
+        {
+          "key": "GIS Specialist IV",
+          "doc_count": 12
+        },
+        {
+          "key": "IT Subject Matter Expert",
+          "doc_count": 12
+        },
+        {
+          "key": "Logistician 3",
+          "doc_count": 12
+        },
+        {
+          "key": "Logistician II",
+          "doc_count": 12
+        },
+        {
+          "key": "Network Administrator II",
+          "doc_count": 12
+        },
+        {
+          "key": "Network Systems Manager",
+          "doc_count": 12
+        },
+        {
+          "key": "Project Leader",
+          "doc_count": 12
+        },
+        {
+          "key": "Software Engineer 3",
+          "doc_count": 12
+        },
+        {
+          "key": "Sr. Documentation Specialist",
+          "doc_count": 12
+        },
+        {
+          "key": "Systems Architect I",
+          "doc_count": 12
+        },
+        {
+          "key": "Systems Architect II",
+          "doc_count": 12
+        },
+        {
+          "key": "Systems Engineer I",
+          "doc_count": 12
+        },
+        {
+          "key": "Systems Engineer V",
+          "doc_count": 12
+        },
+        {
+          "key": "Technical Consultant",
+          "doc_count": 12
+        },
+        {
+          "key": "Technical Specialist 3",
+          "doc_count": 12
+        },
+        {
+          "key": "Technical Support III",
+          "doc_count": 12
+        },
+        {
+          "key": "Technical Writer/Editor II",
+          "doc_count": 12
+        },
+        {
+          "key": "Telecommunications Engineer",
+          "doc_count": 12
+        },
+        {
+          "key": "Writer/Editor",
+          "doc_count": 12
+        },
+        {
+          "key": "Administrative Assistant III**",
+          "doc_count": 11
+        },
+        {
+          "key": "Cloud Business Analyst",
+          "doc_count": 11
+        },
+        {
+          "key": "Cloud Project Manager I",
+          "doc_count": 11
+        },
+        {
+          "key": "Configuration Analyst",
+          "doc_count": 11
+        },
+        {
+          "key": "Contract Specialist",
+          "doc_count": 11
+        },
+        {
+          "key": "Designer",
+          "doc_count": 11
+        },
+        {
+          "key": "Director of Photography",
+          "doc_count": 11
+        },
+        {
+          "key": "GIS Analyst III",
+          "doc_count": 11
+        },
+        {
+          "key": "IT Analyst II",
+          "doc_count": 11
+        },
+        {
+          "key": "Information Systems Training Specialist - Senior",
+          "doc_count": 11
+        },
+        {
+          "key": "Media Director",
+          "doc_count": 11
+        },
+        {
+          "key": "Program Analyst 3",
+          "doc_count": 11
+        },
+        {
+          "key": "Program Analyst, Senior",
+          "doc_count": 11
+        },
+        {
+          "key": "Project Administrator",
+          "doc_count": 11
+        },
+        {
+          "key": "Project Manager V",
+          "doc_count": 11
+        },
+        {
+          "key": "Quality Assurance Analyst - Senior",
+          "doc_count": 11
+        },
+        {
+          "key": "Senior Administrative Assistant",
+          "doc_count": 11
+        },
+        {
+          "key": "Senior Analyst II",
+          "doc_count": 11
+        },
+        {
+          "key": "Senior Configuration Management Specialist",
+          "doc_count": 11
+        },
+        {
+          "key": "Senior Engineer/Analyst I",
+          "doc_count": 11
+        },
+        {
+          "key": "System Administrator 3",
+          "doc_count": 11
+        },
+        {
+          "key": "System Engineer III",
+          "doc_count": 11
+        },
+        {
+          "key": "Systems Administrator 3",
+          "doc_count": 11
+        },
+        {
+          "key": "Test Manager",
+          "doc_count": 11
+        },
+        {
+          "key": "Training Specialist I",
+          "doc_count": 11
+        },
+        {
+          "key": "Analyst VI",
+          "doc_count": 10
+        },
+        {
+          "key": "Applications Systems Analyst III",
+          "doc_count": 10
+        },
+        {
+          "key": "Applications Systems Analyst IV",
+          "doc_count": 10
+        },
+        {
+          "key": "Cloud Architect II",
+          "doc_count": 10
+        },
+        {
+          "key": "Cloud Data Engineer",
+          "doc_count": 10
+        },
+        {
+          "key": "Cloud Security Engineer",
+          "doc_count": 10
+        },
+        {
+          "key": "Contract Administrator",
+          "doc_count": 10
+        },
+        {
+          "key": "Contract Manager",
+          "doc_count": 10
+        },
+        {
+          "key": "Data Architect II",
+          "doc_count": 10
+        },
+        {
+          "key": "Data Entry Technician 4",
+          "doc_count": 10
+        },
+        {
+          "key": "Data Technician V",
+          "doc_count": 10
+        },
+        {
+          "key": "Database Administrator 2",
+          "doc_count": 10
+        },
+        {
+          "key": "Engineer/Analyst II",
+          "doc_count": 10
+        },
+        {
+          "key": "Environmental Scientist II",
+          "doc_count": 10
+        },
+        {
+          "key": "Full Stack Developer",
+          "doc_count": 10
+        }
+      ]
+    },
+    "security_clearance": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "false",
+          "doc_count": 76087
+        },
+        {
+          "key": "true",
+          "doc_count": 5554
+        }
+      ]
+    },
+    "histogram_percentiles": {
+      "values": {
+        "10.0": 78.58867737577509,
+        "25.0": 96.90340799878828,
+        "30.0": 101.65716290942613,
+        "35.0": 106.0290976381967,
+        "50.0": 117.8592136946035,
+        "65.0": 127.88362812890502,
+        "70.0": 131.10497272472824,
+        "75.0": 134.34329461782755,
+        "90.0": 143.8888555203164
+      }
+    },
+    "min_years_experience": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "5",
+          "doc_count": 31642
+        },
+        {
+          "key": "6",
+          "doc_count": 12522
+        },
+        {
+          "key": "8",
+          "doc_count": 11295
+        },
+        {
+          "key": "10",
+          "doc_count": 10404
+        },
+        {
+          "key": "7",
+          "doc_count": 8931
+        },
+        {
+          "key": "12",
+          "doc_count": 1989
+        },
+        {
+          "key": "15",
+          "doc_count": 1666
+        },
+        {
+          "key": "9",
+          "doc_count": 1493
+        },
+        {
+          "key": "11",
+          "doc_count": 535
+        },
+        {
+          "key": "20",
+          "doc_count": 328
+        },
+        {
+          "key": "14",
+          "doc_count": 223
+        },
+        {
+          "key": "13",
+          "doc_count": 173
+        },
+        {
+          "key": "16",
+          "doc_count": 154
+        },
+        {
+          "key": "18",
+          "doc_count": 87
+        },
+        {
+          "key": "17",
+          "doc_count": 50
+        },
+        {
+          "key": "25",
+          "doc_count": 49
+        },
+        {
+          "key": "30",
+          "doc_count": 18
+        },
+        {
+          "key": "21",
+          "doc_count": 17
+        },
+        {
+          "key": "22",
+          "doc_count": 14
+        },
+        {
+          "key": "19",
+          "doc_count": 11
+        },
+        {
+          "key": "24",
+          "doc_count": 10
+        },
+        {
+          "key": "23",
+          "doc_count": 7
+        },
+        {
+          "key": "31",
+          "doc_count": 6
+        },
+        {
+          "key": "27",
+          "doc_count": 5
+        },
+        {
+          "key": "32",
+          "doc_count": 4
+        },
+        {
+          "key": "26",
+          "doc_count": 3
+        },
+        {
+          "key": "28",
+          "doc_count": 2
+        },
+        {
+          "key": "35",
+          "doc_count": 2
+        },
+        {
+          "key": "37",
+          "doc_count": 1
+        }
+      ]
+    },
+    "worksite": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "Customer_Facility",
+          "doc_count": 45419
+        },
+        {
+          "key": "Contractor_Facility",
+          "doc_count": 32912
+        },
+        {
+          "key": "Virtual",
+          "doc_count": 3310
+        }
+      ]
+    },
+    "wage_histogram": {
+      "buckets": [
+        {
+          "min": 50.0,
+          "key": 53.850479875231,
+          "max": 57.64255142211914,
+          "doc_count": 1115
+        },
+        {
+          "min": 57.64255142211914,
+          "key": 61.375882100797874,
+          "max": 64.45499992370605,
+          "doc_count": 2009
+        },
+        {
+          "min": 64.45499992370605,
+          "key": 69.61130881549438,
+          "max": 73.64999771118164,
+          "doc_count": 2683
+        },
+        {
+          "min": 73.64999771118164,
+          "key": 77.12019763661647,
+          "max": 79.57500076293945,
+          "doc_count": 3294
+        },
+        {
+          "min": 79.57500076293945,
+          "key": 85.71581832902076,
+          "max": 90.28860092163086,
+          "doc_count": 6539
+        },
+        {
+          "min": 90.28860092163086,
+          "key": 95.82384959209907,
+          "max": 99.39500045776367,
+          "doc_count": 7557
+        },
+        {
+          "min": 99.39500045776367,
+          "key": 105.0315163400844,
+          "max": 109.88000106811523,
+          "doc_count": 9139
+        },
+        {
+          "min": 109.88000106811523,
+          "key": 114.28426943523532,
+          "max": 117.76649856567383,
+          "doc_count": 9206
+        },
+        {
+          "min": 117.76649856567383,
+          "key": 122.53760779609003,
+          "max": 126.00000381469727,
+          "doc_count": 9570
+        },
+        {
+          "min": 126.00000381469727,
+          "key": 129.87417107068487,
+          "max": 133.23219299316406,
+          "doc_count": 8235
+        },
+        {
+          "min": 133.23219299316406,
+          "key": 136.3135716686733,
+          "max": 139.90160369873047,
+          "doc_count": 9374
+        },
+        {
+          "min": 139.90160369873047,
+          "key": 144.8805834601907,
+          "max": 150.0,
+          "doc_count": 12920
+        }
+      ]
+    },
+    "education_level": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "Bachelors",
+          "doc_count": 65942
+        },
+        {
+          "key": "High School",
+          "doc_count": 6570
+        },
+        {
+          "key": "Associates",
+          "doc_count": 3994
+        },
+        {
+          "key": "Masters",
+          "doc_count": 3836
+        },
+        {
+          "key": "High School Equivalent",
+          "doc_count": 531
+        },
+        {
+          "key": "Other Tech School or Certification",
+          "doc_count": 383
+        },
+        {
+          "key": "None",
+          "doc_count": 204
+        },
+        {
+          "key": "PhD",
+          "doc_count": 181
+        }
+      ]
+    },
+    "current_price": {
+      "doc_count_error_upper_bound": 19,
+      "sum_other_doc_count": 73607,
+      "buckets": [
+        {
+          "key": "148.2",
+          "doc_count": 153
+        },
+        {
+          "key": "146.38",
+          "doc_count": 73
+        },
+        {
+          "key": "119.65",
+          "doc_count": 69
+        },
+        {
+          "key": "145.97",
+          "doc_count": 68
+        },
+        {
+          "key": "149.62",
+          "doc_count": 68
+        },
+        {
+          "key": "146.6",
+          "doc_count": 65
+        },
+        {
+          "key": "140.72",
+          "doc_count": 60
+        },
+        {
+          "key": "148.11",
+          "doc_count": 59
+        },
+        {
+          "key": "143.58",
+          "doc_count": 57
+        },
+        {
+          "key": "119.09",
+          "doc_count": 56
+        },
+        {
+          "key": "130.149",
+          "doc_count": 52
+        },
+        {
+          "key": "106.9744",
+          "doc_count": 48
+        },
+        {
+          "key": "143.04",
+          "doc_count": 48
+        },
+        {
+          "key": "127.3778",
+          "doc_count": 47
+        },
+        {
+          "key": "120.91",
+          "doc_count": 46
+        },
+        {
+          "key": "110.08",
+          "doc_count": 45
+        },
+        {
+          "key": "140.66",
+          "doc_count": 45
+        },
+        {
+          "key": "108.61",
+          "doc_count": 43
+        },
+        {
+          "key": "111.43",
+          "doc_count": 43
+        },
+        {
+          "key": "94.28",
+          "doc_count": 43
+        },
+        {
+          "key": "119.7",
+          "doc_count": 42
+        },
+        {
+          "key": "145.09",
+          "doc_count": 41
+        },
+        {
+          "key": "122.17",
+          "doc_count": 40
+        },
+        {
+          "key": "144.18",
+          "doc_count": 40
+        },
+        {
+          "key": "124.43",
+          "doc_count": 39
+        },
+        {
+          "key": "134.09",
+          "doc_count": 39
+        },
+        {
+          "key": "141.91",
+          "doc_count": 39
+        },
+        {
+          "key": "145.0",
+          "doc_count": 39
+        },
+        {
+          "key": "129.67",
+          "doc_count": 38
+        },
+        {
+          "key": "118.49",
+          "doc_count": 37
+        },
+        {
+          "key": "99.75",
+          "doc_count": 37
+        },
+        {
+          "key": "106.8",
+          "doc_count": 36
+        },
+        {
+          "key": "135.0",
+          "doc_count": 36
+        },
+        {
+          "key": "139.65",
+          "doc_count": 36
+        },
+        {
+          "key": "120.0",
+          "doc_count": 35
+        },
+        {
+          "key": "123.43",
+          "doc_count": 35
+        },
+        {
+          "key": "117.28",
+          "doc_count": 33
+        },
+        {
+          "key": "144.63",
+          "doc_count": 32
+        },
+        {
+          "key": "122.44",
+          "doc_count": 31
+        },
+        {
+          "key": "124.69",
+          "doc_count": 31
+        },
+        {
+          "key": "136.83",
+          "doc_count": 31
+        },
+        {
+          "key": "129.22",
+          "doc_count": 30
+        },
+        {
+          "key": "132.14",
+          "doc_count": 30
+        },
+        {
+          "key": "150.0",
+          "doc_count": 30
+        },
+        {
+          "key": "114.86",
+          "doc_count": 29
+        },
+        {
+          "key": "128.9",
+          "doc_count": 29
+        },
+        {
+          "key": "138.79",
+          "doc_count": 29
+        },
+        {
+          "key": "148.36",
+          "doc_count": 29
+        },
+        {
+          "key": "90.93",
+          "doc_count": 29
+        },
+        {
+          "key": "103.07",
+          "doc_count": 28
+        },
+        {
+          "key": "115.0",
+          "doc_count": 28
+        },
+        {
+          "key": "135.85",
+          "doc_count": 28
+        },
+        {
+          "key": "110.0",
+          "doc_count": 27
+        },
+        {
+          "key": "110.48",
+          "doc_count": 27
+        },
+        {
+          "key": "123.91",
+          "doc_count": 27
+        },
+        {
+          "key": "127.05",
+          "doc_count": 27
+        },
+        {
+          "key": "115.53",
+          "doc_count": 26
+        },
+        {
+          "key": "119.92",
+          "doc_count": 26
+        },
+        {
+          "key": "120.63",
+          "doc_count": 26
+        },
+        {
+          "key": "121.62",
+          "doc_count": 26
+        },
+        {
+          "key": "100.5",
+          "doc_count": 25
+        },
+        {
+          "key": "113.35",
+          "doc_count": 25
+        },
+        {
+          "key": "116.5207",
+          "doc_count": 25
+        },
+        {
+          "key": "117.13",
+          "doc_count": 25
+        },
+        {
+          "key": "136.02",
+          "doc_count": 25
+        },
+        {
+          "key": "145.73",
+          "doc_count": 25
+        },
+        {
+          "key": "102.66",
+          "doc_count": 24
+        },
+        {
+          "key": "104.8",
+          "doc_count": 23
+        },
+        {
+          "key": "114.71",
+          "doc_count": 23
+        },
+        {
+          "key": "116.59",
+          "doc_count": 23
+        },
+        {
+          "key": "95.72",
+          "doc_count": 23
+        },
+        {
+          "key": "97.73",
+          "doc_count": 23
+        },
+        {
+          "key": "98.74",
+          "doc_count": 23
+        },
+        {
+          "key": "107.51",
+          "doc_count": 22
+        },
+        {
+          "key": "117.88",
+          "doc_count": 22
+        },
+        {
+          "key": "128.15",
+          "doc_count": 22
+        },
+        {
+          "key": "137.87",
+          "doc_count": 22
+        },
+        {
+          "key": "140.55",
+          "doc_count": 22
+        },
+        {
+          "key": "140.65",
+          "doc_count": 22
+        },
+        {
+          "key": "102.46",
+          "doc_count": 21
+        },
+        {
+          "key": "105.29",
+          "doc_count": 21
+        },
+        {
+          "key": "109.9",
+          "doc_count": 21
+        },
+        {
+          "key": "127.79",
+          "doc_count": 21
+        },
+        {
+          "key": "128.03",
+          "doc_count": 21
+        },
+        {
+          "key": "133.3",
+          "doc_count": 21
+        },
+        {
+          "key": "141.8",
+          "doc_count": 21
+        },
+        {
+          "key": "141.81",
+          "doc_count": 21
+        },
+        {
+          "key": "121.81",
+          "doc_count": 20
+        },
+        {
+          "key": "128.36",
+          "doc_count": 20
+        },
+        {
+          "key": "140.25",
+          "doc_count": 20
+        },
+        {
+          "key": "124.03",
+          "doc_count": 19
+        },
+        {
+          "key": "131.94",
+          "doc_count": 19
+        },
+        {
+          "key": "144.05",
+          "doc_count": 19
+        },
+        {
+          "key": "86.87",
+          "doc_count": 19
+        },
+        {
+          "key": "93.8",
+          "doc_count": 19
+        },
+        {
+          "key": "104.28",
+          "doc_count": 18
+        },
+        {
+          "key": "108.88",
+          "doc_count": 18
+        },
+        {
+          "key": "112.08",
+          "doc_count": 18
+        },
+        {
+          "key": "112.91",
+          "doc_count": 18
+        },
+        {
+          "key": "120.98",
+          "doc_count": 18
+        },
+        {
+          "key": "122.41",
+          "doc_count": 18
+        },
+        {
+          "key": "123.52",
+          "doc_count": 18
+        },
+        {
+          "key": "127.61",
+          "doc_count": 18
+        },
+        {
+          "key": "131.53",
+          "doc_count": 18
+        },
+        {
+          "key": "135.99",
+          "doc_count": 18
+        },
+        {
+          "key": "138.37",
+          "doc_count": 18
+        },
+        {
+          "key": "147.17",
+          "doc_count": 18
+        },
+        {
+          "key": "95.39",
+          "doc_count": 18
+        },
+        {
+          "key": "100.76",
+          "doc_count": 17
+        },
+        {
+          "key": "103.85",
+          "doc_count": 17
+        },
+        {
+          "key": "110.52",
+          "doc_count": 17
+        },
+        {
+          "key": "111.23",
+          "doc_count": 17
+        },
+        {
+          "key": "113.85",
+          "doc_count": 17
+        },
+        {
+          "key": "116.25",
+          "doc_count": 17
+        },
+        {
+          "key": "117.27",
+          "doc_count": 17
+        },
+        {
+          "key": "122.42",
+          "doc_count": 17
+        },
+        {
+          "key": "123.15",
+          "doc_count": 17
+        },
+        {
+          "key": "125.0",
+          "doc_count": 17
+        },
+        {
+          "key": "125.14",
+          "doc_count": 17
+        },
+        {
+          "key": "127.86",
+          "doc_count": 17
+        },
+        {
+          "key": "128.25",
+          "doc_count": 17
+        },
+        {
+          "key": "134.66",
+          "doc_count": 17
+        },
+        {
+          "key": "136.1023",
+          "doc_count": 17
+        },
+        {
+          "key": "138.24",
+          "doc_count": 17
+        },
+        {
+          "key": "140.0",
+          "doc_count": 17
+        },
+        {
+          "key": "147.78",
+          "doc_count": 17
+        },
+        {
+          "key": "149.79",
+          "doc_count": 17
+        },
+        {
+          "key": "94.76",
+          "doc_count": 17
+        },
+        {
+          "key": "104.32",
+          "doc_count": 16
+        },
+        {
+          "key": "111.67",
+          "doc_count": 16
+        },
+        {
+          "key": "112.89",
+          "doc_count": 16
+        },
+        {
+          "key": "115.64",
+          "doc_count": 16
+        },
+        {
+          "key": "115.87",
+          "doc_count": 16
+        },
+        {
+          "key": "117.33",
+          "doc_count": 16
+        },
+        {
+          "key": "117.48",
+          "doc_count": 16
+        },
+        {
+          "key": "122.68",
+          "doc_count": 16
+        },
+        {
+          "key": "126.14",
+          "doc_count": 16
+        },
+        {
+          "key": "128.05",
+          "doc_count": 16
+        },
+        {
+          "key": "129.92",
+          "doc_count": 16
+        },
+        {
+          "key": "130.0",
+          "doc_count": 16
+        },
+        {
+          "key": "135.5",
+          "doc_count": 16
+        },
+        {
+          "key": "138.82",
+          "doc_count": 16
+        },
+        {
+          "key": "143.17",
+          "doc_count": 16
+        },
+        {
+          "key": "149.92",
+          "doc_count": 16
+        },
+        {
+          "key": "72.4554",
+          "doc_count": 16
+        },
+        {
+          "key": "79.8",
+          "doc_count": 16
+        },
+        {
+          "key": "100.0",
+          "doc_count": 15
+        },
+        {
+          "key": "110.03",
+          "doc_count": 15
+        },
+        {
+          "key": "110.63",
+          "doc_count": 15
+        },
+        {
+          "key": "110.91",
+          "doc_count": 15
+        },
+        {
+          "key": "117.69",
+          "doc_count": 15
+        },
+        {
+          "key": "122.35",
+          "doc_count": 15
+        },
+        {
+          "key": "124.04",
+          "doc_count": 15
+        },
+        {
+          "key": "125.44",
+          "doc_count": 15
+        },
+        {
+          "key": "126.61",
+          "doc_count": 15
+        },
+        {
+          "key": "128.26",
+          "doc_count": 15
+        },
+        {
+          "key": "130.49",
+          "doc_count": 15
+        },
+        {
+          "key": "132.85",
+          "doc_count": 15
+        },
+        {
+          "key": "133.72",
+          "doc_count": 15
+        },
+        {
+          "key": "137.33",
+          "doc_count": 15
+        },
+        {
+          "key": "138.7",
+          "doc_count": 15
+        },
+        {
+          "key": "140.39",
+          "doc_count": 15
+        },
+        {
+          "key": "143.13",
+          "doc_count": 15
+        },
+        {
+          "key": "145.36",
+          "doc_count": 15
+        },
+        {
+          "key": "145.41",
+          "doc_count": 15
+        },
+        {
+          "key": "147.18",
+          "doc_count": 15
+        },
+        {
+          "key": "83.07",
+          "doc_count": 15
+        },
+        {
+          "key": "83.93",
+          "doc_count": 15
+        },
+        {
+          "key": "86.15",
+          "doc_count": 15
+        },
+        {
+          "key": "87.96",
+          "doc_count": 15
+        },
+        {
+          "key": "104.4",
+          "doc_count": 14
+        },
+        {
+          "key": "116.87",
+          "doc_count": 14
+        },
+        {
+          "key": "117.15",
+          "doc_count": 14
+        },
+        {
+          "key": "117.4",
+          "doc_count": 14
+        },
+        {
+          "key": "119.98",
+          "doc_count": 14
+        },
+        {
+          "key": "120.29",
+          "doc_count": 14
+        },
+        {
+          "key": "121.65",
+          "doc_count": 14
+        },
+        {
+          "key": "122.77",
+          "doc_count": 14
+        },
+        {
+          "key": "123.58",
+          "doc_count": 14
+        },
+        {
+          "key": "125.28",
+          "doc_count": 14
+        },
+        {
+          "key": "125.94",
+          "doc_count": 14
+        },
+        {
+          "key": "127.58",
+          "doc_count": 14
+        },
+        {
+          "key": "128.07",
+          "doc_count": 14
+        },
+        {
+          "key": "129.89",
+          "doc_count": 14
+        },
+        {
+          "key": "131.6",
+          "doc_count": 14
+        },
+        {
+          "key": "134.25",
+          "doc_count": 14
+        },
+        {
+          "key": "136.88",
+          "doc_count": 14
+        },
+        {
+          "key": "138.49",
+          "doc_count": 14
+        },
+        {
+          "key": "139.71",
+          "doc_count": 14
+        },
+        {
+          "key": "145.65",
+          "doc_count": 14
+        },
+        {
+          "key": "146.83",
+          "doc_count": 14
+        },
+        {
+          "key": "146.95",
+          "doc_count": 14
+        },
+        {
+          "key": "149.6",
+          "doc_count": 14
+        },
+        {
+          "key": "92.85",
+          "doc_count": 14
+        },
+        {
+          "key": "101.35",
+          "doc_count": 13
+        },
+        {
+          "key": "103.66",
+          "doc_count": 13
+        },
+        {
+          "key": "109.14",
+          "doc_count": 13
+        },
+        {
+          "key": "111.13",
+          "doc_count": 13
+        },
+        {
+          "key": "112.71",
+          "doc_count": 13
+        },
+        {
+          "key": "115.36",
+          "doc_count": 13
+        },
+        {
+          "key": "115.43",
+          "doc_count": 13
+        },
+        {
+          "key": "116.55",
+          "doc_count": 13
+        },
+        {
+          "key": "116.7",
+          "doc_count": 13
+        },
+        {
+          "key": "117.35",
+          "doc_count": 13
+        },
+        {
+          "key": "118.54",
+          "doc_count": 13
+        },
+        {
+          "key": "122.3202",
+          "doc_count": 13
+        },
+        {
+          "key": "124.95",
+          "doc_count": 13
+        },
+        {
+          "key": "125.13",
+          "doc_count": 13
+        },
+        {
+          "key": "126.44",
+          "doc_count": 13
+        },
+        {
+          "key": "127.04",
+          "doc_count": 13
+        },
+        {
+          "key": "129.19",
+          "doc_count": 13
+        },
+        {
+          "key": "129.28",
+          "doc_count": 13
+        },
+        {
+          "key": "129.33",
+          "doc_count": 13
+        },
+        {
+          "key": "131.66",
+          "doc_count": 13
+        },
+        {
+          "key": "132.51",
+          "doc_count": 13
+        },
+        {
+          "key": "132.66",
+          "doc_count": 13
+        },
+        {
+          "key": "132.8",
+          "doc_count": 13
+        },
+        {
+          "key": "135.01",
+          "doc_count": 13
+        },
+        {
+          "key": "137.69",
+          "doc_count": 13
+        },
+        {
+          "key": "138.3",
+          "doc_count": 13
+        },
+        {
+          "key": "139.1",
+          "doc_count": 13
+        },
+        {
+          "key": "139.56",
+          "doc_count": 13
+        },
+        {
+          "key": "139.62",
+          "doc_count": 13
+        },
+        {
+          "key": "140.17",
+          "doc_count": 13
+        },
+        {
+          "key": "140.64",
+          "doc_count": 13
+        },
+        {
+          "key": "142.78",
+          "doc_count": 13
+        },
+        {
+          "key": "143.29",
+          "doc_count": 13
+        },
+        {
+          "key": "143.81",
+          "doc_count": 13
+        },
+        {
+          "key": "144.01",
+          "doc_count": 13
+        },
+        {
+          "key": "146.35",
+          "doc_count": 13
+        },
+        {
+          "key": "147.65",
+          "doc_count": 13
+        },
+        {
+          "key": "148.19",
+          "doc_count": 13
+        },
+        {
+          "key": "149.97",
+          "doc_count": 13
+        },
+        {
+          "key": "74.81",
+          "doc_count": 13
+        },
+        {
+          "key": "101.98",
+          "doc_count": 12
+        },
+        {
+          "key": "104.59",
+          "doc_count": 12
+        },
+        {
+          "key": "108.0",
+          "doc_count": 12
+        },
+        {
+          "key": "108.48",
+          "doc_count": 12
+        },
+        {
+          "key": "111.58",
+          "doc_count": 12
+        },
+        {
+          "key": "113.55",
+          "doc_count": 12
+        },
+        {
+          "key": "113.71",
+          "doc_count": 12
+        },
+        {
+          "key": "113.87",
+          "doc_count": 12
+        },
+        {
+          "key": "115.34",
+          "doc_count": 12
+        },
+        {
+          "key": "117.06",
+          "doc_count": 12
+        },
+        {
+          "key": "118.56",
+          "doc_count": 12
+        },
+        {
+          "key": "118.74",
+          "doc_count": 12
+        },
+        {
+          "key": "119.39",
+          "doc_count": 12
+        },
+        {
+          "key": "120.4",
+          "doc_count": 12
+        },
+        {
+          "key": "120.73",
+          "doc_count": 12
+        },
+        {
+          "key": "120.94",
+          "doc_count": 12
+        },
+        {
+          "key": "121.28",
+          "doc_count": 12
+        },
+        {
+          "key": "124.33",
+          "doc_count": 12
+        },
+        {
+          "key": "126.5",
+          "doc_count": 12
+        },
+        {
+          "key": "131.68",
+          "doc_count": 12
+        },
+        {
+          "key": "132.47",
+          "doc_count": 12
+        },
+        {
+          "key": "132.81",
+          "doc_count": 12
+        },
+        {
+          "key": "135.08",
+          "doc_count": 12
+        },
+        {
+          "key": "135.59",
+          "doc_count": 12
+        },
+        {
+          "key": "138.02",
+          "doc_count": 12
+        },
+        {
+          "key": "138.47",
+          "doc_count": 12
+        },
+        {
+          "key": "139.26",
+          "doc_count": 12
+        },
+        {
+          "key": "141.76",
+          "doc_count": 12
+        },
+        {
+          "key": "141.88",
+          "doc_count": 12
+        },
+        {
+          "key": "142.12",
+          "doc_count": 12
+        },
+        {
+          "key": "142.9",
+          "doc_count": 12
+        },
+        {
+          "key": "143.68",
+          "doc_count": 12
+        },
+        {
+          "key": "144.85",
+          "doc_count": 12
+        },
+        {
+          "key": "149.67",
+          "doc_count": 12
+        },
+        {
+          "key": "98.16",
+          "doc_count": 12
+        },
+        {
+          "key": "98.73",
+          "doc_count": 12
+        },
+        {
+          "key": "101.45",
+          "doc_count": 11
+        },
+        {
+          "key": "102.5",
+          "doc_count": 11
+        },
+        {
+          "key": "102.77",
+          "doc_count": 11
+        },
+        {
+          "key": "104.6",
+          "doc_count": 11
+        },
+        {
+          "key": "106.25",
+          "doc_count": 11
+        },
+        {
+          "key": "106.52",
+          "doc_count": 11
+        },
+        {
+          "key": "107.05",
+          "doc_count": 11
+        },
+        {
+          "key": "110.25",
+          "doc_count": 11
+        },
+        {
+          "key": "110.31",
+          "doc_count": 11
+        },
+        {
+          "key": "111.71",
+          "doc_count": 11
+        },
+        {
+          "key": "111.72",
+          "doc_count": 11
+        },
+        {
+          "key": "113.23",
+          "doc_count": 11
+        },
+        {
+          "key": "113.5",
+          "doc_count": 11
+        },
+        {
+          "key": "113.79",
+          "doc_count": 11
+        },
+        {
+          "key": "115.83",
+          "doc_count": 11
+        },
+        {
+          "key": "116.47",
+          "doc_count": 11
+        },
+        {
+          "key": "116.75",
+          "doc_count": 11
+        },
+        {
+          "key": "118.18",
+          "doc_count": 11
+        },
+        {
+          "key": "118.33",
+          "doc_count": 11
+        },
+        {
+          "key": "119.35",
+          "doc_count": 11
+        },
+        {
+          "key": "119.56",
+          "doc_count": 11
+        },
+        {
+          "key": "121.93",
+          "doc_count": 11
+        },
+        {
+          "key": "122.8",
+          "doc_count": 11
+        },
+        {
+          "key": "123.37",
+          "doc_count": 11
+        },
+        {
+          "key": "124.31",
+          "doc_count": 11
+        },
+        {
+          "key": "125.07",
+          "doc_count": 11
+        },
+        {
+          "key": "125.08",
+          "doc_count": 11
+        },
+        {
+          "key": "125.76",
+          "doc_count": 11
+        },
+        {
+          "key": "126.08",
+          "doc_count": 11
+        },
+        {
+          "key": "126.64",
+          "doc_count": 11
+        },
+        {
+          "key": "126.95",
+          "doc_count": 11
+        },
+        {
+          "key": "127.39",
+          "doc_count": 11
+        },
+        {
+          "key": "127.99",
+          "doc_count": 11
+        },
+        {
+          "key": "128.91",
+          "doc_count": 11
+        },
+        {
+          "key": "129.9897",
+          "doc_count": 11
+        },
+        {
+          "key": "130.26",
+          "doc_count": 11
+        },
+        {
+          "key": "131.25",
+          "doc_count": 11
+        },
+        {
+          "key": "131.49",
+          "doc_count": 11
+        },
+        {
+          "key": "131.88",
+          "doc_count": 11
+        },
+        {
+          "key": "132.06",
+          "doc_count": 11
+        },
+        {
+          "key": "132.59",
+          "doc_count": 11
+        },
+        {
+          "key": "132.93",
+          "doc_count": 11
+        },
+        {
+          "key": "133.56",
+          "doc_count": 11
+        },
+        {
+          "key": "134.01",
+          "doc_count": 11
+        },
+        {
+          "key": "134.56",
+          "doc_count": 11
+        },
+        {
+          "key": "134.91",
+          "doc_count": 11
+        },
+        {
+          "key": "136.4269",
+          "doc_count": 11
+        },
+        {
+          "key": "138.14",
+          "doc_count": 11
+        },
+        {
+          "key": "139.32",
+          "doc_count": 11
+        },
+        {
+          "key": "141.53",
+          "doc_count": 11
+        },
+        {
+          "key": "141.59",
+          "doc_count": 11
+        },
+        {
+          "key": "143.54",
+          "doc_count": 11
+        },
+        {
+          "key": "144.6782",
+          "doc_count": 11
+        },
+        {
+          "key": "73.3",
+          "doc_count": 11
+        },
+        {
+          "key": "88.87",
+          "doc_count": 11
+        },
+        {
+          "key": "100.31",
+          "doc_count": 10
+        },
+        {
+          "key": "101.81",
+          "doc_count": 10
+        },
+        {
+          "key": "102.13",
+          "doc_count": 10
+        },
+        {
+          "key": "102.22",
+          "doc_count": 10
+        },
+        {
+          "key": "102.33",
+          "doc_count": 10
+        },
+        {
+          "key": "103.02",
+          "doc_count": 10
+        },
+        {
+          "key": "104.75",
+          "doc_count": 10
+        },
+        {
+          "key": "107.01",
+          "doc_count": 10
+        },
+        {
+          "key": "108.87",
+          "doc_count": 10
+        },
+        {
+          "key": "109.52",
+          "doc_count": 10
+        },
+        {
+          "key": "109.98",
+          "doc_count": 10
+        },
+        {
+          "key": "110.46",
+          "doc_count": 10
+        },
+        {
+          "key": "111.34",
+          "doc_count": 10
+        },
+        {
+          "key": "111.49",
+          "doc_count": 10
+        },
+        {
+          "key": "111.52",
+          "doc_count": 10
+        },
+        {
+          "key": "112.38",
+          "doc_count": 10
+        },
+        {
+          "key": "112.81",
+          "doc_count": 10
+        },
+        {
+          "key": "113.92",
+          "doc_count": 10
+        },
+        {
+          "key": "114.12",
+          "doc_count": 10
+        },
+        {
+          "key": "114.21",
+          "doc_count": 10
+        },
+        {
+          "key": "115.82",
+          "doc_count": 10
+        },
+        {
+          "key": "116.0",
+          "doc_count": 10
+        },
+        {
+          "key": "116.09",
+          "doc_count": 10
+        },
+        {
+          "key": "116.16",
+          "doc_count": 10
+        },
+        {
+          "key": "117.51",
+          "doc_count": 10
+        },
+        {
+          "key": "117.8",
+          "doc_count": 10
+        },
+        {
+          "key": "118.36",
+          "doc_count": 10
+        },
+        {
+          "key": "118.37",
+          "doc_count": 10
+        },
+        {
+          "key": "118.78",
+          "doc_count": 10
+        },
+        {
+          "key": "119.57",
+          "doc_count": 10
+        },
+        {
+          "key": "120.07",
+          "doc_count": 10
+        },
+        {
+          "key": "121.15",
+          "doc_count": 10
+        },
+        {
+          "key": "121.88",
+          "doc_count": 10
+        },
+        {
+          "key": "122.05",
+          "doc_count": 10
+        },
+        {
+          "key": "122.72",
+          "doc_count": 10
+        },
+        {
+          "key": "123.25",
+          "doc_count": 10
+        },
+        {
+          "key": "123.65",
+          "doc_count": 10
+        },
+        {
+          "key": "124.01",
+          "doc_count": 10
+        },
+        {
+          "key": "124.06",
+          "doc_count": 10
+        },
+        {
+          "key": "125.02",
+          "doc_count": 10
+        },
+        {
+          "key": "125.03",
+          "doc_count": 10
+        },
+        {
+          "key": "126.2",
+          "doc_count": 10
+        },
+        {
+          "key": "126.98",
+          "doc_count": 10
+        },
+        {
+          "key": "127.93",
+          "doc_count": 10
+        },
+        {
+          "key": "128.17",
+          "doc_count": 10
+        },
+        {
+          "key": "128.34",
+          "doc_count": 10
+        },
+        {
+          "key": "128.43",
+          "doc_count": 10
+        },
+        {
+          "key": "128.68",
+          "doc_count": 10
+        },
+        {
+          "key": "129.26",
+          "doc_count": 10
+        },
+        {
+          "key": "129.54",
+          "doc_count": 10
+        },
+        {
+          "key": "130.82",
+          "doc_count": 10
+        },
+        {
+          "key": "131.03",
+          "doc_count": 10
+        },
+        {
+          "key": "131.4187",
+          "doc_count": 10
+        },
+        {
+          "key": "132.48",
+          "doc_count": 10
+        },
+        {
+          "key": "133.0076",
+          "doc_count": 10
+        },
+        {
+          "key": "133.14",
+          "doc_count": 10
+        },
+        {
+          "key": "133.98",
+          "doc_count": 10
+        },
+        {
+          "key": "134.41",
+          "doc_count": 10
+        },
+        {
+          "key": "135.49",
+          "doc_count": 10
+        },
+        {
+          "key": "136.26",
+          "doc_count": 10
+        },
+        {
+          "key": "136.39",
+          "doc_count": 10
+        },
+        {
+          "key": "137.0",
+          "doc_count": 10
+        },
+        {
+          "key": "137.86",
+          "doc_count": 10
+        },
+        {
+          "key": "138.01",
+          "doc_count": 10
+        },
+        {
+          "key": "138.42",
+          "doc_count": 10
+        },
+        {
+          "key": "138.83",
+          "doc_count": 10
+        },
+        {
+          "key": "140.1",
+          "doc_count": 10
+        },
+        {
+          "key": "140.15",
+          "doc_count": 10
+        },
+        {
+          "key": "140.24",
+          "doc_count": 10
+        },
+        {
+          "key": "140.59",
+          "doc_count": 10
+        },
+        {
+          "key": "142.32",
+          "doc_count": 10
+        },
+        {
+          "key": "142.42",
+          "doc_count": 10
+        },
+        {
+          "key": "143.77",
+          "doc_count": 10
+        },
+        {
+          "key": "143.93",
+          "doc_count": 10
+        },
+        {
+          "key": "145.47",
+          "doc_count": 10
+        },
+        {
+          "key": "146.1",
+          "doc_count": 10
+        },
+        {
+          "key": "146.77",
+          "doc_count": 10
+        },
+        {
+          "key": "146.79",
+          "doc_count": 10
+        },
+        {
+          "key": "147.02",
+          "doc_count": 10
+        },
+        {
+          "key": "148.18",
+          "doc_count": 10
+        },
+        {
+          "key": "148.69",
+          "doc_count": 10
+        },
+        {
+          "key": "149.17",
+          "doc_count": 10
+        },
+        {
+          "key": "149.72",
+          "doc_count": 10
+        },
+        {
+          "key": "63.53",
+          "doc_count": 10
+        },
+        {
+          "key": "63.9245",
+          "doc_count": 10
+        },
+        {
+          "key": "78.99",
+          "doc_count": 10
+        },
+        {
+          "key": "81.36",
+          "doc_count": 10
+        },
+        {
+          "key": "84.36",
+          "doc_count": 10
+        },
+        {
+          "key": "85.5",
+          "doc_count": 10
+        },
+        {
+          "key": "97.5",
+          "doc_count": 10
+        },
+        {
+          "key": "97.66",
+          "doc_count": 10
+        },
+        {
+          "key": "101.06",
+          "doc_count": 9
+        },
+        {
+          "key": "101.56",
+          "doc_count": 9
+        },
+        {
+          "key": "102.62",
+          "doc_count": 9
+        },
+        {
+          "key": "103.38",
+          "doc_count": 9
+        },
+        {
+          "key": "103.93",
+          "doc_count": 9
+        },
+        {
+          "key": "105.19",
+          "doc_count": 9
+        },
+        {
+          "key": "105.63",
+          "doc_count": 9
+        },
+        {
+          "key": "105.82",
+          "doc_count": 9
+        },
+        {
+          "key": "106.4",
+          "doc_count": 9
+        },
+        {
+          "key": "106.69",
+          "doc_count": 9
+        },
+        {
+          "key": "107.43",
+          "doc_count": 9
+        },
+        {
+          "key": "107.75",
+          "doc_count": 9
+        },
+        {
+          "key": "107.79",
+          "doc_count": 9
+        },
+        {
+          "key": "108.91",
+          "doc_count": 9
+        },
+        {
+          "key": "109.6",
+          "doc_count": 9
+        },
+        {
+          "key": "110.68",
+          "doc_count": 9
+        },
+        {
+          "key": "110.93",
+          "doc_count": 9
+        },
+        {
+          "key": "112.99",
+          "doc_count": 9
+        },
+        {
+          "key": "113.14",
+          "doc_count": 9
+        },
+        {
+          "key": "113.81",
+          "doc_count": 9
+        },
+        {
+          "key": "113.86",
+          "doc_count": 9
+        },
+        {
+          "key": "114.4",
+          "doc_count": 9
+        },
+        {
+          "key": "114.55",
+          "doc_count": 9
+        },
+        {
+          "key": "115.28",
+          "doc_count": 9
+        },
+        {
+          "key": "116.28",
+          "doc_count": 9
+        },
+        {
+          "key": "116.38",
+          "doc_count": 9
+        },
+        {
+          "key": "116.46",
+          "doc_count": 9
+        },
+        {
+          "key": "117.7",
+          "doc_count": 9
+        },
+        {
+          "key": "118.79",
+          "doc_count": 9
+        },
+        {
+          "key": "119.1",
+          "doc_count": 9
+        },
+        {
+          "key": "119.53",
+          "doc_count": 9
+        },
+        {
+          "key": "119.93",
+          "doc_count": 9
+        },
+        {
+          "key": "120.5",
+          "doc_count": 9
+        },
+        {
+          "key": "120.64",
+          "doc_count": 9
+        },
+        {
+          "key": "120.99",
+          "doc_count": 9
+        },
+        {
+          "key": "121.22",
+          "doc_count": 9
+        },
+        {
+          "key": "121.74",
+          "doc_count": 9
+        },
+        {
+          "key": "122.22",
+          "doc_count": 9
+        },
+        {
+          "key": "122.84",
+          "doc_count": 9
+        },
+        {
+          "key": "123.2",
+          "doc_count": 9
+        },
+        {
+          "key": "123.83",
+          "doc_count": 9
+        },
+        {
+          "key": "124.71",
+          "doc_count": 9
+        },
+        {
+          "key": "125.38",
+          "doc_count": 9
+        },
+        {
+          "key": "125.51",
+          "doc_count": 9
+        },
+        {
+          "key": "126.38",
+          "doc_count": 9
+        },
+        {
+          "key": "126.52",
+          "doc_count": 9
+        },
+        {
+          "key": "126.55",
+          "doc_count": 9
+        },
+        {
+          "key": "127.37",
+          "doc_count": 9
+        },
+        {
+          "key": "127.69",
+          "doc_count": 9
+        },
+        {
+          "key": "127.95",
+          "doc_count": 9
+        },
+        {
+          "key": "128.72",
+          "doc_count": 9
+        },
+        {
+          "key": "128.76",
+          "doc_count": 9
+        },
+        {
+          "key": "129.27",
+          "doc_count": 9
+        },
+        {
+          "key": "130.02",
+          "doc_count": 9
+        },
+        {
+          "key": "130.08",
+          "doc_count": 9
+        },
+        {
+          "key": "130.12",
+          "doc_count": 9
+        },
+        {
+          "key": "130.78",
+          "doc_count": 9
+        },
+        {
+          "key": "132.42",
+          "doc_count": 9
+        },
+        {
+          "key": "132.98",
+          "doc_count": 9
+        },
+        {
+          "key": "133.08",
+          "doc_count": 9
+        },
+        {
+          "key": "133.11",
+          "doc_count": 9
+        },
+        {
+          "key": "133.16",
+          "doc_count": 9
+        },
+        {
+          "key": "133.24",
+          "doc_count": 9
+        },
+        {
+          "key": "134.28",
+          "doc_count": 9
+        },
+        {
+          "key": "134.44",
+          "doc_count": 9
+        },
+        {
+          "key": "134.6",
+          "doc_count": 9
+        },
+        {
+          "key": "134.75",
+          "doc_count": 9
+        },
+        {
+          "key": "135.27",
+          "doc_count": 9
+        },
+        {
+          "key": "135.56",
+          "doc_count": 9
+        },
+        {
+          "key": "136.05",
+          "doc_count": 9
+        },
+        {
+          "key": "136.23",
+          "doc_count": 9
+        },
+        {
+          "key": "136.87",
+          "doc_count": 9
+        },
+        {
+          "key": "137.26",
+          "doc_count": 9
+        },
+        {
+          "key": "137.53",
+          "doc_count": 9
+        },
+        {
+          "key": "138.12",
+          "doc_count": 9
+        },
+        {
+          "key": "139.15",
+          "doc_count": 9
+        },
+        {
+          "key": "139.38",
+          "doc_count": 9
+        },
+        {
+          "key": "139.75",
+          "doc_count": 9
+        },
+        {
+          "key": "139.78",
+          "doc_count": 9
+        },
+        {
+          "key": "139.87",
+          "doc_count": 9
+        },
+        {
+          "key": "139.96",
+          "doc_count": 9
+        },
+        {
+          "key": "140.63",
+          "doc_count": 9
+        },
+        {
+          "key": "140.71",
+          "doc_count": 9
+        },
+        {
+          "key": "140.94",
+          "doc_count": 9
+        }
+      ]
+    },
+    "business_size": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "S",
+          "doc_count": 62110
+        },
+        {
+          "key": "O",
+          "doc_count": 19531
+        }
+      ]
+    },
+    "wage_stats": {
+      "count": 81641,
+      "min": 50.0,
+      "max": 150.0,
+      "avg": 114.06803381812591,
+      "sum": 9312628.348945618,
+      "sum_of_squares": 1110675316.0471053,
+      "variance": 592.8652344280273,
+      "variance_population": 592.8652344280273,
+      "variance_sampling": 592.872496373574,
+      "std_deviation": 24.348824087171586,
+      "std_deviation_population": 24.348824087171586,
+      "std_deviation_sampling": 24.348973209841397,
+      "std_deviation_bounds": {
+        "upper": 162.76568199246907,
+        "lower": 65.37038564378274,
+        "upper_population": 162.76568199246907,
+        "lower_population": 65.37038564378274,
+        "upper_sampling": 162.76598023780872,
+        "lower_sampling": 65.37008739844312
+      }
+    },
+    "median_price": {
+      "values": {
+        "50.0": 117.8592136946035
+      }
+    },
+    "education_level_counts": {
+      "buckets": [
+        {
+          "key": "AA",
+          "doc_count": 3994
+        },
+        {
+          "key": "BA",
+          "doc_count": 65942
+        },
+        {
+          "key": "HS",
+          "doc_count": 7101
+        },
+        {
+          "key": "MA",
+          "doc_count": 3836
+        },
+        {
+          "key": "PHD",
+          "doc_count": 181
+        },
+        {
+          "key": "TEC",
+          "doc_count": 383
+        }
+      ]
+    }
+  },
+  "_stats": {
+    "total_rates": 81641,
+    "hits_capped": true,
+    "min_rate": 50.0,
+    "max_rate": 150.0,
+    "avg_rate": 114.07,
+    "std_deviation": 24.35,
+    "percentiles": {
+      "p10": 78.58867737577509,
+      "p25": 96.90340799878828,
+      "p50_median": 117.8592136946035,
+      "p75": 134.34329461782755,
+      "p90": 143.8888555203164
+    },
+    "outlier_bounds_2sigma": {
+      "lower": 65.37038564378274,
+      "upper": 162.76568199246907
+    },
+    "education_breakdown": {
+      "AA": 3994,
+      "BA": 65942,
+      "HS": 7101,
+      "MA": 3836,
+      "PHD": 181,
+      "TEC": 383
+    },
+    "business_size_breakdown": {
+      "S": 62110,
+      "O": 19531
+    }
+  }
+}

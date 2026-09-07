@@ -1,0 +1,952 @@
+[
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get Latest Date"
+    },
+    "description": "Get the most recent available date for a CFR title.\n\n    CRITICAL: eCFR lags 1-2 business days behind the Federal Register.\n    Using today's date on versioner endpoints causes 404 errors. Call this\n    first to get the safe date, then pass it to other tools.\n\n    Default title 48 = Federal Acquisition Regulations System (FAR, DFARS,\n    and all agency supplements). Other common titles: 2 (Grants/Agreements),\n    5 (Administrative Personnel), 29 (Labor), 41 (Public Contracts).\n\n    Raises ValueError for titles 1-50 that are reserved (no content).\n    ",
+    "inputSchema": {
+      "properties": {
+        "title_number": {
+          "default": 48,
+          "title": "Title Number",
+          "type": "integer"
+        }
+      },
+      "type": "object",
+      "title": "get_latest_dateArguments"
+    },
+    "name": "get_latest_date",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_latest_dateDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get CFR Content"
+    },
+    "description": "Get the full text of a CFR section, subpart, part, or appendix.\n\n    This is the primary workhorse for reading regulatory text. Returns\n    parsed clean text by default (heading, paragraphs, citations, plus\n    tables and editorial_notes when present). Set raw_xml=True to get the\n    original XML instead.\n\n    Specify the narrowest scope possible to keep responses manageable:\n    - section='15.305' for a single FAR section\n    - subpart='15.3' for a subpart\n    - part='15' for an entire part (can be large)\n    - chapter='1' for an entire chapter (often >1 MB, avoid)\n    - appendix='Appendix A to Chapter 2' (with chapter='2') for a DFARS appendix\n\n    Date auto-resolves to the latest available if not provided. Do NOT use\n    today's date directly -- eCFR lags 1-2 business days and today often 404s.\n\n    Title 48 = FAR/DFARS. Chapter 1 = FAR (Parts 1-99), Chapter 2 = DFARS\n    (Parts 200-299). Other chapters = agency FAR supplements (GSAR, VAAR,\n    HSAR, etc.).\n\n    For DFARS clauses, use chapter='2' (e.g., section='252.227-7014').\n\n    part/subpart/section accept int or string. Common prefix mistakes like\n    section='FAR 15.305' or '48 CFR 15.305' are stripped automatically, and\n    trailing paragraph cites like section='15.305(a)(2)' resolve to the base\n    section '15.305'.\n    ",
+    "inputSchema": {
+      "properties": {
+        "title_number": {
+          "default": 48,
+          "title": "Title Number",
+          "type": "integer"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date"
+        },
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part"
+        },
+        "subpart": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subpart"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "chapter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chapter"
+        },
+        "appendix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Appendix"
+        },
+        "raw_xml": {
+          "default": false,
+          "title": "Raw Xml",
+          "type": "boolean"
+        }
+      },
+      "type": "object",
+      "title": "get_cfr_contentArguments"
+    },
+    "name": "get_cfr_content",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_cfr_contentDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get CFR Structure"
+    },
+    "description": "Get the hierarchical table of contents for a CFR title or subset.\n\n    Returns a nested tree of titles, chapters, parts, subparts, and sections\n    with identifiers, descriptions, and byte sizes.\n\n    IMPORTANT: Does NOT support section-level filtering (returns 400).\n    Use part or subpart, then walk the children to find sections.\n\n    Common patterns:\n    - chapter='1' for all FAR parts\n    - chapter='2' for all DFARS parts\n    - part='15' for FAR Part 15 structure\n    - subpart='15.3' for just that subpart's sections\n\n    part/subpart/chapter/appendix accept int or string.\n    ",
+    "inputSchema": {
+      "properties": {
+        "title_number": {
+          "default": 48,
+          "title": "Title Number",
+          "type": "integer"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date"
+        },
+        "chapter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chapter"
+        },
+        "subchapter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subchapter"
+        },
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part"
+        },
+        "subpart": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subpart"
+        },
+        "appendix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Appendix"
+        }
+      },
+      "type": "object",
+      "title": "get_cfr_structureArguments"
+    },
+    "name": "get_cfr_structure",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_cfr_structureDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get Version History"
+    },
+    "description": "Get the version history of a CFR section, subpart, or part.\n\n    Returns a list of content versions with dates, amendment info, and\n    whether each version was a substantive text change vs editorial.\n\n    The 'substantive' field is key: True = the regulatory text actually\n    changed. False = only editorial/formatting change.\n\n    History goes back to January 2017 only. Pre-2017 changes are not tracked.\n\n    part/subpart/section accept int or string.\n    ",
+    "inputSchema": {
+      "properties": {
+        "title_number": {
+          "default": 48,
+          "title": "Title Number",
+          "type": "integer"
+        },
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "subpart": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subpart"
+        }
+      },
+      "type": "object",
+      "title": "get_version_historyArguments"
+    },
+    "name": "get_version_history",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_version_historyDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get Ancestry"
+    },
+    "description": "Get the breadcrumb hierarchy path for a section, part, or appendix.\n\n    Returns ancestors from title down to the target node: title > chapter >\n    subchapter > part > subpart > section. Useful for understanding where\n    a section sits in the CFR hierarchy and what regulation it belongs to.\n\n    part/section/appendix accept int or string.\n    ",
+    "inputSchema": {
+      "properties": {
+        "title_number": {
+          "default": 48,
+          "title": "Title Number",
+          "type": "integer"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date"
+        },
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "appendix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Appendix"
+        }
+      },
+      "type": "object",
+      "title": "get_ancestryArguments"
+    },
+    "name": "get_ancestry",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_ancestryDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Search CFR"
+    },
+    "description": "Full-text search across the Code of Federal Regulations.\n\n    Returns matching sections with excerpts, headings, scores, and hierarchy.\n\n    CRITICAL: Set current_only=True (default) to search only in-effect text.\n    Without it, search returns ALL historical versions including superseded,\n    so a section amended 5 times appears 5 times.\n\n    Search caps at 10,000 total results. Use hierarchy filters (title,\n    chapter, part) to narrow if you hit the cap.\n\n    order controls result ordering: 'relevance' (default), 'newest_first',\n    'oldest_first', 'hierarchy', or 'citations'.\n\n    agency_slugs filters to one or more agencies (single slug string or a\n    list, e.g. 'defense-acquisition-regulations-system'). Use list_agencies()\n    to find slugs.\n\n    last_modified_after/before use YYYY-MM-DD format and filter by the\n    date sections were last amended. Useful for finding recent regulatory changes.\n\n    per_page accepts 1 to 5000 (default 20); paginate with page for more.\n    ",
+    "inputSchema": {
+      "properties": {
+        "query": {
+          "title": "Query",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "chapter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chapter"
+        },
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part"
+        },
+        "subpart": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subpart"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "current_only": {
+          "default": true,
+          "title": "Current Only",
+          "type": "boolean"
+        },
+        "last_modified_after": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Modified After"
+        },
+        "last_modified_before": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Modified Before"
+        },
+        "order": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Order"
+        },
+        "agency_slugs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agency Slugs"
+        },
+        "per_page": {
+          "default": 20,
+          "title": "Per Page",
+          "type": "integer"
+        },
+        "page": {
+          "default": 1,
+          "title": "Page",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "type": "object",
+      "title": "search_cfrArguments"
+    },
+    "name": "search_cfr",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "search_cfrDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "List Agencies"
+    },
+    "description": "List all agencies with their CFR title and chapter references.\n\n    Returns agency names, slugs, and which CFR titles/chapters they own.\n    Useful for finding which chapter corresponds to an agency's FAR supplement.\n\n    summary_only (default True) strips the `children` and most of\n    `cfr_references` to keep the response compact (~20 KB vs ~100 KB).\n    References owned by child agencies are merged into the parent row, so\n    chapter lookups like DFARS (chapter 2, on a DoD child agency) still work\n    in summary mode. Set False for the full raw payload including children.\n    ",
+    "inputSchema": {
+      "properties": {
+        "summary_only": {
+          "default": true,
+          "title": "Summary Only",
+          "type": "boolean"
+        }
+      },
+      "type": "object",
+      "title": "list_agenciesArguments"
+    },
+    "name": "list_agencies",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "list_agenciesDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get Corrections"
+    },
+    "description": "Get editorial corrections for a CFR title.\n\n    Returns a list of corrections with CFR references, corrective actions,\n    error dates, and FR citations. Useful for checking whether a section's\n    current text has been corrected since its last amendment.\n\n    limit caps the number of corrections returned (default 50, max 1000).\n    since_year further filters to corrections with year >= since_year.\n    Title 48 has ~280 corrections across all years; use since_year to\n    focus on recent ones.\n    ",
+    "inputSchema": {
+      "properties": {
+        "title_number": {
+          "default": 48,
+          "title": "Title Number",
+          "type": "integer"
+        },
+        "limit": {
+          "default": 50,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "since_year": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Since Year"
+        }
+      },
+      "type": "object",
+      "title": "get_correctionsArguments"
+    },
+    "name": "get_corrections",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_correctionsDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Lookup FAR Clause"
+    },
+    "description": "Convenience tool: look up the current text of a FAR or DFARS clause.\n\n    Pass a section identifier like '15.305', '52.212-4', '2.101', etc.\n    Default chapter='1' (FAR). Use chapter='2' for DFARS (e.g., '252.227-7014').\n\n    Auto-resolves the latest available date. Returns parsed clean text\n    with heading, paragraphs, and citations.\n\n    Common FAR sections: 2.101 (Definitions), 9.104-1 (Responsibility),\n    15.305 (Proposal Evaluation), 19.502-2 (Small Business Set-Asides),\n    52.212-4 (Commercial Terms), 52.212-5 (Required Commercial Terms).\n    ",
+    "inputSchema": {
+      "properties": {
+        "section_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Section Id"
+        },
+        "chapter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "default": "1",
+          "title": "Chapter"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date"
+        }
+      },
+      "required": [
+        "section_id"
+      ],
+      "type": "object",
+      "title": "lookup_far_clauseArguments"
+    },
+    "name": "lookup_far_clause",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "lookup_far_clauseDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Compare Versions"
+    },
+    "description": "Compare the text of a CFR section at two different dates.\n\n    Useful for understanding what changed in a regulatory amendment. Returns\n    the parsed text at both dates side by side. You can then diff the\n    paragraphs to identify specific changes.\n\n    Dates must be in YYYY-MM-DD format and within the eCFR's tracking range\n    (January 2017 to present). Both dates must not exceed the title's\n    up_to_date_as_of value.\n\n    This tool always returns the section-level XML parsed -- pass a small\n    section_id like '15.305', not a whole part. Whole-part comparisons can\n    exceed 100 KB per side.\n    ",
+    "inputSchema": {
+      "properties": {
+        "section_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Section Id"
+        },
+        "date_before": {
+          "title": "Date Before",
+          "type": "string"
+        },
+        "date_after": {
+          "title": "Date After",
+          "type": "string"
+        },
+        "title_number": {
+          "default": 48,
+          "title": "Title Number",
+          "type": "integer"
+        },
+        "chapter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chapter"
+        }
+      },
+      "required": [
+        "section_id",
+        "date_before",
+        "date_after"
+      ],
+      "type": "object",
+      "title": "compare_versionsArguments"
+    },
+    "name": "compare_versions",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "compare_versionsDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "List Sections in Part"
+    },
+    "description": "List all sections in a FAR/DFARS part with their headings.\n\n    Returns a flat list of sections extracted from the structure tree.\n    Useful for understanding the scope of a FAR part before drilling into\n    specific sections.\n\n    Default chapter='1' (FAR). Use chapter='2' for DFARS.\n\n    part_number accepts int or string.\n    ",
+    "inputSchema": {
+      "properties": {
+        "part_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Part Number"
+        },
+        "chapter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "default": "1",
+          "title": "Chapter"
+        },
+        "title_number": {
+          "default": 48,
+          "title": "Title Number",
+          "type": "integer"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date"
+        }
+      },
+      "required": [
+        "part_number"
+      ],
+      "type": "object",
+      "title": "list_sections_in_partArguments"
+    },
+    "name": "list_sections_in_part",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "list_sections_in_partDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Find FAR Definition"
+    },
+    "description": "Search for a term's definition in FAR 2.101 (master definition section).\n\n    FAR 2.101 contains definitions used throughout the Federal Acquisition\n    Regulation. This tool fetches the full section and searches for paragraphs\n    containing the term, returning matching paragraphs with surrounding context.\n\n    Note: FAR 2.101 is large (~109KB XML). This tool parses the full section\n    server-side and returns only matching paragraphs.\n\n    term must be at least 3 characters. max_matches caps returned matches\n    (default 20, max 100); common terms like 'offeror' hit many paragraphs.\n    ",
+    "inputSchema": {
+      "properties": {
+        "term": {
+          "title": "Term",
+          "type": "string"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date"
+        },
+        "max_matches": {
+          "default": 20,
+          "title": "Max Matches",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "term"
+      ],
+      "type": "object",
+      "title": "find_far_definitionArguments"
+    },
+    "name": "find_far_definition",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "find_far_definitionDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Find Recent Changes"
+    },
+    "description": "Find CFR sections that have been modified since a given date.\n\n    Uses the search API with last_modified_on_or_after filter to find\n    sections amended after the specified date. Returns section identifiers,\n    headings, and excerpts, most recently amended first.\n\n    since_date must be in YYYY-MM-DD format. Results are capped at 10,000\n    by the API. Use title/chapter/part filters to narrow if needed.\n\n    Common pattern: find FAR changes since a specific date to check for\n    regulatory updates that might affect ongoing acquisitions.\n    ",
+    "inputSchema": {
+      "properties": {
+        "since_date": {
+          "title": "Since Date",
+          "type": "string"
+        },
+        "title": {
+          "default": 48,
+          "title": "Title",
+          "type": "integer"
+        },
+        "chapter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chapter"
+        },
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part"
+        },
+        "per_page": {
+          "default": 100,
+          "title": "Per Page",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "since_date"
+      ],
+      "type": "object",
+      "title": "find_recent_changesArguments"
+    },
+    "name": "find_recent_changes",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "find_recent_changesDictOutput"
+    }
+  }
+]

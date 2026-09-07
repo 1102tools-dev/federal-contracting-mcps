@@ -1,0 +1,22 @@
+{
+  "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide",
+  "retrieved_at": "2026-09-07T17:05:42+00:00",
+  "content_sha256": "43d0a7f24cab87d845ed23400e3315bfe277199c4e865f97c64b4809496caca5",
+  "count": 1,
+  "results": [
+    {
+      "source_id": "model-part-3d4014ceb2736ffc3079",
+      "source_kind": "model_deviation",
+      "part": 10,
+      "title": "Part 10 - Market Research",
+      "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide/far-overhaul-part-10",
+      "issuance_date": "2025-05-22",
+      "updated_date": "2026-03-16",
+      "index_ordinal": 10,
+      "agency_deviation_count": 38
+    }
+  ],
+  "warnings": [
+    "This index documents posted sources; it does not decide which text governs a procurement."
+  ]
+}

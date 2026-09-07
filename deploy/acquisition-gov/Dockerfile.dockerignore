@@ -1,0 +1,10 @@
+**
+!servers/
+!servers/acquisition-gov-mcp/
+!servers/acquisition-gov-mcp/pyproject.toml
+!servers/acquisition-gov-mcp/uv.lock
+!servers/acquisition-gov-mcp/readme.md
+!servers/acquisition-gov-mcp/license
+!servers/acquisition-gov-mcp/src/
+!servers/acquisition-gov-mcp/src/**
+**/__pycache__/

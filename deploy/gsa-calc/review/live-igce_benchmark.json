@@ -1,0 +1,34 @@
+{
+  "labor_category": "program manager",
+  "filters_applied": [],
+  "total_rates": 9457,
+  "hits_capped": false,
+  "min_rate": 27.920000076293945,
+  "max_rate": 499.9100036621094,
+  "avg_rate": 188.8,
+  "std_deviation": 60.22,
+  "percentiles": {
+    "p10": 118.94913365222274,
+    "p25": 149.09126021415662,
+    "p50_median": 183.0145249505155,
+    "p75": 221.17925934676674,
+    "p90": 265.33282514822344
+  },
+  "outlier_bounds_2sigma": {
+    "lower": 68.36730251996593,
+    "upper": 309.2373343416523
+  },
+  "education_breakdown": {
+    "AA": 99,
+    "BA": 7954,
+    "HS": 144,
+    "MA": 1199,
+    "PHD": 51,
+    "TEC": 5
+  },
+  "business_size_breakdown": {
+    "S": 6741,
+    "O": 2716
+  },
+  "_note": "Ceiling rates (NTE), not prices paid. Sample size matters for IGCE reliability."
+}

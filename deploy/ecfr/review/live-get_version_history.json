@@ -1,0 +1,76 @@
+{
+  "content_versions": [
+    {
+      "date": "2017-01-01",
+      "amendment_date": "2017-01-01",
+      "issue_date": "2017-01-01",
+      "identifier": "1.102",
+      "name": "1.102   Statement of guiding principles for the Federal Acquisition System.",
+      "part": "1",
+      "substantive": true,
+      "removed": false,
+      "subpart": "1.1",
+      "title": "48",
+      "type": "section"
+    },
+    {
+      "date": "2021-11-04",
+      "amendment_date": "2021-11-04",
+      "issue_date": "2021-11-04",
+      "identifier": "1.102",
+      "name": "1.102   Statement of guiding principles for the Federal Acquisition System.",
+      "part": "1",
+      "substantive": true,
+      "removed": false,
+      "subpart": "1.1",
+      "title": "48",
+      "type": "section"
+    },
+    {
+      "date": "2021-12-06",
+      "amendment_date": "2021-12-06",
+      "issue_date": "2021-12-06",
+      "identifier": "1.102",
+      "name": "1.102   Statement of guiding principles for the Federal Acquisition System.",
+      "part": "1",
+      "substantive": true,
+      "removed": false,
+      "subpart": "1.1",
+      "title": "48",
+      "type": "section"
+    },
+    {
+      "date": "2021-12-06",
+      "amendment_date": "2021-12-06",
+      "issue_date": "2022-11-03",
+      "identifier": "1.102",
+      "name": "1.102   Statement of guiding principles for the Federal Acquisition System.",
+      "part": "1",
+      "substantive": false,
+      "removed": false,
+      "subpart": "1.1",
+      "title": "48",
+      "type": "section"
+    },
+    {
+      "date": "2021-12-06",
+      "amendment_date": "2021-12-06",
+      "issue_date": "2023-04-05",
+      "identifier": "1.102",
+      "name": "1.102   Statement of guiding principles for the Federal Acquisition System.",
+      "part": "1",
+      "substantive": false,
+      "removed": false,
+      "subpart": "1.1",
+      "title": "48",
+      "type": "section"
+    }
+  ],
+  "meta": {
+    "title": "48",
+    "section": "1.102",
+    "result_count": "5",
+    "latest_amendment_date": "2021-12-06",
+    "latest_issue_date": "2023-04-05"
+  }
+}

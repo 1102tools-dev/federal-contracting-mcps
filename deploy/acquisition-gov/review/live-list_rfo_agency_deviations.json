@@ -1,0 +1,76 @@
+{
+  "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide",
+  "retrieved_at": "2026-09-07T17:05:58+00:00",
+  "content_sha256": "43d0a7f24cab87d845ed23400e3315bfe277199c4e865f97c64b4809496caca5",
+  "count": 3,
+  "total_matches": 38,
+  "results": [
+    {
+      "source_id": "agency-deviation-f318571207c43a8f705e",
+      "source_kind": "agency_class_deviation",
+      "agency": "National Science Foundation (NSF)",
+      "far_parts": [
+        10
+      ],
+      "source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/NSF_RFO_Deviation_Part-10.pdf",
+      "index_occurrence": 1,
+      "issuance_date": null,
+      "updated_date": null,
+      "effective_date": null,
+      "expiration_date": null,
+      "applicability_text": null,
+      "retrieved_at": "2026-09-07T17:05:58+00:00",
+      "content_sha256": null,
+      "text_extraction_status": "not_retrieved",
+      "warnings": [
+        "Dates and applicability require retrieval of the official document."
+      ]
+    },
+    {
+      "source_id": "agency-deviation-e9c17c7e03d096201a91",
+      "source_kind": "agency_class_deviation",
+      "agency": "Office of Personnel Management (OPM)",
+      "far_parts": [
+        10
+      ],
+      "source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/OPM_RFO_Deviation_Part-10.pdf",
+      "index_occurrence": 2,
+      "issuance_date": null,
+      "updated_date": null,
+      "effective_date": null,
+      "expiration_date": null,
+      "applicability_text": null,
+      "retrieved_at": "2026-09-07T17:05:58+00:00",
+      "content_sha256": null,
+      "text_extraction_status": "not_retrieved",
+      "warnings": [
+        "Dates and applicability require retrieval of the official document."
+      ]
+    },
+    {
+      "source_id": "agency-deviation-82e056326f2f6a973584",
+      "source_kind": "agency_class_deviation",
+      "agency": "Pension Benefit Guaranty Corporation (PBGC)",
+      "far_parts": [
+        10
+      ],
+      "source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/PBGC_RFO_Deviation_Part_10.pdf",
+      "index_occurrence": 3,
+      "issuance_date": null,
+      "updated_date": null,
+      "effective_date": null,
+      "expiration_date": null,
+      "applicability_text": null,
+      "retrieved_at": "2026-09-07T17:05:58+00:00",
+      "content_sha256": null,
+      "text_extraction_status": "not_retrieved",
+      "warnings": [
+        "Dates and applicability require retrieval of the official document."
+      ]
+    }
+  ],
+  "warnings": [
+    "Documents are listed as posted; retrieve the PDF before relying on dates or applicability.",
+    "Results were truncated from 38 to 3."
+  ]
+}

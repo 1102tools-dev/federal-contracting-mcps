@@ -1,0 +1,76 @@
+{
+  "endpoint": "https://federal-register.1102tools.com/mcp",
+  "results": [
+    {
+      "tool": "search_documents",
+      "ok": true,
+      "seconds": 5.58,
+      "arguments": {
+        "term": "Federal Acquisition Regulation",
+        "per_page": 3
+      }
+    },
+    {
+      "tool": "get_document",
+      "ok": true,
+      "seconds": 3.1,
+      "arguments": {
+        "document_number": "2026-18219"
+      }
+    },
+    {
+      "tool": "get_documents_batch",
+      "ok": true,
+      "seconds": 3.2,
+      "arguments": {
+        "document_numbers": [
+          "2026-18219",
+          "2026-18190",
+          "2026-18187"
+        ]
+      }
+    },
+    {
+      "tool": "far_case_history",
+      "ok": true,
+      "seconds": 6.01,
+      "arguments": {
+        "docket_id": "TD 10054"
+      }
+    },
+    {
+      "tool": "get_facet_counts",
+      "ok": true,
+      "seconds": 3.4,
+      "arguments": {
+        "facet": "type",
+        "term": "Federal Acquisition Regulation"
+      }
+    },
+    {
+      "tool": "get_public_inspection",
+      "ok": true,
+      "seconds": 3.03,
+      "arguments": {
+        "limit": 3
+      }
+    },
+    {
+      "tool": "list_agencies",
+      "ok": true,
+      "seconds": 3.56,
+      "arguments": {
+        "query": "General Services"
+      }
+    },
+    {
+      "tool": "open_comment_periods",
+      "ok": true,
+      "seconds": 3.0,
+      "arguments": {
+        "term": "acquisition",
+        "limit": 3
+      }
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "vendor": "T47 INTERNATIONAL, INC.",
+  "total_categories": 28,
+  "page": 1,
+  "returned": 3,
+  "returned_range": "rows 1-3 of 28",
+  "has_more": true,
+  "next_page": 2,
+  "rates": [
+    {
+      "labor_category": "Access Control I",
+      "current_price": 30.83,
+      "next_year_price": 31.54,
+      "education_level": "High School",
+      "min_years_experience": 0,
+      "sin": "541620,561612",
+      "idv_piid": "47QRAA22D004N",
+      "business_size": "S"
+    },
+    {
+      "labor_category": "Access Control II",
+      "current_price": 27.62,
+      "next_year_price": 28.26,
+      "education_level": "High School",
+      "min_years_experience": 0,
+      "sin": "541620,561612",
+      "idv_piid": "47QRAA22D004N",
+      "business_size": "S"
+    },
+    {
+      "labor_category": "Administrative/Mail Clerk Support II",
+      "current_price": 24.17,
+      "next_year_price": 24.72,
+      "education_level": "High School",
+      "min_years_experience": 3,
+      "sin": "541620,561210FAC",
+      "idv_piid": "47QRAA22D004N",
+      "business_size": "S"
+    }
+  ],
+  "_stats": {
+    "total_rates": 28,
+    "hits_capped": false,
+    "min_rate": 20.3799991607666,
+    "max_rate": 49.810001373291016,
+    "avg_rate": 33.81,
+    "std_deviation": 8.45,
+    "percentiles": {
+      "p10": 24.170000076293945,
+      "p25": 25.799999237060547,
+      "p50_median": 32.83000183105469,
+      "p75": 40.310001373291016,
+      "p90": 47.56999969482422
+    },
+    "outlier_bounds_2sigma": {
+      "lower": 16.909032319820174,
+      "upper": 50.707396327902345
+    },
+    "education_breakdown": {
+      "AA": 4,
+      "BA": 6,
+      "HS": 18,
+      "MA": 0,
+      "PHD": 0,
+      "TEC": 0
+    },
+    "business_size_breakdown": {
+      "S": 28
+    }
+  },
+  "_truncation_note": "Partial rate card: rows are ordered by labor_category (asc), so this slice is biased toward the start of that ordering (alphabetical by labor category with the defaults). Categories later in the ordering, like 'Software Engineer' or 'Systems Engineer', may not appear until later pages. Call again with page=2 to continue; do not present a partial slice as the complete card."
+}

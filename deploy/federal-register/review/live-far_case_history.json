@@ -1,0 +1,65 @@
+{
+  "docket_id": "TD 10054",
+  "total_documents": 1,
+  "docket_matches": 1,
+  "term_matches": 1,
+  "truncated": false,
+  "documents": [
+    {
+      "title": "Car Loan Interest Deduction",
+      "document_number": "2026-18219",
+      "publication_date": "2026-09-08",
+      "type": "Rule",
+      "abstract": "This document contains final regulations regarding the deduction for certain taxpayers for an amount up to $10,000 of qualified passenger vehicle loan interest. This document also contains final regulations regarding new information reporting requirements for certain persons who, in a trade or business, receive from any individual interest aggregating $600 or more for any calendar year on a specified passenger vehicle loan, including applicable penalties for failures to file information returns or furnish payee statements as required. These regulations affect taxpayers that may deduct qualified passenger vehicle loan interest, and also persons subject to these information reporting requirements.",
+      "agencies": [
+        {
+          "raw_name": "DEPARTMENT OF THE TREASURY",
+          "name": "Treasury Department",
+          "id": 497,
+          "url": "https://www.federalregister.gov/agencies/treasury-department",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/497",
+          "parent_id": null,
+          "slug": "treasury-department"
+        },
+        {
+          "raw_name": "Internal Revenue Service",
+          "name": "Internal Revenue Service",
+          "id": 254,
+          "url": "https://www.federalregister.gov/agencies/internal-revenue-service",
+          "json_url": "https://www.federalregister.gov/api/v1/agencies/254",
+          "parent_id": 497,
+          "slug": "internal-revenue-service"
+        }
+      ],
+      "docket_ids": [
+        "TD 10054"
+      ],
+      "regulation_id_numbers": [
+        "1545-BR75"
+      ],
+      "comment_url": null,
+      "comments_close_on": null,
+      "cfr_references": [
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "1",
+          "title": 26
+        },
+        {
+          "chapter": null,
+          "citation_url": null,
+          "part": "301",
+          "title": 26
+        }
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/09/08/2026-18219/car-loan-interest-deduction",
+      "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-08/pdf/2026-18219.pdf",
+      "citation": "91 FR 57214",
+      "dates": "Effective date: The final regulations are effective on November 9, 2026.",
+      "effective_on": "2026-11-09",
+      "action": "Final regulations.",
+      "significant": null
+    }
+  ]
+}
