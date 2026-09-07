@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<title>USAspending MCP by 1102tools</title>
+<path d="M112 366H400" stroke="#ffffff" stroke-width="20" stroke-linecap="round"/>
+<rect x="124" y="258" width="56" height="80" rx="12" fill="#ffffff"/>
+<rect x="222" y="214" width="56" height="124" rx="12" fill="#ffffff"/>
+<rect x="320" y="166" width="56" height="172" rx="12" fill="#ffffff"/>
+<circle cx="168" cy="160" r="65" fill="none" stroke="#ffffff" stroke-width="14"/>
+<path d="M188 137C176 125 145 128 145 145C145 165 190 155 190 175C190 193 158 197 145 184M168 117V204" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+</svg>
