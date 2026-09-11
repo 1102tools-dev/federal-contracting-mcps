@@ -171,12 +171,6 @@ Each server directory ships its own `pyproject.toml`, source, regression tests, 
 
 [federal-contracting-prompts](https://github.com/1102tools-dev/federal-contracting-prompts): research requests labeled with the MCPs they need, including examples that combine multiple sources.
 
-## Additional workflow components
-
-[federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills): portable skills that orchestrate these MCPs into acquisition deliverables and evidence workflows, including SOW/PWS, three IGCE methods, OT scope and cost, market research, GovCon growth, and acquisition policy.
-
-MCPs handle data. Skills handle deliverables.
-
 ## Why MCPs (and not skills for the API calls)
 
 - **Deterministic.** MCP servers execute tested Python. Claude does not generate API-call code on the fly. Source responses can change as upstream data changes.
