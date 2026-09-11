@@ -2,15 +2,21 @@
 
 Free and open source MCP servers for federal contracting data and policy tracking. SAM.gov, USASpending, GSA CALC+, BLS OEWS, per diem, eCFR, Federal Register, Regulations.gov, and Acquisition.gov are exposed through deterministic tool calls.
 
-Your assistant queries the real APIs instead of recalling what it thinks the FAR says. Same input, same output, every time.
+Your assistant calls source-specific tools to retrieve data and documents. Results reflect the upstream sources at retrieval time.
 
 Website: [1102tools.com](https://1102tools.com)
 
-## Most users should start with an agent
+## Start with a prompt and its matching MCPs
 
-The packaged [1102tools agents](https://github.com/1102tools-dev/federal-contracting-agents) include the source integrations required by each guided job. Some federal providers still require a free account or API key. The beginner-facing [HTML setup instructions](https://1102tools.com/setup) and [downloadable Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) cover Codex and Claude Code.
+The [federal contracting prompt library](https://github.com/1102tools-dev/federal-contracting-prompts) contains copy-and-adapt requests for opportunities, competitor research, awards, pricing, regulations, and FAR Overhaul research. Each request names the MCPs it uses.
 
-Use this repository when you specifically want standalone source servers or custom MCP configurations. Follow each selected server's README and testing record; standalone setup is advanced and self-supported. The MCP-oriented [request library](https://github.com/1102tools-dev/federal-contracting-prompts) remains available as a repository, not a maintained PDF product.
+1. Choose a prompt and identify its required sources.
+2. Install those servers using the individual READMEs in the [server catalog](#server-catalog), configure any required keys, and confirm the tools are available in your client.
+3. Replace the prompt's placeholders and run it. Ask for source links, relevant dates, and any missing evidence.
+
+The prompt describes the work; the MCP supplies the source tools. For example, competitor research combines USASpending award records with SAM.gov registration data, while a FAR Overhaul comparison combines eCFR text with Acquisition.gov model text and posted agency deviations. See the [prompt-to-MCP map](https://github.com/1102tools-dev/federal-contracting-prompts#which-mcp-does-my-prompt-need).
+
+The public website is temporarily under construction. Use this repository's server READMEs for setup instructions.
 
 ![Architecture diagram showing how a question travels from an AI client to a local MCP server and an official federal source. Regulatory and rulemaking coverage now includes eCFR, Federal Register, Regulations.gov, and Acquisition.gov.](docs/architecture.png)
 
@@ -111,7 +117,7 @@ Combined: 133 deterministic tools. The Acquisition.gov live source gate passed o
 
 ## Install
 
-Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/). MCP is an open standard, but standalone client setup is outside the beginner support path. Use the exact configuration and current evidence in the selected server directory.
+Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/). Use the exact configuration and current testing evidence in the selected server directory; configuration differs by client.
 
 **1. Register the free API keys you need.** [BLS](https://data.bls.gov/registrationEngine/), [api.data.gov](https://api.data.gov/signup/) (covers Per Diem and Regulations.gov), and [SAM.gov Help](https://sam.gov/help). USASpending, GSA CALC+, eCFR, Federal Register, and Acquisition.gov need no key. Never paste a key into chat.
 
@@ -133,7 +139,7 @@ Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/). MCP is an open stand
 }
 ```
 
-The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes and new tools arrive automatically. Without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup; if your platform enforces a short MCP startup timeout, raise it (the setup guide covers this per platform).
+The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes and new tools arrive automatically. Without it, uv keeps serving whatever version it first cached. It adds network time at startup; check your client's timeout settings if startup fails.
 
 **3. Restart the client.** Each server's README has its own block with the correct package name and environment variable.
 
@@ -161,7 +167,11 @@ federal-contracting-mcps/
 
 Each server directory ships its own `pyproject.toml`, source, regression tests, Dockerfile, and testing record.
 
-## Companion repo
+## Companion prompt library
+
+[federal-contracting-prompts](https://github.com/1102tools-dev/federal-contracting-prompts): research requests labeled with the MCPs they need, including examples that combine multiple sources.
+
+## Additional workflow components
 
 [federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills): portable skills that orchestrate these MCPs into acquisition deliverables and evidence workflows, including SOW/PWS, three IGCE methods, OT scope and cost, market research, GovCon growth, and acquisition policy.
 
@@ -169,7 +179,7 @@ MCPs handle data. Skills handle deliverables.
 
 ## Why MCPs (and not skills for the API calls)
 
-- **Deterministic.** MCP servers execute tested Python. Claude does not generate API-call code on the fly. Same input, same output.
+- **Deterministic.** MCP servers execute tested Python. Claude does not generate API-call code on the fly. Source responses can change as upstream data changes.
 - **Low context cost.** Tool schemas are ~100 tokens each. The deprecated API-data skills cost 500-1000 lines of context per run.
 - **Production-hardened.** Each MCP went through 3-6 audit rounds with live testing against its production API.
 - **Portable protocol.** MCP is an open standard, so the same source server can be configured in multiple compatible clients. Current support claims remain bounded by each server's testing record.
