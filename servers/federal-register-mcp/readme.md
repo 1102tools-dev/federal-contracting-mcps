@@ -4,7 +4,7 @@
 
 MCP server for the Federal Register API. Proposed rules, final rules, notices, executive orders, comment periods, and regulatory tracking since 1994.
 
-No authentication required. Standalone MCP use is an advanced, self-supported path; packaged agents are the maintained beginner path.
+No authentication required. Use the installation and configuration instructions below to connect this MCP directly.
 
 *Tested and hardened through six rounds of integration testing against the live Federal Register API. 228 regression tests (132 offline, 96 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines. See [testing.md](testing.md) for the full testing record.*
 
@@ -36,7 +36,7 @@ uvx federal-register-mcp
 
 ## Configuration
 
-MCP is an open standard, and compatible clients can run this server. The maintained [1102tools Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers packaged agents in Codex and Claude Code, not standalone server configuration. Use the block below as the server definition and adapt its placement to your client.
+Use the configuration below as the server definition and adapt its placement to your compatible MCP client. For practical requests using this source, see the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
 ```json
 {

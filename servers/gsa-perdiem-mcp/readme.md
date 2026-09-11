@@ -4,7 +4,7 @@
 
 MCP server for the GSA Per Diem Rates API. Federal travel lodging and M&IE rates for IGCEs and travel cost estimation.
 
-Works without configuration using DEMO_KEY. Optional free API key for higher rate limits. Standalone MCP use is an advanced, self-supported path; packaged agents are the maintained beginner path.
+Works without configuration using DEMO_KEY. Optional free API key for higher rate limits. Use the installation and configuration instructions below to connect this MCP directly.
 
 *Tested and hardened through seven rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 437 regression tests covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, and 14 round-7 findings fixed. See [testing.md](testing.md) for the full testing record.*
 
@@ -49,7 +49,7 @@ uvx gsa-perdiem-mcp
 
 ## Configuration
 
-MCP is an open standard, and compatible clients can run this server. The maintained [1102tools Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers packaged agents in Codex and Claude Code, not standalone server configuration. Use the block below as the server definition and adapt its placement to your client.
+Use the configuration below as the server definition and adapt its placement to your compatible MCP client. For practical requests using this source, see the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
 **Recommended (with your own key):**
 ```json

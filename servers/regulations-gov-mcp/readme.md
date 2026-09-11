@@ -4,7 +4,7 @@
 
 MCP server for the Regulations.gov API. Federal rulemaking dockets, proposed rules, final rules, public comments, and comment period tracking.
 
-Optional free API key for higher rate limits. Standalone MCP use is an advanced, self-supported path; packaged agents are the maintained beginner path.
+Optional free API key for higher rate limits. Use the installation and configuration instructions below to connect this MCP directly.
 
 *Tested and hardened through five rounds of integration testing against the live Regulations.gov API, including a round-7 independent re-audit with live verification. 197 regression tests covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, and 12 round-7 findings fixed. See [testing.md](testing.md) for the full testing record.*
 
@@ -53,7 +53,7 @@ uvx regulationsgov-mcp
 
 ## Configuration
 
-MCP is an open standard, and compatible clients can run this server. The maintained [1102tools Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers packaged agents in Codex and Claude Code, not standalone server configuration. Use the block below as the server definition and adapt its placement to your client.
+Use the configuration below as the server definition and adapt its placement to your compatible MCP client. For practical requests using this source, see the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
 **Recommended (with your own key):**
 ```json

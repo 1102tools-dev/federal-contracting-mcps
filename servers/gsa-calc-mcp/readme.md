@@ -4,7 +4,7 @@
 
 MCP server for the GSA CALC+ Labor Ceiling Rates API. Query awarded GSA MAS schedule hourly rates for IGCE development, price reasonableness analysis, and market research.
 
-No authentication required. Standalone MCP use is an advanced, self-supported path; packaged agents are the maintained beginner path.
+No authentication required. Use the installation and configuration instructions below to connect this MCP directly.
 
 *Tested and hardened through six audit rounds against the GSA CALC+ API. 352 regression tests (247 offline, 105 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). See [testing.md](testing.md) for the full testing record.*
 
@@ -44,7 +44,7 @@ pip install -e .
 
 ## Configuration
 
-MCP is an open standard, and compatible clients can run this server. The maintained [1102tools Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers packaged agents in Codex and Claude Code, not standalone server configuration. Use the block below as the server definition and adapt its placement to your client.
+Use the configuration below as the server definition and adapt its placement to your compatible MCP client. For practical requests using this source, see the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
 ```json
 {

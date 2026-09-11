@@ -4,7 +4,7 @@
 
 MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplement text with no authentication required.
 
-Standalone MCP use is an advanced, self-supported path; packaged agents are the maintained beginner path.
+Use the installation and configuration instructions below to connect this MCP directly.
 
 *Tested and hardened through six rounds of integration testing against the live eCFR API. 295 regression tests (182 offline, 113 live-gated) covering 2 P0 catastrophic bugs, 26 P1 silent-wrong-data bugs, 32 P2 validation gaps, and the round-6 audit fixes (Title 48 chapter whitelist, table extraction, appendix access). See [testing.md](testing.md) for the full testing record.*
 
@@ -57,7 +57,7 @@ pip install -e .
 
 ## Configuration
 
-MCP is an open standard, and compatible clients can run this server. The maintained [1102tools Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers packaged agents in Codex and Claude Code, not standalone server configuration. Use the block below as the server definition and adapt its placement to your client.
+Use the configuration below as the server definition and adapt its placement to your compatible MCP client. For practical requests using this source, see the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
 ```json
 {
@@ -114,7 +114,7 @@ All data from [ecfr.gov](https://www.ecfr.gov), the continuously updated online 
 
 ## Part of
 
-[federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 9 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills).
+[federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 9 MCP servers for federal contracting data. Pair these sources with the [MCP prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
 ## Request pacing
 

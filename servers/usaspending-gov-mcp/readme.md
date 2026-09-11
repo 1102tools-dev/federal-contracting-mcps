@@ -4,7 +4,7 @@
 
 MCP server for the USASpending.gov federal contract, award, subaward, recipient, agency, and federal account API.
 
-No API key required. Standalone MCP use is an advanced, self-supported path; packaged agents are the maintained beginner path.
+No API key required. Use the installation and configuration instructions below to connect this MCP directly.
 
 *Tested and hardened through ten rounds of integration testing against the live USASpending.gov API. 2,151 regression tests (1,783 offline, 368 live-gated); round 10 fixed 25 verified findings across both tool families, including filters that could never match and a tool that had never once succeeded. See [testing.md](testing.md) for the full testing record.*
 
@@ -108,7 +108,7 @@ pip install -e .
 
 ## Configuration
 
-MCP is an open standard, and compatible clients can run this server. The maintained [1102tools Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers packaged agents in Codex and Claude Code, not standalone server configuration. Use the block below as the server definition and adapt its placement to your client.
+Use the configuration below as the server definition and adapt its placement to your compatible MCP client. For practical requests using this source, see the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
 ```json
 {

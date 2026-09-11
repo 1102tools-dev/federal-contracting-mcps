@@ -4,7 +4,7 @@
 
 MCP server for SAM.gov entity registration, exclusion/debarment, contract opportunity, contract award, federal hierarchy, and FFATA subaward data.
 
-Requires a free SAM.gov API key. Standalone MCP use is an advanced, self-supported path; packaged agents are the maintained beginner path.
+Requires a free SAM.gov API key. Use the installation and configuration instructions below to connect this MCP directly.
 
 *Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,136 regression tests. v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied to all 8 MCPs in the suite. See [testing.md](testing.md) for the full testing record.*
 
@@ -88,7 +88,7 @@ pip install -e .
 
 ## Configuration
 
-MCP is an open standard, and compatible clients can run this server. The maintained [1102tools Agent Setup Guide](https://1102tools.com/downloads/1102tools-agent-setup-guide.pdf) covers packaged agents in Codex and Claude Code, not standalone server configuration. Use the block below as the server definition and adapt its placement to your client.
+Use the configuration below as the server definition and adapt its placement to your compatible MCP client. For practical requests using this source, see the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
 ```json
 {
@@ -154,7 +154,7 @@ Once configured, these examples illustrate the server's advanced standalone use.
 
 ## Part of
 
-[federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 9 MCP servers for federal contracting data. Companion to [federal-contracting-skills](https://github.com/1102tools-dev/federal-contracting-skills).
+[federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 9 MCP servers for federal contracting data. Pair these sources with the [MCP prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
 ## Request pacing
 
