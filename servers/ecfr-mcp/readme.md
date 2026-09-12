@@ -4,9 +4,17 @@
 
 MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplement text with no authentication required.
 
-Use the installation and configuration instructions below to connect this MCP directly.
+Connect through the published ChatGPT plugin below, or use the installation and configuration instructions for another compatible MCP client.
 
 *Tested and hardened through six rounds of integration testing against the live eCFR API. 295 regression tests (182 offline, 113 live-gated) covering 2 P0 catastrophic bugs, 26 P1 silent-wrong-data bugs, 32 P2 validation gaps, and the round-6 audit fixes (Title 48 chapter whitelist, table extraction, appendix access). See [testing.md](testing.md) for the full testing record.*
+
+## Available in ChatGPT
+
+[Install eCFR in ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34)
+
+This MCP is also available as a published plugin in the ChatGPT directory. Open the listing to install and connect it; no user API key or local Python setup is required. Then try a [matching prompt](https://1102tools.com/#ecfr). Prompts that combine sources require every listed MCP to be connected.
+
+The installation and configuration sections below cover direct setup in other compatible MCP clients.
 
 ## What it does
 

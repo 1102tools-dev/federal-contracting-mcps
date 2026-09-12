@@ -4,9 +4,17 @@
 
 MCP server for the GSA CALC+ Labor Ceiling Rates API. Query awarded GSA MAS schedule hourly rates for IGCE development, price reasonableness analysis, and market research.
 
-No authentication required. Use the installation and configuration instructions below to connect this MCP directly.
+No authentication required. Connect through the published ChatGPT plugin below, or use the installation and configuration instructions for another compatible MCP client.
 
 *Tested and hardened through six audit rounds against the GSA CALC+ API. 352 regression tests (247 offline, 105 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). See [testing.md](testing.md) for the full testing record.*
+
+## Available in ChatGPT
+
+[Install GSA CALC+ in ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1)
+
+This MCP is also available as a published plugin in the ChatGPT directory. Open the listing to install and connect it; no user API key or local Python setup is required. Then try a [matching prompt](https://1102tools.com/#gsa-calc). Prompts that combine sources require every listed MCP to be connected.
+
+The installation and configuration sections below cover direct setup in other compatible MCP clients.
 
 ## What it does
 
