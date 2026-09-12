@@ -142,7 +142,7 @@ async def test_same_process_concurrent_requests_serialize_before_file_lock(
         def __init__(self, *_args, **_kwargs) -> None:
             self.held = False
 
-        def acquire(self) -> None:
+        def acquire(self, **_kwargs) -> None:
             if type(self).active:
                 raise RuntimeError("overlapping same-process file-lock acquisition")
             type(self).active = True
@@ -200,3 +200,48 @@ def test_all_http_sites_are_paced_and_helpers_are_synchronized() -> None:
         assert source.count(".request_slot()") == count
         assert "await asyncio.sleep(0.3)" not in source
         assert (server_path.parent / "_pacing.py").read_bytes() == canonical
+
+@pytest.mark.asyncio
+async def test_lock_released_when_executor_uses_different_threads(tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from functools import partial
+    first = ThreadPoolExecutor(max_workers=1)
+    second = ThreadPoolExecutor(max_workers=1)
+    async def separate_workers(func, *args, **kwargs):
+        executor = second if getattr(func, '__name__', '') == 'release' else first
+        return await asyncio.get_running_loop().run_in_executor(executor, partial(func, *args, **kwargs))
+    monkeypatch.setattr(asyncio, 'to_thread', separate_workers)
+    pacer = FederalApiPacer(bucket='example.gov', default_interval=0.001, pacing_dir=tmp_path)
+    try:
+        async with pacer.request_slot():
+            pass
+        # A second independent FileLock must be able to acquire the same file.
+        path = next(tmp_path.glob('*.lock'))
+        probe = pacing_module.FileLock(str(path))
+        probe.acquire(timeout=0)
+        probe.release()
+    finally:
+        first.shutdown(wait=False)
+        second.shutdown(wait=False)
+
+@pytest.mark.asyncio
+async def test_file_lock_contention_is_cancellable(tmp_path):
+    pacer = FederalApiPacer(bucket='example.gov', default_interval=0.001, pacing_dir=tmp_path)
+    async with pacer.request_slot():
+        pass
+    lock_path = next(tmp_path.glob('*.lock'))
+    from concurrent.futures import ThreadPoolExecutor
+    pool = ThreadPoolExecutor(max_workers=1)
+    blocker = pacing_module.FileLock(str(lock_path))
+    pool.submit(blocker.acquire).result()
+    async def waiting():
+        async with pacer.request_slot():
+            pass
+    try:
+        with pytest.raises(TimeoutError):
+            await asyncio.wait_for(waiting(), timeout=0.1)
+    finally:
+        pool.submit(blocker.release).result()
+        pool.shutdown()
+    async with pacer.request_slot():
+        pass

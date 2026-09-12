@@ -30,3 +30,8 @@ Thumbs.db
 .env
 .env.local
 *.key
+
+# Remote deployment local state
+.wrangler/
+.dev.vars
+deploy/usaspending/worker-configuration.d.ts

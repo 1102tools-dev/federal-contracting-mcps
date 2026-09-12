@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "usaspending-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "846d3e41e48446abcd3570c0959f9fb5",
+  "workers_dev": true,
+  "containers": [{"class_name": "USASpending", "image": "Dockerfile", "image_build_context": "../..", "instance_type": "lite", "max_instances": 1}],
+  "durable_objects": {"bindings": [{"class_name": "USASpending", "name": "BACKEND"}]},
+  "migrations": [{"tag": "v1", "new_sqlite_classes": ["USASpending"]}],
+  "ratelimits": [{"name": "REQUEST_LIMITER", "namespace_id": "110255", "simple": {"limit": 60, "period": 60}}],
+  "observability": {"enabled": true, "logs": {"enabled": true, "invocation_logs": false}},
+  "env": {"production": {
+    "name": "usaspending-mcp",
+    "routes": [{"pattern": "usaspending.1102tools.com", "custom_domain": true}],
+    "containers": [{"class_name": "USASpending", "image": "Dockerfile", "image_build_context": "../..", "instance_type": "lite", "max_instances": 1}],
+    "durable_objects": {"bindings": [{"class_name": "USASpending", "name": "BACKEND"}]},
+    "ratelimits": [{"name": "REQUEST_LIMITER", "namespace_id": "110255", "simple": {"limit": 60, "period": 60}}]
+  }}
+}

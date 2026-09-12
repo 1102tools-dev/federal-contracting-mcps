@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-07",
+  "endpoint": "https://usaspending.1102tools.com/mcp",
+  "worker": "usaspending-mcp",
+  "worker_version": "42f7c589-5470-4ebb-b7a3-092a380d94a8",
+  "container_application": "a0356bc1-45dd-455c-b821-31230cd03707",
+  "container_image": "registry.cloudflare.com/846d3e41e48446abcd3570c0959f9fb5/usaspending-mcp@sha256:2bab8f359811e1936d3f327d1d54cc8b1bcc6c2ae59b07a3fc54c54ad9579ba4",
+  "instance_type": "lite",
+  "max_instances": 1,
+  "idle_sleep": "2m",
+  "directory_status": "draft_created",
+  "container_version": 3,
+  "pacing_fix_rollout": "eef453dc-506b-4f82-8985-c7477ec6baf4",
+  "public_documents": [
+    "https://usaspending.1102tools.com/support",
+    "https://usaspending.1102tools.com/privacy",
+    "https://usaspending.1102tools.com/terms"
+  ],
+  "openai_app_id": "asdk_app_6a9ee668cc248191a0bdb9911b546799",
+  "openai_version_id": "asdk_app_v_6a9ee669edd4819183ddd827ce25e6fe",
+  "domain_verified": true,
+  "portal_tools_scanned": 55,
+  "worker_deployment_id": "eb0d2e12060a4e11934a63150ac28297",
+  "chatgpt_dev_app_id": "asdk_app_6a9ee7936a3c8191ae6b19e9793a7e1c",
+  "chatgpt_dev_version_id": "asdk_app_v_6a9ee7936a488191b633a0de1d610deb",
+  "chatgpt_demo_conversation": "https://chatgpt.com/c/6a9ee7b6-5ae8-83ea-bd37-c9833a051ac4"
+}

@@ -1,0 +1,286 @@
+{
+  "endpoint": "https://usaspending.1102tools.com/mcp",
+  "tools": 55,
+  "results": [
+    {
+      "tool": "search_awards",
+      "ok": true,
+      "seconds": 2.46
+    },
+    {
+      "tool": "search_awards",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "search_recipients",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "list_federal_accounts",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_award_count",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "spending_over_time",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "spending_by_category",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_award_detail",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_transactions",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_award_funding",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_idv_children",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: generated_idv_id"
+    },
+    {
+      "tool": "lookup_piid",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "autocomplete_psc",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "autocomplete_naics",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "list_toptier_agencies",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_agency_overview",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_agency_awards",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_naics_details",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_psc_filter_tree",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_state_profile",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "search_subawards",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "spending_by_subaward_grouped",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_recipient_profile",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: recipient_hash"
+    },
+    {
+      "tool": "get_recipient_children",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: uei_or_duns"
+    },
+    {
+      "tool": "autocomplete_recipient",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "list_states",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_agency_budgetary_resources",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_agency_sub_agencies",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_agency_federal_accounts",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_agency_object_classes",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_agency_program_activities",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_agency_obligations_by_award_category",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_award_funding_rollup",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_award_subaward_count",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_award_federal_account_count",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_award_transaction_count",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "awards_last_updated",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "spending_by_transaction",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "spending_by_geography",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "new_awards_over_time",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: recipient_id"
+    },
+    {
+      "tool": "get_idv_amounts",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: award_id"
+    },
+    {
+      "tool": "get_idv_funding",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: award_id"
+    },
+    {
+      "tool": "get_idv_funding_rollup",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: award_id"
+    },
+    {
+      "tool": "get_idv_activity",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: award_id"
+    },
+    {
+      "tool": "autocomplete_awarding_agency",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "autocomplete_funding_agency",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "autocomplete_cfda",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "autocomplete_glossary",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_award_types_reference",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_def_codes_reference",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_glossary",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_submission_periods",
+      "ok": false,
+      "error": "Server error '503 Service Unavailable' for url 'https://usaspending.1102tools.com/mcp'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
+    },
+    {
+      "tool": "get_federal_account_detail",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: account_code"
+    },
+    {
+      "tool": "get_federal_account_object_classes",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: account_code"
+    },
+    {
+      "tool": "get_federal_account_program_activities",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: account_code"
+    },
+    {
+      "tool": "get_federal_account_fy_snapshot",
+      "ok": false,
+      "error": "Live prerequisite fixture unavailable: account_id"
+    }
+  ]
+}

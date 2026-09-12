@@ -1,0 +1,10 @@
+**
+!servers/
+!servers/usaspending-gov-mcp/
+!servers/usaspending-gov-mcp/pyproject.toml
+!servers/usaspending-gov-mcp/uv.lock
+!servers/usaspending-gov-mcp/readme.md
+!servers/usaspending-gov-mcp/license
+!servers/usaspending-gov-mcp/src/
+!servers/usaspending-gov-mcp/src/**
+**/__pycache__/
