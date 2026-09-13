@@ -56,6 +56,6 @@ def main():
             listing=tool('list_rfo_agency_deviations',{'agency':'NSF','part':1})
             assert listing['results'],'NSF Part 1 deviation fixture unavailable upstream'
             pdf=tool('get_rfo_agency_deviation',{'source_id':listing['results'][0]['source_id'],'page_start':1,'page_end':2})
-            assert pdf['text_extraction_status']=='complete' and pdf['content'],'Real PDF extraction incomplete'
+            assert pdf['text_extraction_status']=='complete' and pdf['page_numbered_text'],'Real PDF extraction incomplete'
     print(f"Verified {args.slug}: {version}, commit {args.sha}, {len(actual)} tools")
 if __name__=='__main__':main()

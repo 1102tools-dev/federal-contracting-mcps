@@ -205,7 +205,7 @@ def test_acquisition_release_gate_requires_real_html_and_pdf(monkeypatch, failur
         elif name == 'list_rfo_agency_deviations':
             data = {'results': [{'source_id': 'test-official-nsf-document'}]}
         elif name == 'get_rfo_agency_deviation':
-            data = {'text_extraction_status': 'error' if failure == 'pdf_metadata_only' else 'complete', 'content': 'actual PDF text'}
+            data = {'text_extraction_status': 'error' if failure == 'pdf_metadata_only' else 'complete', 'page_numbered_text': 'actual PDF text'}
         else:
             data = {'count': 1}
         return {'result': {'structuredContent': data}}
