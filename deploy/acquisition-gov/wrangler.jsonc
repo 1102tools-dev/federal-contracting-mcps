@@ -12,7 +12,7 @@
     {
       "class_name": "AcquisitionGov",
       "image": "Dockerfile",
-      "instance_type": "lite",
+      "instance_type": "basic",
       "max_instances": 1,
       "name": "acquisition-gov-mcp-public",
       "image_build_context": "../.."
@@ -64,7 +64,7 @@
         {
           "class_name": "AcquisitionGov",
           "image": "Dockerfile",
-          "instance_type": "lite",
+          "instance_type": "basic",
           "max_instances": 1,
           "name": "acquisition-gov-mcp-public",
           "image_build_context": "../.."
