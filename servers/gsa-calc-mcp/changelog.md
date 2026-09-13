@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.8
+
+- Replace completion-serialized three-second pacing with a shared 500-attempt
+  rolling one-hour budget, minimum 0.6-second starts, and two in-flight slots.
+- Preserve cross-process coordination, failure accounting and Retry-After
+  cooldowns; reject corrupt pacing history rather than silently resetting it.
+- Persist the hosted hourly admission budget and provider cooldown in the
+  existing Durable Object's SQLite storage, across container sleep/replacement.
+- Return clear retry guidance on budget exhaustion and provider throttling.
+- Raise this service's hosted HTTP entrance limit from 60 to 120 per minute.
+  Published tools, schemas, authentication and endpoint URLs are unchanged.
+- Add deterministic and real-process pacing regression tests. See
+  `../../docs/keyless-throughput.md` for bounded live test evidence and limits.
+
 ## 1.0.7
 
 Unifies the hosted HTTP wrapper and existing published tool annotations with the

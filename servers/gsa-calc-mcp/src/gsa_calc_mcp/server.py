@@ -26,7 +26,8 @@ from pydantic import BeforeValidator
 from typing_extensions import Annotated
 
 from . import __version__
-from ._pacing import FederalApiPacer
+from ._throughput import GsaCalcPacer, CalcBudgetUnavailable
+from mcp.server.mcpserver.exceptions import ToolError
 from .constants import (
     BASE_URL,
     DEFAULT_TIMEOUT,
@@ -402,7 +403,7 @@ def _clean_error_body(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 _client: httpx.AsyncClient | None = None
-_pacer = FederalApiPacer(bucket="api.gsa.gov:calc", default_interval=3.0)
+_pacer = GsaCalcPacer()
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -456,11 +457,16 @@ async def _get(params_str: str) -> dict[str, Any]:
         async with _pacer.request_slot() as pacing:
             r = await _get_client().get(url)
             pacing.observe_response(r)
-            pacing.raise_if_rate_limited(
-                r,
-                service="GSA CALC+",
-                guidance=_format_error(r.status_code, r.text[:500]),
-            )
+            try:
+                pacing.raise_if_rate_limited(
+                    r,
+                    service="GSA CALC+",
+                    guidance=_format_error(r.status_code, r.text[:500]),
+                )
+            except RuntimeError as e:
+                # This helper raises only for an expected provider 429. Show
+                # its retry guidance while keeping unrelated crashes masked.
+                raise ToolError(str(e)) from e
         r.raise_for_status()
         try:
             data = r.json()
@@ -478,6 +484,8 @@ async def _get(params_str: str) -> dict[str, Any]:
                 f"Got {type(data).__name__}: {str(data)[:200]}"
             )
         return data
+    except CalcBudgetUnavailable as e:
+        raise ToolError(str(e)) from e
     except httpx.HTTPStatusError as e:
         raise RuntimeError(_format_error(e.response.status_code, e.response.text[:500])) from e
     except httpx.RequestError as e:

@@ -1,7 +1,9 @@
-# Federal Register throughput and keyless test findings
+# Keyless MCP throughput and test findings
 
 Federal Register 1.0.8 and eCFR 1.0.9 use 500-attempt rolling
 300-second budgets, minimum 0.6-second request starts, and two in-flight slots.
+CALC+ 1.0.8 uses the same starts and concurrency with a 500-attempt rolling
+one-hour budget. eCFR XML cache misses retain a separate slower lane.
 The previous implementation serialized requests and waited three seconds after
 completion. This policy is a tested 1102tools safeguard, not an agency quota.
 It does not promise 500 completed tool calls: upstream latency, retries initiated
@@ -23,12 +25,14 @@ pacing implementations.
 
 ## Hosted configuration
 
-Federal Register and eCFR each change from 60 to 120 HTTP requests per minute.
+Each of Federal Register, eCFR and CALC+ changes from 60 to 120 HTTP
+requests per minute.
 These are separate Worker bindings, not a global Cloudflare setting and not the
 upstream budgets. The entrance limiter is approximate, per IP and Cloudflare
 location, and includes protocol traffic. Singleton hosting, four-call HTTP
 admission, 64 KiB request bodies, and 55-second request timeouts remain in place.
-The CALC+ Worker retains its existing limit and pacing policy in this release.
+CALC+ also persists its hosted hourly budget and cooldown outside the container,
+as described below.
 
 ## September 13, 2026 validation
 
@@ -60,7 +64,7 @@ verification. Hosted verification uses bounded protocol and real-tool workloads.
 
 ## eCFR finding
 
-The first mixed eCFR candidate did not pass the same acceleration experiment. Filtered section XML
+The initial eCFR mixed-workload candidate did not pass the same acceleration experiment. Filtered section XML
 responses remained valid but grew substantially slower. A separate XML trial
 had upstream p95 of 0.153 seconds with six seconds after completion, then 4.081
 seconds with three-second starts. The trial stopped on latency regression.
@@ -79,9 +83,10 @@ upstream attempts, including this rejection. This is consistent with an
 additional longer-window quota, but does not prove its exact size, scope or
 window type. The indicated wait ended around 09:00 UTC on September 13, 2026.
 
-The CALC+ acceleration candidate was withheld. Do not infer sustainable
-500-per-five-minute capacity from the first successful run. A future CALC+
-policy needs an independently checked longer-window budget as well as fast
+The first CALC+ acceleration candidate was withheld and replaced by the
+hourly-budget design below. Do not infer sustainable
+500-per-five-minute capacity from the first successful run. The revised CALC+
+policy combines a conservative longer-window budget with fast
 short-batch spacing. The current public CALC+ documentation does not specify a
 numeric quota: https://open.gsa.gov/api/dx-calc-api/.
 
@@ -115,6 +120,45 @@ The existing tool schemas remain unchanged. The mixed-workload live check
 measures the combination of fast JSON and XML reuse, not a claim that every
 uncached XML fetch is faster.
 
+## Revised CALC+ design
+
+The revised implementation replaces the five-minute-only budget with a conservative
+500-attempt rolling one-hour budget, retaining 0.6-second starts and two
+in-flight slots for fast short batches. Budget exhaustion and provider cooldowns
+longer than 30 seconds return a clear retry time rather than tying up a client
+connection. Expected pacing errors use MCP ToolError so the message reaches
+the caller; unrelated exceptions remain masked. Offline tests verify that no
+upstream retry occurs while the cooldown is active. The live confirmation
+must start after the observed Retry-After deadline and may not bypass it by
+switching network origins.
+
+## Hosted CALC+ persistence
+
+A container's filesystem is ephemeral after sleep, so a disk-only hourly budget
+would be insufficient. The existing CALC+ Durable Object now keeps its hourly
+admission counter and provider cooldown in SQLite. Its transaction reserves a
+tool request before forwarding, keeps failed/invalid requests counted, and
+rejects an exhausted budget without waking the backend. Every current CALC+
+tool makes at most one upstream request; regression cases cover all eight.
+Any future tool that makes multiple upstream requests must revise this bound.
+
+The Python HTTP layer forwards only the computed provider cooldown duration in
+a dedicated response header. The Durable Object persists it monotonically and
+checks it before forwarding another tool request. This avoids parsing tool
+error strings and preserves Retry-After across container restarts. Protocol
+traffic does not consume the hourly budget. The separate 120-per-minute HTTP
+entrance limit still applies. Request inspection is bounded to 64 KiB and ten
+seconds. No new credentials, namespace, public endpoint, or long-lived warm
+container is required.
+
+Node tests verify the budget, concurrent reservations, storage failure, body
+bounds, slow input timeout and monotonic provider cooldown. Cloudflare's local
+workerd runtime admitted 500 of 510 concurrent requests, retained the exhausted
+budget across a full runtime restart, admitted requests after the simulated
+hour expired, and retained a provider cooldown across another restart.
+
+See https://developers.cloudflare.com/containers/reference/container-class/
+for persistent Durable Object storage versus ephemeral container disk.
 
 ## eCFR mixed-workload confirmation
 
@@ -125,7 +169,6 @@ seconds; workload upstream p95 was 0.050 seconds and local MCP p95 was 1.807
 seconds. All results passed payload checks. This measures the actual production
 pacer/cache implementation with two callers.
 
-
 ## Federal Register hosted confirmation
 
 Release v1.0.23 deployed Federal Register 1.0.8 through the unified pipeline.
@@ -134,6 +177,24 @@ by 500 valid mixed tool calls in 305.20 seconds with no errors. Hosted MCP
 p95 was 0.793 seconds. These are bounded observations, not a promise of
 continuous capacity or every client's response time.
 
-## CALC+ retest status
+## CALC+ cooldown boundary observation
 
-The 09:00 UTC retest returned one success followed by HTTP 429 and Retry-After: 8. It stopped immediately. This release contains no CALC+ acceleration; a revised hourly-budget candidate is being tested after a longer quiet period.
+At 09:00 UTC, the first request after the original Retry-After deadline
+succeeded, then the next request returned HTTP 429 with Retry-After: 8.
+Testing stopped immediately. An expired retry deadline does not establish
+that an entire burst's allowance has replenished. The planned second 500-call rerun was cancelled to avoid further stress testing.
+This observation still does not establish an official GSA quota.
+
+## Revised CALC+ functional confirmation
+
+After more than five minutes without CALC+ requests, the actual revised
+implementation passed all 24 mixed live calls in 14.24 seconds, with two
+callers, 0.6-second starts, no retries and no errors. Upstream p95 was 0.563
+seconds; local MCP p95 was 2.349 seconds. This verifies faster short batches,
+not sustainable 500-per-five-minute throughput. The 500-per-hour bound is
+verified deterministically and in persistent Cloudflare runtime tests. The
+earlier 500-call trial remains evidence for short-window pacing only.
+
+The release safety assertion now accounts for eCFR's three pacing gates
+(JSON, shared XML, and XML-specific), rather than the previous two. The
+canonical shared helper is unchanged.

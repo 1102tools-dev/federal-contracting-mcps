@@ -8,6 +8,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from starlette.responses import JSONResponse
 
 from .server import mcp
+from . import server
 
 
 def create_app():
@@ -42,6 +43,14 @@ class AdmissionControl:
         async def tracked_send(message):
             nonlocal started
             if message["type"] == "http.response.start":
+                # Let the hosted Durable Object preserve an upstream cooldown
+                # even if the Linux container later sleeps or is replaced.
+                cooldown = await server._pacer.cooldown_remaining()
+                if cooldown:
+                    message = dict(message)
+                    message["headers"] = list(message.get("headers", [])) + [
+                        (b"x-1102tools-provider-retry-after", str(cooldown).encode("ascii"))
+                    ]
                 started = True
             await send(message)
         try:

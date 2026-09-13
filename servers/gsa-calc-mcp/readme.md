@@ -91,11 +91,38 @@ Always note sample size and remind users these are ceiling rates when presenting
 
 ## Request pacing
 
-Every upstream request uses a provisional 3-second cross-process anti-burst
-interval by default. GSA does not publish a numeric CALC+ limit, so this is a
-1102tools safeguard rather than a provider requirement. Override with
-`FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it, and
-use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
+The default safeguard allows up to 500 upstream request attempts per rolling
+hour, with starts spaced at least 0.6 seconds apart and at most two
+requests in flight. This is a 1102tools policy tested against GSA CALC+,
+not a published provider quota or a guaranteed tool-call rate. All eight
+current tools make at most one upstream request. Upstream latency can reduce
+throughput.
+
+Local processes sharing `FEDERAL_API_PACING_DIR` share the budget. The hosted
+service has an additional persistent budget of 500 tool requests per rolling
+hour, shared by its users. Every current CALC+ tool makes at most one upstream
+request; failed or invalid hosted tool requests still consume an admission.
+Protocol-only requests do not consume this hourly budget. The hosted counter
+and observed provider cooldowns live in Durable Object SQLite storage, so they
+survive container sleep and replacement.
+
+The separate HTTP entrance limit is 120 requests per minute per IP and
+Cloudflare location, including protocol requests. Other MCP services have
+separate budgets. `X-1102tools-Hourly-Remaining` reports the hosted admission
+balance; it is not an agency quota header.
+
+Exhausting the hourly safety budget returns an error with a retry time instead
+of holding a connection open. Provider cooldowns longer than 30 seconds also
+return promptly with the remaining wait. Attempts remain counted on failure or
+cancellation, and `Retry-After` extends
+a shared cooldown. Set `FEDERAL_API_MIN_INTERVAL_SECONDS` above `0.6` to slow
+requests; positive values below `0.6` are clamped. Explicit `0` disables pacing
+for offline tests or externally managed clients. Hosted deployments use `0.6`.
+Local pacing history does not survive deletion of its directory. Hosted
+Python pacing history is ephemeral, with the durable admission budget and
+provider cooldown above preserving the outer safeguards across restarts. Do
+not run old and new local pacing implementations against the same directory
+concurrently.
 
 ## License
 

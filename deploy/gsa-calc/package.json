@@ -2,9 +2,10 @@
   "name": "1102tools-gsa-calc-remote",
   "private": true,
   "scripts": {
-    "check": "wrangler types && tsc --noEmit",
+    "check": "wrangler types && tsc --noEmit && npm test",
     "dry-run": "wrangler deploy --dry-run --env production",
-    "deploy": "wrangler deploy --env production"
+    "deploy": "wrangler deploy --env production",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs"
   },
   "dependencies": {
     "@cloudflare/containers": "0.3.7"

@@ -9,6 +9,6 @@ COPY servers/gsa-calc-mcp/src ./src
 RUN uv sync --frozen --no-dev
 RUN useradd --create-home mcp
 USER mcp
-ENV MCP_ALLOWED_HOSTS=container.internal MCP_ALLOWED_ORIGINS=https://gsa-calc.1102tools.com FEDERAL_API_MIN_INTERVAL_SECONDS=3
+ENV MCP_ALLOWED_HOSTS=container.internal MCP_ALLOWED_ORIGINS=https://gsa-calc.1102tools.com FEDERAL_API_MIN_INTERVAL_SECONDS=0.6
 EXPOSE 8080
 CMD ["/app/.venv/bin/python", "-m", "gsa_calc_mcp.http"]

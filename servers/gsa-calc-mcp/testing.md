@@ -1,13 +1,20 @@
 # GSA CALC+ MCP: Testing Record
 
+## September 2026 throughput validation
+
+See [keyless throughput evidence](../../docs/keyless-throughput.md) for the
+current bounded experiments, failed candidates and revised policies. These
+results supplement the historical live suites below; they do not repeat every
+older live test or establish an official provider quota.
+
 ## Executive Summary
 
-This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The MCP ships with 356 regression tests (247 offline plus 109 live-gated).
+This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The MCP ships with 380 regression tests (271 offline plus 109 live-gated).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 356 (247 offline, 109 live-gated) |
+| Total regression tests | 380 (271 offline, 109 live-gated) |
 | Tests per tool | 42.9 |
 | Audit rounds completed | 7 |
 | P1 crashes (shape-shift) found and fixed | 19 |
@@ -17,7 +24,7 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | Round 5 Hypothesis + live findings | 0 (shape-only assertions; see round 6 for what that missed) |
 | Round 6 differential-count findings | 3 high-severity (worksite ignored, experience_min exact-match, vendor_rate_card unpageable) + 4 dead hardcoded SINs + 1 validation gap |
 | Retroactive additional findings | 12 |
-| Current release | 1.0.3 |
+| Current release | 1.0.8 |
 | PyPI status | Published as `gsa-calc-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
