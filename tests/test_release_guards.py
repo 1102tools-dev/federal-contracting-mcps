@@ -165,3 +165,18 @@ def test_visibility_wait_never_retries_a_code_mismatch(tmp_path, monkeypatch):
     monkeypatch.setattr(guard.time,'sleep',sleep)
     with pytest.raises(guard.GuardError,match='increase its version'):
         guard.check_wheel(path,'demo','1.0.0',require_published=True,fetcher=published_fetcher(wheel(),path.name),publication_wait_seconds=90)
+
+
+@pytest.mark.parametrize("command,valid", [
+    ("args: ['ecfr-mcp']", True),
+    ("args: ['ecfr-mcp==1.0.10']", True),
+    ("args: ['ecfr-mcp==1.0.1']", False),
+    ("args: ['ecfr-mcp==1.0.10', 'ecfr-mcp==1.0.1']", False),
+    ("command: 'python', args: ['-m', 'ecfr_mcp']", True),
+    ("args: ['other-ecfr-mcp==1.0.1']", True),
+])
+def test_smithery_checks_explicit_pins_without_rejecting_latest_or_source(command, valid):
+    spec = importlib.util.spec_from_file_location("versions", ROOT / "scripts/validate_versions.py")
+    versions = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(versions)
+    assert versions.smithery_pins_match(command, "ecfr-mcp", "1.0.10") is valid

@@ -23,6 +23,12 @@ PACKAGES = {
 }
 
 
+def smithery_pins_match(source: str, distribution: str, expected: str) -> bool:
+    """Check explicit pins; unpinned uvx commands intentionally install latest."""
+    pins = re.findall(r"(?<![A-Za-z0-9_-])" + re.escape(distribution) + r"==([^\s'\",\]\)]+)", source)
+    return all(pin == expected for pin in pins)
+
+
 def main() -> int:
     failures: list[str] = []
     for directory, (module, distribution) in PACKAGES.items():
@@ -39,7 +45,7 @@ def main() -> int:
         if f"{distribution}=={expected}" not in dockerfile:
             failures.append(f"{directory}: Dockerfile does not install current version {expected}")
         smithery = project / "smithery.yaml"
-        if smithery.is_file() and f"{distribution}=={expected}" not in smithery.read_text(encoding="utf-8"):
+        if smithery.is_file() and not smithery_pins_match(smithery.read_text(encoding="utf-8"), distribution, expected):
             failures.append(f"{directory}: Smithery does not install current version {expected}")
         registry_name = f"com.1102tools/{directory}"
         readme = (project / "readme.md").read_text(encoding="utf-8")
