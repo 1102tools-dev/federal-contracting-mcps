@@ -7,6 +7,6 @@ startCommand:
   commandFunction: |
     (config) => ({
       command: 'uvx',
-      args: ['acquisition-gov-mcp==1.0.7']
+      args: ['acquisition-gov-mcp==1.0.8']
     })
 

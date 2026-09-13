@@ -53,9 +53,16 @@ def _validate_html_body(html: bytes) -> None:
 def _main_content(html: bytes) -> Tag | BeautifulSoup:
     _validate_html_body(html)
     soup = BeautifulSoup(html, "html.parser")
-    content = (soup.select_one("main") or soup.select_one("article")
-               or soup.select_one(".region-content") or soup)
-    for unwanted in list(content.select("script, style, nav, header, footer, form, .block-agov-favorites, #system-breadcrumb")):
+    content = (soup.find("main") or soup.find("article")
+               or soup.find(class_="region-content") or soup)
+    # A CSS selector list tests every element repeatedly. One bounded tree walk
+    # preserves exactly the same prune rules without that multiplicative cost.
+    unwanted_tags = {"script", "style", "nav", "header", "footer", "form"}
+    unwanted_nodes = [tag for tag in content.descendants if isinstance(tag, Tag)
+                      and (tag.name in unwanted_tags
+                           or "block-agov-favorites" in tag.get("class", [])
+                           or tag.get("id") == "system-breadcrumb")]
+    for unwanted in unwanted_nodes:
         # A source may wrap its main content in a form. Only prune descendants,
         # never the selected content root or an ancestor containing it.
         if unwanted.parent is not None:
@@ -223,7 +230,9 @@ def _parse_html_document(body, *, part=None, heading=None, cursor=None, maximum=
         hidden_classes = {"visual-hidden", "hidden", "usa-sr-only"}
         visible_titles = [h for h in node.find_all("h1") if not hidden_classes.intersection(h.get("class", []))]
         if any((match := _PART_RE.search(h.get_text(" ", strip=True))) and int(match.group(1)) == part for h in visible_titles):
-            for h in list(node.select("h1.visual-hidden, h2.hidden")):
+            for h in [tag for tag in node.descendants if isinstance(tag, Tag)
+                      and ((tag.name == "h1" and "visual-hidden" in tag.get("class", []))
+                           or (tag.name == "h2" and "hidden" in tag.get("class", [])))]:
                 match = _PART_RE.search(h.get_text(" ", strip=True))
                 if match and int(match.group(1)) == part:
                     h.decompose()
@@ -232,7 +241,7 @@ def _parse_html_document(body, *, part=None, heading=None, cursor=None, maximum=
         if title_part is None or int(title_part.group(1)) != part:
             raise RuntimeError(f"The returned HTML could not be verified as FAR Overhaul Part {part}.")
     text = _extract_section(node, heading)
-    full_text = "\n".join(_text_lines(node))
+    full_text = text if heading is None else "\n".join(_text_lines(node))
     return {
         **_chunk(text, cursor, maximum),
         "issuance_date": (_labeled_date(full_text, "Issuance") or _labeled_date(full_text, "Issued") or _labeled_date(full_text, "Published")),

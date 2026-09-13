@@ -1,5 +1,9 @@
 # Acquisition.gov MCP test record
 
+## Version 1.0.8 hosted parsing follow-up — 2026-09-13
+
+The 1.0.7 production acceptance test caught a Part 52 HTML parsing timeout at the unchanged 40-second parser deadline, despite its earlier constrained-image check passing. Version 1.0.8 removes repeated full-tree CSS-selector matching and duplicate text extraction. Source guards and parser deadlines are unchanged. All **236 offline tests** pass. Three local runs returned identical output: before **0.6492, 0.6579, 0.6565 seconds**; after **0.4721, 0.4792, 0.4619 seconds**. These local timings are not hosted throughput promises. Final deployment and hosted outcomes are recorded in the follow-up evidence.
+
 ## Version 1.0.7 independent-review fixes — 2026-09-13
 
 Fable 5.1 at extra-high effort independently reviewed the immutable 1.0.6 snapshot. It reproduced two P1 issues: HTTP timeouts/disconnects did not cancel SDK-owned tool tasks, and synchronous HTML parsing blocked the event loop. No P0 finding was identified in that review. Its 84 adversarial cases included expected-behavior hypotheses and test-harness failures; those failures are not a count of confirmed defects.

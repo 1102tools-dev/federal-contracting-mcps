@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.8 — 2026-09-13
+
+- Replace repeated CSS-selector scans with one document walk and reuse full text when no heading is requested. Preserve extraction output, source guards, process isolation and the 40-second parser deadline.
+- Address the live Part 52 parser timeout found during post-release verification of 1.0.7. All 236 offline cases pass; a three-run local comparison retained identical output and reduced parsing time by approximately 28 percent. Hosted verification is recorded in testing.md.
+
 ## 1.0.7 — 2026-09-13
 
 - Tie each stateless HTTP request to its own MCP lifespan, cancelling underlying tool work on timeouts and disconnects before releasing its slot. Reject GET/DELETE at the local stateless endpoint.

@@ -47,4 +47,4 @@ Add `--expected-sha COMMIT_SHA` to require a particular deployed release. The ou
 
 `test_fable_regressions.py` adds 55 cases for actual HTTP task/process ownership, simultaneous timeouts and recovery, HTML process bounds and responsiveness, source text completeness, agency aliases, parser errors, and installation-version pins. Test body receivers model a connected ASGI client rather than repeating the initial upload indefinitely.
 
-The 1.0.7 suite has 236 offline cases and three opt-in live tests. The constrained-runtime workflow tests the production image with 1/16 CPU and 256 MiB RAM, including the actual NSF Part 1 PDF and full Part 52 HTML.
+The 1.0.8 suite has 236 offline cases and three opt-in live tests. The constrained-runtime workflow tests the production image with 1/16 CPU and 256 MiB RAM, including the actual NSF Part 1 PDF and full Part 52 HTML.
