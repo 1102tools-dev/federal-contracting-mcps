@@ -1,0 +1,42 @@
+name: Release guard checks
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/publish-pypi.yml'
+      - '.github/workflows/release-guard-checks.yml'
+      - 'scripts/check_published_version.py'
+      - 'tests/test_release_guards.py'
+      - 'servers/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-pypi.yml'
+      - '.github/workflows/release-guard-checks.yml'
+      - 'scripts/check_published_version.py'
+      - 'tests/test_release_guards.py'
+      - 'servers/**'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: astral-sh/setup-uv@v6
+      - name: Exercise version and release-order failure cases
+        run: uv run --with pytest --with packaging --with pyyaml pytest -q tests/test_release_guards.py
+      - name: Build and compare all nine packages with PyPI
+        run: |
+          for project in servers/*; do
+            test -f "$project/pyproject.toml" || continue
+            dist="$RUNNER_TEMP/dist-$(basename "$project")"
+            uv build "$project" --out-dir "$dist"
+            uv run --with packaging python scripts/check_published_version.py "$project" --dist "$dist"
+          done
