@@ -6,9 +6,10 @@ edits do not deploy production.
 
 ```text
 release tag -> shared tests + package tests + hosted image/contract checks
-                 -> PyPI packages
+                 -> published-version guard for all nine packages
                  -> Cloudflare hosted services -> live verification
-                 -> MCP registry (after PyPI)
+                 -> PyPI packages -> verify published wheels
+                 -> MCP registry
                  -> final release and destination summary
 ```
 
@@ -23,12 +24,21 @@ does not publish website content or submit directory listings.
 - `deploy/<service>/` owns the Worker wrapper, frozen container build, and npm lock.
 - Keep the existing `publish-pypi.yml` filename: PyPI Trusted Publishers refer to it.
 - Patch package versions, manifests, and Docker install pins for changed packages.
-  `scripts/validate_versions.py` checks them. Unchanged versions are skipped by the
-  existing PyPI and registry publishing steps.
+  `scripts/validate_versions.py` checks internal version consistency. Before any
+  deployment, `scripts/check_published_version.py` compares each built wheel
+  against the same version on PyPI: installed payload, dependency/Python metadata,
+  extras, entry points, and wheel compatibility must match. Changed packages must
+  use a new version above the latest PyPI release. Unchanged packages may be
+  skipped safely. ZIP timestamps, builder metadata, and README prose do not force
+  a bump. This compares declared package dependencies, not hosted lockfile pins.
+  PyPI outages, missing artifacts for an existing version, yanked matching wheels,
+  or checksum failures stop release. The guard is repeated after publication with
+  `--require-published`, including skipped versions, to check actual PyPI contents.
 - Push a new `v*` tag only after review and tests. Manual workflow dispatch on a tag
   supports retries. Never overlap a legacy release with the first unified release.
-- The workflow serializes unified production releases. PyPI and Cloudflare may
-  complete at different times; a partial failure is reported as a failed release.
+- The workflow serializes unified production releases. Cloudflare deployment and
+  live verification must succeed for all five services before PyPI starts.
+  A partial failure is reported as a failed release.
   It is not a transaction, and PyPI versions cannot be overwritten or rolled back.
 
 ## Credentials and first activation
@@ -38,7 +48,9 @@ named `CLOUDFLARE_API_TOKEN`. GitHub's hosted runners cannot read a Mac's Keycha
 Use a dedicated Cloudflare account token with Account Settings Read, Workers
 Scripts Write, and Workers Containers Write for account
 `846d3e41e48446abcd3570c0959f9fb5`, plus Zone Read and Workers Routes Write scoped
-to the `1102tools.com` zone. Confirm effective permissions with the preflight.
+to the `1102tools.com` zone. The read-only preflight verifies container-list
+access, not every deployment permission. Successful deployment and live
+verification are the enforced gate before any PyPI upload.
 Do not copy the broader interactive Keychain token into CI, log credentials, or
 commit them. PyPI continues using OIDC Trusted Publishing, without a PyPI API key.
 The existing `mcp-registry-publish` environment retains its own registry secret.
@@ -70,8 +82,13 @@ response reports the release commit. After rollout, the pipeline verifies that
 commit, package version, full tool list, and three real upstream tool requests.
 The overall release succeeds only if PyPI, Cloudflare, and registry jobs succeed.
 
-If publication succeeds but deployment fails, inspect the failed service's log
-and rerun the failed jobs on the same tag. Existing PyPI versions are skipped.
+If Cloudflare deployment or verification fails, PyPI and registry publication
+are skipped. Inspect the failed service and rerun failed jobs on the same tag.
+If PyPI or registry publication fails afterward, hosted services may already
+serve the new release; retry the failed publication jobs. Existing PyPI versions
+are skipped only after the content guard has passed, and checked again afterward.
+Do not overwrite a published version. A successful Cloudflare deployment does
+not make the two destinations transactional.
 Do not mark the release synchronized based only on a successful upload or health
 check. Do not remove or rename a Worker, Container application, or endpoint to
 work around a failed deployment.

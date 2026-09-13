@@ -44,6 +44,9 @@ jobs:
           --with "${{ matrix.filelock }}" --with platformdirs
           pytest -q tests/test_federal_api_pacing.py
 
+      - name: Test release safeguards
+        run: uv run --with pytest --with packaging --with pyyaml pytest -q tests/test_release_guards.py
+
       - name: Verify version surfaces
         run: python scripts/validate_versions.py
 
@@ -92,7 +95,7 @@ jobs:
         run: uv run pytest -q
 
       - name: Install build tooling
-        run: pip install --upgrade build
+        run: pip install --upgrade build packaging
 
       - name: Build sdist + wheel
         working-directory: servers/${{ matrix.server.dir }}
@@ -102,6 +105,9 @@ jobs:
         working-directory: servers/${{ matrix.server.dir }}
         run: unzip -l dist/*.whl | grep '_pacing.py'
 
+      - name: Reject changed packages using an existing PyPI version
+        run: python scripts/check_published_version.py servers/${{ matrix.server.dir }}
+
       - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:
@@ -109,7 +115,7 @@ jobs:
           path: servers/${{ matrix.server.dir }}/dist/
 
   publish:
-    needs: [test-and-build, hosted-build, cloudflare-access]
+    needs: [test-and-build, hosted-build, cloudflare-access, deploy-hosted]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -125,8 +131,14 @@ jobs:
           - { dir: "sam-gov-mcp",         pkg: "sam-gov-mcp" }
           - { dir: "usaspending-gov-mcp", pkg: "usaspending-gov-mcp" }
     permissions:
+      contents: read
       id-token: write
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: astral-sh/setup-uv@v6
       - name: Download distributions
         uses: actions/download-artifact@v4
         with:
@@ -138,6 +150,9 @@ jobs:
         with:
           packages-dir: dist/
           skip-existing: true
+
+      - name: Verify actual published package matches the built wheel
+        run: uv run --with packaging python scripts/check_published_version.py servers/${{ matrix.server.dir }} --dist dist --require-published
 
   publish-registry:
     needs: publish
