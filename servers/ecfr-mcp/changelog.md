@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.9
+
+- Separate fast JSON pacing from controlled XML retrieval. Use a shared
+  500-attempt rolling five-minute budget, 0.6-second starts and two in-flight
+  slots; uncached XML retains a three-second completion gap.
+- Add a bounded five-minute XML cache and coalesce concurrent duplicate misses.
+  Errors are never cached. New dates and different filters have separate keys.
+- Raise this service's hosted HTTP entrance limit from 60 to 120 per minute.
+  Published tools, schemas, authentication and endpoint URLs are unchanged.
+- Add cache and cross-process pacing regression tests.
+
 ## 1.0.8
 
 Unifies the hosted HTTP wrapper and existing published tool annotations with the

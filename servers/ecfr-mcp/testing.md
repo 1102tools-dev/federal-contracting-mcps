@@ -1,20 +1,27 @@
 # eCFR MCP: Testing Record
 
+## September 2026 throughput validation
+
+See [keyless throughput evidence](../../docs/keyless-throughput.md) for the
+current bounded experiments, failed candidates and revised policies. These
+results supplement the historical live suites below; they do not repeat every
+older live test or establish an official provider quota.
+
 ## Executive Summary
 
-This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across six audit rounds that surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, and (in round 6) a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. The MCP ships with 300 regression tests (182 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
+This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across six audit rounds that surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, and (in round 6) a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. The MCP ships with 321 regression tests (203 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 13 |
-| Total regression tests | 300 (182 offline, 118 live-gated) |
+| Total regression tests | 321 (203 offline, 118 live-gated) |
 | Audit rounds completed | 7 |
 | P0 catastrophic bugs found and fixed | 2 |
 | P1 silent-wrong-data bugs found and fixed | 26 |
 | P2 validation gaps found and fixed | 32 |
 | P3 cleanup items found and fixed | 12 |
 | Round 6 external re-audit findings, fixed in 1.0.2 | 12 (2 high, 5 medium, 5 low) |
-| Current release | 1.0.4 |
+| Current release | 1.0.9 |
 | PyPI status | Published as `ecfr-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.4 Safety Release Verification

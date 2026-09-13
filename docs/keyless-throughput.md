@@ -1,6 +1,6 @@
 # Federal Register throughput and keyless test findings
 
-Federal Register 1.0.8 uses a 500-attempt rolling
+Federal Register 1.0.8 and eCFR 1.0.9 use 500-attempt rolling
 300-second budgets, minimum 0.6-second request starts, and two in-flight slots.
 The previous implementation serialized requests and waited three seconds after
 completion. This policy is a tested 1102tools safeguard, not an agency quota.
@@ -23,12 +23,12 @@ pacing implementations.
 
 ## Hosted configuration
 
-Federal Register changes from 60 to 120 HTTP requests per minute.
+Federal Register and eCFR each change from 60 to 120 HTTP requests per minute.
 These are separate Worker bindings, not a global Cloudflare setting and not the
 upstream budgets. The entrance limiter is approximate, per IP and Cloudflare
 location, and includes protocol traffic. Singleton hosting, four-call HTTP
 admission, 64 KiB request bodies, and 55-second request timeouts remain in place.
-The eCFR and CALC+ Workers retain their existing limits and pacing policies in this change.
+The CALC+ Worker retains its existing limit and pacing policy in this release.
 
 ## September 13, 2026 validation
 
@@ -60,7 +60,7 @@ verification. Hosted verification uses bounded protocol and real-tool workloads.
 
 ## eCFR finding
 
-eCFR did not pass the same acceleration experiment. Filtered section XML
+The first mixed eCFR candidate did not pass the same acceleration experiment. Filtered section XML
 responses remained valid but grew substantially slower. A separate XML trial
 had upstream p95 of 0.153 seconds with six seconds after completion, then 4.081
 seconds with three-second starts. The trial stopped on latency regression.
@@ -96,3 +96,44 @@ locks, not the test-only scheduler. The Federal Register package suite passed
 Shared safety and release checks passed 31 tests. Published tool definitions
 were unchanged, version validation passed, and the Worker type check and
 production dry-run passed with the separate 120-per-minute entrance binding.
+
+## Revised eCFR design
+
+The separate JSON pilot passed at one-second and 0.6-second starts. The real
+candidate then completed 500 upstream JSON requests, including setup, with
+no errors. Its 499-call workload took 300.80 seconds, upstream p95 0.052 seconds,
+and local MCP p95 3.011 seconds. These calls used the actual shared file-backed
+pacer. JSON endpoints therefore use 0.6-second starts and a 500-attempt rolling
+five-minute budget, while XML misses keep a separate three-second completion
+lane. XML waiting does not block independent JSON work.
+
+A bounded five-minute XML cache coalesces duplicate misses, uses dates and
+filters in its key, and never caches errors. It holds at most 128 entries,
+32 MiB total and 2 MiB per entry. A correction to dated upstream content can
+therefore take up to five minutes to appear in an already-cached result.
+The existing tool schemas remain unchanged. The mixed-workload live check
+measures the combination of fast JSON and XML reuse, not a claim that every
+uncached XML fetch is faster.
+
+
+## eCFR mixed-workload confirmation
+
+The revised implementation completed 60 mixed workload calls in 25.47 seconds,
+using 42 upstream workload requests plus one setup request. Repeated XML reads
+were served from the bounded cache. The two XML misses took 0.069 and 0.847
+seconds; workload upstream p95 was 0.050 seconds and local MCP p95 was 1.807
+seconds. All results passed payload checks. This measures the actual production
+pacer/cache implementation with two callers.
+
+
+## Federal Register hosted confirmation
+
+Release v1.0.23 deployed Federal Register 1.0.8 through the unified pipeline.
+The public endpoint passed 120 protocol requests in 60.16 seconds, followed
+by 500 valid mixed tool calls in 305.20 seconds with no errors. Hosted MCP
+p95 was 0.793 seconds. These are bounded observations, not a promise of
+continuous capacity or every client's response time.
+
+## CALC+ retest status
+
+The 09:00 UTC retest returned one success followed by HTTP 429 and Retry-After: 8. It stopped immediately. This release contains no CALC+ acceleration; a revised hourly-budget candidate is being tested after a longer quiet period.

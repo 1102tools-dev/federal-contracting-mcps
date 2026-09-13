@@ -42,6 +42,7 @@ _srv = importlib.import_module("ecfr_mcp.server")
 
 @pytest.fixture(autouse=True)
 def _fresh_async_client():
+    _srv._xml_cache = _srv.XmlCache()
     for attr in ("_client", "_http_client", "client"):
         if hasattr(_srv, attr):
             setattr(_srv, attr, None)

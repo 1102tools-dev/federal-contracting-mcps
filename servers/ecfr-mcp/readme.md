@@ -124,13 +124,34 @@ All data from [ecfr.gov](https://www.ecfr.gov), the continuously updated online 
 
 [federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 9 MCP servers for federal contracting data. Pair these sources with the [MCP prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
-## Request pacing
+## Request pacing and cache
 
-Every upstream request uses a provisional 3-second cross-process anti-burst
-interval by default. eCFR does not publish a numeric limit, so this is a
-1102tools safeguard rather than a provider requirement. Override with
-`FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it, and
-use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
+JSON requests can start every 0.6 seconds, with a shared safety budget of
+500 upstream attempts per rolling five minutes and at most two requests in
+flight. Uncached XML remains serialized with at least three seconds after
+completion. XML waiting does not hold up JSON work. These are 1102tools
+safeguards, not published agency quotas or guaranteed tool-call throughput.
+
+Repeated XML requests with the same date, path and filters use a five-minute
+in-memory cache. Concurrent duplicate requests are coalesced. The cache stores
+only valid XML, at most 128 entries and 32 MiB total, with a 2 MiB per-entry
+limit. Errors are not cached. New dates and changed filters use separate keys;
+upstream corrections may take up to five minutes to appear in a cached result.
+Restarting the process clears the cache.
+
+Local processes sharing `FEDERAL_API_PACING_DIR` share upstream pacing state.
+The hosted service's budget is shared by its users; other services have their
+own budgets. Its separate HTTP entrance limit is 120 requests per minute per
+IP and Cloudflare location, including protocol traffic. A tool can make more
+than one upstream request, or none when XML is cached.
+
+`FEDERAL_API_MIN_INTERVAL_SECONDS` can slow requests. Positive values below
+0.6 are clamped for the shared pacer; uncached XML always retains its minimum
+three-second completion gap. Explicit zero disables pacing for offline tests
+or externally managed clients. Hosted deployments use 0.6. Failed and cancelled
+attempts stay counted; Retry-After cooldowns are shared. Container replacement
+can reset on-disk pacing history. Upgrade local processes together rather than
+sharing a state directory between old and new implementations.
 
 ## License
 

@@ -22,7 +22,8 @@ import httpx
 from mcp.server import MCPServer
 
 from . import __version__
-from ._pacing import FederalApiPacer
+from ._throughput import EcfrPacer, EcfrXmlPacer
+from ._xml_cache import XmlCache
 from .constants import (
     BASE_URL,
     COMMON_FAR_SECTIONS,
@@ -302,7 +303,9 @@ def _validate_query_safe(value: str, *, field: str) -> str:
 # ---------------------------------------------------------------------------
 
 _client: httpx.AsyncClient | None = None
-_pacer = FederalApiPacer(bucket="www.ecfr.gov", default_interval=3.0)
+_pacer = EcfrPacer()
+_xml_pacer = EcfrXmlPacer()
+_xml_cache = XmlCache()
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -397,12 +400,18 @@ async def _get_json(
 
 
 async def _get_xml(path: str, params: dict[str, Any] | None = None) -> str:
+    key = _json.dumps([path, params or {}], sort_keys=True, separators=(",", ":"))
+    return await _xml_cache.get_or_fetch(key, lambda: _get_xml_uncached(path, params))
+
+
+async def _get_xml_uncached(path: str, params: dict[str, Any] | None = None) -> str:
     """GET helper for XML content endpoints. Returns raw XML string."""
     try:
-        async with _pacer.request_slot() as pacing:
+        async with _xml_pacer.request_slot() as xml_pacing, _pacer.request_slot() as pacing:
             r = await _get_client().get(
                 path, params=params or {}, timeout=DEFAULT_TIMEOUT_CONTENT
             )
+            xml_pacing.observe_response(r)
             pacing.observe_response(r)
             pacing.raise_if_rate_limited(
                 r,
