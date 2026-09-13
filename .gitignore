@@ -30,3 +30,9 @@ Thumbs.db
 .env
 .env.local
 *.key
+
+# Generated hosted deployment files
+deploy/*/node_modules/
+deploy/*/worker-configuration.d.ts
+deploy/*/wrangler.release.json
+!deploy/*/package-lock.json

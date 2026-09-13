@@ -1,0 +1,93 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "acquisition-gov-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "account_id": "846d3e41e48446abcd3570c0959f9fb5",
+  "workers_dev": true,
+  "containers": [
+    {
+      "class_name": "AcquisitionGov",
+      "image": "Dockerfile",
+      "instance_type": "lite",
+      "max_instances": 1,
+      "name": "acquisition-gov-mcp-public",
+      "image_build_context": "../.."
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "AcquisitionGov",
+        "name": "BACKEND"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "AcquisitionGov"
+      ]
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "REQUEST_LIMITER",
+      "namespace_id": "110263",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  },
+  "env": {
+    "production": {
+      "name": "acquisition-gov-mcp",
+      "routes": [
+        {
+          "pattern": "acquisition-gov.1102tools.com",
+          "custom_domain": true
+        }
+      ],
+      "containers": [
+        {
+          "class_name": "AcquisitionGov",
+          "image": "Dockerfile",
+          "instance_type": "lite",
+          "max_instances": 1,
+          "name": "acquisition-gov-mcp-public",
+          "image_build_context": "../.."
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "AcquisitionGov",
+            "name": "BACKEND"
+          }
+        ]
+      },
+      "ratelimits": [
+        {
+          "name": "REQUEST_LIMITER",
+          "namespace_id": "110263",
+          "simple": {
+            "limit": 60,
+            "period": 60
+          }
+        }
+      ]
+    }
+  }
+}

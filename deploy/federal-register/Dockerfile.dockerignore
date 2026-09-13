@@ -1,0 +1,10 @@
+**
+!servers/
+!servers/federal-register-mcp/
+!servers/federal-register-mcp/pyproject.toml
+!servers/federal-register-mcp/uv.lock
+!servers/federal-register-mcp/readme.md
+!servers/federal-register-mcp/license
+!servers/federal-register-mcp/src/
+!servers/federal-register-mcp/src/**
+**/__pycache__/

@@ -1,0 +1,10 @@
+**
+!servers/
+!servers/ecfr-mcp/
+!servers/ecfr-mcp/pyproject.toml
+!servers/ecfr-mcp/uv.lock
+!servers/ecfr-mcp/readme.md
+!servers/ecfr-mcp/license
+!servers/ecfr-mcp/src/
+!servers/ecfr-mcp/src/**
+**/__pycache__/

@@ -1,4 +1,4 @@
-name: Publish to PyPI
+name: Release MCP packages and hosted services
 
 # Publishes every server package to PyPI on tag push via OIDC Trusted Publisher.
 # Each server must have a Trusted Publisher configured at
@@ -10,6 +10,10 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+
+concurrency:
+  group: mcp-production-release
+  cancel-in-progress: false
 
 jobs:
   shared-safety-tests:
@@ -105,7 +109,7 @@ jobs:
           path: servers/${{ matrix.server.dir }}/dist/
 
   publish:
-    needs: test-and-build
+    needs: [test-and-build, hosted-build, cloudflare-access]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -174,7 +178,7 @@ jobs:
   # create the GitHub Release. This keeps a Release (notes only, no assets)
   # for every tag so the Releases page stays the changelog landing spot.
   release:
-    needs: publish
+    needs: [publish, deploy-hosted, publish-registry]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -184,3 +188,128 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          body: "PyPI packages, the MCP registry, and all five hosted services completed this release from the same commit. See the workflow summary for deployment verification."
+
+  hosted-build:
+    needs: shared-safety-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        slug: [usaspending, ecfr, gsa-calc, federal-register, acquisition-gov]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check hosted package contract
+        env:
+          SLUG: ${{ matrix.slug }}
+        run: |
+          PACKAGE=$(python -c 'import json,os; print(json.load(open("deploy/services.json"))[os.environ["SLUG"]]["package"])')
+          uv run --python 3.12 --frozen --project "servers/$PACKAGE" python scripts/check_hosted_contract.py "$SLUG"
+      - name: Validate Worker and build exact release image
+        env:
+          SLUG: ${{ matrix.slug }}
+        run: |
+          npm ci --prefix "deploy/$SLUG" --ignore-scripts
+          npm run check --prefix "deploy/$SLUG"
+          docker build --platform linux/amd64 --build-arg RELEASE_SHA="$GITHUB_SHA" -f "deploy/$SLUG/Dockerfile" -t "$SLUG-mcp:$GITHUB_SHA" .
+          docker run -d --name mcp-release-check -p 8080:8080 -e MCP_ALLOWED_HOSTS=localhost:*,127.0.0.1:* "$SLUG-mcp:$GITHUB_SHA"
+          python scripts/verify_hosted_release.py "$SLUG" --sha "$GITHUB_SHA" --base http://localhost:8080 --no-upstream
+          docker save "$SLUG-mcp:$GITHUB_SHA" -o image.tar
+      - name: Stop validation container
+        if: always()
+        run: docker rm -f mcp-release-check || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hosted-${{ matrix.slug }}
+          path: image.tar
+          retention-days: 14
+
+  deploy-hosted:
+    needs: [test-and-build, hosted-build, cloudflare-access]
+    runs-on: ubuntu-latest
+    environment: cloudflare-production
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        slug: [usaspending, ecfr, gsa-calc, federal-register, acquisition-gov]
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 846d3e41e48446abcd3570c0959f9fb5
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SLUG: ${{ matrix.slug }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: hosted-${{ matrix.slug }}
+      - name: Deploy verified image to existing service
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
+          export DOCKER_CONFIG="$RUNNER_TEMP/cloudflare-docker"
+          mkdir -m 700 -p "$DOCKER_CONFIG"
+          trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+          docker load -i image.tar
+          npm ci --prefix "deploy/$SLUG" --ignore-scripts
+          python scripts/configure_hosted_image.py "$SLUG" "$GITHUB_SHA"
+          APPLICATION_ID=$(python -c 'import json,os; print(json.load(open("deploy/services.json"))[os.environ["SLUG"]]["application_id"])')
+          cd "deploy/$SLUG"
+          npx wrangler deployments list --config wrangler.release.json --env production > previous-worker.txt
+          npx wrangler containers info "$APPLICATION_ID" > previous-container.json
+          npx wrangler containers push "$SLUG-mcp:$GITHUB_SHA"
+          npx wrangler deploy --config wrangler.release.json --env production
+      - name: Verify production code and repeated upstream requests
+        run: python scripts/verify_hosted_release.py "$SLUG" --sha "$GITHUB_SHA"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: previous-${{ matrix.slug }}
+          path: deploy/${{ matrix.slug }}/previous-*
+          retention-days: 30
+      - name: Record service outcome
+        if: always()
+        env:
+          OUTCOME: ${{ job.status }}
+        run: echo "### $SLUG — $OUTCOME — $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+
+  release-summary:
+    needs: [publish, deploy-hosted, publish-registry]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report each destination independently
+        env:
+          PYPI: ${{ needs.publish.result }}
+          HOSTED: ${{ needs.deploy-hosted.result }}
+          REGISTRY: ${{ needs.publish-registry.result }}
+        run: |
+          printf '## Release %s\n\n| Destination | Result |\n|---|---|\n| PyPI | %s |\n| Cloudflare | %s |\n| MCP registry | %s |\n' "$GITHUB_SHA" "$PYPI" "$HOSTED" "$REGISTRY" >> "$GITHUB_STEP_SUMMARY"
+          test "$PYPI/$HOSTED/$REGISTRY" = success/success/success
+
+  cloudflare-access:
+    runs-on: ubuntu-latest
+    environment: cloudflare-production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: 846d3e41e48446abcd3570c0959f9fb5
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check deployment credential before either destination publishes
+        run: |
+          [[ "$GITHUB_REF" == refs/tags/v* ]] || { echo 'Dispatch this workflow on a versioned release tag'; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Configure the cloudflare-production environment credential before releasing'; exit 1; }
+          npx --yes wrangler@4.129.1 containers list
