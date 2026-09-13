@@ -8,15 +8,31 @@ The server reads official Acquisition.gov HTML pages and indexed PDFs. It does n
 
 ### Verified coverage
 
-The previous source baseline passed **23 offline tests**. This release passes **114 offline tests**, with **3 opt-in live tests skipped** during offline runs:
+The previous source baseline passed **23 offline tests**. This release passes **179 offline tests**, with **3 opt-in live tests skipped** during offline runs:
 
 | Tier | Passing cases | Scope |
 | --- | ---: | --- |
 | P0 | 27 | URL/redirect allowlist, byte/complexity limits, subprocess cancellation, PDF deadlines and parser concurrency |
-| P1 | 33 | Response-policy parity, fallback regression, parsing correctness and fail-closed source validation |
-| P2 | 28 | MCP-dispatched tool paths, filters, pagination, metadata and invalid inputs |
+| P1 | 58 | Response-policy parity, fallback regression, parsing correctness and fail-closed source validation |
+| P2 | 68 | MCP-dispatched tool paths, filters, pagination, metadata and invalid inputs |
 | P3 | 3 | Real stdio startup/discovery/shutdown, packaged parser modules and HTTP MCP smoke checks |
 | Legacy baseline | 23 | Existing captured HTML, generated PDF, pacing and tool-contract tests |
+
+### Direct coverage by tool
+
+| Public tool | Direct offline test cases | Recorded live tool calls |
+| --- | ---: | ---: |
+| `list_rfo_parts` | 21 | 2 |
+| `get_rfo_part` | 24 | 3 |
+| `list_rfo_agency_deviations` | 20 | 2 |
+| `get_rfo_agency_deviation` | 22 | 1 |
+| `get_rfo_guidance` | 20 | 4 |
+
+These are **106 distinct direct-tool cases plus 73 shared cases = 179 offline tests**. One case calls both deviation-listing and PDF-retrieval tools, so the direct-tool rows sum to 107. Each parametrized case counts separately; repeating calls within a single case does not increase its count. Shared parser/transport tests are not credited once per tool. The per-tool rows include successful results, invalid inputs, actual MCP dispatch, transport-failure propagation and tool-specific boundary cases; they are not line-coverage percentages.
+
+The initial 114-case hardening pass was expanded with **65 additional direct-tool scenarios**, 13 per tool, without further runtime changes. These cover 404/429/MIME/redirect/timeout propagation, agency/date filters, duplicated and cross-part records, whole-result pagination, section boundaries, document metadata, encrypted/blank/malformed/partially extractable PDFs, and default/maximum PDF page ranges.
+
+[Collected case inventory](tests/evidence/2026-09-13-test-inventory.json) lists the exact test IDs behind these counts. [tests/README.md](tests/README.md) includes the inventory command.
 
 The priorities describe the tested failure modes; they are not a claim that every possible failure has been covered. The shared release, pacing and hosted-admission suites also passed **92 tests** locally. Linux CI runs the Acquisition.gov offline suite before release, including the isolated PDF parser under its Linux resource limits.
 

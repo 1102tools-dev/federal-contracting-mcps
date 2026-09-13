@@ -22,3 +22,13 @@ uv build servers/acquisition-gov-mcp
 ```
 
 See [the test record](../testing.md) for results, resource-limit differences between platforms and the limits of sampled live coverage. Captured source text is test data, not a policy determination.
+
+## Reproduce the direct-tool inventory
+
+From the repository root, this collects test IDs without executing tests or calling upstream services:
+
+```bash
+PYTHONPATH=servers/acquisition-gov-mcp/tests COVERAGE_INVENTORY_PATH=/tmp/acquisition-gov-test-inventory.json uv run --project servers/acquisition-gov-mcp pytest -p inventory --collect-only -q servers/acquisition-gov-mcp/tests
+```
+
+The inventory uses collected parameter values and direct tool references in each test's source. Catalog-only and helper-only tests are separate. Review the recorded IDs when adding tests that invoke tools indirectly through a new helper.

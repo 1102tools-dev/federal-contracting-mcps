@@ -7,7 +7,7 @@
 - Bound HTML complexity, decoded PDF streams and extracted metadata; explicitly report encrypted, malformed, partial and unextractable documents.
 - Fix section-number matching, selected-content boundaries, issuance-date labels, page-range warnings and wrong-part detection.
 - Validate cursors, headings, source IDs and page ranges before unnecessary upstream requests; fail explicitly on an unrecognized source index.
-- Expand offline coverage from 23 to 114 passing tests, with P0–P3 cases, real stdio/HTTP smoke checks and serialized live evidence across all five tools.
+- Expand offline coverage from 23 to 179 passing tests, with P0–P3 cases, real stdio/HTTP smoke checks and serialized live evidence across all five tools.
 - Preserve the five-tool interface, three-second upstream completion delay and existing hosted admission limits.
 
 ## 1.0.4
