@@ -9,7 +9,7 @@ This server reports source content and metadata. It does **not** decide which ru
 ## Install
 
 ```bash
-uvx acquisition-gov-mcp==1.0.2
+uvx acquisition-gov-mcp==1.0.3
 ```
 
 The server uses stdio, requires no credentials, and defaults to a three-second cross-process interval between Acquisition.gov requests. `FEDERAL_API_MIN_INTERVAL_SECONDS` may increase or decrease that interval for controlled testing; production clients should retain three seconds.

@@ -35,6 +35,9 @@ def main() -> int:
         expected = match.group(1)
         if "https://github.com/1102tools/" in pyproject:
             failures.append(f"{directory}: pyproject contains stale GitHub URLs")
+        dockerfile = (project / "Dockerfile").read_text(encoding="utf-8")
+        if f"{distribution}=={expected}" not in dockerfile:
+            failures.append(f"{directory}: Dockerfile does not install current version {expected}")
         registry_name = f"com.1102tools/{directory}"
         readme = (project / "readme.md").read_text(encoding="utf-8")
         if f"mcp-name: {registry_name}" not in readme:
