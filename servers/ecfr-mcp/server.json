@@ -8,13 +8,13 @@
     "source": "github",
     "subfolder": "servers/ecfr-mcp"
   },
-  "version": "1.0.6",
+  "version": "1.0.7",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "ecfr-mcp",
-      "version": "1.0.6",
+      "version": "1.0.7",
       "transport": {
         "type": "stdio"
       }

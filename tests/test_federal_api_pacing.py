@@ -142,7 +142,7 @@ async def test_same_process_concurrent_requests_serialize_before_file_lock(
         def __init__(self, *_args, **_kwargs) -> None:
             self.held = False
 
-        def acquire(self) -> None:
+        def acquire(self, **_kwargs) -> None:
             if type(self).active:
                 raise RuntimeError("overlapping same-process file-lock acquisition")
             type(self).active = True
@@ -200,3 +200,106 @@ def test_all_http_sites_are_paced_and_helpers_are_synchronized() -> None:
         assert source.count(".request_slot()") == count
         assert "await asyncio.sleep(0.3)" not in source
         assert (server_path.parent / "_pacing.py").read_bytes() == canonical
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("exit_mode", ["normal", "request_error", "cancelled", "state_error"])
+async def test_request_slot_releases_lock_across_executor_threads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, exit_mode: str
+) -> None:
+    """Real file locks must release even when to_thread switches workers."""
+    from concurrent.futures import ThreadPoolExecutor
+    from functools import partial
+    import threading
+
+    from filelock import FileLock
+
+    loop = asyncio.get_running_loop()
+    locks = []
+    threads: dict[str, set[int]] = {}
+    real_write_state = FederalApiPacer._write_state
+
+    def tracked_lock(*args, **kwargs):
+        lock = FileLock(*args, **kwargs)
+        locks.append(lock)
+        return lock
+
+    clock = FakeClock()
+    pacer = FederalApiPacer(
+        bucket="thread-switch.gov", default_interval=0.01,
+        environment={}, pacing_dir=tmp_path, clock=clock.now, sleep=clock.sleep,
+    )
+    monkeypatch.setattr(pacing_module, "FileLock", tracked_lock)
+
+    with ThreadPoolExecutor(max_workers=1) as acquire_pool, ThreadPoolExecutor(max_workers=1) as other_pool:
+        async def forced_to_thread(func, /, *args, **kwargs):
+            name = getattr(func, "__name__", "other")
+            def invoke():
+                threads.setdefault(name, set()).add(threading.get_ident())
+                return func(*args, **kwargs)
+            pool = acquire_pool if name == "acquire" else other_pool
+            return await loop.run_in_executor(pool, invoke)
+
+        monkeypatch.setattr(pacing_module.asyncio, "to_thread", forced_to_thread)
+        try:
+            for _ in range(3):
+                def broken_write(*args):
+                    raise OSError("simulated state write failure")
+                if exit_mode == "state_error":
+                    monkeypatch.setattr(pacer, "_write_state", broken_write)
+
+                async def request():
+                    async with pacer.request_slot():
+                        if exit_mode == "request_error":
+                            raise ValueError("simulated upstream failure")
+                        if exit_mode == "cancelled":
+                            asyncio.current_task().cancel()
+                            await asyncio.sleep(0)
+
+                expected = {"request_error": ValueError, "cancelled": asyncio.CancelledError,
+                            "state_error": OSError}.get(exit_mode)
+                if expected:
+                    with pytest.raises(expected):
+                        await asyncio.create_task(request())
+                else:
+                    await asyncio.create_task(request())
+
+                # A fresh instance must acquire the actual OS lock after every exit.
+                # This catches the old silent release no-op without a hanging test.
+                probe = FileLock(str(tmp_path / f"{pacer._identity()}.lock"))
+                with probe.acquire(timeout=0.2):
+                    pass
+                monkeypatch.setattr(pacer, "_write_state", real_write_state)
+            # Blocking state writes still run off-loop; lock operations do not.
+            assert "acquire" not in threads
+            assert "release" not in threads
+        finally:
+            # Also release a leaked pre-fix lock on its original acquiring thread.
+            for lock in locks:
+                await loop.run_in_executor(acquire_pool, partial(lock.release, force=True))
+
+
+@pytest.mark.asyncio
+async def test_cancel_waiting_for_file_lock_does_not_leave_an_orphan_acquire(tmp_path: Path) -> None:
+    from filelock import FileLock
+
+    pacer = FederalApiPacer(bucket="busy.gov", default_interval=0.01, environment={}, pacing_dir=tmp_path)
+    holder = FileLock(str(tmp_path / f"{pacer._identity()}.lock"))
+    entered = asyncio.Event()
+
+    async def request():
+        async with pacer.request_slot():
+            entered.set()
+
+    with holder.acquire(timeout=0):
+        task = asyncio.create_task(request())
+        await asyncio.sleep(0.08)
+        assert not task.done()
+        assert not entered.is_set()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+    await asyncio.wait_for(request(), timeout=2)
+    assert entered.is_set()
+    with FileLock(holder.lock_file).acquire(timeout=0.2):
+        pass

@@ -13,7 +13,12 @@ on:
 
 jobs:
   shared-safety-tests:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        filelock: ["filelock==3.13.1", "filelock"]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,7 +37,7 @@ jobs:
       - name: Run shared offline safety tests
         run: >-
           uv run --with pytest --with pytest-asyncio --with httpx
-          --with filelock --with platformdirs
+          --with "${{ matrix.filelock }}" --with platformdirs
           pytest -q tests/test_federal_api_pacing.py
 
       - name: Verify version surfaces
