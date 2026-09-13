@@ -5,12 +5,13 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import io
 import re
 import shutil
-import subprocess
+import json
+import sys
 import tempfile
 from datetime import date, datetime, timezone
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urljoin, urlsplit, urlunsplit
@@ -18,8 +19,8 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 import httpx
 from bs4 import BeautifulSoup, Tag
 from mcp.server import MCPServer
-from pypdf import PdfReader
 
+from ._pdf import _normalize_date, _labeled_date, _extract_document_fields, _read_pdf
 from . import __version__
 from ._pacing import FederalApiPacer
 from .constants import (
@@ -32,6 +33,8 @@ from .constants import (
     MAX_OUTPUT_CHARACTERS,
     MAX_PDF_BYTES,
     MAX_PDF_PAGES,
+    MAX_PDF_PARSE_SECONDS,
+    MAX_PDF_WORKER_BYTES,
     MAX_REDIRECTS,
     RFO_INDEX_URL,
     USER_AGENT,
@@ -40,6 +43,7 @@ from .constants import (
 mcp = MCPServer("acquisition-gov", version=__version__)
 _client: httpx.AsyncClient | None = None
 _prefer_system_curl = False
+_pdf_slots = asyncio.Semaphore(1)
 _pacer = FederalApiPacer(bucket="www.acquisition.gov", default_interval=3.0)
 _PART_RE = re.compile(r"(?:FAR\s*)?Part\s*[-:]?\s*(\d{1,2})", re.I)
 _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -80,33 +84,13 @@ def _validate_date(value: str | None, field: str) -> str | None:
     return value.strip()
 
 
-def _normalize_date(raw: str | None) -> str | None:
-    if not raw:
-        return None
-    text = " ".join(raw.replace("\xa0", " ").split()).strip(" .")
-    for fmt in ("%B %d, %Y", "%b %d, %Y", "%m/%d/%Y", "%Y-%m-%d"):
-        try:
-            return datetime.strptime(text, fmt).date().isoformat()
-        except ValueError:
-            continue
-    return None
-
-
-def _labeled_date(text: str, label: str) -> str | None:
-    pattern = re.compile(
-        rf"\b{re.escape(label)}(?:\s+date)?\s*[:\-]\s*"
-        r"([A-Z][a-z]+\s+\d{1,2},\s+\d{4}|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})",
-        re.I,
-    )
-    match = pattern.search(text)
-    return _normalize_date(match.group(1)) if match else None
 
 
 def _validated_url(url: str) -> str:
     parsed = urlsplit(url)
     if parsed.scheme.lower() != "https":
         raise ValueError("Only HTTPS Acquisition.gov URLs are permitted.")
-    if parsed.username or parsed.password or parsed.port:
+    if parsed.username is not None or parsed.password is not None or ":" in parsed.netloc:
         raise ValueError("Credentials and explicit ports are not permitted in source URLs.")
     host = (parsed.hostname or "").lower().rstrip(".")
     if host not in ALLOWED_HOSTS:
@@ -120,7 +104,7 @@ def _get_client() -> httpx.AsyncClient:
         _client = httpx.AsyncClient(
             timeout=DEFAULT_TIMEOUT,
             follow_redirects=False,
-            headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/pdf"},
+            headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/pdf", "Accept-Encoding": "identity"},
         )
     return _client
 
@@ -155,32 +139,34 @@ async def _fetch_bytes(
                         response, response_body = await _curl_once(
                             current, max_bytes=max_bytes
                         )
-                    pacing.observe_response(response)
-                    pacing.raise_if_rate_limited(response, service="Acquisition.gov")
-                    if response.status_code in _REDIRECTS:
-                        location = response.headers.get("location")
-                        if not location:
-                            raise RuntimeError("Acquisition.gov returned a redirect without Location.")
-                        if redirect_count >= MAX_REDIRECTS:
-                            raise RuntimeError("Acquisition.gov exceeded the redirect limit.")
-                        current = _validated_url(urljoin(current, location))
-                        continue
-                    if response.status_code >= 400:
-                        body = response_body[:500].decode("utf-8", "replace")
-                        raise RuntimeError(
-                            f"Acquisition.gov returned HTTP {response.status_code}: {body}"
-                        )
-                    content_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
-                    if not any(content_type == item or content_type.startswith(item) for item in allowed_types):
-                        raise RuntimeError(
-                            f"Unexpected Content-Type {content_type!r} from Acquisition.gov."
-                        )
-                    length = response.headers.get("content-length")
-                    if length and length.isdigit() and int(length) > max_bytes:
-                        raise RuntimeError(
-                            f"Acquisition.gov content exceeds the {max_bytes}-byte limit."
-                        )
-                    return response_body, content_type, current
+                pacing.observe_response(response)
+                pacing.raise_if_rate_limited(response, service="Acquisition.gov")
+                if response.status_code in _REDIRECTS:
+                    location = response.headers.get("location")
+                    if not location:
+                        raise RuntimeError("Acquisition.gov returned a redirect without Location.")
+                    if redirect_count >= MAX_REDIRECTS:
+                        raise RuntimeError("Acquisition.gov exceeded the redirect limit.")
+                    current = _validated_url(urljoin(current, location))
+                    continue
+                if not 200 <= response.status_code < 300:
+                    body = response_body[:500].decode("utf-8", "replace")
+                    raise RuntimeError(
+                        f"Acquisition.gov returned HTTP {response.status_code}: {body}"
+                    )
+                if response.headers.get("content-encoding", "identity").strip().lower() not in ("", "identity"):
+                    raise RuntimeError("Unexpected compressed Acquisition.gov response; identity encoding is required.")
+                content_type = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+                if content_type not in allowed_types:
+                    raise RuntimeError(
+                        f"Unexpected Content-Type {content_type!r} from Acquisition.gov."
+                    )
+                length = response.headers.get("content-length")
+                if length and length.isdigit() and int(length) > max_bytes:
+                    raise RuntimeError(
+                        f"Acquisition.gov content exceeds the {max_bytes}-byte limit."
+                    )
+                return response_body, content_type, current
         except httpx.RequestError as exc:
             raise RuntimeError(f"Network error calling Acquisition.gov: {exc}") from exc
     raise RuntimeError("Acquisition.gov exceeded the redirect limit.")
@@ -189,6 +175,8 @@ async def _fetch_bytes(
 async def _bounded_httpx_body(
     response: httpx.Response, *, max_bytes: int
 ) -> bytes:
+    if response.headers.get("content-encoding", "identity").strip().lower() not in ("", "identity"):
+        raise RuntimeError("Unexpected compressed Acquisition.gov response; identity encoding is required.")
     length = response.headers.get("content-length")
     if length and length.isdigit() and int(length) > max_bytes:
         raise RuntimeError(f"Acquisition.gov content exceeds the {max_bytes}-byte limit.")
@@ -203,92 +191,94 @@ async def _bounded_httpx_body(
 
 
 async def _curl_once(url: str, *, max_bytes: int) -> tuple[httpx.Response, bytes]:
-    """Fetch one validated URL with system curl, without following redirects.
-
-    This is a compatibility fallback for TLS/CDN combinations that stall the
-    Python transport. The caller still owns host validation and redirect policy.
-    """
+    """One HTTPS fetch, with a streaming body bound independent of curl version."""
+    url = _validated_url(url)
     executable = shutil.which("curl")
     if not executable:
         raise RuntimeError("System curl fallback is unavailable.")
-
-    def run() -> tuple[httpx.Response, bytes]:
-        with tempfile.TemporaryDirectory(prefix="acquisition-gov-mcp-") as temporary:
-            root = Path(temporary)
-            headers_path = root / "headers"
-            body_path = root / "body"
-            completed = subprocess.run(
-                [
-                    executable,
-                    "--silent",
-                    "--show-error",
-                    "--proto",
-                    "=https",
-                    "--max-time",
-                    str(int(DEFAULT_TIMEOUT)),
-                    "--max-filesize",
-                    str(max_bytes),
-                    "--max-redirs",
-                    "0",
-                    "--header",
-                    f"User-Agent: {USER_AGENT}",
-                    "--header",
-                    "Accept: text/html,application/pdf",
-                    "--dump-header",
-                    str(headers_path),
-                    "--output",
-                    str(body_path),
-                    "--write-out",
-                    "STATUS:%{http_code}\nTYPE:%{content_type}\nREDIRECT:%{redirect_url}\n",
-                    url,
-                ],
-                capture_output=True,
-                text=True,
-                timeout=DEFAULT_TIMEOUT + 2,
-                check=False,
-            )
-            if completed.returncode != 0:
-                raise RuntimeError(
-                    "System curl could not retrieve Acquisition.gov: "
-                    f"exit {completed.returncode}; {completed.stderr.strip()[:300]}"
-                )
-            metadata = {
-                key: value
-                for line in completed.stdout.splitlines()
-                if ":" in line
-                for key, value in [line.split(":", 1)]
-            }
+    with tempfile.TemporaryDirectory(prefix="acquisition-gov-mcp-") as temporary:
+        headers_path = Path(temporary) / "headers"
+        process = await asyncio.create_subprocess_exec(
+            executable, "--disable", "--silent", "--show-error", "--proto", "=https",
+            "--max-time", str(int(DEFAULT_TIMEOUT)), "--max-filesize", str(max_bytes),
+            "--max-redirs", "0", "--header", f"User-Agent: {USER_AGENT}",
+            "--header", "Accept: text/html,application/pdf", "--header", "Accept-Encoding: identity",
+            "--dump-header", str(headers_path), "--output", "-",
+            "--write-out", "%{stderr}\nSTATUS:%{http_code}\nTYPE:%{content_type}\nREDIRECT:%{redirect_url}\n", url,
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        async def bounded_read(stream, limit):
+            chunks = []
+            size = 0
+            while chunk := await stream.read(65536):
+                size += len(chunk)
+                if size > limit:
+                    raise RuntimeError(f"Acquisition.gov curl response exceeds the {limit}-byte limit.")
+                chunks.append(chunk)
+            return b"".join(chunks)
+        tasks = [asyncio.create_task(bounded_read(process.stdout, max_bytes)),
+                 asyncio.create_task(bounded_read(process.stderr, 8192)),
+                 asyncio.create_task(process.wait())]
+        try:
+            try:
+                body, errors, _ = await asyncio.wait_for(asyncio.gather(*tasks), DEFAULT_TIMEOUT + 2)
+            except asyncio.TimeoutError as exc:
+                raise RuntimeError("System curl timed out calling Acquisition.gov.") from exc
+            if process.returncode:
+                raise RuntimeError(f"System curl could not retrieve Acquisition.gov: exit {process.returncode}; {errors.decode('utf-8', 'replace').strip()[:300]}")
+            metadata = dict(line.split(":", 1) for line in errors.decode().splitlines() if ":" in line)
             if not {"STATUS", "TYPE", "REDIRECT"}.issubset(metadata):
                 raise RuntimeError("System curl returned incomplete response metadata.")
             status = int(metadata["STATUS"])
-            content_type = metadata["TYPE"]
-            redirect_url = metadata["REDIRECT"]
             raw_headers = headers_path.read_text(encoding="iso-8859-1")
-            header_blocks = [block for block in re.split(r"\r?\n\r?\n", raw_headers) if block.strip()]
-            header_lines = header_blocks[-1].splitlines() if header_blocks else []
-            headers: dict[str, str] = {}
-            for line in header_lines[1:]:
-                if ":" in line:
-                    key, value = line.split(":", 1)
-                    headers[key.strip()] = value.strip()
-            if content_type and "Content-Type" not in headers:
-                headers["Content-Type"] = content_type
-            if redirect_url and "Location" not in headers:
-                headers["Location"] = redirect_url
-            body = body_path.read_bytes() if body_path.exists() else b""
-            if len(body) > max_bytes:
-                raise RuntimeError(
-                    f"Acquisition.gov content exceeds the {max_bytes}-byte limit."
-                )
-            return httpx.Response(status, headers=headers, content=body), body
+            blocks = [block for block in re.split(r"\r?\n\r?\n", raw_headers) if block.strip()]
+            lines = blocks[-1].splitlines() if blocks else []
+            headers = dict((k.strip(), v.strip()) for line in lines[1:] if ":" in line for k, v in [line.split(":", 1)])
+            normalized = httpx.Headers(headers)
+            if metadata["TYPE"] and "content-type" not in normalized:
+                normalized["content-type"] = metadata["TYPE"]
+            if metadata["REDIRECT"] and "location" not in normalized:
+                normalized["location"] = metadata["REDIRECT"]
+            return httpx.Response(status, headers=normalized, content=body), body
+        finally:
+            if process.returncode is None:
+                process.kill()
+            await process.wait()
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
 
-    try:
-        return await asyncio.to_thread(run)
-    except subprocess.TimeoutExpired as exc:
-        raise RuntimeError("System curl timed out calling Acquisition.gov.") from exc
+
+def _validate_html_body(html: bytes) -> None:
+    if len(html) > MAX_HTML_BYTES:
+        raise RuntimeError("HTML source exceeds the size limit.")
+    count = 0
+    for tag in re.finditer(rb"<[^>]*>", html):
+        count += 1
+        if count > 20_000 or len(tag.group()) > 16_384:
+            raise RuntimeError("HTML source exceeds the parser complexity limit.")
+
+    class DepthGuard(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=False)
+            self.stack = []
+        def handle_starttag(self, tag, attrs):
+            if tag not in {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}:
+                self.stack.append(tag)
+                if len(self.stack) > 128:
+                    raise RuntimeError("HTML source exceeds the nesting limit.")
+        def handle_startendtag(self, tag, attrs):
+            pass
+        def handle_endtag(self, tag):
+            if tag in self.stack:
+                index = len(self.stack) - 1 - self.stack[::-1].index(tag)
+                del self.stack[index:]
+    DepthGuard().feed(html.decode("utf-8", "replace"))
 
 
 def _main_content(html: bytes) -> Tag | BeautifulSoup:
+    _validate_html_body(html)
     soup = BeautifulSoup(html, "html.parser")
     for node in soup.select("script, style, nav, header, footer, form"):
         node.decompose()
@@ -304,28 +294,53 @@ def _text_lines(node: Tag | BeautifulSoup) -> list[str]:
     return [" ".join(line.split()) for line in node.get_text("\n").splitlines() if line.strip()]
 
 
-def _extract_section(node: Tag | BeautifulSoup, section: str | None) -> str:
+def _validate_heading(section: str | None) -> str | None:
     if section is None:
-        return "\n".join(_text_lines(node))
-    needle = " ".join(section.split()).casefold()
-    heading = next(
-        (
-            h
-            for h in node.find_all(re.compile(r"^h[1-6]$"))
-            if needle in " ".join(h.get_text(" ", strip=True).split()).casefold()
-        ),
-        None,
-    )
-    if heading is None:
+        return None
+    if not section.strip() or len(section) > 500:
+        raise ValueError("section/heading must contain 1 through 500 nonblank characters.")
+    return " ".join(section.split())
+
+
+def _validate_chunk_inputs(cursor: str | None, maximum: int) -> None:
+    if not 1_000 <= maximum <= MAX_OUTPUT_CHARACTERS:
+        raise ValueError(f"max_characters must be between 1000 and {MAX_OUTPUT_CHARACTERS}.")
+    if cursor is not None and (not re.fullmatch(r"[0-9]{1,9}", cursor)):
+        raise ValueError("cursor must be the numeric cursor returned by a prior call.")
+
+
+def _extract_section(node: Tag | BeautifulSoup, section: str | None) -> str:
+    section = _validate_heading(section)
+    if section is None:
+        text = "\n".join(_text_lines(node))
+        if not text:
+            raise RuntimeError("The official HTML source contains no extractable content.")
+        return text
+    needle = section.casefold()
+    headings = list(node.find_all(re.compile(r"^h[1-6]$")))
+    def matches(h):
+        text = " ".join(h.get_text(" ", strip=True).split()).casefold()
+        return re.search(r"(?<![\w.])" + re.escape(needle) + r"(?![\w.])", text) is not None
+    exact = [h for h in headings if h.get_text(" ", strip=True).casefold() == needle]
+    candidates = exact or [h for h in headings if matches(h)]
+    if not candidates:
         raise ValueError(f"section {section!r} was not found in the official source.")
+    if len(candidates) > 1:
+        raise ValueError(f"section {section!r} matches multiple headings; use a more specific heading.")
+    heading = candidates[0]
     level = int(heading.name[1])
     lines = [" ".join(heading.get_text(" ", strip=True).split())]
     for sibling in heading.find_all_next():
-        if sibling is heading:
-            continue
-        if re.fullmatch(r"h[1-6]", sibling.name or "") and int(sibling.name[1]) <= level:
+        if node not in sibling.parents:
             break
-        if sibling.name in {"p", "li", "table"}:
+        if re.fullmatch(r"h[1-6]", sibling.name or ""):
+            if int(sibling.name[1]) <= level:
+                break
+            lines.append(" ".join(sibling.get_text(" ", strip=True).split()))
+        elif sibling.name in {"p", "li", "table"}:
+            # Parent list/table text already includes descendants.
+            if any(parent.name in {"p", "li", "table"} for parent in sibling.parents if parent is not node):
+                continue
             text = " ".join(sibling.get_text(" ", strip=True).split())
             if text:
                 lines.append(text)
@@ -333,10 +348,7 @@ def _extract_section(node: Tag | BeautifulSoup, section: str | None) -> str:
 
 
 def _chunk(text: str, cursor: str | None, maximum: int) -> dict[str, Any]:
-    if not 1_000 <= maximum <= MAX_OUTPUT_CHARACTERS:
-        raise ValueError(
-            f"max_characters must be between 1000 and {MAX_OUTPUT_CHARACTERS}."
-        )
+    _validate_chunk_inputs(cursor, maximum)
     if cursor is None:
         start = 0
     elif not cursor.isdigit():
@@ -369,13 +381,14 @@ def _agency_name(link: Tag) -> str:
 
 
 def _parse_index(html: bytes, source_url: str) -> list[dict[str, Any]]:
+    _validate_html_body(html)
     soup = BeautifulSoup(html, "html.parser")
     cards = soup.select(".content-card.far-card") or soup.select(".far-card")
     results: list[dict[str, Any]] = []
     for ordinal, card in enumerate(cards, start=1):
         part = _part_from_card(card)
-        if part is None:
-            continue
+        if part is None or not 1 <= part <= 53:
+            raise RuntimeError("The Acquisition.gov index contains an unrecognized FAR part card.")
         title_node = card.select_one(".far-title a") or card.find("a")
         part_url = _validated_url(urljoin(source_url, title_node.get("href"))) if title_node and title_node.get("href") else f"{RFO_INDEX_URL}/far-overhaul-part-{part}"
         title = (
@@ -436,72 +449,40 @@ async def _index() -> tuple[list[dict[str, Any]], str, str, str]:
     body, _, final_url = await _fetch_bytes(
         RFO_INDEX_URL, allowed_types=("text/html",), max_bytes=MAX_HTML_BYTES
     )
-    return _parse_index(body, final_url), final_url, _sha(body), _now()
+    parts = _parse_index(body, final_url)
+    if not parts:
+        raise RuntimeError("The Acquisition.gov index structure was not recognized; no results can be confirmed.")
+    return parts, final_url, _sha(body), _now()
 
 
-def _extract_document_fields(page_texts: list[tuple[int, str]]) -> dict[str, Any]:
-    joined = "\n".join(text for _, text in page_texts)
-    applicability: list[str] = []
-    for page, text in page_texts:
-        for line in text.splitlines():
-            cleaned = " ".join(line.split())
-            if re.search(r"\b(applicability|applies to|applicable to)\b", cleaned, re.I):
-                applicability.append(f"Page {page}: {cleaned}")
-    return {
-        "issuance_date": _labeled_date(joined, "Issued") or _labeled_date(joined, "Date"),
-        "effective_date": _labeled_date(joined, "Effective"),
-        "expiration_date": _labeled_date(joined, "Expiration") or _labeled_date(joined, "Expires"),
-        "applicability_text": "\n".join(applicability[:12]) or None,
-    }
 
 
-def _read_pdf(
-    body: bytes, *, page_start: int, page_end: int | None
-) -> tuple[str, str, list[str], dict[str, Any], int, int]:
-    warnings: list[str] = []
-    try:
-        reader = PdfReader(io.BytesIO(body))
-    except Exception as exc:
-        return "", "error", [f"PDF parsing failed: {type(exc).__name__}: {exc}"], {}, 0, 0
-    if reader.is_encrypted:
+async def _read_pdf_safely(body: bytes, *, page_start: int, page_end: int | None):
+    """Keep PDF CPU/memory faults and cancellation outside the main event loop."""
+    if len(body) > MAX_PDF_BYTES:
+        raise ValueError("PDF input exceeds the download limit.")
+    async with _pdf_slots:
+        process = await asyncio.create_subprocess_exec(
+            sys.executable, "-m", "acquisition_gov_mcp._pdf_worker",
+            str(page_start), "none" if page_end is None else str(page_end),
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
         try:
-            unlocked = reader.decrypt("")
-        except Exception:
-            unlocked = 0
-        if not unlocked:
-            return "", "encrypted", ["The official PDF is encrypted and could not be extracted."], {}, len(reader.pages), 0
-    total = len(reader.pages)
-    if total == 0:
-        return "", "unextractable", ["The PDF contains no pages."], {}, 0, 0
-    if page_start < 1 or page_start > total:
-        raise ValueError(f"page_start must be between 1 and {total}.")
-    end = min(total, page_end if page_end is not None else min(total, page_start + 9))
-    if end < page_start:
-        raise ValueError("page_end must be greater than or equal to page_start.")
-    if end - page_start + 1 > MAX_PDF_PAGES:
-        raise ValueError(f"A single call may retrieve at most {MAX_PDF_PAGES} pages.")
-    pages: list[tuple[int, str]] = []
-    empty = 0
-    for number in range(page_start, end + 1):
-        try:
-            text = reader.pages[number - 1].extract_text() or ""
-        except Exception as exc:
-            warnings.append(f"Page {number} extraction failed: {type(exc).__name__}.")
-            text = ""
-        cleaned = text.strip()
-        if not cleaned:
-            empty += 1
-        pages.append((number, cleaned))
-    if empty == len(pages):
-        status = "unextractable"
-        warnings.append("Selected pages contain no extractable text and may be scanned images.")
-    elif empty:
-        status = "partial"
-        warnings.append(f"{empty} selected page(s) contained no extractable text.")
-    else:
-        status = "complete"
-    numbered = "\n\n".join(f"[Page {page}]\n{text}" for page, text in pages)
-    return numbered, status, warnings, _extract_document_fields(pages), total, end
+            try:
+                output, _ = await asyncio.wait_for(process.communicate(body), MAX_PDF_PARSE_SECONDS)
+            except asyncio.TimeoutError:
+                return "", "error", ["PDF parsing exceeded its time budget; request fewer pages or inspect the source document."], {}, 0, 0
+            if process.returncode or len(output) > MAX_PDF_WORKER_BYTES:
+                return "", "error", ["PDF parsing failed or exceeded its resource budget; inspect the source document."], {}, 0, 0
+            try:
+                return tuple(json.loads(output))
+            except (ValueError, TypeError):
+                return "", "error", ["PDF parser returned an invalid result."], {}, 0, 0
+        finally:
+            if process.returncode is None:
+                process.kill()
+            await process.wait()
 
 
 @mcp.tool(annotations={"title": "List FAR Overhaul parts", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -536,15 +517,16 @@ async def list_rfo_parts(
             }
             | {"agency_deviation_count": len(matches)}
         )
+    warnings = ["This index documents posted sources; it does not decide which text governs a procurement."]
+    if since and any(item["updated_date"] is None for item in results):
+        warnings.append("Entries without an update date were retained; they cannot be confirmed as updated since the requested date.")
     return {
         "source_url": source_url,
         "retrieved_at": retrieved,
         "content_sha256": digest,
         "count": len(results),
         "results": results,
-        "warnings": [
-            "This index documents posted sources; it does not decide which text governs a procurement."
-        ],
+        "warnings": warnings,
     }
 
 
@@ -557,12 +539,18 @@ async def get_rfo_part(
 ) -> dict[str, Any]:
     """Return parsed, paginated model-deviation text for one FAR part."""
     wanted = _validate_part(part)
+    _validate_chunk_inputs(cursor, max_characters)
+    _validate_heading(section)
     body, _, final_url = await _fetch_bytes(
         f"{RFO_INDEX_URL}/far-overhaul-part-{wanted}",
         allowed_types=("text/html",),
         max_bytes=MAX_HTML_BYTES,
     )
     node = _main_content(body)
+    title = node.find(re.compile(r"^h[1-2]$"))
+    title_part = _PART_RE.search(title.get_text(" ", strip=True)) if title else None
+    if title_part is None or int(title_part.group(1)) != wanted:
+        raise RuntimeError(f"The returned HTML could not be verified as FAR Overhaul Part {wanted}.")
     text = _extract_section(node, section)
     page = _chunk(text, cursor, max_characters)
     full_text = "\n".join(_text_lines(node))
@@ -644,8 +632,10 @@ async def get_rfo_agency_deviation(
     page_end: int | None = None,
 ) -> dict[str, Any]:
     """Resolve an indexed source ID and return page-numbered official PDF text."""
-    if not source_id.startswith("agency-deviation-"):
+    if not re.fullmatch(r"agency-deviation-[a-f0-9]{20}", source_id):
         raise ValueError("source_id must come from list_rfo_agency_deviations.")
+    if page_start < 1 or (page_end is not None and (page_end < page_start or page_end - page_start + 1 > MAX_PDF_PAGES)):
+        raise ValueError(f"page_start/page_end must select 1 through {MAX_PDF_PAGES} pages in increasing order.")
     parts, _, _, index_retrieved = await _index()
     discovered = [
         deviation
@@ -661,7 +651,7 @@ async def get_rfo_agency_deviation(
     body, _, final_url = await _fetch_bytes(
         target["source_url"], allowed_types=("application/pdf",), max_bytes=MAX_PDF_BYTES
     )
-    text, status, warnings, fields, total_pages, selected_end = _read_pdf(
+    text, status, warnings, fields, total_pages, selected_end = await _read_pdf_safely(
         body, page_start=page_start, page_end=page_end
     )
     total_extracted_characters = len(text)
@@ -703,12 +693,16 @@ async def get_rfo_guidance(
     cursor: str | None = None,
 ) -> dict[str, Any]:
     """Return an allowlisted Acquisition.gov RFO FAQ or guidance resource."""
+    _validate_chunk_inputs(cursor, DEFAULT_MAX_CHARACTERS)
+    _validate_heading(heading)
+    if resource not in GUIDANCE_URLS:
+        raise ValueError("resource must be faq, policy_and_guidance, or deviation_guidance.")
     url = GUIDANCE_URLS[resource]
     if resource == "deviation_guidance":
         body, _, final_url = await _fetch_bytes(
             url, allowed_types=("application/pdf",), max_bytes=MAX_PDF_BYTES
         )
-        text, status, warnings, fields, total_pages, _ = _read_pdf(
+        text, status, warnings, fields, total_pages, _ = await _read_pdf_safely(
             body, page_start=1, page_end=MAX_PDF_PAGES
         )
         if heading:

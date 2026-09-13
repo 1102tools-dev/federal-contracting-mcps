@@ -38,6 +38,11 @@ jobs:
         run: uv run --with pytest --with packaging --with pyyaml pytest -q tests/test_release_guards.py
       - name: Test bounded hosted admission queue
         run: uv run --with pytest --with pytest-asyncio --with starlette pytest -q tests/test_hosted_admission.py
+      - name: Test Acquisition.gov offline hardening
+        env:
+          FEDERAL_API_MIN_INTERVAL_SECONDS: "0"
+          ACQUISITION_GOV_LIVE_TESTS: "0"
+        run: uv run --project servers/acquisition-gov-mcp pytest -q servers/acquisition-gov-mcp/tests
       - name: Build and compare all nine packages with PyPI
         run: |
           for project in servers/*; do

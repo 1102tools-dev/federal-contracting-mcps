@@ -9,7 +9,7 @@ This server reports source content and metadata. It does **not** decide which ru
 ## Install
 
 ```bash
-uvx acquisition-gov-mcp==1.0.4
+uvx acquisition-gov-mcp==1.0.5
 ```
 
 The server uses stdio, requires no credentials, and defaults to a three-second cross-process interval between Acquisition.gov requests. `FEDERAL_API_MIN_INTERVAL_SECONDS` may increase or decrease that interval for controlled testing; production clients should retain three seconds.
@@ -44,10 +44,11 @@ Every retrieved source includes a canonical URL, UTC retrieval time, SHA-256 con
 
 - Only `https://acquisition.gov` and `https://www.acquisition.gov` are allowed.
 - Redirect targets are revalidated; credentials, explicit ports, arbitrary hosts, and private IP targets are rejected.
-- Responses are limited by content type, bytes, redirects, pages, and output length.
+- Downloads are bounded to **5 MiB HTML / 25 MiB PDF**. HTML complexity, redirects, page selection and output length are also bounded.
+- PDF extraction runs in one isolated parser subprocess at a time, with a **10-second deadline**, **2 MiB decoded page-stream limit**, and **160 MiB address-space / 8-second CPU limits on Linux**. macOS and Windows retain process isolation and explicit content/output limits without the Linux resource caps.
 - HTTP 429 is not burst-retried. `Retry-After` is retained in the shared pacing state.
 - If the Python TLS transport stalls against Acquisition.gov's CDN, the server may use an installed system `curl` for the same prevalidated URL; redirects remain disabled and revalidated by the server.
 - Duplicate and conflicting index entries are returned with warnings instead of silently resolved.
 - Scanned, encrypted, and malformed PDFs return explicit extraction status and metadata where possible.
 
-See [testing.md](testing.md) for the release evidence and live-gate instructions.
+Version 1.0.5 passed **114 offline tests**, including P0–P3 coverage and real stdio/HTTP smoke checks, plus **12 serialized live MCP calls across all five tools**. See [testing.md](testing.md) for evidence, exact limits, known scope and reproducible commands.

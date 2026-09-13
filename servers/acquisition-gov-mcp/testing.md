@@ -1,5 +1,67 @@
 # Acquisition.gov MCP test record
 
+## Version 1.0.5 hardening — 2026-09-13
+
+### What this server retrieves
+
+The server reads official Acquisition.gov HTML pages and indexed PDFs. It does not query a government JSON API, a CSV database or a private mirrored dataset. The five tools turn the RFO index, model-part pages, agency deviation PDFs and three allowlisted guidance resources into structured, source-linked results.
+
+### Verified coverage
+
+The previous source baseline passed **23 offline tests**. This release passes **114 offline tests**, with **3 opt-in live tests skipped** during offline runs:
+
+| Tier | Passing cases | Scope |
+| --- | ---: | --- |
+| P0 | 27 | URL/redirect allowlist, byte/complexity limits, subprocess cancellation, PDF deadlines and parser concurrency |
+| P1 | 33 | Response-policy parity, fallback regression, parsing correctness and fail-closed source validation |
+| P2 | 28 | MCP-dispatched tool paths, filters, pagination, metadata and invalid inputs |
+| P3 | 3 | Real stdio startup/discovery/shutdown, packaged parser modules and HTTP MCP smoke checks |
+| Legacy baseline | 23 | Existing captured HTML, generated PDF, pacing and tool-contract tests |
+
+The priorities describe the tested failure modes; they are not a claim that every possible failure has been covered. The shared release, pacing and hosted-admission suites also passed **92 tests** locally. Linux CI runs the Acquisition.gov offline suite before release, including the isolated PDF parser under its Linux resource limits.
+
+### Failures reproduced and fixed
+
+- A cached system-curl fallback skipped response handling on subsequent calls. Both transports now enforce status codes, exact MIME types, redirect validation, body limits and Retry-After handling.
+- Unrecognized index HTML could look like a successful empty result; mismatched part pages could be labeled as the requested part. Both cases now fail explicitly.
+- Section `10.1` could match `10.10`, and section traversal could escape the selected main content. Matching and traversal now respect those boundaries.
+- Encrypted PDFs could crash before an extraction status was returned. PDF parsing is isolated, bounded and cancellable, with explicit failure metadata.
+- A generic date label could misread an effective date as an issuance date. Date labels now distinguish those fields.
+- Invalid cursors, blank headings and bad PDF ranges could trigger unnecessary upstream calls. Validation runs first.
+- Selected PDF pages and oversized applicability text now carry explicit scope/truncation warnings.
+
+### Resource boundaries
+
+| Boundary | Limit |
+| --- | --- |
+| HTML / PDF downloads | 5 MiB / 25 MiB |
+| Redirects | 3; each destination revalidated |
+| HTML complexity | 20,000 tags, 16,384 bytes per tag, nesting depth 128 |
+| PDF pages selected per call | 25 |
+| Decoded PDF page stream | 2 MiB before text extraction |
+| Extracted PDF text / applicability field | 200,000 / 8,192 characters |
+| PDF worker output | 2 MiB |
+| Concurrent PDF parser children | 1 per server process |
+| PDF parser deadline | 10 seconds wall time |
+| Linux parser address space / CPU | 160 MiB / 8 seconds |
+| Public text chunk | Up to 40,000 characters |
+
+The Linux address-space and CPU limits apply to the hosted Linux runtime. macOS and Windows retain subprocess isolation, cancellation, the parent deadline and explicit input/output/content limits, but do not apply those Linux resource limits. A rejected or partial document is reported as such; no OCR is performed.
+
+### Serialized live evidence
+
+Two new opt-in test functions completed **12 real MCP tool calls** on September 13, 2026, using the production three-second completion delay. These covered all five tools, all three guidance resources, a section lookup, a cursor continuation, agency filtering, an indexed NSF PDF page and two successive requests through the actual system-curl transport. The first gate completed in **31.41 seconds** and the curl gate in **3.87 seconds**. These are observed test durations, not throughput guarantees.
+
+The current index returned **51 model parts**. Part 10 had **38 indexed agency deviations**; the filtered NSF record resolved to a **four-page PDF**, and the FAR Council guidance PDF had **three pages**. Both PDF samples extracted successfully. [Machine-readable observations](tests/evidence/2026-09-13-live.json) contain source URLs, UTC retrieval times, hashes, results and warnings.
+
+This is sampled live coverage, not a claim that every agency PDF or model part was tested. Hashes are observations, not permanent expected fixtures. No load test was performed against Acquisition.gov. The upstream pacing remains one request at a time followed by a three-second delay; hosted admission remains four active requests and no waiting queue.
+
+See [tests/README.md](tests/README.md) for reproducible offline, smoke and opt-in live commands.
+
+## Historical evidence
+
+The earlier records below are retained with their original versions and dates.
+
 Version: `1.0.0`
 
 ## Deterministic suite
