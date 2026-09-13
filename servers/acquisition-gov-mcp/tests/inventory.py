@@ -9,6 +9,8 @@ def pytest_collection_modifyitems(items):
   params=getattr(getattr(item,'callspec',None),'params',{})
   tool=params.get('tool',params.get('name'))
   if tool in TOOLS:targets=[tool]
+  elif item.originalname=='test_http_owns_real_parser_process_lifetime':
+   targets=[{'html':'get_rfo_part','pdf':'get_rfo_agency_deviation'}[params['kind']]]
   elif item.originalname=='test_tool_inventory_and_strict_schemas':targets=[]
   else:
    source=inspect.getsource(item.obj)

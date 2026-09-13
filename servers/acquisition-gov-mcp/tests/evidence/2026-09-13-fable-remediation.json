@@ -1,0 +1,353 @@
+{
+  "date": "2026-09-13",
+  "stage": "release-candidate",
+  "package_version": "1.0.7",
+  "runtime_code_sha": "4145f548a2c0f30bd2bdcd3267c71d8c0c3b7152",
+  "independent_review": {
+    "model": "Fable 5.1",
+    "effort": "extra high",
+    "reviewed_version": "1.0.6",
+    "reviewed_source": "e0b6f7ad60958609b10766b5a33b1057817b7094",
+    "source_files_unchanged": 369,
+    "p0_findings": 0,
+    "p1_findings": 2,
+    "adversarial_cases": 84,
+    "note": "Candidate-test failures are not a defect count; independent audit remained read-only."
+  },
+  "offline": {
+    "passed": 236,
+    "skipped_opt_in_live": 3,
+    "new_regression_cases": 55,
+    "seconds": 25.39
+  },
+  "shared_checks": {
+    "passed": 95
+  },
+  "contract": {
+    "tools": 5,
+    "changed": false
+  },
+  "version_pins": "package, module, User-Agent, registry, standalone Docker and Smithery verified at 1.0.7",
+  "ci": {
+    "release_guards": "https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/34755551694",
+    "constrained_runtime": "https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/34755554864"
+  },
+  "live_local_current_candidate": {
+    "version": "1.0.7",
+    "source_sha": "4145f548a2c0f30bd2bdcd3267c71d8c0c3b7152",
+    "runtime": "local",
+    "observations": [
+      {
+        "tool": "list_rfo_agency_deviations",
+        "arguments": {
+          "agency": "Energy (DOE)",
+          "limit": 250
+        },
+        "seconds": 0.373,
+        "count": 49,
+        "total_matches": 49,
+        "total_characters": null,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide",
+        "retrieved_at": "2026-09-13T11:52:29+00:00",
+        "content_sha256": "4f1fd842507e929876ced0a650b59a4687c2757b7d7d710062e160248eec63dd",
+        "warnings": [
+          "Documents are listed as posted; retrieve the PDF before relying on dates or applicability.",
+          "The agency filter matched multiple normalized names: ['Department of Energy (DOE)', 'Department of Energy DOE']."
+        ]
+      },
+      {
+        "tool": "list_rfo_agency_deviations",
+        "arguments": {
+          "agency": "DOE",
+          "limit": 250
+        },
+        "seconds": 3.023,
+        "count": 49,
+        "total_matches": 49,
+        "total_characters": null,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide",
+        "retrieved_at": "2026-09-13T11:52:32+00:00",
+        "content_sha256": "4f1fd842507e929876ced0a650b59a4687c2757b7d7d710062e160248eec63dd",
+        "warnings": [
+          "Documents are listed as posted; retrieve the PDF before relying on dates or applicability.",
+          "The agency filter matched multiple normalized names: ['Department of Energy (DOE)', 'Department of Energy DOE']."
+        ]
+      },
+      {
+        "tool": "list_rfo_agency_deviations",
+        "arguments": {
+          "agency": "General Services Administration",
+          "limit": 250
+        },
+        "seconds": 3.029,
+        "count": 50,
+        "total_matches": 50,
+        "total_characters": null,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide",
+        "retrieved_at": "2026-09-13T11:52:35+00:00",
+        "content_sha256": "4f1fd842507e929876ced0a650b59a4687c2757b7d7d710062e160248eec63dd",
+        "warnings": [
+          "Documents are listed as posted; retrieve the PDF before relying on dates or applicability.",
+          "The agency filter matched multiple normalized names: ['GSA', 'General Services Administration (GSA)']."
+        ]
+      },
+      {
+        "tool": "list_rfo_agency_deviations",
+        "arguments": {
+          "agency": "GSA",
+          "limit": 250
+        },
+        "seconds": 3.026,
+        "count": 50,
+        "total_matches": 50,
+        "total_characters": null,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide",
+        "retrieved_at": "2026-09-13T11:52:39+00:00",
+        "content_sha256": "4f1fd842507e929876ced0a650b59a4687c2757b7d7d710062e160248eec63dd",
+        "warnings": [
+          "Documents are listed as posted; retrieve the PDF before relying on dates or applicability.",
+          "The agency filter matched multiple normalized names: ['GSA', 'General Services Administration (GSA)']."
+        ]
+      },
+      {
+        "tool": "get_rfo_part",
+        "arguments": {
+          "part": 52,
+          "max_characters": 1000
+        },
+        "seconds": 3.641,
+        "count": null,
+        "total_matches": null,
+        "total_characters": 1905514,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide/far-overhaul-part-52",
+        "retrieved_at": "2026-09-13T11:52:42+00:00",
+        "content_sha256": "97dc0e7ad581528c044df4b390dc04ef534fbc0240f4d7c7cc002a97fc1c13fc",
+        "warnings": [
+          "RFO model text is not operative for an agency unless that agency adopts it through a deviation.",
+          "The page text does not state issuance or update dates; list_rfo_parts reports dates from the separate index cards."
+        ]
+      },
+      {
+        "tool": "get_rfo_part",
+        "arguments": {
+          "part": 52,
+          "cursor": "1000",
+          "max_characters": 1000
+        },
+        "seconds": 3.086,
+        "count": null,
+        "total_matches": null,
+        "total_characters": 1905514,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide/far-overhaul-part-52",
+        "retrieved_at": "2026-09-13T11:52:45+00:00",
+        "content_sha256": "97dc0e7ad581528c044df4b390dc04ef534fbc0240f4d7c7cc002a97fc1c13fc",
+        "warnings": [
+          "RFO model text is not operative for an agency unless that agency adopts it through a deviation.",
+          "The page text does not state issuance or update dates; list_rfo_parts reports dates from the separate index cards."
+        ]
+      }
+    ]
+  },
+  "live_local_earlier_candidate": {
+    "source_sha": "403ac765d3ac1dca08e46015a50f755603203e26",
+    "observations": [
+      {
+        "tool": "list_rfo_parts",
+        "arguments": {},
+        "seconds": 0.719,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide",
+        "content_sha256": "4f1fd842507e929876ced0a650b59a4687c2757b7d7d710062e160248eec63dd",
+        "retrieved_at": "2026-09-13T11:46:04+00:00",
+        "count": 51,
+        "text_extraction_status": null,
+        "total_pages": null,
+        "warnings": [
+          "This index documents posted sources; it does not decide which text governs a procurement."
+        ]
+      },
+      {
+        "tool": "get_rfo_part",
+        "arguments": {
+          "part": 10,
+          "max_characters": 1000
+        },
+        "seconds": 2.955,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide/far-overhaul-part-10",
+        "content_sha256": "524d91e82e8ffd9ba73375f7d251db255fb34d0621890f8dd9b5a3df27a06050",
+        "retrieved_at": "2026-09-13T11:46:07+00:00",
+        "count": null,
+        "text_extraction_status": "complete",
+        "total_pages": null,
+        "warnings": [
+          "RFO model text is not operative for an agency unless that agency adopts it through a deviation."
+        ]
+      },
+      {
+        "tool": "get_rfo_part",
+        "arguments": {
+          "part": 10,
+          "section": "10.001",
+          "max_characters": 1000
+        },
+        "seconds": 3.032,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide/far-overhaul-part-10",
+        "content_sha256": "524d91e82e8ffd9ba73375f7d251db255fb34d0621890f8dd9b5a3df27a06050",
+        "retrieved_at": "2026-09-13T11:46:10+00:00",
+        "count": null,
+        "text_extraction_status": "complete",
+        "total_pages": null,
+        "warnings": [
+          "RFO model text is not operative for an agency unless that agency adopts it through a deviation."
+        ]
+      },
+      {
+        "tool": "get_rfo_part",
+        "arguments": {
+          "part": 10,
+          "max_characters": 1000,
+          "cursor": "1000"
+        },
+        "seconds": 3.029,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide/far-overhaul-part-10",
+        "content_sha256": "524d91e82e8ffd9ba73375f7d251db255fb34d0621890f8dd9b5a3df27a06050",
+        "retrieved_at": "2026-09-13T11:46:13+00:00",
+        "count": null,
+        "text_extraction_status": "complete",
+        "total_pages": null,
+        "warnings": [
+          "RFO model text is not operative for an agency unless that agency adopts it through a deviation."
+        ]
+      },
+      {
+        "tool": "list_rfo_agency_deviations",
+        "arguments": {
+          "part": 10,
+          "limit": 10
+        },
+        "seconds": 3.132,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide",
+        "content_sha256": "4f1fd842507e929876ced0a650b59a4687c2757b7d7d710062e160248eec63dd",
+        "retrieved_at": "2026-09-13T11:46:16+00:00",
+        "count": 10,
+        "text_extraction_status": null,
+        "total_pages": null,
+        "warnings": [
+          "Documents are listed as posted; retrieve the PDF before relying on dates or applicability.",
+          "Results were truncated from 38 to 10. Narrow the agency filter or query individual FAR parts to retrieve the remaining entries."
+        ]
+      },
+      {
+        "tool": "list_rfo_agency_deviations",
+        "arguments": {
+          "agency": "National Science Foundation (NSF)",
+          "part": 10,
+          "limit": 10
+        },
+        "seconds": 3.026,
+        "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide",
+        "content_sha256": "4f1fd842507e929876ced0a650b59a4687c2757b7d7d710062e160248eec63dd",
+        "retrieved_at": "2026-09-13T11:46:19+00:00",
+        "count": 1,
+        "text_extraction_status": null,
+        "total_pages": null,
+        "warnings": [
+          "Documents are listed as posted; retrieve the PDF before relying on dates or applicability."
+        ]
+      },
+      {
+        "tool": "get_rfo_agency_deviation",
+        "arguments": {
+          "source_id": "agency-deviation-f318571207c43a8f705e",
+          "page_start": 1,
+          "page_end": 1
+        },
+        "seconds": 5.719,
+        "source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/NSF_RFO_Deviation_Part-10.pdf",
+        "content_sha256": "eb571869435327f78fd683212f5ebe956b6547a84dcf939f2fe7c83e84d02417",
+        "retrieved_at": "2026-09-13T11:46:25+00:00",
+        "count": null,
+        "text_extraction_status": "complete",
+        "total_pages": 4,
+        "warnings": [
+          "Only pages 1 through 1 of 4 were examined; dates and applicability may appear elsewhere."
+        ]
+      },
+      {
+        "tool": "get_rfo_guidance",
+        "arguments": {
+          "resource": "faq"
+        },
+        "seconds": 3.314,
+        "source_url": "https://www.acquisition.gov/far-overhaul/faqs",
+        "content_sha256": "27f7a3d9a52c0f485865a895568b931b1920faa472c73150987dcbdab1ab9743",
+        "retrieved_at": "2026-09-13T11:46:28+00:00",
+        "count": null,
+        "text_extraction_status": "complete",
+        "total_pages": null,
+        "warnings": [
+          "Guidance is not codified regulatory text."
+        ]
+      },
+      {
+        "tool": "get_rfo_guidance",
+        "arguments": {
+          "resource": "policy_and_guidance"
+        },
+        "seconds": 3.035,
+        "source_url": "https://www.acquisition.gov/far-overhaul/policy-and-guidance",
+        "content_sha256": "1f9afb40be01c988808ee9331d90b9a704fbb32e235baa92d87f7ba683557d2b",
+        "retrieved_at": "2026-09-13T11:46:31+00:00",
+        "count": null,
+        "text_extraction_status": "complete",
+        "total_pages": null,
+        "warnings": [
+          "Guidance is not codified regulatory text."
+        ]
+      },
+      {
+        "tool": "get_rfo_guidance",
+        "arguments": {
+          "resource": "deviation_guidance"
+        },
+        "seconds": 2.85,
+        "source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/FAR-Council-Deviation-Guidance-on-FAR-Overhaul.pdf",
+        "content_sha256": "0227ccd5e3cca34749e3b1f1d03d161565b9fdbba5af65b9f0d18ddd7918591c",
+        "retrieved_at": "2026-09-13T11:46:34+00:00",
+        "count": null,
+        "text_extraction_status": "complete",
+        "total_pages": 3,
+        "warnings": [
+          "Guidance is not codified regulatory text."
+        ]
+      }
+    ]
+  },
+  "dispositions": {
+    "http_orphan_work": "fixed; real HTTP cancellation owns upstream and child processes",
+    "html_loop_stall": "fixed; isolated lean parser process, shared HTML/PDF memory slot",
+    "deviation_limit": "250-record contract preserved; explicit narrow-filter/per-part retrieval guidance",
+    "agency_aliases": "fixed; punctuation and explicit acronym variants",
+    "retry_after": "full deadline retained; waits over 30 seconds fail fast without upstream access",
+    "offsite_index_links": "skip and warn; source allowlist preserved",
+    "smithery_pin": "fixed at 1.0.7 with validation",
+    "large_pdf_capacity": "bounded extraction remains; request fewer pages and inspect extraction status",
+    "omitted_html_closing_tags": "strict parser complexity guard retained; no affected current source found",
+    "parsed_text_cache": "not added; continuation still fetches and parses fresh source"
+  },
+  "constrained_runtime": {
+    "status": "passed",
+    "cpu": 0.0625,
+    "memory_mib": 256,
+    "nsf_pdf_seconds": [
+      6.101,
+      6.404
+    ],
+    "part52_html_seconds": [
+      27.8,
+      27.996
+    ],
+    "parent_peak_rss_kib": 121196,
+    "run_id": 34755554864,
+    "source_sha": "4145f548a2c0f30bd2bdcd3267c71d8c0c3b7152"
+  }
+}

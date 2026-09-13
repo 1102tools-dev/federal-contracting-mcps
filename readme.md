@@ -85,7 +85,7 @@ For all nine servers' exact defaults, retry intervals, cache rules, shared-IP be
 
 ## Testing and maintenance
 
-Acquisition.gov has [181 offline tests and 47 successful live calls across all five tools](servers/acquisition-gov-mcp/testing.md), including P0–P3 coverage for HTML/PDF parsing and transport boundaries.
+Acquisition.gov has [236 offline tests and recorded live checks across all five tools](servers/acquisition-gov-mcp/testing.md), including P0–P3 coverage for HTML/PDF parsing and transport boundaries.
 
 Current source-specific evidence is in each server's `testing.md` or `TESTING.md`, with changes in its changelog. Packages version independently. The shared request-pacing code reduces bursts and handles provider errors; it does not create additional provider quota.
 

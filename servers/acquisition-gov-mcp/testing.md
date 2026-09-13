@@ -1,5 +1,60 @@
 # Acquisition.gov MCP test record
 
+## Version 1.0.7 independent-review fixes — 2026-09-13
+
+Fable 5.1 at extra-high effort independently reviewed the immutable 1.0.6 snapshot. It reproduced two P1 issues: HTTP timeouts/disconnects did not cancel SDK-owned tool tasks, and synchronous HTML parsing blocked the event loop. No P0 finding was identified in that review. Its 84 adversarial cases included expected-behavior hypotheses and test-harness failures; those failures are not a count of confirmed defects.
+
+Version 1.0.7 binds each stateless request to its own SDK lifespan and cancels its work before releasing the HTTP slot. HTML parsing now runs in a separate, bounded process. HTML and PDF parsing share **one process slot**, so both parsers cannot consume the container's memory allowance simultaneously. The parser module excludes MCP server startup code. The five published tool definitions and source URL allowlist are unchanged.
+
+### Current offline coverage
+
+**236 passed, 3 opt-in live tests skipped**, including **55 new review regressions**. P0/P1/P2/P3 below classify test scenarios, not outstanding findings.
+
+| Tier | Cases |
+| --- | ---: |
+| P0 | 33 |
+| P1 | 79 |
+| P2 | 97 |
+| P3 | 4 |
+| Original unranked cases | 23 |
+
+| Tool | Direct offline cases |
+| --- | ---: |
+| `list_rfo_parts` | 31 |
+| `get_rfo_part` | 33 |
+| `list_rfo_agency_deviations` | 30 |
+| `get_rfo_agency_deviation` | 25 |
+| `get_rfo_guidance` | 21 |
+
+There are **129 distinct direct-tool cases and 107 shared cases**. Multi-tool cases appear in more than one row. The [case inventory](tests/evidence/2026-09-13-fable-test-inventory.json) records each ID; shared helper tests are counted once.
+
+### Confirmed issues addressed
+
+- Actual MCP HTTP timeouts, client cancellation and disconnects now cancel the upstream task and real HTML/PDF subprocesses. Four simultaneous stalled calls return 504, the fifth receives 429, all four slots are released after cleanup, and a later call succeeds.
+- Large HTML parsing no longer blocks health checks, admission or deadline timers. Actual Part 52 content exercises parsing and loop responsiveness.
+- Section extraction retains div, blockquote, preformatted, definition-list and bare text, without duplicate nested headings or leaking into the next section. Known Favorites UI and duplicate hidden part headings are removed.
+- Agency filtering normalizes punctuation and includes posted labels sharing an explicit acronym. Live checks returned all **49 DOE entries** for both `Energy (DOE)` and `DOE`, and all **50 GSA entries** for the full name and acronym. These counts are dated observations and may change upstream.
+- An unsupported deviation link is skipped with an explicit completeness warning; valid allowlisted records remain usable. No additional hosts are permitted.
+- Long provider cooldowns fail fast with the remaining delay rather than occupying a request indefinitely. **The full Retry-After deadline remains persisted and honored**; it is not shortened to send requests sooner. A wait longer than 30 seconds produces an explicit error without an upstream request.
+- Invalid PDF start pages preserve the document's page count and a useful range error. PDF heading whitespace, additional explicit date formats and non-UTF-8 curl diagnostics are handled consistently.
+- Smithery and standalone Docker installation pins match the package version. Version validation and a regression test check these pins. The root release workflow publishes this monorepo; the nested workflow is a standalone subtree template.
+
+### Constrained container verification
+
+The production image passed with **1/16 CPU and 256 MiB RAM**, without network access. The NSF two-page PDF extraction completed in **6.101 and 6.404 seconds**; full Part 52 HTML parsing completed in **27.800 and 27.996 seconds**, within its 40-second parser deadline. These are observed test times, not throughput promises. [CI run](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/34755554864).
+
+### Boundaries that remain intentional
+
+- Hosted admission remains **4 active requests, no waiting queue, 55-second HTTP deadline**, with **60 HTTP requests/minute/IP** at the Worker entrance. This release does not change the other MCP services' limits.
+- HTML: **5 MiB input, 75,000 tags, 16 KiB per tag, depth 128; 40-second parser wall deadline, 192 MiB Linux address-space limit, 8 CPU seconds, 8 MiB worker output**. PDF limits remain **25 MiB input, 30-second parser wall deadline, 160 MiB Linux address space, 8 CPU seconds, 25 selected pages**. The HTTP deadline can expire before a parser's individual deadline when earlier work used the request's time budget.
+- Broad deviation searches stop at **250 records** and return `total_matches` plus an explicit warning. Narrow the agency filter or query individual FAR parts; there is no cursor parameter. Every record in the live 608-result `Department` search remains reachable using narrower queries. Adding a pagination parameter would change the published tool contract.
+- Dates from an index card are separate from dates stated in a document. Undated model pages retain null date fields and direct the caller to `list_rfo_parts` for index-card dates.
+- Deliberately strict URL and HTML complexity checks remain: explicit URL ports and excessively nested parser output are rejected. HTML with omitted closing tags can be interpreted as deep nesting by the selected parser. No current live page was found to require relaxing this guard.
+- Large, scanned, encrypted or complex PDFs can still hit extraction limits. Check `text_extraction_status` and warnings; request fewer pages when needed. Metadata-only results do not mean text extraction succeeded.
+- Continuations still retrieve and parse the source again. A parsed-text cache was not added in this correctness release.
+
+The earlier 1.0.6 record below is preserved as historical evidence. Current release verification is recorded separately in [the follow-up evidence](tests/evidence/2026-09-13-fable-remediation.json).
+
 ## Version 1.0.6 hardening — 2026-09-13
 
 ### What this server retrieves

@@ -8,7 +8,9 @@
 - Preserve PDF page counts in out-of-range errors; normalize PDF heading whitespace and additional explicit date formats.
 - Keep usable index entries with explicit warnings when a deviation link is outside the source allowlist; retain the allowlist and warn how to refine truncated searches.
 - Preserve full provider Retry-After deadlines while failing fast when a call would wait more than 30 seconds.
-- Add independent-review regression tests and extend the constrained production-image check to actual Part 52 HTML.
+- Add 55 independent-review regressions (236 offline cases total); verify real HTTP subprocess cancellation and actual Part 52 responsiveness.
+- Keep the HTML child independent of MCP server startup, share one parser memory slot across HTML/PDF, and extend the constrained production-image check to actual Part 52 HTML.
+- Normalize agency punctuation/acronym variants; update Smithery and standalone Docker pins to 1.0.7 and validate pin consistency.
 
 ## 1.0.6 — 2026-09-13
 
