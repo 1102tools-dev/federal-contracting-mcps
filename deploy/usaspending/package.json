@@ -1,0 +1,17 @@
+{
+  "name": "1102tools-usaspending-remote",
+  "private": true,
+  "scripts": {
+    "check": "wrangler types && tsc --noEmit",
+    "dry-run": "wrangler deploy --dry-run --env production",
+    "deploy": "wrangler deploy --env production"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "0.3.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.5.0",
+    "typescript": "7.0.2",
+    "wrangler": "4.129.1"
+  }
+}

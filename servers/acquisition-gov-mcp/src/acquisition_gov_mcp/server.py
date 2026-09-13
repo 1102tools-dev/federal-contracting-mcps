@@ -504,7 +504,7 @@ def _read_pdf(
     return numbered, status, warnings, _extract_document_fields(pages), total, end
 
 
-@mcp.tool(annotations={"title": "List FAR Overhaul parts", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "List FAR Overhaul parts", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def list_rfo_parts(
     part: int | None = None,
     agency: str | None = None,
@@ -548,7 +548,7 @@ async def list_rfo_parts(
     }
 
 
-@mcp.tool(annotations={"title": "Get FAR Overhaul model part", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get FAR Overhaul model part", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_rfo_part(
     part: int,
     section: str | None = None,
@@ -592,7 +592,7 @@ async def get_rfo_part(
     }
 
 
-@mcp.tool(annotations={"title": "List posted agency RFO deviations", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "List posted agency RFO deviations", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def list_rfo_agency_deviations(
     agency: str | None = None,
     part: int | None = None,
@@ -637,7 +637,7 @@ async def list_rfo_agency_deviations(
     }
 
 
-@mcp.tool(annotations={"title": "Get posted agency RFO deviation", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get posted agency RFO deviation", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_rfo_agency_deviation(
     source_id: str,
     page_start: int = 1,
@@ -696,7 +696,7 @@ async def get_rfo_agency_deviation(
     }
 
 
-@mcp.tool(annotations={"title": "Get approved RFO guidance", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get approved RFO guidance", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_rfo_guidance(
     resource: Literal["faq", "policy_and_guidance", "deviation_guidance"],
     heading: str | None = None,

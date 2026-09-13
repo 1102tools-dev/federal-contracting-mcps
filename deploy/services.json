@@ -1,0 +1,47 @@
+{
+  "usaspending": {
+    "package": "usaspending-gov-mcp",
+    "module": "usaspending_gov_mcp",
+    "worker": "usaspending-mcp",
+    "application": "usaspending-mcp-usaspending-production",
+    "endpoint": "https://usaspending.1102tools.com/mcp",
+    "tools": 55,
+    "application_id": "a0356bc1-45dd-455c-b821-31230cd03707"
+  },
+  "ecfr": {
+    "package": "ecfr-mcp",
+    "module": "ecfr_mcp",
+    "worker": "ecfr-mcp",
+    "application": "ecfr-mcp-public",
+    "endpoint": "https://ecfr.1102tools.com/mcp",
+    "tools": 13,
+    "application_id": "a03aa868-dd6a-4355-bf3e-6ee7d06a5958"
+  },
+  "gsa-calc": {
+    "package": "gsa-calc-mcp",
+    "module": "gsa_calc_mcp",
+    "worker": "gsa-calc-mcp",
+    "application": "gsa-calc-mcp-public",
+    "endpoint": "https://gsa-calc.1102tools.com/mcp",
+    "tools": 8,
+    "application_id": "a035fe0f-d8ea-4d62-9bb6-ea7f040f4b35"
+  },
+  "federal-register": {
+    "package": "federal-register-mcp",
+    "module": "federal_register_mcp",
+    "worker": "federal-register-mcp",
+    "application": "federal-register-mcp-public",
+    "endpoint": "https://federal-register.1102tools.com/mcp",
+    "tools": 8,
+    "application_id": "a038891c-fed9-4296-8ed3-43e36827359f"
+  },
+  "acquisition-gov": {
+    "package": "acquisition-gov-mcp",
+    "module": "acquisition_gov_mcp",
+    "worker": "acquisition-gov-mcp",
+    "application": "acquisition-gov-mcp-public",
+    "endpoint": "https://acquisition-gov.1102tools.com/mcp",
+    "tools": 5,
+    "application_id": "a03e7823-29ff-4e0c-82ef-1f83bed25b55"
+  }
+}

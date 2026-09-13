@@ -1,0 +1,10 @@
+**
+!servers/
+!servers/gsa-calc-mcp/
+!servers/gsa-calc-mcp/pyproject.toml
+!servers/gsa-calc-mcp/uv.lock
+!servers/gsa-calc-mcp/readme.md
+!servers/gsa-calc-mcp/license
+!servers/gsa-calc-mcp/src/
+!servers/gsa-calc-mcp/src/**
+**/__pycache__/

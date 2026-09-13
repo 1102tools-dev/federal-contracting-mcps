@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.7
+
+Unifies the hosted HTTP wrapper and existing published tool annotations with the
+canonical package source. Releases can now build PyPI packages and Cloudflare
+images from the same commit, with contract and live version checks.
+
 ## 1.0.6
 
 Fixes shared request pacing locks that could remain held when background

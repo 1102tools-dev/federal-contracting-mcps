@@ -1,0 +1,93 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ecfr-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "account_id": "846d3e41e48446abcd3570c0959f9fb5",
+  "workers_dev": true,
+  "containers": [
+    {
+      "class_name": "ECFR",
+      "image": "Dockerfile",
+      "instance_type": "lite",
+      "max_instances": 1,
+      "name": "ecfr-mcp-public",
+      "image_build_context": "../.."
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "ECFR",
+        "name": "BACKEND"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "ECFR"
+      ]
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "REQUEST_LIMITER",
+      "namespace_id": "110261",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  },
+  "env": {
+    "production": {
+      "name": "ecfr-mcp",
+      "routes": [
+        {
+          "pattern": "ecfr.1102tools.com",
+          "custom_domain": true
+        }
+      ],
+      "containers": [
+        {
+          "class_name": "ECFR",
+          "image": "Dockerfile",
+          "instance_type": "lite",
+          "max_instances": 1,
+          "name": "ecfr-mcp-public",
+          "image_build_context": "../.."
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "ECFR",
+            "name": "BACKEND"
+          }
+        ]
+      },
+      "ratelimits": [
+        {
+          "name": "REQUEST_LIMITER",
+          "namespace_id": "110261",
+          "simple": {
+            "limit": 60,
+            "period": 60
+          }
+        }
+      ]
+    }
+  }
+}

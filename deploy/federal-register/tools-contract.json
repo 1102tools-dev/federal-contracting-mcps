@@ -1,0 +1,604 @@
+[
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Search Documents"
+    },
+    "description": "Search Federal Register documents.\n\n    The primary tool for finding proposed rules, final rules, notices,\n    and presidential documents published in the Federal Register since 1994.\n\n    Key parameters:\n    - agencies: list of agency URL slugs (OR logic). Use list_agencies() to find slugs.\n      Common: 'defense-department', 'general-services-administration',\n      'federal-procurement-policy-office', 'small-business-administration'\n    - doc_types: PRORULE (proposed rule), RULE (final rule), NOTICE, PRESDOCU\n    - term: full-text keyword search (strips stop words)\n    - docket_id: docket identifier (token match). 'FAR Case 2023-008' = exact,\n      'FAR Case 2023' = all 2023 cases; partial tokens like 'FAR Case 20'\n      match nothing\n    - regulation_id_number: RIN (precise match, e.g., '9000-AO56')\n    - pub_date_gte/lte: publication date range (YYYY-MM-DD)\n    - comment_date_gte/lte: comment close date range\n    - effective_date_gte/lte: effective date range\n    - correction: True for modern corrections (C1- prefix documents)\n    - significant: True for EO 12866 significant rules only\n    - cfr_title + cfr_part: documents affecting a CFR location, e.g.\n      cfr_title=48, cfr_part='52' for FAR part 52 (part accepts ranges\n      like '1-99'; cfr_part requires cfr_title)\n\n    Count caps at 10,000 for broad queries. Use date ranges for accurate counts.\n    per_page capped at 100 to stay within MCP response size limits.\n    ",
+    "inputSchema": {
+      "properties": {
+        "agencies": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agencies"
+        },
+        "doc_types": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "PRORULE",
+                  "RULE",
+                  "NOTICE",
+                  "PRESDOCU"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Doc Types"
+        },
+        "term": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Term"
+        },
+        "docket_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Docket Id"
+        },
+        "regulation_id_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Regulation Id Number"
+        },
+        "pub_date_gte": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pub Date Gte"
+        },
+        "pub_date_lte": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pub Date Lte"
+        },
+        "comment_date_gte": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comment Date Gte"
+        },
+        "comment_date_lte": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comment Date Lte"
+        },
+        "effective_date_gte": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective Date Gte"
+        },
+        "effective_date_lte": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective Date Lte"
+        },
+        "correction": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Correction"
+        },
+        "significant": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Significant"
+        },
+        "cfr_title": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cfr Title"
+        },
+        "cfr_part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cfr Part"
+        },
+        "per_page": {
+          "default": 20,
+          "title": "Per Page",
+          "type": "integer"
+        },
+        "page": {
+          "default": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "order": {
+          "default": "newest",
+          "enum": [
+            "newest",
+            "oldest",
+            "relevance",
+            "executive_order_number"
+          ],
+          "title": "Order",
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "title": "search_documentsArguments"
+    },
+    "name": "search_documents",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "search_documentsDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get Document"
+    },
+    "description": "Get full details for a single Federal Register document by number.\n\n    Returns all available fields including full text URLs, docket info,\n    RIN details, page views, topics, corrections, and CFR references.\n\n    Document numbers look like '2026-03065' (modern), 'E9-12940' or\n    'X94-70302' (legacy pre-2011 archive), or 'C1-2026-01234' (corrections).\n    ",
+    "inputSchema": {
+      "properties": {
+        "document_number": {
+          "title": "Document Number",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_number"
+      ],
+      "type": "object",
+      "title": "get_documentArguments"
+    },
+    "name": "get_document",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_documentDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get Documents Batch"
+    },
+    "description": "Fetch multiple documents in one call (up to ~20).\n\n    Pass a list of document numbers. More efficient than individual calls.\n    Always returns {count, results, [errors]}; errors.not_found lists any\n    requested numbers the API could not locate.\n    ",
+    "inputSchema": {
+      "properties": {
+        "document_numbers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Document Numbers",
+          "type": "array"
+        }
+      },
+      "required": [
+        "document_numbers"
+      ],
+      "type": "object",
+      "title": "get_documents_batchArguments"
+    },
+    "name": "get_documents_batch",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_documents_batchDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get Facet Counts"
+    },
+    "description": "Get document counts grouped by type, agency, topic, or time period.\n\n    Accepts the same filter conditions as search_documents. Returns\n    aggregated counts without individual document results.\n\n    Facets: type, agency, topic (categorical) plus daily, weekly, monthly,\n    quarterly, yearly (publication-date buckets, useful for trend lines).\n\n    Useful for understanding the volume of rulemaking by agency, type, or\n    over time within a date range before drilling into specific documents.\n\n    At least one filter (agencies, doc_types, term, pub_date_gte/lte, or\n    cfr_title) is required. An unfiltered facet query returns the entire\n    all-time aggregate.\n    ",
+    "inputSchema": {
+      "properties": {
+        "facet": {
+          "enum": [
+            "type",
+            "agency",
+            "topic",
+            "daily",
+            "weekly",
+            "monthly",
+            "quarterly",
+            "yearly"
+          ],
+          "title": "Facet",
+          "type": "string"
+        },
+        "agencies": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agencies"
+        },
+        "doc_types": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "PRORULE",
+                  "RULE",
+                  "NOTICE",
+                  "PRESDOCU"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Doc Types"
+        },
+        "term": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Term"
+        },
+        "pub_date_gte": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pub Date Gte"
+        },
+        "pub_date_lte": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pub Date Lte"
+        },
+        "cfr_title": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cfr Title"
+        },
+        "cfr_part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cfr Part"
+        }
+      },
+      "required": [
+        "facet"
+      ],
+      "type": "object",
+      "title": "get_facet_countsArguments"
+    },
+    "name": "get_facet_counts",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_facet_countsDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Get Public Inspection"
+    },
+    "description": "Get current public inspection documents (pre-publication).\n\n    Public inspection documents are FR documents filed for publication but\n    not yet published. Updated business days only.\n\n    The current-PI endpoint does NOT support server-side filtering. This\n    tool fetches all current PI documents and filters client-side by\n    agency and/or keyword in the title.\n\n    Useful for getting early notice of upcoming regulatory actions.\n\n    Parameters:\n    - agency_filter: case-insensitive substring match against each\n      document's agency slugs, names, and raw names. CAUTION: PI documents\n      list only the FILING sub-agency, so a parent slug like\n      'defense-department' will not match a Defense Logistics Agency\n      filing. Prefer a short distinctive fragment ('defense', 'acquisition\n      regulations') over a full parent slug.\n    - keyword_filter: substring match against document titles\n    - limit: max documents returned after filtering (default 50, max 500).\n      Unfiltered dumps can exceed 170KB; narrow with filters or raise the cap.\n    ",
+    "inputSchema": {
+      "properties": {
+        "agency_filter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agency Filter"
+        },
+        "keyword_filter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Keyword Filter"
+        },
+        "limit": {
+          "default": 50,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "type": "object",
+      "title": "get_public_inspectionArguments"
+    },
+    "name": "get_public_inspection",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "get_public_inspectionDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "List Agencies"
+    },
+    "description": "List agencies with their IDs, names, slugs, and parent agencies.\n\n    Use the 'slug' values with search_documents() and other tools.\n    Common procurement slugs:\n    - federal-procurement-policy-office (OFPP)\n    - defense-department (DoD)\n    - general-services-administration (GSA)\n    - defense-acquisition-regulations-system (DARS/DFARS)\n    - small-business-administration (SBA)\n    - national-aeronautics-and-space-administration (NASA)\n    - veterans-affairs-department (VA)\n\n    Parameters:\n    - query: optional case-insensitive substring match against name, short_name,\n      and slug. Recommended: narrow results before pulling full detail.\n    - include_detail: if False (default), returns only id/name/short_name/slug/parent_id.\n      If True, returns all fields (description, urls, etc.). The full dump is ~700KB.\n    ",
+    "inputSchema": {
+      "properties": {
+        "query": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Query"
+        },
+        "include_detail": {
+          "default": false,
+          "title": "Include Detail",
+          "type": "boolean"
+        }
+      },
+      "type": "object",
+      "title": "list_agenciesArguments"
+    },
+    "name": "list_agencies",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "list_agenciesDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "Open Comment Periods"
+    },
+    "description": "Find documents with currently open comment periods, soonest deadline first.\n\n    Covers proposed rules, notices, AND final/interim rules that accept\n    comments (dozens of RULE-type documents have open periods at any time).\n    Queries for comment close date >= today, scans up to 500 matching\n    documents oldest-published first (where the soonest deadlines live),\n    sorts by close date, and returns the first `limit`.\n\n    Honest bound: total_open is the API's true government-wide count;\n    scanned is how many this call examined. When total_open exceeds\n    scanned, narrow with agencies/term for exhaustive coverage. A very\n    recently published document with an unusually short comment window\n    can fall outside the scan in that oversubscribed case.\n\n    Default: searches all agencies. Pass agency slugs to narrow scope.\n    Common for procurement: ['federal-procurement-policy-office',\n    'defense-department', 'general-services-administration']\n\n    Parameters:\n    - limit: max documents returned after sorting (default 50, max 100).\n      Unfiltered dumps across all agencies can approach 200KB.\n    ",
+    "inputSchema": {
+      "properties": {
+        "agencies": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agencies"
+        },
+        "term": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Term"
+        },
+        "limit": {
+          "default": 50,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "type": "object",
+      "title": "open_comment_periodsArguments"
+    },
+    "name": "open_comment_periods",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "open_comment_periodsDictOutput"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": true,
+      "title": "FAR Case History"
+    },
+    "description": "Get all Federal Register documents for a FAR/DFARS case or FAC.\n\n    Pass a docket ID like 'FAR Case 2023-008' (or a FAC number like\n    'FAC 2025-06'). Runs BOTH a docket-id search and a quoted full-text\n    search, then merges the two result sets (deduped by document number)\n    in chronological order to show the full rulemaking progression:\n    ANPRM -> proposed rule -> final rule -> corrections. The dual query\n    matters: FAC introduction and companion documents often carry only\n    internal docket numbers, so a docket-only search returns a partial set.\n\n    Docket matching is token-based, not substring: 'FAR Case 2023' matches\n    all 2023 cases (token '2023' matches '2023-008'), but a partial token\n    like 'FAR Case 20' matches nothing. Be specific to avoid false positives.\n\n    Each underlying search returns at most 100 documents. truncated=True\n    flags that one of the searches hit that cap (docket_matches and\n    term_matches carry the API's full counts); narrow the docket_id if so.\n\n    Minimum docket_id length is 3 characters to prevent token matches that\n    return unrelated documents (e.g. 'x' matched 65 random dockets in 0.1.x).\n    ",
+    "inputSchema": {
+      "properties": {
+        "docket_id": {
+          "title": "Docket Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "docket_id"
+      ],
+      "type": "object",
+      "title": "far_case_historyArguments"
+    },
+    "name": "far_case_history",
+    "outputSchema": {
+      "type": "object",
+      "additionalProperties": true,
+      "title": "far_case_historyDictOutput"
+    }
+  }
+]
