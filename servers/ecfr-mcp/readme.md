@@ -126,32 +126,30 @@ All data from [ecfr.gov](https://www.ecfr.gov), the continuously updated online 
 
 ## Request pacing and cache
 
-JSON requests can start every 0.6 seconds, with a shared safety budget of
-500 upstream attempts per rolling five minutes and at most two requests in
-flight. Uncached XML remains serialized with at least three seconds after
-completion. XML waiting does not hold up JSON work. These are 1102tools
-safeguards, not published agency quotas or guaranteed tool-call throughput.
+| Default setting | Value |
+| --- | --- |
+| Minimum JSON request-start interval | **0.6 seconds** (approximately 100 starts/minute while capacity remains) |
+| Maximum upstream requests in flight | **2 across JSON and XML combined** |
+| Rolling upstream attempt budget | **500 per 300 seconds (5 minutes), shared by JSON and XML** |
+| Hosted HTTP entrance limit | **120 requests per 60 seconds**, per incoming IP and Cloudflare location |
+| Hosted active MCP HTTP requests | **4 total**, shared by this service's users |
+| Hosted backend processing timeout | **55 seconds** |
+| Uncached XML | **1 fetch at a time; 3 seconds after previous XML completion** |
+| XML cache | **300 seconds; 128 entries; 32 MiB total; 2 MiB per entry** |
 
-Repeated XML requests with the same date, path and filters use a five-minute
-in-memory cache. Concurrent duplicate requests are coalesced. The cache stores
-only valid XML, at most 128 entries and 32 MiB total, with a 2 MiB per-entry
-limit. Errors are not cached. New dates and changed filters use separate keys;
-upstream corrections may take up to five minutes to appear in a cached result.
-Restarting the process clears the cache.
+The upstream budget and concurrency are shared by **all hosted users of this MCP**, even when their incoming IPs differ. Independently hosted/local installations have their own pacing histories; processes sharing a pacing directory and identity share its counter. The separate IP-based entrance limit can also be shared by users of a cloud AI client. HTTP requests include protocol traffic and are not equivalent to upstream data requests.
 
-Local processes sharing `FEDERAL_API_PACING_DIR` share upstream pacing state.
-The hosted service's budget is shared by its users; other services have their
-own budgets. Its separate HTTP entrance limit is 120 requests per minute per
-IP and Cloudflare location, including protocol traffic. A tool can make more
-than one upstream request, or none when XML is cached.
+An XML cache hit makes **zero additional XML downloads** and skips the XML pacing wait. A tool may still need JSON calls, for example to resolve the latest date. XML misses also consume the shared rolling budget and an upstream concurrency slot.
 
-`FEDERAL_API_MIN_INTERVAL_SECONDS` can slow requests. Positive values below
-0.6 are clamped for the shared pacer; uncached XML always retains its minimum
-three-second completion gap. Explicit zero disables pacing for offline tests
-or externally managed clients. Hosted deployments use 0.6. Failed and cancelled
-attempts stay counted; Retry-After cooldowns are shared. Container replacement
-can reset on-disk pacing history. Upgrade local processes together rather than
-sharing a state directory between old and new implementations.
+The cache key includes the date, path and filters. Concurrent duplicate misses reuse one download. Only valid XML within the size limit is cached; errors and larger responses are not. Entries expire after 300 seconds and can be evicted earlier for capacity. Upstream corrections may take up to five minutes to appear in a cached result. Restarting the process clears the cache. These are 1102tools safeguards, not published agency quotas or guaranteed response times.
+
+Failed and cancelled upstream attempts remain counted. Observed `Retry-After` extends the shared cooldown; the MCP does not automatically retry the failed upstream call.
+
+`FEDERAL_API_PACING_DIR` selects the local coordination directory. `FEDERAL_API_MIN_INTERVAL_SECONDS` can slow requests; positive values below 0.6 are clamped to 0.6. Explicit zero disables pacing for offline or externally managed use. Hosted deployments use 0.6. Uncached XML retains its three-second completion gap for positive settings.
+
+Local history survives process restarts while the pacing directory remains. Deleting the directory or replacing a hosted container can reset its filesystem history. Update local processes together rather than mixing old and new pacing implementations against one directory.
+
+See the [complete pacing reference](../../docs/pacing.md) for all nine servers, local versus hosted behavior, shared IPs, retry intervals and state persistence.
 
 ## License
 

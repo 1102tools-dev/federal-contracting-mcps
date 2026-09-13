@@ -181,27 +181,26 @@ All data is sourced from [USASpending.gov](https://www.usaspending.gov), which a
 
 ## Request pacing
 
-USAspending uses a shared rolling budget of **500 upstream attempts per 300
-seconds**, at least **0.6 seconds between starts**, and at most **four requests
-in flight**. Slow requests can overlap instead of holding up every other call.
-Failures and retries consume the budget; a provider `Retry-After` cooldown is
-shared. These are tested 1102tools safeguards, not an official USAspending quota
-or a guarantee that every workload will sustain the maximum rate.
+| Default setting | Value |
+| --- | --- |
+| Minimum upstream request-start interval | **0.6 seconds** (approximately 100 starts/minute while capacity remains) |
+| Maximum upstream requests in flight | **4** |
+| Rolling upstream attempt budget | **500 per 300 seconds (5 minutes)** |
+| Hosted HTTP entrance limit | **120 requests per 60 seconds**, per incoming IP and Cloudflare location |
+| Hosted active MCP HTTP requests | **4 total**, shared by this service's users |
+| Hosted backend processing timeout | **55 seconds** |
 
-Local processes share the budget when they use the same pacing directory.
-`FEDERAL_API_PACING_DIR` relocates that state. A positive
-`FEDERAL_API_MIN_INTERVAL_SECONDS` override can slow starts (minimum 0.6);
-`0` explicitly disables pacing for tests or externally managed clients.
-The hosted service uses 0.6, one backend container, and the same budget across
-users. Its separate entrance guard allows approximately 120 HTTP requests per
-minute per IP per Cloudflare location; this includes MCP protocol traffic and
-is not an upstream API allowance. Busy requests may receive HTTP 429; request
-lifetimes remain bounded at 55 seconds.
+The upstream budget and concurrency are shared by **all hosted users of this MCP**, even when their incoming IPs differ. Independently hosted/local installations have their own pacing histories; processes sharing a pacing directory and identity share its counter. The separate IP-based entrance limit can also be shared by users of a cloud AI client. HTTP requests include protocol traffic and are not equivalent to upstream data requests.
 
-State survives ordinary process restarts while the pacing directory remains.
-Replacing a container or deleting that directory resets its local history;
-independent machines do not share the local budget. Do not run old and new
-package versions concurrently against the same pacing directory during upgrade.
+A 0.6-second minimum interval permits approximately 100 starts per minute, not four starts every 0.6 seconds. Slow requests can overlap within the four-request cap. One tool can make multiple upstream requests. These are 1102tools safeguards, not an official USAspending quota or a guaranteed completion rate.
+
+Failed and cancelled upstream attempts remain counted. Observed `Retry-After` extends the shared cooldown; the MCP does not automatically retry the failed upstream call.
+
+`FEDERAL_API_PACING_DIR` selects the local coordination directory. `FEDERAL_API_MIN_INTERVAL_SECONDS` can slow requests; positive values below 0.6 are clamped to 0.6. Explicit zero disables pacing for offline or externally managed use. Hosted deployments use 0.6.
+
+Local history survives process restarts while the pacing directory remains. Deleting the directory or replacing a hosted container can reset its filesystem history. Update local processes together rather than mixing old and new pacing implementations against one directory.
+
+See the [complete pacing reference](../../docs/pacing.md) for all nine servers, local versus hosted behavior, shared IPs, retry intervals and state persistence.
 
 ## License
 

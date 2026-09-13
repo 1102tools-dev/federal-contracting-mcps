@@ -107,6 +107,16 @@ Use alongside `bls-oews-mcp` (wage data) and `gsa-calc-mcp` (ceiling rates) for 
 
 ## Request pacing
 
+| Default setting | Value |
+| --- | --- |
+| Wait after each upstream request completes | **4 seconds** |
+| Maximum upstream requests in flight per pacing identity | **1** |
+| Rolling attempt counter in this pacer | **None**; provider quotas still apply |
+
+The next request starts after the previous request's duration **plus 4 seconds**. This is a completion delay, not a 4-second start interval. Local processes sharing the same pacing directory and identity share this gate; a separate local counter does not create additional provider quota.
+
+See the [complete pacing reference](../../docs/pacing.md) for all nine servers, shared credentials/IPs, configuration and hosting differences.
+
 Every request, including DEMO_KEY traffic, uses a provisional 4-second
 cross-process anti-burst interval by default. Per Diem and Regulations.gov
 share a local `api.data.gov` bucket when they use the same key. This does not

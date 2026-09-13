@@ -51,6 +51,36 @@ A prompt does not install a server. Local command configuration and remote endpo
 
 Results reflect upstream data and retrieval time. Check dates, completeness, identity matches, and reported limitations. The MCPs provide evidence; they do not make a contracting or procurement-specific applicability decision.
 
+## Request pacing and hosted limits
+
+These are default MCP safeguards, measured in upstream requests to the government data source. One tool call can require multiple upstream requests. They are not agency-published quotas or guaranteed response times.
+
+| MCP | Minimum interval between upstream starts | Maximum simultaneous upstream requests | Rolling upstream attempt budget |
+| --- | --- | --- | --- |
+| [USAspending](servers/usaspending-gov-mcp#request-pacing) | **0.6 seconds** | **4** | **500 per 5 minutes** |
+| [GSA CALC+](servers/gsa-calc-mcp#request-pacing) | **0.6 seconds** | **2** | **500 per hour** |
+| [eCFR JSON](servers/ecfr-mcp#request-pacing-and-cache) | **0.6 seconds** | **2**, shared with XML | **500 per 5 minutes**, shared with XML |
+| [Federal Register](servers/federal-register-mcp#request-pacing) | **0.6 seconds** | **2** | **500 per 5 minutes** |
+
+A **0.6-second interval** permits approximately **100 request starts per minute**, while budget and concurrency slots remain available. Two simultaneous requests means two may be awaiting responses; it does not mean two start every 0.6 seconds. A rolling window counts the immediately preceding five minutes or hour. Failed and cancelled upstream attempts remain counted.
+
+**eCFR XML:** uncached XML is fetched one request at a time, with **three seconds after the previous XML request completes** before the next begins. Eligible XML responses are cached for **300 seconds**; a cache hit skips that XML download and its pacing wait. The cache holds **128 entries**, **32 MiB total**, and **2 MiB per entry**. Entries can be evicted earlier for capacity. Tools may still require JSON calls, such as resolving the latest date.
+
+**Local versus hosted:** running the MCP server yourself gives you its local pacing budget. Processes using the same pacing directory and identity share that budget. Connecting any client to a 1102tools hosted endpoint uses the hosted budget, even if the client application runs on your computer.
+
+| Limit | Local MCP process / stdio | Hosted endpoint / plugin for the four services above |
+| --- | --- | --- |
+| Upstream budget and concurrency | Shared by local processes using the same pacing directory and identity | **Shared by all users of that MCP**, regardless of their incoming IPs |
+| Cloudflare entrance limit | Does not apply | **120 HTTP requests per 60 seconds**, per incoming IP and Cloudflare location |
+| Hosted backend admission | Does not apply | **4 active MCP HTTP requests total**, shared across users |
+| Hosted backend processing timeout | Local/client timeouts apply | **55 seconds**; startup and network latency may add time |
+
+**Shared IPs and shared service capacity are separate limits.** People using the same calling IP can share the 120-per-minute entrance counter. With a cloud AI client, that IP may belong to the AI provider rather than your computer. Cloudflare's counter is approximate and location-specific. Different incoming IPs still share the hosted MCP's upstream budget. For example, ten hosted USAspending users share **500 upstream attempts per five minutes**, not 500 each. The four services above have separate budgets; USAspending use does not consume eCFR, CALC+ or Federal Register capacity.
+
+HTTP requests include connection setup, tool discovery and tool calls. They are not equivalent to upstream data requests. Government providers can apply additional limits, including to a shared outbound IP or API key. The 500-per-hour CALC+ policy supports short batches at 0.6-second starts; it does not permit continuous 500-per-five-minute use.
+
+For all nine servers' exact defaults, retry intervals, cache rules, shared-IP behavior and budget persistence, see the [complete pacing reference](docs/pacing.md). Acquisition.gov's hosted entrance limit remains **60 HTTP requests per minute**. The other servers retain their documented three- or four-second completion delays. [Cloudflare rate-limit behavior](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
+
 ## Testing and maintenance
 
 Current source-specific evidence is in each server's `testing.md` or `TESTING.md`, with changes in its changelog. Packages version independently. The shared request-pacing code reduces bursts and handles provider errors; it does not create additional provider quota.

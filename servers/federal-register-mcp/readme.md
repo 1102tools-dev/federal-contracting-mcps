@@ -72,25 +72,26 @@ Together they cover the full regulatory pipeline. Use `far_case_history` to trac
 
 ## Request pacing
 
-The default safeguard allows up to 500 upstream request attempts per rolling
-five minutes, with starts spaced at least 0.6 seconds apart and at most two
-requests in flight. This is a 1102tools policy tested against Federal Register,
-not a published provider quota or a guaranteed tool-call rate. A tool may make
-more than one upstream request, and upstream latency can reduce throughput.
+| Default setting | Value |
+| --- | --- |
+| Minimum upstream request-start interval | **0.6 seconds** (approximately 100 starts/minute while capacity remains) |
+| Maximum upstream requests in flight | **2** |
+| Rolling upstream attempt budget | **500 per 300 seconds (5 minutes)** |
+| Hosted HTTP entrance limit | **120 requests per 60 seconds**, per incoming IP and Cloudflare location |
+| Hosted active MCP HTTP requests | **4 total**, shared by this service's users |
+| Hosted backend processing timeout | **55 seconds** |
 
-Local processes sharing `FEDERAL_API_PACING_DIR` share the budget. The hosted
-service has its own budget shared by its users. Its separate HTTP entrance
-limit is 120 requests per minute per IP and Cloudflare location, including
-protocol requests that do not call the upstream API. Other MCP services have
-separate budgets.
+The upstream budget and concurrency are shared by **all hosted users of this MCP**, even when their incoming IPs differ. Independently hosted/local installations have their own pacing histories; processes sharing a pacing directory and identity share its counter. The separate IP-based entrance limit can also be shared by users of a cloud AI client. HTTP requests include protocol traffic and are not equivalent to upstream data requests.
 
-Attempts remain counted on failure or cancellation, and `Retry-After` extends
-a shared cooldown. Set `FEDERAL_API_MIN_INTERVAL_SECONDS` above `0.6` to slow
-requests; positive values below `0.6` are clamped. Explicit `0` disables pacing
-for offline tests or externally managed clients. Hosted deployments use `0.6`.
-State is local to the pacing directory and does not survive its deletion or a
-hosted container replacement. Do not run old and new pacing implementations
-against the same directory concurrently.
+A 0.6-second minimum interval permits approximately 100 starts per minute, not two starts every 0.6 seconds. One tool can make multiple upstream requests. These are 1102tools safeguards, not an official agency quota or a guaranteed completion rate.
+
+Failed and cancelled upstream attempts remain counted. Observed `Retry-After` extends the shared cooldown; the MCP does not automatically retry the failed upstream call.
+
+`FEDERAL_API_PACING_DIR` selects the local coordination directory. `FEDERAL_API_MIN_INTERVAL_SECONDS` can slow requests; positive values below 0.6 are clamped to 0.6. Explicit zero disables pacing for offline or externally managed use. Hosted deployments use 0.6.
+
+Local history survives process restarts while the pacing directory remains. Deleting the directory or replacing a hosted container can reset its filesystem history. Update local processes together rather than mixing old and new pacing implementations against one directory.
+
+See the [complete pacing reference](../../docs/pacing.md) for all nine servers, local versus hosted behavior, shared IPs, retry intervals and state persistence.
 
 ## License
 

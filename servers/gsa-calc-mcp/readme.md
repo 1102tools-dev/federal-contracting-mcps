@@ -91,38 +91,29 @@ Always note sample size and remind users these are ceiling rates when presenting
 
 ## Request pacing
 
-The default safeguard allows up to 500 upstream request attempts per rolling
-hour, with starts spaced at least 0.6 seconds apart and at most two
-requests in flight. This is a 1102tools policy tested against GSA CALC+,
-not a published provider quota or a guaranteed tool-call rate. All eight
-current tools make at most one upstream request. Upstream latency can reduce
-throughput.
+| Default setting | Value |
+| --- | --- |
+| Minimum upstream request-start interval | **0.6 seconds** (approximately 100 starts/minute while capacity remains) |
+| Maximum upstream requests in flight | **2** |
+| Rolling upstream attempt budget | **500 per 3,600 seconds (1 hour)** |
+| Hosted HTTP entrance limit | **120 requests per 60 seconds**, per incoming IP and Cloudflare location |
+| Hosted active MCP HTTP requests | **4 total**, shared by this service's users |
+| Hosted backend processing timeout | **55 seconds** |
+| Persistent hosted admission budget | **500 tool requests per rolling hour**, shared by all users |
 
-Local processes sharing `FEDERAL_API_PACING_DIR` share the budget. The hosted
-service has an additional persistent budget of 500 tool requests per rolling
-hour, shared by its users. Every current CALC+ tool makes at most one upstream
-request; failed or invalid hosted tool requests still consume an admission.
-Protocol-only requests do not consume this hourly budget. The hosted counter
-and observed provider cooldowns live in Durable Object SQLite storage, so they
-survive container sleep and replacement.
+The upstream budget and concurrency are shared by **all hosted users of this MCP**, even when their incoming IPs differ. Independently hosted/local installations have their own pacing histories; processes sharing a pacing directory and identity share its counter. The separate IP-based entrance limit can also be shared by users of a cloud AI client. HTTP requests include protocol traffic and are not equivalent to upstream data requests.
 
-The separate HTTP entrance limit is 120 requests per minute per IP and
-Cloudflare location, including protocol requests. Other MCP services have
-separate budgets. `X-1102tools-Hourly-Remaining` reports the hosted admission
-balance; it is not an agency quota header.
+The 0.6-second start interval supports short batches at approximately 100 starts per minute; the 500-attempt hourly budget prevents sustained 500-per-five-minute use. All eight current CALC+ tools make at most one upstream request. These are 1102tools safeguards, not a published provider quota.
 
-Exhausting the hourly safety budget returns an error with a retry time instead
-of holding a connection open. Provider cooldowns longer than 30 seconds also
-return promptly with the remaining wait. Attempts remain counted on failure or
-cancellation, and `Retry-After` extends
-a shared cooldown. Set `FEDERAL_API_MIN_INTERVAL_SECONDS` above `0.6` to slow
-requests; positive values below `0.6` are clamped. Explicit `0` disables pacing
-for offline tests or externally managed clients. Hosted deployments use `0.6`.
-Local pacing history does not survive deletion of its directory. Hosted
-Python pacing history is ephemeral, with the durable admission budget and
-provider cooldown above preserving the outer safeguards across restarts. Do
-not run old and new local pacing implementations against the same directory
-concurrently.
+The hosted hourly admission counter and observed provider cooldowns persist in Durable Object SQLite storage across container sleep/replacement. Failed or invalid hosted tool requests consume an admission; protocol-only requests do not. `X-1102tools-Hourly-Remaining` reports that balance, not an agency allowance. Exhausting the budget or encountering a provider cooldown longer than 30 seconds returns an MCP tool error with a retry interval rather than holding the connection open. HTTP 200 alone does not mean a tool succeeded.
+
+Failed and cancelled upstream attempts remain counted. Observed `Retry-After` extends the shared cooldown; the MCP does not automatically retry the failed upstream call.
+
+`FEDERAL_API_PACING_DIR` selects the local coordination directory. `FEDERAL_API_MIN_INTERVAL_SECONDS` can slow requests; positive values below 0.6 are clamped to 0.6. Explicit zero disables pacing for offline or externally managed use. Hosted deployments use 0.6.
+
+Local history survives process restarts while the pacing directory remains. Deleting the directory or replacing a hosted container can reset its filesystem history. The persistent hosted admission budget and provider cooldown above remain in place across container replacement. Update local processes together rather than mixing old and new pacing implementations against one directory.
+
+See the [complete pacing reference](../../docs/pacing.md) for all nine servers, local versus hosted behavior, shared IPs, retry intervals and state persistence.
 
 ## License
 

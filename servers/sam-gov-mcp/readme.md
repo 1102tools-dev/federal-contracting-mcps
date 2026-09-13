@@ -158,6 +158,16 @@ Once configured, these examples illustrate the server's advanced standalone use.
 
 ## Request pacing
 
+| Default setting | Value |
+| --- | --- |
+| Wait after each upstream request completes | **3 seconds** |
+| Maximum upstream requests in flight per pacing identity | **1** |
+| Rolling attempt counter in this pacer | **None**; provider quotas still apply |
+
+The next request starts after the previous request's duration **plus 3 seconds**. This is a completion delay, not a 3-second start interval. Local processes sharing the same pacing directory and identity share this gate; a separate local counter does not create additional provider quota.
+
+See the [complete pacing reference](../../docs/pacing.md) for all nine servers, shared credentials/IPs, configuration and hosting differences.
+
 Every request, including composite-tool subrequests, uses a provisional
 3-second cross-process anti-burst interval by default. The local gate uses a
 one-way key fingerprint and never stores the raw SAM key. It does not create

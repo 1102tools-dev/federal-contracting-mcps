@@ -14,6 +14,20 @@ uvx acquisition-gov-mcp==1.0.4
 
 The server uses stdio, requires no credentials, and defaults to a three-second cross-process interval between Acquisition.gov requests. `FEDERAL_API_MIN_INTERVAL_SECONDS` may increase or decrease that interval for controlled testing; production clients should retain three seconds.
 
+## Request pacing
+
+| Default setting | Value |
+| --- | --- |
+| Wait after each upstream request completes | **3 seconds** |
+| Maximum upstream requests in flight per pacing identity | **1** |
+| Rolling attempt counter in this pacer | **None**; provider quotas still apply |
+
+The next request starts after the previous request's duration **plus 3 seconds**. This is a completion delay, not a 3-second start interval. Local processes sharing the same pacing directory and identity share this gate; a separate local counter does not create additional provider quota.
+
+See the [complete pacing reference](../../docs/pacing.md) for all nine servers, shared credentials/IPs, configuration and hosting differences.
+
+The hosted Acquisition.gov endpoint retains **60 HTTP requests per 60 seconds per incoming IP and Cloudflare location**, **4 active MCP HTTP requests**, a **55-second backend processing timeout**, and **64 KiB request bodies**. Its one-upstream-request-at-a-time gate is shared by all hosted users.
+
 ## Tools
 
 | Tool | Purpose |
