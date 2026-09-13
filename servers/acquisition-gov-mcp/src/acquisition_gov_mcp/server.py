@@ -256,7 +256,7 @@ def _validate_html_body(html: bytes) -> None:
     count = 0
     for tag in re.finditer(rb"<[^>]*>", html):
         count += 1
-        if count > 20_000 or len(tag.group()) > 16_384:
+        if count > 75_000 or len(tag.group()) > 16_384:
             raise RuntimeError("HTML source exceeds the parser complexity limit.")
 
     class DepthGuard(HTMLParser):

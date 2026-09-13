@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.6 — 2026-09-13
+
+- Accept the legitimate full Part 52 HTML page by raising the bounded tag limit from 20,000 to 75,000; retain byte, tag-size and nesting limits.
+- Add the actual Part 52 snapshot as a full-tool parsing and pagination regression.
+- Complete 180 offline tests, including at least 20 direct cases per tool.
+
 ## 1.0.5 — 2026-09-13
 
 - Fix cached system-curl requests bypassing shared response validation; retain status, MIME, redirect, byte and Retry-After checks on both transports.

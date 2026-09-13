@@ -9,7 +9,7 @@ This server reports source content and metadata. It does **not** decide which ru
 ## Install
 
 ```bash
-uvx acquisition-gov-mcp==1.0.5
+uvx acquisition-gov-mcp==1.0.6
 ```
 
 The server uses stdio, requires no credentials, and defaults to a three-second cross-process interval between Acquisition.gov requests. `FEDERAL_API_MIN_INTERVAL_SECONDS` may increase or decrease that interval for controlled testing; production clients should retain three seconds.
@@ -51,4 +51,4 @@ Every retrieved source includes a canonical URL, UTC retrieval time, SHA-256 con
 - Duplicate and conflicting index entries are returned with warnings instead of silently resolved.
 - Scanned, encrypted, and malformed PDFs return explicit extraction status and metadata where possible.
 
-Version 1.0.5 passed **179 offline tests**, including P0–P3 coverage and real stdio/HTTP smoke checks, plus **12 serialized live MCP calls across all five tools**. See [testing.md](testing.md) for evidence, exact limits, known scope and reproducible commands.
+Version 1.0.6 passed **180 offline tests**, including P0–P3 coverage and real stdio/HTTP smoke checks, plus **12 serialized live MCP calls across all five tools**. See [testing.md](testing.md) for evidence, exact limits, known scope and reproducible commands.

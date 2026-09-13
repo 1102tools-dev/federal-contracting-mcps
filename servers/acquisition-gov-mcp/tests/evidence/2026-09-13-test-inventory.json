@@ -2,17 +2,17 @@
   "method": "Each collected offline case counts once for each public tool it directly invokes. Shared helper-only tests and catalog-only tests are separate. A multi-tool case can appear in more than one row. Parametrized cases are counted separately; repeated calls inside one case are not.",
   "per_tool": {
     "list_rfo_parts": 21,
-    "get_rfo_part": 24,
+    "get_rfo_part": 25,
     "list_rfo_agency_deviations": 20,
     "get_rfo_agency_deviation": 22,
     "get_rfo_guidance": 20
   },
-  "unique_direct_cases": 106,
+  "unique_direct_cases": 107,
   "shared_cases": 73,
-  "offline_total": 179,
+  "offline_total": 180,
   "tiers": {
     "p0": 27,
-    "p1": 58,
+    "p1": 59,
     "p2": 68,
     "legacy": 23,
     "p3": 3
@@ -57,6 +57,7 @@
       "tests/test_per_tool.py::test_get_rfo_part_contract[max_chunk]",
       "tests/test_per_tool.py::test_get_rfo_part_contract[dates]",
       "tests/test_per_tool.py::test_get_rfo_part_contract[missing_title]",
+      "tests/test_per_tool.py::test_get_rfo_part_accepts_actual_large_part52_and_paginates",
       "tests/test_server.py::test_model_part_section_and_cursor",
       "tests/test_smoke.py::test_real_stdio_startup_catalog_validation_and_shutdown",
       "tests/test_smoke.py::test_http_protocol_methods_and_errors_are_structured",

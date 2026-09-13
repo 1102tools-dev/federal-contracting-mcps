@@ -167,3 +167,15 @@ async def test_get_rfo_guidance_contract(rig,scenario):
     elif scenario=='encrypted_pdf':assert result['text_extraction_status']=='encrypted' and result['content']==''
     elif scenario=='pdf_page_cap':assert result['total_pages']==30 and '[Page 25]' in result['content'] and '[Page 26]' not in result['content'] and any('elsewhere' in w for w in result['warnings'])
     else:assert result['agency']=='FAR Council' and result['issuance_date']=='2025-05-02' and result['effective_date']=='2025-06-01' and result['far_parts']==[]
+
+@pytest.mark.p1
+async def test_get_rfo_part_accepts_actual_large_part52_and_paginates(monkeypatch,fixtures):
+    import gzip
+    raw=gzip.decompress((fixtures/'rfo-part-52-2026-09-13.html.gz').read_bytes())
+    async def fetch(url,**kw):return raw,'text/html',url
+    monkeypatch.setattr(s,'_fetch_bytes',fetch)
+    first=await call('get_rfo_part',{'part':52,'max_characters':1000})
+    assert first['far_parts']==[52] and first['text_extraction_status']=='complete'
+    assert first['content_sha256']==hashlib.sha256(raw).hexdigest() and first['next_cursor']=='1000'
+    second=await call('get_rfo_part',{'part':52,'max_characters':1000,'cursor':first['next_cursor']})
+    assert second['cursor']=='1000' and second['content']!=first['content'] and second['content_sha256']==first['content_sha256']

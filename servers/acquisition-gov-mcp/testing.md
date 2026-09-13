@@ -1,6 +1,6 @@
 # Acquisition.gov MCP test record
 
-## Version 1.0.5 hardening — 2026-09-13
+## Version 1.0.6 hardening — 2026-09-13
 
 ### What this server retrieves
 
@@ -8,12 +8,12 @@ The server reads official Acquisition.gov HTML pages and indexed PDFs. It does n
 
 ### Verified coverage
 
-The previous source baseline passed **23 offline tests**. This release passes **179 offline tests**, with **3 opt-in live tests skipped** during offline runs:
+The previous source baseline passed **23 offline tests**. This release passes **180 offline tests**, with **3 opt-in live tests skipped** during offline runs:
 
 | Tier | Passing cases | Scope |
 | --- | ---: | --- |
 | P0 | 27 | URL/redirect allowlist, byte/complexity limits, subprocess cancellation, PDF deadlines and parser concurrency |
-| P1 | 58 | Response-policy parity, fallback regression, parsing correctness and fail-closed source validation |
+| P1 | 59 | Response-policy parity, fallback regression, parsing correctness and fail-closed source validation |
 | P2 | 68 | MCP-dispatched tool paths, filters, pagination, metadata and invalid inputs |
 | P3 | 3 | Real stdio startup/discovery/shutdown, packaged parser modules and HTTP MCP smoke checks |
 | Legacy baseline | 23 | Existing captured HTML, generated PDF, pacing and tool-contract tests |
@@ -23,18 +23,18 @@ The previous source baseline passed **23 offline tests**. This release passes **
 | Public tool | Direct offline test cases | Recorded live tool calls |
 | --- | ---: | ---: |
 | `list_rfo_parts` | 21 | 2 |
-| `get_rfo_part` | 24 | 3 |
+| `get_rfo_part` | 25 | 3 |
 | `list_rfo_agency_deviations` | 20 | 2 |
 | `get_rfo_agency_deviation` | 22 | 1 |
 | `get_rfo_guidance` | 20 | 4 |
 
-These are **106 distinct direct-tool cases plus 73 shared cases = 179 offline tests**. One case calls both deviation-listing and PDF-retrieval tools, so the direct-tool rows sum to 107. Each parametrized case counts separately; repeating calls within a single case does not increase its count. Shared parser/transport tests are not credited once per tool. The per-tool rows include successful results, invalid inputs, actual MCP dispatch, transport-failure propagation and tool-specific boundary cases; they are not line-coverage percentages.
+These are **107 distinct direct-tool cases plus 73 shared cases = 180 offline tests**. One case calls both deviation-listing and PDF-retrieval tools, so the direct-tool rows sum to 108. Each parametrized case counts separately; repeating calls within a single case does not increase its count. Shared parser/transport tests are not credited once per tool. The per-tool rows include successful results, invalid inputs, actual MCP dispatch, transport-failure propagation and tool-specific boundary cases; they are not line-coverage percentages.
 
 The initial 114-case hardening pass was expanded with **65 additional direct-tool scenarios**, 13 per tool, without further runtime changes. These cover 404/429/MIME/redirect/timeout propagation, agency/date filters, duplicated and cross-part records, whole-result pagination, section boundaries, document metadata, encrypted/blank/malformed/partially extractable PDFs, and default/maximum PDF page ranges.
 
 [Collected case inventory](tests/evidence/2026-09-13-test-inventory.json) lists the exact test IDs behind these counts. [tests/README.md](tests/README.md) includes the inventory command.
 
-The priorities describe the tested failure modes; they are not a claim that every possible failure has been covered. The shared release, pacing and hosted-admission suites also passed **92 tests** locally. Linux CI runs the Acquisition.gov offline suite before release, including the isolated PDF parser under its Linux resource limits.
+The priorities describe the tested failure modes; they are not a claim that every possible failure has been covered. The shared release, pacing and hosted-admission suites also passed **95 tests** locally. Linux CI runs the Acquisition.gov offline suite before release, including the isolated PDF parser under its Linux resource limits.
 
 ### Failures reproduced and fixed
 
@@ -46,13 +46,21 @@ The priorities describe the tested failure modes; they are not a claim that ever
 - Invalid cursors, blank headings and bad PDF ranges could trigger unnecessary upstream calls. Validation runs first.
 - Selected PDF pages and oversized applicability text now carry explicit scope/truncation warnings.
 
+### Follow-up found by broader live testing
+
+The actual Part 52 page contains **52,529 tags in 3,187,131 bytes**, exceeding the first hardening pass's 20,000-tag threshold. Version 1.0.6 raises the tag limit to **75,000**, retaining the 5 MiB download, per-tag and nesting limits. A compressed snapshot of that official page now exercises full parsing and cursor continuation through MCP dispatch. Locally the snapshot parsed in **0.46 seconds**, with **133 MiB peak process RSS**; these measurements are observations, not a service guarantee.
+
+Part 52 currently has no agency-deviation links in the source index. An empty filtered listing is valid when the index itself is recognized; the expanded live check distinguishes that case from an unrecognized or blocked page.
+
+The release verifier also allows up to **90 seconds** for a successfully uploaded version to appear in PyPI's JSON endpoint. It waits only on a missing release and still fails immediately on package identity, payload or digest mismatches. Three regression tests cover delayed visibility, timeout and mismatch behavior.
+
 ### Resource boundaries
 
 | Boundary | Limit |
 | --- | --- |
 | HTML / PDF downloads | 5 MiB / 25 MiB |
 | Redirects | 3; each destination revalidated |
-| HTML complexity | 20,000 tags, 16,384 bytes per tag, nesting depth 128 |
+| HTML complexity | 75,000 tags, 16,384 bytes per tag, nesting depth 128 |
 | PDF pages selected per call | 25 |
 | Decoded PDF page stream | 2 MiB before text extraction |
 | Extracted PDF text / applicability field | 200,000 / 8,192 characters |

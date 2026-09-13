@@ -135,3 +135,33 @@ def test_release_dependency_gates_and_postpublication_verification():
     steps = jobs["publish"]["steps"]
     upload_step = next(i for i, step in enumerate(steps) if step.get("uses", "").startswith("pypa/gh-action-pypi-publish@"))
     assert any("--require-published" in step.get("run", "") for step in steps[upload_step + 1:])
+
+
+def test_post_upload_visibility_delay_preserves_payload_verification(tmp_path, monkeypatch):
+    path=local_wheel(tmp_path);clock=[0];calls=[]
+    matching=published_fetcher(wheel(),path.name)
+    def fetch(url,**kw):
+        calls.append(url)
+        if url.endswith('/json') and clock[0]<10:return None
+        return matching(url,**kw)
+    monkeypatch.setattr(guard.time,'monotonic',lambda:clock[0])
+    monkeypatch.setattr(guard.time,'sleep',lambda seconds:clock.__setitem__(0,clock[0]+seconds))
+    assert guard.check_wheel(path,'demo','1.0.0',require_published=True,fetcher=fetch,publication_wait_seconds=20)=='published version matches'
+    assert clock[0]==10 and len(calls)==4
+
+
+def test_post_upload_visibility_wait_is_bounded(tmp_path, monkeypatch):
+    path=local_wheel(tmp_path);clock=[0]
+    monkeypatch.setattr(guard.time,'monotonic',lambda:clock[0])
+    monkeypatch.setattr(guard.time,'sleep',lambda seconds:clock.__setitem__(0,clock[0]+seconds))
+    with pytest.raises(guard.GuardError,match='not published'):
+        guard.check_wheel(path,'demo','1.0.0',require_published=True,fetcher=lambda *a,**kw:None,publication_wait_seconds=12)
+    assert clock[0]==12
+
+
+def test_visibility_wait_never_retries_a_code_mismatch(tmp_path, monkeypatch):
+    path=local_wheel(tmp_path,code=b'changed')
+    def sleep(_):raise AssertionError('must not wait after a mismatch')
+    monkeypatch.setattr(guard.time,'sleep',sleep)
+    with pytest.raises(guard.GuardError,match='increase its version'):
+        guard.check_wheel(path,'demo','1.0.0',require_published=True,fetcher=published_fetcher(wheel(),path.name),publication_wait_seconds=90)

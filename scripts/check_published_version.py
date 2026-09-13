@@ -91,12 +91,18 @@ def wheel_contract(data):
         }
 
 
-def check_wheel(path, name, version, *, require_published=False, fetcher=fetch):
+def check_wheel(path, name, version, *, require_published=False, fetcher=fetch, publication_wait_seconds=0):
     local = wheel_contract(path.read_bytes())
     if (local["name"], Version(local["version"])) != (canonicalize_name(name), Version(version)):
         raise GuardError("Built wheel identity differs from pyproject.toml")
     base = "https://pypi.org/pypi/" + quote(canonicalize_name(name), safe="")
     response = fetcher(base + "/" + quote(version, safe="") + "/json", missing_ok=True)
+    # Upload success can precede visibility on the public JSON endpoint. Wait
+    # only for a missing release; never retry away a payload/digest mismatch.
+    deadline = time.monotonic() + publication_wait_seconds
+    while response is None and require_published and time.monotonic() < deadline:
+        time.sleep(min(5, max(0, deadline - time.monotonic())))
+        response = fetcher(base + "/" + quote(version, safe="") + "/json", missing_ok=True)
     if response is None:
         if require_published:
             raise GuardError(f"{name} {version} is not published")
@@ -129,12 +135,16 @@ def main():
     parser.add_argument("project", type=Path)
     parser.add_argument("--dist", type=Path)
     parser.add_argument("--require-published", action="store_true")
+    parser.add_argument("--publication-wait-seconds", type=int, default=90)
     args = parser.parse_args()
     project = tomllib.loads((args.project / "pyproject.toml").read_text())["project"]
     wheels = list((args.dist or args.project / "dist").glob("*.whl"))
     if len(wheels) != 1:
         raise GuardError("Expected exactly one built wheel")
-    result = check_wheel(wheels[0], project["name"], project["version"], require_published=args.require_published)
+    if not 0 <= args.publication_wait_seconds <= 300:
+        raise GuardError("Publication visibility wait must be between 0 and 300 seconds")
+    result = check_wheel(wheels[0], project["name"], project["version"], require_published=args.require_published,
+                         publication_wait_seconds=args.publication_wait_seconds if args.require_published else 0)
     print(f"{project['name']} {project['version']}: {result}")
 
 

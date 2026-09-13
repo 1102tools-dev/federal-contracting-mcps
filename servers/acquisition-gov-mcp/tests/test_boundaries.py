@@ -74,7 +74,7 @@ async def test_redirect_allowlist_and_chain_limit_for_both_transports(monkeypatc
     finally:await client.aclose()
 
 @pytest.mark.p0
-@pytest.mark.parametrize('body',[b'<div>'*129+b'x'+b'</div>'*129,b'<br>'*20001,b'<div a="'+b'x'*16385+b'">'],ids=['depth','tag_count','tag_size'])
+@pytest.mark.parametrize('body',[b'<div>'*129+b'x'+b'</div>'*129,b'<br>'*75001,b'<div a="'+b'x'*16385+b'">'],ids=['depth','tag_count','tag_size'])
 def test_html_complexity_limits(body):
     with pytest.raises(RuntimeError,match='limit'):s._main_content(body)
 

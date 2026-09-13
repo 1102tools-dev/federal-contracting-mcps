@@ -1,0 +1,8 @@
+{
+  "source_url": "https://www.acquisition.gov/far-overhaul/far-part-deviation-guide/far-overhaul-part-52",
+  "retrieved_date": "2026-09-13",
+  "sha256": "97dc0e7ad581528c044df4b390dc04ef534fbc0240f4d7c7cc002a97fc1c13fc",
+  "uncompressed_bytes": 3187131,
+  "tags": 52529,
+  "purpose": "Regression for the legitimate full Part 52 page exceeding the former 20,000-tag limit"
+}
