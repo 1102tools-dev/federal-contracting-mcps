@@ -21,7 +21,7 @@ import httpx
 from mcp.server import MCPServer
 
 from . import __version__
-from ._pacing import FederalApiPacer
+from ._throughput import USASpendingPacer
 from .constants import (
     AWARD_TYPE_GROUPS,
     BASE_URL,
@@ -68,7 +68,7 @@ ACQUISITION_AGENT_TOOLS = frozenset(
 # ---------------------------------------------------------------------------
 
 _client: httpx.AsyncClient | None = None
-_pacer = FederalApiPacer(bucket="api.usaspending.gov", default_interval=3.0)
+_pacer = USASpendingPacer()
 
 
 def _get_client() -> httpx.AsyncClient:

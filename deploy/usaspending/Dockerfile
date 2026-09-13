@@ -9,6 +9,6 @@ COPY servers/usaspending-gov-mcp/src ./src
 RUN uv sync --frozen --no-dev
 RUN useradd --create-home mcp
 USER mcp
-ENV USASPENDING_TOOL_PROFILE=full MCP_ALLOWED_HOSTS=container.internal MCP_ALLOWED_ORIGINS=https://usaspending.1102tools.com FEDERAL_API_MIN_INTERVAL_SECONDS=3
+ENV USASPENDING_TOOL_PROFILE=full MCP_ALLOWED_HOSTS=container.internal MCP_ALLOWED_ORIGINS=https://usaspending.1102tools.com FEDERAL_API_MIN_INTERVAL_SECONDS=0.6
 EXPOSE 8080
 CMD ["/app/.venv/bin/python", "-m", "usaspending_gov_mcp.http"]

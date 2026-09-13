@@ -181,11 +181,27 @@ All data is sourced from [USASpending.gov](https://www.usaspending.gov), which a
 
 ## Request pacing
 
-Every upstream request uses a provisional 3-second cross-process anti-burst
-interval by default. USASpending does not publish a numeric limit, so this is
-a 1102tools safeguard rather than a provider requirement. Override with
-`FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it, and
-use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
+USAspending uses a shared rolling budget of **500 upstream attempts per 300
+seconds**, at least **0.6 seconds between starts**, and at most **four requests
+in flight**. Slow requests can overlap instead of holding up every other call.
+Failures and retries consume the budget; a provider `Retry-After` cooldown is
+shared. These are tested 1102tools safeguards, not an official USAspending quota
+or a guarantee that every workload will sustain the maximum rate.
+
+Local processes share the budget when they use the same pacing directory.
+`FEDERAL_API_PACING_DIR` relocates that state. A positive
+`FEDERAL_API_MIN_INTERVAL_SECONDS` override can slow starts (minimum 0.6);
+`0` explicitly disables pacing for tests or externally managed clients.
+The hosted service uses 0.6, one backend container, and the same budget across
+users. Its separate entrance guard allows approximately 120 HTTP requests per
+minute per IP per Cloudflare location; this includes MCP protocol traffic and
+is not an upstream API allowance. Busy requests may receive HTTP 429; request
+lifetimes remain bounded at 55 seconds.
+
+State survives ordinary process restarts while the pacing directory remains.
+Replacing a container or deleting that directory resets its local history;
+independent machines do not share the local budget. Do not run old and new
+package versions concurrently against the same pacing directory during upgrade.
 
 ## License
 
