@@ -39,13 +39,20 @@ async def test_admission_limit_does_not_queue_unbounded_work():
     messages = []
     async def send(message):
         messages.append(message)
-    async def receive():
-        return {"type":"http.request", "body":b"", "more_body":False}
+    def receiver():
+        delivered = False
+        async def receive():
+            nonlocal delivered
+            if not delivered:
+                delivered = True
+                return {"type":"http.request", "body":b"", "more_body":False}
+            await asyncio.Event().wait()  # connected client, no further input
+        return receive
     scope = {"type":"http", "path":"/mcp", "method":"POST"}
-    running = [asyncio.create_task(guard(scope, receive, send)) for _ in range(4)]
+    running = [asyncio.create_task(guard(scope, receiver(), send)) for _ in range(4)]
     await asyncio.sleep(0)
     try:
-        await guard(scope, receive, send)
+        await guard(scope, receiver(), send)
         assert messages[0]['status'] == 429
         assert guard.active == 4
     finally:

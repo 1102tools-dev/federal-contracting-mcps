@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.7 — 2026-09-13
+
+- Tie each stateless HTTP request to its own MCP lifespan, cancelling underlying tool work on timeouts and disconnects before releasing its slot. Reject GET/DELETE at the local stateless endpoint.
+- Isolate HTML parsing in one cancellable child process, with a 40-second wall deadline, Linux 192 MiB address-space / 8 CPU-second limits and an 8 MiB output cap; retain existing HTML input/complexity limits.
+- Preserve visible section text across HTML layouts, avoid duplicate headings, retain main content inside an outer form, and prefer primary part headings.
+- Preserve PDF page counts in out-of-range errors; normalize PDF heading whitespace and additional explicit date formats.
+- Keep usable index entries with explicit warnings when a deviation link is outside the source allowlist; retain the allowlist and warn how to refine truncated searches.
+- Preserve full provider Retry-After deadlines while failing fast when a call would wait more than 30 seconds.
+- Add independent-review regression tests and extend the constrained production-image check to actual Part 52 HTML.
+
 ## 1.0.6 — 2026-09-13
 
 - Accept the legitimate full Part 52 HTML page by raising the bounded tag limit from 20,000 to 75,000; retain byte, tag-size and nesting limits.

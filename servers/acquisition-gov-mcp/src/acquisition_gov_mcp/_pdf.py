@@ -7,11 +7,19 @@ from typing import Any
 from pypdf import PdfReader
 from .constants import MAX_PDF_PAGES, MAX_PDF_TEXT_CHARACTERS, MAX_PDF_PAGE_STREAM_BYTES
 
+class PdfPageRangeError(ValueError):
+    """A valid PDF whose requested range is outside its actual page count."""
+    def __init__(self, message: str, total_pages: int):
+        super().__init__(message)
+        self.total_pages = total_pages
+
+
 def _normalize_date(raw: str | None) -> str | None:
     if not raw:
         return None
     text = " ".join(raw.replace("\xa0", " ").split()).strip(" .")
-    for fmt in ("%B %d, %Y", "%b %d, %Y", "%m/%d/%Y", "%Y-%m-%d"):
+    text = re.sub(r"\bSept\b", "Sep", text, flags=re.I)
+    for fmt in ("%B %d, %Y", "%b %d, %Y", "%m/%d/%Y", "%Y-%m-%d", "%d %B %Y", "%d %b %Y"):
         try:
             return datetime.strptime(text, fmt).date().isoformat()
         except ValueError:
@@ -22,8 +30,8 @@ def _normalize_date(raw: str | None) -> str | None:
 def _labeled_date(text: str, label: str) -> str | None:
     pattern = re.compile(
         (r"^\s*" if label.casefold() == "date" else r"\b")
-        + rf"{re.escape(label)}(?:\s+date)?\s*[:\-]\s*"
-        r"([A-Z][a-z]+\s+\d{1,2},\s+\d{4}|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})",
+        + rf"{re.escape(label)}(?:\s+date)?(?:\s*[:\-]\s*|\s+on\s+)"
+        r"([A-Z][a-z]+\s+\d{1,2},\s+\d{4}|\d{1,2}\s+[A-Z][a-z]+\s+\d{4}|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})",
         re.I | re.M,
     )
     match = pattern.search(text)
@@ -68,7 +76,7 @@ def _read_pdf(
     if total == 0:
         return "", "unextractable", ["The PDF contains no pages."], {}, 0, 0
     if page_start < 1 or page_start > total:
-        raise ValueError(f"page_start must be between 1 and {total}.")
+        raise PdfPageRangeError(f"page_start must be between 1 and {total}; this PDF has {total} page(s).", total)
     end = min(total, page_end if page_end is not None else min(total, page_start + 9))
     if end < page_start:
         raise ValueError("page_end must be greater than or equal to page_start.")

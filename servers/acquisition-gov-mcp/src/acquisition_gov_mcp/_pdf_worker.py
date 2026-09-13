@@ -11,12 +11,14 @@ def main():
         import resource
         resource.setrlimit(resource.RLIMIT_AS, (MAX_PDF_WORKER_MEMORY_BYTES, MAX_PDF_WORKER_MEMORY_BYTES))
         resource.setrlimit(resource.RLIMIT_CPU, (8, 8))
-    from ._pdf import _read_pdf
+    from ._pdf import _read_pdf, PdfPageRangeError
     body = sys.stdin.buffer.read(MAX_PDF_BYTES + 1)
     if len(body) > MAX_PDF_BYTES:
         raise ValueError("PDF input too large")
     try:
         result = _read_pdf(body, page_start=int(sys.argv[1]), page_end=None if sys.argv[2] == "none" else int(sys.argv[2]))
+    except PdfPageRangeError as exc:
+        result = ("", "error", [str(exc)], {}, exc.total_pages, 0)
     except Exception as exc:
         result = ("", "error", [f"PDF parsing failed: {type(exc).__name__}."], {}, 0, 0)
     output = json.dumps(result, ensure_ascii=False).encode("utf-8")

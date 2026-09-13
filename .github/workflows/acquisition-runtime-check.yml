@@ -16,9 +16,9 @@ jobs:
           docker run --rm --network none --cpus 0.0625 --memory 256m \
             -v "$PWD/servers/acquisition-gov-mcp/tests/fixtures:/fixtures:ro" \
             acquisition-runtime-check /app/.venv/bin/python -c '
-          import asyncio,json,time,resource
+          import asyncio,json,time,resource,gzip
           from pathlib import Path
-          from acquisition_gov_mcp.server import _read_pdf_safely
+          from acquisition_gov_mcp.server import _read_pdf_safely, _read_html_safely
           async def main():
               body=Path("/fixtures/nsf-part1-2026-09-13.pdf").read_bytes()
               for iteration in range(2):
@@ -26,4 +26,10 @@ jobs:
                   result=await _read_pdf_safely(body,page_start=1,page_end=2)
                   print(json.dumps({"iteration":iteration+1,"seconds":round(time.monotonic()-start,3),"status":result[1],"pages":result[4],"warnings":result[2],"parent_peak_rss_kib":resource.getrusage(resource.RUSAGE_SELF).ru_maxrss}),flush=True)
                   assert result[1]=="complete" and result[4]==3
+              html=gzip.decompress(Path("/fixtures/rfo-part-52-2026-09-13.html.gz").read_bytes())
+              for iteration in range(2):
+                  start=time.monotonic()
+                  result=await _read_html_safely(html,"document",part=52,maximum=1000)
+                  print(json.dumps({"html_iteration":iteration+1,"seconds":round(time.monotonic()-start,3),"characters":result["total_characters"],"parent_peak_rss_kib":resource.getrusage(resource.RUSAGE_SELF).ru_maxrss}),flush=True)
+                  assert result["content"] and result["total_characters"]>1000000
           asyncio.run(main())'

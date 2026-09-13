@@ -8,6 +8,7 @@ import hashlib
 import re
 import shutil
 import json
+import math
 import sys
 import tempfile
 from datetime import date, datetime, timezone
@@ -17,7 +18,7 @@ from typing import Any, Literal
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import httpx
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, Tag, NavigableString, CData
 from mcp.server import MCPServer
 
 from ._pdf import _normalize_date, _labeled_date, _extract_document_fields, _read_pdf
@@ -44,7 +45,18 @@ mcp = MCPServer("acquisition-gov", version=__version__)
 _client: httpx.AsyncClient | None = None
 _prefer_system_curl = False
 _pdf_slots = asyncio.Semaphore(1)
-_pacer = FederalApiPacer(bucket="www.acquisition.gov", default_interval=3.0)
+_html_slots = asyncio.Semaphore(1)
+MAX_HTML_PARSE_SECONDS = 40
+MAX_HTML_WORKER_BYTES = 8 * 1024 * 1024
+async def _bounded_pacing_sleep(seconds: float) -> None:
+    # Preserve the provider's full persisted cooldown, but do not occupy a tool
+    # for minutes/days. This bounds waiting, not the provider's retry deadline.
+    if seconds > 30:
+        raise RuntimeError(f"Acquisition.gov cooldown remains active for approximately {math.ceil(seconds)} seconds; retry after that interval. No upstream request was sent.")
+    await asyncio.sleep(seconds)
+
+
+_pacer = FederalApiPacer(bucket="www.acquisition.gov", default_interval=3.0, sleep=_bounded_pacing_sleep)
 _PART_RE = re.compile(r"(?:FAR\s*)?Part\s*[-:]?\s*(\d{1,2})", re.I)
 _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _REDIRECTS = {301, 302, 303, 307, 308}
@@ -280,14 +292,14 @@ def _validate_html_body(html: bytes) -> None:
 def _main_content(html: bytes) -> Tag | BeautifulSoup:
     _validate_html_body(html)
     soup = BeautifulSoup(html, "html.parser")
-    for node in soup.select("script, style, nav, header, footer, form"):
-        node.decompose()
-    return (
-        soup.select_one("main")
-        or soup.select_one("article")
-        or soup.select_one(".region-content")
-        or soup
-    )
+    content = (soup.select_one("main") or soup.select_one("article")
+               or soup.select_one(".region-content") or soup)
+    for unwanted in list(content.select("script, style, nav, header, footer, form")):
+        # A source may wrap its main content in a form. Only prune descendants,
+        # never the selected content root or an ancestor containing it.
+        if unwanted.parent is not None:
+            unwanted.decompose()
+    return content
 
 
 def _text_lines(node: Tag | BeautifulSoup) -> list[str]:
@@ -321,7 +333,7 @@ def _extract_section(node: Tag | BeautifulSoup, section: str | None) -> str:
     def matches(h):
         text = " ".join(h.get_text(" ", strip=True).split()).casefold()
         return re.search(r"(?<![\w.])" + re.escape(needle) + r"(?![\w.])", text) is not None
-    exact = [h for h in headings if h.get_text(" ", strip=True).casefold() == needle]
+    exact = [h for h in headings if " ".join(h.get_text(" ", strip=True).split()).casefold() == needle]
     candidates = exact or [h for h in headings if matches(h)]
     if not candidates:
         raise ValueError(f"section {section!r} was not found in the official source.")
@@ -329,19 +341,18 @@ def _extract_section(node: Tag | BeautifulSoup, section: str | None) -> str:
         raise ValueError(f"section {section!r} matches multiple headings; use a more specific heading.")
     heading = candidates[0]
     level = int(heading.name[1])
-    lines = [" ".join(heading.get_text(" ", strip=True).split())]
-    for sibling in heading.find_all_next():
-        if node not in sibling.parents:
+    lines: list[str] = []
+    # Walk text nodes in document order rather than consuming whole containers.
+    # This retains div/bare/definition text, avoids nested-heading duplication,
+    # and cannot pull text across the next section through an enclosing table/list.
+    for element in heading.next_elements:
+        if not any(parent is node for parent in element.parents):
             break
-        if re.fullmatch(r"h[1-6]", sibling.name or ""):
-            if int(sibling.name[1]) <= level:
+        if isinstance(element, Tag) and re.fullmatch(r"h[1-6]", element.name or ""):
+            if int(element.name[1]) <= level:
                 break
-            lines.append(" ".join(sibling.get_text(" ", strip=True).split()))
-        elif sibling.name in {"p", "li", "table"}:
-            # Parent list/table text already includes descendants.
-            if any(parent.name in {"p", "li", "table"} for parent in sibling.parents if parent is not node):
-                continue
-            text = " ".join(sibling.get_text(" ", strip=True).split())
+        elif type(element) in (NavigableString, CData):
+            text = " ".join(str(element).split())
             if text:
                 lines.append(text)
     return "\n".join(lines)
@@ -374,7 +385,10 @@ def _part_from_card(card: Tag) -> int | None:
 
 
 def _agency_name(link: Tag) -> str:
-    raw = link.get("title") or link.get_text(" ", strip=True)
+    title = " ".join(str(link.get("title") or "").split())
+    visible = link.get_text(" ", strip=True)
+    generic = re.fullmatch(r"(?:download|view|open)?\s*(?:pdf|document|file)?", title, re.I)
+    raw = visible if generic and visible.strip() else title or visible
     text = " ".join(str(raw).split())
     text = re.sub(r"\s+(?:class\s+)?deviation.*$", "", text, flags=re.I)
     return text.strip(" :-") or "Unspecified agency"
@@ -404,12 +418,17 @@ def _parse_index(html: bytes, source_url: str) -> list[dict[str, Any]]:
         )
         updated = _labeled_date(card_text, "Update") or _labeled_date(card_text, "Updated")
         deviations: list[dict[str, Any]] = []
+        index_warnings: list[str] = []
         details = card.select_one("details.agency-deviations") or card.select_one(".agency-deviations")
         for occurrence, link in enumerate(details.find_all("a") if details else [], start=1):
             href = link.get("href")
             if not href:
                 continue
-            url = _validated_url(urljoin(source_url, href))
+            try:
+                url = _validated_url(urljoin(source_url, href))
+            except ValueError:
+                index_warnings.append("An agency-deviation link was skipped because it is outside permitted HTTPS Acquisition.gov sources; the deviation count excludes that link.")
+                continue
             deviations.append(
                 {
                     "source_id": _source_id("agency-deviation", url),
@@ -440,16 +459,68 @@ def _parse_index(html: bytes, source_url: str) -> list[dict[str, Any]]:
                 "updated_date": updated,
                 "agency_deviations": deviations,
                 "index_ordinal": ordinal,
+                "warnings": index_warnings,
             }
         )
     return results
+
+
+def _parse_html_document(body, *, part=None, heading=None, cursor=None, maximum=DEFAULT_MAX_CHARACTERS):
+    node = _main_content(body)
+    if part is not None:
+        title = node.find("h1") or node.find("h2")
+        title_part = _PART_RE.search(title.get_text(" ", strip=True)) if title else None
+        if title_part is None or int(title_part.group(1)) != part:
+            raise RuntimeError(f"The returned HTML could not be verified as FAR Overhaul Part {part}.")
+    text = _extract_section(node, heading)
+    full_text = "\n".join(_text_lines(node))
+    return {
+        **_chunk(text, cursor, maximum),
+        "issuance_date": (_labeled_date(full_text, "Issuance") or _labeled_date(full_text, "Issued") or _labeled_date(full_text, "Published")),
+        "updated_date": _labeled_date(full_text, "Update") or _labeled_date(full_text, "Updated"),
+    }
+
+
+async def _read_html_safely(body: bytes, operation: str, **arguments):
+    """Isolate CPU-heavy HTML parsing so health, deadlines and cancellation work."""
+    if len(body) > MAX_HTML_BYTES:
+        raise RuntimeError("HTML source exceeds the size limit.")
+    async with _html_slots:
+        process = await asyncio.create_subprocess_exec(
+            sys.executable, "-m", "acquisition_gov_mcp._html_worker", operation,
+            json.dumps(arguments), stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
+        )
+        try:
+            try:
+                output, _ = await asyncio.wait_for(process.communicate(body), MAX_HTML_PARSE_SECONDS)
+            except asyncio.TimeoutError as exc:
+                raise RuntimeError("HTML parsing exceeded its 40-second time budget.") from exc
+            if process.returncode or len(output) > MAX_HTML_WORKER_BYTES:
+                raise RuntimeError("HTML parsing failed or exceeded its resource budget.")
+            try:
+                result = json.loads(output)
+                if not isinstance(result, dict):
+                    raise ValueError("invalid parser envelope")
+            except (ValueError, TypeError) as exc:
+                raise RuntimeError("HTML parser returned an invalid result.") from exc
+            if "error" in result:
+                error = ValueError if result.get("kind") == "ValueError" else RuntimeError
+                raise error(result["error"])
+            if "result" not in result:
+                raise RuntimeError("HTML parser returned an invalid result.")
+            return result["result"]
+        finally:
+            if process.returncode is None:
+                process.kill()
+            await process.wait()
 
 
 async def _index() -> tuple[list[dict[str, Any]], str, str, str]:
     body, _, final_url = await _fetch_bytes(
         RFO_INDEX_URL, allowed_types=("text/html",), max_bytes=MAX_HTML_BYTES
     )
-    parts = _parse_index(body, final_url)
+    parts = await _read_html_safely(body, "index", source_url=final_url)
     if not parts:
         raise RuntimeError("The Acquisition.gov index structure was not recognized; no results can be confirmed.")
     return parts, final_url, _sha(body), _now()
@@ -518,6 +589,7 @@ async def list_rfo_parts(
             | {"agency_deviation_count": len(matches)}
         )
     warnings = ["This index documents posted sources; it does not decide which text governs a procurement."]
+    warnings.extend(warning for item in results for warning in item.get("warnings", []))
     if since and any(item["updated_date"] is None for item in results):
         warnings.append("Entries without an update date were retained; they cannot be confirmed as updated since the requested date.")
     return {
@@ -546,26 +618,13 @@ async def get_rfo_part(
         allowed_types=("text/html",),
         max_bytes=MAX_HTML_BYTES,
     )
-    node = _main_content(body)
-    title = node.find(re.compile(r"^h[1-2]$"))
-    title_part = _PART_RE.search(title.get_text(" ", strip=True)) if title else None
-    if title_part is None or int(title_part.group(1)) != wanted:
-        raise RuntimeError(f"The returned HTML could not be verified as FAR Overhaul Part {wanted}.")
-    text = _extract_section(node, section)
-    page = _chunk(text, cursor, max_characters)
-    full_text = "\n".join(_text_lines(node))
+    page = await _read_html_safely(body, "document", part=wanted, heading=section, cursor=cursor, maximum=max_characters)
     return {
         "source_id": _source_id("model-part", final_url),
         "source_kind": "model_deviation",
         "agency": None,
         "far_parts": [wanted],
         "source_url": final_url,
-        "issuance_date": (
-            _labeled_date(full_text, "Issuance")
-            or _labeled_date(full_text, "Issued")
-            or _labeled_date(full_text, "Published")
-        ),
-        "updated_date": _labeled_date(full_text, "Update") or _labeled_date(full_text, "Updated"),
         "effective_date": None,
         "expiration_date": None,
         "applicability_text": None,
@@ -607,10 +666,11 @@ async def list_rfo_agency_deviations(
     warnings = [
         "Documents are listed as posted; retrieve the PDF before relying on dates or applicability."
     ]
+    warnings.extend(warning for item in parts if wanted_part is None or item["part"] == wanted_part for warning in item.get("warnings", []))
     if agency_filter and len(names) > 1:
         warnings.append(f"The agency filter matched multiple normalized names: {names}.")
     if len(matches) > limit:
-        warnings.append(f"Results were truncated from {len(matches)} to {limit}.")
+        warnings.append(f"Results were truncated from {len(matches)} to {limit}. Narrow the agency filter or query individual FAR parts to retrieve the remaining entries.")
     duplicate_count = len(matches) - len({(m["source_id"], tuple(m["far_parts"])) for m in matches})
     if duplicate_count:
         warnings.append(f"The official index contains {duplicate_count} duplicate entry or entries; they were preserved.")
@@ -694,7 +754,7 @@ async def get_rfo_guidance(
 ) -> dict[str, Any]:
     """Return an allowlisted Acquisition.gov RFO FAQ or guidance resource."""
     _validate_chunk_inputs(cursor, DEFAULT_MAX_CHARACTERS)
-    _validate_heading(heading)
+    heading = _validate_heading(heading)
     if resource not in GUIDANCE_URLS:
         raise ValueError("resource must be faq, policy_and_guidance, or deviation_guidance.")
     url = GUIDANCE_URLS[resource]
@@ -707,7 +767,7 @@ async def get_rfo_guidance(
         )
         if heading:
             lines = text.splitlines()
-            indices = [i for i, line in enumerate(lines) if heading.casefold() in line.casefold()]
+            indices = [i for i, line in enumerate(lines) if heading.casefold() in " ".join(line.split()).casefold()]
             if not indices:
                 raise ValueError(f"heading {heading!r} was not found in the guidance PDF.")
             text = "\n".join(lines[indices[0]:])
@@ -731,22 +791,13 @@ async def get_rfo_guidance(
     body, _, final_url = await _fetch_bytes(
         url, allowed_types=("text/html",), max_bytes=MAX_HTML_BYTES
     )
-    node = _main_content(body)
-    text = _extract_section(node, heading)
-    page = _chunk(text, cursor, DEFAULT_MAX_CHARACTERS)
-    full_text = "\n".join(_text_lines(node))
+    page = await _read_html_safely(body, "document", heading=heading, cursor=cursor)
     return {
         "source_id": _source_id("guidance", final_url),
         "source_kind": "nonregulatory_guidance",
         "agency": "Acquisition.gov",
         "far_parts": [],
         "source_url": final_url,
-        "issuance_date": (
-            _labeled_date(full_text, "Issuance")
-            or _labeled_date(full_text, "Issued")
-            or _labeled_date(full_text, "Published")
-        ),
-        "updated_date": _labeled_date(full_text, "Update") or _labeled_date(full_text, "Updated"),
         "effective_date": None,
         "expiration_date": None,
         "applicability_text": None,
