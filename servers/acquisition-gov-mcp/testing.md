@@ -22,11 +22,11 @@ The previous source baseline passed **23 offline tests**. This release passes **
 
 | Public tool | Direct offline test cases | Recorded live tool calls |
 | --- | ---: | ---: |
-| `list_rfo_parts` | 21 | 2 |
-| `get_rfo_part` | 25 | 3 |
-| `list_rfo_agency_deviations` | 20 | 2 |
-| `get_rfo_agency_deviation` | 23 | 1 |
-| `get_rfo_guidance` | 20 | 4 |
+| `list_rfo_parts` | 21 | 7 |
+| `get_rfo_part` | 25 | 12 |
+| `list_rfo_agency_deviations` | 20 | 7 |
+| `get_rfo_agency_deviation` | 23 | 11 |
+| `get_rfo_guidance` | 20 | 10 |
 
 These are **108 distinct direct-tool cases plus 73 shared cases = 181 offline tests**. One case calls both deviation-listing and PDF-retrieval tools, so the direct-tool rows sum to 109. Each parametrized case counts separately; repeating calls within a single case does not increase its count. Shared parser/transport tests are not credited once per tool. The per-tool rows include successful results, invalid inputs, actual MCP dispatch, transport-failure propagation and tool-specific boundary cases; they are not line-coverage percentages.
 
@@ -74,7 +74,19 @@ The release verifier also allows up to **90 seconds** for a successfully uploade
 
 The Linux address-space and CPU limits apply to the hosted Linux runtime. macOS and Windows retain subprocess isolation, cancellation, the parent deadline and explicit input/output/content limits, but do not apply those Linux resource limits. A rejected or partial document is reported as such; no OCR is performed.
 
-### Serialized live evidence
+### Expanded local and hosted live round
+
+The September 13 audit completed **47 successful live MCP calls: 21 local and 26 hosted**. These covered eight model parts (**1, 2, 10, 12, 15, 39, 52 and 53**), filters, cursor continuation, six agency PDFs across **NSF, OPM, PBGC, FMC and DoD**, and all three guidance resources. This is sampled source coverage, not an exhaustive audit of every agency document.
+
+Broader hosted checks found the full-Part-52 tag-limit failure once and the NSF parser-deadline failure twice. Both were fixed and retested on **hosted version 1.0.6**. The final round passed **11/11 calls**, including Part 52's first chunk and continuation, five different agencies' PDFs, all guidance resources, and the valid zero-deviation count for Part 52. Failed attempts are recorded separately and are not counted as successful calls.
+
+The production-image check also passed twice with networking disabled at **1/16 CPU and 256 MiB RAM**: the NSF PDF took **7.80 and 7.60 seconds**. [Cloudflare documents these limits for the configured lite instance](https://developers.cloudflare.com/containers/platform/limits/). This demonstrates why local parser timings do not predict hosted latency.
+
+Part 52 took **33.8 seconds** for its first hosted chunk and **30.6 seconds** for its continuation. The previously failing NSF PDF completed in **17.9 seconds**, including source retrieval. Large documents remain slower on the small hosted instance; the test confirms successful retrieval, not a speed guarantee.
+
+[Expanded machine-readable evidence](tests/evidence/2026-09-13-expanded-live.json) includes every successful call, runtime, source hash, timing, the failures and retests, and CI links. The [reproducible hosted probe](tests/live_hosted_probe.py) performs 24 sequential sampled calls with a three-second pause between requests.
+
+### Initial serialized live evidence
 
 Two new opt-in test functions completed **12 real MCP tool calls** on September 13, 2026, using the production three-second completion delay. These covered all five tools, all three guidance resources, a section lookup, a cursor continuation, agency filtering, an indexed NSF PDF page and two successive requests through the actual system-curl transport. The first gate completed in **31.41 seconds** and the curl gate in **3.87 seconds**. These are observed test durations, not throughput guarantees.
 

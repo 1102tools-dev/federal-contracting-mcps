@@ -51,4 +51,4 @@ Every retrieved source includes a canonical URL, UTC retrieval time, SHA-256 con
 - Duplicate and conflicting index entries are returned with warnings instead of silently resolved.
 - Scanned, encrypted, and malformed PDFs return explicit extraction status and metadata where possible.
 
-Version 1.0.6 passed **181 offline tests**, including P0–P3 coverage and real stdio/HTTP smoke checks, plus **12 serialized live MCP calls across all five tools**. See [testing.md](testing.md) for evidence, exact limits, known scope and reproducible commands.
+Version 1.0.6 passed **181 offline tests**, including P0–P3 coverage and real stdio/HTTP smoke checks, plus **47 successful live MCP calls across local and hosted runs**. See [testing.md](testing.md) for evidence, exact limits, known scope and reproducible commands.

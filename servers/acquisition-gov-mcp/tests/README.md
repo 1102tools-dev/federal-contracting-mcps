@@ -32,3 +32,13 @@ PYTHONPATH=servers/acquisition-gov-mcp/tests COVERAGE_INVENTORY_PATH=/tmp/acquis
 ```
 
 The inventory uses collected parameter values and direct tool references in each test's source. Catalog-only and helper-only tests are separate. Review the recorded IDs when adding tests that invoke tools indirectly through a new helper.
+
+## Broader hosted live check
+
+Run only when the service is available and no other live run is active. The probe performs 24 sequential calls with a three-second pause, including PDFs from five agencies; it is not a load test.
+
+```bash
+python3 servers/acquisition-gov-mcp/tests/live_hosted_probe.py --output /tmp/acquisition-hosted-live.json
+```
+
+Add `--expected-sha COMMIT_SHA` to require a particular deployed release. The output records source hashes, timestamps, extraction states and timing; the test stops and preserves its observations on a failure. Review changed upstream source content instead of treating captured hashes as permanent expectations.
