@@ -1,5 +1,7 @@
 # USAspending throughput update
 
+> Historical throughput test record. Hosted HTTP admission was subsequently raised to 16 processing plus 32 FIFO waiting slots in v1.0.26. See [current pacing and queue limits](pacing.md).
+
 USAspending 1.0.8 replaces completion-serialized three-second pacing with a
 500-attempt rolling 300-second budget, 0.6-second start spacing, and four
 cross-process in-flight slots. Other providers keep their existing policies.

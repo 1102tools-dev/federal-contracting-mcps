@@ -24,6 +24,8 @@ def main():
         except (ValueError,RuntimeError):pass
         if time.monotonic()>deadline:raise SystemExit('Hosted service did not report expected release commit before the deadline')
         time.sleep(10)
+    if args.slug != "acquisition-gov":
+        assert health.get("admission") == {"processing":16,"waiting":32,"total":48,"deadline_seconds":55}, "Hosted admission configuration differs"
     def rpc(method,params):
         data=request(base+'/mcp',{'jsonrpc':'2.0','id':1,'method':method,'params':params})
         if data.get('error') or data.get('result',{}).get('isError'):raise RuntimeError('MCP returned an error for '+method)

@@ -97,9 +97,12 @@ Always note sample size and remind users these are ceiling rates when presenting
 | Maximum upstream requests in flight | **2** |
 | Rolling upstream attempt budget | **500 per 3,600 seconds (1 hour)** |
 | Hosted HTTP entrance limit | **120 requests per 60 seconds**, per incoming IP and Cloudflare location |
-| Hosted active MCP HTTP requests | **4 total**, shared by this service's users |
-| Hosted backend processing timeout | **55 seconds** |
+| Hosted processing slots | **16 total**, shared by this service's users |
+| Hosted FIFO waiting slots | **32 additional**, for **48 accepted requests total** |
+| Hosted total request deadline | **55 seconds**, including upload, queue wait and processing |
 | Persistent hosted admission budget | **500 tool requests per rolling hour**, shared by all users |
+
+Waiting requests enter processing in arrival order as slots become available. Client disconnects, cancellations and deadlines release their slots. A full 16 + 32 admission queue returns HTTP 429 with `Retry-After: 5`; an expired deadline returns HTTP 504 if no response has started. Slots count HTTP requests, not people, and accepting a request does not guarantee completion before its deadline.
 
 The upstream budget and concurrency are shared by **all hosted users of this MCP**, even when their incoming IPs differ. Independently hosted/local installations have their own pacing histories; processes sharing a pacing directory and identity share its counter. The separate IP-based entrance limit can also be shared by users of a cloud AI client. HTTP requests include protocol traffic and are not equivalent to upstream data requests.
 

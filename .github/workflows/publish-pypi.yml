@@ -41,8 +41,8 @@ jobs:
       - name: Run shared offline safety tests
         run: >-
           uv run --with pytest --with pytest-asyncio --with httpx
-          --with "${{ matrix.filelock }}" --with platformdirs
-          pytest -q tests/test_federal_api_pacing.py
+          --with "${{ matrix.filelock }}" --with platformdirs --with starlette
+          pytest -q tests/test_federal_api_pacing.py tests/test_hosted_admission.py
 
       - name: Test release safeguards
         run: uv run --with pytest --with packaging --with pyyaml pytest -q tests/test_release_guards.py

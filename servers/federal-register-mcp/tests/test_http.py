@@ -26,29 +26,6 @@ def test_host_origin_and_size_guards():
         assert client.post('/mcp', headers={**HEADERS, 'host':'evil.invalid'}, json=body).status_code == 421
         assert client.post('/mcp', headers={**HEADERS, 'origin':'https://evil.invalid'}, json=body).status_code == 403
         assert client.post('/mcp', headers=HEADERS, content='x'*65537).status_code == 413
+        assert client.get('/health').json()['admission'] == {'processing':16,'waiting':32,'total':48,'deadline_seconds':55}
         assert client.get('/health').json()['tools'] == 8
 
-@pytest.mark.asyncio
-async def test_admission_limit_does_not_queue_unbounded_work():
-    import asyncio
-    from federal_register_mcp.http import AdmissionControl
-    release = asyncio.Event()
-    async def backend(scope, receive, send):
-        await release.wait()
-    guard = AdmissionControl(backend)
-    messages = []
-    async def send(message):
-        messages.append(message)
-    async def receive():
-        return {"type":"http.request", "body":b"", "more_body":False}
-    scope = {"type":"http", "path":"/mcp", "method":"POST"}
-    running = [asyncio.create_task(guard(scope, receive, send)) for _ in range(4)]
-    await asyncio.sleep(0)
-    try:
-        await guard(scope, receive, send)
-        assert messages[0]['status'] == 429
-        assert guard.active == 4
-    finally:
-        release.set()
-        await asyncio.gather(*running)
-    assert guard.active == 0

@@ -1,6 +1,6 @@
 # MCP request pacing and hosted limits
 
-Verified against repository commit `4bbabe781bf23740b95327393372be90b53b4ea9`, September 13, 2026.
+Defaults for release `v1.0.26`, September 13, 2026.
 
 ## Default request pacing
 
@@ -8,10 +8,10 @@ These numbers describe the MCP's configured safeguards. They are not agency-publ
 
 | MCP and package version | Minimum time between upstream request starts | Maximum upstream requests in flight | Rolling upstream attempt budget |
 | --- | --- | --- | --- |
-| USAspending 1.0.8 | 0.6 seconds | 4 | 500 per 300 seconds (5 minutes) |
-| GSA CALC+ 1.0.8 | 0.6 seconds | 2 | 500 per 3,600 seconds (1 hour) |
-| eCFR 1.0.9, JSON requests | 0.6 seconds | 2 across JSON and XML combined | 500 per 300 seconds (5 minutes), across JSON and XML combined |
-| Federal Register 1.0.8 | 0.6 seconds | 2 | 500 per 300 seconds (5 minutes) |
+| USAspending 1.0.9 | 0.6 seconds | 4 | 500 per 300 seconds (5 minutes) |
+| GSA CALC+ 1.0.9 | 0.6 seconds | 2 | 500 per 3,600 seconds (1 hour) |
+| eCFR 1.0.10, JSON requests | 0.6 seconds | 2 across JSON and XML combined | 500 per 300 seconds (5 minutes), across JSON and XML combined |
+| Federal Register 1.0.9 | 0.6 seconds | 2 | 500 per 300 seconds (5 minutes) |
 
 A 0.6-second minimum start interval permits approximately 1.67 request starts per second, or 100 per minute, while budget and concurrency slots remain available. It does not mean two or four requests start every 0.6 seconds. The concurrency number is how many requests may still be awaiting responses at once.
 
@@ -37,8 +37,8 @@ The default upstream pacing above is the same code in both installation methods.
 | --- | --- | --- |
 | Upstream budget and concurrency | Shared by processes using the same pacing directory and pacing identity; independent installations do not share that local counter | Shared by all users of that particular hosted MCP, regardless of their incoming IP addresses |
 | Cloudflare entrance limit | Does not apply to a local process calling the data source directly | 120 HTTP requests per 60 seconds, per incoming IP seen by Cloudflare, per Cloudflare location, per MCP service |
-| Hosted backend admission | Does not apply to stdio | At most 4 active MCP HTTP requests across the service's users |
-| Hosted backend processing timeout | Does not apply to stdio; the package/client's own timeouts still apply | 55 seconds per admitted backend request; startup/network time may add latency |
+| Hosted backend admission | Does not apply to stdio | 16 processing slots plus 32 FIFO waiting slots: 48 accepted HTTP requests across this service's users |
+| Hosted total request deadline | Does not apply to stdio; the package/client's own timeouts still apply | 55 seconds including upload, queue wait and processing; startup/network time may add latency |
 | Hosted request-body limit | Does not apply to stdio | 65,536 bytes (64 KiB) |
 
 The four services in the first table have separate hosted budgets, concurrency slots and Cloudflare rate-limit counters. USAspending use does not consume eCFR, CALC+ or Federal Register capacity.
@@ -52,6 +52,10 @@ The four services in the first table have separate hosted budgets, concurrency s
 
 Cloudflare's entrance limit is approximate and location-specific. It is an additional admission check, not a dedicated 120-request allowance for each person. [Cloudflare rate-limiting documentation](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
 
+Waiting requests enter processing in FIFO arrival order. The deadline starts when the backend accepts the request, not when processing starts. Each request releases its slot on completion, failure, cancellation, disconnect or timeout; a disconnected queued request is removed. Uploads are bounded to 64 KiB each and consume an admission slot. Health checks bypass this backend queue. Slots count requests, not users.
+
+The 16 processing slots allow more HTTP requests to wait on the existing provider pacer; they do not increase the two/four upstream concurrency limits or provider budgets. A slow provider, an exhausted budget, or cold XML downloads can still cause deadlines. This is a bounded request queue, not persistent background work; a process restart drops outstanding requests.
+
 The entrance counter includes MCP initialization, tool discovery, pings, tool requests and health checks. Therefore, 120 HTTP requests/minute is not the same as 120 upstream data requests/minute. A tool can make multiple upstream calls, while an XML cache hit can avoid an upstream download.
 
 ### Budget persistence and retry behavior
@@ -63,8 +67,8 @@ For hosted USAspending, eCFR and Federal Register, the upstream pacing history i
 CALC+ additionally reserves each hosted tool request in persistent Durable Object SQLite storage. Its 500-tool-request/hour admission counter and observed provider cooldown survive container restarts. All eight current CALC+ tools make at most one upstream request. Failed or invalid hosted tool requests consume an admission; protocol-only requests do not. The response header `X-1102tools-Hourly-Remaining` reports that hosted admission balance, not an agency allowance.
 
 - **Cloudflare entrance limit:** HTTP 429, with `Retry-After: 60`.
-- **All four backend admission slots busy:** HTTP 429, with `Retry-After: 5`.
-- **Backend processing timeout:** HTTP 504 if the response has not started.
+- **All 16 processing and 32 waiting slots occupied:** HTTP 429, with `Retry-After: 5`.
+- **Total 55-second backend deadline exceeded:** HTTP 504 if the response has not started.
 - **CALC+ hourly budget exhausted or a long provider cooldown:** an MCP tool error with a retry interval; the HTTP status can still be 200. Clients must check MCP `isError` as well as HTTP status.
 - **Provider throttling:** observed `Retry-After` extends the relevant shared cooldown. The MCP does not automatically retry the failed upstream call.
 

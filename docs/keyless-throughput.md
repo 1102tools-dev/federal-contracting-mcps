@@ -1,5 +1,7 @@
 # Keyless MCP throughput and test findings
 
+> Historical throughput test record. Hosted HTTP admission was subsequently raised to 16 processing plus 32 FIFO waiting slots in v1.0.26. See [current pacing and queue limits](pacing.md).
+
 Federal Register 1.0.8 and eCFR 1.0.9 use 500-attempt rolling
 300-second budgets, minimum 0.6-second request starts, and two in-flight slots.
 CALC+ 1.0.8 uses the same starts and concurrency with a 500-attempt rolling

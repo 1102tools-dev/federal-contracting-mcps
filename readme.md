@@ -72,10 +72,12 @@ A **0.6-second interval** permits approximately **100 request starts per minute*
 | --- | --- | --- |
 | Upstream budget and concurrency | Shared by local processes using the same pacing directory and identity | **Shared by all users of that MCP**, regardless of their incoming IPs |
 | Cloudflare entrance limit | Does not apply | **120 HTTP requests per 60 seconds**, per incoming IP and Cloudflare location |
-| Hosted backend admission | Does not apply | **4 active MCP HTTP requests total**, shared across users |
-| Hosted backend processing timeout | Local/client timeouts apply | **55 seconds**; startup and network latency may add time |
+| Hosted backend admission | Does not apply | **16 processing + 32 FIFO waiting = 48 accepted requests total**, shared across this service's users |
+| Hosted total request deadline | Local/client timeouts apply | **55 seconds including upload, queue wait and processing**; startup and network latency may add time |
 
 **Shared IPs and shared service capacity are separate limits.** People using the same calling IP can share the 120-per-minute entrance counter. With a cloud AI client, that IP may belong to the AI provider rather than your computer. Cloudflare's counter is approximate and location-specific. Different incoming IPs still share the hosted MCP's upstream budget. For example, ten hosted USAspending users share **500 upstream attempts per five minutes**, not 500 each. The four services above have separate budgets; USAspending use does not consume eCFR, CALC+ or Federal Register capacity.
+
+Queued requests enter processing in arrival order when a slot opens. Disconnects, cancellations and deadlines free their slots. A full 48-request admission queue returns HTTP 429 with `Retry-After: 5`; requests exceeding the deadline return HTTP 504 if no response has started. The upstream limits above remain unchanged, so 16 processing slots do not mean 16 simultaneous agency API calls.
 
 HTTP requests include connection setup, tool discovery and tool calls. They are not equivalent to upstream data requests. Government providers can apply additional limits, including to a shared outbound IP or API key. The 500-per-hour CALC+ policy supports short batches at 0.6-second starts; it does not permit continuous 500-per-five-minute use.
 

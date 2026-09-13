@@ -7,6 +7,8 @@ on:
       - '.github/workflows/release-guard-checks.yml'
       - 'scripts/check_published_version.py'
       - 'tests/test_release_guards.py'
+      - 'tests/test_hosted_admission.py'
+      - 'shared/hosted_admission.py'
       - 'servers/**'
   push:
     branches: [main]
@@ -15,6 +17,8 @@ on:
       - '.github/workflows/release-guard-checks.yml'
       - 'scripts/check_published_version.py'
       - 'tests/test_release_guards.py'
+      - 'tests/test_hosted_admission.py'
+      - 'shared/hosted_admission.py'
       - 'servers/**'
 
 permissions:
@@ -32,6 +36,8 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - name: Exercise version and release-order failure cases
         run: uv run --with pytest --with packaging --with pyyaml pytest -q tests/test_release_guards.py
+      - name: Test bounded hosted admission queue
+        run: uv run --with pytest --with pytest-asyncio --with starlette pytest -q tests/test_hosted_admission.py
       - name: Build and compare all nine packages with PyPI
         run: |
           for project in servers/*; do
