@@ -12,15 +12,16 @@ import math
 import sys
 import tempfile
 from datetime import date, datetime, timezone
-from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import httpx
-from bs4 import BeautifulSoup, Tag, NavigableString, CData
 from mcp.server import MCPServer
 
+from ._html import (
+    _source_id, _validated_url, _validate_html_body, _main_content, _text_lines, _validate_heading, _validate_chunk_inputs, _extract_section, _chunk, _part_from_card, _agency_name, _parse_index, _parse_html_document
+)
 from ._pdf import _normalize_date, _labeled_date, _extract_document_fields, _read_pdf
 from . import __version__
 from ._pacing import FederalApiPacer
@@ -31,6 +32,7 @@ from .constants import (
     DEFAULT_TIMEOUT,
     GUIDANCE_URLS,
     MAX_HTML_BYTES,
+    MAX_HTML_WORKER_BYTES,
     MAX_OUTPUT_CHARACTERS,
     MAX_PDF_BYTES,
     MAX_PDF_PAGES,
@@ -44,10 +46,11 @@ from .constants import (
 mcp = MCPServer("acquisition-gov", version=__version__)
 _client: httpx.AsyncClient | None = None
 _prefer_system_curl = False
+# Share the memory budget: never run a PDF and HTML parser child together.
 _pdf_slots = asyncio.Semaphore(1)
-_html_slots = asyncio.Semaphore(1)
+_html_slots = _pdf_slots
 MAX_HTML_PARSE_SECONDS = 40
-MAX_HTML_WORKER_BYTES = 8 * 1024 * 1024
+
 async def _bounded_pacing_sleep(seconds: float) -> None:
     # Preserve the provider's full persisted cooldown, but do not occupy a tool
     # for minutes/days. This bounds waiting, not the provider's retry deadline.
@@ -70,10 +73,6 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _source_id(kind: str, url: str) -> str:
-    return f"{kind}-{hashlib.sha256(url.encode('utf-8')).hexdigest()[:20]}"
-
-
 def _validate_part(part: int | str) -> int:
     try:
         value = int(str(part).strip())
@@ -94,20 +93,6 @@ def _validate_date(value: str | None, field: str) -> str | None:
     except ValueError as exc:
         raise ValueError(f"{field} is not a valid calendar date: {value!r}.") from exc
     return value.strip()
-
-
-
-
-def _validated_url(url: str) -> str:
-    parsed = urlsplit(url)
-    if parsed.scheme.lower() != "https":
-        raise ValueError("Only HTTPS Acquisition.gov URLs are permitted.")
-    if parsed.username is not None or parsed.password is not None or ":" in parsed.netloc:
-        raise ValueError("Credentials and explicit ports are not permitted in source URLs.")
-    host = (parsed.hostname or "").lower().rstrip(".")
-    if host not in ALLOWED_HOSTS:
-        raise ValueError(f"Host {host!r} is not on the Acquisition.gov allowlist.")
-    return urlunsplit(("https", host, parsed.path or "/", parsed.query, ""))
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -238,7 +223,7 @@ async def _curl_once(url: str, *, max_bytes: int) -> tuple[httpx.Response, bytes
                 raise RuntimeError("System curl timed out calling Acquisition.gov.") from exc
             if process.returncode:
                 raise RuntimeError(f"System curl could not retrieve Acquisition.gov: exit {process.returncode}; {errors.decode('utf-8', 'replace').strip()[:300]}")
-            metadata = dict(line.split(":", 1) for line in errors.decode().splitlines() if ":" in line)
+            metadata = dict(line.split(":", 1) for line in errors.decode("utf-8", "replace").splitlines() if ":" in line)
             if not {"STATUS", "TYPE", "REDIRECT"}.issubset(metadata):
                 raise RuntimeError("System curl returned incomplete response metadata.")
             status = int(metadata["STATUS"])
@@ -260,225 +245,6 @@ async def _curl_once(url: str, *, max_bytes: int) -> tuple[httpx.Response, bytes
                 if not task.done():
                     task.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
-
-
-def _validate_html_body(html: bytes) -> None:
-    if len(html) > MAX_HTML_BYTES:
-        raise RuntimeError("HTML source exceeds the size limit.")
-    count = 0
-    for tag in re.finditer(rb"<[^>]*>", html):
-        count += 1
-        if count > 75_000 or len(tag.group()) > 16_384:
-            raise RuntimeError("HTML source exceeds the parser complexity limit.")
-
-    class DepthGuard(HTMLParser):
-        def __init__(self):
-            super().__init__(convert_charrefs=False)
-            self.stack = []
-        def handle_starttag(self, tag, attrs):
-            if tag not in {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}:
-                self.stack.append(tag)
-                if len(self.stack) > 128:
-                    raise RuntimeError("HTML source exceeds the nesting limit.")
-        def handle_startendtag(self, tag, attrs):
-            pass
-        def handle_endtag(self, tag):
-            if tag in self.stack:
-                index = len(self.stack) - 1 - self.stack[::-1].index(tag)
-                del self.stack[index:]
-    DepthGuard().feed(html.decode("utf-8", "replace"))
-
-
-def _main_content(html: bytes) -> Tag | BeautifulSoup:
-    _validate_html_body(html)
-    soup = BeautifulSoup(html, "html.parser")
-    content = (soup.select_one("main") or soup.select_one("article")
-               or soup.select_one(".region-content") or soup)
-    for unwanted in list(content.select("script, style, nav, header, footer, form")):
-        # A source may wrap its main content in a form. Only prune descendants,
-        # never the selected content root or an ancestor containing it.
-        if unwanted.parent is not None:
-            unwanted.decompose()
-    return content
-
-
-def _text_lines(node: Tag | BeautifulSoup) -> list[str]:
-    return [" ".join(line.split()) for line in node.get_text("\n").splitlines() if line.strip()]
-
-
-def _validate_heading(section: str | None) -> str | None:
-    if section is None:
-        return None
-    if not section.strip() or len(section) > 500:
-        raise ValueError("section/heading must contain 1 through 500 nonblank characters.")
-    return " ".join(section.split())
-
-
-def _validate_chunk_inputs(cursor: str | None, maximum: int) -> None:
-    if not 1_000 <= maximum <= MAX_OUTPUT_CHARACTERS:
-        raise ValueError(f"max_characters must be between 1000 and {MAX_OUTPUT_CHARACTERS}.")
-    if cursor is not None and (not re.fullmatch(r"[0-9]{1,9}", cursor)):
-        raise ValueError("cursor must be the numeric cursor returned by a prior call.")
-
-
-def _extract_section(node: Tag | BeautifulSoup, section: str | None) -> str:
-    section = _validate_heading(section)
-    if section is None:
-        text = "\n".join(_text_lines(node))
-        if not text:
-            raise RuntimeError("The official HTML source contains no extractable content.")
-        return text
-    needle = section.casefold()
-    headings = list(node.find_all(re.compile(r"^h[1-6]$")))
-    def matches(h):
-        text = " ".join(h.get_text(" ", strip=True).split()).casefold()
-        return re.search(r"(?<![\w.])" + re.escape(needle) + r"(?![\w.])", text) is not None
-    exact = [h for h in headings if " ".join(h.get_text(" ", strip=True).split()).casefold() == needle]
-    candidates = exact or [h for h in headings if matches(h)]
-    if not candidates:
-        raise ValueError(f"section {section!r} was not found in the official source.")
-    if len(candidates) > 1:
-        raise ValueError(f"section {section!r} matches multiple headings; use a more specific heading.")
-    heading = candidates[0]
-    level = int(heading.name[1])
-    lines: list[str] = []
-    # Walk text nodes in document order rather than consuming whole containers.
-    # This retains div/bare/definition text, avoids nested-heading duplication,
-    # and cannot pull text across the next section through an enclosing table/list.
-    for element in heading.next_elements:
-        if not any(parent is node for parent in element.parents):
-            break
-        if isinstance(element, Tag) and re.fullmatch(r"h[1-6]", element.name or ""):
-            if int(element.name[1]) <= level:
-                break
-        elif type(element) in (NavigableString, CData):
-            text = " ".join(str(element).split())
-            if text:
-                lines.append(text)
-    return "\n".join(lines)
-
-
-def _chunk(text: str, cursor: str | None, maximum: int) -> dict[str, Any]:
-    _validate_chunk_inputs(cursor, maximum)
-    if cursor is None:
-        start = 0
-    elif not cursor.isdigit():
-        raise ValueError("cursor must be the numeric cursor returned by a prior call.")
-    else:
-        start = int(cursor)
-    if start < 0 or start > len(text):
-        raise ValueError(f"cursor is outside the source text (length {len(text)}).")
-    end = min(len(text), start + maximum)
-    return {
-        "content": text[start:end],
-        "cursor": str(start),
-        "next_cursor": str(end) if end < len(text) else None,
-        "truncated": end < len(text),
-        "total_characters": len(text),
-    }
-
-
-def _part_from_card(card: Tag) -> int | None:
-    title = card.select_one(".far-title") or card.find(re.compile(r"^h[1-6]$"))
-    match = _PART_RE.search(title.get_text(" ", strip=True) if title else card.get_text(" ", strip=True))
-    return int(match.group(1)) if match else None
-
-
-def _agency_name(link: Tag) -> str:
-    title = " ".join(str(link.get("title") or "").split())
-    visible = link.get_text(" ", strip=True)
-    generic = re.fullmatch(r"(?:download|view|open)?\s*(?:pdf|document|file)?", title, re.I)
-    raw = visible if generic and visible.strip() else title or visible
-    text = " ".join(str(raw).split())
-    text = re.sub(r"\s+(?:class\s+)?deviation.*$", "", text, flags=re.I)
-    return text.strip(" :-") or "Unspecified agency"
-
-
-def _parse_index(html: bytes, source_url: str) -> list[dict[str, Any]]:
-    _validate_html_body(html)
-    soup = BeautifulSoup(html, "html.parser")
-    cards = soup.select(".content-card.far-card") or soup.select(".far-card")
-    results: list[dict[str, Any]] = []
-    for ordinal, card in enumerate(cards, start=1):
-        part = _part_from_card(card)
-        if part is None or not 1 <= part <= 53:
-            raise RuntimeError("The Acquisition.gov index contains an unrecognized FAR part card.")
-        title_node = card.select_one(".far-title a") or card.find("a")
-        part_url = _validated_url(urljoin(source_url, title_node.get("href"))) if title_node and title_node.get("href") else f"{RFO_INDEX_URL}/far-overhaul-part-{part}"
-        title = (
-            " ".join(title_node.get_text(" ", strip=True).split())
-            if title_node
-            else f"FAR Part {part}"
-        )
-        card_text = " ".join(card.get_text(" ", strip=True).split())
-        issuance = (
-            _labeled_date(card_text, "Issuance")
-            or _labeled_date(card_text, "Issued")
-            or _labeled_date(card_text, "Published")
-        )
-        updated = _labeled_date(card_text, "Update") or _labeled_date(card_text, "Updated")
-        deviations: list[dict[str, Any]] = []
-        index_warnings: list[str] = []
-        details = card.select_one("details.agency-deviations") or card.select_one(".agency-deviations")
-        for occurrence, link in enumerate(details.find_all("a") if details else [], start=1):
-            href = link.get("href")
-            if not href:
-                continue
-            try:
-                url = _validated_url(urljoin(source_url, href))
-            except ValueError:
-                index_warnings.append("An agency-deviation link was skipped because it is outside permitted HTTPS Acquisition.gov sources; the deviation count excludes that link.")
-                continue
-            deviations.append(
-                {
-                    "source_id": _source_id("agency-deviation", url),
-                    "source_kind": "agency_class_deviation",
-                    "agency": _agency_name(link),
-                    "far_parts": [part],
-                    "source_url": url,
-                    "index_occurrence": occurrence,
-                    "issuance_date": None,
-                    "updated_date": None,
-                    "effective_date": None,
-                    "expiration_date": None,
-                    "applicability_text": None,
-                    "retrieved_at": None,
-                    "content_sha256": None,
-                    "text_extraction_status": "not_retrieved",
-                    "warnings": ["Dates and applicability require retrieval of the official document."],
-                }
-            )
-        results.append(
-            {
-                "source_id": _source_id("model-part", part_url),
-                "source_kind": "model_deviation",
-                "part": part,
-                "title": title,
-                "source_url": part_url,
-                "issuance_date": issuance,
-                "updated_date": updated,
-                "agency_deviations": deviations,
-                "index_ordinal": ordinal,
-                "warnings": index_warnings,
-            }
-        )
-    return results
-
-
-def _parse_html_document(body, *, part=None, heading=None, cursor=None, maximum=DEFAULT_MAX_CHARACTERS):
-    node = _main_content(body)
-    if part is not None:
-        title = node.find("h1") or node.find("h2")
-        title_part = _PART_RE.search(title.get_text(" ", strip=True)) if title else None
-        if title_part is None or int(title_part.group(1)) != part:
-            raise RuntimeError(f"The returned HTML could not be verified as FAR Overhaul Part {part}.")
-    text = _extract_section(node, heading)
-    full_text = "\n".join(_text_lines(node))
-    return {
-        **_chunk(text, cursor, maximum),
-        "issuance_date": (_labeled_date(full_text, "Issuance") or _labeled_date(full_text, "Issued") or _labeled_date(full_text, "Published")),
-        "updated_date": _labeled_date(full_text, "Update") or _labeled_date(full_text, "Updated"),
-    }
 
 
 async def _read_html_safely(body: bytes, operation: str, **arguments):
@@ -526,8 +292,6 @@ async def _index() -> tuple[list[dict[str, Any]], str, str, str]:
     return parts, final_url, _sha(body), _now()
 
 
-
-
 async def _read_pdf_safely(body: bytes, *, page_start: int, page_end: int | None):
     """Keep PDF CPU/memory faults and cancellation outside the main event loop."""
     if len(body) > MAX_PDF_BYTES:
@@ -556,6 +320,23 @@ async def _read_pdf_safely(body: bytes, *, page_start: int, page_end: int | None
             await process.wait()
 
 
+def _matching_agency_names(parts, query):
+    """Match posted labels consistently, including explicit acronym variants."""
+    if not query:
+        return set()
+    normalize = lambda text: re.sub(r"[^a-z0-9]+", " ", text.casefold()).strip()
+    names = {d["agency"] for part in parts for d in part["agency_deviations"]}
+    needle = normalize(query)
+    if not needle:
+        return set()
+    direct = {name for name in names if needle in normalize(name)}
+    def acronym(name):
+        match = re.search(r"(?:\(([A-Z][A-Z0-9]{1,9})\)|(?:^|\s)([A-Z][A-Z0-9]{1,9}))$", name)
+        return (match.group(1) or match.group(2)) if match else None
+    aliases = {acronym(name) for name in direct} - {None}
+    return direct | {name for name in names if acronym(name) in aliases}
+
+
 @mcp.tool(annotations={"title": "List FAR Overhaul parts", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def list_rfo_parts(
     part: int | None = None,
@@ -567,6 +348,7 @@ async def list_rfo_parts(
     since = _validate_date(updated_since, "updated_since")
     agency_filter = " ".join(agency.split()).casefold() if agency and agency.strip() else None
     parts, source_url, digest, retrieved = await _index()
+    matched_names = _matching_agency_names(parts, agency_filter)
     results: list[dict[str, Any]] = []
     for item in parts:
         if wanted_part is not None and item["part"] != wanted_part:
@@ -576,7 +358,7 @@ async def list_rfo_parts(
         matches = [
             deviation
             for deviation in item["agency_deviations"]
-            if not agency_filter or agency_filter in deviation["agency"].casefold()
+            if not agency_filter or deviation["agency"] in matched_names
         ]
         if agency_filter and not matches:
             continue
@@ -589,6 +371,8 @@ async def list_rfo_parts(
             | {"agency_deviation_count": len(matches)}
         )
     warnings = ["This index documents posted sources; it does not decide which text governs a procurement."]
+    if agency_filter and len(matched_names) > 1:
+        warnings.append(f"Agency matching includes these posted labels and acronym variants: {sorted(matched_names)}.")
     warnings.extend(warning for item in results for warning in item.get("warnings", []))
     if since and any(item["updated_date"] is None for item in results):
         warnings.append("Entries without an update date were retained; they cannot be confirmed as updated since the requested date.")
@@ -633,7 +417,7 @@ async def get_rfo_part(
         "text_extraction_status": "complete",
         "warnings": [
             "RFO model text is not operative for an agency unless that agency adopts it through a deviation."
-        ],
+        ] + (["The page text does not state issuance or update dates; list_rfo_parts reports dates from the separate index cards."] if page["issuance_date"] is None and page["updated_date"] is None else []),
         "section": section,
         **page,
     }
@@ -653,12 +437,13 @@ async def list_rfo_agency_deviations(
     wanted_part = _validate_part(part) if part is not None else None
     agency_filter = " ".join(agency.split()).casefold() if agency and agency.strip() else None
     parts, source_url, digest, retrieved = await _index()
+    matched_names = _matching_agency_names(parts, agency_filter)
     matches: list[dict[str, Any]] = []
     for item in parts:
         if wanted_part is not None and item["part"] != wanted_part:
             continue
         for deviation in item["agency_deviations"]:
-            if agency_filter and agency_filter not in deviation["agency"].casefold():
+            if agency_filter and deviation["agency"] not in matched_names:
                 continue
             matches.append(deviation | {"retrieved_at": retrieved})
     selected = matches[:limit]

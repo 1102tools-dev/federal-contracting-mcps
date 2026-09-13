@@ -240,3 +240,104 @@ async def test_long_provider_cooldown_fails_fast_without_shortening_it(monkeypat
   state=json.loads(next(tmp_path.glob('*.json')).read_text())
   assert state['cooldown_until']>time.time()+31535000
  finally:await client.aclose()
+
+@pytest.mark.p1
+@pytest.mark.parametrize('kind',['html','pdf'])
+@pytest.mark.parametrize('mode',['timeout','cancel'])
+async def test_http_owns_real_parser_process_lifetime(monkeypatch,fixtures,kind,mode):
+ import asyncio,httpx,sys
+ from acquisition_gov_mcp.http import create_app
+ original=asyncio.create_subprocess_exec;children=[];spawned=asyncio.Event()
+ async def spawn(*args,**kwargs):
+  child=await original(sys.executable,'-c','import time; time.sleep(60)',**kwargs)
+  children.append(child);spawned.set();return child
+ monkeypatch.setattr(asyncio,'create_subprocess_exec',spawn)
+ async def fetch(url,**kw):return b'stub source','application/pdf' if kind=='pdf' else 'text/html',url
+ monkeypatch.setattr(s,'_fetch_bytes',fetch)
+ if kind=='pdf':
+  parts=s._parse_index((fixtures/'rfo-index.html').read_bytes(),s.RFO_INDEX_URL)
+  async def index():return parts,s.RFO_INDEX_URL,'digest','time'
+  monkeypatch.setattr(s,'_index',index)
+  name='get_rfo_agency_deviation';args={'source_id':parts[0]['agency_deviations'][0]['source_id']}
+ else:name='get_rfo_part';args={'part':10}
+ app=create_app();app.request_timeout=.2 if mode=='timeout' else 55
+ async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://localhost:8080',headers={'Accept':'application/json, text/event-stream'}) as client:
+  task=asyncio.create_task(client.post('/mcp',json={'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':name,'arguments':args}}))
+  await asyncio.wait_for(spawned.wait(),2)
+  if mode=='timeout':assert (await task).status_code==504
+  else:
+   task.cancel()
+   with pytest.raises(asyncio.CancelledError):await task
+ assert len(children)==1 and children[0].returncode is not None and app.active==0
+
+@pytest.mark.p0
+async def test_html_and_pdf_share_one_parser_memory_slot(monkeypatch):
+ import asyncio,sys
+ assert s._html_slots is s._pdf_slots
+ slot=asyncio.Semaphore(1)
+ monkeypatch.setattr(s,'_html_slots',slot);monkeypatch.setattr(s,'_pdf_slots',slot)
+ original=asyncio.create_subprocess_exec;children=[]
+ async def spawn(*args,**kwargs):
+  payload='{"result": []}' if '_html_worker' in args[2] else '["", "unextractable", [], {}, 0, 0]'
+  process=await original(sys.executable,'-c','import time; time.sleep(.08); print('+repr(payload)+')',**kwargs)
+  assert all(p.returncode is not None for p in children), 'HTML and PDF parsers overlap'
+  children.append(process);return process
+ monkeypatch.setattr(asyncio,'create_subprocess_exec',spawn)
+ await asyncio.gather(s._read_html_safely(b'html','index'),s._read_pdf_safely(b'pdf',page_start=1,page_end=1))
+ assert len(children)==2
+
+@pytest.mark.p2
+@pytest.mark.parametrize('query,expected',[
+ ('Energy (DOE)',{'Department of Energy (DOE)','Department of Energy DOE'}),
+ ('Energy DOE',{'Department of Energy (DOE)','Department of Energy DOE'}),
+ ('General Services Administration',{'General Services Administration (GSA)','GSA'}),
+ ('GSA',{'General Services Administration (GSA)','GSA'}),
+])
+async def test_agency_filters_include_posted_punctuation_and_acronym_variants(monkeypatch,query,expected):
+ names=['Department of Energy (DOE)','Department of Energy DOE','General Services Administration (GSA)','GSA','Department of Defense (DoD)']
+ parts=[{'part':1,'updated_date':None,'agency_deviations':[{'agency':name,'source_id':str(n),'far_parts':[1]} for n,name in enumerate(names)]}]
+ async def index():return parts,s.RFO_INDEX_URL,'digest','time'
+ monkeypatch.setattr(s,'_index',index)
+ listing=await s.list_rfo_agency_deviations(agency=query)
+ assert {d['agency'] for d in listing['results']}==expected and listing['warnings']
+ summary=await s.list_rfo_parts(agency=query)
+ assert summary['results'][0]['agency_deviation_count']==len(expected)
+
+@pytest.mark.p3
+def test_published_installation_pins_follow_package_version():
+ import re
+ from pathlib import Path
+ project=Path(__file__).parents[1]
+ version=re.search(r'^version = "([^"]+)"', (project/'pyproject.toml').read_text(),re.M).group(1)
+ for filename in ['Dockerfile','smithery.yaml']:
+  assert f'acquisition-gov-mcp=={version}' in (project/filename).read_text()
+
+@pytest.mark.p2
+async def test_curl_non_utf8_diagnostics_keep_response_contract(monkeypatch):
+ import asyncio,sys
+ original=asyncio.create_subprocess_exec
+ async def spawn(*args,**kwargs):
+  from pathlib import Path
+  Path(args[args.index('--dump-header')+1]).write_text('HTTP/1.1 200 OK\nContent-Type: text/html\n\n')
+  code='import sys; sys.stdout.buffer.write(b"body"); sys.stderr.buffer.write(b"\\xff\\nSTATUS:200\\nTYPE:text/html\\nREDIRECT:\\n")'
+  return await original(sys.executable,'-c',code,**kwargs)
+ monkeypatch.setattr(asyncio,'create_subprocess_exec',spawn)
+ monkeypatch.setattr(s.shutil,'which',lambda _: '/usr/bin/curl')
+ response,body=await s._curl_once(s.RFO_INDEX_URL,max_bytes=100)
+ assert response.status_code==200 and body==b'body'
+
+@pytest.mark.p2
+def test_real_part52_omits_favorites_and_duplicate_hidden_titles(fixtures):
+ import gzip
+ body=gzip.decompress((fixtures/'rfo-part-52-2026-09-13.html.gz').read_bytes())
+ result=s._parse_html_document(body,part=52,maximum=1000)
+ assert ' '.join(result['content'].split()).startswith('Part 52 - Solicitation Provisions and Contract Clauses')
+ assert 'Favorite' not in result['content'] and 'FAR Overhaul - Part 52' not in result['content']
+
+@pytest.mark.p2
+async def test_undated_part_points_to_index_card_dates(monkeypatch):
+ async def fetch(url,**kw):return b'<main><h1>FAR Overhaul Part 1</h1><p>Text without dates.</p></main>','text/html',url
+ monkeypatch.setattr(s,'_fetch_bytes',fetch)
+ result=await s.get_rfo_part(1)
+ assert result['issuance_date'] is result['updated_date'] is None
+ assert any('list_rfo_parts' in w for w in result['warnings'])

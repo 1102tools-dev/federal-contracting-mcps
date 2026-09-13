@@ -9,7 +9,8 @@ def main():
         memory = 192 * 1024 * 1024
         resource.setrlimit(resource.RLIMIT_AS, (memory, memory))
         resource.setrlimit(resource.RLIMIT_CPU, (8, 8))
-    from .server import _parse_index, _parse_html_document, MAX_HTML_BYTES, MAX_HTML_WORKER_BYTES
+    from ._html import _parse_index, _parse_html_document
+    from .constants import MAX_HTML_BYTES, MAX_HTML_WORKER_BYTES
     body = sys.stdin.buffer.read(MAX_HTML_BYTES + 1)
     if len(body) > MAX_HTML_BYTES:
         raise ValueError('HTML input exceeds download limit')

@@ -1,3 +1,5 @@
+# Standalone subtree template only. In this monorepo, releases use the root
+# .github/workflows/publish-pypi.yml workflow and v* release tags.
 name: Publish to PyPI
 
 on:
