@@ -13,7 +13,7 @@ jobs:
         run: docker build -f deploy/acquisition-gov/Dockerfile -t acquisition-runtime-check .
       - name: Exercise real PDF with hosted CPU and memory limits
         run: |
-          docker run --rm --network none --cpus 0.0625 --memory 256m \
+          docker run --rm --network none --cpus 0.25 --memory 1g \
             -v "$PWD/servers/acquisition-gov-mcp/tests/fixtures:/fixtures:ro" \
             acquisition-runtime-check /app/.venv/bin/python -c '
           import asyncio,json,time,resource,gzip

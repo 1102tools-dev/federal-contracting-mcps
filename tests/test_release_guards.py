@@ -180,3 +180,40 @@ def test_smithery_checks_explicit_pins_without_rejecting_latest_or_source(comman
     versions = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(versions)
     assert versions.smithery_pins_match(command, "ecfr-mcp", "1.0.10") is valid
+
+@pytest.mark.parametrize('failure', [None, 'html_timeout', 'pdf_metadata_only'])
+def test_acquisition_release_gate_requires_real_html_and_pdf(monkeypatch, failure):
+    spec = importlib.util.spec_from_file_location('hosted_verify', ROOT / 'scripts/verify_hosted_release.py')
+    verifier = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(verifier)
+    calls = []
+    def request(url, payload=None):
+        if payload is None:
+            return {'release_sha': 'a' * 40}
+        method = payload['method']
+        if method == 'initialize':
+            import tomllib
+            version = tomllib.loads((ROOT / 'servers/acquisition-gov-mcp/pyproject.toml').read_text())['project']['version']
+            return {'result': {'serverInfo': {'version': version}}}
+        if method == 'tools/list':
+            return {'result': {'tools': json.loads((ROOT / 'deploy/acquisition-gov/tools-contract.json').read_text())}}
+        name = payload['params']['name']; calls.append(name)
+        if name == 'get_rfo_part':
+            if failure == 'html_timeout':
+                return {'result': {'isError': True}}
+            data = {'content': 'Part 52', 'total_characters': 1905514}
+        elif name == 'list_rfo_agency_deviations':
+            data = {'results': [{'source_id': 'test-official-nsf-document'}]}
+        elif name == 'get_rfo_agency_deviation':
+            data = {'text_extraction_status': 'error' if failure == 'pdf_metadata_only' else 'complete', 'content': 'actual PDF text'}
+        else:
+            data = {'count': 1}
+        return {'result': {'structuredContent': data}}
+    monkeypatch.setattr(verifier, 'request', request)
+    monkeypatch.setattr('sys.argv', ['verify', 'acquisition-gov', '--sha', 'a' * 40])
+    if failure:
+        with pytest.raises((AssertionError, RuntimeError)):
+            verifier.main()
+    else:
+        verifier.main()
+        assert calls == ['list_rfo_parts'] * 3 + ['get_rfo_part', 'list_rfo_agency_deviations', 'get_rfo_agency_deviation']

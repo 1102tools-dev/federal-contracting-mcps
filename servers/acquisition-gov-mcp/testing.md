@@ -4,6 +4,18 @@
 
 The 1.0.7 production acceptance test caught a Part 52 HTML parsing timeout at the unchanged 40-second parser deadline, despite its earlier constrained-image check passing. Version 1.0.8 removes repeated full-tree CSS-selector matching and duplicate text extraction. Source guards and parser deadlines are unchanged. All **236 offline tests** pass. Three local runs returned identical output: before **0.6492, 0.6579, 0.6565 seconds**; after **0.4721, 0.4792, 0.4619 seconds**. These local timings are not hosted throughput promises. Final deployment and hosted outcomes are recorded in the follow-up evidence.
 
+### Final production verification
+
+Version **1.0.8** is published on PyPI and deployed from commit `dffaadaa654bbd8e54dde9105b2e720d00c8dc0c` ([successful release](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/34756879409)). The five published tool schemas remain unchanged.
+
+The actual `lite` deployment still exceeded the 40-second parser limit after the optimization. Only Acquisition.gov was moved to **basic: 1/4 vCPU, 1 GiB RAM, 4 GB disk**, with **one instance** and **two-minute idle sleep**. The stricter synthetic 1/16-CPU test did not predict production latency accurately; actual hosted acceptance is the deciding evidence. Configuration is committed separately in `2293ab4202ddf74d42f3f17c62a4703a58da2436`. Parser security caps and HTTP admission limits remain unchanged.
+
+All **14 hosted HTTP requests / 10 tool calls** passed, covering all five tools, initialization, exact catalog, agency aliases, Part 10 section lookup, Part 52 continuation, NSF PDF extraction and both HTML/PDF guidance. Observed Part 52 times were **15.590 and 17.494 seconds**; NSF PDF retrieval/extraction took **10.880 seconds**. These are dated observations, not latency guarantees. There are **236 passing offline package cases** and **104 passing shared safety/release cases**.
+
+The production release gate now also requires actual Part 52 HTML and NSF PDF text extraction; a successful lightweight index response alone is insufficient. Its regressions explicitly reject HTML errors and metadata-only PDF results. The manual constrained-image workflow now uses the production basic allocation.
+
+At Cloudflare's published rates, the basic-versus-lite memory/disk increment is approximately **$0.73 per 100 awake hours before included allowances**, plus usage-based CPU differences. This is a calculation, not a bill forecast or cap. [Pricing](https://developers.cloudflare.com/containers/platform/pricing/). Existing one-instance and idle-sleep controls remain in place.
+
 ## Version 1.0.7 independent-review fixes — 2026-09-13
 
 Fable 5.1 at extra-high effort independently reviewed the immutable 1.0.6 snapshot. It reproduced two P1 issues: HTTP timeouts/disconnects did not cancel SDK-owned tool tasks, and synchronous HTML parsing blocked the event loop. No P0 finding was identified in that review. Its 84 adversarial cases included expected-behavior hypotheses and test-harness failures; those failures are not a count of confirmed defects.

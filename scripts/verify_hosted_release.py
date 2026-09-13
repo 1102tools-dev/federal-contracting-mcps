@@ -36,14 +36,26 @@ def main():
     actual=rpc('tools/list',{})['tools']
     expected=json.loads((ROOT/'deploy'/args.slug/'tools-contract.json').read_text())
     assert sorted(actual,key=lambda t:t['name'])==sorted(expected,key=lambda t:t['name']),'Published tool definitions differ'
+    def tool(name, arguments):
+        result=rpc('tools/call',{'name':name,'arguments':arguments})
+        data=result.get('structuredContent')
+        if data is None and result.get('content'):
+            try:data=json.loads(result['content'][0]['text'])
+            except (ValueError,KeyError):pass
+        assert not (isinstance(data,dict) and data.get('error')),'Upstream error in tool result'
+        return data
     if not args.no_upstream:
         name,arguments=CASES[args.slug]
         for _ in range(3):
-            result=rpc('tools/call',{'name':name,'arguments':arguments})
-            data=result.get('structuredContent')
-            if data is None and result.get('content'):
-                try:data=json.loads(result['content'][0]['text'])
-                except (ValueError,KeyError):pass
-            assert not (isinstance(data,dict) and data.get('error')),'Upstream error in tool result'
+            tool(name,arguments)
+        if args.slug == 'acquisition-gov':
+            # The lightweight index can pass while real document extraction times out.
+            # Keep one actual large HTML and one bounded PDF extraction in the gate.
+            part=tool('get_rfo_part',{'part':52,'max_characters':1000})
+            assert part['content'] and part['total_characters']>1000000,'Large HTML extraction incomplete'
+            listing=tool('list_rfo_agency_deviations',{'agency':'NSF','part':1})
+            assert listing['results'],'NSF Part 1 deviation fixture unavailable upstream'
+            pdf=tool('get_rfo_agency_deviation',{'source_id':listing['results'][0]['source_id'],'page_start':1,'page_end':2})
+            assert pdf['text_extraction_status']=='complete' and pdf['content'],'Real PDF extraction incomplete'
     print(f"Verified {args.slug}: {version}, commit {args.sha}, {len(actual)} tools")
 if __name__=='__main__':main()
