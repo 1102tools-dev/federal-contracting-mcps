@@ -72,11 +72,25 @@ Together they cover the full regulatory pipeline. Use `far_case_history` to trac
 
 ## Request pacing
 
-Every upstream request uses a provisional 3-second cross-process anti-burst
-interval by default. Federal Register does not publish a numeric limit, so
-this is a 1102tools safeguard rather than a provider requirement. Override
-with `FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it,
-and use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
+The default safeguard allows up to 500 upstream request attempts per rolling
+five minutes, with starts spaced at least 0.6 seconds apart and at most two
+requests in flight. This is a 1102tools policy tested against Federal Register,
+not a published provider quota or a guaranteed tool-call rate. A tool may make
+more than one upstream request, and upstream latency can reduce throughput.
+
+Local processes sharing `FEDERAL_API_PACING_DIR` share the budget. The hosted
+service has its own budget shared by its users. Its separate HTTP entrance
+limit is 120 requests per minute per IP and Cloudflare location, including
+protocol requests that do not call the upstream API. Other MCP services have
+separate budgets.
+
+Attempts remain counted on failure or cancellation, and `Retry-After` extends
+a shared cooldown. Set `FEDERAL_API_MIN_INTERVAL_SECONDS` above `0.6` to slow
+requests; positive values below `0.6` are clamped. Explicit `0` disables pacing
+for offline tests or externally managed clients. Hosted deployments use `0.6`.
+State is local to the pacing directory and does not survive its deletion or a
+hosted container replacement. Do not run old and new pacing implementations
+against the same directory concurrently.
 
 ## License
 

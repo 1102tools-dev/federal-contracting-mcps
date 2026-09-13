@@ -20,7 +20,7 @@ import httpx
 from mcp.server import MCPServer
 
 from . import __version__
-from ._pacing import FederalApiPacer
+from ._throughput import FederalRegisterPacer
 from .constants import (
     BASE_URL,
     DEFAULT_FIELDS,
@@ -228,7 +228,7 @@ def _clean_error_body(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 _client: httpx.AsyncClient | None = None
-_pacer = FederalApiPacer(bucket="www.federalregister.gov", default_interval=3.0)
+_pacer = FederalRegisterPacer()
 
 
 def _get_client() -> httpx.AsyncClient:
