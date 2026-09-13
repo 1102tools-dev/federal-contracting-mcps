@@ -179,3 +179,11 @@ async def test_get_rfo_part_accepts_actual_large_part52_and_paginates(monkeypatc
     assert first['content_sha256']==hashlib.sha256(raw).hexdigest() and first['next_cursor']=='1000'
     second=await call('get_rfo_part',{'part':52,'max_characters':1000,'cursor':first['next_cursor']})
     assert second['cursor']=='1000' and second['content']!=first['content'] and second['content_sha256']==first['content_sha256']
+
+@pytest.mark.p1
+async def test_get_deviation_extracts_actual_nsf_part1_pdf(rig,fixtures):
+    rig['pdf']=(fixtures/'nsf-part1-2026-09-13.pdf').read_bytes()
+    result=await call('get_rfo_agency_deviation',{'source_id':source_id(rig['index']),'page_start':1,'page_end':2})
+    assert result['total_pages']==3 and result['text_extraction_status']=='complete'
+    assert '[Page 2]' in result['page_numbered_text'] and result['returned_characters']>3000
+    assert result['content_sha256']==hashlib.sha256(rig['pdf']).hexdigest()

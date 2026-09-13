@@ -8,12 +8,12 @@ The server reads official Acquisition.gov HTML pages and indexed PDFs. It does n
 
 ### Verified coverage
 
-The previous source baseline passed **23 offline tests**. This release passes **180 offline tests**, with **3 opt-in live tests skipped** during offline runs:
+The previous source baseline passed **23 offline tests**. This release passes **181 offline tests**, with **3 opt-in live tests skipped** during offline runs:
 
 | Tier | Passing cases | Scope |
 | --- | ---: | --- |
 | P0 | 27 | URL/redirect allowlist, byte/complexity limits, subprocess cancellation, PDF deadlines and parser concurrency |
-| P1 | 59 | Response-policy parity, fallback regression, parsing correctness and fail-closed source validation |
+| P1 | 60 | Response-policy parity, fallback regression, parsing correctness and fail-closed source validation |
 | P2 | 68 | MCP-dispatched tool paths, filters, pagination, metadata and invalid inputs |
 | P3 | 3 | Real stdio startup/discovery/shutdown, packaged parser modules and HTTP MCP smoke checks |
 | Legacy baseline | 23 | Existing captured HTML, generated PDF, pacing and tool-contract tests |
@@ -25,10 +25,10 @@ The previous source baseline passed **23 offline tests**. This release passes **
 | `list_rfo_parts` | 21 | 2 |
 | `get_rfo_part` | 25 | 3 |
 | `list_rfo_agency_deviations` | 20 | 2 |
-| `get_rfo_agency_deviation` | 22 | 1 |
+| `get_rfo_agency_deviation` | 23 | 1 |
 | `get_rfo_guidance` | 20 | 4 |
 
-These are **107 distinct direct-tool cases plus 73 shared cases = 180 offline tests**. One case calls both deviation-listing and PDF-retrieval tools, so the direct-tool rows sum to 108. Each parametrized case counts separately; repeating calls within a single case does not increase its count. Shared parser/transport tests are not credited once per tool. The per-tool rows include successful results, invalid inputs, actual MCP dispatch, transport-failure propagation and tool-specific boundary cases; they are not line-coverage percentages.
+These are **108 distinct direct-tool cases plus 73 shared cases = 181 offline tests**. One case calls both deviation-listing and PDF-retrieval tools, so the direct-tool rows sum to 109. Each parametrized case counts separately; repeating calls within a single case does not increase its count. Shared parser/transport tests are not credited once per tool. The per-tool rows include successful results, invalid inputs, actual MCP dispatch, transport-failure propagation and tool-specific boundary cases; they are not line-coverage percentages.
 
 The initial 114-case hardening pass was expanded with **65 additional direct-tool scenarios**, 13 per tool, without further runtime changes. These cover 404/429/MIME/redirect/timeout propagation, agency/date filters, duplicated and cross-part records, whole-result pagination, section boundaries, document metadata, encrypted/blank/malformed/partially extractable PDFs, and default/maximum PDF page ranges.
 
@@ -52,6 +52,8 @@ The actual Part 52 page contains **52,529 tags in 3,187,131 bytes**, exceeding t
 
 Part 52 currently has no agency-deviation links in the source index. An empty filtered listing is valid when the index itself is recognized; the expanded live check distinguishes that case from an unrecognized or blocked page.
 
+A hosted two-page extraction of the 128,522-byte NSF Part 1 PDF hit the initial 10-second parser deadline, while the same document completed locally in 0.09 seconds. Version 1.0.6 allows **30 seconds** for the isolated parser within the existing 55-second HTTP deadline; Linux CPU/memory, content and output caps remain in force. That actual PDF is now a regression fixture.
+
 The release verifier also allows up to **90 seconds** for a successfully uploaded version to appear in PyPI's JSON endpoint. It waits only on a missing release and still fails immediately on package identity, payload or digest mismatches. Three regression tests cover delayed visibility, timeout and mismatch behavior.
 
 ### Resource boundaries
@@ -66,7 +68,7 @@ The release verifier also allows up to **90 seconds** for a successfully uploade
 | Extracted PDF text / applicability field | 200,000 / 8,192 characters |
 | PDF worker output | 2 MiB |
 | Concurrent PDF parser children | 1 per server process |
-| PDF parser deadline | 10 seconds wall time |
+| PDF parser deadline | 30 seconds wall time |
 | Linux parser address space / CPU | 160 MiB / 8 seconds |
 | Public text chunk | Up to 40,000 characters |
 

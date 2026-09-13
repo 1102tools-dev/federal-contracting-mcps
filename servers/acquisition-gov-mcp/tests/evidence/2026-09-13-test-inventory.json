@@ -4,15 +4,15 @@
     "list_rfo_parts": 21,
     "get_rfo_part": 25,
     "list_rfo_agency_deviations": 20,
-    "get_rfo_agency_deviation": 22,
+    "get_rfo_agency_deviation": 23,
     "get_rfo_guidance": 20
   },
-  "unique_direct_cases": 107,
+  "unique_direct_cases": 108,
   "shared_cases": 73,
-  "offline_total": 180,
+  "offline_total": 181,
   "tiers": {
     "p0": 27,
-    "p1": 59,
+    "p1": 60,
     "p2": 68,
     "legacy": 23,
     "p3": 3
@@ -104,6 +104,7 @@
       "tests/test_per_tool.py::test_get_rfo_agency_deviation_contract[partially_extractable]",
       "tests/test_per_tool.py::test_get_rfo_agency_deviation_contract[document_fields]",
       "tests/test_per_tool.py::test_get_rfo_agency_deviation_contract[past_last_page]",
+      "tests/test_per_tool.py::test_get_deviation_extracts_actual_nsf_part1_pdf",
       "tests/test_server.py::test_get_deviation_resolves_only_current_index",
       "tests/test_server.py::test_get_deviation_enforces_output_length_limit",
       "tests/test_tool_paths.py::test_pdf_lookup_merge_and_page_scope_via_mcp",

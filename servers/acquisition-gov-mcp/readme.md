@@ -45,10 +45,10 @@ Every retrieved source includes a canonical URL, UTC retrieval time, SHA-256 con
 - Only `https://acquisition.gov` and `https://www.acquisition.gov` are allowed.
 - Redirect targets are revalidated; credentials, explicit ports, arbitrary hosts, and private IP targets are rejected.
 - Downloads are bounded to **5 MiB HTML / 25 MiB PDF**. HTML complexity, redirects, page selection and output length are also bounded.
-- PDF extraction runs in one isolated parser subprocess at a time, with a **10-second deadline**, **2 MiB decoded page-stream limit**, and **160 MiB address-space / 8-second CPU limits on Linux**. macOS and Windows retain process isolation and explicit content/output limits without the Linux resource caps.
+- PDF extraction runs in one isolated parser subprocess at a time, with a **30-second deadline**, **2 MiB decoded page-stream limit**, and **160 MiB address-space / 8-second CPU limits on Linux**. macOS and Windows retain process isolation and explicit content/output limits without the Linux resource caps.
 - HTTP 429 is not burst-retried. `Retry-After` is retained in the shared pacing state.
 - If the Python TLS transport stalls against Acquisition.gov's CDN, the server may use an installed system `curl` for the same prevalidated URL; redirects remain disabled and revalidated by the server.
 - Duplicate and conflicting index entries are returned with warnings instead of silently resolved.
 - Scanned, encrypted, and malformed PDFs return explicit extraction status and metadata where possible.
 
-Version 1.0.6 passed **180 offline tests**, including P0–P3 coverage and real stdio/HTTP smoke checks, plus **12 serialized live MCP calls across all five tools**. See [testing.md](testing.md) for evidence, exact limits, known scope and reproducible commands.
+Version 1.0.6 passed **181 offline tests**, including P0–P3 coverage and real stdio/HTTP smoke checks, plus **12 serialized live MCP calls across all five tools**. See [testing.md](testing.md) for evidence, exact limits, known scope and reproducible commands.
