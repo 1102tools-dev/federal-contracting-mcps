@@ -25,7 +25,7 @@ Choose the sources your work needs. Each server directory contains its own READM
 | MCP | Source coverage | Access |
 |---|---|---|
 | [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | User API key required |
-| [USASpending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | No user API key |
+| [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | No user API key |
 | [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | No user API key |
 | [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography and data year. | Optional key; limited keyless access |
 | [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | Personal key recommended; shared fallback |
@@ -43,11 +43,11 @@ Choose the sources your work needs. Each server directory contains its own READM
 
 A prompt does not install a server. Local command configuration and remote endpoint configuration differ; use the supported setup documented for the selected server. The directory links above identify the published ChatGPT and Claude listings; other servers use their documented setup instructions.
 
-**USASpending package naming:** its package is `usaspending-gov-mcp` and its executable is `usaspending-mcp`. Use the exact configuration in [its README](servers/usaspending-gov-mcp); do not substitute a similarly named package.
+**USAspending package naming:** its package is `usaspending-gov-mcp` and its executable is `usaspending-mcp`. Use the exact configuration in [its README](servers/usaspending-gov-mcp); do not substitute a similarly named package.
 
 ## Use the sources together
 
-- **Competitors and teaming:** combine USASpending award records with SAM.gov entity and exclusion evidence.
+- **Competitors and teaming:** combine USAspending award records with SAM.gov entity and exclusion evidence.
 - **Pricing inputs:** compare BLS wages, CALC+ ceiling rates, and GSA travel rates while keeping their different pricing bases clear.
 - **Regulations and policy:** use eCFR for codified text, Federal Register and Regulations.gov for rulemaking, and Acquisition.gov for FAR Overhaul model text and posted deviations.
 

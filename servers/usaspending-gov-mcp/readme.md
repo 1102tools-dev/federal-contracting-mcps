@@ -2,23 +2,25 @@
 
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
-MCP server for the USASpending.gov federal contract, award, subaward, recipient, agency, and federal account API.
+MCP server for the USAspending.gov federal contract, award, subaward, recipient, agency, and federal account API.
 
 No API key required. Connect through the published ChatGPT plugin below, or use the installation and configuration instructions for another compatible MCP client.
 
-*Tested and hardened through ten rounds of integration testing against the live USASpending.gov API. 2,151 regression tests (1,783 offline, 368 live-gated); round 10 fixed 25 verified findings across both tool families, including filters that could never match and a tool that had never once succeeded. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through ten rounds of integration testing against the live USAspending.gov API. 2,151 regression tests (1,783 offline, 368 live-gated); round 10 fixed 25 verified findings across both tool families, including filters that could never match and a tool that had never once succeeded. See [testing.md](testing.md) for the full testing record.*
 
-## Available in ChatGPT
+## Available in ChatGPT and Claude
 
-[Install USASpending in ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799)
+| MCP | ChatGPT | Claude |
+|---|---|---|
+| USAspending | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) | Coming soon |
 
-This MCP is also available as a published plugin in the ChatGPT directory. Open the listing to install and connect it; no user API key or local Python setup is required. Then try a [matching prompt](https://1102tools.com/#competitor-intelligence). Prompts that combine sources require every listed MCP to be connected.
+This MCP is published in the ChatGPT directory. Open the listing to install and connect it; no user API key or local Python setup is required. A Claude directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#competitor-intelligence). Prompts that combine sources require every listed MCP to be connected.
 
 The installation and configuration sections below cover direct setup in other compatible MCP clients.
 
 ## What it does
 
-Exposes the USASpending.gov REST API as 55 MCP tools covering:
+Exposes the USAspending.gov REST API as 55 MCP tools covering:
 
 **Search and aggregation**
 - `search_awards` - Primary search for contracts, IDVs, grants, loans, direct payments
@@ -168,16 +170,16 @@ Once configured, try:
 
 ## Design notes
 
-- **No authentication required.** USASpending.gov is a free, public API.
+- **No authentication required.** USAspending.gov is a free, public API.
 - **Award type groups cannot be mixed.** The `award_type` parameter takes one of: `contracts`, `idvs`, `grants`, `loans`, `direct_payments`, `other`. Use separate calls for separate categories.
 - **Actionable error messages.** Common API errors (422 mixed award types, 400 sort field missing, 400 empty keywords) are translated into guidance for the calling LLM.
-- **Sort field auto-handling.** The USASpending API requires the sort field to appear in the fields array; this server adds it automatically.
+- **Sort field auto-handling.** The USAspending API requires the sort field to appear in the fields array; this server adds it automatically.
 - **Sensible defaults.** Search limits default to 25 (API max 100). Default fields cover the most common columns for each award category.
 - **Flat filter parameters.** Most common filters are surfaced as named parameters (`keywords`, `awarding_agency`, `naics_codes`, etc.) rather than a nested filter dict, for better LLM tool discovery.
 
 ## Data source
 
-All data is sourced from [USASpending.gov](https://www.usaspending.gov), which aggregates FPDS-NG contract data, FAADC assistance data, and agency DATA Act submissions. Data freshness varies by agency: non-DoD contract data is typically available within 5 business days, DoD and USACE procurement data has a 90-day reporting delay in FPDS, and financial assistance data is available within 2 days of submission.
+All data is sourced from [USAspending.gov](https://www.usaspending.gov), which aggregates FPDS-NG contract data, FAADC assistance data, and agency DATA Act submissions. Data freshness varies by agency: non-DoD contract data is typically available within 5 business days, DoD and USACE procurement data has a 90-day reporting delay in FPDS, and financial assistance data is available within 2 days of submission.
 
 ## Request pacing
 
