@@ -8,11 +8,11 @@ No authentication required. Connect through the published Claude listing below, 
 
 *Tested and hardened through six rounds of integration testing against the live Federal Register API. 228 regression tests (132 offline, 96 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines. See [testing.md](testing.md) for the full testing record.*
 
-## Available in ChatGPT and Claude
+## Available in Claude and ChatGPT
 
-| MCP | ChatGPT | Claude |
+| MCP | Claude | ChatGPT |
 |---|---|---|
-| Federal Register | Coming soon | [Install](https://claude.ai/directory/federal-register-by-1102tools) |
+| Federal Register | [Install](https://claude.ai/directory/federal-register-by-1102tools) | Coming soon |
 
 This MCP is published in the Claude directory. Open the listing to install and connect it; no user API key or local Python setup is required. A ChatGPT directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#federal-register). Prompts that combine sources require every listed MCP to be connected.
 

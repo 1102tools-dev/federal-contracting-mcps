@@ -4,17 +4,17 @@
 
 MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplement text with no authentication required.
 
-Connect through the published ChatGPT or Claude listing below, or use the installation and configuration instructions for another compatible MCP client.
+Connect through the published Claude or ChatGPT listing below, or use the installation and configuration instructions for another compatible MCP client.
 
 *Tested and hardened through six rounds of integration testing against the live eCFR API. 295 regression tests (182 offline, 113 live-gated) covering 2 P0 catastrophic bugs, 26 P1 silent-wrong-data bugs, 32 P2 validation gaps, and the round-6 audit fixes (Title 48 chapter whitelist, table extraction, appendix access). See [testing.md](testing.md) for the full testing record.*
 
-## Available in ChatGPT and Claude
+## Available in Claude and ChatGPT
 
-| MCP | ChatGPT | Claude |
+| MCP | Claude | ChatGPT |
 |---|---|---|
-| eCFR | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) | [Install](https://claude.ai/directory/ecfr-by-1102tools) |
+| eCFR | [Install](https://claude.ai/directory/ecfr-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) |
 
-This MCP is published in the ChatGPT and Claude directories. Open a listing to install and connect it; no user API key or local Python setup is required. Then try a [matching prompt](https://1102tools.com/#ecfr). Prompts that combine sources require every listed MCP to be connected.
+This MCP is published in the Claude and ChatGPT directories. Open a listing to install and connect it; no user API key or local Python setup is required. Then try a [matching prompt](https://1102tools.com/#ecfr). Prompts that combine sources require every listed MCP to be connected.
 
 The installation and configuration sections below cover direct setup in other compatible MCP clients.
 

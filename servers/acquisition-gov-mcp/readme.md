@@ -6,13 +6,13 @@ Read-only, deterministic MCP access to the official Acquisition.gov FAR Overhaul
 
 This server reports source content and metadata. It does **not** decide which rule governs a procurement. In particular, model deviation text is not treated as operative for an agency without that agency's posted deviation.
 
-## Available in ChatGPT and Claude
+## Available in Claude and ChatGPT
 
-| MCP | ChatGPT | Claude |
+| MCP | Claude | ChatGPT |
 |---|---|---|
 | Acquisition.gov | Coming soon | Coming soon |
 
-Listings in the ChatGPT and Claude directories are coming soon. Until then, use the installation instructions below, then try a [matching prompt](https://1102tools.com/#far-overhaul-and-agency-deviations). Prompts that combine sources require every listed MCP to be connected.
+Listings in the Claude and ChatGPT directories are coming soon. Until then, use the installation instructions below, then try a [matching prompt](https://1102tools.com/#far-overhaul-and-agency-deviations). Prompts that combine sources require every listed MCP to be connected.
 
 ## Install
 

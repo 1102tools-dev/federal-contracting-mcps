@@ -8,11 +8,11 @@ No authentication required. Connect through the published ChatGPT plugin below, 
 
 *Tested and hardened through six audit rounds against the GSA CALC+ API. 352 regression tests (247 offline, 105 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). See [testing.md](testing.md) for the full testing record.*
 
-## Available in ChatGPT and Claude
+## Available in Claude and ChatGPT
 
-| MCP | ChatGPT | Claude |
+| MCP | Claude | ChatGPT |
 |---|---|---|
-| GSA CALC+ | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) | Coming soon |
+| GSA CALC+ | Coming soon | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) |
 
 This MCP is published in the ChatGPT directory. Open the listing to install and connect it; no user API key or local Python setup is required. A Claude directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#gsa-calc). Prompts that combine sources require every listed MCP to be connected.
 

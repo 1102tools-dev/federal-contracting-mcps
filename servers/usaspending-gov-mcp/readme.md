@@ -8,11 +8,11 @@ No API key required. Connect through the published ChatGPT plugin below, or use 
 
 *Tested and hardened through ten rounds of integration testing against the live USAspending.gov API. 2,151 regression tests (1,783 offline, 368 live-gated); round 10 fixed 25 verified findings across both tool families, including filters that could never match and a tool that had never once succeeded. See [testing.md](testing.md) for the full testing record.*
 
-## Available in ChatGPT and Claude
+## Available in Claude and ChatGPT
 
-| MCP | ChatGPT | Claude |
+| MCP | Claude | ChatGPT |
 |---|---|---|
-| USAspending | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) | Coming soon |
+| USAspending | Coming soon | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) |
 
 This MCP is published in the ChatGPT directory. Open the listing to install and connect it; no user API key or local Python setup is required. A Claude directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#competitor-intelligence). Prompts that combine sources require every listed MCP to be connected.
 
