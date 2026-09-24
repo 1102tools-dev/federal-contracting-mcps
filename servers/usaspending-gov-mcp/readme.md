@@ -4,7 +4,7 @@
 
 MCP server for the USAspending.gov federal contract, award, subaward, recipient, agency, and federal account API.
 
-No API key required. Connect through the published ChatGPT plugin below, or use the installation and configuration instructions for another compatible MCP client.
+No API key required. Connect through the published Claude or ChatGPT listing below, or use the installation and configuration instructions for another compatible MCP client.
 
 *Tested and hardened through ten rounds of integration testing against the live USAspending.gov API. 2,151 regression tests (1,783 offline, 368 live-gated); round 10 fixed 25 verified findings across both tool families, including filters that could never match and a tool that had never once succeeded. See [testing.md](testing.md) for the full testing record.*
 
@@ -12,9 +12,9 @@ No API key required. Connect through the published ChatGPT plugin below, or use 
 
 | MCP | Claude | ChatGPT |
 |---|---|---|
-| USAspending | Coming soon | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) |
+| USAspending | [Install](https://claude.ai/directory/usaspending-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) |
 
-This MCP is published in the ChatGPT directory. Open the listing to install and connect it; no user API key or local Python setup is required. A Claude directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#competitor-intelligence). Prompts that combine sources require every listed MCP to be connected.
+This MCP is published in the Claude and ChatGPT directories. Open a listing to install and connect it; no user API key or local Python setup is required. Then try a [matching prompt](https://1102tools.com/#competitor-intelligence). Prompts that combine sources require every listed MCP to be connected.
 
 The installation and configuration sections below cover direct setup in other compatible MCP clients.
 
