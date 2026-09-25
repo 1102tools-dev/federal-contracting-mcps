@@ -1,15 +1,43 @@
 # sam-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 20](https://img.shields.io/badge/tools-20-007a59)](#what-it-does) [![regression tests: 1,155](https://img.shields.io/badge/regression%20tests-1%2C155-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 20](https://img.shields.io/badge/tools-20-007a59)](#what-it-does) [![regression tests: 1,155](https://img.shields.io/badge/regression%20tests-1%2C155-007a59)](testing.md) [![hosted edition: coming soon](https://img.shields.io/badge/hosted%20edition-coming%20soon-b0770f)](#coming-soon-hosted-keyless-edition)
 
 
 <!-- mcp-name: com.1102tools/sam-gov-mcp -->
 
 Free, open-source MCP server for SAM.gov entity registration, exclusion/debarment, contract opportunity, contract award, federal hierarchy, and FFATA subaward data.
 
-Requires a free SAM.gov API key. Use the installation and configuration instructions below to connect this MCP directly.
+Requires a free SAM.gov API key. Use the installation and configuration instructions below to connect this MCP directly. A keyless hosted edition is [coming soon](#coming-soon-hosted-keyless-edition) to the Claude and ChatGPT directories.
 
 *Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,136 regression tests. v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied to all 8 MCPs in the suite. See [testing.md](testing.md) for the full testing record.*
+
+## Coming soon: hosted, keyless edition
+
+A hosted edition of this server is coming to the Claude and ChatGPT directories. It needs no API key and no local setup. It serves SAM.gov's public data files, which SAM.gov publishes for download, through 17 tools:
+
+| Tool | What it does | Source file | Refreshed |
+|---|---|---|---|
+| `search_opportunities` | Search active notices by NAICS, PSC, set-aside, agency, notice type, and response deadline | Contract Opportunities | Daily |
+| `get_opportunity` | Full notice record, including description, contacts, and links | Contract Opportunities | Daily |
+| `search_award_notices` | Award notices with awardee, amount, and award date | Contract Opportunities | Daily |
+| `summarize_opportunities` | Counts by agency, NAICS, set-aside, and notice type | Contract Opportunities | Daily |
+| `search_archived_opportunities` | Search prior fiscal years of notices | Fiscal-year opportunity archives | Yearly |
+| `lookup_entity` | Registration by UEI or CAGE code | Entity registration public extract | Monthly |
+| `search_entities` | Search registrants by name, NAICS, PSC, state, and business type | Entity registration public extract | Monthly |
+| `get_sba_certifications` | SBA certification types, with 8(a) exit dates | Entity registration public extract | Monthly |
+| `get_entity_points_of_contact` | Public points of contact on a registration | Entity registration public extract | Monthly |
+| `find_expiring_registrations` | Registrations expiring within a chosen window | Entity registration public extract | Monthly |
+| `summarize_entities` | Registrant counts by NAICS, state, and socioeconomic category | Entity registration public extract | Monthly |
+| `check_exclusion` | Exclusion check by UEI | Exclusions public extract | Daily |
+| `search_exclusions` | Exclusion search by name, classification, and agency | Exclusions public extract | Daily |
+| `list_recent_exclusions` | Exclusions added in a recent window | Exclusions public extract | Daily |
+| `vendor_responsibility_check` | Registration and exclusion status in one call | Entity and exclusions extracts | Daily/monthly |
+| `search_assistance_listings` | Federal assistance listings (formerly CFDA) | Assistance Listings | Periodically |
+| `get_data_dates` | The date of every underlying file | All | — |
+
+Every response reports the date of the file it came from. Tools return individual records, not bulk exports.
+
+The local server documented below remains the full edition: 20 tools against the live SAM.gov APIs with your free key. It adds reps and certs, entity integrity records (FAPIIS), live registration status, contract award records, the federal hierarchy, and FFATA subawards.
 
 ## What it does
 

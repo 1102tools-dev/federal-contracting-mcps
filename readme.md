@@ -26,6 +26,7 @@ Select MCPs are published in the Claude and ChatGPT directories. Install and con
 | eCFR | [Install](https://claude.ai/directory/ecfr-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) |
 | Federal Register | [Install](https://claude.ai/directory/federal-register-by-1102tools) | Coming soon |
 | Acquisition.gov | Coming soon | Coming soon |
+| SAM.gov (hosted, keyless) | Coming soon | Coming soon |
 
 After connecting, choose a [matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) and replace the bracketed details. If a prompt lists multiple MCPs, connect every one it requires. For other sources or compatible MCP clients, use the server setup instructions below.
 
@@ -35,7 +36,7 @@ Choose the sources your work needs. Each server directory contains its own READM
 
 | MCP | Source coverage | Tools | Tests | Access |
 |---|---|---|---|---|
-| [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | User API key required |
+| [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | Free key (local); keyless hosted edition coming soon |
 | [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | 55 | 2,174 | No user API key |
 | [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | 8 | 379 | No user API key |
 | [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography and data year. | 8 | 258 | Optional key; limited keyless access |
