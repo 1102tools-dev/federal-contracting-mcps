@@ -9,7 +9,7 @@ Free, open-source MCP server for the eCFR (Electronic Code of Federal Regulation
 
 Connect through the published Claude or ChatGPT listing below, or use the installation and configuration instructions for another compatible MCP client.
 
-*Tested and hardened through six rounds of integration testing against the live eCFR API. 295 regression tests (182 offline, 113 live-gated) covering 2 P0 catastrophic bugs, 26 P1 silent-wrong-data bugs, 32 P2 validation gaps, and the round-6 audit fixes (Title 48 chapter whitelist, table extraction, appendix access). See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through six rounds of integration testing against the live eCFR API. 320 collected regression tests (202 offline, 118 live-gated) covering 2 P0 catastrophic bugs, 26 P1 silent-wrong-data bugs, 32 P2 validation gaps, and the round-6 audit fixes (Title 48 chapter whitelist, table extraction, appendix access). See [testing.md](testing.md) for the full testing record.*
 
 ## Available in Claude and ChatGPT
 

@@ -1,6 +1,6 @@
 # regulationsgov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 9](https://img.shields.io/badge/tools-9-007a59)](#what-it-does) [![regression tests: 212](https://img.shields.io/badge/regression%20tests-212-007a59)](testing.md) [![hosted edition: coming soon](https://img.shields.io/badge/hosted%20edition-coming%20soon-b0770f)](#available-in-claude-and-chatgpt)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 9](https://img.shields.io/badge/tools-9-007a59)](#what-it-does) [![regression tests: 217](https://img.shields.io/badge/regression%20tests-217-007a59)](testing.md) [![hosted edition: coming soon](https://img.shields.io/badge/hosted%20edition-coming%20soon-b0770f)](#available-in-claude-and-chatgpt)
 
 
 <!-- mcp-name: com.1102tools/regulations-gov-mcp -->
@@ -9,7 +9,7 @@ Free, open-source MCP server for the Regulations.gov API. Federal rulemaking doc
 
 Optional free API key for higher rate limits. Use the installation and configuration instructions below to connect this MCP directly.
 
-*Tested and hardened through five rounds of integration testing against the live Regulations.gov API, including a round-7 independent re-audit with live verification. 197 regression tests covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, and 12 round-7 findings fixed. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through four rounds of integration testing against the live Regulations.gov API, plus a round-7 independent re-audit with live verification. 217 collected regression tests (98 offline, 119 live-gated) covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, and 12 round-7 findings fixed. See [testing.md](testing.md) for the full testing record.*
 
 ## Available in Claude and ChatGPT
 
@@ -17,7 +17,7 @@ Optional free API key for higher rate limits. Use the installation and configura
 |---|---|---|
 | Regulations.gov | Coming soon | Coming soon |
 
-A hosted edition is coming soon to the Claude and ChatGPT directories. It will need no API key and no local setup. Locally, a free personal key is recommended; a shared fallback works at low volume. Until the listings are live, use the installation and configuration instructions below, then try a [matching prompt](https://1102tools.com/#regulationsgov).
+A hosted edition is running at `https://regulations-gov.1102tools.com/mcp` and is planned for the Claude and ChatGPT directories. It needs no user API key and no local setup. Locally, a free personal key is recommended; a shared fallback works at low volume. Until the listings are live, use the installation and configuration instructions below, then try a [matching prompt](https://1102tools.com/#regulationsgov).
 
 ## What it does
 

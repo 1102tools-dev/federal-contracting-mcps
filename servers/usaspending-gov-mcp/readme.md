@@ -9,7 +9,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required. Connect through the published Claude or ChatGPT listing below, or use the installation and configuration instructions for another compatible MCP client.
 
-*Tested and hardened through ten rounds of integration testing against the live USAspending.gov API. 2,151 regression tests (1,783 offline, 368 live-gated); round 10 fixed 25 verified findings across both tool families, including filters that could never match and a tool that had never once succeeded. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through ten rounds of integration testing against the live USAspending.gov API. 2,174 collected regression tests (1,799 offline, 375 live-gated); round 10 fixed 25 verified findings across both tool families, including filters that could never match and a tool that had never once succeeded. See [testing.md](testing.md) for the full testing record.*
 
 ## Available in Claude and ChatGPT
 

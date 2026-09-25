@@ -9,7 +9,7 @@ Free, open-source MCP server for the BLS Occupational Employment and Wage Statis
 
 Optional free API key for higher rate limits. Works without a key at reduced limits. Use the installation and configuration instructions below to connect this MCP directly.
 
-*Tested and hardened through a 5-round retroactive live audit with a real BLS API key after the initial smoke test reported zero bugs. 60 regression tests covering 1 P0 usability-breaking bug (SOC format), 10 P1 silent-wrong-data bugs, 12 P1 response-shape crash paths, and 7 P2 validation gaps fixed. See [TESTING.md](TESTING.md) for the full testing record.*
+*Tested and hardened through a 5-round retroactive live audit with a real BLS API key after the initial smoke test reported zero bugs. 258 collected regression tests (94 offline, 164 live-gated), covering the 1 P0 usability-breaking bug (SOC format), 10 P1 silent-wrong-data bugs, 12 P1 response-shape crash paths, and 7 P2 validation gaps fixed in that audit. See [TESTING.md](TESTING.md) for the full testing record.*
 
 ## Available in Claude and ChatGPT
 
@@ -17,7 +17,7 @@ Optional free API key for higher rate limits. Works without a key at reduced lim
 |---|---|---|
 | BLS OEWS | Coming soon | Coming soon |
 
-A hosted edition is coming soon to the Claude and ChatGPT directories. It will need no API key and no local setup. This server also works locally without a key at reduced limits. Until the listings are live, use the installation and configuration instructions below, then try a [matching prompt](https://1102tools.com/#bls-oews).
+A hosted edition is coming soon to the Claude and ChatGPT directories. It is planned to need no user API key and no local setup. This server also works locally without a key at reduced limits. Until the listings are live, use the installation and configuration instructions below, then try a [matching prompt](https://1102tools.com/#bls-oews).
 
 ## What it does
 

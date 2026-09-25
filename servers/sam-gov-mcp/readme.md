@@ -9,7 +9,7 @@ Free, open-source MCP server for SAM.gov entity registration, exclusion/debarmen
 
 Requires a free SAM.gov API key. Use the installation and configuration instructions below to connect this MCP directly. A keyless hosted edition is [coming soon](#coming-soon-hosted-keyless-edition) to the Claude and ChatGPT directories.
 
-*Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,136 regression tests. v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied to all 8 MCPs in the suite. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,155 collected regression tests (781 offline, 374 live-gated). v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied across the suite. See [testing.md](testing.md) for the full testing record.*
 
 ## Coming soon: hosted, keyless edition
 

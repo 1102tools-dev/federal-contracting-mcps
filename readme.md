@@ -1,6 +1,6 @@
 # Federal contracting MCPs
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,429](https://img.shields.io/badge/regression%20tests-5%2C429-007a59)](#testing-and-maintenance) [![Claude directory: 4 servers](https://img.shields.io/badge/Claude%20directory-4%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 3 servers](https://img.shields.io/badge/ChatGPT%20directory-3%20servers-172f2a)](#available-in-claude-and-chatgpt)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,439](https://img.shields.io/badge/regression%20tests-5%2C439-007a59)](#testing-and-maintenance) [![Claude directory: 4 servers](https://img.shields.io/badge/Claude%20directory-4%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 3 servers](https://img.shields.io/badge/ChatGPT%20directory-3%20servers-172f2a)](#available-in-claude-and-chatgpt)
 
 Free, open-source, read-only source tools for federal contracting research: opportunities, awards, company records, labor pricing, travel rates, regulations, and rulemaking.
 
@@ -9,8 +9,8 @@ Free, open-source, read-only source tools for federal contracting research: oppo
 ## Why these MCPs
 
 - **Free.** MIT-licensed, with no subscription and no credits. Directory installs need no account or API key.
-- **Tested hard.** 5,429 regression tests across 9 servers and 133 tools, with up to ten audit rounds per server against the live government APIs. Every bug found becomes a permanent test.
-- **Listed, no keys.** 4 servers in the Claude directory and 3 in the ChatGPT directory, with all nine coming to both. Directory installs need no user API key.
+- **Tested hard.** 5,439 collected regression tests, including live-API tests, across 9 servers and 133 tools, with up to ten audit rounds per server against the live government APIs. Published testing records document each bug fixed and the tests added.
+- **Listed, no keys.** 4 servers in the Claude directory and 3 in the ChatGPT directory, with all nine planned for both. Directory installs need no user API key.
 - **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
 
 See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
@@ -43,11 +43,11 @@ Choose the sources your work needs. Each server directory contains its own READM
 | [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | 55 | 2,174 | No user API key |
 | [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | 8 | 379 | No user API key |
 | [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography and data year. | 8 | 258 | Optional key; limited keyless access; keyless hosted edition coming soon |
-| [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | 7 | 449 | Personal key recommended; shared fallback; keyless hosted edition coming soon |
+| [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | 7 | 454 | Personal key recommended; shared fallback; keyless hosted edition coming soon |
 | [eCFR](servers/ecfr-mcp) | Codified regulatory text, dates, and version comparisons. | 13 | 320 | No user API key |
 | [Acquisition.gov](servers/acquisition-gov-mcp) | FAR Overhaul model text, posted agency deviations, and guidance. | 5 | 239 | No user API key |
 | [Federal Register](servers/federal-register-mcp) | Published rules, notices, comment periods, and FAR cases. | 8 | 243 | No user API key |
-| [Regulations.gov](servers/regulations-gov-mcp) | Rulemaking dockets, documents, and public comments. | 9 | 212 | Personal key recommended; shared fallback; keyless hosted edition coming soon |
+| [Regulations.gov](servers/regulations-gov-mcp) | Rulemaking dockets, documents, and public comments. | 9 | 217 | Personal key recommended; shared fallback; keyless hosted edition coming soon |
 
 ## Install
 

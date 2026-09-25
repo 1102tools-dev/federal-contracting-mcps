@@ -9,7 +9,7 @@ Free, open-source MCP server for the Federal Register API. Proposed rules, final
 
 No authentication required. Connect through the published Claude listing below, or use the installation and configuration instructions for another compatible MCP client.
 
-*Tested and hardened through six rounds of integration testing against the live Federal Register API. 228 regression tests (132 offline, 96 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through six rounds of integration testing against the live Federal Register API. 243 collected regression tests (143 offline, 100 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines. See [testing.md](testing.md) for the full testing record.*
 
 ## Available in Claude and ChatGPT
 
