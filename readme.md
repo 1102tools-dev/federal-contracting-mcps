@@ -1,8 +1,19 @@
 # Federal contracting MCPs
 
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,429](https://img.shields.io/badge/regression%20tests-5%2C429-007a59)](#testing-and-maintenance) [![Claude directory: 4 servers](https://img.shields.io/badge/Claude%20directory-4%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 3 servers](https://img.shields.io/badge/ChatGPT%20directory-3%20servers-172f2a)](#available-in-claude-and-chatgpt)
+
 Free, open-source, read-only source tools for federal contracting research: opportunities, awards, company records, labor pricing, travel rates, regulations, and rulemaking.
 
 [Explore 1102tools](https://1102tools.com) · [Find a matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) · [Download the MCP prompt guide](https://github.com/1102tools-dev/federal-contracting-prompts/blob/main/docs/1102tools-mcp-prompt-guide.pdf)
+
+## Why these MCPs
+
+- **Free.** MIT-licensed, with no subscription and no credits. Directory installs need no account or API key.
+- **Tested hard.** 5,429 regression tests across 9 servers and 133 tools, with up to ten audit rounds per server against the live government APIs. Every bug found becomes a permanent test.
+- **Listed.** 4 servers in the Claude directory and 3 in the ChatGPT directory.
+- **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
+
+See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
 
 ## Available in Claude and ChatGPT
 
@@ -22,17 +33,17 @@ After connecting, choose a [matching prompt](https://github.com/1102tools-dev/fe
 
 Choose the sources your work needs. Each server directory contains its own README, code, configuration, tests, and release notes.
 
-| MCP | Source coverage | Access |
-|---|---|---|
-| [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | User API key required |
-| [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | No user API key |
-| [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | No user API key |
-| [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography and data year. | Optional key; limited keyless access |
-| [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | Personal key recommended; shared fallback |
-| [eCFR](servers/ecfr-mcp) | Codified regulatory text, dates, and version comparisons. | No user API key |
-| [Federal Register](servers/federal-register-mcp) | Published rules, notices, comment periods, and FAR cases. | No user API key |
-| [Regulations.gov](servers/regulations-gov-mcp) | Rulemaking dockets, documents, and public comments. | Personal key recommended; shared fallback |
-| [Acquisition.gov](servers/acquisition-gov-mcp) | FAR Overhaul model text, posted agency deviations, and guidance. | No user API key |
+| MCP | Source coverage | Tools | Tests | Access |
+|---|---|---|---|---|
+| [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | User API key required |
+| [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | 55 | 2,174 | No user API key |
+| [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | 8 | 379 | No user API key |
+| [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography and data year. | 8 | 258 | Optional key; limited keyless access |
+| [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | 7 | 449 | Personal key recommended; shared fallback |
+| [eCFR](servers/ecfr-mcp) | Codified regulatory text, dates, and version comparisons. | 13 | 320 | No user API key |
+| [Federal Register](servers/federal-register-mcp) | Published rules, notices, comment periods, and FAR cases. | 8 | 243 | No user API key |
+| [Regulations.gov](servers/regulations-gov-mcp) | Rulemaking dockets, documents, and public comments. | 9 | 212 | Personal key recommended; shared fallback |
+| [Acquisition.gov](servers/acquisition-gov-mcp) | FAR Overhaul model text, posted agency deviations, and guidance. | 5 | 239 | No user API key |
 
 ## Install
 

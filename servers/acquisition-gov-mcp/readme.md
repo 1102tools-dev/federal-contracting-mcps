@@ -1,5 +1,8 @@
 # Acquisition.gov MCP
 
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests: 239](https://img.shields.io/badge/regression%20tests-239-007a59)](testing.md)
+
+
 <!-- mcp-name: com.1102tools/acquisition-gov-mcp -->
 
 Free, open-source, read-only, deterministic MCP access to the official Acquisition.gov FAR Overhaul (RFO) model-part pages, the posted agency-deviation index, official deviation PDFs, and a small allowlist of RFO guidance resources.

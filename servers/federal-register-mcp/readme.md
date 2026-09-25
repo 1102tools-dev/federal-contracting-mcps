@@ -1,5 +1,8 @@
 # federal-register-mcp
 
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 243](https://img.shields.io/badge/regression%20tests-243-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/federal-register-by-1102tools)
+
+
 <!-- mcp-name: com.1102tools/federal-register-mcp -->
 
 Free, open-source MCP server for the Federal Register API. Proposed rules, final rules, notices, executive orders, comment periods, and regulatory tracking since 1994.

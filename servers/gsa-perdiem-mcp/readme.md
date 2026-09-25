@@ -1,5 +1,8 @@
 # gsa-perdiem-mcp
 
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 7](https://img.shields.io/badge/tools-7-007a59)](#what-it-does) [![regression tests: 449](https://img.shields.io/badge/regression%20tests-449-007a59)](testing.md)
+
+
 <!-- mcp-name: com.1102tools/gsa-perdiem-mcp -->
 
 Free, open-source MCP server for the GSA Per Diem Rates API. Federal travel lodging and M&IE rates for IGCEs and travel cost estimation.

@@ -1,5 +1,8 @@
 # ecfr-mcp
 
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 13](https://img.shields.io/badge/tools-13-007a59)](#what-it-does) [![regression tests: 320](https://img.shields.io/badge/regression%20tests-320-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/ecfr-by-1102tools) [![ChatGPT directory: listed](https://img.shields.io/badge/ChatGPT%20directory-listed-172f2a)](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34)
+
+
 <!-- mcp-name: com.1102tools/ecfr-mcp -->
 
 Free, open-source MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplement text with no authentication required.

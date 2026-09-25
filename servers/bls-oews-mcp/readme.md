@@ -1,5 +1,8 @@
 # bls-oews-mcp
 
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 258](https://img.shields.io/badge/regression%20tests-258-007a59)](testing.md)
+
+
 <!-- mcp-name: com.1102tools/bls-oews-mcp -->
 
 Free, open-source MCP server for the BLS Occupational Employment and Wage Statistics (OEWS) API. Market wage data for IGCE development, price analysis, and labor market research.

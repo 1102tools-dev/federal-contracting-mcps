@@ -1,5 +1,8 @@
 # usaspending-gov-mcp
 
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,174](https://img.shields.io/badge/regression%20tests-2%2C174-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/usaspending-by-1102tools) [![ChatGPT directory: listed](https://img.shields.io/badge/ChatGPT%20directory-listed-172f2a)](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799)
+
+
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
 Free, open-source MCP server for the USAspending.gov federal contract, award, subaward, recipient, agency, and federal account API.

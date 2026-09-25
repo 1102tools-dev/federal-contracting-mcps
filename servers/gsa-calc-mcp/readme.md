@@ -1,5 +1,8 @@
 # gsa-calc-mcp
 
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 379](https://img.shields.io/badge/regression%20tests-379-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/gsa-calc-by-1102tools) [![ChatGPT directory: listed](https://img.shields.io/badge/ChatGPT%20directory-listed-172f2a)](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1)
+
+
 <!-- mcp-name: com.1102tools/gsa-calc-mcp -->
 
 Free, open-source MCP server for the GSA CALC+ Labor Ceiling Rates API. Query awarded GSA MAS schedule hourly rates for IGCE development, price reasonableness analysis, and market research.

@@ -1,5 +1,8 @@
 # sam-gov-mcp
 
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 20](https://img.shields.io/badge/tools-20-007a59)](#what-it-does) [![regression tests: 1,155](https://img.shields.io/badge/regression%20tests-1%2C155-007a59)](testing.md)
+
+
 <!-- mcp-name: com.1102tools/sam-gov-mcp -->
 
 Free, open-source MCP server for SAM.gov entity registration, exclusion/debarment, contract opportunity, contract award, federal hierarchy, and FFATA subaward data.
