@@ -24,12 +24,12 @@ All nine MCPs install and run locally today; the **Local** column links to each 
 | SAM.gov | Coming soon | Coming soon | [Install](servers/sam-gov-mcp#installation) (free key) |
 | USAspending | [Install](https://claude.ai/directory/usaspending-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) | [Install](servers/usaspending-gov-mcp#installation) |
 | GSA CALC+ | [Install](https://claude.ai/directory/gsa-calc-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) | [Install](servers/gsa-calc-mcp#installation) |
-| BLS OEWS | Coming soon | Coming soon | [Install](servers/bls-oews-mcp#installation) |
-| GSA Per Diem | Coming soon | Coming soon | [Install](servers/gsa-perdiem-mcp#installation) |
+| BLS OEWS | Coming soon | Coming soon | [Install](servers/bls-oews-mcp#installation) (free key) |
+| GSA Per Diem | Coming soon | Coming soon | [Install](servers/gsa-perdiem-mcp#installation) (free key) |
 | eCFR | [Install](https://claude.ai/directory/ecfr-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) | [Install](servers/ecfr-mcp#installation) |
 | Acquisition.gov | Coming soon | Coming soon | [Install](servers/acquisition-gov-mcp#install) |
 | Federal Register | [Install](https://claude.ai/directory/federal-register-by-1102tools) | Coming soon | [Install](servers/federal-register-mcp#installation) |
-| Regulations.gov | Coming soon | Coming soon | [Install](servers/regulations-gov-mcp#installation) |
+| Regulations.gov | Coming soon | Coming soon | [Install](servers/regulations-gov-mcp#installation) (free key) |
 
 After connecting, choose a [matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) and replace the bracketed details. If a prompt lists multiple MCPs, connect every one it requires. For other sources or compatible MCP clients, use the server setup instructions below.
 
