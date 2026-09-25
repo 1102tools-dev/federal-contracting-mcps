@@ -43,5 +43,23 @@
     "endpoint": "https://acquisition-gov.1102tools.com/mcp",
     "tools": 5,
     "application_id": "a03e7823-29ff-4e0c-82ef-1f83bed25b55"
+  },
+  "gsa-perdiem": {
+    "package": "gsa-perdiem-mcp",
+    "module": "gsa_perdiem_mcp",
+    "worker": "gsa-perdiem-mcp",
+    "application": "gsa-perdiem-mcp-public",
+    "endpoint": "https://gsa-perdiem.1102tools.com/mcp",
+    "tools": 7,
+    "application_id": "a03d923b-13a4-4002-8a6b-512618f77913"
+  },
+  "regulations-gov": {
+    "package": "regulations-gov-mcp",
+    "module": "regulationsgov_mcp",
+    "worker": "regulations-gov-mcp",
+    "application": "regulations-gov-mcp-public",
+    "endpoint": "https://regulations-gov.1102tools.com/mcp",
+    "tools": 9,
+    "application_id": "a0353bca-05c2-44bd-b5e2-bd703062f204"
   }
 }

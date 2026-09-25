@@ -2,7 +2,7 @@
 import argparse,json,subprocess,time,tomllib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-CASES={'usaspending':('get_award_types_reference',{}),'ecfr':('get_latest_date',{}),'gsa-calc':('keyword_search',{'keyword':'program manager','page_size':1}),'federal-register':('search_documents',{'term':'Federal Acquisition Regulation','per_page':1}),'acquisition-gov':('list_rfo_parts',{'part':10})}
+CASES={'usaspending':('get_award_types_reference',{}),'ecfr':('get_latest_date',{}),'gsa-calc':('keyword_search',{'keyword':'program manager','page_size':1}),'federal-register':('search_documents',{'term':'Federal Acquisition Regulation','per_page':1}),'acquisition-gov':('list_rfo_parts',{'part':10}),'gsa-perdiem':('lookup_zip_perdiem',{'zip_code':'22201'}),'regulations-gov':('search_dockets',{'agency_id':'FAR','page_size':5})}
 
 def request(url,payload=None):
     cmd=['curl','-fsS','--max-time','65',url]

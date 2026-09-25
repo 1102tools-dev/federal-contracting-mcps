@@ -1,6 +1,6 @@
 # Unified MCP releases
 
-A versioned GitHub release builds the Python packages and the five hosted MCP
+A versioned GitHub release builds the Python packages and the seven hosted MCP
 services from the same canonical checkout. Ordinary commits and documentation
 edits do not deploy production.
 
@@ -19,7 +19,7 @@ does not publish website content or submit directory listings.
 ## Source and release rules
 
 - `servers/` is the source for both local packages and hosted services.
-- `deploy/services.json` lists the five hosted services, package paths, existing
+- `deploy/services.json` lists the seven hosted services, package paths, existing
   application names, endpoints, and tool counts. Other packages only go to PyPI.
 - `deploy/<service>/` owns the Worker wrapper, frozen container build, and npm lock.
 - Keep the existing `publish-pypi.yml` filename: PyPI Trusted Publishers refer to it.
@@ -37,7 +37,7 @@ does not publish website content or submit directory listings.
 - Push a new `v*` tag only after review and tests. Manual workflow dispatch on a tag
   supports retries. Never overlap a legacy release with the first unified release.
 - The workflow serializes unified production releases. Cloudflare deployment and
-  live verification must succeed for all five services before PyPI starts.
+  live verification must succeed for all seven services before PyPI starts.
   A partial failure is reported as a failed release.
   It is not a transaction, and PyPI versions cannot be overwritten or rolled back.
 
@@ -62,8 +62,8 @@ The first release should be a new tag, not a rewrite of an existing public tag.
 
 ## Published ChatGPT metadata
 
-The five baseline `tools-contract.json` files were captured from the live hosted
-endpoints. Source and built-container checks must match them exactly, including
+The five original baseline `tools-contract.json` files were captured from the live hosted
+endpoints; GSA Per Diem and Regulations.gov baselines were generated from source at their first hosted release (v1.0.32). Source and built-container checks must match them exactly, including
 tool names, descriptions, schemas, annotations, and metadata. Containers use
 Python 3.12, matching the currently hosted runtime; newer Python versions can
 format docstrings differently. No server instructions are currently published;
@@ -98,3 +98,7 @@ Container image together using the recorded prior deployment. Wrangler's Worker
 rollback alone must not be assumed to roll back the Container image. Preserve
 the existing singleton application and rate-limit settings. Never attempt to
 undo a PyPI publication by overwriting a package version; ship a corrective patch.
+
+## Operator-keyed services
+
+GSA Per Diem and Regulations.gov call api.data.gov with a key held by 1102tools, one key per service. Each key is stored as a Worker secret (`PERDIEM_API_KEY` on `gsa-perdiem-mcp`, `REGULATIONS_GOV_API_KEY` on `regulations-gov-mcp`) and passed to the container at start. Secrets persist across deploys; rotate one with `wrangler secret put <NAME> --name <worker>`. The servers cap upstream calls at 950 per rolling hour, and hosted containers cache identical responses (a day for Per Diem, 15 minutes for Regulations.gov), so release verification uses one upstream call per key.
