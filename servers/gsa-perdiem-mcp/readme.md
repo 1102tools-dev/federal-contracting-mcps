@@ -1,6 +1,6 @@
 # gsa-perdiem-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 7](https://img.shields.io/badge/tools-7-007a59)](#what-it-does) [![regression tests: 449](https://img.shields.io/badge/regression%20tests-449-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 7](https://img.shields.io/badge/tools-7-007a59)](#what-it-does) [![regression tests: 449](https://img.shields.io/badge/regression%20tests-449-007a59)](testing.md) [![hosted edition: coming soon](https://img.shields.io/badge/hosted%20edition-coming%20soon-b0770f)](#available-in-claude-and-chatgpt)
 
 
 <!-- mcp-name: com.1102tools/gsa-perdiem-mcp -->
@@ -10,6 +10,14 @@ Free, open-source MCP server for the GSA Per Diem Rates API. Federal travel lodg
 Works without configuration using DEMO_KEY. Optional free API key for higher rate limits. Use the installation and configuration instructions below to connect this MCP directly.
 
 *Tested and hardened through seven rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 437 regression tests covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, and 14 round-7 findings fixed. See [testing.md](testing.md) for the full testing record.*
+
+## Available in Claude and ChatGPT
+
+| MCP | Claude | ChatGPT |
+|---|---|---|
+| GSA Per Diem | Coming soon | Coming soon |
+
+A hosted edition is coming soon to the Claude and ChatGPT directories. It will need no API key and no local setup. Locally, a free personal key is recommended; a shared fallback works at low volume. Until the listings are live, use the installation and configuration instructions below, then try a [matching prompt](https://1102tools.com/#gsa-per-diem).
 
 ## What it does
 

@@ -13,6 +13,10 @@ Requires a free SAM.gov API key. Use the installation and configuration instruct
 
 ## Coming soon: hosted, keyless edition
 
+| MCP | Claude | ChatGPT |
+|---|---|---|
+| SAM.gov (hosted, keyless) | Coming soon | Coming soon |
+
 A hosted edition of this server is coming to the Claude and ChatGPT directories. It needs no API key and no local setup. It serves SAM.gov's public data files, which SAM.gov publishes for download, through 17 tools:
 
 | Tool | What it does | Source file | Refreshed |

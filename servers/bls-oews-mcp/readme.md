@@ -1,6 +1,6 @@
 # bls-oews-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 258](https://img.shields.io/badge/regression%20tests-258-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 258](https://img.shields.io/badge/regression%20tests-258-007a59)](testing.md) [![hosted edition: coming soon](https://img.shields.io/badge/hosted%20edition-coming%20soon-b0770f)](#available-in-claude-and-chatgpt)
 
 
 <!-- mcp-name: com.1102tools/bls-oews-mcp -->
@@ -10,6 +10,14 @@ Free, open-source MCP server for the BLS Occupational Employment and Wage Statis
 Optional free API key for higher rate limits. Works without a key at reduced limits. Use the installation and configuration instructions below to connect this MCP directly.
 
 *Tested and hardened through a 5-round retroactive live audit with a real BLS API key after the initial smoke test reported zero bugs. 60 regression tests covering 1 P0 usability-breaking bug (SOC format), 10 P1 silent-wrong-data bugs, 12 P1 response-shape crash paths, and 7 P2 validation gaps fixed. See [TESTING.md](TESTING.md) for the full testing record.*
+
+## Available in Claude and ChatGPT
+
+| MCP | Claude | ChatGPT |
+|---|---|---|
+| BLS OEWS | Coming soon | Coming soon |
+
+A hosted edition is coming soon to the Claude and ChatGPT directories. It will need no API key and no local setup. This server also works locally without a key at reduced limits. Until the listings are live, use the installation and configuration instructions below, then try a [matching prompt](https://1102tools.com/#bls-oews).
 
 ## What it does
 

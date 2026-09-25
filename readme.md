@@ -10,23 +10,26 @@ Free, open-source, read-only source tools for federal contracting research: oppo
 
 - **Free.** MIT-licensed, with no subscription and no credits. Directory installs need no account or API key.
 - **Tested hard.** 5,429 regression tests across 9 servers and 133 tools, with up to ten audit rounds per server against the live government APIs. Every bug found becomes a permanent test.
-- **Listed.** 4 servers in the Claude directory and 3 in the ChatGPT directory.
+- **Listed, no keys.** 4 servers in the Claude directory and 3 in the ChatGPT directory, with all nine coming to both. Directory installs need no user API key.
 - **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
 
 See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
 
 ## Available in Claude and ChatGPT
 
-Select MCPs are published in the Claude and ChatGPT directories. Install and connect them directly from these listings; no user API key or local setup is required.
+Select MCPs are published in the Claude and ChatGPT directories. Install and connect them directly from these listings; no user API key or local setup is required. The rest are coming soon, also with no user API key.
 
 | MCP | Claude | ChatGPT |
 |---|---|---|
+| SAM.gov (hosted, keyless) | Coming soon | Coming soon |
 | USAspending | [Install](https://claude.ai/directory/usaspending-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) |
 | GSA CALC+ | [Install](https://claude.ai/directory/gsa-calc-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) |
+| BLS OEWS | Coming soon | Coming soon |
+| GSA Per Diem | Coming soon | Coming soon |
 | eCFR | [Install](https://claude.ai/directory/ecfr-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) |
-| Federal Register | [Install](https://claude.ai/directory/federal-register-by-1102tools) | Coming soon |
 | Acquisition.gov | Coming soon | Coming soon |
-| SAM.gov (hosted, keyless) | Coming soon | Coming soon |
+| Federal Register | [Install](https://claude.ai/directory/federal-register-by-1102tools) | Coming soon |
+| Regulations.gov | Coming soon | Coming soon |
 
 After connecting, choose a [matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) and replace the bracketed details. If a prompt lists multiple MCPs, connect every one it requires. For other sources or compatible MCP clients, use the server setup instructions below.
 
@@ -39,12 +42,12 @@ Choose the sources your work needs. Each server directory contains its own READM
 | [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | Free key (local); keyless hosted edition coming soon |
 | [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | 55 | 2,174 | No user API key |
 | [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | 8 | 379 | No user API key |
-| [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography and data year. | 8 | 258 | Optional key; limited keyless access |
-| [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | 7 | 449 | Personal key recommended; shared fallback |
+| [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography and data year. | 8 | 258 | Optional key; limited keyless access; keyless hosted edition coming soon |
+| [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | 7 | 449 | Personal key recommended; shared fallback; keyless hosted edition coming soon |
 | [eCFR](servers/ecfr-mcp) | Codified regulatory text, dates, and version comparisons. | 13 | 320 | No user API key |
-| [Federal Register](servers/federal-register-mcp) | Published rules, notices, comment periods, and FAR cases. | 8 | 243 | No user API key |
-| [Regulations.gov](servers/regulations-gov-mcp) | Rulemaking dockets, documents, and public comments. | 9 | 212 | Personal key recommended; shared fallback |
 | [Acquisition.gov](servers/acquisition-gov-mcp) | FAR Overhaul model text, posted agency deviations, and guidance. | 5 | 239 | No user API key |
+| [Federal Register](servers/federal-register-mcp) | Published rules, notices, comment periods, and FAR cases. | 8 | 243 | No user API key |
+| [Regulations.gov](servers/regulations-gov-mcp) | Rulemaking dockets, documents, and public comments. | 9 | 212 | Personal key recommended; shared fallback; keyless hosted edition coming soon |
 
 ## Install
 
