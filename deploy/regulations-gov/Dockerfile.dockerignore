@@ -1,0 +1,10 @@
+**
+!servers/
+!servers/regulations-gov-mcp/
+!servers/regulations-gov-mcp/pyproject.toml
+!servers/regulations-gov-mcp/uv.lock
+!servers/regulations-gov-mcp/readme.md
+!servers/regulations-gov-mcp/license
+!servers/regulations-gov-mcp/src/
+!servers/regulations-gov-mcp/src/**
+**/__pycache__/

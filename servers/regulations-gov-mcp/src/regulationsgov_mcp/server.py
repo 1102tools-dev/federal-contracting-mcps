@@ -12,8 +12,11 @@ rulemaking docket structure, public comments, and comment period status.
 
 from __future__ import annotations
 
+import collections
+import copy
 import json as _json
 import os
+import time
 import re
 import urllib.parse
 from datetime import date as _date, datetime as _datetime
@@ -412,9 +415,55 @@ def _get_client() -> httpx.AsyncClient:
 def _pacer(api_key: str) -> FederalApiPacer:
     return FederalApiPacer(
         bucket="api.data.gov",
-        default_interval=4.0,
+        default_interval=4.0 if api_key == "DEMO_KEY" else REGISTERED_KEY_INTERVAL,
         credential=api_key,
     )
+
+
+# api.data.gov limits a registered key per rolling hour (1,000 by default), not per
+# second, so a registered key can burst; DEMO_KEY keeps the conservative spacing.
+REGISTERED_KEY_INTERVAL = 0.6
+HOURLY_UPSTREAM_CAP = int(os.environ.get("API_DATA_GOV_HOURLY_CAP", "950"))
+_upstream_starts: collections.deque[float] = collections.deque()
+
+# Hosted deployments opt in to a bounded response cache (off by default locally).
+RESPONSE_CACHE_SECONDS = float(os.environ.get("MCP_RESPONSE_CACHE_SECONDS", "0") or 0)
+_RESPONSE_CACHE_MAX_ENTRIES = 2048
+_response_cache: dict[str, tuple[float, Any]] = {}
+
+
+def _reserve_hourly_upstream() -> None:
+    now = time.monotonic()
+    while _upstream_starts and _upstream_starts[0] <= now - 3600:
+        _upstream_starts.popleft()
+    if len(_upstream_starts) >= HOURLY_UPSTREAM_CAP:
+        retry = int(_upstream_starts[0] + 3600 - now) + 1
+        raise ToolError(
+            f"The hourly Regulations.gov request budget ({HOURLY_UPSTREAM_CAP} upstream "
+            f"calls) is used up. Retry in about {retry} seconds."
+        )
+    _upstream_starts.append(now)
+
+
+def _cache_get(cache_key: str) -> Any:
+    if RESPONSE_CACHE_SECONDS <= 0:
+        return None
+    hit = _response_cache.get(cache_key)
+    if hit is None:
+        return None
+    expires, value = hit
+    if expires <= time.monotonic():
+        _response_cache.pop(cache_key, None)
+        return None
+    return copy.deepcopy(value)
+
+
+def _cache_put(cache_key: str, value: Any) -> None:
+    if RESPONSE_CACHE_SECONDS <= 0:
+        return
+    if len(_response_cache) >= _RESPONSE_CACHE_MAX_ENTRIES:
+        _response_cache.pop(next(iter(_response_cache)))
+    _response_cache[cache_key] = (time.monotonic() + RESPONSE_CACHE_SECONDS, copy.deepcopy(value))
 
 
 def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
@@ -494,7 +543,12 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
 
 async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """GET helper. Returns parsed JSON; empty/null bodies become {}."""
+    cache_key = path + "?" + urllib.parse.urlencode(sorted((params or {}).items()))
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
     key = _get_api_key()
+    _reserve_hourly_upstream()
     query = dict(params or {})
     query["api_key"] = key
     url = f"{BASE_URL}/{path}?{urllib.parse.urlencode(query)}"
@@ -532,6 +586,7 @@ async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any
             f"Regulations.gov returned unexpected JSON type {type(data).__name__}: "
             f"{str(data)[:200]}"
         )
+    _cache_put(cache_key, data)
     return data
 
 

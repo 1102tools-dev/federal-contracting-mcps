@@ -1,0 +1,10 @@
+**
+!servers/
+!servers/gsa-perdiem-mcp/
+!servers/gsa-perdiem-mcp/pyproject.toml
+!servers/gsa-perdiem-mcp/uv.lock
+!servers/gsa-perdiem-mcp/readme.md
+!servers/gsa-perdiem-mcp/license
+!servers/gsa-perdiem-mcp/src/
+!servers/gsa-perdiem-mcp/src/**
+**/__pycache__/

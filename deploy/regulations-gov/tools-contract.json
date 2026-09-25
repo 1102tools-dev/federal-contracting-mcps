@@ -1,0 +1,537 @@
+[
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "readOnlyHint": true,
+      "title": "FAR Case History"
+    },
+    "description": "Get the full lifecycle of a FAR/DFARS rulemaking case.\n\n    Fetches the docket metadata (title, abstract, RIN) plus the documents\n    filed under the docket, sorted by most recent first. Follows pagination\n    up to 1,000 documents (4 pages); larger dockets set truncated=true\n    (FAR/DARS dockets are far smaller, but the tool accepts any docket).\n\n    docket_id examples: FAR-2023-0008, DARS-2025-0071\n\n    Returns the docket abstract, RIN (links to Unified Agenda), and the\n    documents with their types, dates, and URLs.\n    ",
+    "inputSchema": {
+      "properties": {
+        "docket_id": {
+          "title": "Docket Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "docket_id"
+      ],
+      "title": "far_case_historyArguments",
+      "type": "object"
+    },
+    "name": "far_case_history",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "far_case_historyDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "readOnlyHint": true,
+      "title": "Check Regulations.gov Data Access"
+    },
+    "description": "Check Regulations.gov credential presence without returning or validating it.",
+    "inputSchema": {
+      "properties": {},
+      "title": "get_access_statusArguments",
+      "type": "object"
+    },
+    "name": "get_access_status",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "get_access_statusDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "readOnlyHint": true,
+      "title": "Get Comment Detail"
+    },
+    "description": "Get full details for a single comment.\n\n    Returns the full comment text, organization, submitter info (if public),\n    tracking number, and duplicate comment count.\n\n    Some fields (firstName, lastName, organization) are agency-configurable\n    and may be hidden.\n    ",
+    "inputSchema": {
+      "properties": {
+        "comment_id": {
+          "title": "Comment Id",
+          "type": "string"
+        },
+        "include_attachments": {
+          "default": false,
+          "title": "Include Attachments",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "comment_id"
+      ],
+      "title": "get_comment_detailArguments",
+      "type": "object"
+    },
+    "name": "get_comment_detail",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "get_comment_detailDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "readOnlyHint": true,
+      "title": "Get Docket Detail"
+    },
+    "description": "Get full details for a single docket.\n\n    Returns title, abstract, RIN (links to Unified Agenda), agency,\n    keywords, and modification date.\n\n    docket_id format: FAR-2023-0008, DARS-2025-0071, SBA-2024-0002\n    ",
+    "inputSchema": {
+      "properties": {
+        "docket_id": {
+          "title": "Docket Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "docket_id"
+      ],
+      "title": "get_docket_detailArguments",
+      "type": "object"
+    },
+    "name": "get_docket_detail",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "get_docket_detailDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "readOnlyHint": true,
+      "title": "Get Document Detail"
+    },
+    "description": "Get full details for a single Regulations.gov document.\n\n    Returns fileFormats (download URLs), cfrPart, displayProperties, and\n    other detail fields not available in search results.\n\n    Set include_attachments=True to get attachment objects with download URLs.\n\n    document_id format: FAR-2023-0008-0023\n    ",
+    "inputSchema": {
+      "properties": {
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "include_attachments": {
+          "default": false,
+          "title": "Include Attachments",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "document_id"
+      ],
+      "title": "get_document_detailArguments",
+      "type": "object"
+    },
+    "name": "get_document_detail",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "get_document_detailDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "readOnlyHint": true,
+      "title": "Open Comment Periods"
+    },
+    "description": "Find documents with currently open comment periods.\n\n    Searches for documents where withinCommentPeriod=true, sorted by\n    soonest closing deadline (ascending commentEndDate, so even when the\n    result set is truncated it keeps the deadlines you can still act on).\n    Returns document IDs, titles, agencies, comment end dates, docket IDs,\n    the API-true total_open, and a truncated flag when more exist than the\n    250 returned.\n\n    Default searches FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA in a single\n    comma-joined query. Pass agency_ids to narrow or expand the scope. An\n    empty list is rejected; pass None to use the defaults.\n    ",
+    "inputSchema": {
+      "properties": {
+        "agency_ids": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agency Ids"
+        }
+      },
+      "title": "open_comment_periodsArguments",
+      "type": "object"
+    },
+    "name": "open_comment_periods",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "open_comment_periodsDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "readOnlyHint": true,
+      "title": "Search Comments"
+    },
+    "description": "Search public comments on Regulations.gov.\n\n    To find comments on a specific document, use comment_on_id with the\n    hex objectId from document detail/search results (attributes.objectId,\n    e.g. '0900006486531e6b'). The human-readable documentId is REJECTED\n    here because the API silently returns 0 comments for it.\n\n    docket_id can also filter comments to all documents in a docket\n    (undocumented upstream but verified working live).\n\n    Page size: 5-250. Comments sorted by '-postedDate' by default.\n    ",
+    "inputSchema": {
+      "properties": {
+        "agency_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agency Id"
+        },
+        "comment_on_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comment On Id"
+        },
+        "docket_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Docket Id"
+        },
+        "page_number": {
+          "default": 1,
+          "title": "Page Number",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 25,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "posted_date_ge": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Posted Date Ge"
+        },
+        "posted_date_le": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Posted Date Le"
+        },
+        "search_term": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Search Term"
+        },
+        "sort": {
+          "default": "-postedDate",
+          "title": "Sort",
+          "type": "string"
+        }
+      },
+      "title": "search_commentsArguments",
+      "type": "object"
+    },
+    "name": "search_comments",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "search_commentsDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "readOnlyHint": true,
+      "title": "Search Dockets"
+    },
+    "description": "Search Regulations.gov dockets.\n\n    Dockets are containers for related regulatory documents (proposed rules,\n    comments, supporting materials). FAR cases, DFARS cases, and agency\n    rulemaking actions each have a docket.\n\n    docket_type is CASE-SENSITIVE: 'Rulemaking' or 'Nonrulemaking'.\n\n    lastModifiedDate format: 'YYYY-MM-DD HH:MM:SS' (space-separated, NOT ISO).\n    This is a Regulations.gov quirk; ISO 8601 is rejected.\n\n    Limited filters: only searchTerm, agencyId, docketType, lastModifiedDate.\n    ",
+    "inputSchema": {
+      "properties": {
+        "agency_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agency Id"
+        },
+        "docket_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "Rulemaking",
+                "Nonrulemaking"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Docket Type"
+        },
+        "last_modified_date_ge": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Modified Date Ge"
+        },
+        "last_modified_date_le": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Modified Date Le"
+        },
+        "page_number": {
+          "default": 1,
+          "title": "Page Number",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 25,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "search_term": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Search Term"
+        },
+        "sort": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sort"
+        }
+      },
+      "title": "search_docketsArguments",
+      "type": "object"
+    },
+    "name": "search_dockets",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "search_docketsDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "readOnlyHint": true,
+      "title": "Search Documents"
+    },
+    "description": "Search Regulations.gov documents (proposed rules, final rules, notices).\n\n    Filter values are CASE-SENSITIVE. Use exact casing:\n    - document_type: 'Proposed Rule', 'Rule', 'Notice', 'Supporting & Related Material', 'Other'\n    - Lowercase values silently return 0 results (no error)\n\n    Key parameters:\n    - agency_id: FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA, etc.\n      Comma-separate for multiple agencies ('FAR,GSA').\n      Empty string is REJECTED (previously returned all 1.95M records).\n    - docket_id: e.g., 'FAR-2023-0008' for a specific FAR case\n    - within_comment_period: True to find documents currently accepting\n      comments. False is NOT supported by the API (it 400s); omit the\n      parameter instead to search regardless of comment status.\n    - posted_date_ge/le: YYYY-MM-DD format (calendar-checked)\n    - comment_end_date_ge/le: YYYY-MM-DD format\n\n    Response includes meta.aggregations with counts by document type, agency,\n    and comment period status.\n\n    Page size: 5-250. page_number: 1-40 (10,000 reachable records per\n    query; the live API allows 40 pages even though the docs say 20).\n    For larger sets, partition with date ranges, or use the API's deep\n    pagination recipe: sort='lastModifiedDate,documentId' plus\n    lastModifiedDate windows on search_dockets/search_comments.\n\n    sort: '-postedDate' (newest first, default), 'postedDate', '-commentEndDate',\n    'lastModifiedDate', 'title', 'documentId'. Comma-separate for\n    multi-field sorts ('lastModifiedDate,documentId').\n    ",
+    "inputSchema": {
+      "properties": {
+        "agency_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agency Id"
+        },
+        "comment_end_date_ge": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comment End Date Ge"
+        },
+        "comment_end_date_le": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comment End Date Le"
+        },
+        "docket_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Docket Id"
+        },
+        "document_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "Proposed Rule",
+                "Rule",
+                "Notice",
+                "Supporting & Related Material",
+                "Other"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Document Type"
+        },
+        "page_number": {
+          "default": 1,
+          "title": "Page Number",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 25,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "posted_date_ge": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Posted Date Ge"
+        },
+        "posted_date_le": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Posted Date Le"
+        },
+        "search_term": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Search Term"
+        },
+        "sort": {
+          "default": "-postedDate",
+          "title": "Sort",
+          "type": "string"
+        },
+        "within_comment_period": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Within Comment Period"
+        }
+      },
+      "title": "search_documentsArguments",
+      "type": "object"
+    },
+    "name": "search_documents",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "search_documentsDictOutput",
+      "type": "object"
+    }
+  }
+]

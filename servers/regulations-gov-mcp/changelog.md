@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.10
+
+- With a registered api.data.gov key, requests are now spaced 0.6 seconds apart instead of 4 seconds. The key's limit is per rolling hour, not per second; DEMO_KEY keeps 4-second spacing.
+- Added an in-process cap of 950 upstream calls per rolling hour (`API_DATA_GOV_HOURLY_CAP`), below api.data.gov's default 1,000.
+- Added an opt-in response cache (`MCP_RESPONSE_CACHE_SECONDS`, off by default) for hosted deployments.
+- Added a bounded, stateless HTTP entry point (`regulationsgov_mcp.http`) for the hosted 1102tools deployment. Tool names, arguments, and results are unchanged.
+
 ## 1.0.9
 
 Fixes shared request pacing locks that could remain held when background
