@@ -2,7 +2,7 @@
 
 <!-- mcp-name: com.1102tools/regulations-gov-mcp -->
 
-MCP server for the Regulations.gov API. Federal rulemaking dockets, proposed rules, final rules, public comments, and comment period tracking.
+Free, open-source MCP server for the Regulations.gov API. Federal rulemaking dockets, proposed rules, final rules, public comments, and comment period tracking.
 
 Optional free API key for higher rate limits. Use the installation and configuration instructions below to connect this MCP directly.
 

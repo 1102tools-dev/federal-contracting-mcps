@@ -2,7 +2,7 @@
 
 <!-- mcp-name: com.1102tools/gsa-calc-mcp -->
 
-MCP server for the GSA CALC+ Labor Ceiling Rates API. Query awarded GSA MAS schedule hourly rates for IGCE development, price reasonableness analysis, and market research.
+Free, open-source MCP server for the GSA CALC+ Labor Ceiling Rates API. Query awarded GSA MAS schedule hourly rates for IGCE development, price reasonableness analysis, and market research.
 
 No authentication required. Connect through the published Claude or ChatGPT listing below, or use the installation and configuration instructions for another compatible MCP client.
 

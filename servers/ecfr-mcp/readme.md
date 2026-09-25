@@ -2,7 +2,7 @@
 
 <!-- mcp-name: com.1102tools/ecfr-mcp -->
 
-MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplement text with no authentication required.
+Free, open-source MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplement text with no authentication required.
 
 Connect through the published Claude or ChatGPT listing below, or use the installation and configuration instructions for another compatible MCP client.
 

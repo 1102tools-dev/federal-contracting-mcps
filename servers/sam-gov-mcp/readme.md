@@ -2,7 +2,7 @@
 
 <!-- mcp-name: com.1102tools/sam-gov-mcp -->
 
-MCP server for SAM.gov entity registration, exclusion/debarment, contract opportunity, contract award, federal hierarchy, and FFATA subaward data.
+Free, open-source MCP server for SAM.gov entity registration, exclusion/debarment, contract opportunity, contract award, federal hierarchy, and FFATA subaward data.
 
 Requires a free SAM.gov API key. Use the installation and configuration instructions below to connect this MCP directly.
 

@@ -2,7 +2,7 @@
 
 <!-- mcp-name: com.1102tools/federal-register-mcp -->
 
-MCP server for the Federal Register API. Proposed rules, final rules, notices, executive orders, comment periods, and regulatory tracking since 1994.
+Free, open-source MCP server for the Federal Register API. Proposed rules, final rules, notices, executive orders, comment periods, and regulatory tracking since 1994.
 
 No authentication required. Connect through the published Claude listing below, or use the installation and configuration instructions for another compatible MCP client.
 
