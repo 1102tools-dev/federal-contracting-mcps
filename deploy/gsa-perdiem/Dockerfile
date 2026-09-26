@@ -10,6 +10,6 @@ RUN uv sync --frozen --no-dev
 RUN useradd --create-home mcp
 USER mcp
 ENV MCP_ALLOWED_HOSTS=container.internal MCP_ALLOWED_ORIGINS=https://gsa-perdiem.1102tools.com
-ENV MCP_RESPONSE_CACHE_SECONDS=86400
+ENV MCP_RESPONSE_CACHE_SECONDS=86400 PERDIEM_HOSTED=1
 EXPOSE 8080
 CMD ["/app/.venv/bin/python", "-m", "gsa_perdiem_mcp.http"]

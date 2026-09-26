@@ -63,7 +63,7 @@ The first release should be a new tag, not a rewrite of an existing public tag.
 ## Published ChatGPT metadata
 
 The five original baseline `tools-contract.json` files were captured from the live hosted
-endpoints; GSA Per Diem and Regulations.gov baselines were generated from source at their first hosted release (v1.0.32). Source and built-container checks must match them exactly, including
+endpoints; GSA Per Diem and Regulations.gov baselines were generated from source at their first hosted release (v1.0.32). The GSA Per Diem baseline was regenerated for 1.1.0 (bundled data, `openWorldHint`, no instructions) with `uv run --python 3.12 --frozen --project servers/gsa-perdiem-mcp python scripts/check_hosted_contract.py gsa-perdiem --write` (Python 3.13+ strips docstring indentation, so always regenerate under 3.12); review the diff before committing any regenerated baseline. Source and built-container checks must match them exactly, including
 tool names, descriptions, schemas, annotations, and metadata. Containers use
 Python 3.12, matching the currently hosted runtime; newer Python versions can
 format docstrings differently. No server instructions are currently published;
@@ -101,4 +101,10 @@ undo a PyPI publication by overwriting a package version; ship a corrective patc
 
 ## Operator-keyed services
 
-GSA Per Diem and Regulations.gov call api.data.gov with a key held by 1102tools, one key per service. Each key is stored as a Worker secret (`PERDIEM_API_KEY` on `gsa-perdiem-mcp`, `REGULATIONS_GOV_API_KEY` on `regulations-gov-mcp`) and passed to the container at start. Secrets persist across deploys; rotate one with `wrangler secret put <NAME> --name <worker>`. The servers cap upstream calls at 950 per rolling hour, and hosted containers cache identical responses (a day for Per Diem, 15 minutes for Regulations.gov), so release verification uses one upstream call per key.
+GSA Per Diem and Regulations.gov call api.data.gov with a key held by 1102tools, one key per service. Each key is stored as a Worker secret (`PERDIEM_API_KEY` on `gsa-perdiem-mcp`, `REGULATIONS_GOV_API_KEY` on `regulations-gov-mcp`) and passed to the container at start. Secrets persist across deploys; rotate one with `wrangler secret put <NAME> --name <worker>`. The servers cap upstream calls at 950 per rolling hour, and hosted containers cache identical responses in memory (up to a day for Per Diem, 15 minutes for Regulations.gov; the cache is lost when an idle container sleeps), so release verification uses one upstream call per key.
+
+From 1.1.0, GSA Per Diem answers ZIP, state, and M&IE lookups for bundled fiscal years from GSA's published files in the image (`servers/gsa-perdiem-mcp/src/gsa_perdiem_mcp/data/`); only city lookups and unbundled years use the key. Its release verification therefore adds one live `lookup_city_perdiem` call. Refresh the bundled data when GSA posts or corrects a file: run `scripts/build_snapshot.py`, run the live parity tests (`MCP_LIVE_TESTS=1 uv run pytest tests/test_live_parity.py` with a registered key), bump the package version, and release.
+
+## Releasing one service
+
+A `v*` tag push (for example `v1.0.33`) releases every package and hosted service. A scoped tag `<slug>/v<version>` (for example `gsa-perdiem/v1.1.0`, slugs from `deploy/services.json`) releases only that service and its package. A manual dispatch on a release tag can also set `services` to comma-separated slugs. `scripts/release_plan.py` scopes the build, deploy, PyPI, and registry jobs; unrelated services are not rebuilt or redeployed.

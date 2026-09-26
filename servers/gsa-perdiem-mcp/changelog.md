@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0
+
+- ZIP, state, and M&IE lookups for FY2021 onward are answered from GSA's published rate, ZIP, and M&IE files bundled in the package; no API key or network call is needed. `data/manifest.json` records each source URL and SHA-256. `scripts/build_snapshot.py` regenerates the files and fails on any schema drift or rate/ZIP-file disagreement. FY2020 and unbundled years still use the GSA API.
+- `lookup_zip_perdiem` no longer picks one rate area when a ZIP spans several with different rates (about 1,800 ZIPs). It returns `status: "ambiguous"` with every candidate; the new optional `county` argument selects one. Results now include `lodging_by_month`.
+- City lookups no longer depend on the order of GSA's response rows. When GSA lists several rate areas for a city, Census 2020 place-to-county records break the tie only if they place the city in exactly one (McLean, VA -> District of Columbia; Chester, MA -> Springfield, which previously returned Northampton). Otherwise the result is `ambiguous`.
+- A city GSA does not recognize (GSA returns every rate area in the state) is now `unresolved` instead of being reported as the Standard Rate.
+- `estimate_travel_cost` and `compare_locations` do not price ambiguous or unresolved cities; they return the candidates.
+- New optional `county` argument on the city tools determines the rate from GSA's county definitions, including the city-limit carve-outs (Sedona, Santa Monica, Cambridge, Falmouth, Hershey, Grapevine, Edwards AFB).
+- `estimate_travel_cost` without `fiscal_year` now uses the fiscal year of the next occurrence of `travel_month` (in September, a November trip uses next fiscal year's rates).
+- `get_access_status` is replaced by `get_data_status`, which reports bundled fiscal years and sources, which tools call the GSA API, and credential presence.
+- Removed the server `instructions` and DEMO_KEY wording from tool descriptions; DEMO_KEY guidance appears as an `access_note` in results only when DEMO_KEY is actually in use. Error messages for HTTP 403/429 now match the credential mode.
+- All tools declare `openWorldHint`.
+- Every result carries `source`, naming the bundled GSA file (with SHA-256) or API endpoint used.
+
 ## 1.0.11
 
 - With a registered api.data.gov key, requests are now spaced 0.6 seconds apart instead of 4 seconds. The key's limit is per rolling hour, not per second; DEMO_KEY keeps 4-second spacing.

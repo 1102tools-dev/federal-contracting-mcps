@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-"""Credential-readiness contract for GSA Per Diem access."""
+"""Data-status and credential-readiness contract for GSA Per Diem."""
 
 from __future__ import annotations
 
@@ -14,23 +14,52 @@ def _payload(result):
     return result.structured_content if hasattr(result, "structured_content") else result[1]
 
 
-@pytest.mark.parametrize("value", [None, "", "   \t"])
-def test_access_status_discloses_demo_key_fallback(monkeypatch, value):
-    if value is None:
+def _status(monkeypatch, key=None, hosted=None):
+    if key is None:
         monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
     else:
-        monkeypatch.setenv("PERDIEM_API_KEY", value)
-    payload = _payload(asyncio.run(mcp.call_tool("get_access_status", {})))
-    assert payload["status"] == "limited_fallback"
-    assert payload["credential_env"] == "PERDIEM_API_KEY"
-    assert payload["fallback"]["mode"] == "api.data.gov DEMO_KEY"
-    assert "10 requests per hour" in payload["fallback"]["limit"]
+        monkeypatch.setenv("PERDIEM_API_KEY", key)
+    if hosted is None:
+        monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
+    else:
+        monkeypatch.setenv("PERDIEM_HOSTED", hosted)
+    return _payload(asyncio.run(mcp.call_tool("get_data_status", {})))
 
 
-def test_access_status_reports_configured_unverified_without_value(monkeypatch):
+@pytest.mark.parametrize("value", [None, "", "   \t"])
+def test_local_without_key_discloses_demo_key_fallback(monkeypatch, value):
+    payload = _status(monkeypatch, key=value)
+    assert payload["live_lookup_access"] == "demo_key_fallback"
+    assert "DEMO_KEY" in payload["access_note"]
+    assert "10 requests per hour" in payload["access_note"]
+
+
+def test_local_with_key_reports_configured_unverified_without_value(monkeypatch):
     secret = "perdiem-secret-value"
-    monkeypatch.setenv("PERDIEM_API_KEY", secret)
-    payload = _payload(asyncio.run(mcp.call_tool("get_access_status", {})))
-    assert payload["status"] == "configured_unverified"
-    assert payload["fallback"] is None
+    payload = _status(monkeypatch, key=secret)
+    assert payload["live_lookup_access"] == "configured_unverified"
+    assert payload["validation"] == "presence_only"
+    assert "access_note" not in payload
     assert secret not in repr(payload)
+
+
+def test_hosted_status_has_no_key_language(monkeypatch):
+    secret = "publisher-secret-value"
+    payload = _status(monkeypatch, key=secret, hosted="1")
+    assert payload["live_lookup_access"] == "hosted_publisher_key"
+    text = repr(payload)
+    assert "DEMO_KEY" not in text
+    assert "PERDIEM_API_KEY" not in text
+    assert secret not in text
+
+
+def test_status_reports_bundled_years_and_sources(monkeypatch):
+    payload = _status(monkeypatch, hosted="1")
+    years = payload["bundled_fiscal_years"]
+    assert years == sorted(years)
+    assert 2027 in years and 2021 in years
+    src = payload["bundled_sources"]["2027"]
+    assert src["zip_file"].startswith("https://www.gsa.gov/")
+    assert len(src["zip_file_sha256"]) == 64
+    assert set(payload["live_api_tools"]) == {
+        "lookup_city_perdiem", "estimate_travel_cost", "compare_locations"}

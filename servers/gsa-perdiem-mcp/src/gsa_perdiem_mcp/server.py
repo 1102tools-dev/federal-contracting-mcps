@@ -5,9 +5,12 @@
 Federal travel lodging and M&IE rates for CONUS locations. Rates are set
 annually per fiscal year (Oct 1 - Sep 30).
 
-Authentication via PERDIEM_API_KEY environment variable. Falls back to
-DEMO_KEY (~10 req/hr) if not set. Register free at api.data.gov/signup
-for 1,000 req/hr.
+ZIP, state, and M&IE lookups for bundled fiscal years are answered from
+GSA's published rate, ZIP, and M&IE files (see snapshot.py); no key is
+needed. City lookups call the GSA Per Diem API, which resolves city names
+to rate areas. That call uses PERDIEM_API_KEY, falling back to DEMO_KEY
+(~10 req/hr) if not set. Register free at api.data.gov/signup for
+1,000 req/hr. Hosted deployments (PERDIEM_HOSTED=1) use the publisher's key.
 
 These are maximum reimbursement ceilings, not actual hotel prices.
 CONUS only. Non-foreign OCONUS (Alaska, Hawaii, territories) rates are
@@ -30,7 +33,7 @@ import httpx
 from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
-from . import __version__
+from . import __version__, snapshot
 from ._pacing import FederalApiPacer
 from .constants import BASE_URL, DEFAULT_TIMEOUT, USER_AGENT
 
@@ -40,11 +43,13 @@ mcp = MCPServer(
     # HTTPX INFO logs include request URLs, including query credentials used by
     # this API. Keep host stderr credential-safe by default.
     log_level="WARNING",
-    instructions=(
-        "Before the first Per Diem data call in a session, call get_access_status "
-        "and disclose the DEMO_KEY limit when PERDIEM_API_KEY is not configured."
-    ),
 )
+
+# Tool annotations. Every rate tool may call the GSA Per Diem API (city
+# resolution, or fiscal years not in the bundled snapshot), so they are
+# open-world; only the local status tool is closed-world.
+_OPEN_WORLD = {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": True}
+_LOCAL_ONLY = {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}
 
 
 # ---------------------------------------------------------------------------
@@ -326,29 +331,74 @@ def _get_api_key() -> str:
     return os.environ.get("PERDIEM_API_KEY", "").strip() or "DEMO_KEY"
 
 
-@mcp.tool(
-    annotations={
-        "title": "Check GSA Per Diem Data Access",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-    }
+def _hosted() -> bool:
+    """True in the 1102tools hosted container, which holds the publisher key."""
+    return os.environ.get("PERDIEM_HOSTED", "").strip() == "1"
+
+
+def _live_access_mode() -> str:
+    if _hosted():
+        return "hosted_publisher_key"
+    if os.environ.get("PERDIEM_API_KEY", "").strip():
+        return "configured_unverified"
+    return "demo_key_fallback"
+
+
+_DEMO_KEY_NOTE = (
+    "Live city lookups are using the shared api.data.gov DEMO_KEY "
+    "(about 10 requests per hour). A free PERDIEM_API_KEY from "
+    "https://api.data.gov/signup/ allows 1,000 per hour."
 )
-def get_access_status() -> dict[str, Any]:
-    """Check Per Diem credential presence without returning or validating its value."""
-    configured = bool(os.environ.get("PERDIEM_API_KEY", "").strip())
-    return {
-        "service": "GSA Per Diem API",
-        "status": "configured_unverified" if configured else "limited_fallback",
-        "credential_env": "PERDIEM_API_KEY",
-        "required_for": ["higher-volume GSA Per Diem travel-pricing requests"],
-        "fallback": None if configured else {
-            "mode": "api.data.gov DEMO_KEY",
-            "limit": "approximately 10 requests per hour (live-measured)",
-        },
-        "setup_url": "https://api.data.gov/signup/",
-        "validation": "presence_only",
-        "restart_required": True,
+
+
+def _access_note() -> str | None:
+    return _DEMO_KEY_NOTE if _live_access_mode() == "demo_key_fallback" else None
+
+
+_LIVE_TOOLS = ["lookup_city_perdiem", "estimate_travel_cost", "compare_locations"]
+_BUNDLED_TOOLS = ["lookup_zip_perdiem", "lookup_state_rates", "get_mie_breakdown"]
+
+
+@mcp.tool(annotations={"title": "Get Per Diem Data Status", **_LOCAL_ONLY})
+def get_data_status() -> dict[str, Any]:
+    """Report which fiscal years are bundled, their GSA source files, and which tools call the GSA API.
+
+    ZIP, state, and M&IE lookups for bundled fiscal years are answered
+    from GSA's published files with no network call. City-based tools
+    resolve the city through the live GSA Per Diem API. Credential
+    presence is reported without revealing or validating any value.
+    """
+    years = snapshot.available_years()
+    sources = {}
+    for fy in years:
+        meta = snapshot.manifest()["fiscal_years"][str(fy)]
+        sources[str(fy)] = {
+            "zip_file": meta["zip"]["url"],
+            "zip_file_published": meta["zip"].get("published"),
+            "zip_file_sha256": meta["zip"]["sha256"],
+            "rate_file": meta["rates"]["url"],
+            "mie_file": meta["mie"]["url"],
+        }
+    mode = _live_access_mode()
+    out: dict[str, Any] = {
+        "service": "GSA Per Diem",
+        "current_fiscal_year": _current_fiscal_year(),
+        "bundled_fiscal_years": years,
+        "bundled_sources": sources,
+        "bundled_tools": _BUNDLED_TOOLS,
+        "live_api_tools": _LIVE_TOOLS,
+        "live_api_also_used_for": (
+            "ZIP, state, and M&IE lookups for fiscal years not bundled"
+            + (f" (bundled: FY{years[0]}-FY{years[-1]})" if years else "")
+        ),
+        "live_lookup_access": mode,
     }
+    if mode == "demo_key_fallback":
+        out["access_note"] = _DEMO_KEY_NOTE
+    elif mode == "configured_unverified":
+        out["credential_env"] = "PERDIEM_API_KEY"
+        out["validation"] = "presence_only"
+    return out
 
 
 _client: httpx.AsyncClient | None = None
@@ -420,7 +470,19 @@ def _cache_put(cache_key: str, value: Any) -> None:
 
 def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
     cleaned = _clean_error_body(body, api_key)
+    mode = _live_access_mode()
     if status == 403:
+        if mode == "hosted_publisher_key":
+            return (
+                "HTTP 403: the GSA Per Diem API rejected this service's credential. "
+                "This is a server-side issue; ZIP, state, and M&IE lookups for "
+                "bundled fiscal years still work without it."
+            )
+        if mode == "configured_unverified":
+            return (
+                "HTTP 403: api.data.gov rejected the configured PERDIEM_API_KEY. "
+                "Check the key at https://api.data.gov/signup/."
+            )
         return (
             "HTTP 403: API key rejected or missing. "
             "Set PERDIEM_API_KEY env var, or the server will use DEMO_KEY "
@@ -428,6 +490,16 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
             "for 1,000 req/hr."
         )
     if status == 429:
+        if mode == "hosted_publisher_key":
+            return (
+                "HTTP 429: the GSA Per Diem API rate limit was reached. Retry later; "
+                "ZIP, state, and M&IE lookups for bundled fiscal years are unaffected."
+            )
+        if mode == "configured_unverified":
+            return (
+                "HTTP 429: the configured PERDIEM_API_KEY reached its api.data.gov "
+                "hourly limit (1,000 req/hr by default). Retry later."
+            )
         return (
             "HTTP 429: Rate limited. DEMO_KEY allows ~10 req/hr; set "
             "PERDIEM_API_KEY with a real key (1,000 req/hr). "
@@ -520,6 +592,9 @@ def _parse_rate_entry(entry: Any) -> dict[str, Any]:
     city = entry.get("city") or ""
     if not isinstance(city, str):
         city = str(city) if city is not None else ""
+    # Some FY2026 API rows carry trailing spaces ("State College "); names
+    # must match the bundled GSA files exactly for rate-area identification.
+    city = re.sub(r"\s+", " ", city).strip()
 
     # The API uses the literal string "Standard Rate" for the standard-rate row.
     # `standardRate` field is unreliable (always "false"), so we match by name.
@@ -669,14 +744,208 @@ def _normalize_city_for_url(city: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Rate records and resolution
+# ---------------------------------------------------------------------------
+
+def _from_area_record(rec: dict[str, Any]) -> dict[str, Any]:
+    """Convert a snapshot area record into the parsed-entry shape used by the tools."""
+    months = rec["lodging_by_month"]
+    values = list(months.values())
+    return {
+        "city": rec["destination"],
+        "county": rec["location_defined"],
+        "state": rec["state"],
+        "meals": rec["meals"],
+        "is_standard_rate": rec["is_standard_rate"],
+        "lodging_by_month": dict(months),
+        "lodging_min": min(values),
+        "lodging_max": max(values),
+        "has_seasonal_variation": min(values) != max(values),
+        "has_monthly_data": True,
+        "_area_id": rec["area_id"],
+    }
+
+
+def _parsed_entries(response: Any) -> list[dict[str, Any]]:
+    response = _safe_dict(response)
+    rates = _as_list(response.get("rates"))
+    if not rates:
+        return []
+    raw_entries = _as_list(_safe_dict(rates[0]).get("rate"))
+    return [p for p in (_parse_rate_entry(e) for e in raw_entries) if p.get("city")]
+
+
+def _rate_signature(p: dict[str, Any]) -> tuple:
+    return (tuple(sorted(p["lodging_by_month"].items())), p["meals"])
+
+
+def _candidate_summary(p: dict[str, Any]) -> dict[str, Any]:
+    out = {
+        "destination": p["city"],
+        "location_defined": p["county"],
+        "is_standard_rate": p["is_standard_rate"],
+        "lodging_range": _format_lodging_range(p),
+        "lodging_by_month": p["lodging_by_month"],
+        "mie_daily": p["meals"],
+        "max_daily_total": p["lodging_max"] + p["meals"],
+    }
+    if p.get("state"):
+        out["state"] = p["state"]
+    return out
+
+
+def _api_source(path: str) -> dict[str, Any]:
+    return {"kind": "gsa_per_diem_api", "endpoint": f"{BASE_URL}/{path}"}
+
+
+def _area_id_for(snap: snapshot.Year, state: str, p: dict[str, Any]) -> Any:
+    if "_area_id" in p:
+        return p["_area_id"]
+    if p["is_standard_rate"]:
+        return snapshot.STANDARD
+    return snap.destination_id(state, p["city"])
+
+
+def _is_full_state_list(snap: snapshot.Year | None, state: str, nsa: list[dict[str, Any]]) -> bool:
+    """GSA answers an unrecognized city with every rate area in the state."""
+    if snap is None:
+        return len(nsa) >= 2
+    names = {snap.destinations[i]["name"] for i in snap.state_destination_ids(state)}
+    return bool(names) and names <= {p["city"] for p in nsa}
+
+
+def _census_suggestion(snap: snapshot.Year | None, state: str, city: str) -> dict[str, Any] | None:
+    if snap is None:
+        return None
+    areas, counties = snap.census_areas(state, city)
+    if len(areas) != 1:
+        return None
+    rec = _from_area_record(snap.area_rate(next(iter(areas)), state))
+    out = _candidate_summary(rec)
+    out["basis"] = (
+        "Census 2020 place/county records"
+        + (f" place {city!r} in {', '.join(c.split('|', 1)[1].title() for c in counties)} County"
+           if counties else "")
+        + "; not a GSA determination"
+    )
+    return out
+
+
+def _resolve_city(
+    response: Any, city: str, state: str, year: int
+) -> dict[str, Any]:
+    """Interpret a GSA city-endpoint response without guessing.
+
+    Returns {"status": resolved|ambiguous|unresolved|no_data, ...}.
+    """
+    parsed = _parsed_entries(response)
+    if not parsed:
+        return {"status": "no_data"}
+    snap = snapshot.load_year(year)
+    q = _normalize_for_match(city)
+
+    exact = [p for p in parsed if _normalize_for_match(p["city"]) == q]
+    if exact:
+        return {"status": "resolved", "rate": exact[0], "match_type": "exact"}
+    composite = [
+        p for p in parsed
+        if not p["is_standard_rate"] and q in _normalize_for_match(p["city"])
+    ]
+    if len(composite) == 1:
+        return {"status": "resolved", "rate": composite[0], "match_type": "composite"}
+
+    standard = [p for p in parsed if p["is_standard_rate"]]
+    nsa = [p for p in parsed if not p["is_standard_rate"]]
+    if standard and nsa and _is_full_state_list(snap, state, nsa):
+        return {"status": "unresolved", "suggestion": _census_suggestion(snap, state, city)}
+
+    candidates = nsa + standard[:1]
+    if len(candidates) == 1:
+        only = candidates[0]
+        return {
+            "status": "resolved",
+            "rate": only,
+            "match_type": "standard_fallback" if only["is_standard_rate"] else "api_resolved",
+        }
+
+    # GSA returned several rate areas (the place's ZIPs span a boundary).
+    # Break the tie only when Census places the city in exactly one of them.
+    if snap is not None:
+        areas, _counties = snap.census_areas(state, city)
+        hits = [p for p in candidates if _area_id_for(snap, state, p) in areas]
+        if len(hits) == 1:
+            chosen = hits[0]
+            return {
+                "status": "resolved",
+                "rate": chosen,
+                "match_type": "census_tiebreak",
+                "other_candidates": [p["city"] for p in candidates if p is not chosen],
+            }
+    return {"status": "ambiguous", "candidates": candidates}
+
+
+def _resolve_city_by_county(
+    snap: snapshot.Year, city: str, state: str, county: str
+) -> dict[str, Any]:
+    area = snap.area_for_county(state, county, place=city)
+    if area is None:
+        return {"status": "invalid_county"}
+    rec = _from_area_record(snap.area_rate(area, state))
+    return {"status": "resolved", "rate": rec, "match_type": "county"}
+
+
+async def _lookup_city(
+    city: str, state: str, year: int, county: str | None
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Resolve a city (optionally with county) to a rate. Returns (resolution, source)."""
+    snap = snapshot.load_year(year)
+    if county and snap is not None:
+        return _resolve_city_by_county(snap, city, state, county), snap.source
+    path = f"city/{_normalize_city_for_url(city)}/state/{state}/year/{year}"
+    response = await _get(path)
+    if county:
+        # No bundled data for this year: filter GSA's candidates by county text.
+        cq = _normalize_for_match(county)
+        parsed = [p for p in _parsed_entries(response)
+                  if cq and cq in _normalize_for_match(str(p.get("county") or ""))]
+        if len(parsed) == 1:
+            return {"status": "resolved", "rate": parsed[0], "match_type": "county"}, _api_source(path)
+        return {"status": "invalid_county"}, _api_source(path)
+    return _resolve_city(response, city, state, year), _api_source(path)
+
+
+def _unresolved_payload(res: dict[str, Any], city: str, state: str) -> dict[str, Any]:
+    status = res["status"]
+    out: dict[str, Any] = {"status": status}
+    if status == "ambiguous":
+        out["candidates"] = [_candidate_summary(p) for p in res["candidates"]]
+        out["note"] = (
+            f"GSA lists more than one rate area for {city}, {state}. Per diem follows the "
+            f"county or locality of the work location; supplying county selects one."
+        )
+    elif status == "unresolved":
+        out["note"] = (
+            f"GSA's city lookup did not recognize {city!r} in {state}; it returned every "
+            f"rate area in the state rather than a match. Supplying county, or using "
+            f"lookup_zip_perdiem, determines the rate."
+        )
+        if res.get("suggestion"):
+            out["census_suggestion"] = res["suggestion"]
+    elif status == "invalid_county":
+        out["note"] = f"No {state} county or county-equivalent matches the supplied county."
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Core tools
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Lookup City Per Diem", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Lookup City Per Diem", **_OPEN_WORLD})
 async def lookup_city_perdiem(
     city: str,
     state: str,
     fiscal_year: int | None = None,
+    county: str | None = None,
 ) -> dict[str, Any]:
     """Look up federal per diem rates for a city and state.
 
@@ -686,64 +955,63 @@ async def lookup_city_perdiem(
     state: 2-letter USPS code (e.g., 'DC', 'VA', 'MD', 'CA').
     fiscal_year: defaults to current FY. FY runs Oct 1 - Sep 30, so
     FY2026 = 2025-10-01 through 2026-09-30.
+    county: optional county or independent city (e.g., 'Fairfax',
+    'Hampden', 'Richmond city'). When given for a bundled fiscal year the
+    rate is determined from GSA's county definitions without an API call.
 
-    The city endpoint resolves cities to their county's rate area
-    server-side, so the matched NSA name can legitimately differ from the
-    query (Washington -> 'District of Columbia', Penasco -> 'Taos').
-    Selection order:
-    1. Exact city name match
-    2. Composite NSA name containing the city (e.g., 'Boston' matches 'Boston / Cambridge')
-    3. API-resolved rate area (no Standard Rate row in the response)
-    4. Standard Rate fallback (query fell through to the state default)
+    Without county, the GSA Per Diem API resolves the city name to rate
+    areas. The result's status is:
+    - resolved: one rate applies (exact name, composite name such as
+      'Boston / Cambridge', GSA's own city-to-county resolution, or a
+      Census county tie-break among GSA's candidates)
+    - ambiguous: GSA lists several rate areas for the city; candidates are
+      returned and no single rate is chosen
+    - unresolved: GSA did not recognize the city; no rate is asserted
 
-    Apostrophes, hyphens, and slashes in city names are auto-replaced with
-    spaces (GSA API quirk). Keep periods for 'St.' prefix cities (St. Louis).
-
-    For DC: query city='Washington', state='DC'.
     CONUS only: AK, HI, and territories return a pointer to DoD/State rates.
     """
     city_clean = _validate_city(city, field="city")
     state_upper = _validate_state(state, field="state")
     year = _validate_fiscal_year(fiscal_year, field="fiscal_year")
+    county_clean = _validate_county(county)
+    query = {"city": city_clean, "state": state_upper, "fiscal_year": year}
+    if county_clean:
+        query["county"] = county_clean
 
     if state_upper in _OCONUS_STATES:
-        return {
-            "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
-            "oconus": True,
-            "error": _OCONUS_NOTE,
+        return {"query": query, "oconus": True, "error": _OCONUS_NOTE}
+
+    res, source = await _lookup_city(city_clean, state_upper, year, county_clean)
+    note = _access_note() if source.get("kind") == "gsa_per_diem_api" else None
+    if res["status"] == "no_data":
+        out = {"query": query, "error": f"No rates found for {city_clean}, {state_upper} in FY{year}."
+               + _no_rates_hint(year)}
+    elif res["status"] != "resolved":
+        out = {"query": query, **_unresolved_payload(res, city_clean, state_upper), "source": source}
+    else:
+        best = res["rate"]
+        out = {
+            "query": query,
+            "status": "resolved",
+            "matched_city": best["city"],
+            "match_type": res["match_type"],
+            "match_note": _match_note(res["match_type"], city_clean, best, res.get("other_candidates")),
+            "county": best["county"],
+            "is_standard_rate": best["is_standard_rate"],
+            "lodging_by_month": best["lodging_by_month"],
+            "lodging_range": _format_lodging_range(best),
+            "mie_daily": best["meals"],
+            "mie_first_last_day": round(best["meals"] * 0.75, 2),
+            "max_daily_total": best["lodging_max"] + best["meals"],
+            "has_monthly_data": best["has_monthly_data"],
+            "source": source,
         }
-
-    city_encoded = _normalize_city_for_url(city_clean)
-    response = await _get(f"city/{city_encoded}/state/{state_upper}/year/{year}")
-    best = _select_best_rate(response, query_city=city_clean)
-
-    if not best:
-        return {
-            "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
-            "error": (
-                f"No rates found for {city_clean}, {state_upper} in FY{year}."
-                + _no_rates_hint(year)
-            ),
-        }
-
-    out = {
-        "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
-        "matched_city": best["city"],
-        "match_type": best.get("match_type", "exact"),
-        "match_note": _match_note(best.get("match_type"), city_clean, best),
-        "county": best["county"],
-        "is_standard_rate": best["is_standard_rate"],
-        "lodging_by_month": best["lodging_by_month"],
-        "lodging_range": _format_lodging_range(best),
-        "mie_daily": best["meals"],
-        "mie_first_last_day": round(best["meals"] * 0.75, 2),
-        "max_daily_total": best["lodging_max"] + best["meals"],
-        "has_monthly_data": best["has_monthly_data"],
-    }
-    if best.get("other_candidates"):
-        out["other_candidates"] = best["other_candidates"]
-    if best.get("months_without_data"):
-        out["months_without_data"] = best["months_without_data"]
+        if res.get("other_candidates"):
+            out["other_candidates"] = res["other_candidates"]
+        if best.get("months_without_data"):
+            out["months_without_data"] = best["months_without_data"]
+    if note:
+        out["access_note"] = note
     return out
 
 
@@ -751,33 +1019,33 @@ def _match_note(
     match_type: str | None,
     query_city: str,
     best: dict[str, Any] | None = None,
+    others: list[str] | None = None,
 ) -> str | None:
     """Human-readable note explaining non-exact matches."""
+    best = best or {}
     if match_type in (None, "exact"):
         return None
     if match_type == "composite":
         return f"{query_city!r} is part of a composite NSA name."
     if match_type == "standard_fallback":
         return (
-            f"{query_city!r} is not a listed NSA for this state. "
-            f"Returning the Standard Rate, which applies to all non-NSA "
-            f"locations in this state."
+            f"GSA resolved {query_city!r} to the Standard Rate: it is not in a "
+            f"listed non-standard area for this state."
         )
     if match_type == "api_resolved":
-        best = best or {}
-        note = (
+        return (
             f"GSA resolved {query_city!r} to the {best.get('city')!r} rate "
             f"area (county: {best.get('county')}). This is the API's own "
             f"city-to-county resolution, not a name-match failure."
         )
-        others = best.get("other_candidates")
-        if others:
-            note += (
-                f" Other rate areas in the response: {others}. If the "
-                f"destination county is ambiguous, verify with "
-                f"lookup_zip_perdiem."
-            )
-        return note
+    if match_type == "census_tiebreak":
+        return (
+            f"GSA listed several rate areas for {query_city!r} ({[best.get('city')] + (others or [])}). "
+            f"Census 2020 place records put {query_city!r} only in the "
+            f"{best.get('city')!r} area, so that rate is shown."
+        )
+    if match_type == "county":
+        return "Rate determined from GSA's county definitions for the supplied county."
     return None
 
 
@@ -801,51 +1069,114 @@ def _format_lodging_range(rate: dict[str, Any]) -> str:
     return f"${lo}/night"
 
 
-@mcp.tool(annotations={"title": "Lookup ZIP Per Diem", "readOnlyHint": True, "destructiveHint": False})
+def _validate_county(value: Any, *, field: str = "county") -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError(f"{field} must be a string county name like 'Fairfax'.")
+    s = re.sub(r"\s+", " ", value).strip()
+    if not s:
+        return None
+    if len(s) > 80 or _CITY_INVALID_CHARS_RE.search(s):
+        raise ValueError(f"{field}={value!r} is not a valid county name.")
+    return s
+
+
+@mcp.tool(annotations={"title": "Lookup ZIP Per Diem", **_OPEN_WORLD})
 async def lookup_zip_perdiem(
     zip_code: str,
     fiscal_year: int | None = None,
+    county: str | None = None,
 ) -> dict[str, Any]:
     """Look up federal per diem rates by ZIP code.
 
-    May return multiple entries (NSA + standard rate). This tool auto-selects
-    the NSA rate over the standard rate.
-
-    Useful when the exact city name is uncertain but the ZIP is known.
     Accepts 5-digit ZIPs or ZIP+4 (e.g., '02101' or '02101-1234').
+    Bundled fiscal years are answered from GSA's published ZIP file with
+    no API call; other years use the GSA Per Diem API.
+
+    GSA sets rates by county or locality, and about 1,800 ZIPs span more
+    than one rate area. The result's status is 'resolved' when every rate
+    area GSA lists for the ZIP has the same rate, otherwise 'ambiguous'
+    with all candidates and no single rate chosen. county (optional)
+    selects the candidate for that county.
     """
     zip5 = _validate_zip(zip_code, field="zip_code")
     year = _validate_fiscal_year(fiscal_year, field="fiscal_year")
+    county_clean = _validate_county(county)
+    base: dict[str, Any] = {"zip_code": zip5, "fiscal_year": year}
+    if county_clean:
+        base["county"] = county_clean
 
-    response = await _get(f"zip/{zip5}/year/{year}")
-    best = _select_best_rate(response)
+    snap = snapshot.load_year(year)
+    if snap is not None:
+        areas = snap.zip_areas(zip5)
+        candidates = [_from_area_record(snap.area_rate(a, st)) for a, st in areas]
+        source = snap.source
+        if county_clean and candidates:
+            wanted = {snap.area_for_county(st, county_clean) for st in {st for _, st in areas}}
+            wanted.discard(None)
+            if not wanted:
+                return {**base, "status": "invalid_county",
+                        "note": "No county or county-equivalent in this ZIP's state(s) matches the supplied county.",
+                        "source": source}
+            candidates = [p for p in candidates if p["_area_id"] in wanted]
+    else:
+        path = f"zip/{zip5}/year/{year}"
+        candidates = _parsed_entries(await _get(path))
+        source = _api_source(path)
+        if county_clean:
+            cq = _normalize_for_match(county_clean)
+            candidates = [p for p in candidates
+                          if cq in _normalize_for_match(str(p.get("county") or ""))]
 
-    if not best:
+    if not candidates:
         return {
-            "zip_code": zip5,
-            "fiscal_year": year,
+            **base,
             "error": (
-                "No rates found for this ZIP."
+                ("No rate area for this ZIP matches the supplied county." if county_clean else
+                 "No rates found for this ZIP.")
                 + _no_rates_hint(year)
-                + " If this ZIP is in Alaska, Hawaii, or a territory: "
-                + _OCONUS_NOTE
+                + ("" if county_clean else " If this ZIP is in Alaska, Hawaii, or a territory: " + _OCONUS_NOTE)
             ),
+            "source": source,
         }
 
-    return {
-        "zip_code": zip5,
-        "fiscal_year": year,
+    distinct = {_rate_signature(p) for p in candidates}
+    if len(distinct) > 1:
+        return {
+            **base,
+            "status": "ambiguous",
+            "candidates": [_candidate_summary(p) for p in candidates],
+            "note": (
+                f"ZIP {zip5} spans {len(candidates)} per diem rate areas with different rates. "
+                f"GSA assigns rates by the county or locality of the work location, not by "
+                f"ZIP; supplying county selects one."
+            ),
+            "source": source,
+        }
+
+    best = next((p for p in candidates if not p["is_standard_rate"]), candidates[0])
+    out = {
+        **base,
+        "status": "resolved",
         "matched_city": best["city"],
-        "match_type": best.get("match_type"),
+        "match_type": "county" if county_clean else "zip",
         "county": best["county"],
         "is_standard_rate": best["is_standard_rate"],
+        "lodging_by_month": best["lodging_by_month"],
         "lodging_range": _format_lodging_range(best),
         "mie_daily": best["meals"],
+        "mie_first_last_day": round(best["meals"] * 0.75, 2),
+        "max_daily_total": best["lodging_max"] + best["meals"],
         "has_monthly_data": best["has_monthly_data"],
+        "source": source,
     }
+    if len(candidates) > 1:
+        out["same_rate_areas"] = [p["city"] for p in candidates]
+    return out
 
 
-@mcp.tool(annotations={"title": "Lookup State Rates", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Lookup State Rates", **_OPEN_WORLD})
 async def lookup_state_rates(
     state: str,
     fiscal_year: int | None = None,
@@ -853,8 +1184,10 @@ async def lookup_state_rates(
     """Get all Non-Standard Area (NSA) per diem rates for a state.
 
     Returns every city/county with rates above the standard rate in that
-    state. Useful for comparing rates across cities within a state or for
-    building a travel IGCE with multiple destinations.
+    state, plus the state's standard rate. Useful for comparing rates
+    across cities within a state or for building a travel IGCE with
+    multiple destinations. Bundled fiscal years are answered from GSA's
+    published files with no API call.
 
     CONUS only: AK, HI, and territories return a pointer to DoD/State rates
     instead of an empty list that would falsely imply the standard CONUS
@@ -871,27 +1204,37 @@ async def lookup_state_rates(
             "error": _OCONUS_NOTE,
         }
 
-    response = await _get(f"state/{state_upper}/year/{year}")
-    response = _safe_dict(response)
-    rates = _as_list(response.get("rates"))
-    if not rates:
-        return {
-            "state": state_upper,
-            "fiscal_year": year,
-            "nsa_count": 0,
-            "rates": [],
-            "note": (
-                f"The API returned no rate data for {state_upper} in FY{year}."
-                + _no_rates_hint(year)
-            ),
-        }
-    first = _safe_dict(rates[0])
-    raw_entries = _as_list(first.get("rate"))
-    parsed = [_parse_rate_entry(e) for e in raw_entries]
-    parsed = [p for p in parsed if p.get("city")]
+    snap = snapshot.load_year(year)
+    standard: dict[str, Any] | None = None
+    if snap is not None:
+        parsed = [_from_area_record(snap.area_rate(i, state_upper))
+                  for i in snap.state_destination_ids(state_upper)]
+        parsed.sort(key=lambda p: p["city"])
+        std = _from_area_record(snap.area_rate(snapshot.STANDARD, state_upper))
+        standard = {"lodging": std["lodging_max"], "mie": std["meals"]}
+        source = snap.source
+    else:
+        path = f"state/{state_upper}/year/{year}"
+        parsed = _parsed_entries(await _get(path))
+        source = _api_source(path)
+        if not parsed:
+            return {
+                "state": state_upper,
+                "fiscal_year": year,
+                "nsa_count": 0,
+                "rates": [],
+                "note": (
+                    f"The API returned no rate data for {state_upper} in FY{year}."
+                    + _no_rates_hint(year)
+                ),
+                "source": source,
+            }
+        std_rows = [p for p in parsed if p["is_standard_rate"]]
+        if std_rows:
+            standard = {"lodging": std_rows[0]["lodging_max"], "mie": std_rows[0]["meals"]}
     nsa_only = [p for p in parsed if not p["is_standard_rate"]]
 
-    return {
+    out = {
         "state": state_upper,
         "fiscal_year": year,
         "nsa_count": len(nsa_only),
@@ -907,23 +1250,46 @@ async def lookup_state_rates(
             }
             for r in nsa_only
         ],
+        "source": source,
     }
+    if standard:
+        out["standard_rate"] = standard
+    return out
 
 
-@mcp.tool(annotations={"title": "Get M&IE Breakdown", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get M&IE Breakdown", **_OPEN_WORLD})
 async def get_mie_breakdown(fiscal_year: int | None = None) -> dict[str, Any]:
     """Get the M&IE (meals and incidental expenses) tier breakdown table.
 
     Returns all M&IE tiers with breakfast, lunch, dinner, incidental, and
-    first/last day (75%) amounts. Use this to show the meal component
-    breakdown when presenting per diem estimates.
+    first/last day (75%) amounts, for showing the meal component of a
+    per diem estimate. Bundled fiscal years come from GSA's published
+    M&IE breakdown with no API call.
 
     M&IE does NOT vary seasonally (unlike lodging). The tier is set per
     location and applies year-round.
     """
     year = _validate_fiscal_year(fiscal_year, field="fiscal_year")
-    data = await _get(f"conus/mie/{year}")
+    snap = snapshot.load_year(year)
+    if snap is not None:
+        return {
+            "fiscal_year": year,
+            "tiers": [
+                {
+                    "total": t["total"],
+                    "breakfast": t["breakfast"],
+                    "lunch": t["lunch"],
+                    "dinner": t["dinner"],
+                    "incidental": t["incidental"],
+                    "first_last_day_75pct": t["first_last_day"],
+                }
+                for t in snap.mie_tiers
+            ],
+            "source": snap.source,
+        }
 
+    path = f"conus/mie/{year}"
+    data = await _get(path)
     if isinstance(data, list):
         tiers_raw = data
     else:
@@ -951,20 +1317,32 @@ async def get_mie_breakdown(fiscal_year: int | None = None) -> dict[str, Any]:
             "first_last_day_75pct": first_last,
         })
 
-    return {"fiscal_year": year, "tiers": out}
+    return {"fiscal_year": year, "tiers": out, "source": _api_source(path)}
 
 
 # ---------------------------------------------------------------------------
 # Workflow tools
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Estimate Travel Cost", "readOnlyHint": True, "destructiveHint": False})
+_MONTH_NUMBER = {m: i for i, m in enumerate(_MONTH_SHORTS, 1)}
+
+
+def _fiscal_year_for_month(month: str, today: _date | None = None) -> int:
+    """FY of the next occurrence of a month (this month counts as next)."""
+    today = today or _date.today()
+    n = _MONTH_NUMBER[month]
+    cal_year = today.year if n >= today.month else today.year + 1
+    return cal_year + 1 if n >= 10 else cal_year
+
+
+@mcp.tool(annotations={"title": "Estimate Travel Cost", **_OPEN_WORLD})
 async def estimate_travel_cost(
     city: str,
     state: str,
     num_nights: int,
     travel_month: str | None = None,
     fiscal_year: int | None = None,
+    county: str | None = None,
 ) -> dict[str, Any]:
     """Estimate total per diem cost for a trip.
 
@@ -973,42 +1351,61 @@ async def estimate_travel_cost(
 
     travel_month: 3-letter abbreviation (Jan, Feb, ..., Dec). If omitted,
     uses the max monthly lodging rate (conservative estimate for IGCE).
+    fiscal_year: if omitted, the FY of the next occurrence of travel_month
+    (or the current FY when no month is given).
+    county: optional; selects the rate area when the city spans more than
+    one (see lookup_city_perdiem).
 
-    Does NOT include airfare or ground transportation. Add those separately.
+    No estimate is produced when the city is ambiguous or unresolved; the
+    candidate rate areas are returned instead.
+
+    Does NOT include airfare or ground transportation.
 
     Formula:
     - Lodging = nightly_rate * num_nights
     - M&IE = full_day_rate * (travel_days - 2) + first/last_day_rate * 2
     - Travel days = num_nights + 1
 
-    num_nights bounded 1-365. A single trip longer than a year is
-    unlikely to be covered by per diem.
+    num_nights bounded 1-365.
     """
     city_clean = _validate_city(city, field="city")
     state_upper = _validate_state(state, field="state")
     num_nights = _clamp(int(num_nights), field="num_nights", lo=1, hi=365)
-    year = _validate_fiscal_year(fiscal_year, field="fiscal_year")
     travel_month = _validate_travel_month(travel_month, field="travel_month")
+    if fiscal_year is None and travel_month:
+        year = _validate_fiscal_year(_fiscal_year_for_month(travel_month), field="fiscal_year")
+        fy_basis = f"next {travel_month} (FY{year})"
+    else:
+        year = _validate_fiscal_year(fiscal_year, field="fiscal_year")
+        fy_basis = "requested" if fiscal_year is not None else "current fiscal year"
+    county_clean = _validate_county(county)
+    query = {"city": city_clean, "state": state_upper, "fiscal_year": year}
+    if county_clean:
+        query["county"] = county_clean
 
     if state_upper in _OCONUS_STATES:
-        return {
-            "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
-            "oconus": True,
-            "error": _OCONUS_NOTE,
-        }
+        return {"query": query, "oconus": True, "error": _OCONUS_NOTE}
 
-    city_encoded = _normalize_city_for_url(city_clean)
-    response = await _get(f"city/{city_encoded}/state/{state_upper}/year/{year}")
-    best = _select_best_rate(response, query_city=city_clean)
-
-    if not best:
-        return {
-            "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
-            "error": (
-                f"No rates found for {city_clean}, {state_upper} in FY{year}."
-                + _no_rates_hint(year)
-            ),
+    res, source = await _lookup_city(city_clean, state_upper, year, county_clean)
+    note = _access_note() if source.get("kind") == "gsa_per_diem_api" else None
+    if res["status"] == "no_data":
+        out = {"query": query, "error": f"No rates found for {city_clean}, {state_upper} in FY{year}."
+               + _no_rates_hint(year)}
+        if note:
+            out["access_note"] = note
+        return out
+    if res["status"] != "resolved":
+        out = {
+            "query": query,
+            **_unresolved_payload(res, city_clean, state_upper),
+            "error": f"No single per diem rate can be determined for {city_clean}, {state_upper}; "
+                     f"no estimate was produced.",
+            "source": source,
         }
+        if note:
+            out["access_note"] = note
+        return out
+    best = res["rate"]
 
     month_fallback_note: str | None = None
     if travel_month and travel_month in best["lodging_by_month"]:
@@ -1028,9 +1425,9 @@ async def estimate_travel_cost(
     # produce a dollar estimate that silently prices a component at zero.
     if nightly <= 0 or daily_mie <= 0:
         return {
-            "query": {"city": city_clean, "state": state_upper, "fiscal_year": year},
+            "query": query,
             "matched_city": best["city"],
-            "match_type": best.get("match_type"),
+            "match_type": res["match_type"],
             "error": (
                 f"Rate data for {best['city']!r} is incomplete "
                 f"(nightly lodging={nightly}, M&IE={daily_mie}); refusing to "
@@ -1055,8 +1452,10 @@ async def estimate_travel_cost(
         "destination": best["city"],
         "state": state_upper,
         "fiscal_year": year,
-        "match_type": best.get("match_type"),
-        "match_note": _match_note(best.get("match_type"), city_clean, best),
+        "fiscal_year_basis": fy_basis,
+        "status": "resolved",
+        "match_type": res["match_type"],
+        "match_note": _match_note(res["match_type"], city_clean, best, res.get("other_candidates")),
         "num_nights": num_nights,
         "travel_days": travel_days,
         "nightly_lodging": nightly,
@@ -1066,26 +1465,32 @@ async def estimate_travel_cost(
         "mie_total": round(mie_total, 2),
         "grand_total": round(lodging_total + mie_total, 2),
         "rate_month": rate_month,
+        "source": source,
         "_note": "Per diem only (lodging + M&IE). Airfare and ground transport not included.",
     }
     if month_fallback_note:
         out["month_fallback_note"] = month_fallback_note
+    if res.get("other_candidates"):
+        out["other_candidates"] = res["other_candidates"]
+    if note:
+        out["access_note"] = note
     return out
 
 
 _MAX_COMPARE_LOCATIONS = 25
 
 
-@mcp.tool(annotations={"title": "Compare Locations", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Compare Locations", **_OPEN_WORLD})
 async def compare_locations(
     locations: list[dict[str, str]],
     fiscal_year: int | None = None,
 ) -> dict[str, Any]:
     """Compare per diem rates across multiple locations.
 
-    locations: list of {"city": "...", "state": "XX"} dicts, max 25 entries
-    (DEMO_KEY limits you to ~10 req/hr so this is generous). Returns rates
-    sorted by max daily total (highest first).
+    locations: list of {"city": "...", "state": "XX"} dicts (optionally
+    with "county"), max 25 entries. Returns rates sorted by max daily
+    total (highest first). Ambiguous or unresolved cities are listed with
+    their status and candidate rate areas instead of a rate.
 
     Useful for travel IGCE development when comparing destination costs.
     """
@@ -1102,7 +1507,7 @@ async def compare_locations(
 
     # Pre-validate everything first so we fail fast on bad input rather
     # than halfway through a set of network calls.
-    prepared: list[tuple[str, str, str]] = []
+    prepared: list[tuple[str, str, str | None]] = []
     for i, loc in enumerate(locations):
         if not isinstance(loc, dict):
             raise ValueError(
@@ -1111,16 +1516,17 @@ async def compare_locations(
         try:
             city_clean = _validate_city(loc.get("city"), field=f"locations[{i}].city")
             state_upper = _validate_state(loc.get("state"), field=f"locations[{i}].state")
+            county_clean = _validate_county(loc.get("county"), field=f"locations[{i}].county")
         except ValueError as e:
             results.append({
                 "location": f"{loc.get('city','?')}, {loc.get('state','?')}",
                 "error": str(e),
             })
             continue
-        prepared.append((city_clean, state_upper, _normalize_city_for_url(city_clean)))
+        prepared.append((city_clean, state_upper, county_clean))
 
-    import asyncio
-    for city_clean, state_upper, city_encoded in prepared:
+    used_api = False
+    for city_clean, state_upper, county_clean in prepared:
         # Label rows by the QUERY, not the matched entry: labeling Arlington
         # by its matched NSA produced nonsense like "District of Columbia, VA".
         label = f"{city_clean}, {state_upper}"
@@ -1128,13 +1534,15 @@ async def compare_locations(
             results.append({"location": label, "oconus": True, "error": _OCONUS_NOTE})
             continue
         try:
-            response = await _get(f"city/{city_encoded}/state/{state_upper}/year/{year}")
-            best = _select_best_rate(response, query_city=city_clean)
-            if best:
+            res, source = await _lookup_city(city_clean, state_upper, year, county_clean)
+            used_api = used_api or source.get("kind") == "gsa_per_diem_api"
+            if res["status"] == "resolved":
+                best = res["rate"]
                 results.append({
                     "location": label,
+                    "status": "resolved",
                     "matched_city": best["city"],
-                    "match_type": best.get("match_type"),
+                    "match_type": res["match_type"],
                     "is_standard_rate": best["is_standard_rate"],
                     "lodging_max": best["lodging_max"],
                     "lodging_min": best["lodging_min"],
@@ -1142,11 +1550,19 @@ async def compare_locations(
                     "max_daily_total": best["lodging_max"] + best["meals"],
                     "seasonal": best["has_seasonal_variation"],
                 })
-            else:
+            elif res["status"] == "no_data":
                 results.append({
                     "location": label,
                     "error": "no rates found" + _no_rates_hint(year),
                 })
+            else:
+                entry = {"location": label, **_unresolved_payload(res, city_clean, state_upper)}
+                if "candidates" in entry:
+                    entry["candidates"] = [
+                        {"destination": c["destination"], "max_daily_total": c["max_daily_total"]}
+                        for c in entry["candidates"]
+                    ]
+                results.append(entry)
         except (RuntimeError, ToolError) as e:
             results.append({
                 "location": label,
@@ -1154,7 +1570,11 @@ async def compare_locations(
             })
 
     results.sort(key=lambda x: x.get("max_daily_total", 0), reverse=True)
-    return {"fiscal_year": year, "locations": results}
+    out: dict[str, Any] = {"fiscal_year": year, "locations": results}
+    note = _access_note() if used_api else None
+    if note:
+        out["access_note"] = note
+    return out
 
 
 # ---------------------------------------------------------------------------

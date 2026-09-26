@@ -1,0 +1,42 @@
+name: GSA per diem source watch
+
+# Weekly check that GSA's published per diem files still match the snapshot
+# bundled in gsa-perdiem-mcp. Opens (or updates) one issue on any difference.
+# Never modifies data or publishes; refreshing is a reviewed release.
+
+on:
+  schedule:
+    - cron: '17 13 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compare GSA sources with bundled manifest
+        id: check
+        run: |
+          set +e
+          python servers/gsa-perdiem-mcp/scripts/check_sources.py > report.md
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+          cat report.md
+      - name: Open or update issue
+        if: steps.check.outputs.status != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="GSA per diem source files changed"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body-file report.md
+          else
+            gh issue create --title "$title" --body-file report.md
+          fi

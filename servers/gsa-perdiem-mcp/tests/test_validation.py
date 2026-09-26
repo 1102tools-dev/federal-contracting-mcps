@@ -543,7 +543,7 @@ def test_lookup_city_handles_shape_variance():
 def test_lookup_state_rates_handles_none_response():
     orig = _mock_get(None)
     try:
-        r = asyncio.run(srv.lookup_state_rates(state="CA"))
+        r = asyncio.run(srv.lookup_state_rates(state="CA", fiscal_year=2020))
         assert r["nsa_count"] == 0
         assert r["rates"] == []
     finally:
@@ -557,7 +557,7 @@ def test_lookup_state_rates_filters_out_standard_rate():
     ]}]})
     try:
         # CO, not AK: OCONUS states short-circuit before the API call now.
-        r = asyncio.run(srv.lookup_state_rates(state="CO"))
+        r = asyncio.run(srv.lookup_state_rates(state="CO", fiscal_year=2020))
         assert r["nsa_count"] == 1
         assert r["rates"][0]["city"] == "Anchorage"
     finally:
@@ -570,7 +570,7 @@ def test_mie_breakdown_handles_list_response():
         {"total": 74, "breakfast": 18},  # missing FirstLastDay
     ])
     try:
-        r = asyncio.run(srv.get_mie_breakdown())
+        r = asyncio.run(srv.get_mie_breakdown(fiscal_year=2020))
         assert len(r["tiers"]) == 2
         # 2nd tier should compute first_last as total * 0.75
         assert r["tiers"][1]["first_last_day_75pct"] == round(74 * 0.75, 2)
@@ -581,7 +581,7 @@ def test_mie_breakdown_handles_list_response():
 def test_mie_breakdown_handles_none_response():
     orig = _mock_get(None)
     try:
-        r = asyncio.run(srv.get_mie_breakdown())
+        r = asyncio.run(srv.get_mie_breakdown(fiscal_year=2020))
         assert r["tiers"] == []
     finally:
         _restore_get(orig)
@@ -590,7 +590,7 @@ def test_mie_breakdown_handles_none_response():
 def test_mie_breakdown_handles_none_tier():
     orig = _mock_get([{"total": 68}, None, {"total": 80}])
     try:
-        r = asyncio.run(srv.get_mie_breakdown())
+        r = asyncio.run(srv.get_mie_breakdown(fiscal_year=2020))
         assert len(r["tiers"]) == 3
         assert r["tiers"][1]["total"] == 0  # None tier coerced to zeros
     finally:
@@ -600,7 +600,7 @@ def test_mie_breakdown_handles_none_tier():
 def test_mie_breakdown_handles_string_total():
     orig = _mock_get([{"total": "68", "breakfast": "16"}])
     try:
-        r = asyncio.run(srv.get_mie_breakdown())
+        r = asyncio.run(srv.get_mie_breakdown(fiscal_year=2020))
         assert r["tiers"][0]["total"] == 68
         assert r["tiers"][0]["breakfast"] == 16
     finally:
@@ -696,13 +696,17 @@ def test_get_handles_timeout():
         asyncio.run(srv._get("x"))
 
 
-def test_get_formats_403():
+def test_get_formats_403(monkeypatch):
+    monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
+    monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
     _install_fake_client(_FakeResp(403, "{}", "application/json"))
     with pytest.raises(ToolError, match="API key rejected"):
         asyncio.run(srv._get("x"))
 
 
-def test_get_formats_429():
+def test_get_formats_429(monkeypatch):
+    monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
+    monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
     _install_fake_client(_FakeResp(429, '{"error":{}}', "application/json"))
     with pytest.raises(ToolError, match="Rate limited"):
         asyncio.run(srv._get("x"))
@@ -1138,7 +1142,7 @@ def test_estimate_travel_cost_365_nights_ok():
 def test_mie_breakdown_handles_empty_list():
     orig = _mock_get([])
     try:
-        r = asyncio.run(srv.get_mie_breakdown())
+        r = asyncio.run(srv.get_mie_breakdown(fiscal_year=2020))
         assert r["tiers"] == []
     finally:
         _restore_get(orig)
@@ -1147,7 +1151,7 @@ def test_mie_breakdown_handles_empty_list():
 def test_mie_breakdown_handles_missing_first_last():
     orig = _mock_get([{"total": 100, "breakfast": 20, "lunch": 25, "dinner": 50, "incidental": 5}])
     try:
-        r = asyncio.run(srv.get_mie_breakdown())
+        r = asyncio.run(srv.get_mie_breakdown(fiscal_year=2020))
         assert r["tiers"][0]["first_last_day_75pct"] == 75.0
     finally:
         _restore_get(orig)
@@ -1156,7 +1160,7 @@ def test_mie_breakdown_handles_missing_first_last():
 def test_mie_breakdown_handles_string_totals():
     orig = _mock_get([{"total": "68", "FirstLastDay": "51"}])
     try:
-        r = asyncio.run(srv.get_mie_breakdown())
+        r = asyncio.run(srv.get_mie_breakdown(fiscal_year=2020))
         assert r["tiers"][0]["total"] == 68.0
         assert r["tiers"][0]["first_last_day_75pct"] == 51.0
     finally:
@@ -1289,7 +1293,7 @@ def test_lookup_state_rates_handles_only_standard():
     """State with only standard rate returns empty NSA list."""
     orig = _mock_get({"rates": [{"rate": [{"city":"Standard Rate","meals":68,"months":{"month":[{"short":"Jan","value":110}]}}]}]})
     try:
-        r = asyncio.run(srv.lookup_state_rates(state="WV"))
+        r = asyncio.run(srv.lookup_state_rates(state="WV", fiscal_year=2020))
         assert r["nsa_count"] == 0
     finally:
         _restore_get(orig)
@@ -1328,7 +1332,7 @@ def test_mie_breakdown_handles_dict_with_unknown_key():
     """API returns dict without mieData or rates; should return empty list."""
     orig = _mock_get({"someOtherKey": "value"})
     try:
-        r = asyncio.run(srv.get_mie_breakdown())
+        r = asyncio.run(srv.get_mie_breakdown(fiscal_year=2020))
         assert r["tiers"] == []
     finally:
         _restore_get(orig)
