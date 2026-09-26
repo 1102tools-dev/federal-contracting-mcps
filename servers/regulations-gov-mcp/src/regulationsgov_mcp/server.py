@@ -44,11 +44,6 @@ mcp = MCPServer(
     # Regulations.gov authenticates in the query string and HTTPX logs full
     # request URLs at INFO. Do not allow credentials into host stderr logs.
     log_level="WARNING",
-    instructions=(
-        "Before the first Regulations.gov data call in a session, call "
-        "get_access_status and disclose the DEMO_KEY limit when "
-        "REGULATIONS_GOV_API_KEY is not configured."
-    ),
 )
 
 
@@ -372,6 +367,23 @@ def _validate_id(value: Any, *, field: str) -> str:
 
 def _get_api_key() -> str:
     return os.environ.get("REGULATIONS_GOV_API_KEY", "").strip() or "DEMO_KEY"
+
+
+# Data results carry the DEMO_KEY limit as a fact about the result rather than
+# as server instructions, which directory policies discourage.
+_DEMO_KEY_NOTE = (
+    "Regulations.gov data is using the shared api.data.gov DEMO_KEY "
+    "(about 10 requests per hour, live-measured). A free "
+    "REGULATIONS_GOV_API_KEY from "
+    "https://open.gsa.gov/api/regulationsgov/#getting-started allows "
+    "1,000 per hour."
+)
+
+
+def _with_access_note(result: dict[str, Any]) -> dict[str, Any]:
+    if _get_api_key() == "DEMO_KEY":
+        result["access_note"] = _DEMO_KEY_NOTE
+    return result
 
 
 @mcp.tool(
@@ -733,7 +745,9 @@ async def search_documents(
 
     result = await _get("documents", params)
     ctx = f"agency_id={agency_id!r}, document_type={document_type!r}"
-    return _flag_no_data(result, context=ctx, page_size=page_size, page_number=page_number)
+    return _with_access_note(
+        _flag_no_data(result, context=ctx, page_size=page_size, page_number=page_number)
+    )
 
 
 @mcp.tool(annotations={"title": "Get Document Detail", "readOnlyHint": True, "destructiveHint": False})
@@ -754,7 +768,7 @@ async def get_document_detail(
     params: dict[str, Any] = {}
     if include_attachments:
         params["include"] = "attachments"
-    return await _get(f"documents/{document_id}", params)
+    return _with_access_note(await _get(f"documents/{document_id}", params))
 
 
 @mcp.tool(annotations={"title": "Search Comments", "readOnlyHint": True, "destructiveHint": False})
@@ -817,7 +831,9 @@ async def search_comments(
         f"agency_id={agency_id!r}, docket_id={docket_id!r}, "
         f"comment_on_id={comment_on_id!r}"
     )
-    return _flag_no_data(result, context=ctx, page_size=page_size, page_number=page_number)
+    return _with_access_note(
+        _flag_no_data(result, context=ctx, page_size=page_size, page_number=page_number)
+    )
 
 
 @mcp.tool(annotations={"title": "Get Comment Detail", "readOnlyHint": True, "destructiveHint": False})
@@ -837,7 +853,7 @@ async def get_comment_detail(
     params: dict[str, Any] = {}
     if include_attachments:
         params["include"] = "attachments"
-    return await _get(f"comments/{comment_id}", params)
+    return _with_access_note(await _get(f"comments/{comment_id}", params))
 
 
 @mcp.tool(annotations={"title": "Search Dockets", "readOnlyHint": True, "destructiveHint": False})
@@ -899,7 +915,9 @@ async def search_dockets(
 
     result = await _get("dockets", params)
     ctx = f"agency_id={agency_id!r}, docket_type={docket_type!r}"
-    return _flag_no_data(result, context=ctx, page_size=page_size, page_number=page_number)
+    return _with_access_note(
+        _flag_no_data(result, context=ctx, page_size=page_size, page_number=page_number)
+    )
 
 
 @mcp.tool(annotations={"title": "Get Docket Detail", "readOnlyHint": True, "destructiveHint": False})
@@ -912,7 +930,7 @@ async def get_docket_detail(docket_id: str) -> dict[str, Any]:
     docket_id format: FAR-2023-0008, DARS-2025-0071, SBA-2024-0002
     """
     docket_id = _validate_id(docket_id, field="docket_id")
-    return await _get(f"dockets/{docket_id}")
+    return _with_access_note(await _get(f"dockets/{docket_id}"))
 
 
 # ---------------------------------------------------------------------------
@@ -1007,7 +1025,7 @@ async def open_comment_periods(
             f"{len(undated)} open document(s) report no commentEndDate; they "
             f"are listed after the dated ones instead of being dropped."
         )
-    return response
+    return _with_access_note(response)
 
 
 @mcp.tool(annotations={"title": "FAR Case History", "readOnlyHint": True, "destructiveHint": False})
@@ -1079,7 +1097,7 @@ async def far_case_history(docket_id: str) -> dict[str, Any]:
             f"Docket has {total_documents} documents; the {len(documents)} "
             f"most recent are shown ({_MAX_DOC_PAGES} pages of 250)."
         )
-    return out
+    return _with_access_note(out)
 
 
 # ---------------------------------------------------------------------------
