@@ -64,7 +64,7 @@ The first release should be a new tag, not a rewrite of an existing public tag.
 ## Published ChatGPT metadata
 
 The five original baseline `tools-contract.json` files were captured from the live hosted
-endpoints; GSA Per Diem and Regulations.gov baselines were generated from source at their first hosted release (v1.0.32). The GSA Per Diem baseline was regenerated for 1.1.0 (bundled data, `openWorldHint`, no instructions) with `uv run --python 3.12 --frozen --project servers/gsa-perdiem-mcp python scripts/check_hosted_contract.py gsa-perdiem --write` (Python 3.13+ strips docstring indentation, so always regenerate under 3.12); review the diff before committing any regenerated baseline. Source and built-container checks must match them exactly, including
+endpoints; GSA Per Diem and Regulations.gov baselines were generated from source at their first hosted release (v1.0.32). The GSA Per Diem baseline was regenerated for 1.1.0 (bundled data, `openWorldHint`, no instructions) with `uv run --python 3.12 --frozen --project servers/gsa-perdiem-mcp python scripts/check_hosted_contract.py gsa-perdiem --write` (Python 3.13+ strips docstring indentation, so always regenerate under 3.12); review the diff before committing any regenerated baseline. The Regulations.gov baseline was regenerated the same way for 2.0.0, when `open_comment_periods` and `far_case_history` gained `page_size` and `page_number`. Source and built-container checks must match them exactly, including
 tool names, descriptions, schemas, annotations, and metadata. Containers use
 Python 3.12, matching the currently hosted runtime; newer Python versions can
 format docstrings differently. No server instructions are currently published;
