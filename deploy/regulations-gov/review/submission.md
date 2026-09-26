@@ -11,7 +11,7 @@ Terms: https://regulations-gov.1102tools.com/terms
 Source: https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/regulations-gov-mcp
 Category: Government / legal and regulatory.
 
-Status: prepared, **not ready to submit**. Production runs 1.1.0; this record describes 2.0.0, which is not yet deployed. Resolve every item under "Open before submission" first.
+Status: prepared, **not ready to submit**. 2.0.0 is released and verified in production (tag `regulations-gov/v2.0.0`, commit `0691651`, 2026-09-26). Resolve every item under "Open before submission" first.
 
 ## Open before submission
 
@@ -19,7 +19,7 @@ Status: prepared, **not ready to submit**. Production runs 1.1.0; this record de
 2. **OpenAI demo recording URL.** Record the principal tools (document search, docket detail, open comment periods with paging, FAR case history) on production 2.0.0.
 3. **OpenAI domain verification.** The portal issues the `/.well-known/openai-apps-challenge` token; add it to `deploy/regulations-gov/src/public-docs.ts` and release.
 4. **Production tool scan** in each portal after the final deployment.
-5. **Capacity and origin testing** through each platform's connector: cold start, representative concurrency, p95 latency, 429/503 counts, and use of the 950-per-hour upstream budget. The Worker rejects a cross-origin `Origin` header (403 for `https://claude.ai` and `https://chatgpt.com` in the audit); server-side connector calls send none. Add allowed origins only if a supported client needs them.
+5. **Capacity and origin testing** through each platform's connector: cold start, representative concurrency, p95 latency, 429/503 counts, and use of the 950-per-hour upstream budget. The Worker rejects a cross-origin `Origin` header (403 for `https://claude.ai` and `https://chatgpt.com` in the audit); server-side connector calls send none. Add allowed origins only if a supported client needs them. Measured directly on 2026-09-26 (not through a platform connector): 40 requests at 10 concurrent returned all 200 with no tool errors, p95 0.74 s; the service's own Origin returns 200.
 6. **Cloudflare retention.** The privacy notice states Cloudflare's documented 7-day maximum for Workers Logs. Confirm the account has no Logpush or other log export before accepting a privacy attestation.
 7. **Portal access.** Recheck on the publishing account that the Claude directory portal is open to it (announced September 25 for paid Claude plans).
 
@@ -79,17 +79,15 @@ Negative:
 ## Verification record
 
 Source 2.0.0 (branch `claude/directory-audit-fixes`, 2026-09-26): offline suite 122 passed, 119 live-gated skipped (241 collected); release guards 57 passed; shared pacing and admission 100 passed; `scripts/validate_versions.py` passed. `tools-contract.json` was regenerated under Python 3.12. Only `open_comment_periods` and `far_case_history` changed (new `page_size`/`page_number` inputs and descriptions); annotations are unchanged.
-Live checks on 2026-09-26, before the DEMO_KEY fallback was removed: `X-Api-Key` header authentication returned 5 FAR dockets of 451. Default `open_comment_periods` returned 25 of 70 open documents with `next_page_number: 2` in 9,798 characters, down from 26,870 characters of structured content at 1.1.0; page 2 returned documents 26-50. The documents-search aggregations `far_case_history` summarizes (`documentType`, `withinCommentPeriod`) were confirmed live for FAR-2023-0008. `far_case_history` itself was tested offline only: the shared DEMO_KEY hit its hourly limit before the live call.
+Live checks on 2026-09-26, before the DEMO_KEY fallback was removed: `X-Api-Key` header authentication returned 5 FAR dockets of 451. Default `open_comment_periods` returned 25 of 70 open documents with `next_page_number: 2` in 9,798 characters, down from 26,870 characters of structured content at 1.1.0; page 2 returned documents 26-50. The documents-search aggregations `far_case_history` summarizes (`documentType`, `withinCommentPeriod`) were confirmed live for FAR-2023-0008. `far_case_history` was then verified end to end, first on the release image with a registered key and then on production (FAR-2023-0008: 5 documents, 4 Proposed Rule and 1 Supporting & Related Material).
 Mock directory review on 2026-09-26 (Claude Code 2.1.281, hosted 1.0.11, the 11 cases above) found gaps that 1.1.0 fixed: missing `openWorldHint`, oversized results, and key-setup wording shown to hosted users. **The cases have not been rerun on 1.1.0 or 2.0.0.** Say that they found defects that were fixed, not that the final release passed them.
 Production 1.1.0 on 2026-09-26: `/health` ok at `001e536` with 9 tools; `scripts/check_hosted_health.py regulations-gov` passed.
-Production 2.0.0: pending deployment.
+Production 2.0.0 on 2026-09-26 (release run 36269434859, all jobs passed): `/health` ok, 9 tools, `0691651`; PyPI and the MCP Registry list 2.0.0; the health check passed; all 9 tools called on production returned results, with `get_access_status` reporting `hosted_publisher_key`; the new privacy notice is served.
 
 ## Remaining user steps
 
-1. Review and merge the PR, then push tag `regulations-gov/v2.0.0` (scoped release).
-2. Confirm the workflow's production verification passed and the scheduled health check is green.
-3. Resolve "Open before submission" above, and rerun the mock directory cases against production 2.0.0.
-4. Test every tool on production in Claude (custom connector) and ChatGPT (Developer Mode).
-5. OpenAI: create the plugin draft, enter the short description, listing copy, annotation justifications, test cases, starter prompts, demo URL, and icons from `review/assets/`. No screenshots (no UI).
-6. Claude: submit at claude.ai/directory/manage with the listing copy, `docs/directory-icons/regulations-gov.png`, the three starter prompts, and the support/privacy URLs. On the data-handling step, state that the server relays the public Regulations.gov API with a registered api.data.gov key and does not control the Regulations.gov endpoint.
-7. Review and accept each portal's attestations yourself.
+1. Resolve "Open before submission" above, and rerun the mock directory cases against production 2.0.0.
+2. Test every tool on production in Claude (custom connector) and ChatGPT (Developer Mode).
+3. OpenAI: create the plugin draft, enter the short description, listing copy, annotation justifications, test cases, starter prompts, demo URL, and icons from `review/assets/`. No screenshots (no UI).
+4. Claude: submit at claude.ai/directory/manage with the listing copy, `docs/directory-icons/regulations-gov.png`, the three starter prompts, and the support/privacy URLs. On the data-handling step, state that the server relays the public Regulations.gov API with a registered api.data.gov key and does not control the Regulations.gov endpoint.
+5. Review and accept each portal's attestations yourself.

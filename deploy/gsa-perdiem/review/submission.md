@@ -11,7 +11,7 @@ Terms: https://gsa-perdiem.1102tools.com/terms
 Source: https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp
 Category: Government / travel.
 
-Status: prepared, **not ready to submit**. Production runs 1.1.1; this record describes 1.2.0, which is not yet deployed. Resolve every item under "Open before submission" first.
+Status: prepared, **not ready to submit**. 1.2.0 is released and verified in production (tag `gsa-perdiem/v1.2.0`, commit `0691651`, 2026-09-26). Resolve every item under "Open before submission" first.
 
 ## Open before submission
 
@@ -19,7 +19,7 @@ Status: prepared, **not ready to submit**. Production runs 1.1.1; this record de
 2. **OpenAI demo recording URL.** Record the principal tools (ZIP, city with an ambiguous result, estimate, compare) on production 1.2.0.
 3. **OpenAI domain verification.** The portal issues the `/.well-known/openai-apps-challenge` token; add it to `deploy/gsa-perdiem/src/public-docs.ts` and release.
 4. **Production tool scan** in each portal after the final deployment.
-5. **Capacity and origin testing** through each platform's connector: cold start, representative concurrency, p95 latency, 429/503 counts, and upstream budget use. The Worker rejects a cross-origin `Origin` header (403 for `https://claude.ai` and `https://chatgpt.com` in the audit); server-side connector calls send none. Add allowed origins only if a supported client needs them.
+5. **Capacity and origin testing** through each platform's connector: cold start, representative concurrency, p95 latency, 429/503 counts, and upstream budget use. The Worker rejects a cross-origin `Origin` header (403 for `https://claude.ai` and `https://chatgpt.com` in the audit); server-side connector calls send none. Add allowed origins only if a supported client needs them. Measured directly on 2026-09-26 (not through a platform connector): 40 requests at 10 concurrent returned all 200 with no tool errors, p95 0.32 s; the service's own Origin returns 200.
 6. **Cloudflare retention.** The privacy notice states Cloudflare's documented 7-day maximum for Workers Logs. Confirm the account has no Logpush or other log export before accepting a privacy attestation.
 7. **Portal access.** Recheck on the publishing account that the Claude directory portal is open to it (announced September 25 for paid Claude plans).
 
@@ -80,14 +80,12 @@ Source 1.2.0 (branch `claude/directory-audit-fixes`, 2026-09-26): offline suite 
 `X-Api-Key` header authentication checked against `api.gsa.gov` on 2026-09-26: the header and the old `api_key` query parameter draw on the same quota, and an invalid key returns 403.
 Live parity against the GSA API on 2026-09-26 with a registered key (1.1.x): every sampled ZIP (about 110 per fiscal year, FY2026 and FY2027) matched the bundled files; state lists for VA, MD, CA, MA, TX, CT, PA, and AZ matched; the city corpus resolved as expected.
 Production 1.1.1 on 2026-09-26: `/health` ok at `001e536`; the updated `scripts/check_hosted_health.py` passed with a live GSA city lookup; all 79 monitor cities resolved as exact GSA API matches for FY2027.
-Production 1.2.0: pending deployment.
+Production 1.2.0 on 2026-09-26 (release run 36269423238, all jobs passed): `/health` ok, 7 tools, `0691651`; PyPI and the MCP Registry list 1.2.0; the health check passed with a GSA city lookup (Visalia, CA); every tool called on production returned the expected result (ZIP 01011 `ambiguous`, McLean `resolved`, Anchorage OCONUS); the new privacy notice is served. Before release, the exact image passed `verify_hosted_release.py` with upstream calls on a registered key.
 
 ## Remaining user steps
 
-1. Review and merge the PR, then push tag `gsa-perdiem/v1.2.0` (scoped release; other services are not redeployed).
-2. Confirm the workflow's production verification passed, `/health` reports the tag commit, and the scheduled health check is green.
-3. Resolve "Open before submission" above.
-4. Test every tool on production in Claude (custom connector) and ChatGPT (Developer Mode).
-5. OpenAI: create the plugin draft (verified individual publisher, no-auth MCP), enter the short description, listing copy, annotation justifications, test cases, starter prompts, demo URL, and icons from `review/assets/`. No screenshots (no UI).
-6. Claude: submit at claude.ai/directory/manage with the listing copy, `docs/directory-icons/gsa-perdiem.png`, the three starter prompts, and the support/privacy URLs.
-7. Review and accept each portal's attestations yourself. A saved draft, submitted review, approval, and directory publication are separate states.
+1. Resolve "Open before submission" above.
+2. Test every tool on production in Claude (custom connector) and ChatGPT (Developer Mode).
+3. OpenAI: create the plugin draft (verified individual publisher, no-auth MCP), enter the short description, listing copy, annotation justifications, test cases, starter prompts, demo URL, and icons from `review/assets/`. No screenshots (no UI).
+4. Claude: submit at claude.ai/directory/manage with the listing copy, `docs/directory-icons/gsa-perdiem.png`, the three starter prompts, and the support/privacy URLs.
+5. Review and accept each portal's attestations yourself. A saved draft, submitted review, approval, and directory publication are separate states.
