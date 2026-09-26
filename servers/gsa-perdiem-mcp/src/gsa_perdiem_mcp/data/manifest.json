@@ -1,0 +1,213 @@
+{
+  "builder": 1,
+  "census": {
+    "county": {
+      "bytes": 126639,
+      "sha256": "9f6e5f6eb6ac2f5e9a36d5fd01dec77991bddc75118f748a069441a4782970d6",
+      "url": "https://www2.census.gov/geo/docs/reference/codes2020/national_county2020.txt"
+    },
+    "cousub": {
+      "bytes": 2259730,
+      "sha256": "2f292e90e56b1c1b085402bef6e4dc9d9404b0006e44988860226759217c7cf3",
+      "url": "https://www2.census.gov/geo/docs/reference/codes2020/national_cousub2020.txt"
+    },
+    "place_by_county": {
+      "bytes": 2736928,
+      "sha256": "9996494d33cf6ee4527491508aa1b8dae85dcff3a979886e19b0b375e5d06ec6",
+      "url": "https://www2.census.gov/geo/docs/reference/codes2020/national_place_by_county2020.txt"
+    }
+  },
+  "fiscal_years": {
+    "2021": {
+      "counts": {
+        "ambiguous_zips": 2037,
+        "destinations": 319,
+        "zip_rows": 42601,
+        "zips": 40455
+      },
+      "file": "fy2021.json.gz",
+      "file_sha256": "beb9d883878789ca8ae81394c3f020a44981a670e713f637ef849dfa4fa27b1a",
+      "fiscal_year": 2021,
+      "mie": {
+        "bytes": 7497,
+        "sha256": "5b72bc20d6a3e8c04149b26592fd682d1c38654960a92ebeb487fee7c019a20a",
+        "url": "https://www.gsa.gov/system/files/MIE_Breakdown_FY2019-present.docx"
+      },
+      "rates": {
+        "bytes": 43622,
+        "sha256": "6ae0de73ea097553d533f54916a6a9b37b26b32bce0fa13332f653123149536b",
+        "url": "https://www.gsa.gov/system/files/FY2021_PerDiemMasterRatesFile.xlsx"
+      },
+      "zip": {
+        "bytes": 8976384,
+        "published": "2020-07-10",
+        "sha256": "d51e6f444d7938fbdbabf0c7693fbb8b433608eac1eb13aeb9e50de60e446caa",
+        "url": "https://www.gsa.gov/system/files/Zip_Code_at_7-10-2020_91805_AM.xls"
+      }
+    },
+    "2022": {
+      "counts": {
+        "ambiguous_zips": 2037,
+        "destinations": 319,
+        "zip_rows": 42601,
+        "zips": 40455
+      },
+      "file": "fy2022.json.gz",
+      "file_sha256": "7c2992245ad6dfeaec6b7411c7cbec8bec144aba99bc25dcd4f7de5641738753",
+      "fiscal_year": 2022,
+      "mie": {
+        "bytes": 17962,
+        "sha256": "b32217c1d4780e73691ed3f5e9e743b3431c628501e7831c3b0d5fffdade845e",
+        "url": "https://www.gsa.gov/system/files/FY%202022%20MIE%20Breakdown_0.docx"
+      },
+      "rates": {
+        "bytes": 44119,
+        "sha256": "fd49c0c217056b341e62311497b8ac00484c60385abc0e95e0649ac55ba89590",
+        "url": "https://www.gsa.gov/system/files/FY2022_PerDiemMasterRatesFile.xlsx"
+      },
+      "zip": {
+        "bytes": 3377163,
+        "published": "2021-08-12",
+        "sha256": "b69b7c61c6d88856cf16c2e6b45db5ac9d01d077fde3324518919ceae7872fd5",
+        "url": "https://www.gsa.gov/system/files/FY2022_ZipCodeFile.xlsx"
+      }
+    },
+    "2023": {
+      "counts": {
+        "ambiguous_zips": 2043,
+        "destinations": 316,
+        "zip_rows": 42593,
+        "zips": 40439
+      },
+      "file": "fy2023.json.gz",
+      "file_sha256": "012a88a36878ba4c67a2451e471324dbd656ca9c292e8b88d5b79cf2fc1c1bcc",
+      "fiscal_year": 2023,
+      "mie": {
+        "bytes": 17962,
+        "sha256": "b32217c1d4780e73691ed3f5e9e743b3431c628501e7831c3b0d5fffdade845e",
+        "url": "https://www.gsa.gov/system/files/FY%202022%20MIE%20Breakdown_0.docx"
+      },
+      "rates": {
+        "bytes": 44635,
+        "sha256": "d3f886db9514f0542c5065743b83486168e0c62041da0584b96cfe109d5d32f0",
+        "url": "https://www.gsa.gov/system/files/FY2023_PerDiemMasterRatesFile.xlsx"
+      },
+      "zip": {
+        "bytes": 3360617,
+        "published": "2022-07-19",
+        "sha256": "221307631945039283ea207debf703df7ff2fad79b43c38539f11ce2805ab2a8",
+        "url": "https://www.gsa.gov/system/files/FY2023_ZIPCodeFile_081122.xlsx"
+      }
+    },
+    "2024": {
+      "counts": {
+        "ambiguous_zips": 1900,
+        "destinations": 302,
+        "zip_rows": 42431,
+        "zips": 40437
+      },
+      "file": "fy2024.json.gz",
+      "file_sha256": "e5124874a8388229e107fb497f4c5a987f60699fde89703a6f2b8b673b432034",
+      "fiscal_year": 2024,
+      "mie": {
+        "bytes": 17962,
+        "sha256": "b32217c1d4780e73691ed3f5e9e743b3431c628501e7831c3b0d5fffdade845e",
+        "url": "https://www.gsa.gov/system/files/FY%202022%20MIE%20Breakdown_0.docx"
+      },
+      "rates": {
+        "bytes": 43559,
+        "sha256": "87a02474eb44d00991bc9bc7765b57b1cecc471279fb6e3e19e93fcf0fda9f96",
+        "url": "https://www.gsa.gov/system/files/FY2024_PerDiemMasterRatesFile_correction.xlsx"
+      },
+      "zip": {
+        "bytes": 3346390,
+        "published": "2023-07-11",
+        "sha256": "4ec928ebec736a715953731d450a0c6f0b258eb920fef68ebab04bd404ab8bec",
+        "url": "https://www.gsa.gov/system/files/FY2024_ZIPCodeFile_071123.xlsx"
+      }
+    },
+    "2025": {
+      "counts": {
+        "ambiguous_zips": 1839,
+        "destinations": 296,
+        "zip_rows": 42358,
+        "zips": 40426
+      },
+      "file": "fy2025.json.gz",
+      "file_sha256": "d2ff68511e417a720afc5bcba5f6fef60f2af49e8ce023f57641a1df556a968e",
+      "fiscal_year": 2025,
+      "mie": {
+        "bytes": 18668,
+        "sha256": "cc55916865cb21268a1fcbd1b75c5077698207033b41672fd1142f385c8fa4ef",
+        "url": "https://www.gsa.gov/system/files/FY%202025%20MIE%20Breakdown.docx"
+      },
+      "rates": {
+        "bytes": 42242,
+        "sha256": "82e7312b20f9421812f9c738b11e8075492180c2a762a26b8f1afa866f3f9039",
+        "url": "https://www.gsa.gov/system/files/FY2025_PerDiemMasterRatesFile.xlsx"
+      },
+      "zip": {
+        "bytes": 3338813,
+        "published": "2024-08-16",
+        "sha256": "51838199daa360cceaa147e9b0e0cf4a9a58317b8c763d8a8c7a8c987976324b",
+        "url": "https://www.gsa.gov/system/files/FY2025_ZipCodeFile_080824.xlsx"
+      }
+    },
+    "2026": {
+      "counts": {
+        "ambiguous_zips": 1839,
+        "destinations": 296,
+        "zip_rows": 42358,
+        "zips": 40426
+      },
+      "file": "fy2026.json.gz",
+      "file_sha256": "83176cc133ea7d38c75ed86c560f53d6332999778e140ad61b70f5ad96ecb6c5",
+      "fiscal_year": 2026,
+      "mie": {
+        "bytes": 18668,
+        "sha256": "cc55916865cb21268a1fcbd1b75c5077698207033b41672fd1142f385c8fa4ef",
+        "url": "https://www.gsa.gov/system/files/FY%202025%20MIE%20Breakdown.docx"
+      },
+      "rates": {
+        "bytes": 42276,
+        "sha256": "5a3214fdafa1034799e2ff61d8997cface1a1ff0322be3efad78595b12b4e244",
+        "url": "https://www.gsa.gov/system/files/FY2026_PerDiemMasterRatesFile.xlsx"
+      },
+      "zip": {
+        "bytes": 3338820,
+        "published": "2025-08-14",
+        "sha256": "3278fa7bd7c04bf4337260c2e53f97e55b520a514e8820d5cfa681dad41a4824",
+        "url": "https://www.gsa.gov/system/files/FY2026_ZipCodeFile.xlsx"
+      }
+    },
+    "2027": {
+      "counts": {
+        "ambiguous_zips": 1839,
+        "destinations": 295,
+        "zip_rows": 42358,
+        "zips": 40426
+      },
+      "file": "fy2027.json.gz",
+      "file_sha256": "3adc584c27471f45bb55e8da775c0e2aa18bf204a1eb3ebd9fb424c2b0541fb6",
+      "fiscal_year": 2027,
+      "mie": {
+        "bytes": 18668,
+        "sha256": "cc55916865cb21268a1fcbd1b75c5077698207033b41672fd1142f385c8fa4ef",
+        "url": "https://www.gsa.gov/system/files/FY%202025%20MIE%20Breakdown.docx"
+      },
+      "rates": {
+        "bytes": 37380,
+        "sha256": "818af7d0e568228804f6e8d3d475504cf0c22562544f4d808509fc4aa8790618",
+        "url": "https://www.gsa.gov/system/files/FY2027_PerDiemRates_Validated090126.xlsx"
+      },
+      "zip": {
+        "bytes": 3158613,
+        "published": "2026-09-03",
+        "sha256": "0837f8d7a50bfc1029263b04bec7490873dbe3084554e5128c2ae23ba3eec7f1",
+        "url": "https://www.gsa.gov/system/files/FY2027PerDiemZipCode_Validated090126.xlsx"
+      }
+    }
+  },
+  "places_sha256": "f7206c4c5fa4290a010906a672a273425121c39e3d6cccbb07c3379844f83446",
+  "schema": 1
+}
