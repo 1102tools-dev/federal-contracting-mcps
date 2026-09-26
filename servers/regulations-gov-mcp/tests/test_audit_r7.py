@@ -250,9 +250,18 @@ def test_open_comment_periods_pages_with_next_page_metadata(monkeypatch):
     assert (first["returned"], first["page_number"], first["page_size"]) == (25, 1, 25)
     assert first["truncated"] is True and first["next_page_number"] == 2
     assert "documents 1-25 of 70" in first["truncated_note"] and "close later" in first["truncated_note"]
+    assert "page_number=2" in first["truncated_note"]
     last = _payload(asyncio.run(_call("open_comment_periods", page_size=50, page_number=2)))
     assert calls[-1]["params"]["page[size]"] == 50 and calls[-1]["params"]["page[number]"] == 2
     assert last["returned"] == 20 and "truncated" not in last and "next_page_number" not in last
+
+
+def test_last_reachable_page_still_reports_truncation(monkeypatch):
+    _patch_get(monkeypatch, _paged_responder(5000))
+    data = _payload(asyncio.run(_call(
+        "far_case_history", docket_id="EPA-HQ-OAR-2009-0171", page_size=100, page_number=40)))
+    assert data["returned"] == 100 and data["truncated"] is True
+    assert "next_page_number" not in data and "narrow the search" in data["truncated_note"]
 
 
 def test_open_comment_periods_page_size_is_bounded(monkeypatch):

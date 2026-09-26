@@ -9,7 +9,7 @@ Free, open-source MCP server for the Regulations.gov API. Federal rulemaking doc
 
 Requires a free api.data.gov key. Use the installation and configuration instructions below to connect this MCP directly.
 
-*Tested and hardened through four rounds of integration testing against the live Regulations.gov API, plus a round-7 independent re-audit with live verification. 240 collected regression tests (121 offline, 119 live-gated) covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, 12 round-7 findings, and the 1.1.0 hosted-directory fixes (compact results, publisher-key fail-closed). See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through four rounds of integration testing against the live Regulations.gov API, plus a round-7 independent re-audit with live verification. 241 collected regression tests (122 offline, 119 live-gated) covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, 12 round-7 findings, and the 1.1.0 hosted-directory fixes (compact results, publisher-key fail-closed). See [testing.md](testing.md) for the full testing record.*
 
 ## Available in Claude and ChatGPT
 

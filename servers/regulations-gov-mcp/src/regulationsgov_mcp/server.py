@@ -1105,10 +1105,17 @@ def _page_fields(total: Any, page_size: int, page_number: int, returned: int) ->
     """Pagination metadata shared by the workflow tools."""
     fields: dict[str, Any] = {"page_number": page_number, "page_size": page_size, "returned": returned}
     shown_through = (page_number - 1) * page_size + returned
-    if isinstance(total, int) and total > shown_through and returned == page_size and page_number < 40:
+    if isinstance(total, int) and total > shown_through and returned == page_size:
         fields["truncated"] = True
-        fields["next_page_number"] = page_number + 1
+        if page_number < 40:  # the API serves at most 40 pages
+            fields["next_page_number"] = page_number + 1
     return fields
+
+
+def _continue_hint(fields: dict[str, Any], later: str) -> str:
+    if "next_page_number" in fields:
+        return f"Request page_number={fields['next_page_number']} for {later}."
+    return "The API serves at most 40 pages; narrow the search to reach the rest."
 
 
 @mcp.tool(annotations={"title": "Open Comment Periods", **_OPEN_WORLD})
@@ -1198,8 +1205,8 @@ async def open_comment_periods(
         first = (page_number - 1) * page_size + 1
         response["truncated_note"] = (
             f"Showing open documents {first}-{first + len(all_docs) - 1} of {api_total}, "
-            f"soonest-closing first. The rest close later: request "
-            f"page_number={page_number + 1}, or a larger page_size (up to {MAX_TOOL_PAGE_SIZE})."
+            f"soonest-closing first; the rest close later. "
+            + _continue_hint(response, f"more, or a larger page_size (up to {MAX_TOOL_PAGE_SIZE})")
         )
     if undated:
         response["undated_note"] = (
@@ -1277,7 +1284,7 @@ async def far_case_history(
         first = (page_number - 1) * page_size + 1
         out["truncated_note"] = (
             f"Showing documents {first}-{first + len(documents) - 1} of {api_total}, most "
-            f"recent first. Request page_number={page_number + 1} for older documents."
+            f"recent first. " + _continue_hint(out, "older documents")
         )
     return out
 
