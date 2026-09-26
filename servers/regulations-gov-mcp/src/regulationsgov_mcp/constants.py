@@ -9,7 +9,8 @@ DEFAULT_TIMEOUT = 15.0
 USER_AGENT = f"regulationsgov-mcp/{__version__}"
 
 MIN_PAGE_SIZE = 5
-MAX_PAGE_SIZE = 250
+MAX_PAGE_SIZE = 250  # API maximum; used by the workflow tools' internal paging
+MAX_TOOL_PAGE_SIZE = 100  # public search tools: keeps one result well under client size limits
 DEFAULT_PAGE_SIZE = 25
 
 # Document types (CASE-SENSITIVE)

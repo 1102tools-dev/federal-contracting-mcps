@@ -14,7 +14,13 @@ ROOT = Path(__file__).resolve().parents[1]
 PYPI_NAMES = {"regulations-gov-mcp": "regulationsgov-mcp"}
 
 
-_SCOPED_TAG = re.compile(r"^refs/tags/([a-z0-9-]+)/v\d")
+_SCOPED_TAG = re.compile(r"^refs/tags/([a-z0-9-]+)/v(\d[^/]*)$")
+
+
+def _package_version(package_dir: str) -> str:
+    import tomllib
+
+    return tomllib.loads((ROOT / "servers" / package_dir / "pyproject.toml").read_text())["project"]["version"]
 
 
 def plan(services: str, ref: str = "") -> dict:
@@ -26,6 +32,13 @@ def plan(services: str, ref: str = "") -> dict:
         requested = [tag.group(1)]
     elif tag and requested != [tag.group(1)]:
         raise SystemExit(f"Tag {ref} is scoped to {tag.group(1)}; services input {services!r} conflicts")
+    if tag and tag.group(1) in hosted_all:
+        want = _package_version(hosted_all[tag.group(1)]["package"])
+        if tag.group(2) != want:
+            raise SystemExit(
+                f"Tag {ref} names version {tag.group(2)}, but {hosted_all[tag.group(1)]['package']} "
+                f"is {want} in pyproject.toml. Tag the commit that carries the release version."
+            )
     if requested in ([], ["all"]):
         hosted, dirs, scope = list(hosted_all), dirs_all, "all"
     else:

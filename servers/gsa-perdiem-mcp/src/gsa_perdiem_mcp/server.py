@@ -327,21 +327,31 @@ def _clean_error_body(text: Any, api_key: str | None = None) -> str:
 # Auth and HTTP
 # ---------------------------------------------------------------------------
 
-def _get_api_key() -> str:
-    return os.environ.get("PERDIEM_API_KEY", "").strip() or "DEMO_KEY"
-
-
 def _hosted() -> bool:
     """True in the 1102tools hosted container, which holds the publisher key."""
     return os.environ.get("PERDIEM_HOSTED", "").strip() == "1"
 
 
-def _live_access_mode() -> str:
+def _get_api_key() -> str:
+    key = os.environ.get("PERDIEM_API_KEY", "").strip()
+    if key:
+        return key
     if _hosted():
-        return "hosted_publisher_key"
-    if os.environ.get("PERDIEM_API_KEY", "").strip():
-        return "configured_unverified"
-    return "demo_key_fallback"
+        # Fail closed: the hosted service must never silently fall back to the
+        # shared DEMO_KEY (about 10 requests per hour for everyone).
+        raise ToolError(
+            "GSA Per Diem service credential is not configured. This is a "
+            "server-side problem with the hosted service; ZIP, state, and M&IE "
+            "lookups for bundled fiscal years still work."
+        )
+    return "DEMO_KEY"
+
+
+def _live_access_mode() -> str:
+    configured = bool(os.environ.get("PERDIEM_API_KEY", "").strip())
+    if _hosted():
+        return "hosted_publisher_key" if configured else "hosted_key_missing"
+    return "configured_unverified" if configured else "demo_key_fallback"
 
 
 _DEMO_KEY_NOTE = (
@@ -378,6 +388,7 @@ def get_data_status() -> dict[str, Any]:
             "zip_file_sha256": meta["zip"]["sha256"],
             "rate_file": meta["rates"]["url"],
             "mie_file": meta["mie"]["url"],
+            "mie_file_covers": meta["mie"].get("covers"),
         }
     mode = _live_access_mode()
     out: dict[str, Any] = {
@@ -472,7 +483,7 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
     cleaned = _clean_error_body(body, api_key)
     mode = _live_access_mode()
     if status == 403:
-        if mode == "hosted_publisher_key":
+        if mode.startswith("hosted"):
             return (
                 "HTTP 403: the GSA Per Diem API rejected this service's credential. "
                 "This is a server-side issue; ZIP, state, and M&IE lookups for "
@@ -490,7 +501,7 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
             "for 1,000 req/hr."
         )
     if status == 429:
-        if mode == "hosted_publisher_key":
+        if mode.startswith("hosted"):
             return (
                 "HTTP 429: the GSA Per Diem API rate limit was reached. Retry later; "
                 "ZIP, state, and M&IE lookups for bundled fiscal years are unaffected."

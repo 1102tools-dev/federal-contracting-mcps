@@ -37,7 +37,8 @@ does not publish website content or submit directory listings.
 - Push a new `v*` tag only after review and tests. Manual workflow dispatch on a tag
   supports retries. Never overlap a legacy release with the first unified release.
 - The workflow serializes unified production releases. Cloudflare deployment and
-  live verification must succeed for all seven services before PyPI starts.
+  live verification must succeed for every service in the release (all seven for
+  a `v*` tag, one for a scoped tag) before PyPI starts.
   A partial failure is reported as a failed release.
   It is not a transaction, and PyPI versions cannot be overwritten or rolled back.
 
@@ -79,8 +80,17 @@ to make the check pass. See the official
 
 Each image is built once and passed as an artifact to deployment. Its health
 response reports the release commit. After rollout, the pipeline verifies that
-commit, package version, full tool list, and three real upstream tool requests.
-The overall release succeeds only if PyPI, Cloudflare, and registry jobs succeed.
+commit, package version, full tool list, and a representative tool call repeated
+three times (plus service-specific checks: the publisher-key mode for the two
+operator-keyed services, a live city lookup for GSA Per Diem, and compacted
+search results for Regulations.gov). The overall release succeeds only if PyPI,
+Cloudflare, and registry jobs succeed.
+
+Between releases, `.github/workflows/hosted-health.yml` runs
+`scripts/check_hosted_health.py` every 30 minutes against every hosted service
+(health, initialize, one upstream tool call, publisher-key mode). It opens one
+issue while anything fails and closes it when all services pass again. Run it
+locally with `python3 scripts/check_hosted_health.py [slug ...]` (Python 3.11+).
 
 If Cloudflare deployment or verification fails, PyPI and registry publication
 are skipped. Inspect the failed service and rerun failed jobs on the same tag.
@@ -94,14 +104,22 @@ check. Do not remove or rename a Worker, Container application, or endpoint to
 work around a failed deployment.
 
 For a broken production deployment, restore the last known-good Worker and its
-Container image together using the recorded prior deployment. Wrangler's Worker
-rollback alone must not be assumed to roll back the Container image. Preserve
-the existing singleton application and rate-limit settings. Never attempt to
-undo a PyPI publication by overwriting a package version; ship a corrective patch.
+Container image together. The preferred path keeps them in sync: dispatch this
+workflow on the service's previous release tag (for example
+`gsa-perdiem/v1.1.0`) with `services` set to that slug. It rebuilds that commit's
+image and Worker and redeploys both; PyPI (`skip-existing`) and the registry
+(duplicate versions are skipped) do not change. The deploy job also uploads the
+prior Worker deployment list and Container description as the `previous-<slug>`
+artifact (kept 30 days) for manual recovery. Wrangler's Worker rollback alone
+must not be assumed to roll back the Container image. Preserve the existing
+singleton application and rate-limit settings. Rolling back past a release that
+changed tool metadata also rolls back reviewed directory metadata. Never attempt
+to undo a PyPI publication by overwriting a package version; ship a corrective
+patch.
 
 ## Operator-keyed services
 
-GSA Per Diem and Regulations.gov call api.data.gov with a key held by 1102tools, one key per service. Each key is stored as a Worker secret (`PERDIEM_API_KEY` on `gsa-perdiem-mcp`, `REGULATIONS_GOV_API_KEY` on `regulations-gov-mcp`) and passed to the container at start. Secrets persist across deploys; rotate one with `wrangler secret put <NAME> --name <worker>`. The servers cap upstream calls at 950 per rolling hour, and hosted containers cache identical responses in memory (up to a day for Per Diem, 15 minutes for Regulations.gov; the cache is lost when an idle container sleeps), so release verification uses one upstream call per key.
+GSA Per Diem and Regulations.gov call api.data.gov with a key held by 1102tools, one key per service. Each key is stored as a Worker secret (`PERDIEM_API_KEY` on `gsa-perdiem-mcp`, `REGULATIONS_GOV_API_KEY` on `regulations-gov-mcp`) and passed to the container at start. Secrets persist across deploys; rotate one with `wrangler secret put <NAME> --name <worker>` (a running container keeps the old value until it restarts, which happens after two idle minutes or on the next deploy). Both images set a hosted flag (`PERDIEM_HOSTED=1`, `REGULATIONS_HOSTED=1`): the server refuses to start without its key rather than falling back to the shared DEMO_KEY, and reports `hosted_publisher_key`, which release verification and the health check both require. The servers cap upstream calls at 950 per rolling hour, and hosted containers cache identical responses in memory (up to a day for Per Diem; 15 minutes and 24 MiB for Regulations.gov; the cache is lost when an idle container sleeps), so release verification's repeated call reaches upstream once per key.
 
 From 1.1.0, GSA Per Diem answers ZIP, state, and M&IE lookups for bundled fiscal years from GSA's published files in the image (`servers/gsa-perdiem-mcp/src/gsa_perdiem_mcp/data/`); only city lookups and unbundled years use the key. Its release verification therefore adds one live `lookup_city_perdiem` call. Refresh the bundled data when GSA posts or corrects a file: run `scripts/build_snapshot.py`, run the live parity tests (`MCP_LIVE_TESTS=1 uv run pytest tests/test_live_parity.py` with a registered key), bump the package version, and release.
 

@@ -72,6 +72,14 @@ SOURCES: dict[int, dict[str, str]] = {
            "zip": GSA + "FY2027PerDiemZipCode_Validated090126.xlsx", "zip_published": "2026-09-03",
            "mie": GSA + "FY%202025%20MIE%20Breakdown.docx"},
 }
+# GSA publishes one M&IE breakdown per span of fiscal years; the file names
+# carry the first year only ("FY 2025 MIE Breakdown" covers FY2025 onward).
+# Labels are GSA's own, from the per diem files page.
+MIE_COVERS = {
+    GSA + "MIE_Breakdown_FY2019-present.docx": "FY2019-FY2021",
+    GSA + "FY%202022%20MIE%20Breakdown_0.docx": "FY2022-FY2024",
+    GSA + "FY%202025%20MIE%20Breakdown.docx": "FY2025-present",
+}
 CENSUS_FILES = {
     "county": CENSUS + "national_county2020.txt",
     "place_by_county": CENSUS + "national_place_by_county2020.txt",
@@ -495,7 +503,7 @@ def build_year(fy: int, cache: Path, census_counties: set[str], prior: dict | No
         "fiscal_year": fy,
         "rates": rate_meta,
         "zip": {**zip_meta, "published": src["zip_published"]},
-        "mie": mie_meta,
+        "mie": {**mie_meta, "covers": MIE_COVERS[src["mie"]]},
         "counts": {"zip_rows": len(zrows), "zips": len(zips), "destinations": len(destinations),
                    "ambiguous_zips": sum(1 for v in zips.values() if len(v) > 1)},
     }

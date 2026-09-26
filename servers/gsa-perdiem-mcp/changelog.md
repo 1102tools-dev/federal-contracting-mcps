@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- Bundled-data `source` and `get_data_status` now include `mie_file_covers` (for example `FY2025-present`). GSA names each M&IE breakdown file for its first fiscal year, which made current data look stale. Rate data is unchanged (the bundled FY files are byte-identical).
+- The hosted deployment (`PERDIEM_HOSTED=1`) now refuses to start without `PERDIEM_API_KEY` instead of silently falling back to the shared DEMO_KEY; `get_data_status` reports `hosted_key_missing` if the key disappears at runtime.
+
 ## 1.1.0
 
 - ZIP, state, and M&IE lookups for FY2021 onward are answered from GSA's published rate, ZIP, and M&IE files bundled in the package; no API key or network call is needed. `data/manifest.json` records each source URL and SHA-256. `scripts/build_snapshot.py` regenerates the files and fails on any schema drift or rate/ZIP-file disagreement. FY2020 and unbundled years still use the GSA API.

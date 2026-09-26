@@ -168,6 +168,8 @@ def load_year(fiscal_year: int) -> Year | None:
             "zip_file_sha256": meta["zip"]["sha256"],
             "rate_file": meta["rates"]["url"],
             "mie_file": meta["mie"]["url"],
+            # GSA's breakdown files are named for their first fiscal year.
+            "mie_file_covers": meta["mie"].get("covers"),
         },
         by_state_name=by_state_name,
     )

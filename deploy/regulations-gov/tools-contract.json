@@ -2,6 +2,7 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "FAR Case History"
     },
@@ -29,6 +30,7 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": false,
       "readOnlyHint": true,
       "title": "Check Regulations.gov Data Access"
     },
@@ -48,10 +50,11 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Get Comment Detail"
     },
-    "description": "Get full details for a single comment.\n\n    Returns the full comment text, organization, submitter info (if public),\n    tracking number, and duplicate comment count.\n\n    Some fields (firstName, lastName, organization) are agency-configurable\n    and may be hidden.\n    ",
+    "description": "Get full details for a single comment.\n\n    Returns the comment text field, organization, submitter info (if public),\n    tracking number, and duplicate comment count. Many comments put their\n    substance in attachments and the text field only says \"See attached\";\n    include_attachments=True returns the attachment download URLs.\n\n    Some fields (firstName, lastName, organization) are agency-configurable\n    and may be hidden.\n    ",
     "inputSchema": {
       "properties": {
         "comment_id": {
@@ -80,6 +83,7 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Get Docket Detail"
     },
@@ -107,6 +111,7 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Get Document Detail"
     },
@@ -139,6 +144,7 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Open Comment Periods"
     },
@@ -174,10 +180,11 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Search Comments"
     },
-    "description": "Search public comments on Regulations.gov.\n\n    To find comments on a specific document, use comment_on_id with the\n    hex objectId from document detail/search results (attributes.objectId,\n    e.g. '0900006486531e6b'). The human-readable documentId is REJECTED\n    here because the API silently returns 0 comments for it.\n\n    docket_id can also filter comments to all documents in a docket\n    (undocumented upstream but verified working live).\n\n    Page size: 5-250. Comments sorted by '-postedDate' by default.\n    ",
+    "description": "Search public comments on Regulations.gov.\n\n    To find comments on a specific document, use comment_on_id with the\n    hex objectId from document detail/search results (attributes.objectId,\n    e.g. '0900006486531e6b'). The human-readable documentId is REJECTED\n    here because the API silently returns 0 comments for it.\n\n    docket_id filters comments to all documents in a docket.\n\n    Page size: 5-100; page_number 1-40. Comments sorted by '-postedDate' by\n    default. For larger result sets, split the query into posted_date_ge/le\n    windows. Most comment text is in attachments; get_comment_detail with\n    include_attachments=True returns their download URLs.\n    ",
     "inputSchema": {
       "properties": {
         "agency_id": {
@@ -281,10 +288,11 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Search Dockets"
     },
-    "description": "Search Regulations.gov dockets.\n\n    Dockets are containers for related regulatory documents (proposed rules,\n    comments, supporting materials). FAR cases, DFARS cases, and agency\n    rulemaking actions each have a docket.\n\n    docket_type is CASE-SENSITIVE: 'Rulemaking' or 'Nonrulemaking'.\n\n    lastModifiedDate format: 'YYYY-MM-DD HH:MM:SS' (space-separated, NOT ISO).\n    This is a Regulations.gov quirk; ISO 8601 is rejected.\n\n    Limited filters: only searchTerm, agencyId, docketType, lastModifiedDate.\n    ",
+    "description": "Search Regulations.gov dockets.\n\n    Dockets are containers for related regulatory documents (proposed rules,\n    comments, supporting materials). FAR cases, DFARS cases, and agency\n    rulemaking actions each have a docket.\n\n    docket_type is CASE-SENSITIVE: 'Rulemaking' or 'Nonrulemaking'.\n\n    lastModifiedDate format: 'YYYY-MM-DD HH:MM:SS' (space-separated, NOT ISO).\n    This is a Regulations.gov quirk; ISO 8601 is rejected.\n\n    Limited filters: only searchTerm, agencyId, docketType, lastModifiedDate.\n\n    Page size: 5-100; page_number 1-40. For larger result sets, split the\n    query into last_modified_date_ge/le windows.\n    ",
     "inputSchema": {
       "properties": {
         "agency_id": {
@@ -387,10 +395,11 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Search Documents"
     },
-    "description": "Search Regulations.gov documents (proposed rules, final rules, notices).\n\n    Filter values are CASE-SENSITIVE. Use exact casing:\n    - document_type: 'Proposed Rule', 'Rule', 'Notice', 'Supporting & Related Material', 'Other'\n    - Lowercase values silently return 0 results (no error)\n\n    Key parameters:\n    - agency_id: FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA, etc.\n      Comma-separate for multiple agencies ('FAR,GSA').\n      Empty string is REJECTED (previously returned all 1.95M records).\n    - docket_id: e.g., 'FAR-2023-0008' for a specific FAR case\n    - within_comment_period: True to find documents currently accepting\n      comments. False is NOT supported by the API (it 400s); omit the\n      parameter instead to search regardless of comment status.\n    - posted_date_ge/le: YYYY-MM-DD format (calendar-checked)\n    - comment_end_date_ge/le: YYYY-MM-DD format\n\n    Response includes meta.aggregations with counts by document type, agency,\n    and comment period status.\n\n    Page size: 5-250. page_number: 1-40 (10,000 reachable records per\n    query; the live API allows 40 pages even though the docs say 20).\n    For larger sets, partition with date ranges, or use the API's deep\n    pagination recipe: sort='lastModifiedDate,documentId' plus\n    lastModifiedDate windows on search_dockets/search_comments.\n\n    sort: '-postedDate' (newest first, default), 'postedDate', '-commentEndDate',\n    'lastModifiedDate', 'title', 'documentId'. Comma-separate for\n    multi-field sorts ('lastModifiedDate,documentId').\n    ",
+    "description": "Search Regulations.gov documents (proposed rules, final rules, notices).\n\n    Filter values are CASE-SENSITIVE. Use exact casing:\n    - document_type: 'Proposed Rule', 'Rule', 'Notice', 'Supporting & Related Material', 'Other'\n    - Lowercase values silently return 0 results (no error)\n\n    Key parameters:\n    - agency_id: FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA, etc.\n      Comma-separate for multiple agencies ('FAR,GSA'). Empty string is rejected.\n    - docket_id: e.g., 'FAR-2023-0008' for a specific FAR case\n    - within_comment_period: True to find documents currently accepting\n      comments. False is NOT supported by the API (it 400s); omit the\n      parameter instead to search regardless of comment status.\n    - posted_date_ge/le: YYYY-MM-DD format (calendar-checked)\n    - comment_end_date_ge/le: YYYY-MM-DD format\n\n    Response meta.facets gives the top counts by document type, agency,\n    and comment period status; meta.totalElements is the full match count.\n\n    Page size: 5-100. page_number: 1-40. For larger result sets, split the\n    query into posted_date_ge/le windows.\n\n    sort: '-postedDate' (newest first, default), 'postedDate', '-commentEndDate',\n    'lastModifiedDate', 'title', 'documentId'. Comma-separate for\n    multi-field sorts ('lastModifiedDate,documentId').\n    ",
     "inputSchema": {
       "properties": {
         "agency_id": {

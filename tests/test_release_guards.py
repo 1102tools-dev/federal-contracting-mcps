@@ -196,13 +196,20 @@ def test_release_plan_rejects_unknown_service():
 
 
 def test_release_plan_scoped_tag_limits_push_release():
+    import tomllib
     rp = _release_plan()
-    assert json.loads(rp.plan('all', 'refs/tags/gsa-perdiem/v1.1.0')['hosted']) == ['gsa-perdiem']
+    version = tomllib.loads((ROOT / 'servers/gsa-perdiem-mcp/pyproject.toml').read_text())['project']['version']
+    assert json.loads(rp.plan('all', f'refs/tags/gsa-perdiem/v{version}')['hosted']) == ['gsa-perdiem']
     assert rp.plan('all', 'refs/tags/v1.0.33')['scope'] == 'all'
     with pytest.raises(SystemExit):
         rp.plan('all', 'refs/tags/not-a-service/v1.0.0')
     with pytest.raises(SystemExit):
-        rp.plan('ecfr', 'refs/tags/gsa-perdiem/v1.1.0')
+        rp.plan('ecfr', f'refs/tags/gsa-perdiem/v{version}')
+
+
+def test_release_plan_rejects_scoped_tag_with_wrong_version():
+    with pytest.raises(SystemExit, match='pyproject.toml'):
+        _release_plan().plan('all', 'refs/tags/gsa-perdiem/v0.0.1')
 
 
 def test_release_workflow_accepts_scoped_tags():
@@ -315,7 +322,9 @@ def test_perdiem_release_gate_requires_keyless_contract_and_live_city(monkeypatc
         if method == 'tools/list':
             return {'result': {'tools': json.loads((ROOT / 'deploy/gsa-perdiem/tools-contract.json').read_text())}}
         name = payload['params']['name']; calls.append(name)
-        if name == 'lookup_city_perdiem':
+        if name == 'get_data_status':
+            data = {'live_lookup_access': 'hosted_key_missing' if failure == 'key_missing' else 'hosted_publisher_key'}
+        elif name == 'lookup_city_perdiem':
             data = {'status': 'unresolved' if failure == 'city_unresolved' else 'resolved',
                     'source': {'kind': 'gsa_per_diem_api'}}
             if failure == 'demo_key':
@@ -330,4 +339,50 @@ def test_perdiem_release_gate_requires_keyless_contract_and_live_city(monkeypatc
             verifier.main()
     else:
         verifier.main()
-        assert calls == ['lookup_zip_perdiem'] * 3 + ['lookup_city_perdiem']
+        assert calls == ['get_data_status'] + ['lookup_zip_perdiem'] * 3 + ['lookup_city_perdiem']
+
+
+def test_perdiem_release_gate_rejects_missing_publisher_key(monkeypatch):
+    test_perdiem_release_gate_requires_keyless_contract_and_live_city(monkeypatch, 'key_missing')
+
+
+@pytest.mark.parametrize('failure', [None, 'key_missing', 'uncompacted', 'demo_key', 'pre_deploy'])
+def test_regulations_release_gate_requires_publisher_key_and_compact_results(monkeypatch, failure):
+    spec = importlib.util.spec_from_file_location('hosted_verify', ROOT / 'scripts/verify_hosted_release.py')
+    verifier = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(verifier)
+    calls = []
+    def request(url, payload=None):
+        if payload is None:
+            return {'release_sha': 'a' * 40,
+                    'admission': {'processing': 16, 'waiting': 32, 'total': 48, 'deadline_seconds': 55}}
+        method = payload['method']
+        if method == 'initialize':
+            import tomllib
+            version = tomllib.loads((ROOT / 'servers/regulations-gov-mcp/pyproject.toml').read_text())['project']['version']
+            return {'result': {'serverInfo': {'version': version}}}
+        if method == 'tools/list':
+            return {'result': {'tools': json.loads((ROOT / 'deploy/regulations-gov/tools-contract.json').read_text())}}
+        name = payload['params']['name']; calls.append(name)
+        if name == 'get_access_status':
+            data = {'status': 'hosted_key_missing' if failure == 'key_missing' else 'hosted_publisher_key'}
+        else:
+            data = {'data': [{'id': 'FAR-2026-0001-0001'}], 'meta': {'totalElements': 1}}
+            if failure == 'uncompacted':
+                data['meta']['aggregations'] = {'agencyId': []}
+            if failure == 'demo_key':
+                data['access_note'] = 'Regulations.gov data is using the shared api.data.gov DEMO_KEY'
+        return {'result': {'structuredContent': data}}
+    monkeypatch.setattr(verifier, 'request', request)
+    argv = ['verify', 'regulations-gov', '--sha', 'a' * 40]
+    if failure == 'pre_deploy':
+        argv += ['--base', 'http://localhost:8080', '--no-upstream']
+    monkeypatch.setattr('sys.argv', argv)
+    if failure in ('key_missing', 'uncompacted', 'demo_key'):
+        with pytest.raises((AssertionError, RuntimeError)):
+            verifier.main()
+    else:
+        verifier.main()
+        expected = ['get_access_status'] if failure == 'pre_deploy' else (
+            ['get_access_status'] + ['search_dockets'] * 3 + ['search_documents'])
+        assert calls == expected
