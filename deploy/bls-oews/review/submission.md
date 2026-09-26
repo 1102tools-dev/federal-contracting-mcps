@@ -15,8 +15,8 @@ Status: deployed on 2026-09-26 (container application `a032779f-43ea-45f4-abd5-4
 
 ## Open before submission
 
-1. **Icons.** Light and dark directory and composer icons made by ChatGPT, matching the other 1102tools icons, go in `review/assets/` and `docs/directory-icons/bls-oews.png`. BLS does not permit use of its logo, so the mark must be 1102tools' own.
-2. **Production tool test** in Claude (custom connector) and ChatGPT (Developer Mode) with the review test cases below.
+1. **Icons: done.** ChatGPT's "Wage Range" mark (independent 1102tools graphic, not the BLS logo): `review/assets/bls-oews-directory-{light,dark}.png` and `bls-oews-composer-{light,dark}.png`; the Claude form's single icon URL uses `docs/directory-icons/bls-oews.png` (light). Editable SVGs are in the owner's design folder.
+2. **Production tool test: done (2026-09-26).** Claude Code CLI 13/13 and claude.ai custom connector 8/8; see the verification record.
 3. **OpenAI domain verification and demo recording**, as for the other services.
 4. **Portal attestations.** API ownership: this service calls no API; it serves a copy of BLS's public flat files. Answer the portal's data-source question accordingly and do not attest control of BLS systems.
 
@@ -68,3 +68,4 @@ Negative (expected explanation, no fabricated figure):
 
 Source 1.1.0 (PR #24, merged 2026-09-26 at `8f87c41`): offline suite 275 passed with the network blocked, plus 1 live parity test (25/25 values and footnotes match the BLS v1 API); rounds 6 and 8 (157 tests written against the live API) run offline; release guards and hosted admission passed; `scripts/check_hosted_contract.py bls-oews` 8 tools; the linux/amd64 image passed `verify_hosted_release.py --no-upstream`.
 First deploy 2026-09-26: `/health` ok, 8 tools; `get_wage_data` on production returned the DC metro software developer mean ($153,100) from `bundled_bls_oews_files`; `/support`, `/privacy`, `/terms` 200; a cross-origin `Origin` header is rejected with 403.
+Connector tests 2026-09-26: Claude Code CLI 2.1.281 (headless, only BLS tools, no web/shell) 13/13 passed; claude.ai custom connector at bls-oews.1102tools.com 8/8 passed (server check detected no sign-in, all 8 tools listed read-only); connector removed afterwards.
