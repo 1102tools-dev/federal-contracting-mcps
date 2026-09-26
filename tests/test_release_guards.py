@@ -116,6 +116,22 @@ def test_wheel_identity_must_match_project(tmp_path):
         guard.check_wheel(path, "other-package", "1.0.0")
 
 
+def test_hosted_servers_send_no_instructions():
+    # verify_hosted_release.py rejects initialize instructions in hosted-build,
+    # after tagging. Catch them here from source, without importing servers.
+    import ast
+    services = json.loads((ROOT / "deploy/services.json").read_text())
+    offenders = []
+    for slug, service in services.items():
+        path = ROOT / "servers" / service["package"] / "src" / service["module"] / "server.py"
+        calls = [node for node in ast.walk(ast.parse(path.read_text()))
+                 if isinstance(node, ast.Call) and getattr(node.func, "id", getattr(node.func, "attr", None)) == "MCPServer"]
+        assert calls, f"{slug}: no MCPServer(...) call found in {path.relative_to(ROOT)}"
+        if any(keyword.arg == "instructions" for call in calls for keyword in call.keywords):
+            offenders.append(slug)
+    assert not offenders, f"Hosted servers set instructions: {offenders}. Put guidance in tool results instead."
+
+
 def test_release_dependency_gates_and_postpublication_verification():
     workflow = yaml.safe_load((ROOT / ".github/workflows/publish-pypi.yml").read_text())
     jobs = workflow["jobs"]
