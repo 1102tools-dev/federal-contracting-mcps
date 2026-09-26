@@ -257,8 +257,8 @@ def test_page_size_too_small():
 
 def test_page_size_too_large():
     asyncio.run(_call_expect_error(
-        "search_documents", "exceeds maximum of 250",
-        agency_id="FAR", page_size=251,
+        "search_documents", "exceeds maximum of 100",
+        agency_id="FAR", page_size=101,
     ))
 
 
@@ -480,11 +480,11 @@ def test_paged_past_end_flag():
     })
     try:
         r = asyncio.run(srv.search_documents(
-            agency_id="FAR", page_size=250, page_number=20,
+            agency_id="FAR", page_size=100, page_number=30,
         ))
         assert r.get("paged_past_end") is True
         assert r.get("no_data") is not True
-        assert "page 9" in r["paged_past_end_reason"]  # 2152 / 250 = 9 pages
+        assert "page 22" in r["paged_past_end_reason"]  # 2152 / 100 = 22 pages
     finally:
         _restore_get(orig)
 

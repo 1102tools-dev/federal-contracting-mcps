@@ -36,9 +36,23 @@ class AdmissionControl(AdmissionQueue):
 
 
 
+def require_hosted_credential() -> None:
+    """Refuse to serve a hosted deployment that lacks the publisher key.
+
+    Without it the server would fall back to the shared DEMO_KEY (about 10
+    requests per hour for everyone). Failing to start makes the release
+    verification's /health wait fail instead of shipping a degraded service.
+    """
+    if os.environ.get("REGULATIONS_HOSTED", "").strip() == "1" and not os.environ.get(
+        "REGULATIONS_GOV_API_KEY", ""
+    ).strip():
+        raise SystemExit("REGULATIONS_GOV_API_KEY is required when REGULATIONS_HOSTED=1")
+
+
 def main():
     import logging
     import uvicorn
+    require_hosted_credential()
     logging.disable(logging.CRITICAL)  # SDK errors may include raw tool arguments.
     uvicorn.run(create_app(), host="0.0.0.0", port=int(os.environ.get("PORT", "8080")), access_log=False, log_level="critical")
 

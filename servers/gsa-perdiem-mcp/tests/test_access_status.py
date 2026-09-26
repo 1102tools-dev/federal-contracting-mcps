@@ -53,6 +53,20 @@ def test_hosted_status_has_no_key_language(monkeypatch):
     assert secret not in text
 
 
+def test_hosted_without_key_fails_closed(monkeypatch):
+    import gsa_perdiem_mcp.server as srv
+    from gsa_perdiem_mcp import http as srv_http
+    from mcp.server.mcpserver.exceptions import ToolError
+
+    payload = _status(monkeypatch, key=None, hosted="1")
+    assert payload["live_lookup_access"] == "hosted_key_missing"
+    assert "access_note" not in payload
+    with pytest.raises(ToolError, match="server-side problem"):
+        srv._get_api_key()
+    with pytest.raises(SystemExit, match="PERDIEM_API_KEY is required"):
+        srv_http.require_hosted_credential()
+
+
 def test_status_reports_bundled_years_and_sources(monkeypatch):
     payload = _status(monkeypatch, hosted="1")
     years = payload["bundled_fiscal_years"]
@@ -61,5 +75,8 @@ def test_status_reports_bundled_years_and_sources(monkeypatch):
     src = payload["bundled_sources"]["2027"]
     assert src["zip_file"].startswith("https://www.gsa.gov/")
     assert len(src["zip_file_sha256"]) == 64
+    # GSA names breakdown files for their first year; the label says what they cover.
+    assert src["mie_file_covers"] == "FY2025-present"
+    assert payload["bundled_sources"]["2023"]["mie_file_covers"] == "FY2022-FY2024"
     assert set(payload["live_api_tools"]) == {
         "lookup_city_perdiem", "estimate_travel_cost", "compare_locations"}

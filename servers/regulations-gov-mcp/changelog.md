@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0
+
+- Smaller results. Search responses replace the API's `meta.aggregations` (facet counts for about 300 agencies on every search) with `meta.facets`, the top 10 counts per facet, and drop JSON:API self-links and empty attributes. Data rows and `meta.totalElements` are unchanged. A 25-row document search is about a third smaller; an unknown agency code now returns `agency_codes_with_most_records`.
+- The public search tools accept `page_size` 5-100 (was 5-250) so one result stays well under client tool-result limits. `open_comment_periods` and `far_case_history` still page at 250 internally.
+- Hosted mode (`REGULATIONS_HOSTED=1`): the server refuses to start without `REGULATIONS_GOV_API_KEY` instead of silently using the shared DEMO_KEY; `get_access_status` reports `hosted_publisher_key` without key-setup fields; 403 and 429 messages no longer tell hosted users to set a key.
+- A 403 is reported as a key problem only when api.data.gov says so (`api_key`), not for any body containing "rate" or "key".
+- All tools declare `openWorldHint`.
+- Descriptions and 400 messages no longer recommend `lastModifiedDate` windows on searches that lack that filter; they point to `posted_date_ge/le` (documents, comments) and `last_modified_date_ge/le` (dockets). The sort-field error lists the valid fields per search type, and `no_data_reason` is specific to the search type.
+- The hosted response cache is bounded by size (24 MiB by default, `MCP_RESPONSE_CACHE_MAX_BYTES`) as well as entry count, and skips single responses over 1 MiB.
+
 ## 1.0.11
 
 - Removed the server `instructions` sent at initialization. When `REGULATIONS_GOV_API_KEY` is not configured, every data tool result now carries an `access_note` stating the shared `DEMO_KEY` limit and where to get a free key. Results with a configured key are unchanged. Tool names, arguments, and descriptions are unchanged.

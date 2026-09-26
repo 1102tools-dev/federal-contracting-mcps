@@ -36,9 +36,23 @@ class AdmissionControl(AdmissionQueue):
 
 
 
+def require_hosted_credential() -> None:
+    """Refuse to serve a hosted deployment that lacks the publisher key.
+
+    Without it, city lookups would fall back to the shared DEMO_KEY (about 10
+    requests per hour for everyone). Failing to start makes the release
+    verification's /health wait fail instead of shipping a degraded service.
+    """
+    if os.environ.get("PERDIEM_HOSTED", "").strip() == "1" and not os.environ.get(
+        "PERDIEM_API_KEY", ""
+    ).strip():
+        raise SystemExit("PERDIEM_API_KEY is required when PERDIEM_HOSTED=1")
+
+
 def main():
     import logging
     import uvicorn
+    require_hosted_credential()
     logging.disable(logging.CRITICAL)  # SDK errors may include raw tool arguments.
     uvicorn.run(create_app(), host="0.0.0.0", port=int(os.environ.get("PORT", "8080")), access_log=False, log_level="critical")
 

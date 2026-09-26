@@ -44,6 +44,13 @@ def main():
             except (ValueError,KeyError):pass
         assert not (isinstance(data,dict) and data.get('error')),'Upstream error in tool result'
         return data
+    # Operator-keyed services must run on the publisher key, never a DEMO_KEY
+    # fallback. This check is local to the server, so it also runs pre-deploy.
+    key_mode={'gsa-perdiem':('get_data_status','live_lookup_access'),'regulations-gov':('get_access_status','status')}
+    if args.slug in key_mode:
+        name,field=key_mode[args.slug]
+        mode=tool(name,{}).get(field)
+        assert mode=='hosted_publisher_key','Hosted service is not using the publisher key: '+str(mode)
     if not args.no_upstream:
         name,arguments=CASES[args.slug]
         for _ in range(3):
@@ -63,5 +70,9 @@ def main():
             city=tool('lookup_city_perdiem',{'city':'Arlington','state':'VA'})
             assert city.get('status')=='resolved' and city['source']['kind']=='gsa_per_diem_api','Hosted city lookup did not resolve through the GSA API'
             assert 'DEMO_KEY' not in json.dumps(city),'Hosted result mentions DEMO_KEY'
+        if args.slug == 'regulations-gov':
+            docs=tool('search_documents',{'agency_id':'FAR','page_size':5})
+            assert docs.get('data') and 'aggregations' not in docs.get('meta',{}),'Search results are not compacted'
+            assert 'access_note' not in docs and 'DEMO_KEY' not in json.dumps(docs),'Hosted result mentions DEMO_KEY'
     print(f"Verified {args.slug}: {version}, commit {args.sha}, {len(actual)} tools")
 if __name__=='__main__':main()

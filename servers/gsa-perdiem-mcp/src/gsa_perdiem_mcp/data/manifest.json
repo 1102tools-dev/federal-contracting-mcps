@@ -30,6 +30,7 @@
       "fiscal_year": 2021,
       "mie": {
         "bytes": 7497,
+        "covers": "FY2019-FY2021",
         "sha256": "5b72bc20d6a3e8c04149b26592fd682d1c38654960a92ebeb487fee7c019a20a",
         "url": "https://www.gsa.gov/system/files/MIE_Breakdown_FY2019-present.docx"
       },
@@ -57,6 +58,7 @@
       "fiscal_year": 2022,
       "mie": {
         "bytes": 17962,
+        "covers": "FY2022-FY2024",
         "sha256": "b32217c1d4780e73691ed3f5e9e743b3431c628501e7831c3b0d5fffdade845e",
         "url": "https://www.gsa.gov/system/files/FY%202022%20MIE%20Breakdown_0.docx"
       },
@@ -84,6 +86,7 @@
       "fiscal_year": 2023,
       "mie": {
         "bytes": 17962,
+        "covers": "FY2022-FY2024",
         "sha256": "b32217c1d4780e73691ed3f5e9e743b3431c628501e7831c3b0d5fffdade845e",
         "url": "https://www.gsa.gov/system/files/FY%202022%20MIE%20Breakdown_0.docx"
       },
@@ -111,6 +114,7 @@
       "fiscal_year": 2024,
       "mie": {
         "bytes": 17962,
+        "covers": "FY2022-FY2024",
         "sha256": "b32217c1d4780e73691ed3f5e9e743b3431c628501e7831c3b0d5fffdade845e",
         "url": "https://www.gsa.gov/system/files/FY%202022%20MIE%20Breakdown_0.docx"
       },
@@ -138,6 +142,7 @@
       "fiscal_year": 2025,
       "mie": {
         "bytes": 18668,
+        "covers": "FY2025-present",
         "sha256": "cc55916865cb21268a1fcbd1b75c5077698207033b41672fd1142f385c8fa4ef",
         "url": "https://www.gsa.gov/system/files/FY%202025%20MIE%20Breakdown.docx"
       },
@@ -165,6 +170,7 @@
       "fiscal_year": 2026,
       "mie": {
         "bytes": 18668,
+        "covers": "FY2025-present",
         "sha256": "cc55916865cb21268a1fcbd1b75c5077698207033b41672fd1142f385c8fa4ef",
         "url": "https://www.gsa.gov/system/files/FY%202025%20MIE%20Breakdown.docx"
       },
@@ -192,6 +198,7 @@
       "fiscal_year": 2027,
       "mie": {
         "bytes": 18668,
+        "covers": "FY2025-present",
         "sha256": "cc55916865cb21268a1fcbd1b75c5077698207033b41672fd1142f385c8fa4ef",
         "url": "https://www.gsa.gov/system/files/FY%202025%20MIE%20Breakdown.docx"
       },

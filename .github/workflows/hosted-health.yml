@@ -1,0 +1,51 @@
+name: Hosted service health
+
+# Every 30 minutes, check each hosted MCP service end to end (health,
+# initialize, one upstream tool call, publisher-key mode). Opens or updates one
+# issue while anything fails and closes it when all services recover.
+# Read-only: never deploys or changes a service.
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: hosted-health
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Check every hosted service
+        id: check
+        run: |
+          set +e
+          python scripts/check_hosted_health.py > report.md
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+          cat report.md | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Open, update, or close the outage issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ steps.check.outputs.status }}
+        run: |
+          title="Hosted MCP service health check failing"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ "$STATUS" != "0" ]; then
+            if [ -n "$number" ]; then gh issue comment "$number" --body-file report.md
+            else gh issue create --title "$title" --body-file report.md; fi
+            exit 1
+          elif [ -n "$number" ]; then
+            gh issue comment "$number" --body "All hosted services passed again. $(date -u +%FT%TZ)"
+            gh issue close "$number"
+          fi
