@@ -469,3 +469,65 @@ def test_perdiem_monitor_reports_rejected_and_rate_limited_keys_separately(monke
     with pytest.raises(RuntimeError) as caught:
         hc.check('gsa-perdiem', {'endpoint': 'https://perdiem.example/mcp'})
     assert type(caught.value).__name__ == error and text in str(caught.value)
+
+
+@pytest.mark.parametrize('failure', [None, 'pre_deploy', 'instructions', 'not_bundled', 'wrong_source'])
+def test_bls_release_gate_requires_bundled_source(monkeypatch, failure):
+    spec = importlib.util.spec_from_file_location('hosted_verify', ROOT / 'scripts/verify_hosted_release.py')
+    verifier = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(verifier)
+    calls = []
+    def request(url, payload=None):
+        if payload is None:
+            return {'release_sha': 'a' * 40,
+                    'admission': {'processing': 16, 'waiting': 32, 'total': 48, 'deadline_seconds': 55}}
+        method = payload['method']
+        if method == 'initialize':
+            import tomllib
+            version = tomllib.loads((ROOT / 'servers/bls-oews-mcp/pyproject.toml').read_text())['project']['version']
+            result = {'serverInfo': {'version': version}}
+            if failure == 'instructions':
+                result['instructions'] = 'Call get_access_status first.'
+            return {'result': result}
+        if method == 'tools/list':
+            return {'result': {'tools': json.loads((ROOT / 'deploy/bls-oews/tools-contract.json').read_text())}}
+        name = payload['params']['name']; calls.append(name)
+        if name == 'get_data_status':
+            data = {'status': 'limited_fallback' if failure == 'not_bundled' else 'bundled', 'api_key_required': False}
+        else:
+            kind = 'bls_public_api' if failure == 'wrong_source' else 'bundled_bls_oews_files'
+            data = {'wages': {'Annual Mean Wage': {'numeric': 148100}}, 'source': {'kind': kind}}
+        return {'result': {'structuredContent': data}}
+    monkeypatch.setattr(verifier, 'request', request)
+    argv = ['verify', 'bls-oews', '--sha', 'a' * 40]
+    if failure == 'pre_deploy':
+        argv += ['--base', 'http://localhost:8080', '--no-upstream']
+    monkeypatch.setattr('sys.argv', argv)
+    if failure in ('instructions', 'not_bundled', 'wrong_source'):
+        with pytest.raises((AssertionError, RuntimeError)):
+            verifier.main()
+    else:
+        verifier.main()
+        expected = ['get_data_status', 'get_wage_data']
+        if failure is None:
+            expected += ['get_wage_data'] * 3
+        assert calls == expected
+
+
+def test_bls_monitor_requires_the_bundled_source(monkeypatch):
+    hc = _health_check()
+    service = {'endpoint': 'https://bls.example/mcp'}
+    def stub(kind):
+        def request(url, payload=None):
+            if url.endswith('/health'):
+                return {'status': 'ok', 'release_sha': '8f87c41aaa'}
+            if payload['method'] == 'initialize':
+                return {'result': {'serverInfo': {'version': '1.1.0'}}}
+            assert payload['params']['name'] == 'get_wage_data'
+            return {'result': {'structuredContent': {'source': {'kind': kind, 'release': 'May 2025'}}}}
+        return request
+    monkeypatch.setattr(hc._verify, 'request', stub('bundled_bls_oews_files'))
+    assert 'bundled May 2025 OEWS release' in hc.check('bls-oews', service)
+    monkeypatch.setattr(hc._verify, 'request', stub('bls_public_api'))
+    with pytest.raises(RuntimeError, match='expected bundled_bls_oews_files'):
+        hc.check('bls-oews', service)

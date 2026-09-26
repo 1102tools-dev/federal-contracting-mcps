@@ -1,6 +1,6 @@
 # Unified MCP releases
 
-A versioned GitHub release builds the Python packages and the seven hosted MCP
+A versioned GitHub release builds the Python packages and the eight hosted MCP
 services from the same canonical checkout. Ordinary commits and documentation
 edits do not deploy production.
 
@@ -19,7 +19,7 @@ does not publish website content or submit directory listings.
 ## Source and release rules
 
 - `servers/` is the source for both local packages and hosted services.
-- `deploy/services.json` lists the seven hosted services, package paths, existing
+- `deploy/services.json` lists the eight hosted services, package paths, existing
   application names, endpoints, and tool counts. Other packages only go to PyPI.
 - `deploy/<service>/` owns the Worker wrapper, frozen container build, and npm lock.
 - Keep the existing `publish-pypi.yml` filename: PyPI Trusted Publishers refer to it.
@@ -37,7 +37,7 @@ does not publish website content or submit directory listings.
 - Push a new `v*` tag only after review and tests. Manual workflow dispatch on a tag
   supports retries. Never overlap a legacy release with the first unified release.
 - The workflow serializes unified production releases. Cloudflare deployment and
-  live verification must succeed for every service in the release (all seven for
+  live verification must succeed for every service in the release (all eight for
   a `v*` tag, one for a scoped tag) before PyPI starts.
   A partial failure is reported as a failed release.
   It is not a transaction, and PyPI versions cannot be overwritten or rolled back.
@@ -127,6 +127,8 @@ patch.
 ## Operator-keyed services
 
 GSA Per Diem and Regulations.gov call api.data.gov with a key held by 1102tools, one key per service. Each key is stored as a Worker secret (`PERDIEM_API_KEY` on `gsa-perdiem-mcp`, `REGULATIONS_GOV_API_KEY` on `regulations-gov-mcp`) and passed to the container at start. Secrets persist across deploys; rotate one with `wrangler secret put <NAME> --name <worker>` (a running container keeps the old value until it restarts, which happens after two idle minutes or on the next deploy). Both images set a hosted flag (`PERDIEM_HOSTED=1`, `REGULATIONS_HOSTED=1`): the server refuses to start without its key rather than serving without it (neither server has a DEMO_KEY fallback), and reports `hosted_publisher_key`, which release verification and the health check both require. The servers cap upstream calls at 950 per rolling hour, and hosted containers cache identical responses in memory (up to a day for Per Diem; 15 minutes and 24 MiB for Regulations.gov; the cache is lost when an idle container sleeps), so release verification's repeated call reaches upstream once per key.
+
+BLS OEWS (1.1.0) has no key and makes no upstream call: every tool answers from the current OEWS release bundled in the image (`servers/bls-oews-mcp/src/bls_oews_mcp/data/`). Its image sets `BLS_HOSTED=1`, so the server refuses to start if the bundled database is missing or does not match its manifest, and release verification and the health check require results sourced from `bundled_bls_oews_files`. The weekly `bls-source-watch.yml` opens an issue when BLS publishes a new release; refresh with `scripts/build_oews_db.py`, update the golden values, run `BLS_LIVE_TESTS=1 uv run pytest tests/test_live_parity.py` (no key needed), bump the version, and release. It was created on 2026-09-26 with `scripts/first_deploy_hosted.sh bls-oews`, the one-time manual first deploy for a new service (CI only redeploys services already in `deploy/services.json`).
 
 From 1.1.0, GSA Per Diem answers ZIP, state, and M&IE lookups for bundled fiscal years from GSA's published files in the image (`servers/gsa-perdiem-mcp/src/gsa_perdiem_mcp/data/`); only city lookups and unbundled years use the key. Its release verification therefore adds one live `lookup_city_perdiem` call. Refresh the bundled data when GSA posts or corrects a file: run `scripts/build_snapshot.py`, run the live parity tests (`MCP_LIVE_TESTS=1 uv run pytest tests/test_live_parity.py` with a registered key), bump the package version, and release.
 

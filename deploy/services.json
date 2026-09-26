@@ -61,5 +61,14 @@
     "endpoint": "https://regulations-gov.1102tools.com/mcp",
     "tools": 9,
     "application_id": "a0353bca-05c2-44bd-b5e2-bd703062f204"
+  },
+  "bls-oews": {
+    "package": "bls-oews-mcp",
+    "module": "bls_oews_mcp",
+    "worker": "bls-oews-mcp",
+    "application": "bls-oews-mcp-public",
+    "endpoint": "https://bls-oews.1102tools.com/mcp",
+    "tools": 8,
+    "application_id": "a032779f-43ea-45f4-abd5-449099e866b9"
   }
 }
