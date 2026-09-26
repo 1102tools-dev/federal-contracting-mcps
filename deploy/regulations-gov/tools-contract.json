@@ -6,12 +6,22 @@
       "readOnlyHint": true,
       "title": "FAR Case History"
     },
-    "description": "Get the full lifecycle of a FAR/DFARS rulemaking case.\n\n    Fetches the docket metadata (title, abstract, RIN) plus the documents\n    filed under the docket, sorted by most recent first. Follows pagination\n    up to 1,000 documents (4 pages); larger dockets set truncated=true\n    (FAR/DARS dockets are far smaller, but the tool accepts any docket).\n\n    docket_id examples: FAR-2023-0008, DARS-2025-0071\n\n    Returns the docket abstract, RIN (links to Unified Agenda), and the\n    documents with their types, dates, and URLs.\n    ",
+    "description": "Get the lifecycle of a FAR/DFARS rulemaking case, summary first.\n\n    Returns the docket metadata (title, abstract, RIN linking to the\n    Unified Agenda), the docket's total document count, counts by document\n    type and of documents open for comment across the whole docket, and one\n    page of its documents, most recent first, with types, dates, and URLs.\n    When the docket has more documents, truncated=true and next_page_number\n    gives the page that continues the list.\n\n    page_size: 5-100 documents per page (default 25). page_number: 1-40.\n\n    docket_id examples: FAR-2023-0008, DARS-2025-0071\n    ",
     "inputSchema": {
       "properties": {
         "docket_id": {
           "title": "Docket Id",
           "type": "string"
+        },
+        "page_number": {
+          "default": 1,
+          "title": "Page Number",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 25,
+          "title": "Page Size",
+          "type": "integer"
         }
       },
       "required": [
@@ -148,7 +158,7 @@
       "readOnlyHint": true,
       "title": "Open Comment Periods"
     },
-    "description": "Find documents with currently open comment periods.\n\n    Searches for documents where withinCommentPeriod=true, sorted by\n    soonest closing deadline (ascending commentEndDate, so even when the\n    result set is truncated it keeps the deadlines you can still act on).\n    Returns document IDs, titles, agencies, comment end dates, docket IDs,\n    the API-true total_open, and a truncated flag when more exist than the\n    250 returned.\n\n    Default searches FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA in a single\n    comma-joined query. Pass agency_ids to narrow or expand the scope. An\n    empty list is rejected; pass None to use the defaults.\n    ",
+    "description": "Find documents with currently open comment periods.\n\n    Searches for documents where withinCommentPeriod=true, sorted by\n    soonest closing deadline (ascending commentEndDate), so page 1 holds\n    the deadlines you can still act on. Returns document IDs, titles,\n    agencies, comment end dates, docket IDs, and the API-true total_open.\n    When more documents exist, truncated=true and next_page_number gives\n    the page that continues the list (later pages close later).\n\n    page_size: 5-100 documents per page (default 25). page_number: 1-40.\n\n    Default searches FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA in a single\n    comma-joined query. Pass agency_ids to narrow or expand the scope. An\n    empty list is rejected; pass None to use the defaults.\n    ",
     "inputSchema": {
       "properties": {
         "agency_ids": {
@@ -165,6 +175,16 @@
           ],
           "default": null,
           "title": "Agency Ids"
+        },
+        "page_number": {
+          "default": 1,
+          "title": "Page Number",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 25,
+          "title": "Page Size",
+          "type": "integer"
         }
       },
       "title": "open_comment_periodsArguments",

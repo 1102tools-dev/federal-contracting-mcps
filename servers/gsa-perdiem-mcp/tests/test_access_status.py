@@ -27,11 +27,13 @@ def _status(monkeypatch, key=None, hosted=None):
 
 
 @pytest.mark.parametrize("value", [None, "", "   \t"])
-def test_local_without_key_discloses_demo_key_fallback(monkeypatch, value):
+def test_local_without_key_reports_key_missing_and_setup(monkeypatch, value):
     payload = _status(monkeypatch, key=value)
-    assert payload["live_lookup_access"] == "demo_key_fallback"
-    assert "DEMO_KEY" in payload["access_note"]
-    assert "10 requests per hour" in payload["access_note"]
+    assert payload["live_lookup_access"] == "key_missing"
+    assert payload["credential_env"] == "PERDIEM_API_KEY"
+    assert payload["setup_url"] == "https://api.data.gov/signup/"
+    assert "work without a key" in payload["access_note"]
+    assert "DEMO_KEY" not in repr(payload)
 
 
 def test_local_with_key_reports_configured_unverified_without_value(monkeypatch):

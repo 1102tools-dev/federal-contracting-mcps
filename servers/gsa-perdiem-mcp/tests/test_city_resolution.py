@@ -17,6 +17,7 @@ import pytest
 import gsa_perdiem_mcp.server as srv
 
 FIXTURES = Path(__file__).parent / "fixtures" / "gsa_city"
+_REAL_GET = srv._get
 
 
 @pytest.fixture(autouse=True)
@@ -111,8 +112,15 @@ def test_hosted_city_results_have_no_key_language():
         assert "DEMO_KEY" not in text and "PERDIEM_API_KEY" not in text
 
 
-def test_local_demo_key_mode_adds_access_note(monkeypatch):
+def test_local_city_lookup_without_key_asks_for_one(monkeypatch):
+    from mcp.server.mcpserver.exceptions import ToolError
+
     monkeypatch.delenv("PERDIEM_HOSTED")
     monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
-    r = _city("McLean", "VA")
-    assert "DEMO_KEY" in r["access_note"]
+    monkeypatch.setattr(srv, "_get", _REAL_GET)
+    monkeypatch.setattr(srv, "_get_client", lambda: pytest.fail("no key, so no upstream request"))
+    with pytest.raises(ToolError, match="set PERDIEM_API_KEY") as caught:
+        _city("McLean", "VA")
+    assert "DEMO_KEY" not in str(caught.value)
+    zip_rate = asyncio.run(srv.lookup_zip_perdiem("22201", 2027))
+    assert zip_rate["source"]["kind"] != "gsa_per_diem_api", "bundled lookups stay keyless"

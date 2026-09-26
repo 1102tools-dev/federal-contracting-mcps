@@ -7,7 +7,7 @@ startCommand:
     properties:
       perdiemApiKey:
         type: string
-        description: "Free key from https://api.data.gov/signup/. 1,000 req/hr. Same key works for regulations-gov-mcp. DEMO_KEY fallback exists but its ~10 req/hr limit (live-measured) is too tight for real use."
+        description: "Free key from https://api.data.gov/signup/. 1,000 req/hr. Same key works for regulations-gov-mcp. Required for city lookups; ZIP, state, and M&IE lookups work without it."
   commandFunction: |
     (config) => ({
       command: 'uvx',

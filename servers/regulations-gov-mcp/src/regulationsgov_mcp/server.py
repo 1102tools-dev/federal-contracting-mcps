@@ -3,9 +3,9 @@
 """Regulations.gov MCP server.
 
 Federal rulemaking dockets, documents, public comments, and comment period
-tracking. Authentication via REGULATIONS_GOV_API_KEY environment variable.
-Falls back to DEMO_KEY (10 req/hr, live-measured) if not set, except in the
-hosted deployment (REGULATIONS_HOSTED=1), which requires the publisher key.
+tracking. Requires a free api.data.gov key in REGULATIONS_GOV_API_KEY; without
+it, data tools return setup instructions. The hosted deployment
+(REGULATIONS_HOSTED=1) uses the publisher key.
 
 Complements the Federal Register MCP (what was published) by providing the
 rulemaking docket structure, public comments, and comment period status.
@@ -33,7 +33,6 @@ from .constants import (
     BASE_URL,
     DEFAULT_PAGE_SIZE,
     DEFAULT_TIMEOUT,
-    MAX_PAGE_SIZE,
     MAX_TOOL_PAGE_SIZE,
     MIN_PAGE_SIZE,
     PROCUREMENT_AGENCIES,
@@ -392,34 +391,20 @@ def _get_api_key() -> str:
     key = _configured_key()
     if key:
         return key
-    if _hosted():
-        # Fail closed: the hosted service must never silently fall back to the
-        # shared DEMO_KEY (about 10 requests per hour for everyone).
-        raise ToolError(_HOSTED_KEY_MISSING)
-    return "DEMO_KEY"
+    raise ToolError(_HOSTED_KEY_MISSING if _hosted() else _KEY_MISSING)
 
 
 def _live_access_mode() -> str:
     if _hosted():
         return "hosted_publisher_key" if _configured_key() else "hosted_key_missing"
-    return "configured_unverified" if _configured_key() else "demo_key_fallback"
+    return "configured_unverified" if _configured_key() else "key_missing"
 
 
-# Data results carry the DEMO_KEY limit as a fact about the result rather than
-# as server instructions, which directory policies discourage.
-_DEMO_KEY_NOTE = (
-    "Regulations.gov data is using the shared api.data.gov DEMO_KEY "
-    "(about 10 requests per hour, live-measured). A free "
-    "REGULATIONS_GOV_API_KEY from "
-    "https://open.gsa.gov/api/regulationsgov/#getting-started allows "
-    "1,000 per hour."
+_KEY_MISSING = (
+    "Regulations.gov needs a free api.data.gov key: register at "
+    "https://open.gsa.gov/api/regulationsgov/#getting-started, set "
+    "REGULATIONS_GOV_API_KEY, and restart the server."
 )
-
-
-def _with_access_note(result: dict[str, Any]) -> dict[str, Any]:
-    if _live_access_mode() == "demo_key_fallback":
-        result["access_note"] = _DEMO_KEY_NOTE
-    return result
 
 
 @mcp.tool(annotations={"title": "Check Regulations.gov Data Access", **_LOCAL_ONLY})
@@ -433,16 +418,11 @@ def get_access_status() -> dict[str, Any]:
             "users_need_key": False,
             "validation": "presence_only",
         }
-    configured = mode == "configured_unverified"
     return {
         "service": "Regulations.gov API",
-        "status": "configured_unverified" if configured else "limited_fallback",
+        "status": mode,
         "credential_env": "REGULATIONS_GOV_API_KEY",
-        "required_for": ["higher-volume Regulations.gov docket and comment research"],
-        "fallback": None if configured else {
-            "mode": "api.data.gov DEMO_KEY",
-            "limit": "approximately 10 requests per hour (live-measured)",
-        },
+        "required_for": ["every Regulations.gov data tool"],
         "setup_url": "https://open.gsa.gov/api/regulationsgov/#getting-started",
         "validation": "presence_only",
         "restart_required": True,
@@ -465,13 +445,13 @@ def _get_client() -> httpx.AsyncClient:
 def _pacer(api_key: str) -> FederalApiPacer:
     return FederalApiPacer(
         bucket="api.data.gov",
-        default_interval=4.0 if api_key == "DEMO_KEY" else REGISTERED_KEY_INTERVAL,
+        default_interval=REGISTERED_KEY_INTERVAL,
         credential=api_key,
     )
 
 
 # api.data.gov limits a registered key per rolling hour (1,000 by default), not per
-# second, so a registered key can burst; DEMO_KEY keeps the conservative spacing.
+# second, so a registered key can burst.
 REGISTERED_KEY_INTERVAL = 0.6
 HOURLY_UPSTREAM_CAP = int(os.environ.get("API_DATA_GOV_HOURLY_CAP", "950"))
 _upstream_starts: collections.deque[float] = collections.deque()
@@ -554,9 +534,8 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
                     "service, not something the user can fix; try again later."
                 )
             return (
-                "HTTP 403: API key rejected or missing. "
-                "Set REGULATIONS_GOV_API_KEY env var. "
-                "Register free at https://open.gsa.gov/api/regulationsgov/#getting-started"
+                "HTTP 403: api.data.gov rejected the configured REGULATIONS_GOV_API_KEY. "
+                "Check the key at https://open.gsa.gov/api/regulationsgov/#getting-started"
             )
         return (
             f"HTTP 403: Request blocked. Common cause: Regulations.gov's WAF "
@@ -569,15 +548,9 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
                 "HTTP 429: the Regulations.gov API rate limit for this service was "
                 "reached. Retry in a few minutes."
             )
-        if mode == "configured_unverified":
-            return (
-                "HTTP 429: the configured REGULATIONS_GOV_API_KEY reached its "
-                "api.data.gov hourly limit (1,000 req/hr by default). Retry later."
-            )
         return (
-            "HTTP 429: Rate limited (DEMO_KEY allows about 10 req/hr, live-measured). "
-            "Register a free key for 1,000/hr at "
-            "https://open.gsa.gov/api/regulationsgov/#getting-started"
+            "HTTP 429: the configured REGULATIONS_GOV_API_KEY reached its "
+            "api.data.gov hourly limit (1,000 req/hr by default). Retry later."
         )
     if status == 400:
         if "page" in low and "size" in low:
@@ -655,8 +628,7 @@ async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any
         safe_error = _redact_sensitive_text(str(e), key)
         raise ToolError(f"Network error calling Regulations.gov: {safe_error}") from e
     except RuntimeError as e:
-        redact_key = None if key == "DEMO_KEY" else key
-        raise ToolError(_redact_sensitive_text(str(e), redact_key)) from e
+        raise ToolError(_redact_sensitive_text(str(e), key)) from e
     if r.status_code >= 400:
         raise ToolError(_format_error(r.status_code, r.text, key))
     try:
@@ -927,10 +899,10 @@ async def _search_documents(
 
     result = await _get("documents", params)
     ctx = f"agency_id={agency_id!r}, document_type={document_type!r}"
-    return _with_access_note(_compact_listing(_flag_no_data(
+    return _compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
         hints=("document_type uses exact casing ('Proposed Rule', not 'proposed rule')",),
-    )))
+    ))
 
 
 @mcp.tool(annotations={"title": "Get Document Detail", **_OPEN_WORLD})
@@ -951,7 +923,7 @@ async def get_document_detail(
     params: dict[str, Any] = {}
     if include_attachments:
         params["include"] = "attachments"
-    return _with_access_note(_compact_detail(await _get(f"documents/{document_id}", params)))
+    return _compact_detail(await _get(f"documents/{document_id}", params))
 
 
 @mcp.tool(annotations={"title": "Search Comments", **_OPEN_WORLD})
@@ -1016,10 +988,10 @@ async def search_comments(
         f"agency_id={agency_id!r}, docket_id={docket_id!r}, "
         f"comment_on_id={comment_on_id!r}"
     )
-    return _with_access_note(_compact_listing(_flag_no_data(
+    return _compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
         hints=("comment_on_id is the document's hex objectId, not its documentId",),
-    )))
+    ))
 
 
 @mcp.tool(annotations={"title": "Get Comment Detail", **_OPEN_WORLD})
@@ -1041,7 +1013,7 @@ async def get_comment_detail(
     params: dict[str, Any] = {}
     if include_attachments:
         params["include"] = "attachments"
-    return _with_access_note(_compact_detail(await _get(f"comments/{comment_id}", params)))
+    return _compact_detail(await _get(f"comments/{comment_id}", params))
 
 
 @mcp.tool(annotations={"title": "Search Dockets", **_OPEN_WORLD})
@@ -1106,10 +1078,10 @@ async def search_dockets(
 
     result = await _get("dockets", params)
     ctx = f"agency_id={agency_id!r}, docket_type={docket_type!r}"
-    return _with_access_note(_compact_listing(_flag_no_data(
+    return _compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
         hints=("docket_type uses exact casing ('Rulemaking', not 'rulemaking')",),
-    )))
+    ))
 
 
 @mcp.tool(annotations={"title": "Get Docket Detail", **_OPEN_WORLD})
@@ -1122,25 +1094,39 @@ async def get_docket_detail(docket_id: str) -> dict[str, Any]:
     docket_id format: FAR-2023-0008, DARS-2025-0071, SBA-2024-0002
     """
     docket_id = _validate_id(docket_id, field="docket_id")
-    return _with_access_note(_compact_detail(await _get(f"dockets/{docket_id}")))
+    return _compact_detail(await _get(f"dockets/{docket_id}"))
 
 
 # ---------------------------------------------------------------------------
 # Workflow tools
 # ---------------------------------------------------------------------------
 
+def _page_fields(total: Any, page_size: int, page_number: int, returned: int) -> dict[str, Any]:
+    """Pagination metadata shared by the workflow tools."""
+    fields: dict[str, Any] = {"page_number": page_number, "page_size": page_size, "returned": returned}
+    shown_through = (page_number - 1) * page_size + returned
+    if isinstance(total, int) and total > shown_through and returned == page_size and page_number < 40:
+        fields["truncated"] = True
+        fields["next_page_number"] = page_number + 1
+    return fields
+
+
 @mcp.tool(annotations={"title": "Open Comment Periods", **_OPEN_WORLD})
 async def open_comment_periods(
     agency_ids: list[str] | None = None,
+    page_size: int = DEFAULT_PAGE_SIZE,
+    page_number: int = 1,
 ) -> dict[str, Any]:
     """Find documents with currently open comment periods.
 
     Searches for documents where withinCommentPeriod=true, sorted by
-    soonest closing deadline (ascending commentEndDate, so even when the
-    result set is truncated it keeps the deadlines you can still act on).
-    Returns document IDs, titles, agencies, comment end dates, docket IDs,
-    the API-true total_open, and a truncated flag when more exist than the
-    250 returned.
+    soonest closing deadline (ascending commentEndDate), so page 1 holds
+    the deadlines you can still act on. Returns document IDs, titles,
+    agencies, comment end dates, docket IDs, and the API-true total_open.
+    When more documents exist, truncated=true and next_page_number gives
+    the page that continues the list (later pages close later).
+
+    page_size: 5-100 documents per page (default 25). page_number: 1-40.
 
     Default searches FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA in a single
     comma-joined query. Pass agency_ids to narrow or expand the scope. An
@@ -1165,6 +1151,8 @@ async def open_comment_periods(
         agencies = validated
     else:
         agencies = list(PROCUREMENT_AGENCIES)
+    page_size = _validate_page_size(page_size)
+    page_number = _validate_page_number(page_number)
 
     # One comma-joined call (documented multi-agency form) replaces the old
     # per-agency loop of 8 round-trips. Ascending sort is the load-bearing
@@ -1175,8 +1163,8 @@ async def open_comment_periods(
         agency_id=",".join(agencies),
         within_comment_period=True,
         sort="commentEndDate",
-        page_size=MAX_PAGE_SIZE,
-        max_page_size=MAX_PAGE_SIZE,
+        page_size=page_size,
+        page_number=page_number,
     )
 
     all_docs: list[dict[str, Any]] = []
@@ -1203,95 +1191,95 @@ async def open_comment_periods(
     response: dict[str, Any] = {
         "agencies_searched": agencies,
         "total_open": total_open,
-        "returned": len(all_docs),
+        **_page_fields(api_total, page_size, page_number, len(all_docs)),
         "documents": dated + undated,
     }
-    if isinstance(api_total, int) and api_total > len(all_docs):
-        response["truncated"] = True
+    if response.get("truncated"):
+        first = (page_number - 1) * page_size + 1
         response["truncated_note"] = (
-            f"Showing the {len(all_docs)} soonest-closing of {api_total} open "
-            f"documents (one page of 250, ascending commentEndDate). The "
-            f"omitted documents all close LATER than the ones shown."
+            f"Showing open documents {first}-{first + len(all_docs) - 1} of {api_total}, "
+            f"soonest-closing first. The rest close later: request "
+            f"page_number={page_number + 1}, or a larger page_size (up to {MAX_TOOL_PAGE_SIZE})."
         )
     if undated:
         response["undated_note"] = (
-            f"{len(undated)} open document(s) report no commentEndDate; they "
-            f"are listed after the dated ones instead of being dropped."
+            f"{len(undated)} open document(s) on this page report no commentEndDate; "
+            f"they are listed after the dated ones instead of being dropped."
         )
-    return _with_access_note(response)
+    return response
 
 
 @mcp.tool(annotations={"title": "FAR Case History", **_OPEN_WORLD})
-async def far_case_history(docket_id: str) -> dict[str, Any]:
-    """Get the full lifecycle of a FAR/DFARS rulemaking case.
+async def far_case_history(
+    docket_id: str,
+    page_size: int = DEFAULT_PAGE_SIZE,
+    page_number: int = 1,
+) -> dict[str, Any]:
+    """Get the lifecycle of a FAR/DFARS rulemaking case, summary first.
 
-    Fetches the docket metadata (title, abstract, RIN) plus the documents
-    filed under the docket, sorted by most recent first. Follows pagination
-    up to 1,000 documents (4 pages); larger dockets set truncated=true
-    (FAR/DARS dockets are far smaller, but the tool accepts any docket).
+    Returns the docket metadata (title, abstract, RIN linking to the
+    Unified Agenda), the docket's total document count, counts by document
+    type and of documents open for comment across the whole docket, and one
+    page of its documents, most recent first, with types, dates, and URLs.
+    When the docket has more documents, truncated=true and next_page_number
+    gives the page that continues the list.
+
+    page_size: 5-100 documents per page (default 25). page_number: 1-40.
 
     docket_id examples: FAR-2023-0008, DARS-2025-0071
-
-    Returns the docket abstract, RIN (links to Unified Agenda), and the
-    documents with their types, dates, and URLs.
     """
     docket_id = _validate_id(docket_id, field="docket_id")
+    page_size = _validate_page_size(page_size)
+    page_number = _validate_page_number(page_number)
 
     docket = await get_docket_detail(docket_id)
     docket_attrs = _safe_dict(_safe_dict(docket.get("data")).get("attributes"))
 
-    _MAX_DOC_PAGES = 4  # 4 x 250 = 1,000 documents
+    docs_result = await _search_documents(
+        docket_id=docket_id,
+        sort="-postedDate",
+        page_size=page_size,
+        page_number=page_number,
+    )
     documents: list[dict[str, Any]] = []
-    total_documents: Any = None
-    for page in range(1, _MAX_DOC_PAGES + 1):
-        docs_result = await _search_documents(
-            docket_id=docket_id,
-            sort="-postedDate",
-            page_size=MAX_PAGE_SIZE,
-            page_number=page,
-            max_page_size=MAX_PAGE_SIZE,
-        )
-        page_items = _as_list(docs_result.get("data"))
-        for item in page_items:
-            item = _safe_dict(item)
-            attrs = _safe_dict(item.get("attributes"))
-            documents.append({
-                "document_id": item.get("id"),
-                "document_type": attrs.get("documentType"),
-                "title": attrs.get("title"),
-                "posted_date": attrs.get("postedDate"),
-                "comment_end_date": attrs.get("commentEndDate"),
-                "within_comment_period": attrs.get("withinCommentPeriod"),
-                "url": f"https://www.regulations.gov/document/{item.get('id')}",
-            })
-        meta = _safe_dict(docs_result.get("meta"))
-        if total_documents is None:
-            total_documents = meta.get("totalElements")
-        if len(page_items) < 250:
-            break
-        if isinstance(total_documents, int) and len(documents) >= total_documents:
-            break
+    for item in _as_list(docs_result.get("data")):
+        item = _safe_dict(item)
+        attrs = _safe_dict(item.get("attributes"))
+        documents.append({
+            "document_id": item.get("id"),
+            "document_type": attrs.get("documentType"),
+            "title": attrs.get("title"),
+            "posted_date": attrs.get("postedDate"),
+            "comment_end_date": attrs.get("commentEndDate"),
+            "within_comment_period": attrs.get("withinCommentPeriod"),
+            "url": f"https://www.regulations.gov/document/{item.get('id')}",
+        })
+    meta = _safe_dict(docs_result.get("meta"))
+    facets = _safe_dict(meta.get("facets"))
+    api_total = meta.get("totalElements")
 
-    if total_documents is None:
-        total_documents = len(documents)
-
-    out = {
+    out: dict[str, Any] = {
         "docket_id": docket_id,
         "title": docket_attrs.get("title"),
         "abstract": docket_attrs.get("dkAbstract"),
         "rin": docket_attrs.get("rin"),
         "agency": docket_attrs.get("agencyId"),
-        "total_documents": total_documents,
-        "documents": documents,
         "url": f"https://www.regulations.gov/docket/{docket_id}",
+        "total_documents": api_total if isinstance(api_total, int) else len(documents),
     }
-    if isinstance(total_documents, int) and total_documents > len(documents):
-        out["truncated"] = True
+    if facets.get("documentType"):
+        out["documents_by_type"] = facets["documentType"]
+    if "withinCommentPeriod" in facets:
+        out["open_for_comment"] = _safe_dict(facets["withinCommentPeriod"]).get("true", 0)
+    out.update(_page_fields(api_total, page_size, page_number, len(documents)))
+    out["documents"] = documents
+    if out.get("truncated"):
+        first = (page_number - 1) * page_size + 1
         out["truncated_note"] = (
-            f"Docket has {total_documents} documents; the {len(documents)} "
-            f"most recent are shown ({_MAX_DOC_PAGES} pages of 250)."
+            f"Showing documents {first}-{first + len(documents) - 1} of {api_total}, most "
+            f"recent first. Request page_number={page_number + 1} for older documents."
         )
-    return _with_access_note(out)
+    return out
 
 
 # ---------------------------------------------------------------------------

@@ -8,9 +8,10 @@ annually per fiscal year (Oct 1 - Sep 30).
 ZIP, state, and M&IE lookups for bundled fiscal years are answered from
 GSA's published rate, ZIP, and M&IE files (see snapshot.py); no key is
 needed. City lookups call the GSA Per Diem API, which resolves city names
-to rate areas. That call uses PERDIEM_API_KEY, falling back to DEMO_KEY
-(~10 req/hr) if not set. Register free at api.data.gov/signup for
-1,000 req/hr. Hosted deployments (PERDIEM_HOSTED=1) use the publisher's key.
+to rate areas. That call requires PERDIEM_API_KEY (free at
+https://api.data.gov/signup/, 1,000 req/hr); without it city lookups return
+setup instructions and the bundled lookups keep working. Hosted deployments
+(PERDIEM_HOSTED=1) use the publisher's key.
 
 These are maximum reimbursement ceilings, not actual hotel prices.
 CONUS only. Non-foreign OCONUS (Alaska, Hawaii, territories) rates are
@@ -337,32 +338,27 @@ def _get_api_key() -> str:
     if key:
         return key
     if _hosted():
-        # Fail closed: the hosted service must never silently fall back to the
-        # shared DEMO_KEY (about 10 requests per hour for everyone).
         raise ToolError(
             "GSA Per Diem service credential is not configured. This is a "
             "server-side problem with the hosted service; ZIP, state, and M&IE "
             "lookups for bundled fiscal years still work."
         )
-    return "DEMO_KEY"
+    raise ToolError(_KEY_MISSING)
 
 
 def _live_access_mode() -> str:
     configured = bool(os.environ.get("PERDIEM_API_KEY", "").strip())
     if _hosted():
         return "hosted_publisher_key" if configured else "hosted_key_missing"
-    return "configured_unverified" if configured else "demo_key_fallback"
+    return "configured_unverified" if configured else "key_missing"
 
 
-_DEMO_KEY_NOTE = (
-    "Live city lookups are using the shared api.data.gov DEMO_KEY "
-    "(about 10 requests per hour). A free PERDIEM_API_KEY from "
-    "https://api.data.gov/signup/ allows 1,000 per hour."
+_KEY_MISSING = (
+    "City lookups call the GSA Per Diem API, which needs a free api.data.gov "
+    "key: register at https://api.data.gov/signup/, set PERDIEM_API_KEY, and "
+    "restart the server. ZIP, state, and M&IE lookups for bundled fiscal "
+    "years work without a key."
 )
-
-
-def _access_note() -> str | None:
-    return _DEMO_KEY_NOTE if _live_access_mode() == "demo_key_fallback" else None
 
 
 _LIVE_TOOLS = ["lookup_city_perdiem", "estimate_travel_cost", "compare_locations"]
@@ -404,8 +400,10 @@ def get_data_status() -> dict[str, Any]:
         ),
         "live_lookup_access": mode,
     }
-    if mode == "demo_key_fallback":
-        out["access_note"] = _DEMO_KEY_NOTE
+    if mode == "key_missing":
+        out["credential_env"] = "PERDIEM_API_KEY"
+        out["setup_url"] = "https://api.data.gov/signup/"
+        out["access_note"] = _KEY_MISSING
     elif mode == "configured_unverified":
         out["credential_env"] = "PERDIEM_API_KEY"
         out["validation"] = "presence_only"
@@ -428,13 +426,13 @@ def _get_client() -> httpx.AsyncClient:
 def _pacer(api_key: str) -> FederalApiPacer:
     return FederalApiPacer(
         bucket="api.data.gov",
-        default_interval=4.0 if api_key == "DEMO_KEY" else REGISTERED_KEY_INTERVAL,
+        default_interval=REGISTERED_KEY_INTERVAL,
         credential=api_key,
     )
 
 
 # api.data.gov limits a registered key per rolling hour (1,000 by default), not per
-# second, so a registered key can burst; DEMO_KEY keeps the conservative spacing.
+# second, so a registered key can burst.
 REGISTERED_KEY_INTERVAL = 0.6
 HOURLY_UPSTREAM_CAP = int(os.environ.get("API_DATA_GOV_HOURLY_CAP", "950"))
 _upstream_starts: collections.deque[float] = collections.deque()
@@ -489,16 +487,9 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
                 "This is a server-side issue; ZIP, state, and M&IE lookups for "
                 "bundled fiscal years still work without it."
             )
-        if mode == "configured_unverified":
-            return (
-                "HTTP 403: api.data.gov rejected the configured PERDIEM_API_KEY. "
-                "Check the key at https://api.data.gov/signup/."
-            )
         return (
-            "HTTP 403: API key rejected or missing. "
-            "Set PERDIEM_API_KEY env var, or the server will use DEMO_KEY "
-            "(~10 req/hr). Register free at https://api.data.gov/signup/ "
-            "for 1,000 req/hr."
+            "HTTP 403: api.data.gov rejected the configured PERDIEM_API_KEY. "
+            "Check the key at https://api.data.gov/signup/."
         )
     if status == 429:
         if mode.startswith("hosted"):
@@ -506,15 +497,9 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
                 "HTTP 429: the GSA Per Diem API rate limit was reached. Retry later; "
                 "ZIP, state, and M&IE lookups for bundled fiscal years are unaffected."
             )
-        if mode == "configured_unverified":
-            return (
-                "HTTP 429: the configured PERDIEM_API_KEY reached its api.data.gov "
-                "hourly limit (1,000 req/hr by default). Retry later."
-            )
         return (
-            "HTTP 429: Rate limited. DEMO_KEY allows ~10 req/hr; set "
-            "PERDIEM_API_KEY with a real key (1,000 req/hr). "
-            "Register free at https://api.data.gov/signup/."
+            "HTTP 429: the configured PERDIEM_API_KEY reached its api.data.gov "
+            "hourly limit (1,000 req/hr by default). Retry later."
         )
     if status == 500:
         return (
@@ -555,8 +540,7 @@ async def _get(path: str) -> Any:
             f"Network error calling GSA Per Diem API: {safe_error}"
         ) from e
     except RuntimeError as e:
-        redact_key = None if key == "DEMO_KEY" else key
-        raise ToolError(_redact_sensitive_text(str(e), redact_key)) from e
+        raise ToolError(_redact_sensitive_text(str(e), key)) from e
     if r.status_code >= 400:
         raise ToolError(_format_error(r.status_code, r.text, key))
     try:
@@ -993,7 +977,6 @@ async def lookup_city_perdiem(
         return {"query": query, "oconus": True, "error": _OCONUS_NOTE}
 
     res, source = await _lookup_city(city_clean, state_upper, year, county_clean)
-    note = _access_note() if source.get("kind") == "gsa_per_diem_api" else None
     if res["status"] == "no_data":
         out = {"query": query, "error": f"No rates found for {city_clean}, {state_upper} in FY{year}."
                + _no_rates_hint(year)}
@@ -1021,8 +1004,6 @@ async def lookup_city_perdiem(
             out["other_candidates"] = res["other_candidates"]
         if best.get("months_without_data"):
             out["months_without_data"] = best["months_without_data"]
-    if note:
-        out["access_note"] = note
     return out
 
 
@@ -1398,12 +1379,9 @@ async def estimate_travel_cost(
         return {"query": query, "oconus": True, "error": _OCONUS_NOTE}
 
     res, source = await _lookup_city(city_clean, state_upper, year, county_clean)
-    note = _access_note() if source.get("kind") == "gsa_per_diem_api" else None
     if res["status"] == "no_data":
         out = {"query": query, "error": f"No rates found for {city_clean}, {state_upper} in FY{year}."
                + _no_rates_hint(year)}
-        if note:
-            out["access_note"] = note
         return out
     if res["status"] != "resolved":
         out = {
@@ -1413,8 +1391,6 @@ async def estimate_travel_cost(
                      f"no estimate was produced.",
             "source": source,
         }
-        if note:
-            out["access_note"] = note
         return out
     best = res["rate"]
 
@@ -1483,8 +1459,6 @@ async def estimate_travel_cost(
         out["month_fallback_note"] = month_fallback_note
     if res.get("other_candidates"):
         out["other_candidates"] = res["other_candidates"]
-    if note:
-        out["access_note"] = note
     return out
 
 
@@ -1536,7 +1510,6 @@ async def compare_locations(
             continue
         prepared.append((city_clean, state_upper, county_clean))
 
-    used_api = False
     for city_clean, state_upper, county_clean in prepared:
         # Label rows by the QUERY, not the matched entry: labeling Arlington
         # by its matched NSA produced nonsense like "District of Columbia, VA".
@@ -1546,7 +1519,6 @@ async def compare_locations(
             continue
         try:
             res, source = await _lookup_city(city_clean, state_upper, year, county_clean)
-            used_api = used_api or source.get("kind") == "gsa_per_diem_api"
             if res["status"] == "resolved":
                 best = res["rate"]
                 results.append({
@@ -1582,9 +1554,6 @@ async def compare_locations(
 
     results.sort(key=lambda x: x.get("max_daily_total", 0), reverse=True)
     out: dict[str, Any] = {"fiscal_year": year, "locations": results}
-    note = _access_note() if used_api else None
-    if note:
-        out["access_note"] = note
     return out
 
 

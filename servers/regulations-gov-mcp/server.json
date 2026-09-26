@@ -8,21 +8,21 @@
     "source": "github",
     "subfolder": "servers/regulations-gov-mcp"
   },
-  "version": "1.1.0",
+  "version": "2.0.0",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "regulationsgov-mcp",
-      "version": "1.1.0",
+      "version": "2.0.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "description": "Optional free api.data.gov key for higher request limits.",
-          "isRequired": false,
+          "description": "Free api.data.gov key; required for every data tool.",
+          "isRequired": true,
           "isSecret": true,
           "format": "string",
           "name": "REGULATIONS_GOV_API_KEY"

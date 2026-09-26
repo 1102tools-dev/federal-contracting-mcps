@@ -2,8 +2,7 @@
 """Validation tests for gsa-perdiem-mcp.
 
 All tests route through mcp.call_tool. Live tests (MCP_LIVE_TESTS=1) are
-gated and use the minimum number of requests to stay under DEMO_KEY's
-~10 req/hr limit.
+gated, need PERDIEM_API_KEY for city lookups, and use few requests.
 """
 from __future__ import annotations
 
@@ -697,18 +696,18 @@ def test_get_handles_timeout():
 
 
 def test_get_formats_403(monkeypatch):
-    monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
+    monkeypatch.setenv("PERDIEM_API_KEY", "local-test-key")
     monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
     _install_fake_client(_FakeResp(403, "{}", "application/json"))
-    with pytest.raises(ToolError, match="API key rejected"):
+    with pytest.raises(ToolError, match="rejected the configured PERDIEM_API_KEY"):
         asyncio.run(srv._get("x"))
 
 
 def test_get_formats_429(monkeypatch):
-    monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
+    monkeypatch.setenv("PERDIEM_API_KEY", "local-test-key")
     monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
     _install_fake_client(_FakeResp(429, '{"error":{}}', "application/json"))
-    with pytest.raises(ToolError, match="Rate limited"):
+    with pytest.raises(ToolError, match="rate limit|hourly limit"):
         asyncio.run(srv._get("x"))
 
 
@@ -738,14 +737,18 @@ def test_get_api_key_uses_env(monkeypatch):
     assert srv._get_api_key() == "test-key-123"
 
 
-def test_get_api_key_falls_back_to_demo(monkeypatch):
+def test_get_api_key_requires_a_key(monkeypatch):
     monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
-    assert srv._get_api_key() == "DEMO_KEY"
+    monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
+    with pytest.raises(ToolError, match="https://api.data.gov/signup/"):
+        srv._get_api_key()
 
 
-def test_get_api_key_strips_whitespace_and_falls_back(monkeypatch):
+def test_get_api_key_treats_whitespace_as_missing(monkeypatch):
     monkeypatch.setenv("PERDIEM_API_KEY", "   ")
-    assert srv._get_api_key() == "DEMO_KEY"
+    monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
+    with pytest.raises(ToolError, match="set PERDIEM_API_KEY"):
+        srv._get_api_key()
 
 
 # ---------------------------------------------------------------------------

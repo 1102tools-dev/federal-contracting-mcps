@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0
+
+- City lookups (`lookup_city_perdiem`, `estimate_travel_cost`, `compare_locations`) require `PERDIEM_API_KEY`; the shared `DEMO_KEY` fallback is gone. Without a key they return setup instructions (free key at https://api.data.gov/signup/) instead of calling GSA. ZIP, state, and M&IE lookups for bundled fiscal years still need no key. `get_data_status` reports `key_missing` with `credential_env` and `setup_url`, and results no longer carry `access_note`. Hosted behavior is unchanged.
+- The key is sent in the `X-Api-Key` header, never in the request URL.
+
 ## 1.1.1
 
 - Bundled-data `source` and `get_data_status` now include `mie_file_covers` (for example `FY2025-present`). GSA names each M&IE breakdown file for its first fiscal year, which made current data look stale. Rate data is unchanged (the bundled FY files are byte-identical).
