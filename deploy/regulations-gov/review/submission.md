@@ -88,6 +88,6 @@ Production 2.0.0 on 2026-09-26 (release run 36269434859, all jobs passed): `/hea
 
 1. Resolve "Open before submission" above, and rerun the mock directory cases against production 2.0.0.
 2. Test every tool on production in Claude (custom connector) and ChatGPT (Developer Mode).
-3. OpenAI: create the plugin draft, enter the short description, listing copy, annotation justifications, test cases, starter prompts, demo URL, and icons from `review/assets/`. No screenshots (no UI).
-4. Claude: submit at claude.ai/directory/manage with the listing copy, `docs/directory-icons/regulations-gov.png`, the three starter prompts, and the support/privacy URLs. On the data-handling step, state that the server relays the public Regulations.gov API with a registered api.data.gov key and does not control the Regulations.gov endpoint.
+3. OpenAI: create the plugin draft, enter the short description, listing copy, annotation justifications, test cases, starter prompts, demo URL, and the directory and composer icons from `review/assets/` (the same light and dark set ChatGPT made). No screenshots (no UI).
+4. Claude: submit at claude.ai/directory/manage with the listing copy, the light and dark icons `review/assets/regulations-gov-directory-light.png` and `review/assets/regulations-gov-directory-dark.png`, the three starter prompts, and the support/privacy URLs. On the data-handling step, state that the server relays the public Regulations.gov API with a registered api.data.gov key and does not control the Regulations.gov endpoint.
 5. Review and accept each portal's attestations yourself.
