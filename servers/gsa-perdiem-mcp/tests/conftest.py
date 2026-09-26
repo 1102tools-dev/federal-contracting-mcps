@@ -32,6 +32,16 @@ def _disable_offline_network_pacing(monkeypatch):
     yield
 
 
+@pytest.fixture(autouse=True)
+def _offline_runs_like_ci(monkeypatch):
+    # CI runs the offline suite with no key. Drop a key exported in a developer
+    # shell too, so a local pass cannot depend on it; tests that need a key set
+    # a synthetic one themselves.
+    if not LIVE:
+        monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
+    yield
+
+
 # Each test runs in its own event loop (asyncio.run), but the server caches
 # an AsyncClient bound to the first loop; reset it so every test gets a
 # fresh client (same pattern as the per-file _reset_client fixtures).

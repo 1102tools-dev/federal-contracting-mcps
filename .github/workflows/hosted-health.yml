@@ -2,7 +2,8 @@ name: Hosted service health
 
 # Every 30 minutes, check each hosted MCP service end to end (health,
 # initialize, one upstream tool call, publisher-key mode, and for GSA Per Diem
-# an uncached GSA API city lookup that exercises the publisher key). Opens or updates one
+# a rotating GSA API city lookup that usually misses the response cache and
+# so exercises the publisher key). Opens or updates one
 # issue while anything fails and closes it when all services recover.
 # Read-only: never deploys or changes a service.
 

@@ -7,9 +7,11 @@ Prints a Markdown report; exits 1 if any service fails. Read-only.
 
 GSA Per Diem's representative ZIP lookup is served from bundled files, and its
 status tool only proves a key is configured. So each run also looks up one city
-through the GSA API, rotating through PERDIEM_CITIES so that no city repeats
-within the hosted 24-hour response cache: a revoked or rate-limited publisher
-key then fails the check instead of hiding behind cached or bundled data.
+through the GSA API, rotating through PERDIEM_CITIES so the monitor itself does
+not repeat a city within the hosted 24-hour response cache. The lookup is then
+very likely, though not guaranteed, to reach GSA: another client may have asked
+for the same city recently, and manual runs use up rotation slots. When it does
+reach GSA, a revoked or rate-limited publisher key fails the check.
 """
 import argparse, importlib.util, json, os, sys, time
 from pathlib import Path
