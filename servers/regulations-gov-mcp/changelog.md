@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.11
+
+- Removed the server `instructions` sent at initialization. When `REGULATIONS_GOV_API_KEY` is not configured, every data tool result now carries an `access_note` stating the shared `DEMO_KEY` limit and where to get a free key. Results with a configured key are unchanged. Tool names, arguments, and descriptions are unchanged.
+
 ## 1.0.10
 
 - With a registered api.data.gov key, requests are now spaced 0.6 seconds apart instead of 4 seconds. The key's limit is per rolling hour, not per second; DEMO_KEY keeps 4-second spacing.

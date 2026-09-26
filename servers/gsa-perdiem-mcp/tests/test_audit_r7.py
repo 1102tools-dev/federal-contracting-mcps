@@ -90,7 +90,9 @@ def test_api_resolved_city_gets_neutral_note(monkeypatch):
     assert "resolved" in note.lower()
 
 
-def test_api_resolved_prefers_county_mentioning_query(monkeypatch):
+def test_multiple_api_candidates_broken_by_census_county(monkeypatch):
+    # Arlington, VA is a Census place in Arlington County, which GSA's DC
+    # definition includes; the other candidates are dropped, not guessed.
     _patch_get(monkeypatch, _resp([
         _entry("Loudoun", county="Loudoun"),
         _entry("District of Columbia",
@@ -99,19 +101,33 @@ def test_api_resolved_prefers_county_mentioning_query(monkeypatch):
     ]))
     data = _payload(asyncio.run(_call(
         "lookup_city_perdiem", city="Arlington", state="VA")))
-    assert data["match_type"] == "api_resolved"
+    assert data["status"] == "resolved"
+    assert data["match_type"] == "census_tiebreak"
     assert data["matched_city"] == "District of Columbia"
     assert set(data["other_candidates"]) == {"Loudoun", "Wallops Island"}
     assert "Loudoun" in (data["match_note"] or "")
 
 
-def test_standard_fallback_still_wins_when_standard_row_present(monkeypatch):
+def test_standard_plus_nsa_without_tiebreak_is_ambiguous(monkeypatch):
+    # Previously this silently returned the Standard Rate.
     _patch_get(monkeypatch, _resp([
         _entry("Standard Rate", county="N/A", meals=68, months={"Jan": 110}),
         _entry("Some Other NSA", county="Elsewhere"),
     ]))
     data = _payload(asyncio.run(_call(
         "lookup_city_perdiem", city="Nowhereville", state="MA")))
+    assert data["status"] == "ambiguous"
+    assert "matched_city" not in data
+    assert {c["destination"] for c in data["candidates"]} == {"Standard Rate", "Some Other NSA"}
+
+
+def test_single_standard_row_is_standard_fallback(monkeypatch):
+    # GSA recognized a standard-rate city (e.g. Abingdon, VA).
+    _patch_get(monkeypatch, _resp([
+        _entry("Standard Rate", county="N/A", meals=68, months={"Jan": 110}),
+    ]))
+    data = _payload(asyncio.run(_call(
+        "lookup_city_perdiem", city="Abingdon", state="VA")))
     assert data["match_type"] == "standard_fallback"
     assert data["is_standard_rate"] is True
 

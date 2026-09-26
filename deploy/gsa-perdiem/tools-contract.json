@@ -2,10 +2,11 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Compare Locations"
     },
-    "description": "Compare per diem rates across multiple locations.\n\n    locations: list of {\"city\": \"...\", \"state\": \"XX\"} dicts, max 25 entries\n    (DEMO_KEY limits you to ~10 req/hr so this is generous). Returns rates\n    sorted by max daily total (highest first).\n\n    Useful for travel IGCE development when comparing destination costs.\n    ",
+    "description": "Compare per diem rates across multiple locations.\n\n    locations: list of {\"city\": \"...\", \"state\": \"XX\"} dicts (optionally\n    with \"county\"), max 25 entries. Returns rates sorted by max daily\n    total (highest first). Ambiguous or unresolved cities are listed with\n    their status and candidate rate areas instead of a rate.\n\n    Useful for travel IGCE development when comparing destination costs.\n    ",
     "inputSchema": {
       "properties": {
         "fiscal_year": {
@@ -47,15 +48,28 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Estimate Travel Cost"
     },
-    "description": "Estimate total per diem cost for a trip.\n\n    Calculates lodging + M&IE for the specified number of nights.\n    First and last travel days use 75% M&IE per 41 CFR 301-11.101.\n\n    travel_month: 3-letter abbreviation (Jan, Feb, ..., Dec). If omitted,\n    uses the max monthly lodging rate (conservative estimate for IGCE).\n\n    Does NOT include airfare or ground transportation. Add those separately.\n\n    Formula:\n    - Lodging = nightly_rate * num_nights\n    - M&IE = full_day_rate * (travel_days - 2) + first/last_day_rate * 2\n    - Travel days = num_nights + 1\n\n    num_nights bounded 1-365. A single trip longer than a year is\n    unlikely to be covered by per diem.\n    ",
+    "description": "Estimate total per diem cost for a trip.\n\n    Calculates lodging + M&IE for the specified number of nights.\n    First and last travel days use 75% M&IE per 41 CFR 301-11.101.\n\n    travel_month: 3-letter abbreviation (Jan, Feb, ..., Dec). If omitted,\n    uses the max monthly lodging rate (conservative estimate for IGCE).\n    fiscal_year: if omitted, the FY of the next occurrence of travel_month\n    (or the current FY when no month is given).\n    county: optional; selects the rate area when the city spans more than\n    one (see lookup_city_perdiem).\n\n    No estimate is produced when the city is ambiguous or unresolved; the\n    candidate rate areas are returned instead.\n\n    Does NOT include airfare or ground transportation.\n\n    Formula:\n    - Lodging = nightly_rate * num_nights\n    - M&IE = full_day_rate * (travel_days - 2) + first/last_day_rate * 2\n    - Travel days = num_nights + 1\n\n    num_nights bounded 1-365.\n    ",
     "inputSchema": {
       "properties": {
         "city": {
           "title": "City",
           "type": "string"
+        },
+        "county": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "County"
         },
         "fiscal_year": {
           "anyOf": [
@@ -108,29 +122,31 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": false,
       "readOnlyHint": true,
-      "title": "Check GSA Per Diem Data Access"
+      "title": "Get Per Diem Data Status"
     },
-    "description": "Check Per Diem credential presence without returning or validating its value.",
+    "description": "Report which fiscal years are bundled, their GSA source files, and which tools call the GSA API.\n\n    ZIP, state, and M&IE lookups for bundled fiscal years are answered\n    from GSA's published files with no network call. City-based tools\n    resolve the city through the live GSA Per Diem API. Credential\n    presence is reported without revealing or validating any value.\n    ",
     "inputSchema": {
       "properties": {},
-      "title": "get_access_statusArguments",
+      "title": "get_data_statusArguments",
       "type": "object"
     },
-    "name": "get_access_status",
+    "name": "get_data_status",
     "outputSchema": {
       "additionalProperties": true,
-      "title": "get_access_statusDictOutput",
+      "title": "get_data_statusDictOutput",
       "type": "object"
     }
   },
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Get M&IE Breakdown"
     },
-    "description": "Get the M&IE (meals and incidental expenses) tier breakdown table.\n\n    Returns all M&IE tiers with breakfast, lunch, dinner, incidental, and\n    first/last day (75%) amounts. Use this to show the meal component\n    breakdown when presenting per diem estimates.\n\n    M&IE does NOT vary seasonally (unlike lodging). The tier is set per\n    location and applies year-round.\n    ",
+    "description": "Get the M&IE (meals and incidental expenses) tier breakdown table.\n\n    Returns all M&IE tiers with breakfast, lunch, dinner, incidental, and\n    first/last day (75%) amounts, for showing the meal component of a\n    per diem estimate. Bundled fiscal years come from GSA's published\n    M&IE breakdown with no API call.\n\n    M&IE does NOT vary seasonally (unlike lodging). The tier is set per\n    location and applies year-round.\n    ",
     "inputSchema": {
       "properties": {
         "fiscal_year": {
@@ -159,15 +175,28 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Lookup City Per Diem"
     },
-    "description": "Look up federal per diem rates for a city and state.\n\n    Returns lodging rates (monthly breakdown for seasonal locations) and\n    M&IE (meals and incidental expenses) for the specified fiscal year.\n\n    state: 2-letter USPS code (e.g., 'DC', 'VA', 'MD', 'CA').\n    fiscal_year: defaults to current FY. FY runs Oct 1 - Sep 30, so\n    FY2026 = 2025-10-01 through 2026-09-30.\n\n    The city endpoint resolves cities to their county's rate area\n    server-side, so the matched NSA name can legitimately differ from the\n    query (Washington -> 'District of Columbia', Penasco -> 'Taos').\n    Selection order:\n    1. Exact city name match\n    2. Composite NSA name containing the city (e.g., 'Boston' matches 'Boston / Cambridge')\n    3. API-resolved rate area (no Standard Rate row in the response)\n    4. Standard Rate fallback (query fell through to the state default)\n\n    Apostrophes, hyphens, and slashes in city names are auto-replaced with\n    spaces (GSA API quirk). Keep periods for 'St.' prefix cities (St. Louis).\n\n    For DC: query city='Washington', state='DC'.\n    CONUS only: AK, HI, and territories return a pointer to DoD/State rates.\n    ",
+    "description": "Look up federal per diem rates for a city and state.\n\n    Returns lodging rates (monthly breakdown for seasonal locations) and\n    M&IE (meals and incidental expenses) for the specified fiscal year.\n\n    state: 2-letter USPS code (e.g., 'DC', 'VA', 'MD', 'CA').\n    fiscal_year: defaults to current FY. FY runs Oct 1 - Sep 30, so\n    FY2026 = 2025-10-01 through 2026-09-30.\n    county: optional county or independent city (e.g., 'Fairfax',\n    'Hampden', 'Richmond city'). When given for a bundled fiscal year the\n    rate is determined from GSA's county definitions without an API call.\n\n    Without county, the GSA Per Diem API resolves the city name to rate\n    areas. The result's status is:\n    - resolved: one rate applies (exact name, composite name such as\n      'Boston / Cambridge', GSA's own city-to-county resolution, or a\n      Census county tie-break among GSA's candidates)\n    - ambiguous: GSA lists several rate areas for the city; candidates are\n      returned and no single rate is chosen\n    - unresolved: GSA did not recognize the city; no rate is asserted\n\n    CONUS only: AK, HI, and territories return a pointer to DoD/State rates.\n    ",
     "inputSchema": {
       "properties": {
         "city": {
           "title": "City",
           "type": "string"
+        },
+        "county": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "County"
         },
         "fiscal_year": {
           "anyOf": [
@@ -203,10 +232,11 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Lookup State Rates"
     },
-    "description": "Get all Non-Standard Area (NSA) per diem rates for a state.\n\n    Returns every city/county with rates above the standard rate in that\n    state. Useful for comparing rates across cities within a state or for\n    building a travel IGCE with multiple destinations.\n\n    CONUS only: AK, HI, and territories return a pointer to DoD/State rates\n    instead of an empty list that would falsely imply the standard CONUS\n    rate applies there.\n    ",
+    "description": "Get all Non-Standard Area (NSA) per diem rates for a state.\n\n    Returns every city/county with rates above the standard rate in that\n    state, plus the state's standard rate. Useful for comparing rates\n    across cities within a state or for building a travel IGCE with\n    multiple destinations. Bundled fiscal years are answered from GSA's\n    published files with no API call.\n\n    CONUS only: AK, HI, and territories return a pointer to DoD/State rates\n    instead of an empty list that would falsely imply the standard CONUS\n    rate applies there.\n    ",
     "inputSchema": {
       "properties": {
         "fiscal_year": {
@@ -242,12 +272,25 @@
   {
     "annotations": {
       "destructiveHint": false,
+      "openWorldHint": true,
       "readOnlyHint": true,
       "title": "Lookup ZIP Per Diem"
     },
-    "description": "Look up federal per diem rates by ZIP code.\n\n    May return multiple entries (NSA + standard rate). This tool auto-selects\n    the NSA rate over the standard rate.\n\n    Useful when the exact city name is uncertain but the ZIP is known.\n    Accepts 5-digit ZIPs or ZIP+4 (e.g., '02101' or '02101-1234').\n    ",
+    "description": "Look up federal per diem rates by ZIP code.\n\n    Accepts 5-digit ZIPs or ZIP+4 (e.g., '02101' or '02101-1234').\n    Bundled fiscal years are answered from GSA's published ZIP file with\n    no API call; other years use the GSA Per Diem API.\n\n    GSA sets rates by county or locality, and about 1,800 ZIPs span more\n    than one rate area. The result's status is 'resolved' when every rate\n    area GSA lists for the ZIP has the same rate, otherwise 'ambiguous'\n    with all candidates and no single rate chosen. county (optional)\n    selects the candidate for that county.\n    ",
     "inputSchema": {
       "properties": {
+        "county": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "County"
+        },
         "fiscal_year": {
           "anyOf": [
             {

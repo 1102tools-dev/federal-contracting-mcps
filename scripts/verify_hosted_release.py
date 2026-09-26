@@ -57,5 +57,11 @@ def main():
             assert listing['results'],'NSF Part 1 deviation fixture unavailable upstream'
             pdf=tool('get_rfo_agency_deviation',{'source_id':listing['results'][0]['source_id'],'page_start':1,'page_end':2})
             assert pdf['text_extraction_status']=='complete' and pdf['page_numbered_text'],'Real PDF extraction incomplete'
+        if args.slug == 'gsa-perdiem':
+            # ZIP lookups are served from bundled GSA files; only city lookups use
+            # the publisher key, so exercise one to prove the hosted secret works.
+            city=tool('lookup_city_perdiem',{'city':'Arlington','state':'VA'})
+            assert city.get('status')=='resolved' and city['source']['kind']=='gsa_per_diem_api','Hosted city lookup did not resolve through the GSA API'
+            assert 'DEMO_KEY' not in json.dumps(city),'Hosted result mentions DEMO_KEY'
     print(f"Verified {args.slug}: {version}, commit {args.sha}, {len(actual)} tools")
 if __name__=='__main__':main()

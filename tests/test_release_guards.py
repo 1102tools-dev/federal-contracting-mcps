@@ -141,7 +141,12 @@ def test_release_dependency_gates_and_postpublication_verification():
     assert "deploy-hosted" in jobs["publish"]["needs"]
     assert "test-and-build" in jobs["deploy-hosted"]["needs"]
     assert "publish" not in jobs["deploy-hosted"]["needs"]
-    assert jobs["publish-registry"]["needs"] == "publish"
+    assert set(jobs["publish-registry"]["needs"]) == {"plan", "publish"}
+    # Every matrix job takes its scope from the plan job, never a hard-coded list.
+    for name in ("test-and-build", "publish", "hosted-build", "deploy-hosted"):
+        assert "plan" in jobs[name]["needs"]
+        matrix = jobs[name]["strategy"]["matrix"]
+        assert "needs.plan.outputs" in str(matrix)
     steps = jobs["test-and-build"]["steps"]
     guard_step = next(i for i, step in enumerate(steps) if "check_published_version.py" in step.get("run", ""))
     upload_step = next(i for i, step in enumerate(steps) if step.get("uses", "").startswith("actions/upload-artifact@"))
@@ -151,6 +156,60 @@ def test_release_dependency_gates_and_postpublication_verification():
     steps = jobs["publish"]["steps"]
     upload_step = next(i for i, step in enumerate(steps) if step.get("uses", "").startswith("pypa/gh-action-pypi-publish@"))
     assert any("--require-published" in step.get("run", "") for step in steps[upload_step + 1:])
+
+
+def _release_plan():
+    spec = importlib.util.spec_from_file_location('release_plan', ROOT / 'scripts/release_plan.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_release_plan_all_covers_every_package_and_service():
+    plan = _release_plan().plan('all')
+    hosted = json.loads(plan['hosted'])
+    packages = json.loads(plan['packages'])
+    assert set(hosted) == set(json.loads((ROOT / 'deploy/services.json').read_text()))
+    assert {p['dir'] for p in packages} == {p.name for p in (ROOT / 'servers').iterdir() if (p / 'pyproject.toml').exists()}
+    for p in packages:
+        name = tomllib_name(ROOT / 'servers' / p['dir'] / 'pyproject.toml')
+        assert p['pkg'] == name
+    assert 'all hosted services' in plan['release_body']
+
+
+def tomllib_name(path):
+    import tomllib
+    return tomllib.loads(path.read_text())['project']['name']
+
+
+def test_release_plan_scopes_single_service():
+    plan = _release_plan().plan('gsa-perdiem')
+    assert json.loads(plan['hosted']) == ['gsa-perdiem']
+    assert json.loads(plan['packages']) == [{'dir': 'gsa-perdiem-mcp', 'pkg': 'gsa-perdiem-mcp'}]
+    assert plan['manifests'] == 'servers/gsa-perdiem-mcp/server.json'
+    assert 'all' not in plan['release_body'].split()
+
+
+def test_release_plan_rejects_unknown_service():
+    with pytest.raises(SystemExit):
+        _release_plan().plan('gsa-perdiem,not-a-service')
+
+
+def test_release_plan_scoped_tag_limits_push_release():
+    rp = _release_plan()
+    assert json.loads(rp.plan('all', 'refs/tags/gsa-perdiem/v1.1.0')['hosted']) == ['gsa-perdiem']
+    assert rp.plan('all', 'refs/tags/v1.0.33')['scope'] == 'all'
+    with pytest.raises(SystemExit):
+        rp.plan('all', 'refs/tags/not-a-service/v1.0.0')
+    with pytest.raises(SystemExit):
+        rp.plan('ecfr', 'refs/tags/gsa-perdiem/v1.1.0')
+
+
+def test_release_workflow_accepts_scoped_tags():
+    workflow = yaml.safe_load((ROOT / ".github/workflows/publish-pypi.yml").read_text())
+    trigger = workflow.get("on") or workflow.get(True)
+    assert set(trigger["push"]["tags"]) == {"v*", "*/v*"}
+    assert workflow["jobs"]["release"]["if"] == "startsWith(github.ref, 'refs/tags/')"
 
 
 def test_post_upload_visibility_delay_preserves_payload_verification(tmp_path, monkeypatch):
@@ -233,3 +292,42 @@ def test_acquisition_release_gate_requires_real_html_and_pdf(monkeypatch, failur
     else:
         verifier.main()
         assert calls == ['list_rfo_parts'] * 3 + ['get_rfo_part', 'list_rfo_agency_deviations', 'get_rfo_agency_deviation']
+
+
+@pytest.mark.parametrize('failure', [None, 'instructions', 'city_unresolved', 'demo_key'])
+def test_perdiem_release_gate_requires_keyless_contract_and_live_city(monkeypatch, failure):
+    spec = importlib.util.spec_from_file_location('hosted_verify', ROOT / 'scripts/verify_hosted_release.py')
+    verifier = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(verifier)
+    calls = []
+    def request(url, payload=None):
+        if payload is None:
+            return {'release_sha': 'a' * 40,
+                    'admission': {'processing': 16, 'waiting': 32, 'total': 48, 'deadline_seconds': 55}}
+        method = payload['method']
+        if method == 'initialize':
+            import tomllib
+            version = tomllib.loads((ROOT / 'servers/gsa-perdiem-mcp/pyproject.toml').read_text())['project']['version']
+            result = {'serverInfo': {'version': version}}
+            if failure == 'instructions':
+                result['instructions'] = 'Call get_access_status first.'
+            return {'result': result}
+        if method == 'tools/list':
+            return {'result': {'tools': json.loads((ROOT / 'deploy/gsa-perdiem/tools-contract.json').read_text())}}
+        name = payload['params']['name']; calls.append(name)
+        if name == 'lookup_city_perdiem':
+            data = {'status': 'unresolved' if failure == 'city_unresolved' else 'resolved',
+                    'source': {'kind': 'gsa_per_diem_api'}}
+            if failure == 'demo_key':
+                data['access_note'] = 'using DEMO_KEY'
+        else:
+            data = {'status': 'resolved', 'source': {'kind': 'bundled_gsa_files'}}
+        return {'result': {'structuredContent': data}}
+    monkeypatch.setattr(verifier, 'request', request)
+    monkeypatch.setattr('sys.argv', ['verify', 'gsa-perdiem', '--sha', 'a' * 40])
+    if failure:
+        with pytest.raises((AssertionError, RuntimeError)):
+            verifier.main()
+    else:
+        verifier.main()
+        assert calls == ['lookup_zip_perdiem'] * 3 + ['lookup_city_perdiem']
