@@ -639,12 +639,12 @@ async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any
         return cached
     key = _get_api_key()
     _reserve_hourly_upstream()
-    query = dict(params or {})
-    query["api_key"] = key
-    url = f"{BASE_URL}/{path}?{urllib.parse.urlencode(query)}"
+    # The key travels in the X-Api-Key header (as Regulations.gov documents),
+    # never in the URL, so upstream and infrastructure URL logs cannot hold it.
+    url = f"{BASE_URL}/{path}?{urllib.parse.urlencode(dict(params or {}))}"
     try:
         async with _pacer(key).request_slot() as pacing:
-            r = await _get_client().get(url)
+            r = await _get_client().get(url, headers={"X-Api-Key": key})
             pacing.observe_response(r)
             pacing.raise_if_rate_limited(
                 r,

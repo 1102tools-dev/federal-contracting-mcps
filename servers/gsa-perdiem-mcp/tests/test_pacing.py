@@ -26,7 +26,7 @@ class _Client:
         self.starts: list[float] = []
         self.ends: list[float] = []
 
-    async def get(self, _url: str) -> _Response:
+    async def get(self, _url: str, headers=None) -> _Response:
         self.starts.append(time.monotonic())
         await asyncio.sleep(0.005)
         self.ends.append(time.monotonic())

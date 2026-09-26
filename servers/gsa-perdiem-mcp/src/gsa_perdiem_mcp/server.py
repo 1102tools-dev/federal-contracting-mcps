@@ -537,12 +537,12 @@ async def _get(path: str) -> Any:
         return cached
     key = _get_api_key()
     _reserve_hourly_upstream()
-    encoded_key = urllib.parse.quote(key, safe="-")
-    sep = "&" if "?" in path else "?"
-    url = f"{BASE_URL}/{path}{sep}api_key={encoded_key}"
+    # The key travels in api.data.gov's X-Api-Key header, never in the URL, so
+    # upstream and infrastructure URL logs cannot hold it.
+    url = f"{BASE_URL}/{path}"
     try:
         async with _pacer(key).request_slot() as pacing:
-            r = await _get_client().get(url)
+            r = await _get_client().get(url, headers={"X-Api-Key": key})
             pacing.observe_response(r)
             pacing.raise_if_rate_limited(
                 r,

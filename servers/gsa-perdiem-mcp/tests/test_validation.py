@@ -664,7 +664,7 @@ class _FakeResp:
 def _install_fake_client(resp_or_exc):
     class FC:
         is_closed = False
-        async def get(self, url):
+        async def get(self, url, headers=None):
             if isinstance(resp_or_exc, Exception):
                 raise resp_or_exc
             return resp_or_exc
