@@ -130,6 +130,13 @@ jobs:
           unzip -l dist/*.whl | grep 'gsa_perdiem_mcp/data/places.json.gz'
           unzip -l dist/*.whl | grep -E 'gsa_perdiem_mcp/data/fy[0-9]{4}\.json\.gz'
 
+      - name: Verify bundled OEWS data is packaged
+        if: matrix.server.dir == 'bls-oews-mcp'
+        working-directory: servers/${{ matrix.server.dir }}
+        run: |
+          unzip -l dist/*.whl | grep 'bls_oews_mcp/data/manifest.json'
+          unzip -l dist/*.whl | grep -E 'bls_oews_mcp/data/oews-[0-9]{4}\.sqlite\.gz'
+
       - name: Reject changed packages using an existing PyPI version
         run: python scripts/check_published_version.py servers/${{ matrix.server.dir }}
 

@@ -2,20 +2,52 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the BLS Occupational Employment and Wage Statistics (OEWS) API as callable tools for federal IGCE development, price analysis, and labor market research. It was hardened through a retroactive live audit with a real BLS API key (0.2.2, 22 findings), then re-audited end to end in round 7 (1.0.1) by an independent full-source review with live verification. Round 7 found 13 further bugs, headlined by a money bug the earlier "empirical" round had itself introduced: the four hourly percentile labels were shifted one slot, so requesting the Hourly Median returned the 75th percentile (26% high for Software Developers). The official mapping was pinned by cross-footing hourly x 2080 against the annual percentiles and is now guarded by a live canary test.
+This Model Context Protocol server exposes BLS Occupational Employment and Wage Statistics (OEWS) data as callable tools for federal IGCE development, price analysis, and labor market research. It was hardened through a retroactive live audit with a real BLS API key (0.2.2, 22 findings), then re-audited end to end in round 7 (1.0.1) by an independent full-source review with live verification. Round 7 found 13 further bugs, headlined by a money bug the earlier "empirical" round had itself introduced: the four hourly percentile labels were shifted one slot, so requesting the Hourly Median returned the 75th percentile (26% high for Software Developers). The official mapping was pinned by cross-footing hourly x 2080 against the annual percentiles and is now guarded by a live canary test.
 
 | Metric | Value |
 |---|---|
-| MCP tools exposed | 7 |
-| Total regression tests | 249 (85 offline, 164 live-gated) |
+| MCP tools exposed | 8 |
+| Total regression tests | 276 (275 offline, 1 live parity check) |
 | Audit rounds completed | 8 |
 | P0 usability-breaking bugs found and fixed | 1 |
 | P1 silent-wrong-data bugs found and fixed | 14 |
 | P1 response-shape crash paths found and fixed | 12 |
 | P2 validation gaps found and fixed | 12 |
 | P3 cleanup items found and fixed | 8 |
-| Current release | 1.0.4 |
+| Current release | 1.1.0 (bundled May 2025 OEWS release) |
 | PyPI status | Published as `bls-oews-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## 1.1.0 Bundled release (2026-09-26)
+
+1.1.0 stops calling the BLS API. Every tool answers from the current OEWS
+release, bundled as a read-only SQLite database that
+`scripts/build_oews_db.py` builds from BLS's flat files
+(download.bls.gov/pub/time.series/oe/, published May 15, 2026): 6,023,970
+data rows pivoted into 370,172 estimate cells covering 583 areas, 444
+industries, and 1,104 occupations. The build fails on schema drift (changed
+headers, an unexpected datatype set, more than one release, codes missing
+from the mapping files, or row counts moving more than 10%), and two builds
+from the same files produce byte-identical output.
+
+Verification, all on 2026-09-26:
+
+| Check | Result |
+|---|---|
+| Parity with the live BLS v1 API (fixed 25-series sample: national, state, metro, industry, unreleased "-" with footnote 8, top-coded with footnote 5, annual-only pilots) | 25/25 values and footnote codes match |
+| A second, random 25-series sample against the live API during development | 25/25 match |
+| Offline suite (network blocked in `conftest.py`) | 275 passed |
+| Rounds 6 and 8, written against the live API, run against the bundled release | 157 passed, now ungated and part of every run |
+| Wheel installed into a clean Python 3.12 environment | Decompresses the database, verifies its SHA-256, answers `get_wage_data` |
+| Hosted image (`deploy/bls-oews/Dockerfile`, linux/amd64) run locally | `/health` ok with 8 tools; `scripts/verify_hosted_release.py --no-upstream` passed (version, tool contract, no instructions, bundled source) |
+
+The tool count stays 8: `get_access_status` became `get_data_status`.
+Behavior that depended on the live API was retired with it: the v1/v2 key
+modes, request pacing, the credential redaction paths, and the
+`REQUEST_PARTIALLY_PROCESSED` and non-JSON response handling. Their tests
+(`test_access_status.py`, `test_credential_redaction.py`, `test_pacing.py`,
+and the API-shape cases in `test_validation.py` and `test_audit_r7.py`) were
+removed. Tests that previously called the live API and swallowed errors now
+assert exact values from the bundled release.
 
 ## 1.0.4 Safety Release Verification
 
@@ -174,16 +206,19 @@ Helpers wrapping every BLS response parsing path: `_as_list`, `_coerce_str_digit
 
 ## Test Coverage
 
-The repo ships 243 regression tests (82 offline, 161 live-gated). All pass on every release cycle; live tests require `BLS_LIVE_TESTS=1` plus a key.
+The repo ships 276 regression tests (275 offline, 1 live parity check). The offline suite runs on every release with the network blocked; the parity check runs with `BLS_LIVE_TESTS=1` and needs no key. See [tests/README.md](tests/README.md) for the per-file map.
 
 | File | Purpose | Test count |
 |---|---|---|
-| `tests/test_validation.py` | Main regression suite covering rounds 0.2.x, including 5 live-gated integration tests | 66 |
-| `tests/test_live_audit_r6.py` | Round 6 live sweep (shape assertions; kept as breadth coverage) | 154 (all live-gated) |
-| `tests/test_audit_r7.py` | Round 7 regressions: datatype semantics, annual-only detection, normalized dedup, seeded gaps, latest-year probe, FIPS validation, plus the live cross-foot canary | 23 (21 offline, 2 live-gated) |
-| `tests/stress_test.py` | Scenario script (not pytest) retained for reproducibility | N/A |
+| `tests/test_validation.py` | Main regression suite covering rounds 0.2.x, with exact bundled values | 58 |
+| `tests/test_audit_r6.py` | Round 6 sweep (written live; runs offline since 1.1.0) | 154 |
+| `tests/test_audit_r7.py` | Round 7 regressions: datatype semantics, annual-only detection, normalized dedup, seeded gaps, FIPS validation, plus the cross-foot canary | 19 |
+| `tests/test_audit_r8.py` | Round 8 anchors | 3 |
+| `tests/test_snapshot.py`, `test_builder.py`, `test_directory_contract.py`, `test_http.py` | 1.1.0 bundled release, builder, directory rules, hosted HTTP app | 41 |
+| `tests/test_live_parity.py` | Bundled values vs the live BLS API | 1 |
+| `tests/scenarios/stress_test.py` | Scenario script (not pytest) retained for reproducibility | N/A |
 
-Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`). An autouse fixture resets the shared httpx client between tests.
+Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`).
 
 ## Release History
 
@@ -196,6 +231,7 @@ Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`). 
 | 1.0.0 | mcp 2.x SDK rebase, version sync, packaging | Stable baseline |
 | 1.0.1 | Round 7 independent re-audit with live verification | 13 findings resolved, incl. the datatype label shift money bug; live cross-foot canary added |
 | 1.0.3 | Opt-in production pacing for real-key traffic | Concurrent upstream calls serialize and wait after completion; offline concurrency regressions added |
+| 1.1.0 | Bundled May 2025 OEWS release; no API key or network calls; hosted HTTP entry point | 25/25 live parity; rounds 6 and 8 run offline; 276 tests |
 
 ## Cross-MCP Context
 
@@ -208,14 +244,13 @@ This MCP is one of eight servers in the 1102tools federal-contracting MCP suite 
 
 ## What Was Not Tested
 
-- **Rate-limit behavior beyond published quotas.** All requests now use a provisional 3-second cross-process gate by default and honor `Retry-After` without an automatic retry. The safeguard does not create more provider quota or coordinate the same key on another computer.
-- **Historical data years.** BLS's public API only serves the current year. Users needing historical data are directed to `bls.gov/oes/tables.htm`.
-- **Wage data during the annual BLS data release window.** BLS publishes new OEWS data roughly in April each year; the window when the new year's data appears and stabilizes has not been live-audited. `detect_latest_year` now reports the true served year whenever it runs.
-- **v1 (legacy) API endpoints.** This MCP uses v2 only (v1 fallback exists for keyless operation but is not live-audited).
+- **Historical data years.** Only the current release is bundled. Users needing historical data are directed to `bls.gov/oes/tables.htm`.
+- **The next BLS release.** A new release (expected spring 2027) is detected by the weekly source watch and ships as a reviewed package release; the rebuild, golden values, and parity check are repeated then.
+- **Parity beyond the sample.** The live comparison covers a fixed 25-series sample plus one random sample; the rest of the release is trusted to the builder's one-to-one copy of BLS's published values.
 
 ## Verification
 
-All testing artifacts are in the repository. The methodology and fixes are reviewable commit-by-commit in git history. The regression test suite runs via `pytest` in the repo root and can be re-executed by anyone. The live suite runs with `BLS_LIVE_TESTS=1 BLS_API_KEY=... pytest` using a free BLS v2 API key.
+All testing artifacts are in the repository. The methodology and fixes are reviewable commit-by-commit in git history. The regression test suite runs via `pytest` in the repo root and can be re-executed by anyone. The live parity check runs with `BLS_LIVE_TESTS=1 pytest tests/test_live_parity.py` and needs no key.
 
 ---
 

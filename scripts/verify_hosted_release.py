@@ -2,7 +2,7 @@
 import argparse,json,subprocess,time,tomllib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-CASES={'usaspending':('get_award_types_reference',{}),'ecfr':('get_latest_date',{}),'gsa-calc':('keyword_search',{'keyword':'program manager','page_size':1}),'federal-register':('search_documents',{'term':'Federal Acquisition Regulation','per_page':1}),'acquisition-gov':('list_rfo_parts',{'part':10}),'gsa-perdiem':('lookup_zip_perdiem',{'zip_code':'22201'}),'regulations-gov':('search_dockets',{'agency_id':'FAR','page_size':5})}
+CASES={'usaspending':('get_award_types_reference',{}),'ecfr':('get_latest_date',{}),'gsa-calc':('keyword_search',{'keyword':'program manager','page_size':1}),'federal-register':('search_documents',{'term':'Federal Acquisition Regulation','per_page':1}),'acquisition-gov':('list_rfo_parts',{'part':10}),'gsa-perdiem':('lookup_zip_perdiem',{'zip_code':'22201'}),'regulations-gov':('search_dockets',{'agency_id':'FAR','page_size':5}),'bls-oews':('get_wage_data',{'occ_code':'151252'})}
 
 def request(url,payload=None):
     cmd=['curl','-fsS','--max-time','65',url]
@@ -51,6 +51,14 @@ def main():
         name,field=key_mode[args.slug]
         mode=tool(name,{}).get(field)
         assert mode=='hosted_publisher_key','Hosted service is not using the publisher key: '+str(mode)
+    if args.slug == 'bls-oews':
+        # Keyless: every answer comes from the bundled OEWS release. Local to
+        # the server, so it also runs pre-deploy.
+        status=tool('get_data_status',{})
+        assert status.get('status')=='bundled' and status.get('api_key_required') is False,'BLS service is not answering from bundled data'
+        wages=tool('get_wage_data',{'occ_code':'151252'})
+        assert wages['source']['kind']=='bundled_bls_oews_files','BLS result did not come from the bundled release'
+        assert wages['wages']['Annual Mean Wage']['numeric'],'Bundled BLS lookup returned no wage'
     if not args.no_upstream:
         name,arguments=CASES[args.slug]
         for _ in range(3):

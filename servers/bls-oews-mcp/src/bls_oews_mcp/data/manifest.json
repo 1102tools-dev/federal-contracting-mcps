@@ -1,0 +1,74 @@
+{
+  "builder": 1,
+  "counts": {
+    "areas": 583,
+    "cells": 370172,
+    "data_rows": 6023970,
+    "industries": 444,
+    "occupations": 1104
+  },
+  "data_year": "2025",
+  "database_bytes": 52494336,
+  "database_sha256": "b5e75974c3165639e8f99b8432e33bfd3dd3d41c1fe3f32ac510810fea1cec52",
+  "file": "oews-2025.sqlite.gz",
+  "file_sha256": "3966d23d97176509ecbbcac23d7db0f3fd0c4c566a8f169fcb2f8ee543e9e99c",
+  "release": {
+    "code": "2025A01",
+    "description": "May 2025",
+    "period": "A01",
+    "year": "2025"
+  },
+  "retrieved": "2026-09-26",
+  "schema": 1,
+  "sources": {
+    "oe.area": {
+      "bytes": 21915,
+      "etag": "\"030991e73e4dc1:0\"",
+      "last_modified": "2026-05-15",
+      "sha256": "d8285c51f82338130b53688f5904fd984c008c76698ed435bc597c276be2af8e",
+      "url": "https://download.bls.gov/pub/time.series/oe/oe.area"
+    },
+    "oe.data.0.Current": {
+      "bytes": 331509758,
+      "etag": "\"030991e73e4dc1:0\"",
+      "last_modified": "2026-05-15",
+      "sha256": "09879508d69f51149842368c8953f13974338728329375481d485ee696d3370b",
+      "url": "https://download.bls.gov/pub/time.series/oe/oe.data.0.Current"
+    },
+    "oe.datatype": {
+      "bytes": 528,
+      "etag": "\"030991e73e4dc1:0\"",
+      "last_modified": "2026-05-15",
+      "sha256": "836929c3f516346ab42b161c72cb4511acd74e7e2f0244f861fbd5490de50db1",
+      "url": "https://download.bls.gov/pub/time.series/oe/oe.datatype"
+    },
+    "oe.footnote": {
+      "bytes": 851,
+      "etag": "\"030991e73e4dc1:0\"",
+      "last_modified": "2026-05-15",
+      "sha256": "81d3078f8d4323fdc30ca73d8e92442f61426f1a5b10643a8be657caa0e41bc1",
+      "url": "https://download.bls.gov/pub/time.series/oe/oe.footnote"
+    },
+    "oe.industry": {
+      "bytes": 25417,
+      "etag": "\"030991e73e4dc1:0\"",
+      "last_modified": "2026-05-15",
+      "sha256": "2568befe7be79b0b4affeb01d2b9b73728ec2c77dd7311f7e7cca98a491e57a1",
+      "url": "https://download.bls.gov/pub/time.series/oe/oe.industry"
+    },
+    "oe.occupation": {
+      "bytes": 263424,
+      "etag": "\"030991e73e4dc1:0\"",
+      "last_modified": "2026-05-15",
+      "sha256": "692f2429446724f95a24bfdf550619c149f264323e4f41744793ffe680e30b08",
+      "url": "https://download.bls.gov/pub/time.series/oe/oe.occupation"
+    },
+    "oe.release": {
+      "bytes": 44,
+      "etag": "\"030991e73e4dc1:0\"",
+      "last_modified": "2026-05-15",
+      "sha256": "bad4703b749e4dcaacb77904b57dfdd0f54028a373169d59d4f5c7d771d60eaa",
+      "url": "https://download.bls.gov/pub/time.series/oe/oe.release"
+    }
+  }
+}

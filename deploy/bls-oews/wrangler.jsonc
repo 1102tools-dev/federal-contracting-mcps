@@ -1,0 +1,93 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "bls-oews-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "account_id": "846d3e41e48446abcd3570c0959f9fb5",
+  "workers_dev": true,
+  "containers": [
+    {
+      "class_name": "BLSOEWS",
+      "image": "Dockerfile",
+      "instance_type": "lite",
+      "max_instances": 1,
+      "name": "bls-oews-mcp-public",
+      "image_build_context": "../.."
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "BLSOEWS",
+        "name": "BACKEND"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "BLSOEWS"
+      ]
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "REQUEST_LIMITER",
+      "namespace_id": "110266",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  },
+  "env": {
+    "production": {
+      "name": "bls-oews-mcp",
+      "routes": [
+        {
+          "pattern": "bls-oews.1102tools.com",
+          "custom_domain": true
+        }
+      ],
+      "containers": [
+        {
+          "class_name": "BLSOEWS",
+          "image": "Dockerfile",
+          "instance_type": "lite",
+          "max_instances": 1,
+          "name": "bls-oews-mcp-public",
+          "image_build_context": "../.."
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "BLSOEWS",
+            "name": "BACKEND"
+          }
+        ]
+      },
+      "ratelimits": [
+        {
+          "name": "REQUEST_LIMITER",
+          "namespace_id": "110266",
+          "simple": {
+            "limit": 120,
+            "period": 60
+          }
+        }
+      ]
+    }
+  }
+}

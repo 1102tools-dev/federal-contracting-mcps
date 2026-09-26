@@ -79,10 +79,11 @@ These servers were not accelerated in the September 13 changes. Their pacers ser
 | MCP | Default wait after a request completes | Maximum requests in flight per pacing identity | Rolling attempt counter in this pacer |
 | --- | --- | --- | --- |
 | SAM.gov | 3 seconds | 1 | None; provider/key quotas still apply |
-| BLS OEWS | 3 seconds | 1 | None; provider/key quotas still apply |
 | GSA Per Diem | 4 seconds | 1 | None; provider/key quotas still apply |
 | Regulations.gov | 4 seconds | 1 | None; provider/key quotas still apply |
 | Acquisition.gov | 3 seconds | 1 | None; source-site limits still apply |
+
+BLS OEWS has no pacer since 1.1.0: every tool answers from the bundled OEWS release and makes no upstream request.
 
 Pacing identities incorporate the API bucket and credential where applicable. GSA Per Diem and Regulations.gov both use the `api.data.gov` bucket: using the same credential and pacing directory makes them share the same gate. Different computers can still share provider-side limits when they use the same key.
 
@@ -94,6 +95,6 @@ The Acquisition.gov hosted endpoint has a **60 HTTP requests per 60 seconds** en
 
 The tables describe defaults. `FEDERAL_API_MIN_INTERVAL_SECONDS` can override pacing. In the four accelerated packages, positive values below 0.6 are clamped to 0.6; eCFR XML retains a three-second minimum for positive values. Explicit zero disables pacing for externally managed/offline use. The hosted deployments use 0.6 and do not expose that override to plugin users. `FEDERAL_API_PACING_DIR` determines the local coordination directory.
 
-The other five pacers use the configured positive interval directly, with the defaults shown above. Changing this setting does not increase the government's quota.
+The other four pacers use the configured positive interval directly, with the defaults shown above. Changing this setting does not increase the government's quota.
 
 See [USAspending throughput evidence](usaspending-throughput.md), [CALC+, eCFR and Federal Register evidence](keyless-throughput.md), individual server testing records, each service's `_throughput.py` or `_pacing.py`, and `deploy/<service>/wrangler.jsonc` for implementation and test evidence.

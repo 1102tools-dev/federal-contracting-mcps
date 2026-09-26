@@ -10,29 +10,9 @@ paths fixed here.
 from __future__ import annotations
 
 import asyncio
-import os
-
-import pytest
-from mcp.server.mcpserver.exceptions import ToolError
 
 import bls_oews_mcp.server as srv  # noqa: E402
 from bls_oews_mcp.server import mcp  # noqa: E402
-
-
-LIVE = os.environ.get("BLS_LIVE_TESTS") == "1"
-
-
-@pytest.fixture(autouse=True)
-def _reset_client():
-    """Reset the shared httpx client before every test so we don't reuse
-    a stale client across asyncio event loops."""
-    srv._client = None
-    srv._pacing_lock = None
-    srv._last_credentialed_request_completed = None
-    yield
-    srv._client = None
-    srv._pacing_lock = None
-    srv._last_credentialed_request_completed = None
 
 
 async def _call(name: str, **kwargs):
@@ -66,30 +46,27 @@ def _payload(result):
 
 
 def test_get_wage_data_soc_with_dash_now_accepted():
-    """Dashed SOC must pass validation. Hits network so it may fail on
-    auth -- we only assert that the dash-rejection error is gone."""
-    try:
-        asyncio.run(_call("get_wage_data", occ_code="15-1252"))
-    except Exception as e:
-        msg = str(e).lower()
-        assert "ascii digits" not in msg, f"dashed SOC wrongly rejected: {e}"
-        assert "must be a soc code" not in msg
+    """Dashed SOC must pass validation and return the same wages."""
+    dashed = _payload(asyncio.run(_call("get_wage_data", occ_code="15-1252")))
+    plain = _payload(asyncio.run(_call("get_wage_data", occ_code="151252")))
+    assert dashed["occ_code"] == "151252"
+    assert dashed["wages"] == plain["wages"]
+    assert dashed["wages"]["Annual Mean Wage"]["numeric"] > 100_000
 
 
 def test_compare_metros_soc_with_dash_now_accepted():
-    try:
-        asyncio.run(_call(
-            "compare_metros", occ_code="15-1252", metro_codes=["47900"]
-        ))
-    except Exception as e:
-        assert "ascii digits" not in str(e).lower()
+    p = _payload(asyncio.run(_call(
+        "compare_metros", occ_code="15-1252", metro_codes=["47900"]
+    )))
+    assert p["metros"]["47900"]["numeric"] > 100_000
 
 
 def test_compare_occupations_soc_with_dash_now_accepted():
-    try:
-        asyncio.run(_call("compare_occupations", occ_codes=["15-1252", "13-1082"]))
-    except Exception as e:
-        assert "ascii digits" not in str(e).lower()
+    p = _payload(asyncio.run(_call("compare_occupations", occ_codes=["15-1252", "13-1082"])))
+    assert set(p["occupations"]) == {
+        "151252 (Software Developers)", "131082 (Project Management Specialists)",
+    }
+    assert all(v["numeric"] for v in p["occupations"].values())
 
 
 def test_soc_letters_rejected():
@@ -115,10 +92,9 @@ def test_soc_too_short_rejected():
 
 def test_soc_accepts_int():
     """Users naturally pass SOC as int; we coerce."""
-    try:
-        asyncio.run(_call("get_wage_data", occ_code=151252))
-    except Exception as e:
-        assert "only ASCII digits" not in str(e), f"int SOC wrongly rejected: {e}"
+    p = _payload(asyncio.run(_call("get_wage_data", occ_code=151252)))
+    assert p["occ_code"] == "151252"
+    assert p["wages"]["Annual Mean Wage"]["numeric"] > 100_000
 
 
 # ---------------------------------------------------------------------------
@@ -265,11 +241,8 @@ def test_year_historical_gets_clear_redirect():
 def test_year_accepts_int():
     # Use the current OEWS year: a superseded year is rejected as historical,
     # which would exercise the wrong code path for an int-coercion test.
-    try:
-        asyncio.run(_call("get_wage_data", occ_code="151252", year=int(srv.OEWS_CURRENT_YEAR)))
-    except Exception as e:
-        assert "4-digit year" not in str(e)
-        assert "before the current" not in str(e)
+    p = _payload(asyncio.run(_call("get_wage_data", occ_code="151252", year=int(srv.OEWS_CURRENT_YEAR))))
+    assert p["data_year"] == srv.OEWS_CURRENT_YEAR
 
 
 def test_year_letters_rejected():
@@ -380,14 +353,14 @@ def test_get_wage_data_with_dict_series_doesnt_crash():
     async def fake_query(series_ids, start_year=None, end_year=None):
         return {"Results": {"series": {"seriesID": series_ids[0], "data": [{"value": "144570", "year": 2024, "periodName": "Annual"}]}}}
 
-    orig = S._query_bls
-    S._query_bls = fake_query
+    orig = S._query_series
+    S._query_series = fake_query
     try:
         result = asyncio.run(S.get_wage_data(occ_code="151252"))
         assert isinstance(result, dict)
         assert "wages" in result
     finally:
-        S._query_bls = orig
+        S._query_series = orig
 
 
 def test_get_wage_data_with_missing_value_key():
@@ -396,14 +369,14 @@ def test_get_wage_data_with_missing_value_key():
     async def fake_query(series_ids, start_year=None, end_year=None):
         return {"Results": {"series": [{"seriesID": series_ids[0], "data": [{"year": "2024", "periodName": "Annual"}]}]}}
 
-    orig = S._query_bls
-    S._query_bls = fake_query
+    orig = S._query_series
+    S._query_series = fake_query
     try:
         result = asyncio.run(S.get_wage_data(occ_code="151252"))
         # Should not crash; value=None flows through _parse_value
         assert isinstance(result, dict)
     finally:
-        S._query_bls = orig
+        S._query_series = orig
 
 
 def test_get_wage_data_with_none_series_entries():
@@ -412,13 +385,13 @@ def test_get_wage_data_with_none_series_entries():
     async def fake_query(series_ids, start_year=None, end_year=None):
         return {"Results": {"series": [None, {"seriesID": series_ids[0], "data": [{"value": "100", "year": "2024", "periodName": "Annual"}]}]}}
 
-    orig = S._query_bls
-    S._query_bls = fake_query
+    orig = S._query_series
+    S._query_series = fake_query
     try:
         result = asyncio.run(S.get_wage_data(occ_code="151252"))
         assert isinstance(result, dict)
     finally:
-        S._query_bls = orig
+        S._query_series = orig
 
 
 def test_get_wage_data_with_footnotes_as_dict():
@@ -427,57 +400,13 @@ def test_get_wage_data_with_footnotes_as_dict():
     async def fake_query(series_ids, start_year=None, end_year=None):
         return {"Results": {"series": [{"seriesID": series_ids[0], "data": [{"value": "144570", "year": "2024", "periodName": "Annual", "footnotes": {"text": "cap"}}]}]}}
 
-    orig = S._query_bls
-    S._query_bls = fake_query
+    orig = S._query_series
+    S._query_series = fake_query
     try:
         result = asyncio.run(S.get_wage_data(occ_code="151252"))
         assert isinstance(result, dict)
     finally:
-        S._query_bls = orig
-
-
-def test_query_bls_handles_non_json_200():
-    """Round 5: JSONDecodeError from 200 with HTML body."""
-    import bls_oews_mcp.server as S
-    import httpx
-
-    class FakeClient:
-        async def post(self, *args, **kw):
-            return httpx.Response(200, content=b"<html>oops</html>", request=httpx.Request("POST", args[0]))
-
-    orig = S._get_client
-    S._get_client = lambda: FakeClient()
-    try:
-        try:
-            asyncio.run(S._query_bls(["OEUN000000000000000000004"]))
-            raise AssertionError("expected ToolError on non-JSON 200")
-        except ToolError as e:
-            assert "non-JSON" in str(e)
-    finally:
-        S._get_client = orig
-
-
-def test_query_bls_handles_partially_processed():
-    """REQUEST_PARTIALLY_PROCESSED should surface warnings."""
-    import bls_oews_mcp.server as S
-
-    async def fake_query(series_ids, start_year=None, end_year=None):
-        return {
-            "status": "REQUEST_PARTIALLY_PROCESSED",
-            "message": ["Series not found: X"],
-            "_partial": True,
-            "_warnings": ["Series not found: X"],
-            "Results": {"series": [{"seriesID": series_ids[0], "data": []}]},
-        }
-
-    orig = S._query_bls
-    S._query_bls = fake_query
-    try:
-        result = asyncio.run(S.get_wage_data(occ_code="151252"))
-        assert result.get("_partial") is True
-        assert result.get("_warnings") == ["Series not found: X"]
-    finally:
-        S._query_bls = orig
+        S._query_series = orig
 
 
 # ---------------------------------------------------------------------------
@@ -491,14 +420,14 @@ def test_national_scope_area_code_flagged():
     async def fake_query(series_ids, start_year=None, end_year=None):
         return {"Results": {"series": []}}
 
-    orig = S._query_bls
-    S._query_bls = fake_query
+    orig = S._query_series
+    S._query_series = fake_query
     try:
         result = asyncio.run(S.get_wage_data(occ_code="151252", scope="national", area_code="51"))
         assert "_note" in result
         assert "area_code" in result["_note"]
     finally:
-        S._query_bls = orig
+        S._query_series = orig
 
 
 # ---------------------------------------------------------------------------
@@ -514,14 +443,14 @@ def test_compare_metros_dedup():
         captured.append(list(series_ids))
         return {"Results": {"series": []}}
 
-    orig = S._query_bls
-    S._query_bls = capture_query
+    orig = S._query_series
+    S._query_series = capture_query
     try:
         asyncio.run(S.compare_metros(occ_code="151252", metro_codes=["47900", "47900", "47900"]))
         assert len(captured) == 1
         assert len(captured[0]) == 1, f"expected dedup to 1 series, got {len(captured[0])}"
     finally:
-        S._query_bls = orig
+        S._query_series = orig
 
 
 def test_compare_occupations_dedup():
@@ -532,30 +461,13 @@ def test_compare_occupations_dedup():
         captured.append(list(series_ids))
         return {"Results": {"series": []}}
 
-    orig = S._query_bls
-    S._query_bls = capture_query
+    orig = S._query_series
+    S._query_series = capture_query
     try:
         asyncio.run(S.compare_occupations(occ_codes=["151252", "151252", "151252"]))
         assert len(captured[0]) == 1, f"expected dedup, got {len(captured[0])}"
     finally:
-        S._query_bls = orig
-
-
-# ---------------------------------------------------------------------------
-# Error hygiene
-# ---------------------------------------------------------------------------
-
-def test_clean_error_body_strips_html():
-    from bls_oews_mcp.server import _clean_error_body
-    html = '<!DOCTYPE html><html><head><title>403 Forbidden</title></head><body><h1>API_KEY_INVALID</h1></body></html>'
-    result = _clean_error_body(html)
-    assert "<" not in result
-    assert "403 Forbidden" in result or "API_KEY_INVALID" in result
-
-
-def test_clean_error_body_passthrough_non_html():
-    from bls_oews_mcp.server import _clean_error_body
-    assert _clean_error_body('{"error":"nope"}') == '{"error":"nope"}'
+        S._query_series = orig
 
 
 # ---------------------------------------------------------------------------
@@ -570,19 +482,6 @@ def test_user_agent_matches_version():
     assert USER_AGENT.endswith(f"/{_expected}"), (
         f"USER_AGENT {USER_AGENT!r} does not match packaged version {_expected!r}"
     )
-
-
-def test_api_key_status_whitespace_flagged():
-    from bls_oews_mcp.server import _api_key_status
-    import os
-    os.environ["BLS_API_KEY"] = "   "
-    try:
-        status = _api_key_status()
-        assert status["set"] is True
-        assert status["mode"] == "v1"
-        assert "whitespace" in status["note"].lower() or "empty" in status["note"].lower()
-    finally:
-        del os.environ["BLS_API_KEY"]
 
 
 # ---------------------------------------------------------------------------
@@ -629,23 +528,20 @@ def test_datatype_16_17_are_ratios_not_dollars():
 
 
 # ---------------------------------------------------------------------------
-# Live tests (opt-in)
+# Real values from the bundled release
 # ---------------------------------------------------------------------------
 
-@pytest.mark.skipif(not LIVE, reason="Set BLS_LIVE_TESTS=1 to run live API calls")
-def test_live_software_developers_national():
-    result = asyncio.run(_call("get_wage_data", occ_code="151252"))
-    payload = _payload(result)
-    assert "wages" in payload
-    mean = payload["wages"].get("Annual Mean Wage", {})
-    assert mean.get("numeric") and mean["numeric"] > 50000
+def test_software_developers_national():
+    payload = _payload(asyncio.run(_call("get_wage_data", occ_code="151252")))
+    assert payload["wages"]["Annual Mean Wage"]["numeric"] == 148100
+    assert payload["data_year"] == "2025"
+    assert payload["source"]["kind"] == "bundled_bls_oews_files"
 
 
-@pytest.mark.skipif(not LIVE, reason="Set BLS_LIVE_TESTS=1 to run live API calls")
-def test_live_igce_benchmark_software_devs():
-    result = asyncio.run(_call("igce_wage_benchmark", occ_code="151252"))
-    payload = _payload(result)
-    assert "benchmarks" in payload
+def test_igce_benchmark_software_devs():
+    payload = _payload(asyncio.run(_call("igce_wage_benchmark", occ_code="151252")))
+    assert payload["occ_title"] == "Software Developers"
+    assert payload["benchmarks"]["Annual Mean Wage"]["numeric_annual"] == 148100
 
 
 # ---------------------------------------------------------------------------
@@ -673,45 +569,26 @@ def test_unknown_param_rejected():
 
 def test_no_data_flag_on_fake_soc():
     """0.2.2: nonexistent SOC used to return 4 'suppressed' fields silently."""
-    async def _run():
-        try:
-            r = await mcp.call_tool("get_wage_data", {"occ_code": "99-9999"})
-            p = r.structured_content if hasattr(r, "structured_content") else (r[1] if isinstance(r, tuple) else r)
-            assert p.get("no_data") is True
-            assert "no_data_reason" in p
-            assert "SOC" in p["no_data_reason"]
-        except Exception:
-            pass  # network/auth OK
-    asyncio.run(_run())
+    p = _payload(asyncio.run(_call("get_wage_data", occ_code="99-9999")))
+    assert p.get("no_data") is True
+    assert "SOC" in p["no_data_reason"]
+    assert "not an occupation" in p["no_data_reason"]
 
 
 def test_no_data_flag_on_fake_state():
-    async def _run():
-        try:
-            r = await mcp.call_tool(
-                "get_wage_data",
-                {"occ_code": "15-1252", "scope": "state", "area_code": "99"},
-            )
-            p = r.structured_content if hasattr(r, "structured_content") else (r[1] if isinstance(r, tuple) else r)
-            assert p.get("no_data") is True
-        except Exception:
-            pass
-    asyncio.run(_run())
+    asyncio.run(_call_expect_error(
+        "get_wage_data", "not a state/territory",
+        occ_code="15-1252", scope="state", area_code="99",
+    ))
 
 
 def test_single_digit_state_fips_auto_padded():
     """CA FIPS = 6 (not 06). 0.2.2: auto-pad single-digit state FIPS."""
-    async def _run():
-        try:
-            await mcp.call_tool(
-                "get_wage_data",
-                {"occ_code": "15-1252", "scope": "state", "area_code": "6"},
-            )
-        except Exception as e:
-            assert "unrecognized area code" not in str(e).lower(), (
-                f"single-digit state FIPS still rejected: {e}"
-            )
-    asyncio.run(_run())
+    p = _payload(asyncio.run(_call(
+        "get_wage_data", occ_code="15-1252", scope="state", area_code="6",
+    )))
+    assert p["area_name"] == "California"
+    assert p["wages"]["Annual Mean Wage"]["numeric"] > 100_000
 
 
 def test_compare_metros_rejects_state_fips():
@@ -723,43 +600,7 @@ def test_compare_metros_rejects_state_fips():
 
 
 def test_igce_flags_unknown_soc_title():
-    """0.2.2: igce must warn when SOC isn't in the title-lookup table."""
-    async def _run():
-        try:
-            r = await mcp.call_tool(
-                "igce_wage_benchmark", {"occ_code": "99-9999"}
-            )
-            p = r.structured_content if hasattr(r, "structured_content") else (r[1] if isinstance(r, tuple) else r)
-            assert p.get("no_data") is True or p.get("_title_warning")
-        except Exception:
-            pass
-    asyncio.run(_run())
-
-
-# ---- LIVE tests ----
-
-@pytest.mark.skipif(not LIVE, reason="Set BLS_LIVE_TESTS=1 to run live API calls")
-def test_live_dashed_soc_returns_real_wage():
-    """Round-1 P0 regression: dashed SOC must return real wage data."""
-    r = asyncio.run(_call("get_wage_data", occ_code="15-1252"))
-    p = _payload(r)
-    mean = p.get("wages", {}).get("Annual Mean Wage", {}).get("numeric")
-    assert mean and mean > 100_000, f"expected >$100k mean for software devs, got {mean}"
-
-
-@pytest.mark.skipif(not LIVE, reason="Set BLS_LIVE_TESTS=1 to run live API calls")
-def test_live_fake_soc_flagged_not_suppressed():
-    """Round-1 P1 regression: nonexistent SOC must set no_data=True."""
-    r = asyncio.run(_call("get_wage_data", occ_code="99-9999"))
-    p = _payload(r)
+    """0.2.2: igce must warn when the SOC isn't an OEWS occupation."""
+    p = _payload(asyncio.run(_call("igce_wage_benchmark", occ_code="99-9999")))
     assert p.get("no_data") is True
-    assert "SOC" in (p.get("no_data_reason") or "")
-
-
-@pytest.mark.skipif(not LIVE, reason="Set BLS_LIVE_TESTS=1 to run live API calls")
-def test_live_single_digit_ca_fips_works():
-    """Round-1 P2 regression: CA FIPS '6' must auto-pad to '06' and return data."""
-    r = asyncio.run(_call("get_wage_data", occ_code="15-1252", scope="state", area_code="6"))
-    p = _payload(r)
-    mean = p.get("wages", {}).get("Annual Mean Wage", {}).get("numeric")
-    assert mean and mean > 100_000, f"expected CA software dev wage, got {mean}"
+    assert p.get("_title_warning")

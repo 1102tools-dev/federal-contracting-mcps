@@ -1,0 +1,436 @@
+[
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Compare Metros"
+    },
+    "description": "Compare wages for one occupation across multiple metro areas.\n\n    Pass a list of 5-digit MSA codes (e.g., ['47900', '42660', '12580']\n    for DC, Seattle, Baltimore). Returns the specified wage measure for\n    each metro. Use list_common_metros() to find codes.\n\n    datatype: '04' (Annual Mean, default), '13' (Median), '03' (Hourly Mean).\n\n    Up to 50 metros per call.\n    ",
+    "inputSchema": {
+      "properties": {
+        "datatype": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "default": "04",
+          "title": "Datatype"
+        },
+        "metro_codes": {
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "title": "Metro Codes",
+          "type": "array"
+        },
+        "occ_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Occ Code"
+        },
+        "year": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Year"
+        }
+      },
+      "required": [
+        "occ_code",
+        "metro_codes"
+      ],
+      "title": "compare_metrosArguments",
+      "type": "object"
+    },
+    "name": "compare_metros",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "compare_metrosDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Compare Occupations"
+    },
+    "description": "Compare wages across multiple occupations in one location.\n\n    Pass a list of 6-digit SOC codes. Returns the specified wage measure\n    for each occupation. Use list_common_soc_codes() to find codes.\n\n    Up to 50 occupations per call.\n    ",
+    "inputSchema": {
+      "properties": {
+        "area_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Area Code"
+        },
+        "datatype": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "default": "04",
+          "title": "Datatype"
+        },
+        "occ_codes": {
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "title": "Occ Codes",
+          "type": "array"
+        },
+        "scope": {
+          "default": "national",
+          "enum": [
+            "national",
+            "state",
+            "metro"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "year": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Year"
+        }
+      },
+      "required": [
+        "occ_codes"
+      ],
+      "title": "compare_occupationsArguments",
+      "type": "object"
+    },
+    "name": "compare_occupations",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "compare_occupationsDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Detect Latest Year"
+    },
+    "description": "Report the OEWS data year this server answers from.\n\n    OEWS releases annually in spring, and this server bundles the current\n    release (May 2025 estimates, published May 15, 2026). Every tool\n    defaults to that year. When BLS publishes a newer release, a new package\n    version bundles it.\n    ",
+    "inputSchema": {
+      "properties": {},
+      "title": "detect_latest_yearArguments",
+      "type": "object"
+    },
+    "name": "detect_latest_year",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "detect_latest_yearDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Check Bundled OEWS Data"
+    },
+    "description": "Report which OEWS release this server answers from and where it came from.\n\n    Returns the bundled data year and release, the BLS source files with\n    their SHA-256 and publication dates, the retrieval date, and row counts.\n    No API key is used or needed.\n    ",
+    "inputSchema": {
+      "properties": {},
+      "title": "get_data_statusArguments",
+      "type": "object"
+    },
+    "name": "get_data_status",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "get_data_statusDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Get Wage Data"
+    },
+    "description": "Get wage data for an occupation by SOC code.\n\n    This is the primary tool for querying BLS OEWS wage statistics.\n\n    occ_code: 6-digit SOC code without dash (e.g., '151252' for Software\n    Developers, '131082' for Project Management Specialists). See\n    list_common_soc_codes() for common mappings.\n\n    scope + area_code:\n    - 'national': no area_code needed (all US)\n    - 'state': area_code = 2-digit state FIPS (e.g., '51' for VA, '11' for DC)\n    - 'metro': area_code = 5-digit MSA code (e.g., '47900' for DC metro,\n      '42660' for Seattle). See list_common_metros() for codes.\n\n    industry: 6-digit industry code for national-only breakdowns.\n    '000000' = all industries (default). Common: '541000' (Professional Services),\n    '541500' (Computer Systems), '999100' (Federal Government). Industry\n    breakdowns only work with scope='national'.\n\n    datatypes: list of 2-digit codes. Default uses IGCE set:\n    - '04' = Annual Mean Wage\n    - '13' = Annual Median\n    - '11' = Annual 10th Percentile\n    - '15' = Annual 90th Percentile\n    Hourly percentiles: '03' (Mean), '06' (10th), '07' (25th), '08'\n    (Median), '09' (75th), '10' (90th). Annual percentiles: '11' (10th),\n    '12' (25th), '13' (Median), '14' (75th), '15' (90th). Other: '01'\n    (Employment); '16' (Employment per 1,000 Jobs) and '17' (Location\n    Quotient) exist at state/metro scope only.\n\n    '02' (Employment RSE) and '05' (Mean Wage RSE) are relative standard\n    errors in percent, a measure of each estimate's reliability.\n\n    Data year defaults to 2025 (May 2025 estimates, published by BLS on\n    May 15, 2026), the release bundled with this server. Do NOT pass 2026:\n    OEWS publishes about a year in arrears. Other years are rejected.\n\n    Special values ('-', '*', '#') mean BLS did not publish the cell; the\n    attached footnote says why (annual-only occupation, sample too small).\n    ",
+    "inputSchema": {
+      "properties": {
+        "area_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Area Code"
+        },
+        "datatypes": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Datatypes"
+        },
+        "industry": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "default": "000000",
+          "title": "Industry"
+        },
+        "occ_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Occ Code"
+        },
+        "scope": {
+          "default": "national",
+          "enum": [
+            "national",
+            "state",
+            "metro"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "year": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Year"
+        }
+      },
+      "required": [
+        "occ_code"
+      ],
+      "title": "get_wage_dataArguments",
+      "type": "object"
+    },
+    "name": "get_wage_data",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "get_wage_dataDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "IGCE Wage Benchmark"
+    },
+    "description": "Get wage benchmarks formatted for IGCE development.\n\n    Returns annual and hourly wages at mean, median, 10th, and 90th\n    percentiles, plus estimated burdened hourly rates using the specified\n    burden multiplier range.\n\n    BLS wages are BASE wages (no fringe, overhead, G&A, or profit).\n    Multiply by a burden factor to estimate fully-loaded rates:\n    - 1.5x-1.7x: lean contractor\n    - 1.8x-2.2x: mid-range professional services (default)\n    - 2.0x-2.5x: large contractor with clearance overhead\n    - 2.5x-3.0x: high-overhead (SCIF, deployed)\n\n    The burdened range should roughly align with GSA CALC+ ceiling rates\n    for comparable labor categories. If CALC+ >> burdened BLS, the role\n    may require specialized skills or clearance overhead. Document the gap.\n\n    Burden multipliers must be positive and burden_low <= burden_high.\n    Reasonable range: 1.3 (lean) to 4.0 (high-overhead/clearance).\n    ",
+    "inputSchema": {
+      "properties": {
+        "area_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Area Code"
+        },
+        "burden_high": {
+          "default": 2.2,
+          "title": "Burden High",
+          "type": "number"
+        },
+        "burden_low": {
+          "default": 1.8,
+          "title": "Burden Low",
+          "type": "number"
+        },
+        "occ_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Occ Code"
+        },
+        "scope": {
+          "default": "national",
+          "enum": [
+            "national",
+            "state",
+            "metro"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "year": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Year"
+        }
+      },
+      "required": [
+        "occ_code"
+      ],
+      "title": "igce_wage_benchmarkArguments",
+      "type": "object"
+    },
+    "name": "igce_wage_benchmark",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "igce_wage_benchmarkDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List Common Metros"
+    },
+    "description": "List common metro area MSA codes for wage lookups.\n\n    Use these codes with get_wage_data(scope='metro', area_code=...).\n    Pass the 5-digit MSA code (the tool auto-pads to 7 characters).\n\n    For the full MSA list: https://www.bls.gov/oes/current/msa_def.htm\n    ",
+    "inputSchema": {
+      "properties": {},
+      "title": "list_common_metrosArguments",
+      "type": "object"
+    },
+    "name": "list_common_metros",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "list_common_metrosDictOutput",
+      "type": "object"
+    }
+  },
+  {
+    "annotations": {
+      "destructiveHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "List Common SOC Codes"
+    },
+    "description": "List common SOC code mappings for federal IT and professional services.\n\n    Use these codes with get_wage_data() and other tools. SOC codes are\n    6 digits without a dash (e.g., '151252' not '15-1252').\n\n    For the full SOC list: https://www.bls.gov/oes/current/oes_stru.htm\n    ",
+    "inputSchema": {
+      "properties": {},
+      "title": "list_common_soc_codesArguments",
+      "type": "object"
+    },
+    "name": "list_common_soc_codes",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "list_common_soc_codesDictOutput",
+      "type": "object"
+    }
+  }
+]

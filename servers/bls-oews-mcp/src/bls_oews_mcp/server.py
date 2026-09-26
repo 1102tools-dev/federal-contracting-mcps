@@ -2,60 +2,46 @@
 # Copyright (c) James Jenrette / 1102tools
 """BLS OEWS MCP server.
 
-Provides access to Bureau of Labor Statistics Occupational Employment and
-Wage Statistics (OEWS) data. Authentication via BLS_API_KEY environment
-variable (optional but recommended for higher rate limits).
+Answers Bureau of Labor Statistics Occupational Employment and Wage
+Statistics (OEWS) questions from the current OEWS release, bundled with the
+package as a read-only SQLite database built from BLS's published flat files
+(scripts/build_oews_db.py). No API key, no network calls, and no daily
+query limit.
 
-Without a key (v1): 25 queries/day, 25 series/query.
-With a key (v2): 500 queries/day, 50 series/query.
-
-OEWS data lags ~2 years. The server defaults to the correct data year
-(currently 2025 = May 2025 estimates). Do NOT query the current calendar year.
+OEWS data lags about a year: the bundled release is May 2025 estimates,
+published by BLS on May 15, 2026. Do NOT query the current calendar year.
 """
 
 from __future__ import annotations
 
-import json
-import os
 import re
 from typing import Any, Literal, Union
 
-import httpx
 from mcp.server import MCPServer
-from mcp.server.mcpserver.exceptions import ToolError
 
-from . import __version__
-from ._pacing import FederalApiPacer
+from . import __version__, snapshot
 from .constants import (
-    BASE_URL_V1,
-    BASE_URL_V2,
     COMMON_SOC_CODES,
     COUNT_DATATYPES,
     DATATYPE_LABELS,
-    DEFAULT_TIMEOUT,
     HOURLY_DATATYPES,
     IGCE_DATATYPES,
-    MAX_SERIES_V1,
-    MAX_SERIES_V2,
+    MAX_SERIES,
     OEWS_CURRENT_YEAR,
+    OEWS_RELEASE_NAME,
     RATIO_DATATYPES,
+    RSE_DATATYPES,
     SERIES_ID_LENGTH,
     SPECIAL_VALUES,
     STATE_FIPS,
-    USER_AGENT,
 )
 
-mcp = MCPServer(
-    "bls-oews",
-    version=__version__,
-    # Suppress HTTPX INFO request URLs; keyed BLS calls may carry registration
-    # credentials in request data that must never enter host logs.
-    log_level="WARNING",
-    instructions=(
-        "Before the first BLS data call in a session, call get_access_status and "
-        "disclose the 25-requests-per-day v1 fallback when no BLS_API_KEY is configured."
-    ),
-)
+mcp = MCPServer("bls-oews", version=__version__, log_level="WARNING")
+
+# Every tool answers from the bundled database, so none reaches an outside
+# system (openWorldHint False).
+_LOCAL_ONLY = {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}
+_NO_DATA = {"raw": None, "formatted": "No data", "numeric": None, "suppressed": True}
 
 
 # ---------------------------------------------------------------------------
@@ -67,11 +53,9 @@ _ASCII_DIGITS_RE = re.compile(r"^[0-9]+$")
 _DATATYPE_RE = re.compile(r"^[0-9]{2}$")
 _YEAR_RE = re.compile(r"^[0-9]{4}$")
 
-# OEWS data is available from 1997 onward (earliest published year).
-# IMPORTANT: The BLS OEWS public API only serves the **latest** data year.
-# Requesting a historical year returns empty rows with no error, which is why
-# OEWS_LATEST_FUTURE_YEAR tightly hugs the current release. To get historical
-# OEWS data, users must download tables from bls.gov/oes/tables.htm.
+# OEWS data is available from 1997 onward (earliest published year), but only
+# the current release is bundled. Historical OEWS tables are at
+# bls.gov/oes/tables.htm.
 OEWS_EARLIEST_YEAR = 1997
 OEWS_LATEST_FUTURE_YEAR = int(OEWS_CURRENT_YEAR) + 1
 
@@ -121,7 +105,7 @@ def _validate_soc(value: Any, *, field: str = "occ_code") -> str:
     """Validate a SOC code. Accepts both '15-1252' (standard BLS format) and
     '151252' (API format); the dash is stripped before validation.
 
-    Returns the un-dashed 6-digit form that the BLS API expects.
+    Returns the un-dashed 6-digit form used in OEWS series IDs.
     """
     if value is None:
         raise ValueError(f"{field} cannot be None.")
@@ -178,11 +162,9 @@ def _validate_datatype(value: Any, *, field: str = "datatype") -> str:
 def _validate_year(value: Any, *, field: str = "year") -> str:
     """Validate a 4-digit year. Accepts int or str (stripped).
 
-    The BLS OEWS public API only serves the **current** data year (see
-    OEWS_LATEST_FUTURE_YEAR comment above). Requesting older years
-    silently returns empty rows that look like privacy-suppressed cells.
-    Pre-reject out-of-range years AND years before current with a clear
-    message pointing users to the bulk-download alternative.
+    Only the bundled OEWS release can be answered. Out-of-range years are
+    rejected with a message pointing to the bulk-download alternative rather
+    than returning empty rows that look like suppressed cells.
     """
     if value is None:
         return str(OEWS_CURRENT_YEAR)
@@ -202,19 +184,20 @@ def _validate_year(value: Any, *, field: str = "year") -> str:
             f"Decimals, whitespace, and leading zeros beyond 4 digits are rejected."
         )
     y = int(s)
-    if y > OEWS_LATEST_FUTURE_YEAR:
+    if y > int(OEWS_CURRENT_YEAR):
         raise ValueError(
-            f"{field}={y} is beyond the latest OEWS release ({OEWS_CURRENT_YEAR}). "
-            f"Future years return empty from the BLS API. "
+            f"{field}={y} is beyond the latest OEWS release ({OEWS_RELEASE_NAME}, "
+            f"data year {OEWS_CURRENT_YEAR}). BLS publishes OEWS about a year in "
+            f"arrears, so {y} estimates do not exist yet. "
             f"Omit the year or pass {OEWS_CURRENT_YEAR}."
         )
     if y < int(OEWS_CURRENT_YEAR):
         raise ValueError(
-            f"{field}={y} is before the current OEWS release. "
-            f"The BLS OEWS public API only serves the latest year "
-            f"({OEWS_CURRENT_YEAR}); historical years silently return empty "
-            f"rows. For historical OEWS data, download from "
-            f"bls.gov/oes/tables.htm. Omit the year argument to get current data."
+            f"{field}={y} is before the current OEWS release. This server "
+            f"answers from the current release only ({OEWS_RELEASE_NAME}, data "
+            f"year {OEWS_CURRENT_YEAR}). For historical OEWS data, download "
+            f"from bls.gov/oes/tables.htm. Omit the year argument to get "
+            f"current data."
         )
     return s
 
@@ -229,249 +212,70 @@ def _normalize_whitespace_str(value: Any) -> str | None:
     return str(value).strip() or None
 
 
-_HTML_ERROR_RE = re.compile(r"<(?:!doctype|html)", re.IGNORECASE)
-_TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
-_H1_RE = re.compile(r"<h1[^>]*>(.*?)</h1>", re.IGNORECASE | re.DOTALL)
-
-
-def _redact_sensitive_text(text: str, secrets: tuple[str | None, ...] = ()) -> str:
-    """Remove active credentials from upstream-controlled text in memory."""
-    result = text
-    for secret in sorted(
-        {item for item in secrets if item}, key=len, reverse=True
-    ):
-        result = result.replace(secret, "[REDACTED]")
-    return result
-
-
-def _redact_sensitive_payload(
-    value: Any, secrets: tuple[str | None, ...] = ()
-) -> Any:
-    """Recursively redact credentials before an upstream payload is returned."""
-    if isinstance(value, str):
-        return _redact_sensitive_text(value, secrets)
-    if isinstance(value, dict):
-        return {
-            key: _redact_sensitive_payload(item, secrets)
-            for key, item in value.items()
-        }
-    if isinstance(value, list):
-        return [_redact_sensitive_payload(item, secrets) for item in value]
-    if isinstance(value, tuple):
-        return tuple(_redact_sensitive_payload(item, secrets) for item in value)
-    return value
-
-
-def _clean_error_body(
-    text: str, secrets: tuple[str | None, ...] = ()
-) -> str:
-    """Redact credentials and compact upstream error bodies for safe display."""
-    text = _redact_sensitive_text(text, secrets)
-    if not _HTML_ERROR_RE.search(text):
-        return text[:400]
-    pieces: list[str] = []
-    t = _TITLE_RE.search(text)
-    if t:
-        pieces.append(t.group(1).strip())
-    h = _H1_RE.search(text)
-    if h and (not t or h.group(1).strip() != t.group(1).strip()):
-        pieces.append(h.group(1).strip())
-    return " - ".join(pieces) if pieces else "upstream returned HTML error page"
-
-
 # ---------------------------------------------------------------------------
-# Auth and HTTP
+# Bundled data
 # ---------------------------------------------------------------------------
 
-def _get_api_key() -> str | None:
-    """Read BLS API key from environment. None = v1 (25/day).
+@mcp.tool(annotations={"title": "Check Bundled OEWS Data", **_LOCAL_ONLY})
+def get_data_status() -> dict[str, Any]:
+    """Report which OEWS release this server answers from and where it came from.
 
-    Whitespace-only values are treated as unset (silent downgrade to v1). Callers
-    that need to know whether a key was intentionally provided should use
-    _api_key_status() instead.
+    Returns the bundled data year and release, the BLS source files with
+    their SHA-256 and publication dates, the retrieval date, and row counts.
+    No API key is used or needed.
     """
-    key = os.environ.get("BLS_API_KEY", "").strip()
-    return key if key else None
-
-
-def _api_key_status() -> dict[str, Any]:
-    """Report whether API key was set, empty, whitespace-only, or absent."""
-    raw = os.environ.get("BLS_API_KEY")
-    if raw is None:
-        return {"set": False, "mode": "v1", "note": "BLS_API_KEY not set (v1, 25/day)"}
-    stripped = raw.strip()
-    if not stripped:
-        return {
-            "set": True, "mode": "v1",
-            "note": "BLS_API_KEY is set but empty/whitespace-only; using v1 (25/day).",
-        }
-    return {"set": True, "mode": "v2", "note": "v2 mode (500/day)"}
-
-
-@mcp.tool(
-    annotations={
-        "title": "Check BLS Data Access",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-    }
-)
-def get_access_status() -> dict[str, Any]:
-    """Check BLS credential presence without returning or validating its value."""
-    configured = bool(os.environ.get("BLS_API_KEY", "").strip())
+    meta = snapshot.manifest()
     return {
-        "service": "BLS Public Data API",
-        "status": "configured_unverified" if configured else "limited_fallback",
-        "credential_env": "BLS_API_KEY",
-        "required_for": ["higher-volume BLS v2 wage-data requests"],
-        "fallback": None if configured else {
-            "mode": "BLS v1 unauthenticated",
-            "limit": "25 requests per day and 10 years per query",
+        "service": "BLS OEWS (bundled release)",
+        "status": "bundled",
+        "data_year": meta["data_year"],
+        "release": meta["release"]["description"],
+        "retrieved": meta["retrieved"],
+        "counts": meta["counts"],
+        "sources": {
+            name: {"url": src["url"], "sha256": src["sha256"], "published": src.get("last_modified")}
+            for name, src in sorted(meta["sources"].items())
         },
-        "setup_url": "https://data.bls.gov/registrationEngine/",
-        "validation": "presence_only",
-        "restart_required": True,
+        "api_key_required": False,
+        "next_release": "BLS publishes the next OEWS release (May 2026 estimates) in spring 2027.",
+        "source": snapshot.source(),
     }
 
 
-_client: httpx.AsyncClient | None = None
-
-
-def _get_client() -> httpx.AsyncClient:
-    global _client
-    if _client is None:
-        _client = httpx.AsyncClient(
-            timeout=DEFAULT_TIMEOUT,
-            headers={"User-Agent": USER_AGENT, "Content-Type": "application/json"},
-        )
-    return _client
-
-
-def _pacer(api_key: str | None) -> FederalApiPacer:
-    return FederalApiPacer(
-        bucket="api.bls.gov",
-        default_interval=3.0,
-        credential=api_key,
-    )
-
-
-def _format_error(status: int, body: str, api_key: str | None = None) -> str:
-    cleaned = _clean_error_body(body, (api_key,))
-    if status == 429:
-        key = _get_api_key()
-        limit = "500/day (v2)" if key else "25/day (v1)"
-        return (
-            f"HTTP 429: BLS rate limit exceeded ({limit}, plus published "
-            "short-window limits). Do not retry in a burst. Register a free "
-            "v2 key at https://data.bls.gov/registrationEngine/ for the "
-            "higher published allowance."
-        )
-    if status == 400:
-        return f"HTTP 400: Bad request. Check series ID format (must be exactly 25 chars). API response: {cleaned}"
-    if status == 403:
-        return (
-            "HTTP 403: Forbidden. Your BLS API key may be invalid. "
-            "Register a free key at https://data.bls.gov/registrationEngine/"
-        )
-    return f"HTTP {status}: {cleaned}"
-
-
-async def _query_bls(
+async def _query_series(
     series_ids: list[str],
     start_year: str | None = None,
-    end_year: str | None = None,
-    *,
-    latest: bool = False,
 ) -> dict[str, Any]:
-    """POST to BLS timeseries API.
+    """Look up OEWS series in the bundled release.
 
-    latest=True sends the API's latest=true flag with no year range, which
-    returns whatever the newest available year is. Used by detect_latest_year
-    so a stale OEWS_CURRENT_YEAR cannot mask a newer release.
+    Returns the same shape the BLS timeseries API uses ({"Results":
+    {"series": [{"seriesID", "data": [{"year", "period", "periodName",
+    "value", "footnotes"}]}]}}), with an empty data list for a series the
+    release does not contain, so the tools parse one format.
     """
-    api_key = _get_api_key()
-    base_url = BASE_URL_V2 if api_key else BASE_URL_V1
-    max_series = MAX_SERIES_V2 if api_key else MAX_SERIES_V1
-
-    if len(series_ids) > max_series:
+    if len(series_ids) > MAX_SERIES:
         raise ValueError(
-            f"Too many series ({len(series_ids)}). "
-            f"Max {max_series} per request ({'v2' if api_key else 'v1'}). "
+            f"Too many series ({len(series_ids)}). Max {MAX_SERIES} per request. "
             "Split into multiple calls."
         )
+    year = start_year or OEWS_CURRENT_YEAR
+    found = snapshot.lookup(series_ids) if year == OEWS_CURRENT_YEAR else {}
+    series = []
+    for sid in series_ids:
+        hit = found.get(sid)
+        data = []
+        if hit is not None:
+            value, notes = hit
+            data.append({
+                "year": OEWS_CURRENT_YEAR, "period": "A01", "periodName": "Annual",
+                "value": value, "footnotes": notes,
+            })
+        series.append({"seriesID": sid, "data": data})
+    return {"status": "REQUEST_SUCCEEDED", "Results": {"series": series}}
 
-    if latest:
-        payload: dict[str, Any] = {"seriesid": series_ids, "latest": "true"}
-    else:
-        year = start_year or OEWS_CURRENT_YEAR
-        payload = {
-            "seriesid": series_ids,
-            "startyear": year,
-            "endyear": end_year or year,
-        }
-    if api_key:
-        payload["registrationkey"] = api_key
 
-    try:
-        async with _pacer(api_key).request_slot() as pacing:
-            r = await _get_client().post(base_url, content=json.dumps(payload))
-            pacing.observe_response(r)
-            pacing.raise_if_rate_limited(
-                r,
-                service="BLS",
-                guidance=_format_error(r.status_code, r.text, api_key),
-            )
-        r.raise_for_status()
-
-        try:
-            data = r.json()
-        except json.JSONDecodeError as e:
-            body_preview = _clean_error_body(
-                r.text or "(empty body)", (api_key,)
-            )
-            raise ToolError(
-                f"BLS returned non-JSON response on 200 OK. "
-                f"This often happens during API maintenance or when an HTML "
-                f"error page is served without an error status. "
-                f"Body: {body_preview}"
-            ) from e
-
-        data = _redact_sensitive_payload(data, (api_key,))
-        if not isinstance(data, dict):
-            raise ToolError(
-                f"BLS response was not a JSON object. Got {type(data).__name__}: {str(data)[:200]}"
-            )
-
-        status = data.get("status")
-        if status == "REQUEST_NOT_PROCESSED":
-            messages = data.get("message", [])
-            raise ToolError(
-                f"BLS API refused the request: {messages}. "
-                "Common cause: rate limit exceeded or malformed series IDs."
-            )
-        if status == "REQUEST_PARTIALLY_PROCESSED":
-            # Surface the warnings so caller knows some series failed.
-            messages = data.get("message", [])
-            data["_partial"] = True
-            data["_warnings"] = messages
-        else:
-            # REQUEST_SUCCEEDED can still carry per-series diagnostics like
-            # "Series does not exist for Series OEU..." or "No Data Available
-            # for Series ... Year: 2025". They are the definitive distinction
-            # between a bad series ID and a real suppression, so keep them.
-            msgs = [str(m) for m in _as_list(data.get("message")) if m]
-            if msgs:
-                data["_messages"] = msgs
-        return data
-
-    except httpx.HTTPStatusError as e:
-        raise ToolError(
-            _format_error(e.response.status_code, e.response.text[:500], api_key)
-        ) from e
-    except httpx.RequestError as e:
-        safe_error = _redact_sensitive_text(str(e), (api_key,))
-        raise ToolError(f"Network error calling BLS: {safe_error}") from e
-    except RuntimeError as e:
-        raise ToolError(_redact_sensitive_text(str(e), (api_key,))) from e
+def _occupation_title(occ_code: str) -> str | None:
+    return snapshot.occupation_name(occ_code) or COMMON_SOC_CODES.get(occ_code)
 
 
 # ---------------------------------------------------------------------------
@@ -532,7 +336,7 @@ def _normalize_area(area_input: Any) -> str:
 
 
 def _check_area_for_scope(scope: str, area: str, *, field: str = "area_code") -> None:
-    """Catch scope/area mismatches before they burn a query.
+    """Catch scope/area mismatches before they return a silent empty result.
 
     A 2-digit state FIPS normalizes to 'NN00000', which under scope='metro'
     builds a syntactically valid OEUM series that cannot exist; a 5-digit MSA
@@ -583,6 +387,9 @@ def _parse_value(value: Any, datatype: str, footnotes: list[str] | None = None) 
         if datatype in COUNT_DATATYPES:
             n = int(float(stripped))
             return {"raw": raw, "formatted": f"{n:,}", "numeric": n, "suppressed": False}
+        elif datatype in RSE_DATATYPES:
+            n = float(stripped)
+            return {"raw": raw, "formatted": f"{n:,.1f}%", "numeric": n, "suppressed": False}
         elif datatype in RATIO_DATATYPES:
             n = float(stripped)
             return {"raw": raw, "formatted": f"{n:,.2f}", "numeric": n, "suppressed": False}
@@ -643,7 +450,7 @@ def _series_id_from(series_item: Any, fallback: str = "") -> str:
 # Core tools
 # ---------------------------------------------------------------------------
 
-@mcp.tool(annotations={"title": "Get Wage Data", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Get Wage Data", **_LOCAL_ONLY})
 async def get_wage_data(
     occ_code: Union[str, int],
     scope: Literal["national", "state", "metro"] = "national",
@@ -682,11 +489,12 @@ async def get_wage_data(
     (Employment); '16' (Employment per 1,000 Jobs) and '17' (Location
     Quotient) exist at state/metro scope only.
 
-    CRITICAL: Data year defaults to 2025 (May 2025 estimates). Do NOT pass
-    2026. OEWS estimates publish about a year in arrears (May 2025 estimates
-    released April 2026), so the current calendar year returns nothing. Older
-    years are withdrawn once superseded: 2024 now returns no data at all.
-    Call detect_latest_year() if you need to confirm the newest published year.
+    '02' (Employment RSE) and '05' (Mean Wage RSE) are relative standard
+    errors in percent, a measure of each estimate's reliability.
+
+    Data year defaults to 2025 (May 2025 estimates, published by BLS on
+    May 15, 2026), the release bundled with this server. Do NOT pass 2026:
+    OEWS publishes about a year in arrears. Other years are rejected.
 
     Special values ('-', '*', '#') mean BLS did not publish the cell; the
     attached footnote says why (annual-only occupation, sample too small).
@@ -727,7 +535,7 @@ async def get_wage_data(
         )
 
     series_ids = [_build_series_id(prefix, area, industry, occ_code, dt) for dt in validated_datatypes]
-    data = await _query_bls(series_ids, start_year=year)
+    data = await _query_series(series_ids, start_year=year)
 
     results: dict[str, Any] = {}
     data_year: str | None = None
@@ -761,8 +569,10 @@ async def get_wage_data(
 
     response: dict[str, Any] = {
         "occ_code": occ_code,
+        "occ_title": _occupation_title(occ_code),
         "scope": scope,
         "area_code": area_code if scope != "national" else None,
+        "area_name": snapshot.area_name(area),
         "industry": industry,
         "data_year": data_year,
         "period": data_period,
@@ -779,14 +589,22 @@ async def get_wage_data(
     ]
     if not wage_values:
         response["no_data"] = True
+        if snapshot.occupation_name(occ_code) is None:
+            cause = (
+                f"occ_code={occ_code} is not an occupation in the "
+                f"{OEWS_RELEASE_NAME} OEWS release; the SOC code may not exist "
+                f"or may have been retired. Verify it at bls.gov/soc."
+            )
+        elif snapshot.area_name(area) is None:
+            cause = f"area_code={area_code!r} is not an OEWS area in the {OEWS_RELEASE_NAME} release."
+        else:
+            cause = (
+                f"BLS publishes no estimate for this occupation at this "
+                f"area/industry level (or every requested cell is unreleased)."
+            )
         response["no_data_reason"] = (
-            f"BLS returned no wage values for occ_code={occ_code} "
-            f"scope={scope} area_code={area_code!r} industry={industry}. "
-            f"Likely causes: (1) the SOC code does not exist or was recently "
-            f"retired, (2) the area/industry combo has no observations, or "
-            f"(3) the SOC is not surveyed at this geographic level. Verify "
-            f"the SOC at bls.gov/soc and the area/industry codes before "
-            f"treating this as a real suppression."
+            f"No wage values for occ_code={occ_code} scope={scope} "
+            f"area_code={area_code!r} industry={industry}. {cause}"
         )
 
     if scope == "national" and area_code is not None:
@@ -794,15 +612,11 @@ async def get_wage_data(
             f"area_code={area_code!r} was ignored because scope='national'. "
             "Use scope='state' or scope='metro' for geographic breakdowns."
         )
-    if data.get("_partial"):
-        response["_partial"] = True
-        response["_warnings"] = data.get("_warnings", [])
-    if data.get("_messages"):
-        response["_api_messages"] = data["_messages"]
+    response["source"] = snapshot.source()
     return response
 
 
-@mcp.tool(annotations={"title": "Compare Metros", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Compare Metros", **_LOCAL_ONLY})
 async def compare_metros(
     occ_code: Union[str, int],
     metro_codes: list[Union[str, int]],
@@ -817,7 +631,7 @@ async def compare_metros(
 
     datatype: '04' (Annual Mean, default), '13' (Median), '03' (Hourly Mean).
 
-    Max ~12 metros per call (each metro = 1 series, 50 series limit on v2).
+    Up to 50 metros per call.
     """
     occ_code = _validate_soc(occ_code)
     datatype = _validate_datatype(datatype)
@@ -851,7 +665,7 @@ async def compare_metros(
         series_ids.append(sid)
         metro_labels[sid] = raw_label
 
-    data = await _query_bls(series_ids, start_year=year)
+    data = await _query_series(series_ids, start_year=year)
 
     metros: dict[str, Any] = {}
     series_list = _as_list(data.get("Results", {}).get("series"))
@@ -873,8 +687,12 @@ async def compare_metros(
 
     response: dict[str, Any] = {
         "occ_code": occ_code,
+        "occ_title": _occupation_title(occ_code),
         "datatype": DATATYPE_LABELS.get(datatype, datatype),
         "metros": metros,
+        "metro_names": {
+            label: snapshot.area_name(sid[4:11]) for sid, label in metro_labels.items()
+        },
     }
     # Flag the all-no-data case: every metro returned empty.
     metros_with_values = [
@@ -893,15 +711,11 @@ async def compare_metros(
             f"Inputs {collapsed} normalized to the same series as another "
             f"input and were collapsed (first spelling wins)."
         )
-    if data.get("_partial"):
-        response["_partial"] = True
-        response["_warnings"] = data.get("_warnings", [])
-    if data.get("_messages"):
-        response["_api_messages"] = data["_messages"]
+    response["source"] = snapshot.source()
     return response
 
 
-@mcp.tool(annotations={"title": "Compare Occupations", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Compare Occupations", **_LOCAL_ONLY})
 async def compare_occupations(
     occ_codes: list[Union[str, int]],
     scope: Literal["national", "state", "metro"] = "national",
@@ -914,7 +728,7 @@ async def compare_occupations(
     Pass a list of 6-digit SOC codes. Returns the specified wage measure
     for each occupation. Use list_common_soc_codes() to find codes.
 
-    Max ~12 occupations per call.
+    Up to 50 occupations per call.
     """
     if not occ_codes:
         raise ValueError("occ_codes list cannot be empty.")
@@ -953,7 +767,7 @@ async def compare_occupations(
     if not series_ids:
         raise ValueError("occ_codes contained no usable SOC codes.")
 
-    data = await _query_bls(series_ids, start_year=year)
+    data = await _query_series(series_ids, start_year=year)
 
     occupations: dict[str, Any] = {}
     series_list = _as_list(data.get("Results", {}).get("series"))
@@ -962,7 +776,7 @@ async def compare_occupations(
             continue
         sid = _series_id_from(series)
         code = occ_labels.get(sid, sid or "unknown")
-        label = COMMON_SOC_CODES.get(code, code)
+        label = _occupation_title(code) or code
         entry = _extract_first_data_entry(series)
         if entry:
             occupations[f"{code} ({label})"] = _parse_value(
@@ -975,7 +789,7 @@ async def compare_occupations(
 
     # Seed requested occupations missing from the response entirely.
     for sid, code in occ_labels.items():
-        label = COMMON_SOC_CODES.get(code, code)
+        label = _occupation_title(code) or code
         key = f"{code} ({label})"
         if key not in occupations:
             occupations[key] = {
@@ -985,6 +799,7 @@ async def compare_occupations(
     response: dict[str, Any] = {
         "scope": scope,
         "area_code": area_code if scope != "national" else None,
+        "area_name": snapshot.area_name(area),
         "datatype": DATATYPE_LABELS.get(datatype, datatype),
         "occupations": occupations,
     }
@@ -1007,15 +822,11 @@ async def compare_occupations(
             f"Inputs {collapsed} normalized to the same series as another "
             f"input and were collapsed (first spelling wins)."
         )
-    if data.get("_partial"):
-        response["_partial"] = True
-        response["_warnings"] = data.get("_warnings", [])
-    if data.get("_messages"):
-        response["_api_messages"] = data["_messages"]
+    response["source"] = snapshot.source()
     return response
 
 
-@mcp.tool(annotations={"title": "IGCE Wage Benchmark", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "IGCE Wage Benchmark", **_LOCAL_ONLY})
 async def igce_wage_benchmark(
     occ_code: Union[str, int],
     scope: Literal["national", "state", "metro"] = "national",
@@ -1093,9 +904,9 @@ async def igce_wage_benchmark(
         else:
             benchmarks[label] = {"annual": entry.get("formatted", "No data"), "suppressed": True}
 
-    # Look up occ_title. Our lookup table uses the un-dashed 6-digit form.
+    # Title from the release's occupation list (un-dashed 6-digit form).
     normalized_soc = str(occ_code).replace("-", "").strip()
-    occ_title_lookup = COMMON_SOC_CODES.get(normalized_soc)
+    occ_title_lookup = _occupation_title(normalized_soc)
     title_is_lookup_miss = occ_title_lookup is None
 
     response: dict[str, Any] = {
@@ -1103,6 +914,7 @@ async def igce_wage_benchmark(
         "occ_title": occ_title_lookup or occ_code,
         "scope": scope,
         "area_code": area_code,
+        "area_name": wage_data.get("area_name"),
         "data_year": wage_data.get("data_year") or OEWS_CURRENT_YEAR,
         "burden_range": f"{burden_low}x - {burden_high}x",
         "benchmarks": benchmarks,
@@ -1123,95 +935,47 @@ async def igce_wage_benchmark(
             "and may materially misstate the true hourly rate. Benchmark "
             "against the annual figures instead."
         )
-    if wage_data.get("_api_messages"):
-        response["_api_messages"] = wage_data["_api_messages"]
     if title_is_lookup_miss:
         response["_title_warning"] = (
-            f"occ_code={occ_code!r} was not found in the built-in SOC title "
-            f"lookup. Verify the code at bls.gov/soc before relying on the "
-            f"benchmark -- typos or retired SOCs produce all-zero benchmarks."
+            f"occ_code={occ_code!r} is not an occupation in the "
+            f"{OEWS_RELEASE_NAME} OEWS release. Verify the code at bls.gov/soc "
+            f"before relying on the benchmark -- typos or retired SOCs produce "
+            f"all-zero benchmarks."
         )
 
+    response["source"] = snapshot.source()
     return response
 
 
-@mcp.tool(annotations={"title": "Detect Latest Year", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "Detect Latest Year", **_LOCAL_ONLY})
 async def detect_latest_year() -> dict[str, Any]:
-    """Ask the BLS API which OEWS data year is the newest available.
+    """Report the OEWS data year this server answers from.
 
-    OEWS releases annually around April/May, and BLS serves ONLY the latest
-    survey year (older years are withdrawn). This probe sends the API's
-    latest=true flag with no year range, so it reports the true newest year
-    even if this package's default has fallen multiple years behind.
-
-    Call this once at the start of an IGCE build to confirm the default
-    year still matches reality.
+    OEWS releases annually in spring, and this server bundles the current
+    release (May 2025 estimates, published May 15, 2026). Every tool
+    defaults to that year. When BLS publishes a newer release, a new package
+    version bundles it.
     """
-    probe_series = "OEUN000000000000000000004"  # National all-occupation annual mean
-    current = OEWS_CURRENT_YEAR
-
-    try:
-        data = await _query_bls([probe_series], latest=True)
-        series_list = _as_list(data.get("Results", {}).get("series"))
-        for s in series_list:
-            entry = _extract_first_data_entry(s)
-            if entry and str(entry.get("value", "")).strip() not in SPECIAL_VALUES:
-                api_year = str(entry.get("year", "")).strip()
-                if not api_year:
-                    break
-                newer = int(api_year) > int(current)
-                if newer:
-                    msg = (
-                        f"OEWS {api_year} data is available but this server "
-                        f"defaults to {current}. Pass year='{api_year}' "
-                        f"explicitly until the package updates its default."
-                    )
-                elif api_year == current:
-                    msg = (
-                        f"OEWS {current} is the latest available. Next "
-                        f"release expected ~April {int(current) + 2}."
-                    )
-                else:
-                    msg = (
-                        f"BLS reports {api_year} as latest, OLDER than this "
-                        f"server's default {current}. Default-year queries "
-                        f"will return empty; pass year='{api_year}'."
-                    )
-                return {
-                    "latest_year": api_year,
-                    "default_year": current,
-                    "newer_data_available": newer,
-                    "api_key": _api_key_status(),
-                    "message": msg,
-                }
-    except Exception as e:
-        # Don't silently eat the error: surface it so user knows probing failed
-        return {
-            "latest_year": current,
-            "default_year": current,
-            "newer_data_available": False,
-            "api_key": _api_key_status(),
-            "probe_error": str(e),
-            "message": (
-                f"Could not probe for the latest year (reason: {type(e).__name__}). "
-                f"Defaulting to OEWS {current}. Rate limit, key issue, or BLS downtime "
-                f"can all cause this. Call again later to check."
-            ),
-        }
-
+    meta = snapshot.manifest()
+    year = meta["data_year"]
     return {
-        "latest_year": current,
-        "default_year": current,
+        "latest_year": year,
+        "default_year": OEWS_CURRENT_YEAR,
+        "release": meta["release"]["description"],
+        "published": meta["sources"]["oe.data.0.Current"].get("last_modified"),
+        "retrieved": meta["retrieved"],
         "newer_data_available": False,
-        "api_key": _api_key_status(),
         "message": (
-            f"Probe returned no usable data; assuming OEWS {current} is "
-            f"current. Next release expected ~April {int(current) + 2}."
+            f"OEWS {year} ({meta['release']['description']} estimates) is the "
+            f"bundled release and the default for every tool. BLS publishes "
+            f"the next release (May {int(year) + 1} estimates) in spring "
+            f"{int(year) + 2}; check bls.gov/oes for newer data."
         ),
+        "source": snapshot.source(),
     }
 
 
-@mcp.tool(annotations={"title": "List Common SOC Codes", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "List Common SOC Codes", **_LOCAL_ONLY})
 async def list_common_soc_codes() -> dict[str, Any]:
     """List common SOC code mappings for federal IT and professional services.
 
@@ -1220,10 +984,10 @@ async def list_common_soc_codes() -> dict[str, Any]:
 
     For the full SOC list: https://www.bls.gov/oes/current/oes_stru.htm
     """
-    return {"soc_codes": COMMON_SOC_CODES}
+    return {"soc_codes": COMMON_SOC_CODES, "source": snapshot.source()}
 
 
-@mcp.tool(annotations={"title": "List Common Metros", "readOnlyHint": True, "destructiveHint": False})
+@mcp.tool(annotations={"title": "List Common Metros", **_LOCAL_ONLY})
 async def list_common_metros() -> dict[str, Any]:
     """List common metro area MSA codes for wage lookups.
 
@@ -1233,7 +997,7 @@ async def list_common_metros() -> dict[str, Any]:
     For the full MSA list: https://www.bls.gov/oes/current/msa_def.htm
     """
     from .constants import COMMON_METROS
-    return {"metros": COMMON_METROS}
+    return {"metros": COMMON_METROS, "source": snapshot.source()}
 
 
 # ---------------------------------------------------------------------------

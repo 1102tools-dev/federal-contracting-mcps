@@ -98,6 +98,12 @@ def check(slug, service):
     if isinstance(data, dict) and data.get("error"):
         raise RuntimeError(f"{name} returned an error result")
     detail = f"{init['serverInfo']['version']} at {health.get('release_sha', '?')[:7]}"
+    if slug == "bls-oews":
+        # Keyless: prove the answer came from the bundled OEWS release.
+        source = (data or {}).get("source") or {}
+        if source.get("kind") != "bundled_bls_oews_files":
+            raise RuntimeError(f"wage lookup came from {source.get('kind')!r}, expected bundled_bls_oews_files")
+        detail += f"; bundled {source.get('release')} OEWS release"
     if slug == "gsa-perdiem":
         city, state = perdiem_city()
         data = rpc("tools/call", {"name": "lookup_city_perdiem",
