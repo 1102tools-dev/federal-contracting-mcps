@@ -7,9 +7,9 @@
 
 Free, open-source MCP server for the Regulations.gov API. Federal rulemaking dockets, proposed rules, final rules, public comments, and comment period tracking.
 
-Optional free API key for higher rate limits. Use the installation and configuration instructions below to connect this MCP directly.
+Requires a free api.data.gov key. Use the installation and configuration instructions below to connect this MCP directly.
 
-*Tested and hardened through four rounds of integration testing against the live Regulations.gov API, plus a round-7 independent re-audit with live verification. 236 collected regression tests (117 offline, 119 live-gated) covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, 12 round-7 findings, and the 1.1.0 hosted-directory fixes (compact results, publisher-key fail-closed). See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through four rounds of integration testing against the live Regulations.gov API, plus a round-7 independent re-audit with live verification. 241 collected regression tests (122 offline, 119 live-gated) covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, 12 round-7 findings, and the 1.1.0 hosted-directory fixes (compact results, publisher-key fail-closed). See [testing.md](testing.md) for the full testing record.*
 
 ## Available in Claude and ChatGPT
 
@@ -33,17 +33,14 @@ Exposes the Regulations.gov API plus a credential-readiness check as 9 MCP tools
 
 **Workflow**
 - `open_comment_periods` - Currently open comment periods across procurement agencies
-- `far_case_history` - Full lifecycle of a FAR/DFARS rulemaking case
+- `far_case_history` - Summary of a FAR/DFARS rulemaking case with its documents, paged
 
-## Get your own API key (strongly recommended)
+## API key (required)
 
-This server hits `api.regulations.gov`, which uses api.data.gov for rate
-limiting.
-
-- **Without a key**: falls back to the shared `DEMO_KEY` which is capped at
-  **~10 requests per hour (live-measured) across everyone using it**, so
-  you'll hit 429 errors within a couple of prompts.
-- **With a personal key**: 1,000 requests per hour, yours alone.
+This server calls `api.regulations.gov`, which requires an api.data.gov key:
+1,000 requests per hour, yours alone. Without `REGULATIONS_GOV_API_KEY` the
+server still starts and lists its tools, but data tools return setup
+instructions instead of calling Regulations.gov.
 
 **Get a free key (takes 30 seconds):**
 
@@ -66,7 +63,7 @@ uvx regulationsgov-mcp
 
 Use the configuration below as the server definition and adapt its placement to your compatible MCP client. For practical requests using this source, see the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
-**Recommended (with your own key):**
+**With your key:**
 ```json
 {
   "mcpServers": {
@@ -76,18 +73,6 @@ Use the configuration below as the server definition and adapt its placement to 
       "env": {
         "REGULATIONS_GOV_API_KEY": "paste-your-api-data-gov-key-here"
       }
-    }
-  }
-}
-```
-
-**Without a key** (works for a handful of calls per hour, then 429s until the hour rolls over):
-```json
-{
-  "mcpServers": {
-    "regulationsgov": {
-      "command": "uvx",
-      "args": ["--refresh-package", "regulationsgov-mcp", "--from", "regulationsgov-mcp", "regulationsgov-mcp"]
     }
   }
 }

@@ -39,8 +39,7 @@ class AdmissionControl(AdmissionQueue):
 def require_hosted_credential() -> None:
     """Refuse to serve a hosted deployment that lacks the publisher key.
 
-    Without it, city lookups would fall back to the shared DEMO_KEY (about 10
-    requests per hour for everyone). Failing to start makes the release
+    Without it every city lookup would fail. Failing to start makes the release
     verification's /health wait fail instead of shipping a degraded service.
     """
     if os.environ.get("PERDIEM_HOSTED", "").strip() == "1" and not os.environ.get(

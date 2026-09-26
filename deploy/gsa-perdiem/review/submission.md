@@ -4,43 +4,55 @@ Publisher: James Prentiss Jenrette (individual). Brand: 1102tools.
 
 Endpoint: https://gsa-perdiem.1102tools.com/mcp
 Transport: Streamable HTTP (stateless, JSON responses).
-Authentication: none. Users need no account or API key. City lookups call the GSA Per Diem API with a publisher key held as a Cloudflare Worker secret and never exposed.
+Authentication: none. Users need no account or API key. City lookups call the GSA Per Diem API with a publisher key held as a Cloudflare Worker secret, sent in the `X-Api-Key` header and never exposed.
 Support: https://gsa-perdiem.1102tools.com/support
 Privacy: https://gsa-perdiem.1102tools.com/privacy
 Terms: https://gsa-perdiem.1102tools.com/terms
 Source: https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp
 Category: Government / travel.
 
-Status: prepared, not submitted. Requires package 1.1.0 deployed to the endpoint above (health `release_sha` equal to the release commit) before any portal scan.
+Status: prepared, **not ready to submit**. Production runs 1.1.1; this record describes 1.2.0, which is not yet deployed. Resolve every item under "Open before submission" first.
+
+## Open before submission
+
+1. **Third-party API eligibility (both portals).** OpenAI does not approve plugins that primarily act as unofficial pass-through connectors, and Anthropic's policy section 3(F) asks developers to verify control of the API endpoints their software connects to. 1102tools controls `gsa-perdiem.1102tools.com`, not `api.gsa.gov`. Do not attest ownership or control of GSA endpoints. Ask each platform how it applies these rules to a public government API before accepting the attestation. The statement below describes the service's own functionality.
+2. **OpenAI demo recording URL.** Record the principal tools (ZIP, city with an ambiguous result, estimate, compare) on production 1.2.0.
+3. **OpenAI domain verification.** The portal issues the `/.well-known/openai-apps-challenge` token; add it to `deploy/gsa-perdiem/src/public-docs.ts` and release.
+4. **Production tool scan** in each portal after the final deployment.
+5. **Capacity and origin testing** through each platform's connector: cold start, representative concurrency, p95 latency, 429/503 counts, and upstream budget use. The Worker rejects a cross-origin `Origin` header (403 for `https://claude.ai` and `https://chatgpt.com` in the audit); server-side connector calls send none. Add allowed origins only if a supported client needs them.
+6. **Cloudflare retention.** The privacy notice states Cloudflare's documented 7-day maximum for Workers Logs. Confirm the account has no Logpush or other log export before accepting a privacy attestation.
+7. **Portal access.** Recheck on the publishing account that the Claude directory portal is open to it (announced September 25 for paid Claude plans).
+
+Independent functionality (for eligibility questions): ZIP, state, and M&IE answers come from GSA's published files for FY2021 onward bundled in the service, with no GSA call. The service identifies ZIP codes and cities that span more than one rate area and lists every candidate instead of guessing. It applies a labeled Census county tie-break, computes trip estimates with first- and last-day M&IE at 75% (41 CFR 301-11.101), compares destinations, and detects OCONUS locations instead of returning a CONUS rate. Only city lookups, and fiscal years that are not bundled, call the GSA API. The service uses a registered api.data.gov key under api.data.gov's terms.
 
 ## Listing copy
 
 Name: GSA Per Diem by 1102tools
 
-One-liner (≤200): Federal travel per diem rates from GSA: lodging by month and M&IE by city, ZIP, county, or state, with trip cost estimates for IGCEs.
+OpenAI short description (≤30): Federal per diem rates
+
+One-liner (≤200): Federal travel per diem rates from GSA: lodging by month and M&IE by city, ZIP, or state, with county disambiguation and trip cost estimates for IGCEs.
 
 Description (≤2,000):
-Look up the official GSA per diem rates that cap federal travel lodging and meals-and-incidental-expense (M&IE) reimbursement in the continental United States. Search by city, ZIP code, county, or state; see monthly lodging rates for seasonal locations; get the M&IE breakdown by meal; estimate a trip's per diem with first- and last-day M&IE at 75% (41 CFR 301-11.101); and compare destinations for an independent government cost estimate.
+Look up the official GSA per diem rates that cap federal travel lodging and meals-and-incidental-expense (M&IE) reimbursement in the continental United States. Search by city, ZIP code, or state, adding a county when a city or ZIP spans more than one rate area; see monthly lodging rates for seasonal locations; get the M&IE breakdown by meal; estimate a trip's per diem with first- and last-day M&IE at 75% (41 CFR 301-11.101); and compare destinations for an independent government cost estimate.
 
 ZIP, state, and M&IE answers come from GSA's published per diem files (FY2021 onward) included in the service; city names are resolved to rate areas through the GSA Per Diem API. GSA sets rates by county or locality, so when a ZIP code or city spans more than one rate area the service lists every candidate instead of choosing one, and a county selects the applicable rate. Each result names the GSA file or API it came from.
 
 Rates are reimbursement ceilings, not hotel prices. Alaska, Hawaii, U.S. territories, and foreign locations are set by DoD and the State Department and are not covered; the service says so rather than returning a CONUS rate. Read-only; no account needed. Independent service, not endorsed by GSA.
 
-## Tools and annotations
-
-Every tool is read-only (`readOnlyHint: true`) and non-destructive (`destructiveHint: false`); none modifies data anywhere.
-
-| Tool | openWorldHint | Reason |
-|---|---|---|
-| lookup_city_perdiem | true | Resolves city names through the GSA Per Diem API. |
-| estimate_travel_cost | true | Uses the city lookup. |
-| compare_locations | true | Uses the city lookup for each location. |
-| lookup_zip_perdiem | true | Bundled GSA file for FY2021+; calls the GSA API for other fiscal years. |
-| lookup_state_rates | true | Same as ZIP. |
-| get_mie_breakdown | true | Same as ZIP. |
-| get_data_status | false | Reports bundled data and configuration; no external access. |
+## Tools and annotation justifications
 
 The server publishes no `instructions`. Tool descriptions describe behavior only.
+
+| Tool | `readOnlyHint: true` | `destructiveHint: false` | `openWorldHint` |
+|---|---|---|---|
+| lookup_city_perdiem | Returns GSA rates; writes nothing. | Creates, changes, or deletes nothing, locally or at GSA. | `true`: sends city, state, and fiscal year to the GSA Per Diem API. |
+| estimate_travel_cost | Computes an estimate from looked-up rates; stores nothing. | No side effects. | `true`: resolves the city through the GSA Per Diem API. |
+| compare_locations | Returns rates for up to 25 locations; stores nothing. | No side effects. | `true`: one GSA city lookup per location. |
+| lookup_zip_perdiem | Returns rates for a ZIP code. | No side effects. | `true`: bundled GSA file for FY2021+, GSA API for other fiscal years. |
+| lookup_state_rates | Returns a state's rate areas. | No side effects. | `true`: bundled file for FY2021+, GSA API otherwise. |
+| get_mie_breakdown | Returns M&IE meal tiers. | No side effects. | `true`: bundled file for FY2021+, GSA API otherwise. |
+| get_data_status | Reports bundled data and credential presence. | No side effects. | `false`: reads only bundled metadata and local configuration. |
 
 ## Starter prompts
 
@@ -64,16 +76,18 @@ Negative (expected refusal or explanation, no fabricated rate):
 
 ## Verification record
 
-Offline suite: 274 passed (541 collected; live-gated tests skipped). Release guards: 37 passed.
-Live parity against the GSA API on 2026-09-26 with a registered key: every sampled ZIP (about 110 per fiscal year, FY2026 and FY2027) matched the bundled files exactly; state lists for VA, MD, CA, MA, TX, CT, PA, and AZ matched; the city corpus resolved as expected.
-Local hosted entry point (`gsa_perdiem_mcp.http`, `PERDIEM_HOSTED=1`) passed `scripts/verify_hosted_release.py gsa-perdiem` including the live city check.
-Production checks: pending deployment.
+Source 1.2.0 (branch `claude/directory-audit-fixes`, 2026-09-26): offline suite 277 passed, 267 live-gated skipped (544 collected); release guards 57 passed; shared pacing and admission 100 passed; `scripts/check_hosted_contract.py gsa-perdiem` unchanged (7 tools); `scripts/validate_versions.py` passed.
+`X-Api-Key` header authentication checked against `api.gsa.gov` on 2026-09-26: the header and the old `api_key` query parameter draw on the same quota, and an invalid key returns 403.
+Live parity against the GSA API on 2026-09-26 with a registered key (1.1.x): every sampled ZIP (about 110 per fiscal year, FY2026 and FY2027) matched the bundled files; state lists for VA, MD, CA, MA, TX, CT, PA, and AZ matched; the city corpus resolved as expected.
+Production 1.1.1 on 2026-09-26: `/health` ok at `001e536`; the updated `scripts/check_hosted_health.py` passed with a live GSA city lookup; all 79 monitor cities resolved as exact GSA API matches for FY2027.
+Production 1.2.0: pending deployment.
 
 ## Remaining user steps
 
-1. Approve the PR, then push tag `gsa-perdiem/v1.1.0` (scoped release; other services are not redeployed).
-2. Confirm the workflow's production verification passed and `/health` reports the tag commit.
-3. Test every tool on production in Claude (custom connector) and ChatGPT (Developer Mode).
-4. OpenAI: create the plugin draft (verified individual publisher, no-auth MCP), obtain the domain-challenge token, add it to `deploy/gsa-perdiem/src/public-docs.ts` as `/.well-known/openai-apps-challenge`, release, then enter the listing copy, test cases, starter prompts, and icons from `review/assets/`. No screenshots (no UI).
-5. Claude: submit at claude.ai/directory/manage with the listing copy, `docs/directory-icons/gsa-perdiem.png`, the three starter prompts, and the support/privacy URLs.
-6. Review and accept each portal's attestations yourself. A saved draft, submitted review, approval, and directory publication are separate states.
+1. Review and merge the PR, then push tag `gsa-perdiem/v1.2.0` (scoped release; other services are not redeployed).
+2. Confirm the workflow's production verification passed, `/health` reports the tag commit, and the scheduled health check is green.
+3. Resolve "Open before submission" above.
+4. Test every tool on production in Claude (custom connector) and ChatGPT (Developer Mode).
+5. OpenAI: create the plugin draft (verified individual publisher, no-auth MCP), enter the short description, listing copy, annotation justifications, test cases, starter prompts, demo URL, and icons from `review/assets/`. No screenshots (no UI).
+6. Claude: submit at claude.ai/directory/manage with the listing copy, `docs/directory-icons/gsa-perdiem.png`, the three starter prompts, and the support/privacy URLs.
+7. Review and accept each portal's attestations yourself. A saved draft, submitted review, approval, and directory publication are separate states.

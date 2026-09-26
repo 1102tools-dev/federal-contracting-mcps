@@ -220,18 +220,53 @@ def test_open_comment_periods_ascending_single_call_truncation(monkeypatch):
     assert len(calls) == 1, "should be one comma-joined call, not per-agency loops"
     params = calls[0]["params"]
     assert params["sort"] == "commentEndDate", "ascending: soonest deadlines first"
-    assert params["page[size]"] == 250
+    assert params["page[size]"] == 25, "small default page keeps the result token-frugal"
     assert params["filter[agencyId]"] == "FDA"
 
     assert data["total_open"] == 71
     assert data["returned"] == 4
-    assert data["truncated"] is True
-    assert "close LATER" in data["truncated_note"]
+    assert "truncated" not in data, "a short page is the last page"
     dates = [d["comment_end_date"] for d in data["documents"] if d["comment_end_date"]]
     assert dates == sorted(dates), "documents must be sorted soonest-closing first"
     assert data["documents"][0]["comment_end_date"] == "2026-08-18"
     assert data["documents"][-1]["comment_end_date"] is None, "undated kept, listed last"
     assert "undated_note" in data
+
+
+def test_open_comment_periods_pages_with_next_page_metadata(monkeypatch):
+    calls: list = []
+
+    def responder(path, params):
+        size, page = params["page[size]"], params["page[number]"]
+        start = (page - 1) * size
+        return {
+            "data": [_doc(f"FAR-2026-{start + i:04d}-0001", f"2026-10-{1 + (start + i) % 28:02d}", "FAR")
+                     for i in range(max(0, min(size, 70 - start)))],
+            "meta": {"totalElements": 70},
+        }
+
+    _patch_get(monkeypatch, responder, calls)
+    first = _payload(asyncio.run(_call("open_comment_periods")))
+    assert (first["returned"], first["page_number"], first["page_size"]) == (25, 1, 25)
+    assert first["truncated"] is True and first["next_page_number"] == 2
+    assert "documents 1-25 of 70" in first["truncated_note"] and "close later" in first["truncated_note"]
+    assert "page_number=2" in first["truncated_note"]
+    last = _payload(asyncio.run(_call("open_comment_periods", page_size=50, page_number=2)))
+    assert calls[-1]["params"]["page[size]"] == 50 and calls[-1]["params"]["page[number]"] == 2
+    assert last["returned"] == 20 and "truncated" not in last and "next_page_number" not in last
+
+
+def test_last_reachable_page_still_reports_truncation(monkeypatch):
+    _patch_get(monkeypatch, _paged_responder(5000))
+    data = _payload(asyncio.run(_call(
+        "far_case_history", docket_id="EPA-HQ-OAR-2009-0171", page_size=100, page_number=40)))
+    assert data["returned"] == 100 and data["truncated"] is True
+    assert "next_page_number" not in data and "narrow the search" in data["truncated_note"]
+
+
+def test_open_comment_periods_page_size_is_bounded(monkeypatch):
+    _patch_get(monkeypatch, lambda p, q: {"data": [], "meta": {"totalElements": 0}}, [])
+    asyncio.run(_call_expect_error("open_comment_periods", "exceeds maximum of 100", page_size=101))
 
 
 def test_open_comment_periods_default_agencies_comma_joined(monkeypatch):
@@ -254,36 +289,46 @@ def _paged_responder(total: int):
                 "title": "Big Docket", "dkAbstract": "A", "rin": "2060-AP86",
                 "agencyId": "EPA",
             }}}
-        page = params.get("page[number]", 1)
-        start = (page - 1) * 250
-        count = max(0, min(250, total - start))
+        page, size = params.get("page[number]", 1), params["page[size]"]
+        start = (page - 1) * size
+        count = max(0, min(size, total - start))
         return {
             "data": [
                 _doc(f"EPA-HQ-OAR-2009-0171-{start + i:05d}", "2010-01-01", "EPA")
                 for i in range(count)
             ],
-            "meta": {"totalElements": total},
+            "meta": {"totalElements": total, "aggregations": {
+                "documentType": [{"docCount": total - 2, "label": "Rule"},
+                                 {"docCount": 2, "label": "Proposed Rule"}],
+                "withinCommentPeriod": [{"docCount": 1, "label": "true"},
+                                        {"docCount": total - 1, "label": "false"}],
+            }},
         }
 
     return responder
 
 
-def test_far_case_history_follows_pagination(monkeypatch):
-    _patch_get(monkeypatch, _paged_responder(553))
+def test_far_case_history_is_summary_first_with_one_page(monkeypatch):
+    calls: list = []
+    _patch_get(monkeypatch, _paged_responder(553), calls)
     data = _payload(asyncio.run(_call(
         "far_case_history", docket_id="EPA-HQ-OAR-2009-0171")))
     assert data["total_documents"] == 553
-    assert len(data["documents"]) == 553
-    assert "truncated" not in data
+    assert data["documents_by_type"] == {"Rule": 551, "Proposed Rule": 2}
+    assert data["open_for_comment"] == 1
+    assert len(data["documents"]) == data["returned"] == 25
+    assert data["truncated"] is True and data["next_page_number"] == 2
+    assert [c["path"] for c in calls].count("documents") == 1, "one page, not the whole docket"
 
 
-def test_far_case_history_flags_truncation_past_cap(monkeypatch):
-    _patch_get(monkeypatch, _paged_responder(1200))
+def test_far_case_history_pages_on_request(monkeypatch):
+    calls: list = []
+    _patch_get(monkeypatch, _paged_responder(553), calls)
     data = _payload(asyncio.run(_call(
-        "far_case_history", docket_id="EPA-HQ-OAR-2009-0171")))
-    assert data["total_documents"] == 1200
-    assert len(data["documents"]) == 1000
-    assert data["truncated"] is True
+        "far_case_history", docket_id="EPA-HQ-OAR-2009-0171", page_size=100, page_number=6)))
+    assert calls[-1]["params"]["page[size]"] == 100 and calls[-1]["params"]["page[number]"] == 6
+    assert data["returned"] == 53 and data["documents"][0]["document_id"].endswith("-00500")
+    assert "truncated" not in data and "next_page_number" not in data
 
 
 def test_far_case_history_small_docket_single_page(monkeypatch):

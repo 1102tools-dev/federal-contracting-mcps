@@ -8,9 +8,8 @@ from regulationsgov_mcp import server
 from mcp.server.mcpserver.exceptions import ToolError
 
 
-def test_registered_key_bursts_and_demo_key_stays_conservative():
+def test_registered_key_bursts():
     assert server._pacer("registered-key").default_interval == server.REGISTERED_KEY_INTERVAL == 0.6
-    assert server._pacer("DEMO_KEY").default_interval == 4.0
 
 
 def test_hourly_cap_stops_before_the_provider_limit(monkeypatch):

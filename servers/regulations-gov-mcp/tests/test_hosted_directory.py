@@ -84,12 +84,11 @@ def test_hosted_entrypoint_refuses_to_start_without_key(monkeypatch):
     srv_http.require_hosted_credential()
 
 
-def test_access_note_only_for_local_demo_key(monkeypatch):
+def test_results_never_carry_an_access_note(monkeypatch):
     _fake_get(monkeypatch, _listing())
-    _mode(monkeypatch, key=None, hosted=None)
-    assert "DEMO_KEY" in asyncio.run(srv.search_documents(agency_id="FAR"))["access_note"]
-    _mode(monkeypatch, key="publisher-secret", hosted="1")
-    assert "access_note" not in asyncio.run(srv.search_documents(agency_id="FAR"))
+    for key, hosted in (("local-key", None), ("publisher-secret", "1")):
+        _mode(monkeypatch, key=key, hosted=hosted)
+        assert "access_note" not in asyncio.run(srv.search_documents(agency_id="FAR"))
 
 
 @pytest.mark.parametrize("status,body", [
@@ -100,9 +99,9 @@ def test_hosted_error_messages_do_not_ask_users_for_keys(monkeypatch, status, bo
     _mode(monkeypatch, key="publisher-secret", hosted="1")
     msg = srv._format_error(status, body, "publisher-secret")
     assert "REGULATIONS_GOV_API_KEY" not in msg and "Register" not in msg and "DEMO_KEY" not in msg
-    _mode(monkeypatch, key=None, hosted=None)
-    local = srv._format_error(status, body, "DEMO_KEY")
-    assert "REGULATIONS_GOV_API_KEY" in local or "Register" in local
+    _mode(monkeypatch, key="local-key", hosted=None)
+    local = srv._format_error(status, body, "local-key")
+    assert "REGULATIONS_GOV_API_KEY" in local and "DEMO_KEY" not in local
 
 
 def test_waf_403_is_not_reported_as_key_problem(monkeypatch):
@@ -143,14 +142,18 @@ def test_unknown_agency_lists_real_codes(monkeypatch):
     assert "case-insensitive at the API; unknown" not in r["no_data_reason"]
 
 
-def test_public_page_size_capped_but_workflows_page_at_250(monkeypatch):
+def test_public_and_workflow_page_sizes_are_capped(monkeypatch):
     _mode(monkeypatch, key="k", hosted="1")
     with pytest.raises(ValueError, match="exceeds maximum of 100"):
         asyncio.run(srv.search_documents(page_size=101))
     calls = []
     _fake_get(monkeypatch, _listing(n=0), calls)
     asyncio.run(srv.open_comment_periods(agency_ids=["FAR"]))
-    assert calls[-1][1]["page[size]"] == 250
+    assert calls[-1][1]["page[size]"] == 25
+    with pytest.raises(ValueError, match="exceeds maximum of 100"):
+        asyncio.run(srv.open_comment_periods(page_size=250))
+    with pytest.raises(ValueError, match="exceeds maximum of 100"):
+        asyncio.run(srv.far_case_history("FAR-2023-0008", page_size=250))
 
 
 def test_partitioning_advice_matches_real_parameters():

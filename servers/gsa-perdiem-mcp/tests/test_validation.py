@@ -2,8 +2,7 @@
 """Validation tests for gsa-perdiem-mcp.
 
 All tests route through mcp.call_tool. Live tests (MCP_LIVE_TESTS=1) are
-gated and use the minimum number of requests to stay under DEMO_KEY's
-~10 req/hr limit.
+gated, need PERDIEM_API_KEY for city lookups, and use few requests.
 """
 from __future__ import annotations
 
@@ -661,58 +660,61 @@ class _FakeResp:
             raise httpx.HTTPStatusError("err", request=None, response=self)
 
 
+@pytest.fixture
+def offline_key(monkeypatch):
+    """A synthetic key so mocked HTTP tests reach the response handling."""
+    monkeypatch.setenv("PERDIEM_API_KEY", "offline-test-only")
+    monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
+
+
 def _install_fake_client(resp_or_exc):
     class FC:
         is_closed = False
-        async def get(self, url):
+        async def get(self, url, headers=None):
             if isinstance(resp_or_exc, Exception):
                 raise resp_or_exc
             return resp_or_exc
     srv._client = FC()
 
 
-def test_get_handles_html_200():
+def test_get_handles_html_200(offline_key):
     _install_fake_client(_FakeResp(200, "<html>maint</html>", "text/html"))
     with pytest.raises(ToolError, match="non-JSON"):
         asyncio.run(srv._get("x"))
 
 
-def test_get_handles_empty_200():
+def test_get_handles_empty_200(offline_key):
     _install_fake_client(_FakeResp(200, "", "application/json"))
     with pytest.raises(ToolError, match="non-JSON"):
         asyncio.run(srv._get("x"))
 
 
-def test_get_handles_truncated_json():
+def test_get_handles_truncated_json(offline_key):
     _install_fake_client(_FakeResp(200, "{\"rates\":[{", "application/json"))
     with pytest.raises(ToolError, match="non-JSON"):
         asyncio.run(srv._get("x"))
 
 
-def test_get_handles_timeout():
+def test_get_handles_timeout(offline_key):
     import httpx
     _install_fake_client(httpx.TimeoutException("timed out"))
     with pytest.raises(ToolError, match="Network error"):
         asyncio.run(srv._get("x"))
 
 
-def test_get_formats_403(monkeypatch):
-    monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
-    monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
+def test_get_formats_403(offline_key):
     _install_fake_client(_FakeResp(403, "{}", "application/json"))
-    with pytest.raises(ToolError, match="API key rejected"):
+    with pytest.raises(ToolError, match="rejected the configured PERDIEM_API_KEY"):
         asyncio.run(srv._get("x"))
 
 
-def test_get_formats_429(monkeypatch):
-    monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
-    monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
+def test_get_formats_429(offline_key):
     _install_fake_client(_FakeResp(429, '{"error":{}}', "application/json"))
-    with pytest.raises(ToolError, match="Rate limited"):
+    with pytest.raises(ToolError, match="rate limit|hourly limit"):
         asyncio.run(srv._get("x"))
 
 
-def test_get_formats_500():
+def test_get_formats_500(offline_key):
     _install_fake_client(_FakeResp(500, "internal error", "text/plain"))
     with pytest.raises(ToolError, match="server error"):
         asyncio.run(srv._get("x"))
@@ -738,14 +740,18 @@ def test_get_api_key_uses_env(monkeypatch):
     assert srv._get_api_key() == "test-key-123"
 
 
-def test_get_api_key_falls_back_to_demo(monkeypatch):
+def test_get_api_key_requires_a_key(monkeypatch):
     monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
-    assert srv._get_api_key() == "DEMO_KEY"
+    monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
+    with pytest.raises(ToolError, match="https://api.data.gov/signup/"):
+        srv._get_api_key()
 
 
-def test_get_api_key_strips_whitespace_and_falls_back(monkeypatch):
+def test_get_api_key_treats_whitespace_as_missing(monkeypatch):
     monkeypatch.setenv("PERDIEM_API_KEY", "   ")
-    assert srv._get_api_key() == "DEMO_KEY"
+    monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
+    with pytest.raises(ToolError, match="set PERDIEM_API_KEY"):
+        srv._get_api_key()
 
 
 # ---------------------------------------------------------------------------

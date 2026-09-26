@@ -29,7 +29,7 @@ class _Response:
 
 
 class _Client:
-    async def get(self, _url: str) -> _Response:
+    async def get(self, _url: str, headers=None) -> _Response:
         return _Response()
 
 
@@ -61,9 +61,10 @@ def test_network_error_url_never_echoes_key(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     class FailingClient:
-        async def get(self, url: str) -> _Response:
-            request = httpx.Request("GET", url)
-            raise httpx.ConnectError(f"failed request {url}", request=request)
+        async def get(self, url: str, headers=None) -> _Response:
+            # Echo the credential header too: a transport error must not leak it.
+            request = httpx.Request("GET", url, headers=headers)
+            raise httpx.ConnectError(f"failed request {url} {headers}", request=request)
 
     monkeypatch.setattr(srv, "_get_client", lambda: FailingClient())
     with pytest.raises(ToolError) as captured:
@@ -71,3 +72,34 @@ def test_network_error_url_never_echoes_key(
     assert SECRET not in str(captured.value)
     assert "rc5-regulations-secret%2Fvalue" not in str(captured.value)
     assert "[REDACTED]" in str(captured.value)
+
+
+class _RecordingClient:
+    def __init__(self, response: _Response) -> None:
+        self.response, self.calls = response, []
+
+    async def get(self, url: str, headers=None) -> _Response:
+        self.calls.append((url, dict(headers or {})))
+        return self.response
+
+
+def test_key_is_sent_in_header_never_in_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _RecordingClient(_Response())
+    monkeypatch.setattr(srv, "_get_client", lambda: client)
+    asyncio.run(srv._get("documents", {"filter[searchTerm]": "FAR"}))
+    ((url, headers),) = client.calls
+    assert headers == {"X-Api-Key": SECRET}
+    assert "filter%5BsearchTerm%5D=FAR" in url
+    assert "api_key" not in url and SECRET not in url and "rc5-regulations-secret%2Fvalue" not in url
+
+
+def test_rejected_key_error_is_redacted(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Rejected(_Response):
+        status_code = 403
+        text = f'{{"error":{{"code":"API_KEY_INVALID","message":"invalid api_key {SECRET}"}}}}'
+
+    monkeypatch.setattr(srv, "_get_client", lambda: _RecordingClient(Rejected()))
+    with pytest.raises(ToolError) as captured:
+        asyncio.run(srv._get("documents", {"filter[searchTerm]": "FAR"}))
+    assert "HTTP 403" in str(captured.value)
+    assert SECRET not in str(captured.value) and "rc5-regulations-secret%2Fvalue" not in str(captured.value)

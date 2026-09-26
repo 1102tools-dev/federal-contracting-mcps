@@ -64,7 +64,7 @@ The first release should be a new tag, not a rewrite of an existing public tag.
 ## Published ChatGPT metadata
 
 The five original baseline `tools-contract.json` files were captured from the live hosted
-endpoints; GSA Per Diem and Regulations.gov baselines were generated from source at their first hosted release (v1.0.32). The GSA Per Diem baseline was regenerated for 1.1.0 (bundled data, `openWorldHint`, no instructions) with `uv run --python 3.12 --frozen --project servers/gsa-perdiem-mcp python scripts/check_hosted_contract.py gsa-perdiem --write` (Python 3.13+ strips docstring indentation, so always regenerate under 3.12); review the diff before committing any regenerated baseline. Source and built-container checks must match them exactly, including
+endpoints; GSA Per Diem and Regulations.gov baselines were generated from source at their first hosted release (v1.0.32). The GSA Per Diem baseline was regenerated for 1.1.0 (bundled data, `openWorldHint`, no instructions) with `uv run --python 3.12 --frozen --project servers/gsa-perdiem-mcp python scripts/check_hosted_contract.py gsa-perdiem --write` (Python 3.13+ strips docstring indentation, so always regenerate under 3.12); review the diff before committing any regenerated baseline. The Regulations.gov baseline was regenerated the same way for 2.0.0, when `open_comment_periods` and `far_case_history` gained `page_size` and `page_number`. Source and built-container checks must match them exactly, including
 tool names, descriptions, schemas, annotations, and metadata. Containers use
 Python 3.12, matching the currently hosted runtime; newer Python versions can
 format docstrings differently. No server instructions are currently published;
@@ -88,8 +88,15 @@ Cloudflare, and registry jobs succeed.
 
 Between releases, `.github/workflows/hosted-health.yml` runs
 `scripts/check_hosted_health.py` every 30 minutes against every hosted service
-(health, initialize, one upstream tool call, publisher-key mode). It opens one
-issue while anything fails and closes it when all services pass again. Run it
+(health, initialize, one upstream tool call, publisher-key mode). For GSA Per
+Diem, whose representative ZIP lookup uses bundled files, each run also makes
+one GSA API city lookup, rotating through a list longer than the 24-hour
+response cache. That makes a real GSA call very likely but not guaranteed (a
+user may have requested the same city recently), so a revoked publisher key
+(HTTP 403, reported as `UpstreamKeyRejected`) or an exhausted rate limit (HTTP
+429, `UpstreamRateLimited`) normally fails the next run, and fails any run whose
+city is not already cached. It opens one issue while anything fails
+and closes it when all services pass again. Run it
 locally with `python3 scripts/check_hosted_health.py [slug ...]` (Python 3.11+).
 
 If Cloudflare deployment or verification fails, PyPI and registry publication
@@ -119,7 +126,7 @@ patch.
 
 ## Operator-keyed services
 
-GSA Per Diem and Regulations.gov call api.data.gov with a key held by 1102tools, one key per service. Each key is stored as a Worker secret (`PERDIEM_API_KEY` on `gsa-perdiem-mcp`, `REGULATIONS_GOV_API_KEY` on `regulations-gov-mcp`) and passed to the container at start. Secrets persist across deploys; rotate one with `wrangler secret put <NAME> --name <worker>` (a running container keeps the old value until it restarts, which happens after two idle minutes or on the next deploy). Both images set a hosted flag (`PERDIEM_HOSTED=1`, `REGULATIONS_HOSTED=1`): the server refuses to start without its key rather than falling back to the shared DEMO_KEY, and reports `hosted_publisher_key`, which release verification and the health check both require. The servers cap upstream calls at 950 per rolling hour, and hosted containers cache identical responses in memory (up to a day for Per Diem; 15 minutes and 24 MiB for Regulations.gov; the cache is lost when an idle container sleeps), so release verification's repeated call reaches upstream once per key.
+GSA Per Diem and Regulations.gov call api.data.gov with a key held by 1102tools, one key per service. Each key is stored as a Worker secret (`PERDIEM_API_KEY` on `gsa-perdiem-mcp`, `REGULATIONS_GOV_API_KEY` on `regulations-gov-mcp`) and passed to the container at start. Secrets persist across deploys; rotate one with `wrangler secret put <NAME> --name <worker>` (a running container keeps the old value until it restarts, which happens after two idle minutes or on the next deploy). Both images set a hosted flag (`PERDIEM_HOSTED=1`, `REGULATIONS_HOSTED=1`): the server refuses to start without its key rather than serving without it (neither server has a DEMO_KEY fallback), and reports `hosted_publisher_key`, which release verification and the health check both require. The servers cap upstream calls at 950 per rolling hour, and hosted containers cache identical responses in memory (up to a day for Per Diem; 15 minutes and 24 MiB for Regulations.gov; the cache is lost when an idle container sleeps), so release verification's repeated call reaches upstream once per key.
 
 From 1.1.0, GSA Per Diem answers ZIP, state, and M&IE lookups for bundled fiscal years from GSA's published files in the image (`servers/gsa-perdiem-mcp/src/gsa_perdiem_mcp/data/`); only city lookups and unbundled years use the key. Its release verification therefore adds one live `lookup_city_perdiem` call. Refresh the bundled data when GSA posts or corrects a file: run `scripts/build_snapshot.py`, run the live parity tests (`MCP_LIVE_TESTS=1 uv run pytest tests/test_live_parity.py` with a registered key), bump the package version, and release.
 

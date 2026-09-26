@@ -26,7 +26,7 @@ class _Client:
         self.starts: list[float] = []
         self.ends: list[float] = []
 
-    async def get(self, _url: str) -> _Response:
+    async def get(self, _url: str, headers=None) -> _Response:
         self.starts.append(time.monotonic())
         await asyncio.sleep(0.005)
         self.ends.append(time.monotonic())
@@ -54,14 +54,14 @@ async def test_real_key_requests_wait_after_prior_completion(monkeypatch: pytest
 
 
 @pytest.mark.asyncio
-async def test_demo_key_is_also_paced(monkeypatch: pytest.MonkeyPatch):
+async def test_missing_key_fails_before_any_request(monkeypatch: pytest.MonkeyPatch):
     client = _Client()
-    monkeypatch.setenv("FEDERAL_API_MIN_INTERVAL_SECONDS", "0.03")
     monkeypatch.setattr(srv, "_get_client", lambda: client)
 
-    await asyncio.gather(srv._get("rates/a"), srv._get("rates/b"))
+    with pytest.raises(ToolError, match="PERDIEM_API_KEY"):
+        await srv._get("rates/a")
 
-    assert client.starts[1] - client.ends[0] >= 0.025
+    assert client.starts == []
 
 
 @pytest.mark.asyncio

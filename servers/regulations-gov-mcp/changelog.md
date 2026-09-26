@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.0
+
+- **Breaking: a key is required.** The shared `DEMO_KEY` fallback is gone. Without `REGULATIONS_GOV_API_KEY` the server still starts and lists its tools, but data tools return setup instructions (free key at https://open.gsa.gov/api/regulationsgov/#getting-started) instead of calling Regulations.gov. `get_access_status` reports `key_missing` in place of `limited_fallback`, and results no longer carry `access_note`. Hosted behavior is unchanged.
+- `open_comment_periods` and `far_case_history` return one page instead of up to 250 and 1,000 documents: `page_size` 5-100 (default 25) and `page_number` 1-40, with `returned`, `truncated`, and `next_page_number`. `open_comment_periods` is still soonest-closing first. `far_case_history` leads with the docket summary, `total_documents`, `documents_by_type`, and `open_for_comment` counts across the whole docket, and makes one documents call per page. A default `open_comment_periods` result is about a third of its former size.
+- The key is sent in the `X-Api-Key` header, never in the request URL.
+
 ## 1.1.0
 
 - Smaller results. Search responses replace the API's `meta.aggregations` (facet counts for about 300 agencies on every search) with `meta.facets`, the top 10 counts per facet, and drop JSON:API self-links and empty attributes. Data rows and `meta.totalElements` are unchanged. A 25-row document search is about a third smaller; an unknown agency code now returns `agency_codes_with_most_records`.
