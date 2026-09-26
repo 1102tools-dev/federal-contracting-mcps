@@ -3,8 +3,13 @@
 Scope comes from, in order: an explicit `services` dispatch input other than
 "all" (comma-separated hosted slugs from deploy/services.json); a scoped tag
 `refs/tags/<slug>/v<version>` (e.g. gsa-perdiem/v1.1.0); otherwise every
-package and hosted service (plain `v*` tags). A scoped release builds, deploys,
-and publishes only those services and their packages.
+package and hosted service (an all-service tag `refs/tags/vX.Y.Z`). A scoped
+release builds, deploys, and publishes only those services and their packages.
+
+An all-service tag's version is the repository release number (v1.0.33 follows
+v1.0.32); it does not name any one package version. Every other ref, including
+a branch dispatch or a malformed tag such as v9nonsense, is rejected here so no
+build or deploy starts.
 """
 import argparse, json, os, re
 from pathlib import Path
@@ -15,6 +20,7 @@ PYPI_NAMES = {"regulations-gov-mcp": "regulationsgov-mcp"}
 
 
 _SCOPED_TAG = re.compile(r"^refs/tags/([a-z0-9-]+)/v(\d[^/]*)$")
+_ALL_SERVICE_TAG = re.compile(r"^refs/tags/v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 
 
 def _package_version(package_dir: str) -> str:
@@ -28,6 +34,11 @@ def plan(services: str, ref: str = "") -> dict:
     dirs_all = sorted(p.name for p in (ROOT / "servers").iterdir() if (p / "pyproject.toml").exists())
     requested = [s.strip() for s in (services or "all").split(",") if s.strip()]
     tag = _SCOPED_TAG.match(ref or "")
+    if ref and not tag and not _ALL_SERVICE_TAG.match(ref):
+        raise SystemExit(
+            f"{ref} is not a release tag. Use vX.Y.Z to release everything or <slug>/v<version> "
+            "for one service, and dispatch this workflow only on such a tag."
+        )
     if requested in ([], ["all"]) and tag:
         requested = [tag.group(1)]
     elif tag and requested != [tag.group(1)]:
@@ -64,6 +75,8 @@ def plan(services: str, ref: str = "") -> dict:
 def main():
     p = argparse.ArgumentParser(); p.add_argument("--services", default="all")
     p.add_argument("--ref", default=os.environ.get("GITHUB_REF", "")); args = p.parse_args()
+    if os.environ.get("GITHUB_ACTIONS") and not args.ref:
+        raise SystemExit("GITHUB_REF is empty; run this workflow on a release tag")
     out = plan(args.services, args.ref)
     target = os.environ.get("GITHUB_OUTPUT")
     lines = "".join(f"{k}={v}\n" for k, v in out.items())

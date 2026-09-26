@@ -212,6 +212,26 @@ def test_release_plan_rejects_scoped_tag_with_wrong_version():
         _release_plan().plan('all', 'refs/tags/gsa-perdiem/v0.0.1')
 
 
+@pytest.mark.parametrize('ref', ['refs/tags/v9nonsense', 'refs/tags/v1.0', 'refs/tags/v01.0.1',
+                                 'refs/tags/v1.0.33-rc1', 'refs/heads/main', 'refs/pull/7/merge'])
+def test_release_plan_rejects_refs_that_are_not_release_tags(ref):
+    with pytest.raises(SystemExit, match='not a release tag'):
+        _release_plan().plan('all', ref)
+    with pytest.raises(SystemExit, match='not a release tag'):
+        _release_plan().plan('gsa-perdiem', ref)
+
+
+def test_cloudflare_guard_matches_release_plan_tag_shapes():
+    import re
+    workflow = yaml.safe_load((ROOT / ".github/workflows/publish-pypi.yml").read_text())
+    run = next(s["run"] for s in workflow["jobs"]["cloudflare-access"]["steps"] if "GITHUB_REF" in s.get("run", ""))
+    pattern = re.search(r'=~ (\S+) \]\]', run).group(1)
+    for ref in ('refs/tags/v1.0.33', 'refs/tags/gsa-perdiem/v1.1.1'):
+        assert re.fullmatch(pattern, ref), ref
+    for ref in ('refs/tags/v9nonsense', 'refs/tags/v1.0', 'refs/heads/main', 'refs/tags/gsa-perdiem/v1.1.1/x'):
+        assert not re.fullmatch(pattern, ref), ref
+
+
 def test_release_workflow_accepts_scoped_tags():
     workflow = yaml.safe_load((ROOT / ".github/workflows/publish-pypi.yml").read_text())
     trigger = workflow.get("on") or workflow.get(True)
@@ -386,3 +406,66 @@ def test_regulations_release_gate_requires_publisher_key_and_compact_results(mon
         expected = ['get_access_status'] if failure == 'pre_deploy' else (
             ['get_access_status'] + ['search_dockets'] * 3 + ['search_documents'])
         assert calls == expected
+
+
+def _health_check():
+    spec = importlib.util.spec_from_file_location('check_hosted_health', ROOT / 'scripts/check_hosted_health.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_perdiem_monitor_city_does_not_repeat_within_the_response_cache():
+    hc = _health_check()
+    runs_per_cache_ttl = 86400 // 1800  # scheduled every 30 minutes
+    assert len(set(hc.PERDIEM_CITIES)) == len(hc.PERDIEM_CITIES) > runs_per_cache_ttl
+    for start in (1, 500, 4242):
+        cities = [hc.perdiem_city(run_number=n) for n in range(start, start + runs_per_cache_ttl + 1)]
+        assert len(set(cities)) == len(cities)
+    slots = [hc.perdiem_city(run_number='', now=1800 * n) for n in range(runs_per_cache_ttl + 1)]
+    assert len(set(slots)) == len(slots)
+
+
+def _mcp_stub(city_result):
+    def request(url, payload=None):
+        if url.endswith('/health'):
+            return {'status': 'ok', 'release_sha': '001e536ae6'}
+        name = payload['params'].get('name')
+        if payload['method'] == 'initialize':
+            return {'result': {'serverInfo': {'version': '1.1.1'}}}
+        if name == 'get_data_status':
+            return {'result': {'structuredContent': {'live_lookup_access': 'hosted_publisher_key'}}}
+        if name == 'lookup_zip_perdiem':
+            return {'result': {'structuredContent': {'status': 'resolved'}}}
+        assert name == 'lookup_city_perdiem' and set(payload['params']['arguments']) == {'city', 'state'}
+        return {'result': city_result}
+    return request
+
+
+def _error(text):
+    return {'isError': True, 'content': [{'type': 'text', 'text': text}]}
+
+
+def test_perdiem_monitor_requires_a_live_gsa_city_lookup(monkeypatch):
+    hc = _health_check()
+    service = {'endpoint': 'https://perdiem.example/mcp'}
+    ok = {'structuredContent': {'status': 'resolved', 'source': {'kind': 'gsa_per_diem_api'}}}
+    monkeypatch.setattr(hc._verify, 'request', _mcp_stub(ok))
+    assert 'GSA API city lookup' in hc.check('gsa-perdiem', service)
+    bundled = {'structuredContent': {'status': 'resolved', 'source': {'kind': 'gsa_bundled_snapshot'}}}
+    monkeypatch.setattr(hc._verify, 'request', _mcp_stub(bundled))
+    with pytest.raises(RuntimeError, match='expected resolved from gsa_per_diem_api'):
+        hc.check('gsa-perdiem', service)
+
+
+@pytest.mark.parametrize('text, error', [
+    ("HTTP 403: the GSA Per Diem API rejected this service's credential.", 'UpstreamKeyRejected'),
+    ('HTTP 429: the GSA Per Diem API rate limit was reached. Retry later.', 'UpstreamRateLimited'),
+    ('Network error calling GSA Per Diem API: timed out', 'RuntimeError'),
+])
+def test_perdiem_monitor_reports_rejected_and_rate_limited_keys_separately(monkeypatch, text, error):
+    hc = _health_check()
+    monkeypatch.setattr(hc._verify, 'request', _mcp_stub(_error(text)))
+    with pytest.raises(RuntimeError) as caught:
+        hc.check('gsa-perdiem', {'endpoint': 'https://perdiem.example/mcp'})
+    assert type(caught.value).__name__ == error and text in str(caught.value)

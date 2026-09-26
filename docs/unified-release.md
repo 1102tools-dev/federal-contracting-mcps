@@ -88,8 +88,13 @@ Cloudflare, and registry jobs succeed.
 
 Between releases, `.github/workflows/hosted-health.yml` runs
 `scripts/check_hosted_health.py` every 30 minutes against every hosted service
-(health, initialize, one upstream tool call, publisher-key mode). It opens one
-issue while anything fails and closes it when all services pass again. Run it
+(health, initialize, one upstream tool call, publisher-key mode). For GSA Per
+Diem, whose representative ZIP lookup uses bundled files, each run also makes
+one GSA API city lookup, rotating through a list longer than the 24-hour
+response cache, so a revoked publisher key (HTTP 403, reported as
+`UpstreamKeyRejected`) or an exhausted rate limit (HTTP 429,
+`UpstreamRateLimited`) fails the check. It opens one issue while anything fails
+and closes it when all services pass again. Run it
 locally with `python3 scripts/check_hosted_health.py [slug ...]` (Python 3.11+).
 
 If Cloudflare deployment or verification fails, PyPI and registry publication
