@@ -149,6 +149,6 @@ async def test_lifespan_passes_through(admission):
 
 def test_all_hosted_packages_use_canonical_queue():
     # shared copy + usaspending, ecfr, federal-register, gsa-calc, gsa-perdiem, regulations-gov
-    assert len(PATHS)==7
+    assert len(PATHS)==8
     for path in PATHS[1:]:
         assert path.read_bytes()==PATHS[0].read_bytes()

@@ -1,0 +1,10 @@
+**
+!servers/
+!servers/bls-oews-mcp/
+!servers/bls-oews-mcp/pyproject.toml
+!servers/bls-oews-mcp/uv.lock
+!servers/bls-oews-mcp/readme.md
+!servers/bls-oews-mcp/license
+!servers/bls-oews-mcp/src/
+!servers/bls-oews-mcp/src/**
+**/__pycache__/

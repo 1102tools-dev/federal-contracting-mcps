@@ -1,6 +1,6 @@
 # Federal contracting MCPs
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,439](https://img.shields.io/badge/regression%20tests-5%2C439-007a59)](#testing-and-maintenance) [![Claude directory: 4 servers](https://img.shields.io/badge/Claude%20directory-4%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 3 servers](https://img.shields.io/badge/ChatGPT%20directory-3%20servers-172f2a)](#available-in-claude-and-chatgpt)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,457](https://img.shields.io/badge/regression%20tests-5%2C457-007a59)](#testing-and-maintenance) [![Claude directory: 4 servers](https://img.shields.io/badge/Claude%20directory-4%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 3 servers](https://img.shields.io/badge/ChatGPT%20directory-3%20servers-172f2a)](#available-in-claude-and-chatgpt)
 
 Free, open-source, read-only source tools for federal contracting research: opportunities, awards, company records, labor pricing, travel rates, regulations, and rulemaking.
 
@@ -9,7 +9,7 @@ Free, open-source, read-only source tools for federal contracting research: oppo
 ## Why these MCPs
 
 - **Free.** MIT-licensed, with no subscription and no credits. Directory installs need no account or API key.
-- **Tested.** 5,439 collected regression tests, including live-API tests, across 9 servers and 133 tools, with up to ten audit rounds per server against the live government APIs. Published testing records document each bug fixed and the tests added.
+- **Tested.** 5,457 collected regression tests, including live-API tests, across 9 servers and 133 tools, with up to ten audit rounds per server against the live government APIs. Published testing records document each bug fixed and the tests added.
 - **Listed, no keys.** 4 servers in the Claude directory and 3 in the ChatGPT directory, with all nine planned for both. Directory installs need no user API key.
 - **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
 
@@ -24,7 +24,7 @@ All nine MCPs install and run locally today; the **Local** column links to each 
 | SAM.gov | Coming soon | Coming soon | [Install](servers/sam-gov-mcp#installation) (free key) |
 | USAspending | [Install](https://claude.ai/directory/usaspending-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) | [Install](servers/usaspending-gov-mcp#installation) |
 | GSA CALC+ | [Install](https://claude.ai/directory/gsa-calc-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) | [Install](servers/gsa-calc-mcp#installation) |
-| BLS OEWS | Coming soon | Coming soon | [Install](servers/bls-oews-mcp#installation) (free key) |
+| BLS OEWS | Coming soon | Coming soon | [Install](servers/bls-oews-mcp#installation) |
 | GSA Per Diem | Coming soon | Coming soon | [Install](servers/gsa-perdiem-mcp#installation) (free key) |
 | eCFR | [Install](https://claude.ai/directory/ecfr-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) | [Install](servers/ecfr-mcp#installation) |
 | Acquisition.gov | Coming soon | Coming soon | [Install](servers/acquisition-gov-mcp#install) |
@@ -34,7 +34,7 @@ All nine MCPs install and run locally today; the **Local** column links to each 
 **Directory install or local install?**
 
 - **Claude and ChatGPT:** Install from the directory listing. No API key and no setup. The MCP runs on Cloudflare at its own 1102tools.com address, such as `usaspending.1102tools.com`, and your AI app connects to it over the internet. The hosted servers don't store your queries, results, or conversations, and request logging is turned off, so no one at 1102tools sees what you look up. The server code and Cloudflare setup are public in [federal-contracting-mcps](deploy). Cloudflare still handles connection data such as IP addresses, and Claude or ChatGPT handles your conversation under its own privacy policy.
-- **Local:** The MCP runs on your own computer and works with any MCP-compatible app. Requests go straight from your computer to the government source, and nothing passes through 1102tools.com. SAM.gov, BLS OEWS, GSA Per Diem and Regulations.gov need a free API key from the agency. Each setup guide shows how to get one.
+- **Local:** The MCP runs on your own computer and works with any MCP-compatible app. Requests go straight from your computer to the government source, and nothing passes through 1102tools.com. SAM.gov, GSA Per Diem and Regulations.gov need a free API key from the agency. Each setup guide shows how to get one.
 
 After connecting, choose a [matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) and replace the bracketed details. If a prompt lists multiple MCPs, connect every one it requires. For other sources or compatible MCP clients, use the server setup instructions below.
 
@@ -47,7 +47,7 @@ Choose the sources your work needs. Each server directory contains its own READM
 | [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | Free key (local); keyless hosted edition coming soon |
 | [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | 55 | 2,174 | No user API key |
 | [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | 8 | 379 | No user API key |
-| [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography and data year. | 8 | 258 | Optional key; limited keyless access; keyless hosted edition coming soon |
+| [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography, industry, and occupation (current OEWS release). | 8 | 276 | No user API key (bundled BLS release); keyless hosted edition coming soon |
 | [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | 7 | 544 | ZIP/state/M&IE keyless from bundled GSA files; free personal key required for city lookups; keyless hosted edition coming soon |
 | [eCFR](servers/ecfr-mcp) | Codified regulatory text, dates, and version comparisons. | 13 | 320 | No user API key |
 | [Acquisition.gov](servers/acquisition-gov-mcp) | FAR Overhaul model text, posted agency deviations, and guidance. | 5 | 239 | No user API key |

@@ -4,36 +4,35 @@
 
 from . import __version__
 
-BASE_URL_V2 = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
-BASE_URL_V1 = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
-DEFAULT_TIMEOUT = 30.0
 USER_AGENT = f"bls-oews-mcp/{__version__}"
 
-# OEWS publishes about a year in arrears. Do NOT use the calendar year.
-# May 2025 estimates released April 2026. Next: May 2026 estimates in ~April 2027.
-# BLS withdraws the prior year once superseded: 2024 stopped returning rows
-# when 2025 published, so this constant must be bumped each release cycle or
-# every defaulted query comes back empty. Verify with detect_latest_year().
+# The OEWS release bundled in data/ (May 2025 estimates, published by BLS on
+# May 15, 2026). scripts/build_oews_db.py records it in data/manifest.json and
+# tests/test_snapshot.py fails if this constant drifts from the manifest.
+# BLS publishes the next release (May 2026 estimates) in spring 2027.
 OEWS_CURRENT_YEAR = "2025"
+OEWS_RELEASE_NAME = "May 2025"
 
 # Series ID format: PREFIX(4) + AREA(7) + INDUSTRY(6) + OCC(6) + DATATYPE(2) = 25 chars
 SERIES_ID_LENGTH = 25
 
-# Max series per request
-MAX_SERIES_V1 = 25
-MAX_SERIES_V2 = 50
+# Upper bound on series per tool call. The bundled lookup has no BLS quota;
+# this only keeps a single response to a readable size.
+MAX_SERIES = 50
 
 SPECIAL_VALUES = {"-", "#", "*", "N/A"}
 
-# Official OEWS datatype map, live-verified 2026-08 against national
-# all-occupations data by cross-footing hourly x 2080 against the annual
-# percentiles (06=$15.00 x 2080 = $31,200 = dt11 annual 10th, 08=$24.51
-# x 2080 = $50,980 = dt13 annual median, and so on). Datatypes 16/17 only
-# exist at state/metro scope and are ratios, not dollars.
+# Official OEWS datatype map (oe.datatype), cross-footed against national
+# all-occupations data: hourly x 2080 equals the annual percentiles
+# (06=$15.00 x 2080 = $31,200 = dt11 annual 10th, and so on). Datatypes
+# 16/17 only exist at state/metro scope and are ratios, not dollars; 02/05
+# are relative standard errors in percent.
 DATATYPE_LABELS: dict[str, str] = {
     "01": "Employment",
+    "02": "Employment RSE (%)",
     "03": "Hourly Mean Wage",
     "04": "Annual Mean Wage",
+    "05": "Mean Wage RSE (%)",
     "06": "Hourly 10th Percentile",
     "07": "Hourly 25th Percentile",
     "08": "Hourly Median",
@@ -54,6 +53,8 @@ HOURLY_DATATYPES: set[str] = {"03", "06", "07", "08", "09", "10"}
 COUNT_DATATYPES: set[str] = {"01"}
 # Datatypes returning RATIOS (not dollars): state/metro only
 RATIO_DATATYPES: set[str] = {"16", "17"}
+# Relative standard errors, in percent
+RSE_DATATYPES: set[str] = {"02", "05"}
 
 # Datatypes used for IGCE wage profiles. "03" rides along so annual-only
 # occupations (pilots, teachers) can be detected: BLS suppresses their

@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.1.0
+
+Answers every tool from the current OEWS release (May 2025 estimates,
+published by BLS on May 15, 2026), bundled with the package as a read-only
+SQLite database built from BLS's published flat files by
+`scripts/build_oews_db.py`. No API key, no network calls, and no daily query
+limit, so the same package runs locally and as the hosted keyless service.
+`data/manifest.json` records each BLS source file's URL, size, SHA-256, and
+publication date; values match the live BLS API on a fixed 25-series parity
+sample (including unreleased and top-coded cells).
+
+- `get_access_status` is replaced by `get_data_status`, which reports the
+  bundled release and its sources (the tool count stays 8).
+- `detect_latest_year` reports the bundled release instead of probing the API.
+- Every result carries a `source` block citing the BLS release, publication
+  and retrieval dates, and source file, with BLS's required notice.
+- Results add the official BLS occupation title and area name; missing-data
+  reasons now say whether the SOC code or area is absent from the release.
+- Datatypes 02 and 05 (employment and mean wage relative standard errors) are
+  available.
+- Every tool is annotated `openWorldHint: false`, and the server sends no
+  initialize instructions.
+- `BLS_API_KEY` and request pacing are no longer used; `bls_oews_mcp.http`
+  serves the tools over stateless streamable HTTP for hosting.
+
 ## 1.0.10
 
 Fixes shared request pacing locks that could remain held when background

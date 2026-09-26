@@ -1,34 +1,21 @@
 # SPDX-License-Identifier: MIT
 """Round 7 regression tests: the audit that fixed the datatype label shift.
 
-Offline tests mock _query_bls and go through mcp.call_tool so pydantic
-coercion runs as in production. Live tests (BLS_LIVE_TESTS=1 + BLS_API_KEY)
-pin the official datatype semantics against production BLS data via the
-2080 cross-foot invariant: each hourly percentile x 2080 must equal the
-matching annual percentile. If BLS ever remaps datatype codes, the live
-canary fails loudly instead of letting labels drift again.
+Offline tests mock _query_series and go through mcp.call_tool so pydantic
+coercion runs as in production. The cross-foot tests pin the official
+datatype semantics against the bundled BLS release via the 2080 invariant:
+each hourly percentile x 2080 must equal the matching annual percentile. If
+BLS ever remaps datatype codes, the canary fails loudly instead of letting
+labels drift again.
 """
 
 from __future__ import annotations
 
 import asyncio
-import os
-
 import pytest
 
 import bls_oews_mcp.server as srv
 from bls_oews_mcp.server import mcp
-
-LIVE = os.environ.get("BLS_LIVE_TESTS") == "1"
-live = pytest.mark.skipif(not LIVE, reason="requires BLS_LIVE_TESTS=1 + BLS_API_KEY")
-
-
-@pytest.fixture(autouse=True)
-def _reset_client():
-    srv._client = None
-    yield
-    srv._client = None
-
 
 async def _call(name: str, **kwargs):
     return await mcp.call_tool(name, kwargs)
@@ -69,21 +56,13 @@ def _canned(series: list, messages: list | None = None):
 
 
 def _patch_query(monkeypatch, response=None, capture: list | None = None):
-    async def fake_query(series_ids, start_year=None, end_year=None, *, latest=False):
+    async def fake_query(series_ids, start_year=None):
         if capture is not None:
-            capture.append(
-                {"series_ids": list(series_ids), "start_year": start_year, "latest": latest}
-            )
+            capture.append({"series_ids": list(series_ids), "start_year": start_year})
         out = response(series_ids) if callable(response) else response
-        if out is None:
-            out = _canned([])
-        # Mirror the real _query_bls: surface REQUEST_SUCCEEDED diagnostics.
-        msgs = [str(m) for m in out.get("message", []) if m]
-        if msgs and out.get("status") == "REQUEST_SUCCEEDED":
-            out["_messages"] = msgs
-        return out
+        return out if out is not None else _canned([])
 
-    monkeypatch.setattr(srv, "_query_bls", fake_query)
+    monkeypatch.setattr(srv, "_query_series", fake_query)
 
 
 def _echo_all(value: str = "50.00"):
@@ -183,17 +162,6 @@ def test_fully_empty_response_flags_no_data(monkeypatch):
     assert "no_data_reason" in data
 
 
-def test_api_messages_surfaced(monkeypatch):
-    msg = "Series does not exist for Series OEUN000000000000099999904"
-    _patch_query(monkeypatch, response=_canned([], messages=[msg]))
-    data = _payload(asyncio.run(_call("get_wage_data", occ_code="999999")))
-    assert data.get("_api_messages") == [msg]
-
-
-# ---------------------------------------------------------------------------
-# Normalized dedup (finding 7)
-# ---------------------------------------------------------------------------
-
 def test_compare_metros_collapses_normalized_dupes(monkeypatch):
     capture: list = []
     _patch_query(monkeypatch, response=_echo_all("60.00"), capture=capture)
@@ -280,40 +248,13 @@ def test_igce_no_annual_only_flag_for_normal_occupation(monkeypatch):
 # detect_latest_year via latest=true (finding 9)
 # ---------------------------------------------------------------------------
 
-def test_detect_latest_year_sends_latest_flag(monkeypatch):
-    capture: list = []
-    _patch_query(
-        monkeypatch,
-        response=_canned([_series("OEUN000000000000000000004", "83500", year="2025")]),
-        capture=capture,
-    )
+def test_detect_latest_year_reports_bundled_release():
     data = _payload(asyncio.run(_call("detect_latest_year")))
-    assert capture[0]["latest"] is True
-    assert capture[0]["start_year"] is None
-    assert data["latest_year"] == "2025"
+    assert data["latest_year"] == data["default_year"] == "2025"
+    assert data["release"] == "May 2025"
     assert data["newer_data_available"] is False
-    assert "api_key" in data
-
-
-def test_detect_latest_year_reports_newer(monkeypatch):
-    _patch_query(
-        monkeypatch,
-        response=_canned([_series("OEUN000000000000000000004", "86000", year="2026")]),
-    )
-    data = _payload(asyncio.run(_call("detect_latest_year")))
-    assert data["latest_year"] == "2026"
-    assert data["newer_data_available"] is True
-
-
-def test_detect_latest_year_reports_stale_default(monkeypatch):
-    _patch_query(
-        monkeypatch,
-        response=_canned([_series("OEUN000000000000000000004", "80000", year="2024")]),
-    )
-    data = _payload(asyncio.run(_call("detect_latest_year")))
-    assert data["latest_year"] == "2024"
-    assert data["newer_data_available"] is False
-    assert "OLDER" in data["message"]
+    assert data["source"]["kind"] == "bundled_bls_oews_files"
+    assert "api_key" not in data
 
 
 # ---------------------------------------------------------------------------
@@ -382,8 +323,7 @@ def test_territory_fips_accepted(monkeypatch):
 # Live canaries (the drift guards this audit wishes had existed earlier)
 # ---------------------------------------------------------------------------
 
-@live
-def test_live_cross_foot_invariant():
+def test_cross_foot_invariant():
     """Each hourly percentile x 2080 must equal its annual counterpart.
 
     This is the invariant that exposed the round-1 mislabeling: dt08 x 2080
@@ -416,8 +356,3 @@ def test_live_cross_foot_invariant():
         )
 
 
-@live
-def test_live_detect_latest_year_returns_real_year():
-    data = _payload(asyncio.run(_call("detect_latest_year")))
-    assert data["latest_year"].isdigit() and len(data["latest_year"]) == 4
-    assert int(data["latest_year"]) >= 2025

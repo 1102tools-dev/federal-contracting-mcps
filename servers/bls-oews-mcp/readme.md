@@ -1,15 +1,15 @@
 # bls-oews-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 258](https://img.shields.io/badge/regression%20tests-258-007a59)](testing.md) [![hosted edition: coming soon](https://img.shields.io/badge/hosted%20edition-coming%20soon-b0770f)](#available-in-claude-and-chatgpt)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 276](https://img.shields.io/badge/regression%20tests-276-007a59)](testing.md) [![hosted edition: coming soon](https://img.shields.io/badge/hosted%20edition-coming%20soon-b0770f)](#available-in-claude-and-chatgpt)
 
 
 <!-- mcp-name: com.1102tools/bls-oews-mcp -->
 
-Free, open-source MCP server for the BLS Occupational Employment and Wage Statistics (OEWS) API. Market wage data for IGCE development, price analysis, and labor market research.
+Free, open-source MCP server for BLS Occupational Employment and Wage Statistics (OEWS) market wages. For IGCE development, price analysis, and labor market research.
 
-Optional free API key for higher rate limits. Works without a key at reduced limits. Use the installation and configuration instructions below to connect this MCP directly.
+No API key and no daily limit. The package bundles the current OEWS release (May 2025 estimates, published by BLS on May 15, 2026) as a read-only database built from BLS's published flat files, so every answer is local and each result cites the BLS release, publication date, retrieval date, and source file. Use the installation and configuration instructions below to connect this MCP directly.
 
-*Tested and hardened through a 5-round retroactive live audit with a real BLS API key after the initial smoke test reported zero bugs. 258 collected regression tests (94 offline, 164 live-gated), covering the 1 P0 usability-breaking bug (SOC format), 10 P1 silent-wrong-data bugs, 12 P1 response-shape crash paths, and 7 P2 validation gaps fixed in that audit. See [TESTING.md](TESTING.md) for the full testing record.*
+*Tested and hardened through a 5-round retroactive live audit with a real BLS API key after the initial smoke test reported zero bugs, then round 7's full-source re-audit. 276 collected regression tests (275 offline, 1 live parity check against the BLS API), covering the 1 P0 usability-breaking bug (SOC format), 10 P1 silent-wrong-data bugs, 12 P1 response-shape crash paths, and 7 P2 validation gaps fixed in that audit. See [TESTING.md](TESTING.md) for the full testing record.*
 
 ## Available in Claude and ChatGPT
 
@@ -17,11 +17,11 @@ Optional free API key for higher rate limits. Works without a key at reduced lim
 |---|---|---|
 | BLS OEWS | Coming soon | Coming soon |
 
-A hosted edition is coming soon to the Claude and ChatGPT directories. It is planned to need no user API key and no local setup. This server also works locally without a key at reduced limits. Until the listings are live, use the installation and configuration instructions below, then try a [matching prompt](https://1102tools.com/#bls-oews).
+A hosted edition is coming soon to the Claude and ChatGPT directories. It needs no user API key and no local setup. The local server needs no key either. Until the listings are live, use the installation and configuration instructions below, then try a [matching prompt](https://1102tools.com/#bls-oews).
 
 ## What it does
 
-Exposes the BLS OEWS API plus a credential-readiness check as 8 MCP tools:
+Answers OEWS questions from the bundled release through 8 MCP tools:
 
 **Core**
 - `get_wage_data` - Wage statistics for an occupation by SOC code (national, state, or metro)
@@ -30,15 +30,18 @@ Exposes the BLS OEWS API plus a credential-readiness check as 8 MCP tools:
 
 **Workflow**
 - `igce_wage_benchmark` - Wage benchmarks with burdened rate estimates for IGCE development
-- `detect_latest_year` - Check if newer OEWS data has been released
+- `detect_latest_year` - Report the bundled OEWS data year and release
 
 **Reference**
 - `list_common_soc_codes` - SOC code mappings for federal IT/professional services
 - `list_common_metros` - Metro area MSA codes
+- `get_data_status` - The bundled release, its BLS source files with SHA-256 and publication dates, and the retrieval date
 
-## Authentication (optional)
+## Data source
 
-Without a key, the server uses BLS v1 API (25 queries/day). With a key, it uses v2 (500 queries/day). Register free at [data.bls.gov/registrationEngine](https://data.bls.gov/registrationEngine/).
+The bundled database is built by [`scripts/build_oews_db.py`](scripts/build_oews_db.py) from the BLS OEWS flat files at [download.bls.gov/pub/time.series/oe/](https://download.bls.gov/pub/time.series/oe/): national, state, metropolitan and nonmetropolitan area, and national industry estimates for every occupation and all 17 OEWS datatypes, including the relative standard errors. [`data/manifest.json`](src/bls_oews_mcp/data/manifest.json) records each source file's URL, size, SHA-256, and BLS publication date. A weekly check reports when BLS publishes a new release, which ships as a new package version.
+
+BLS.gov cannot vouch for the data or analyses derived from these data after the data have been retrieved from BLS.gov.
 
 ## Installation
 
@@ -50,7 +53,6 @@ uvx bls-oews-mcp
 
 Use the configuration below as the server definition and adapt its placement to your compatible MCP client. For practical requests using this source, see the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
 
-Without key:
 ```json
 {
   "mcpServers": {
@@ -62,28 +64,9 @@ Without key:
 }
 ```
 
-With key (recommended):
-```json
-{
-  "mcpServers": {
-    "bls-oews": {
-      "command": "uvx",
-      "args": ["--refresh-package", "bls-oews-mcp", "--from", "bls-oews-mcp", "bls-oews-mcp"],
-      "env": {
-        "BLS_API_KEY": "your-api-key-here",
-        "FEDERAL_API_MIN_INTERVAL_SECONDS": "3"
-      }
-    }
-  }
-}
-```
+The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes and new OEWS releases arrive automatically; without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup, so raise your platform's MCP startup timeout if it enforces a short one.
 
-The server defaults `FEDERAL_API_MIN_INTERVAL_SECONDS` to `3` for keyed and
-keyless requests. The explicit value above documents the intended policy and
-can be changed when you have a documented reason. Multiple local processes
-using the same key share the gate.
-
-The `--refresh-package` flag tells uv to check PyPI for a newer release each time your client launches the server, so fixes arrive automatically; without it, uv keeps serving whatever version it first cached. It adds a moment of network time at startup, so raise your platform's MCP startup timeout if it enforces a short one.
+On first use the server decompresses the bundled database (about 50 MB) into your user cache directory; set `BLS_OEWS_DATA_DIR` to put it elsewhere.
 
 Restart the client and the tools appear.
 
@@ -108,7 +91,7 @@ The `igce_wage_benchmark` tool applies the multiplier automatically.
 
 ## Data year
 
-OEWS publishes about a year in arrears, and the BLS API serves ONLY the latest survey year. The server defaults to 2025 (May 2025 estimates, released April 2026), which is currently the only year that returns data: older years are withdrawn and raise a clear error here. Omit the year argument in normal use, and call `detect_latest_year` to confirm the newest release.
+OEWS publishes about a year in arrears. The server answers from the bundled release, 2025 (May 2025 estimates, published May 15, 2026); other years raise a clear error pointing to the historical tables at [bls.gov/oes/tables.htm](https://www.bls.gov/oes/tables.htm). Omit the year argument in normal use, and call `detect_latest_year` or `get_data_status` to see the bundled release.
 
 ## Companion tools
 
@@ -116,22 +99,7 @@ Use alongside `gsa-calc-mcp` (GSA CALC+ ceiling rates) for complete pricing anal
 
 ## Request pacing
 
-| Default setting | Value |
-| --- | --- |
-| Wait after each upstream request completes | **3 seconds** |
-| Maximum upstream requests in flight per pacing identity | **1** |
-| Rolling attempt counter in this pacer | **None**; provider quotas still apply |
-
-The next request starts after the previous request's duration **plus 3 seconds**. This is a completion delay, not a 3-second start interval. Local processes sharing the same pacing directory and identity share this gate; a separate local counter does not create additional provider quota.
-
-See the [complete pacing reference](../../docs/pacing.md) for all nine servers, shared credentials/IPs, configuration and hosting differences.
-
-Every upstream request uses a provisional 3-second cross-process anti-burst
-interval by default. This protects keyed and keyless traffic launched by
-multiple local clients; it does not increase BLS daily quota or coordinate the
-same key on another computer. Override with
-`FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it, and
-use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
+None. Every tool answers from the bundled database, so the server makes no upstream requests and has no BLS quota. See the [pacing reference](../../docs/pacing.md) for the other servers.
 
 ## License
 

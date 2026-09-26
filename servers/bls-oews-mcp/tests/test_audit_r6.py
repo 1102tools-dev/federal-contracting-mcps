@@ -1,46 +1,29 @@
 # SPDX-License-Identifier: MIT
-"""Round 6: Live audit (200+ tests against the production BLS OEWS API).
+"""Round 6 audit (200+ tool calls across states, metros, and occupations).
 
-Runs only when BLS_LIVE_TESTS=1 and a BLS_API_KEY is set. Makes real
-HTTP calls to api.bls.gov.
+Written against the production BLS OEWS API; since 1.1.0 every call is
+answered from the bundled OEWS release, so the suite runs offline on every
+test run (the network is blocked in conftest.py).
 
-Purpose: validate behaviors that mocks cannot see.
+Covers behaviors mocks cannot see:
 - Real wage data across 50 states, top metros, common occupations
 - All 4 IGCE datatypes returned correctly
-- All 9 valid datatype codes accepted by the API
+- All valid datatype codes accepted
 - Industry breakdowns at national scope
 - Compare metros/occupations with real series IDs
-- Year boundary behavior (latest, prior years)
+- Year boundary behavior (current, prior, and future years)
 - Concurrent call safety
 - Suppressed and capped value handling
 - Response shape verification
-
-Cost: ~210 BLS calls per full run. Key has 500/day limit.
-Runtime: 4-6 minutes typical.
 """
 
 from __future__ import annotations
 
 import asyncio
-import os
 
 import pytest
 
-import bls_oews_mcp.server as srv  # noqa: E402
 from bls_oews_mcp.server import mcp  # noqa: E402
-
-
-LIVE = os.environ.get("BLS_LIVE_TESTS") == "1"
-pytestmark = pytest.mark.skipif(
-    not LIVE, reason="requires BLS_LIVE_TESTS=1 + BLS_API_KEY"
-)
-
-
-@pytest.fixture(autouse=True)
-def _reset_client():
-    srv._client = None
-    yield
-    srv._client = None
 
 
 async def _call(name: str, **kwargs):
@@ -341,7 +324,7 @@ def test_live_get_wage_data_current_year():
     )
     data = _payload(r)
     assert isinstance(data, dict)
-    assert not data.get("no_data"), "current OEWS year should return live rows"
+    assert not data.get("no_data"), "current OEWS year should return rows"
 
 
 def test_live_get_wage_data_year_2024_rejected():
