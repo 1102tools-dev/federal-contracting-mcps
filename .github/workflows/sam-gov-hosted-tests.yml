@@ -1,0 +1,41 @@
+name: SAM.gov hosted tests
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/sam-gov/**'
+      - 'scripts/load_sam_opportunities.py'
+      - 'tests/test_sam_loader.py'
+      - '.github/workflows/sam-gov-hosted-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/sam-gov/**'
+      - 'scripts/load_sam_opportunities.py'
+      - 'tests/test_sam_loader.py'
+      - '.github/workflows/sam-gov-hosted-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Loader
+        run: uv run --python 3.12 --with pytest pytest -q tests/test_sam_loader.py
+      - name: Worker typecheck, tools, and contract
+        working-directory: deploy/sam-gov
+        run: |
+          npm ci --ignore-scripts
+          npm run check
+          npm test
+      - name: Deploy dry run
+        working-directory: deploy/sam-gov
+        run: npx wrangler deploy --dry-run --env production --outdir "$RUNNER_TEMP/sam-dist"

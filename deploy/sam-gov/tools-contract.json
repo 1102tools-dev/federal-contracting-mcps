@@ -1,0 +1,352 @@
+[
+  {
+    "name": "search_opportunities",
+    "description": "Search active SAM.gov contract opportunity notices: solicitations, combined synopses, presolicitations, sources sought, special notices, award notices, and justifications.\n\nAll filters combine. Keyword search covers titles and full descriptions. By default, only the latest version of each amended notice is included, notices whose response deadline has passed are left out, and results are sorted by soonest deadline, with notices that have no deadline last. Returns up to 100 notices per call with the total match count; use offset to page. Use get_opportunity for a notice's full description and contacts.\n\nData is SAM.gov's public daily file of active notices, not live SAM.gov. Archived notices and attachments are not included.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "keywords": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Words that must all appear in the title or full description. Put exact phrases in double quotes, e.g. zero trust \"cloud migration\". Word endings are matched loosely (bridge matches bridges)."
+        },
+        "notice_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Solicitation",
+              "Combined Synopsis/Solicitation",
+              "Presolicitation",
+              "Sources Sought",
+              "Special Notice",
+              "Award Notice",
+              "Justification",
+              "Justification and Approval (J&A)",
+              "Modification/Amendment/Cancel",
+              "Consolidate/(Substantially) Bundle",
+              "Sale of Surplus Property"
+            ]
+          },
+          "description": "Current notice types to include. Omit for all types."
+        },
+        "naics_codes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "description": "NAICS codes or prefixes (2 to 6 digits); a prefix such as 5415 matches every code under it."
+        },
+        "psc_codes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "description": "Product and service codes or prefixes, e.g. D3 or R425."
+        },
+        "set_aside_codes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "SBA",
+              "SBP",
+              "8A",
+              "8AN",
+              "HZC",
+              "HZS",
+              "SDVOSBC",
+              "SDVOSBS",
+              "WOSB",
+              "WOSBSS",
+              "EDWOSB",
+              "EDWOSBSS",
+              "VSA",
+              "VSS",
+              "ISBEE",
+              "IEE",
+              "BICiv",
+              "LAS",
+              "ESB",
+              "NONE"
+            ]
+          },
+          "description": "SAM.gov set-aside codes, e.g. SBA (total small business), 8A, SDVOSBC, WOSB, HZC. NONE means the notice says no set-aside was used."
+        },
+        "agency": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NAVSEA."
+        },
+        "place_of_performance_state": {
+          "type": "string",
+          "pattern": "^[A-Za-z]{2}$",
+          "description": "Two-letter state code for the place of performance. Many notices leave this blank."
+        },
+        "solicitation_number": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Exact solicitation number."
+        },
+        "posted_from": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Earliest posted date, YYYY-MM-DD."
+        },
+        "posted_to": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Latest posted date, YYYY-MM-DD."
+        },
+        "deadline_from": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Earliest response deadline date, YYYY-MM-DD, in the deadline's own time zone."
+        },
+        "deadline_to": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Latest response deadline date, YYYY-MM-DD."
+        },
+        "include_past_deadlines": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Notices without a deadline, such as award notices, are always included."
+        },
+        "include_earlier_versions": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include earlier versions of amended notices. SAM.gov's file lists every version of a notice as its own row; by default only the latest version of each is included."
+        },
+        "sort": {
+          "type": "string",
+          "enum": [
+            "deadline",
+            "newest",
+            "relevance"
+          ],
+          "default": "deadline",
+          "description": "deadline: soonest response deadline first. newest: most recently posted first. relevance: best keyword match first (needs keywords)."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 25
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "default": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Search Opportunities",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_opportunity",
+    "description": "Get one SAM.gov notice in full: description, response deadline, set-aside, NAICS and PSC codes, place of performance, contracting office, points of contact, award details for award notices, and the public sam.gov link. Also lists other active notices with the same solicitation number, such as earlier versions, amendments, or the award.\n\nPass the 32-character notice ID from search results, or a solicitation number (returns its most recently posted notice). Attachments are not retrieved; open the sam.gov link for them.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "notice_id": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{32}$",
+          "description": "32-character SAM.gov notice ID."
+        },
+        "solicitation_number": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Solicitation number, used when notice_id is not given."
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get Opportunity",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "summarize_opportunities",
+    "description": "Count active SAM.gov notices grouped by agency, sub-tier, office, NAICS, PSC, set-aside, notice type, place-of-performance state, or posted month. Accepts the same filters as search_opportunities, e.g. counts of open solicitations under one NAICS by set-aside, or which agencies posted the most sources sought notices this quarter.\n\nCounts cover active notices in SAM.gov's public daily file only, not archived or historical notices.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "group_by": {
+          "type": "string",
+          "enum": [
+            "agency",
+            "sub_tier",
+            "office",
+            "naics",
+            "psc",
+            "set_aside",
+            "notice_type",
+            "place_of_performance_state",
+            "posted_month"
+          ],
+          "description": "Field to group counts by."
+        },
+        "keywords": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Words that must all appear in the title or full description. Put exact phrases in double quotes, e.g. zero trust \"cloud migration\". Word endings are matched loosely (bridge matches bridges)."
+        },
+        "notice_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Solicitation",
+              "Combined Synopsis/Solicitation",
+              "Presolicitation",
+              "Sources Sought",
+              "Special Notice",
+              "Award Notice",
+              "Justification",
+              "Justification and Approval (J&A)",
+              "Modification/Amendment/Cancel",
+              "Consolidate/(Substantially) Bundle",
+              "Sale of Surplus Property"
+            ]
+          },
+          "description": "Current notice types to include. Omit for all types."
+        },
+        "naics_codes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "description": "NAICS codes or prefixes (2 to 6 digits); a prefix such as 5415 matches every code under it."
+        },
+        "psc_codes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "description": "Product and service codes or prefixes, e.g. D3 or R425."
+        },
+        "set_aside_codes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "SBA",
+              "SBP",
+              "8A",
+              "8AN",
+              "HZC",
+              "HZS",
+              "SDVOSBC",
+              "SDVOSBS",
+              "WOSB",
+              "WOSBSS",
+              "EDWOSB",
+              "EDWOSBSS",
+              "VSA",
+              "VSS",
+              "ISBEE",
+              "IEE",
+              "BICiv",
+              "LAS",
+              "ESB",
+              "NONE"
+            ]
+          },
+          "description": "SAM.gov set-aside codes, e.g. SBA (total small business), 8A, SDVOSBC, WOSB, HZC. NONE means the notice says no set-aside was used."
+        },
+        "agency": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NAVSEA."
+        },
+        "place_of_performance_state": {
+          "type": "string",
+          "pattern": "^[A-Za-z]{2}$",
+          "description": "Two-letter state code for the place of performance. Many notices leave this blank."
+        },
+        "solicitation_number": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Exact solicitation number."
+        },
+        "posted_from": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Earliest posted date, YYYY-MM-DD."
+        },
+        "posted_to": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Latest posted date, YYYY-MM-DD."
+        },
+        "deadline_from": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Earliest response deadline date, YYYY-MM-DD, in the deadline's own time zone."
+        },
+        "deadline_to": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Latest response deadline date, YYYY-MM-DD."
+        },
+        "include_past_deadlines": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Notices without a deadline, such as award notices, are always included."
+        },
+        "include_earlier_versions": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include earlier versions of amended notices. SAM.gov's file lists every version of a notice as its own row; by default only the latest version of each is included."
+        },
+        "top": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 25,
+          "description": "Number of groups to return, largest first."
+        }
+      },
+      "required": [
+        "group_by"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Summarize Opportunities",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_data_status",
+    "description": "Report the date of the SAM.gov file behind every answer, when it was loaded, how many active notices it holds by type, and what changed in the last nightly load. Use it to judge how current results are.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get Data Status",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  }
+]

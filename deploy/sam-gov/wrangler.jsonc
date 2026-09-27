@@ -1,0 +1,65 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sam-gov-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "account_id": "846d3e41e48446abcd3570c0959f9fb5",
+  "workers_dev": true,
+  // Worker only, no container: tools query D1 directly. The nightly loader
+  // (scripts/load_sam_opportunities.py) is the only writer.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sam-gov-opportunities",
+      "database_id": "8875076f-cbb2-4ce8-9ea1-b152323fbbb0"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "REQUEST_LIMITER",
+      "namespace_id": "110267",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  },
+  "env": {
+    "production": {
+      "name": "sam-gov-mcp",
+      "routes": [
+        {
+          "pattern": "sam.1102tools.com",
+          "custom_domain": true
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "sam-gov-opportunities",
+          "database_id": "8875076f-cbb2-4ce8-9ea1-b152323fbbb0"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "REQUEST_LIMITER",
+          "namespace_id": "110267",
+          "simple": {
+            "limit": 120,
+            "period": 60
+          }
+        }
+      ]
+    }
+  }
+}
