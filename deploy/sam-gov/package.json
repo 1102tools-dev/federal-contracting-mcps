@@ -1,0 +1,16 @@
+{
+  "name": "1102tools-sam-gov-remote",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "wrangler types && tsc --noEmit",
+    "test": "node --test test/",
+    "dry-run": "wrangler deploy --dry-run --env production",
+    "deploy": "wrangler deploy --env production"
+  },
+  "devDependencies": {
+    "@types/node": "26.5.0",
+    "typescript": "7.0.2",
+    "wrangler": "4.129.1"
+  }
+}
