@@ -21,7 +21,7 @@ All nine MCPs install and run locally today; the **Local** column links to each 
 
 | MCP | Claude | ChatGPT | Local |
 |---|---|---|---|
-| SAM.gov | Coming soon | Coming soon | [Install](servers/sam-gov-mcp#installation) (free key) |
+| SAM.gov | Coming soon | Coming soon | [Install](servers/sam-gov-mcp#installation) (free key, full 20-tool edition) |
 | USAspending | [Install](https://claude.ai/directory/usaspending-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) | [Install](servers/usaspending-gov-mcp#installation) |
 | GSA CALC+ | [Install](https://claude.ai/directory/gsa-calc-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) | [Install](servers/gsa-calc-mcp#installation) |
 | BLS OEWS | Coming soon | Coming soon | [Install](servers/bls-oews-mcp#installation) |
@@ -35,6 +35,7 @@ All nine MCPs install and run locally today; the **Local** column links to each 
 
 - **Claude and ChatGPT:** Install from the directory listing. No API key and no setup. The MCP runs on Cloudflare at its own 1102tools.com address, such as `usaspending.1102tools.com`, and your AI app connects to it over the internet. The hosted servers don't store your queries, results, or conversations, and request logging is turned off, so no one at 1102tools sees what you look up. The server code and Cloudflare setup are public in [federal-contracting-mcps](deploy). Cloudflare still handles connection data such as IP addresses, and Claude or ChatGPT handles your conversation under its own privacy policy.
 - **Local:** The MCP runs on your own computer and works with any MCP-compatible app. Requests go straight from your computer to the government source, and nothing passes through 1102tools.com. SAM.gov, GSA Per Diem and Regulations.gov need a free API key from the agency. Each setup guide shows how to get one.
+- **SAM.gov comes in two editions.** The directory version (coming soon) has 4 keyless tools for contract opportunities, award notices, and justifications. The full version has 20 tools and adds entity registrations, SBA certifications, exclusions, and contract award records. It needs a free SAM.gov key and a local install; there is no one-click directory install for it. [Compare the editions](servers/sam-gov-mcp#two-editions-hosted-or-full).
 
 After connecting, choose a [matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) and replace the bracketed details. If a prompt lists multiple MCPs, connect every one it requires. For other sources or compatible MCP clients, use the server setup instructions below.
 
@@ -44,7 +45,7 @@ Choose the sources your work needs. Each server directory contains its own READM
 
 | MCP | Source coverage | Tools | Tests | Access |
 |---|---|---|---|---|
-| [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | Free key (local); keyless hosted edition coming soon |
+| [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | Free key (local); keyless 4-tool hosted edition coming soon |
 | [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | 55 | 2,174 | No user API key |
 | [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | 8 | 379 | No user API key |
 | [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography, industry, and occupation (current OEWS release). | 8 | 276 | No user API key (bundled BLS release); keyless hosted edition coming soon |
@@ -67,7 +68,7 @@ A prompt does not install a server. Local command configuration and remote endpo
 
 ## Use the sources together
 
-- **Competitors and teaming:** combine USAspending award records with SAM.gov entity and exclusion evidence.
+- **Competitors and teaming:** combine USAspending award records with SAM.gov entity and exclusion evidence from the full local edition.
 - **Pricing inputs:** compare BLS wages, CALC+ ceiling rates, and GSA travel rates while keeping their different pricing bases clear.
 - **Regulations and policy:** use eCFR for codified text, Federal Register and Regulations.gov for rulemaking, and Acquisition.gov for FAR Overhaul model text and posted deviations.
 
