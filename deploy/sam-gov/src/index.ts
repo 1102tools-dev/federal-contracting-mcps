@@ -75,7 +75,7 @@ export async function handleMessage(message: Message, env: Env): Promise<object 
       }
       try {
         const data = await handler(env.DB, args);
-        return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify(data, null, 2)}], structuredContent: data}};
+        return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify(data)}], structuredContent: data}};
       } catch (error) {
         if (error instanceof ToolError) {
           return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify({error: error.message})}], structuredContent: {error: error.message}, isError: true}};
