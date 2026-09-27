@@ -28,7 +28,7 @@ function notice(n: number, fields: Record<string, unknown> = {}) {
     sub_tier: "DEPT OF THE ARMY", office: "W6QK ACC-APG", posted_at: "2026-09-01 10:00:00", posted_date: "2026-09-01",
     notice_type: "Solicitation", archive_date: "2026-12-31", set_aside_code: null, set_aside: null,
     response_deadline: "2026-10-15T14:00:00-04:00", response_deadline_utc: "2026-10-15T18:00:00Z",
-    naics_code: "541512", psc_code: "D302", pop_state: null, description: "Routine services.", row_hash: `h${n}`,
+    naics_code: "541512", psc_code: "D302", pop_state: null, office_state: "MD", description: "Routine services.", row_hash: `h${n}`,
     ...fields,
   };
 }
@@ -108,6 +108,7 @@ test("filters combine: type with slash, NAICS prefix, set-aside, agency, state, 
   assert.deepEqual(ids(await search({set_aside_codes: ["SBA", "SDVOSBC"]})), [4, 1]);
   assert.deepEqual(ids(await search({agency: "veterans"})), [4]);
   assert.deepEqual(ids(await search({agency: "army", place_of_performance_state: "md"})), [1]);
+  assert.deepEqual(ids(await search({office_state: "md", notice_types: ["Sources Sought"]})), [4]);
   assert.deepEqual(ids(await search({solicitation_number: "sol-1"})), [1, 5]);
 });
 
@@ -141,6 +142,17 @@ test("bad arguments raise clear tool errors", async () => {
     [{place_of_performance_state: "Maryland"}, /longer than 2|two-letter/],
   ];
   for (const [args, message] of cases) await assert.rejects(search(args), (e: Error) => e instanceof ToolError && message.test(e.message), JSON.stringify(args));
+});
+
+test("place-of-performance searches point to notices with an office in that state", async () => {
+  const result = await search({place_of_performance_state: "MD"});
+  assert.deepEqual(ids(result), [1]);
+  assert.match(result.notes.at(-1), /^3 more matching notices leave the place of performance blank but have a contracting office in MD/);
+  const counts = await summarizeOpportunities(db, {group_by: "office_state", place_of_performance_state: "MD"}, NOW);
+  assert.deepEqual(counts.groups, [{value: "MD", count: 1}]);
+  assert.match(counts.notes.at(-1), /^3 more/);
+  assert.equal((await summarizeOpportunities(db, {group_by: "notice_type", place_of_performance_state: "VA"}, NOW)).notes.length, 1, "no hint when nothing more matches");
+  assert.equal((await search({place_of_performance_state: "MD", office_state: "MD"})).notes.length, 1);
 });
 
 test("zero matches explain what to try", async () => {
