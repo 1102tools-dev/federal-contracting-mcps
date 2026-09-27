@@ -6,6 +6,10 @@ the file: new notices are inserted, changed notices updated, and notices no
 longer in the file (archived by SAM.gov) deleted. Notices already past their
 archive date are skipped even if the file still lists them.
 
+The file also lists every earlier version of a notice (each amendment is its
+own row, still marked active), so each row is flagged is_latest; the tools
+show only the latest version by default.
+
     python scripts/load_sam_opportunities.py --remote            # nightly job
     python scripts/load_sam_opportunities.py --local --csv f.csv  # wrangler dev
 
@@ -51,7 +55,7 @@ COLUMNS = {
     "ZipCode": "office_zip", "CountryCode": "office_country",
     "AdditionalInfoLink": "additional_info_link", "Link": None, "Description": "description",
 }
-FIELDS = [c for c in COLUMNS.values() if c] + ["posted_date", "response_deadline_utc"]
+FIELDS = [c for c in COLUMNS.values() if c] + ["posted_date", "response_deadline_utc", "is_latest"]
 
 EASTERN = ZoneInfo("America/New_York")
 UTF8_SEQUENCE = re.compile(rb"[\xc2-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf]{2}|[\xf0-\xf4][\x80-\xbf]{3}")
@@ -136,8 +140,37 @@ def normalize(source):
     row["award_amount"] = amount(row["award_amount"])
     row["set_aside_code"] = set_aside_code(row["set_aside_code"])
     row["response_deadline_utc"] = utc_deadline(row["response_deadline"])
-    row["row_hash"] = hashlib.sha256(json.dumps([row[f] for f in FIELDS]).encode()).hexdigest()
     return row
+
+
+def version_key(row):
+    """Rows sharing a key are versions of one notice. Versions share a
+    solicitation number and sub-tier; award notices must also share the award
+    number and awardee, since one solicitation can have thousands of awards."""
+    if not row["solicitation_number"]:
+        return None
+    key = (row["solicitation_number"].upper(), row["sub_tier"])
+    if row["notice_type"] == "Award Notice":
+        if not (row["award_number"] or row["awardee"]):
+            return None
+        key += (row["award_number"], row["awardee"])
+    return key
+
+
+def mark_latest(rows):
+    """Flag the most recently posted version of each notice and hash every row."""
+    latest = {}
+    for row in rows.values():
+        key = version_key(row)
+        if key is not None:
+            rank = (row["posted_at"] or "", row["notice_id"])
+            if key not in latest or rank > latest[key][0]:
+                latest[key] = (rank, row["notice_id"])
+    newest = {notice_id for _, notice_id in latest.values()}
+    for row in rows.values():
+        row["is_latest"] = 1 if version_key(row) is None or row["notice_id"] in newest else 0
+        row["row_hash"] = hashlib.sha256(json.dumps([row[f] for f in FIELDS]).encode()).hexdigest()
+    return rows
 
 
 def parse(raw, today):
@@ -158,7 +191,7 @@ def parse(raw, today):
             skipped += 1
             continue
         rows[row["notice_id"]] = row
-    return rows, skipped
+    return mark_latest(rows), skipped
 
 
 def download():
@@ -225,7 +258,7 @@ class D1:
     def run(self, *args, capture=False):
         cmd = ["npx", "--no-install", "wrangler", "d1", "execute", DATABASE, f"--{self.target}", "--yes", *args]
         result = subprocess.run(cmd, cwd=WORKER_DIR, check=True, text=True,
-                                stdout=subprocess.PIPE if capture else None)
+                                stdout=subprocess.PIPE if capture else sys.stderr)
         return result.stdout
 
     def query(self, sql):
@@ -276,9 +309,11 @@ def main(argv=None):
     statements, counts = plan(rows, existing)
     types = {}
     for row in rows.values():
-        types[row["notice_type"] or "Unknown"] = types.get(row["notice_type"] or "Unknown", 0) + 1
+        if row["is_latest"]:
+            types[row["notice_type"] or "Unknown"] = types.get(row["notice_type"] or "Unknown", 0) + 1
     status = {"file_date": file_date, "loaded_at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-              "source_url": SOURCE_URL, "notices": len(rows), "skipped_past_archive_date": skipped,
+              "source_url": SOURCE_URL, "notices": len(rows),
+              "latest_versions": sum(r["is_latest"] for r in rows.values()), "skipped_past_archive_date": skipped,
               "by_notice_type": dict(sorted(types.items(), key=lambda kv: -kv[1])), **counts}
     for chunk in chunks(statements):
         db.execute_file(chunk)

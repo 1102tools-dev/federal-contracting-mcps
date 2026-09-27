@@ -4,9 +4,10 @@
   "type": "module",
   "scripts": {
     "check": "wrangler types && tsc --noEmit",
-    "test": "node --test test/",
+    "test": "node --test \"test/*.test.ts\"",
     "dry-run": "wrangler deploy --dry-run --env production",
-    "deploy": "wrangler deploy --env production"
+    "deploy": "wrangler deploy --env production",
+    "contract": "node scripts/write-contract.ts"
   },
   "devDependencies": {
     "@types/node": "26.5.0",

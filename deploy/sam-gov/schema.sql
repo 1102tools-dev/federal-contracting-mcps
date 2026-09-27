@@ -2,8 +2,9 @@
 -- Loaded nightly by scripts/load_sam_opportunities.py from SAM.gov's public
 -- ContractOpportunitiesFullCSV.csv, which lists every active notice. Notices
 -- SAM.gov drops from that file are deleted here, so the table mirrors what is
--- active on SAM.gov as of the file date. Every statement is idempotent; the
--- loader applies this file before each load.
+-- active on SAM.gov as of the file date. The file also lists earlier versions
+-- of amended notices; is_latest marks the newest version of each. Every
+-- statement is idempotent; the loader applies this file before each load.
 
 CREATE TABLE IF NOT EXISTS opportunities (
   rowid INTEGER PRIMARY KEY,
@@ -54,6 +55,7 @@ CREATE TABLE IF NOT EXISTS opportunities (
   office_country TEXT,
   additional_info_link TEXT,
   description TEXT,
+  is_latest INTEGER NOT NULL DEFAULT 1, -- 0 when a newer version of this notice is listed
   row_hash TEXT NOT NULL
 );
 
@@ -64,7 +66,7 @@ CREATE INDEX IF NOT EXISTS opp_naics ON opportunities(naics_code);
 CREATE INDEX IF NOT EXISTS opp_psc ON opportunities(psc_code);
 CREATE INDEX IF NOT EXISTS opp_set_aside ON opportunities(set_aside_code);
 CREATE INDEX IF NOT EXISTS opp_pop_state ON opportunities(pop_state);
-CREATE INDEX IF NOT EXISTS opp_solicitation ON opportunities(solicitation_number);
+CREATE INDEX IF NOT EXISTS opp_solicitation ON opportunities(solicitation_number COLLATE NOCASE);
 
 -- Keyword search over titles and full descriptions.
 CREATE VIRTUAL TABLE IF NOT EXISTS opportunities_fts USING fts5(

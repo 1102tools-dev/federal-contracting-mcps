@@ -56,12 +56,13 @@ const FILTERS = {
   deadline_from: dateField("Earliest response deadline date, YYYY-MM-DD, in the deadline's own time zone."),
   deadline_to: dateField("Latest response deadline date, YYYY-MM-DD."),
   include_past_deadlines: {type: "boolean", default: false, description: "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Notices without a deadline, such as award notices, are always included."},
+  include_earlier_versions: {type: "boolean", default: false, description: "Include earlier versions of amended notices. SAM.gov's file lists every version of a notice as its own row; by default only the latest version of each is included."},
 };
 
 export const TOOLS = [
   {
     name: "search_opportunities",
-    description: "Search active SAM.gov contract opportunity notices: solicitations, combined synopses, presolicitations, sources sought, special notices, award notices, and justifications.\n\nAll filters combine. Keyword search covers titles and full descriptions. By default, notices whose response deadline has passed are left out and results are sorted by soonest deadline, with notices that have no deadline last. Returns up to 100 notices per call with the total match count; use offset to page. Use get_opportunity for a notice's full description and contacts.\n\nData is SAM.gov's public daily file of active notices, not live SAM.gov. Archived notices and attachments are not included.",
+    description: "Search active SAM.gov contract opportunity notices: solicitations, combined synopses, presolicitations, sources sought, special notices, award notices, and justifications.\n\nAll filters combine. Keyword search covers titles and full descriptions. By default, only the latest version of each amended notice is included, notices whose response deadline has passed are left out, and results are sorted by soonest deadline, with notices that have no deadline last. Returns up to 100 notices per call with the total match count; use offset to page. Use get_opportunity for a notice's full description and contacts.\n\nData is SAM.gov's public daily file of active notices, not live SAM.gov. Archived notices and attachments are not included.",
     inputSchema: {
       type: "object",
       properties: {
@@ -76,7 +77,7 @@ export const TOOLS = [
   },
   {
     name: "get_opportunity",
-    description: "Get one SAM.gov notice in full: description, response deadline, set-aside, NAICS and PSC codes, place of performance, contracting office, points of contact, award details for award notices, and the public sam.gov link. Also lists other active notices with the same solicitation number, such as amendments or the award.\n\nPass the 32-character notice ID from search results, or a solicitation number (returns its most recently posted notice). Attachments are not retrieved; open the sam.gov link for them.",
+    description: "Get one SAM.gov notice in full: description, response deadline, set-aside, NAICS and PSC codes, place of performance, contracting office, points of contact, award details for award notices, and the public sam.gov link. Also lists other active notices with the same solicitation number, such as earlier versions, amendments, or the award.\n\nPass the 32-character notice ID from search results, or a solicitation number (returns its most recently posted notice). Attachments are not retrieved; open the sam.gov link for them.",
     inputSchema: {
       type: "object",
       properties: {
@@ -249,6 +250,9 @@ function buildQuery(args: Args, now: Date): Query {
   const today = now.toISOString().slice(0, 10);
   q.where.push("(o.archive_date IS NULL OR o.archive_date >= ?)");
   q.params.push(today);
+  if (!bool(args, "include_earlier_versions")) {
+    q.where.push("o.is_latest = 1");
+  }
   if (!bool(args, "include_past_deadlines")) {
     q.where.push("(o.response_deadline_utc IS NULL OR o.response_deadline_utc >= ?)");
     q.params.push(now.toISOString().slice(0, 19) + "Z");
@@ -289,6 +293,7 @@ function summary(row: Row) {
     psc_code: row.psc_code,
     place_of_performance: place(row),
     award: award(row),
+    superseded_by_newer_version: row.is_latest === 0 ? true : undefined,
     link: publicLink(row.notice_id),
   };
 }
@@ -303,7 +308,7 @@ async function dataAsOf(db: Database): Promise<string | null> {
   return results.length ? JSON.parse(results[0].value) : null;
 }
 
-const SUMMARY_COLUMNS = "o.notice_id, o.title, o.solicitation_number, o.notice_type, o.department, o.sub_tier, o.office, o.posted_date, o.response_deadline, o.set_aside_code, o.set_aside, o.naics_code, o.psc_code, o.pop_street, o.pop_city, o.pop_state, o.pop_zip, o.pop_country, o.award_number, o.award_date, o.award_amount, o.awardee";
+const SUMMARY_COLUMNS = "o.notice_id, o.title, o.solicitation_number, o.notice_type, o.department, o.sub_tier, o.office, o.posted_date, o.response_deadline, o.set_aside_code, o.set_aside, o.naics_code, o.psc_code, o.pop_street, o.pop_city, o.pop_state, o.pop_zip, o.pop_country, o.award_number, o.award_date, o.award_amount, o.awardee, o.is_latest";
 
 // ---------- tools ----------
 
@@ -355,7 +360,7 @@ export async function getOpportunity(db: Database, args: Args) {
     if (!NOTICE_ID.test(id)) throw new ToolError("notice_id must be the 32-character hexadecimal notice ID from SAM.gov.");
     rows = (await db.prepare("SELECT * FROM opportunities WHERE notice_id = ?").bind(id.toLowerCase()).all()).results;
   } else if (sol !== undefined) {
-    rows = (await db.prepare("SELECT * FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE ORDER BY posted_at DESC LIMIT 1").bind(sol).all()).results;
+    rows = (await db.prepare("SELECT * FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE ORDER BY is_latest DESC, posted_at DESC LIMIT 1").bind(sol).all()).results;
   } else {
     throw new ToolError("Pass notice_id or solicitation_number.");
   }
@@ -370,10 +375,20 @@ export async function getOpportunity(db: Database, args: Args) {
   }
   const row = rows[0];
   let related: Row[] = [];
+  let relatedTotal = 0;
   if (row.solicitation_number) {
-    related = (await db.prepare("SELECT notice_id, notice_type, title, posted_date, response_deadline FROM opportunities WHERE solicitation_number = ? AND notice_id != ? ORDER BY posted_at DESC LIMIT 20")
-      .bind(row.solicitation_number, row.notice_id).all<Row>()).results.map(r => ({...r, link: publicLink(r.notice_id)}));
+    const [page, count] = await Promise.all([
+      db.prepare("SELECT notice_id, notice_type, title, posted_date, response_deadline, is_latest FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE AND notice_id != ? ORDER BY is_latest DESC, posted_at DESC LIMIT 20")
+        .bind(row.solicitation_number, row.notice_id).all<Row>(),
+      db.prepare("SELECT COUNT(*) AS n FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE AND notice_id != ?")
+        .bind(row.solicitation_number, row.notice_id).all<{n: number}>(),
+    ]);
+    related = page.results.map(({is_latest, ...r}) => ({...r, latest_version: is_latest === 1, link: publicLink(r.notice_id)}));
+    relatedTotal = count.results[0]?.n ?? 0;
   }
+  const notes = ["Attachments and amendment documents are not included; open the sam.gov link for them."];
+  if (row.is_latest === 0) notes.unshift("A newer version of this notice exists; related_notices entries with latest_version true are current.");
+  if (relatedTotal > related.length) notes.push(`${relatedTotal} other notices share this solicitation number; ${related.length} are listed.`);
   const contact = (prefix: string) => {
     const c = {title: row[`${prefix}_title`], name: row[`${prefix}_name`], email: row[`${prefix}_email`], phone: row[`${prefix}_phone`], fax: row[`${prefix}_fax`]};
     return Object.values(c).some(v => v) ? c : undefined;
@@ -386,6 +401,7 @@ export async function getOpportunity(db: Database, args: Args) {
     solicitation_number: row.solicitation_number,
     notice_type: row.notice_type,
     original_notice_type: row.base_type,
+    latest_version: row.is_latest === 1,
     posted_at: row.posted_at,
     response_deadline: row.response_deadline,
     archive_date: row.archive_date,
@@ -403,7 +419,7 @@ export async function getOpportunity(db: Database, args: Args) {
     description: row.description,
     links: {sam_gov: publicLink(row.notice_id), additional_info: row.additional_info_link},
     related_notices: related,
-    notes: ["Attachments and amendment documents are not included; open the sam.gov link for them."],
+    notes,
     source: SOURCE,
   };
 }
@@ -449,10 +465,11 @@ export async function getDataStatus(db: Database, _args: Args, now = new Date())
     file_age_days: ageDays,
     loaded_at: s.loaded_at,
     active_notices: s.notices,
+    latest_versions: s.latest_versions,
     by_notice_type: s.by_notice_type,
     last_load: {added: s.added, updated: s.updated, removed: s.removed, skipped_past_archive_date: s.skipped_past_archive_date},
     refresh: "Nightly. SAM.gov publishes the file once a day; notices posted since then appear after the next load.",
-    coverage: "Active notices only. Archived notices, past fiscal years, and attachments are not included.",
+    coverage: "Active notices only. Archived notices, past fiscal years, and attachments are not included. active_notices counts every listed version of amended notices; latest_versions and by_notice_type count only the latest version of each.",
     source: SOURCE,
     source_url: s.source_url,
   };
