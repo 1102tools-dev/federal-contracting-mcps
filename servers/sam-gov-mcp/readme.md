@@ -20,7 +20,7 @@ This full edition has 20 tools and requires a free SAM.gov API key. Use the inst
 | Tools | 4 | 20 |
 | Covers | Contract opportunities, award notices, and justifications | Opportunities plus entity registrations, SBA certifications, exclusions, reps and certs, integrity records, contract award records, the federal hierarchy, and subawards |
 | Data | SAM.gov's public contract opportunities file, refreshed daily | Live SAM.gov APIs, within your key's daily limit |
-| Works in | Claude and ChatGPT | Apps that run local MCP servers, such as Claude Desktop, Claude Code, Codex, and Cursor |
+| Works in | Claude and ChatGPT | Most MCP clients |
 
 | MCP | Claude | ChatGPT |
 |---|---|---|
