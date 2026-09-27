@@ -83,7 +83,12 @@
         "place_of_performance_state": {
           "type": "string",
           "pattern": "^[A-Za-z]{2}$",
-          "description": "Two-letter state code for the place of performance. Many notices leave this blank."
+          "description": "Two-letter state code for the place of performance. Most notices leave the place of performance blank, so results also report how many more notices have a contracting office in that state (see office_state)."
+        },
+        "office_state": {
+          "type": "string",
+          "pattern": "^[A-Za-z]{2}$",
+          "description": "Two-letter state code of the contracting office. Filled in on nearly every notice, but an office's state is not always where the work happens."
         },
         "solicitation_number": {
           "type": "string",
@@ -180,7 +185,7 @@
   },
   {
     "name": "summarize_opportunities",
-    "description": "Count active SAM.gov notices grouped by agency, sub-tier, office, NAICS, PSC, set-aside, notice type, place-of-performance state, or posted month. Accepts the same filters as search_opportunities, e.g. counts of open solicitations under one NAICS by set-aside, or which agencies posted the most sources sought notices this quarter.\n\nCounts cover active notices in SAM.gov's public daily file only, not archived or historical notices.",
+    "description": "Count active SAM.gov notices grouped by agency, sub-tier, office, NAICS, PSC, set-aside, notice type, place-of-performance state, contracting office state, or posted month. Accepts the same filters as search_opportunities, e.g. counts of open solicitations under one NAICS by set-aside, or which agencies posted the most sources sought notices this quarter.\n\nCounts cover active notices in SAM.gov's public daily file only, not archived or historical notices.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -195,6 +200,7 @@
             "set_aside",
             "notice_type",
             "place_of_performance_state",
+            "office_state",
             "posted_month"
           ],
           "description": "Field to group counts by."
@@ -277,7 +283,12 @@
         "place_of_performance_state": {
           "type": "string",
           "pattern": "^[A-Za-z]{2}$",
-          "description": "Two-letter state code for the place of performance. Many notices leave this blank."
+          "description": "Two-letter state code for the place of performance. Most notices leave the place of performance blank, so results also report how many more notices have a contracting office in that state (see office_state)."
+        },
+        "office_state": {
+          "type": "string",
+          "pattern": "^[A-Za-z]{2}$",
+          "description": "Two-letter state code of the contracting office. Filled in on nearly every notice, but an office's state is not always where the work happens."
         },
         "solicitation_number": {
           "type": "string",

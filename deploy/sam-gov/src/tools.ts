@@ -31,6 +31,7 @@ const GROUPS: Record<string, string> = {
   set_aside: "set_aside_code",
   notice_type: "notice_type",
   place_of_performance_state: "pop_state",
+  office_state: "office_state",
   posted_month: "substr(posted_date, 1, 7)",
 };
 
@@ -49,7 +50,8 @@ const FILTERS = {
   psc_codes: codeList("Product and service codes or prefixes, e.g. D3 or R425."),
   set_aside_codes: {type: "array", items: {type: "string", enum: SET_ASIDE_CODES}, description: "SAM.gov set-aside codes, e.g. SBA (total small business), 8A, SDVOSBC, WOSB, HZC. NONE means the notice says no set-aside was used."},
   agency: {type: "string", maxLength: 200, description: "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NAVSEA."},
-  place_of_performance_state: {type: "string", pattern: "^[A-Za-z]{2}$", description: "Two-letter state code for the place of performance. Many notices leave this blank."},
+  place_of_performance_state: {type: "string", pattern: "^[A-Za-z]{2}$", description: "Two-letter state code for the place of performance. Most notices leave the place of performance blank, so results also report how many more notices have a contracting office in that state (see office_state)."},
+  office_state: {type: "string", pattern: "^[A-Za-z]{2}$", description: "Two-letter state code of the contracting office. Filled in on nearly every notice, but an office's state is not always where the work happens."},
   solicitation_number: {type: "string", maxLength: 100, description: "Exact solicitation number."},
   posted_from: dateField("Earliest posted date, YYYY-MM-DD."),
   posted_to: dateField("Latest posted date, YYYY-MM-DD."),
@@ -90,7 +92,7 @@ export const TOOLS = [
   },
   {
     name: "summarize_opportunities",
-    description: "Count active SAM.gov notices grouped by agency, sub-tier, office, NAICS, PSC, set-aside, notice type, place-of-performance state, or posted month. Accepts the same filters as search_opportunities, e.g. counts of open solicitations under one NAICS by set-aside, or which agencies posted the most sources sought notices this quarter.\n\nCounts cover active notices in SAM.gov's public daily file only, not archived or historical notices.",
+    description: "Count active SAM.gov notices grouped by agency, sub-tier, office, NAICS, PSC, set-aside, notice type, place-of-performance state, contracting office state, or posted month. Accepts the same filters as search_opportunities, e.g. counts of open solicitations under one NAICS by set-aside, or which agencies posted the most sources sought notices this quarter.\n\nCounts cover active notices in SAM.gov's public daily file only, not archived or historical notices.",
     inputSchema: {
       type: "object",
       properties: {
@@ -225,10 +227,11 @@ function buildQuery(args: Args, now: Date): Query {
     const like = `%${agency.replace(/[%_]/g, "")}%`;
     q.params.push(like, like, like);
   }
-  const state = str(args, "place_of_performance_state", 2);
-  if (state !== undefined) {
-    if (!/^[A-Za-z]{2}$/.test(state)) throw new ToolError("place_of_performance_state must be a two-letter code.");
-    q.where.push("o.pop_state = ?");
+  for (const [key, column] of [["place_of_performance_state", "pop_state"], ["office_state", "office_state"]]) {
+    const state = str(args, key, 2);
+    if (state === undefined) continue;
+    if (!/^[A-Za-z]{2}$/.test(state)) throw new ToolError(`${key} must be a two-letter code.`);
+    q.where.push(`o.${column} = ?`);
     q.params.push(state.toUpperCase());
   }
   const sol = str(args, "solicitation_number", 100);
@@ -262,6 +265,19 @@ function buildQuery(args: Args, now: Date): Query {
 }
 
 const whereSql = (q: Query) => (q.where.length ? " WHERE " + q.where.join(" AND ") : "");
+
+/** Most notices leave the place of performance blank. When filtering on it,
+ * count the other matches whose contracting office is in that state. */
+async function officeStateHint(db: Database, args: Args, now: Date): Promise<string | undefined> {
+  const state = str(args, "place_of_performance_state", 2)?.toUpperCase();
+  if (!state || str(args, "office_state", 2) !== undefined) return undefined;
+  const q = buildQuery({...args, place_of_performance_state: undefined, office_state: state}, now);
+  q.where.push("o.pop_state IS NULL");
+  const {results} = await db.prepare(`SELECT COUNT(*) AS n FROM ${q.from}${whereSql(q)}`).bind(...q.params).all<{n: number}>();
+  const n = results[0]?.n ?? 0;
+  if (!n) return undefined;
+  return `${n} more matching notices leave the place of performance blank but have a contracting office in ${state}; set office_state to "${state}" (instead of place_of_performance_state) to include them. An office's state is not always where the work happens.`;
+}
 
 export function publicLink(noticeId: string): string {
   return `https://sam.gov/opp/${noticeId}/view`;
@@ -330,14 +346,16 @@ export async function searchOpportunities(db: Database, args: Args, now = new Da
     throw new ToolError("sort must be deadline, newest, or relevance.");
   }
   const where = whereSql(q);
-  const [count, page, asOf] = await Promise.all([
+  const [count, page, asOf, hint] = await Promise.all([
     db.prepare(`SELECT COUNT(*) AS n FROM ${q.from}${where}`).bind(...q.params).all<{n: number}>(),
     db.prepare(`SELECT ${SUMMARY_COLUMNS} FROM ${q.from}${where} ORDER BY ${order} LIMIT ? OFFSET ?`).bind(...q.params, limit, offset).all(),
     dataAsOf(db),
+    officeStateHint(db, args, now),
   ]);
   const total = count.results[0]?.n ?? 0;
   const results = page.results.map(summary);
   const notes = [...q.notes];
+  if (hint) notes.push(hint);
   if (total === 0) notes.push("No active notices matched. Try fewer filters, a NAICS prefix, include_past_deadlines, or a wider date range. Archived notices are not searchable here.");
   return {
     total_matches: total,
@@ -432,10 +450,11 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
   const q = buildQuery(args, now);
   const column = GROUPS[groupBy].startsWith("substr") ? "substr(o.posted_date, 1, 7)" : `o.${GROUPS[groupBy]}`;
   const where = whereSql(q);
-  const [groups, count, asOf] = await Promise.all([
+  const [groups, count, asOf, hint] = await Promise.all([
     db.prepare(`SELECT ${column} AS value, COUNT(*) AS count FROM ${q.from}${where} GROUP BY value ORDER BY count DESC, value LIMIT ?`).bind(...q.params, top).all<{value: string | null; count: number}>(),
     db.prepare(`SELECT COUNT(*) AS n, COUNT(DISTINCT ${column}) AS g FROM ${q.from}${where}`).bind(...q.params).all<{n: number; g: number}>(),
     dataAsOf(db),
+    officeStateHint(db, args, now),
   ]);
   const total = count.results[0]?.n ?? 0;
   const shown = groups.results.reduce((sum, g) => sum + g.count, 0);
@@ -446,7 +465,7 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
     groups: groups.results.map(g => ({value: g.value ?? "(blank)", count: g.count})),
     other_count: total - shown,
     data_as_of: asOf,
-    notes: q.notes,
+    notes: hint ? [...q.notes, hint] : q.notes,
     source: SOURCE,
   };
 }
