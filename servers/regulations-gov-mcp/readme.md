@@ -1,13 +1,13 @@
 # regulationsgov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 9](https://img.shields.io/badge/tools-9-007a59)](#what-it-does) [![regression tests: 236](https://img.shields.io/badge/regression%20tests-236-007a59)](testing.md) [![hosted edition: coming soon](https://img.shields.io/badge/hosted%20edition-coming%20soon-b0770f)](#available-in-claude-and-chatgpt)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 9](https://img.shields.io/badge/tools-9-007a59)](#what-it-does) [![regression tests: 236](https://img.shields.io/badge/regression%20tests-236-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/regulations-gov-by-1102tools)
 
 
 <!-- mcp-name: com.1102tools/regulations-gov-mcp -->
 
 Free, open-source MCP server for the Regulations.gov API. Federal rulemaking dockets, proposed rules, final rules, public comments, and comment period tracking.
 
-Requires a free api.data.gov key. Use the installation and configuration instructions below to connect this MCP directly.
+No user API key through the published Claude listing below. Local installs in other compatible MCP clients need a free api.data.gov key; see the installation and configuration instructions.
 
 *Tested and hardened through four rounds of integration testing against the live Regulations.gov API, plus a round-7 independent re-audit with live verification. 241 collected regression tests (122 offline, 119 live-gated) covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, 12 round-7 findings, and the 1.1.0 hosted-directory fixes (compact results, publisher-key fail-closed). See [testing.md](testing.md) for the full testing record.*
 
@@ -15,9 +15,11 @@ Requires a free api.data.gov key. Use the installation and configuration instruc
 
 | MCP | Claude | ChatGPT |
 |---|---|---|
-| Regulations.gov | Coming soon | Coming soon |
+| Regulations.gov | [Install](https://claude.ai/directory/regulations-gov-by-1102tools) | Coming soon |
 
-A hosted edition is running at `https://regulations-gov.1102tools.com/mcp` and is planned for the Claude and ChatGPT directories. It needs no user API key and no local setup. Locally, a free personal key is recommended; a shared fallback works at low volume. Until the listings are live, use the installation and configuration instructions below, then try a [matching prompt](https://1102tools.com/#regulationsgov).
+This MCP is published in the Claude directory. Open the listing to install and connect it; no user API key or local Python setup is required. A ChatGPT directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#regulationsgov). Prompts that combine sources require every listed MCP to be connected.
+
+The installation and configuration sections below cover direct setup in other compatible MCP clients, which needs a free api.data.gov key.
 
 ## What it does
 

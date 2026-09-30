@@ -1,13 +1,13 @@
 # gsa-perdiem-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 7](https://img.shields.io/badge/tools-7-007a59)](#what-it-does) [![regression tests: 542](https://img.shields.io/badge/regression%20tests-542-007a59)](testing.md) [![hosted edition: coming soon](https://img.shields.io/badge/hosted%20edition-coming%20soon-b0770f)](#available-in-claude-and-chatgpt)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 7](https://img.shields.io/badge/tools-7-007a59)](#what-it-does) [![regression tests: 542](https://img.shields.io/badge/regression%20tests-542-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/gsa-perdiem-by-1102tools)
 
 
 <!-- mcp-name: com.1102tools/gsa-perdiem-mcp -->
 
 Free, open-source MCP server for the GSA Per Diem Rates API. Federal travel lodging and M&IE rates for IGCEs and travel cost estimation.
 
-ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network call: they are answered from GSA's published rate, ZIP, and M&IE files bundled in the package. City lookups use the GSA Per Diem API, which resolves city names to rate areas; they need a free api.data.gov key in `PERDIEM_API_KEY`. Use the installation and configuration instructions below to connect this MCP directly.
+ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network call: they are answered from GSA's published rate, ZIP, and M&IE files bundled in the package. City lookups use the GSA Per Diem API, which resolves city names to rate areas; they need a free api.data.gov key in `PERDIEM_API_KEY`. The published Claude listing below needs no user API key for any lookup. For other compatible MCP clients, use the installation and configuration instructions below.
 
 *Tested and hardened through seven rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 544 collected regression tests (277 offline, 267 live-gated) covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, 14 round-7 findings, and the 1.1.0 rate-area ambiguity fixes. See [testing.md](testing.md) for the full testing record.*
 
@@ -15,9 +15,11 @@ ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network c
 
 | MCP | Claude | ChatGPT |
 |---|---|---|
-| GSA Per Diem | Coming soon | Coming soon |
+| GSA Per Diem | [Install](https://claude.ai/directory/gsa-perdiem-by-1102tools) | Coming soon |
 
-A hosted edition is running at `https://gsa-perdiem.1102tools.com/mcp` and is planned for the Claude and ChatGPT directories. It needs no user API key and no local setup. Locally, a free personal key is recommended; a shared fallback works at low volume. Until the listings are live, use the installation and configuration instructions below, then try a [matching prompt](https://1102tools.com/#gsa-per-diem).
+This MCP is published in the Claude directory. Open the listing to install and connect it; no user API key or local Python setup is required. A ChatGPT directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#gsa-per-diem). Prompts that combine sources require every listed MCP to be connected.
+
+The installation and configuration sections below cover direct setup in other compatible MCP clients.
 
 ## What it does
 

@@ -11,7 +11,9 @@ Terms: https://gsa-perdiem.1102tools.com/terms
 Source: https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp
 Category: Government / travel.
 
-Status: prepared, **not ready to submit**. 1.2.0 is released and verified in production (tag `gsa-perdiem/v1.2.0`, commit `0691651`, 2026-09-26). Resolve every item under "Open before submission" first.
+Status: **Claude: approved and listed September 30, 2026** at https://claude.ai/directory/gsa-perdiem-by-1102tools. ChatGPT: not yet submitted; the items under "Open before submission" still apply to OpenAI.
+
+Earlier status: prepared, **not ready to submit**. 1.2.0 is released and verified in production (tag `gsa-perdiem/v1.2.0`, commit `0691651`, 2026-09-26). Resolve every item under "Open before submission" first.
 
 ## Open before submission
 
@@ -87,5 +89,5 @@ Production 1.2.0 on 2026-09-26 (release run 36269423238, all jobs passed): `/hea
 1. Resolve "Open before submission" above.
 2. Test every tool on production in Claude (custom connector) and ChatGPT (Developer Mode).
 3. OpenAI: create the plugin draft (verified individual publisher, no-auth MCP), enter the short description, listing copy, annotation justifications, test cases, starter prompts, demo URL, and the directory and composer icons from `review/assets/` (the same light and dark set ChatGPT made). No screenshots (no UI).
-4. Claude: submit at claude.ai/directory/manage with the listing copy, the light and dark icons `review/assets/gsa-perdiem-directory-light.png` and `review/assets/gsa-perdiem-directory-dark.png`, the three starter prompts, and the support/privacy URLs.
+4. ~~Claude: submit at claude.ai/directory/manage with the listing copy, the light and dark icons `review/assets/gsa-perdiem-directory-light.png` and `review/assets/gsa-perdiem-directory-dark.png`, the three starter prompts, and the support/privacy URLs.~~ Done: approved and listed September 30, 2026.
 5. Review and accept each portal's attestations yourself. A saved draft, submitted review, approval, and directory publication are separate states.
