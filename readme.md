@@ -17,19 +17,19 @@ See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon pla
 
 ## Available in Claude and ChatGPT
 
-All nine MCPs install and run locally today; the **Local** column links to each setup guide. Six are also published in the Claude directory and three in ChatGPT, where installs need no user API key or local setup. The rest are coming soon to the directories.
+All nine MCPs install and run locally today; the **Local** column links to each setup guide. Six are also published in the Claude directory and three in ChatGPT, where installs need no user API key or local setup. The rest are in review for the directories.
 
 | MCP | Claude | ChatGPT | Local |
 |---|---|---|---|
-| SAM.gov | Coming soon | Coming soon | [Install](servers/sam-gov-mcp#installation) (free key, full 20-tool edition) |
-| USAspending | [Install](https://claude.ai/directory/usaspending-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) | [Install](servers/usaspending-gov-mcp#installation) |
-| GSA CALC+ | [Install](https://claude.ai/directory/gsa-calc-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) | [Install](servers/gsa-calc-mcp#installation) |
-| BLS OEWS | Coming soon | Coming soon | [Install](servers/bls-oews-mcp#installation) |
-| GSA Per Diem | [Install](https://claude.ai/directory/gsa-perdiem-by-1102tools) | Coming soon | [Install](servers/gsa-perdiem-mcp#installation) (free key) |
-| eCFR | [Install](https://claude.ai/directory/ecfr-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) | [Install](servers/ecfr-mcp#installation) |
-| Acquisition.gov | Coming soon | Coming soon | [Install](servers/acquisition-gov-mcp#install) |
-| Federal Register | [Install](https://claude.ai/directory/federal-register-by-1102tools) | Coming soon | [Install](servers/federal-register-mcp#installation) |
-| Regulations.gov | [Install](https://claude.ai/directory/regulations-gov-by-1102tools) | Coming soon | [Install](servers/regulations-gov-mcp#installation) (free key) |
+| SAM.gov | In review | In review | [Setup guide](servers/sam-gov-mcp#installation) (free key, full 20-tool edition) |
+| USAspending | [Add to Claude](https://claude.ai/directory/usaspending-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) | [Setup guide](servers/usaspending-gov-mcp#installation) |
+| GSA CALC+ | [Add to Claude](https://claude.ai/directory/gsa-calc-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) | [Setup guide](servers/gsa-calc-mcp#installation) |
+| BLS OEWS | In review | In review | [Setup guide](servers/bls-oews-mcp#installation) |
+| GSA Per Diem | [Add to Claude](https://claude.ai/directory/gsa-perdiem-by-1102tools) | In review | [Setup guide](servers/gsa-perdiem-mcp#installation) (free key) |
+| eCFR | [Add to Claude](https://claude.ai/directory/ecfr-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) | [Setup guide](servers/ecfr-mcp#installation) |
+| Acquisition.gov | In review | In review | [Setup guide](servers/acquisition-gov-mcp#install) |
+| Federal Register | [Add to Claude](https://claude.ai/directory/federal-register-by-1102tools) | In review | [Setup guide](servers/federal-register-mcp#installation) |
+| Regulations.gov | [Add to Claude](https://claude.ai/directory/regulations-gov-by-1102tools) | In review | [Setup guide](servers/regulations-gov-mcp#installation) (free key) |
 
 **Directory install or local install?**
 
