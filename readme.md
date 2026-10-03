@@ -17,25 +17,25 @@ See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon pla
 
 ## Available in Claude and ChatGPT
 
-All nine MCPs install and run locally today; the **Local** column links to each setup guide. Six are also published in the Claude directory and three in ChatGPT, where installs need no user API key or local setup. The rest are coming soon to the directories.
+All nine MCPs install and run locally today; the **Local** column links to each setup guide. Six are also published in the Claude directory and three in ChatGPT, where installs need no user API key or local setup. The rest are in review for the directories.
 
 | MCP | Claude | ChatGPT | Local |
 |---|---|---|---|
-| SAM.gov | Coming soon | Coming soon | [Install](servers/sam-gov-mcp#installation) (free key, full 20-tool edition) |
-| USAspending | [Install](https://claude.ai/directory/usaspending-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) | [Install](servers/usaspending-gov-mcp#installation) |
-| GSA CALC+ | [Install](https://claude.ai/directory/gsa-calc-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) | [Install](servers/gsa-calc-mcp#installation) |
-| BLS OEWS | Coming soon | Coming soon | [Install](servers/bls-oews-mcp#installation) |
-| GSA Per Diem | [Install](https://claude.ai/directory/gsa-perdiem-by-1102tools) | Coming soon | [Install](servers/gsa-perdiem-mcp#installation) (free key) |
-| eCFR | [Install](https://claude.ai/directory/ecfr-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) | [Install](servers/ecfr-mcp#installation) |
-| Acquisition.gov | Coming soon | Coming soon | [Install](servers/acquisition-gov-mcp#install) |
-| Federal Register | [Install](https://claude.ai/directory/federal-register-by-1102tools) | Coming soon | [Install](servers/federal-register-mcp#installation) |
-| Regulations.gov | [Install](https://claude.ai/directory/regulations-gov-by-1102tools) | Coming soon | [Install](servers/regulations-gov-mcp#installation) (free key) |
+| SAM.gov | In review | In review | [Setup guide](servers/sam-gov-mcp#installation) (free key, full 20-tool edition) |
+| USAspending | [Add to Claude](https://claude.ai/directory/usaspending-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) | [Setup guide](servers/usaspending-gov-mcp#installation) |
+| GSA CALC+ | [Add to Claude](https://claude.ai/directory/gsa-calc-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) | [Setup guide](servers/gsa-calc-mcp#installation) |
+| BLS OEWS | In review | In review | [Setup guide](servers/bls-oews-mcp#installation) |
+| GSA Per Diem | [Add to Claude](https://claude.ai/directory/gsa-perdiem-by-1102tools) | In review | [Setup guide](servers/gsa-perdiem-mcp#installation) (free key) |
+| eCFR | [Add to Claude](https://claude.ai/directory/ecfr-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) | [Setup guide](servers/ecfr-mcp#installation) |
+| Acquisition.gov | In review | In review | [Setup guide](servers/acquisition-gov-mcp#install) |
+| Federal Register | [Add to Claude](https://claude.ai/directory/federal-register-by-1102tools) | In review | [Setup guide](servers/federal-register-mcp#installation) |
+| Regulations.gov | [Add to Claude](https://claude.ai/directory/regulations-gov-by-1102tools) | In review | [Setup guide](servers/regulations-gov-mcp#installation) (free key) |
 
 **Directory install or local install?**
 
 - **Claude and ChatGPT:** Install from the directory listing. No API key and no setup. The MCP runs on Cloudflare at its own 1102tools.com address, such as `usaspending.1102tools.com`, and your AI app connects to it over the internet. The hosted servers don't store your queries, results, or conversations, and request logging is turned off, so no one at 1102tools sees what you look up. The server code and Cloudflare setup are public in [federal-contracting-mcps](deploy). Cloudflare still handles connection data such as IP addresses, and Claude or ChatGPT handles your conversation under its own privacy policy.
 - **Local:** The MCP runs on your own computer and works with any MCP-compatible app. Requests go straight from your computer to the government source, and nothing passes through 1102tools.com. SAM.gov, GSA Per Diem and Regulations.gov need a free API key from the agency. Each setup guide shows how to get one.
-- **SAM.gov comes in two editions.** The directory version (coming soon) has 4 keyless tools for contract opportunities, award notices, and justifications. The full version has 20 tools and adds entity registrations, SBA certifications, exclusions, and contract award records. It needs a free SAM.gov key and a local install; there is no one-click directory install for it. [Compare the editions](servers/sam-gov-mcp#two-editions-hosted-or-full).
+- **SAM.gov comes in two editions.** The directory version (in review) has 4 keyless tools for contract opportunities, award notices, and justifications. The full version has 20 tools and adds entity registrations, SBA certifications, exclusions, and contract award records. It needs a free SAM.gov key and a local install; there is no one-click directory install for it. [Compare the editions](servers/sam-gov-mcp#two-editions-hosted-or-full).
 
 After connecting, choose a [matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) and replace the bracketed details. If a prompt lists multiple MCPs, connect every one it requires. For other sources or compatible MCP clients, use the server setup instructions below.
 
@@ -45,10 +45,10 @@ Choose the sources your work needs. Each server directory contains its own READM
 
 | MCP | Source coverage | Tools | Tests | Access |
 |---|---|---|---|---|
-| [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | Free key (local); keyless 4-tool hosted edition coming soon |
+| [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | Free key (local); keyless 4-tool hosted edition in directory review |
 | [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | 55 | 2,174 | No user API key |
 | [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | 8 | 379 | No user API key |
-| [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography, industry, and occupation (current OEWS release). | 8 | 276 | No user API key (bundled BLS release); keyless hosted edition coming soon |
+| [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography, industry, and occupation (current OEWS release). | 8 | 276 | No user API key (bundled BLS release); keyless hosted edition in directory review |
 | [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | 7 | 544 | ZIP/state/M&IE keyless from bundled GSA files; free personal key required for city lookups; no user key in the Claude directory edition |
 | [eCFR](servers/ecfr-mcp) | Codified regulatory text, dates, and version comparisons. | 13 | 320 | No user API key |
 | [Acquisition.gov](servers/acquisition-gov-mcp) | FAR Overhaul model text, posted agency deviations, and guidance. | 5 | 239 | No user API key |
