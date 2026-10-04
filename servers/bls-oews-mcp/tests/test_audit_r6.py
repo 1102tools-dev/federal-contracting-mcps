@@ -23,6 +23,7 @@ import asyncio
 
 import pytest
 
+from bls_oews_mcp.constants import OEWS_CURRENT_YEAR  # noqa: E402
 from bls_oews_mcp.server import mcp  # noqa: E402
 
 
@@ -320,23 +321,23 @@ def test_live_get_wage_data_industry_int():
 
 def test_live_get_wage_data_current_year():
     r = asyncio.run(
-        _call("get_wage_data", occ_code="151252", scope="national", year=2025)
+        _call("get_wage_data", occ_code="151252", scope="national", year=int(OEWS_CURRENT_YEAR))
     )
     data = _payload(r)
     assert isinstance(data, dict)
     assert not data.get("no_data"), "current OEWS year should return rows"
 
 
-def test_live_get_wage_data_year_2024_rejected():
-    """2024 was withdrawn when 2025 published; it is now a historical year."""
+def test_live_get_wage_data_prior_year_rejected():
+    """The prior year was withdrawn when the bundled release published."""
     try:
         asyncio.run(
-            _call("get_wage_data", occ_code="151252", scope="national", year=2024)
+            _call("get_wage_data", occ_code="151252", scope="national", year=int(OEWS_CURRENT_YEAR) - 1)
         )
     except Exception as e:
         assert "before the current" in str(e) or "latest year" in str(e).lower()
         return
-    raise AssertionError("expected year=2024 to be rejected as historical")
+    raise AssertionError("expected the prior year to be rejected as historical")
 
 
 def test_live_get_wage_data_year_2023_rejected():

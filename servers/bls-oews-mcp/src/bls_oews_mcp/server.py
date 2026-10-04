@@ -8,8 +8,8 @@ package as a read-only SQLite database built from BLS's published flat files
 (scripts/build_oews_db.py). No API key, no network calls, and no daily
 query limit.
 
-OEWS data lags about a year: the bundled release is May 2025 estimates,
-published by BLS on May 15, 2026. Do NOT query the current calendar year.
+OEWS data lags about a year: the bundled release (data/manifest.json) is
+the latest BLS has published. Do NOT query the current calendar year.
 """
 
 from __future__ import annotations
@@ -237,7 +237,10 @@ def get_data_status() -> dict[str, Any]:
             for name, src in sorted(meta["sources"].items())
         },
         "api_key_required": False,
-        "next_release": "BLS publishes the next OEWS release (May 2026 estimates) in spring 2027.",
+        "next_release": (
+            f"BLS publishes the next OEWS release (May {int(meta['data_year']) + 1} estimates) "
+            f"in spring {int(meta['data_year']) + 2}."
+        ),
         "source": snapshot.source(),
     }
 
@@ -492,8 +495,8 @@ async def get_wage_data(
     '02' (Employment RSE) and '05' (Mean Wage RSE) are relative standard
     errors in percent, a measure of each estimate's reliability.
 
-    Data year defaults to 2025 (May 2025 estimates, published by BLS on
-    May 15, 2026), the release bundled with this server. Do NOT pass 2026:
+    Data year defaults to the OEWS release bundled with this server
+    (get_data_status reports it). Do NOT pass the current calendar year:
     OEWS publishes about a year in arrears. Other years are rejected.
 
     Special values ('-', '*', '#') mean BLS did not publish the cell; the
@@ -952,9 +955,8 @@ async def detect_latest_year() -> dict[str, Any]:
     """Report the OEWS data year this server answers from.
 
     OEWS releases annually in spring, and this server bundles the current
-    release (May 2025 estimates, published May 15, 2026). Every tool
-    defaults to that year. When BLS publishes a newer release, a new package
-    version bundles it.
+    release. Every tool defaults to that year. When BLS publishes a newer
+    release, a new package version bundles it.
     """
     meta = snapshot.manifest()
     year = meta["data_year"]

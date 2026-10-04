@@ -2,16 +2,18 @@
 # Copyright (c) James Jenrette / 1102tools
 """Constants for the BLS OEWS MCP server."""
 
+import json
+from importlib import resources
+
 from . import __version__
 
 USER_AGENT = f"bls-oews-mcp/{__version__}"
 
-# The OEWS release bundled in data/ (May 2025 estimates, published by BLS on
-# May 15, 2026). scripts/build_oews_db.py records it in data/manifest.json and
-# tests/test_snapshot.py fails if this constant drifts from the manifest.
-# BLS publishes the next release (May 2026 estimates) in spring 2027.
-OEWS_CURRENT_YEAR = "2025"
-OEWS_RELEASE_NAME = "May 2025"
+# The OEWS release bundled in data/, read from the manifest that
+# scripts/build_oews_db.py writes, so a data refresh needs no code change.
+_RELEASE = json.loads(resources.files(__package__).joinpath("data", "manifest.json").read_text())["release"]
+OEWS_CURRENT_YEAR = _RELEASE["year"]
+OEWS_RELEASE_NAME = _RELEASE["description"]
 
 # Series ID format: PREFIX(4) + AREA(7) + INDUSTRY(6) + OCC(6) + DATATYPE(2) = 25 chars
 SERIES_ID_LENGTH = 25

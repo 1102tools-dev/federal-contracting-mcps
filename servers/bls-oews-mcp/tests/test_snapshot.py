@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: MIT
 """The bundled OEWS database: integrity, provenance, and golden values.
 
-Golden values are from the May 2025 release (published May 15, 2026) and
-were checked against the live BLS v1 API when the release was bundled
-(tests/test_live_parity.py repeats that comparison on demand). A new
-release changes them; update them in the same reviewed change that
-rebuilds data/ with scripts/build_oews_db.py.
+Tests marked golden pin values from the May 2025 release (published May 15,
+2026), checked against the live BLS v1 API when that release was bundled.
+They skip when a newer release is bundled; tests/test_live_parity.py checks
+any release against the live API, and the automated refresh runs it before
+publishing.
 """
 
 from __future__ import annotations
@@ -59,6 +59,7 @@ def test_manifest_records_every_source():
         assert src["bytes"] > 0
 
 
+@pytest.mark.golden
 def test_release_counts():
     counts = snapshot.manifest()["counts"]
     assert counts == {
@@ -67,6 +68,7 @@ def test_release_counts():
     }
 
 
+@pytest.mark.golden
 def test_golden_values():
     got = snapshot.lookup([
         "OEUN000000000000015125208",  # Software Developers, national hourly median
@@ -78,12 +80,14 @@ def test_golden_values():
     assert got["OEUM004790000000015125201"] == ("69060", [])
 
 
+@pytest.mark.golden
 def test_unreleased_cell_carries_its_footnote():
     value, notes = snapshot.lookup(["OEUM001018000000015125404"])["OEUM001018000000015125404"]
     assert value == "-"
     assert notes == [{"code": "8", "text": "Estimate not released."}]
 
 
+@pytest.mark.golden
 def test_top_coded_wage_footnote():
     value, notes = snapshot.lookup(["OEUM001054000000029121515"])["OEUM001054000000029121515"]
     assert value == "-"
@@ -108,6 +112,7 @@ def test_lookup_handles_many_series():
     assert all(got[k] is not None for k in keys)
 
 
+@pytest.mark.golden
 def test_names():
     assert snapshot.occupation_name("151252") == "Software Developers"
     assert snapshot.area_name("0047900") == "Washington-Arlington-Alexandria, DC-VA-MD-WV"
@@ -133,8 +138,8 @@ def test_corrupt_cache_is_rebuilt(tmp_path, monkeypatch):
 def test_source_block_cites_bls():
     src = snapshot.source()
     assert src["kind"] == "bundled_bls_oews_files"
-    assert src["release"] == "May 2025"
-    assert src["published"] == "2026-05-15"
+    assert src["release"] == constants.OEWS_RELEASE_NAME
+    assert src["published"] == snapshot.manifest()["sources"]["oe.data.0.Current"]["last_modified"]
     assert src["data_file"].endswith("/oe.data.0.Current")
     assert "cannot vouch for the data" in src["notice"]
     assert src["retrieved"] == snapshot.manifest()["retrieved"]
@@ -162,10 +167,11 @@ def test_data_status_needs_no_key():
     data = _payload(asyncio.run(mcp.call_tool("get_data_status", {})))
     assert data["status"] == "bundled"
     assert data["api_key_required"] is False
-    assert data["data_year"] == "2025"
+    assert data["data_year"] == constants.OEWS_CURRENT_YEAR
     assert set(data["sources"]) == set(snapshot.manifest()["sources"])
 
 
+@pytest.mark.golden
 def test_rse_datatypes_format_as_percent():
     data = _payload(asyncio.run(mcp.call_tool(
         "get_wage_data", {"occ_code": "151252", "datatypes": ["02", "05"]},
@@ -174,6 +180,7 @@ def test_rse_datatypes_format_as_percent():
     assert data["wages"]["Mean Wage RSE (%)"]["formatted"] == "0.4%"
 
 
+@pytest.mark.golden
 def test_names_in_results():
     data = _payload(asyncio.run(mcp.call_tool(
         "get_wage_data", {"occ_code": "151252", "scope": "metro", "area_code": "47900"},

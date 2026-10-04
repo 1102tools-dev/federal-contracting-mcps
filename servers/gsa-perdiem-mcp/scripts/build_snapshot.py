@@ -45,41 +45,15 @@ from gsa_perdiem_mcp._geo import (  # noqa: E402
 
 SCHEMA_VERSION = 1
 BUILDER_VERSION = 1
-GSA = "https://www.gsa.gov/system/files/"
 CENSUS = "https://www2.census.gov/geo/docs/reference/codes2020/"
 
-# Published dates are from https://www.gsa.gov/travel/plan-a-trip/per-diem-rates/per-diem-files
-SOURCES: dict[int, dict[str, str]] = {
-    2021: {"rates": GSA + "FY2021_PerDiemMasterRatesFile.xlsx",
-           "zip": GSA + "Zip_Code_at_7-10-2020_91805_AM.xls", "zip_published": "2020-07-10",
-           "mie": GSA + "MIE_Breakdown_FY2019-present.docx"},
-    2022: {"rates": GSA + "FY2022_PerDiemMasterRatesFile.xlsx",
-           "zip": GSA + "FY2022_ZipCodeFile.xlsx", "zip_published": "2021-08-12",
-           "mie": GSA + "FY%202022%20MIE%20Breakdown_0.docx"},
-    2023: {"rates": GSA + "FY2023_PerDiemMasterRatesFile.xlsx",
-           "zip": GSA + "FY2023_ZIPCodeFile_081122.xlsx", "zip_published": "2022-07-19",
-           "mie": GSA + "FY%202022%20MIE%20Breakdown_0.docx"},
-    2024: {"rates": GSA + "FY2024_PerDiemMasterRatesFile_correction.xlsx",
-           "zip": GSA + "FY2024_ZIPCodeFile_071123.xlsx", "zip_published": "2023-07-11",
-           "mie": GSA + "FY%202022%20MIE%20Breakdown_0.docx"},
-    2025: {"rates": GSA + "FY2025_PerDiemMasterRatesFile.xlsx",
-           "zip": GSA + "FY2025_ZipCodeFile_080824.xlsx", "zip_published": "2024-08-16",
-           "mie": GSA + "FY%202025%20MIE%20Breakdown.docx"},
-    2026: {"rates": GSA + "FY2026_PerDiemMasterRatesFile.xlsx",
-           "zip": GSA + "FY2026_ZipCodeFile.xlsx", "zip_published": "2025-08-14",
-           "mie": GSA + "FY%202025%20MIE%20Breakdown.docx"},
-    2027: {"rates": GSA + "FY2027_PerDiemRates_Validated090126.xlsx",
-           "zip": GSA + "FY2027PerDiemZipCode_Validated090126.xlsx", "zip_published": "2026-09-03",
-           "mie": GSA + "FY%202025%20MIE%20Breakdown.docx"},
-}
-# GSA publishes one M&IE breakdown per span of fiscal years; the file names
-# carry the first year only ("FY 2025 MIE Breakdown" covers FY2025 onward).
-# Labels are GSA's own, from the per diem files page.
-MIE_COVERS = {
-    GSA + "MIE_Breakdown_FY2019-present.docx": "FY2019-FY2021",
-    GSA + "FY%202022%20MIE%20Breakdown_0.docx": "FY2022-FY2024",
-    GSA + "FY%202025%20MIE%20Breakdown.docx": "FY2025-present",
-}
+# GSA source files per fiscal year, and the fiscal years each M&IE breakdown
+# covers (GSA's own labels). scripts/discover_sources.py keeps this in step
+# with https://www.gsa.gov/travel/plan-a-trip/per-diem-rates/per-diem-files.
+SOURCES_FILE = HERE / "sources.json"
+_SOURCES = json.loads(SOURCES_FILE.read_text())
+SOURCES: dict[int, dict[str, str]] = {int(fy): s for fy, s in _SOURCES["fiscal_years"].items()}
+MIE_COVERS: dict[str, str] = _SOURCES["mie_covers"]
 CENSUS_FILES = {
     "county": CENSUS + "national_county2020.txt",
     "place_by_county": CENSUS + "national_place_by_county2020.txt",

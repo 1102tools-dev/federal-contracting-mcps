@@ -6,8 +6,9 @@
 Re-downloads every GSA source recorded in data/manifest.json and compares
 SHA-256, and scans GSA's per diem files page for fiscal years newer than the
 latest bundled one. Exits 1 with a Markdown report on any difference. Never
-modifies the bundled data; refreshing is a reviewed release
-(scripts/build_snapshot.py).
+modifies the bundled data; scripts/refresh_data.py (run weekly by
+.github/workflows/data-refresh.yml) rebuilds, tests, and releases when this
+or scripts/discover_sources.py reports a difference.
 """
 
 from __future__ import annotations
