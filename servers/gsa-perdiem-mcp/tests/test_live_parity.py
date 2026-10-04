@@ -22,6 +22,8 @@ LIVE = os.environ.get("MCP_LIVE_TESTS") == "1" and bool(os.environ.get("PERDIEM_
 pytestmark = pytest.mark.skipif(not LIVE, reason="requires MCP_LIVE_TESTS=1 + PERDIEM_API_KEY")
 
 SAMPLE_PER_YEAR = 100
+# The newest bundled fiscal years, so a data refresh checks what it added.
+NEWEST = snapshot.available_years()[-2:]
 FIXED_ZIPS = ["01011", "01054", "00501", "22201", "84060", "10506", "19003", "02554", "91759", "93560"]
 
 
@@ -46,7 +48,7 @@ def _api_set(response, months):
     return out
 
 
-@pytest.mark.parametrize("fy", [2026, 2027])
+@pytest.mark.parametrize("fy", NEWEST)
 def test_zip_candidates_match_api(fy):
     year = snapshot.load_year(fy)
     mismatches = []
@@ -62,7 +64,7 @@ def test_zip_candidates_match_api(fy):
     assert not mismatches, mismatches[:5]
 
 
-@pytest.mark.parametrize("fy", [2027])
+@pytest.mark.parametrize("fy", NEWEST[-1:])
 def test_state_lists_match_api(fy):
     year = snapshot.load_year(fy)
 

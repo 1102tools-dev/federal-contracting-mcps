@@ -15,6 +15,7 @@ import asyncio
 import pytest
 
 import bls_oews_mcp.server as srv
+from bls_oews_mcp.constants import OEWS_CURRENT_YEAR, OEWS_RELEASE_NAME
 from bls_oews_mcp.server import mcp
 
 async def _call(name: str, **kwargs):
@@ -250,8 +251,8 @@ def test_igce_no_annual_only_flag_for_normal_occupation(monkeypatch):
 
 def test_detect_latest_year_reports_bundled_release():
     data = _payload(asyncio.run(_call("detect_latest_year")))
-    assert data["latest_year"] == data["default_year"] == "2025"
-    assert data["release"] == "May 2025"
+    assert data["latest_year"] == data["default_year"] == OEWS_CURRENT_YEAR
+    assert data["release"] == OEWS_RELEASE_NAME
     assert data["newer_data_available"] is False
     assert data["source"]["kind"] == "bundled_bls_oews_files"
     assert "api_key" not in data

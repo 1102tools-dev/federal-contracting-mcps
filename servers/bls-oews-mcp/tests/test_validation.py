@@ -12,6 +12,8 @@ from __future__ import annotations
 import asyncio
 
 import bls_oews_mcp.server as srv  # noqa: E402
+from bls_oews_mcp import snapshot  # noqa: E402
+from bls_oews_mcp.constants import OEWS_CURRENT_YEAR  # noqa: E402
 from bls_oews_mcp.server import mcp  # noqa: E402
 
 
@@ -531,17 +533,22 @@ def test_datatype_16_17_are_ratios_not_dollars():
 # Real values from the bundled release
 # ---------------------------------------------------------------------------
 
+_SOFTWARE_DEV_MEAN = "OEUN000000000000015125204"
+
+
 def test_software_developers_national():
     payload = _payload(asyncio.run(_call("get_wage_data", occ_code="151252")))
-    assert payload["wages"]["Annual Mean Wage"]["numeric"] == 148100
-    assert payload["data_year"] == "2025"
+    bundled = snapshot.lookup([_SOFTWARE_DEV_MEAN])[_SOFTWARE_DEV_MEAN][0]
+    assert payload["wages"]["Annual Mean Wage"]["numeric"] == int(bundled)
+    assert payload["data_year"] == OEWS_CURRENT_YEAR
     assert payload["source"]["kind"] == "bundled_bls_oews_files"
 
 
 def test_igce_benchmark_software_devs():
     payload = _payload(asyncio.run(_call("igce_wage_benchmark", occ_code="151252")))
     assert payload["occ_title"] == "Software Developers"
-    assert payload["benchmarks"]["Annual Mean Wage"]["numeric_annual"] == 148100
+    bundled = snapshot.lookup([_SOFTWARE_DEV_MEAN])[_SOFTWARE_DEV_MEAN][0]
+    assert payload["benchmarks"]["Annual Mean Wage"]["numeric_annual"] == int(bundled)
 
 
 # ---------------------------------------------------------------------------

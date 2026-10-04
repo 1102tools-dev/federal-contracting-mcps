@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.1
+
+- The bundled release's year and name now come from `data/manifest.json`
+  instead of constants, so a new OEWS release needs no code change.
+  `.github/workflows/data-refresh.yml` checks BLS weekly and, when BLS
+  publishes new files, rebuilds, tests (including live parity), and releases
+  on its own.
+- `get_wage_data` and `detect_latest_year` descriptions no longer name the
+  May 2025 release; `get_data_status` derives `next_release` from the
+  bundled year. Data is unchanged (still the May 2025 release).
+
 ## 1.1.0
 
 Answers every tool from the current OEWS release (May 2025 estimates,

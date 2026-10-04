@@ -25,7 +25,8 @@ def test_full_tool_catalog_and_reject_extra_inputs():
             assert result.get('error') or result.get('result', {}).get('isError'), tool['name']
         call = rpc('tools/call', {"name": "get_wage_data", "arguments": {"occ_code": "151252"}}).json()
         data = call['result']['structuredContent']
-        assert data['wages']['Annual Mean Wage']['numeric'] == 148100
+        bundled = snapshot.lookup(["OEUN000000000000015125204"])["OEUN000000000000015125204"][0]
+        assert data['wages']['Annual Mean Wage']['numeric'] == int(bundled)
         assert data['source']['kind'] == 'bundled_bls_oews_files'
 
 

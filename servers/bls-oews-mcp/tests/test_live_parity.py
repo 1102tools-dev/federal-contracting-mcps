@@ -2,12 +2,16 @@
 """Compare bundled values with the live BLS API (opt-in).
 
 Run with BLS_LIVE_TESTS=1. Uses one keyless BLS v1 request (25 series, one
-of the 25 requests v1 allows per day), so no API key is needed. The sample
+of the 25 requests v1 allows per day), so no API key is needed. CI runners
+share IP addresses and with them that daily allowance, so when BLS_API_KEY
+is set the same request goes to v2 with the key instead. The sample
 is fixed and spans national, state, and metro cells, several datatypes,
 an unreleased cell, and a top-coded wage.
 """
 
 from __future__ import annotations
+
+import os
 
 import httpx
 import pytest
@@ -46,9 +50,13 @@ SAMPLE = [
 
 
 def test_bundled_values_match_live_bls_api():
+    query = {"seriesid": SAMPLE, "startyear": snapshot.data_year(), "endyear": snapshot.data_year()}
+    key = os.environ.get("BLS_API_KEY", "").strip()
+    if key:
+        query["registrationkey"] = key
     r = httpx.post(
-        "https://api.bls.gov/publicAPI/v1/timeseries/data/",
-        json={"seriesid": SAMPLE, "startyear": snapshot.data_year(), "endyear": snapshot.data_year()},
+        f"https://api.bls.gov/publicAPI/{'v2' if key else 'v1'}/timeseries/data/",
+        json=query,
         headers={"User-Agent": "bls-oews-mcp live parity test"},
         timeout=60,
     )

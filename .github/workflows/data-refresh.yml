@@ -1,0 +1,171 @@
+name: Bundled data refresh
+
+# Weekly check of the government files behind the two bundled-data MCPs
+# (BLS OEWS and GSA per diem). When the source published new or changed
+# files, this rebuilds the data with the package's own builder, runs the
+# offline suite and a live comparison with the government API, commits the
+# result to main with a patch version, tags it, and runs the release
+# workflow, which deploys Cloudflare and publishes PyPI. Any failure opens
+# (or updates) one issue per service and stops; nothing is committed or
+# released unless every check passed.
+
+on:
+  schedule:
+    - cron: '47 13 * * 1'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to check'
+        type: choice
+        options: [all, bls-oews, gsa-perdiem]
+        default: all
+
+permissions:
+  contents: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.pick.outputs.services }}
+    steps:
+      - id: pick
+        env:
+          REQUESTED: ${{ github.event.inputs.service || 'all' }}
+        run: |
+          if [ "$REQUESTED" = all ]; then
+            echo 'services=["bls-oews","gsa-perdiem"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "services=[\"$REQUESTED\"]" >> "$GITHUB_OUTPUT"
+          fi
+
+  refresh:
+    needs: plan
+    runs-on: ubuntu-latest
+    # Holds the CI-only API keys the live comparisons use.
+    environment: data-refresh
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      # Each service may push to main; run them one after the other.
+      max-parallel: 1
+      matrix:
+        service: ${{ fromJSON(needs.plan.outputs.services) }}
+    env:
+      SERVICE: ${{ matrix.service }}
+      FEDERAL_API_MIN_INTERVAL_SECONDS: '0'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # The latest main, which includes an earlier matrix job's refresh.
+          ref: main
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+
+      - name: Check sources and rebuild
+        id: refresh
+        run: |
+          set +e
+          python3 scripts/refresh_data.py "$SERVICE" > report.md
+          status=$?
+          set -e
+          cat report.md
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          test "$status" = 0 || test "$status" = 10
+
+      - name: Offline test suite
+        if: steps.refresh.outputs.status == '10'
+        working-directory: servers/${{ steps.refresh.outputs.package }}
+        env:
+          MCP_LIVE_TESTS: '0'
+          BLS_LIVE_TESTS: '0'
+        run: uv run --frozen --group dev pytest -q
+
+      - name: Live comparison with the government API
+        if: steps.refresh.outputs.status == '10'
+        working-directory: servers/${{ steps.refresh.outputs.package }}
+        env:
+          BLS_LIVE_TESTS: '1'
+          MCP_LIVE_TESTS: '1'
+          BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+          PERDIEM_API_KEY: ${{ secrets.PERDIEM_API_KEY }}
+        run: |
+          if [ "$SERVICE" = gsa-perdiem ]; then
+            test -n "$PERDIEM_API_KEY" || { echo 'PERDIEM_API_KEY is missing from the data-refresh environment'; exit 1; }
+          fi
+          uv run --frozen --group dev pytest -q -rs tests/test_live_parity.py
+
+      - name: Version surfaces and hosted tool contract
+        if: steps.refresh.outputs.status == '10'
+        env:
+          PACKAGE: ${{ steps.refresh.outputs.package }}
+        run: |
+          python3 scripts/validate_versions.py
+          uv run --python 3.12 --frozen --project "servers/$PACKAGE" python scripts/check_hosted_contract.py "$SERVICE"
+
+      - name: Commit and tag
+        id: push
+        if: steps.refresh.outputs.status == '10'
+        env:
+          PACKAGE: ${{ steps.refresh.outputs.package }}
+          VERSION: ${{ steps.refresh.outputs.version }}
+          TAG: ${{ steps.refresh.outputs.tag }}
+          SUMMARY: ${{ steps.refresh.outputs.summary }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A "servers/$PACKAGE"
+          git commit -q -m "$SERVICE $VERSION: automated data refresh" -m "$SUMMARY"
+          git tag "$TAG"
+          git push --atomic origin HEAD:main "$TAG"
+
+      - name: Release to Cloudflare and PyPI
+        if: steps.push.outcome == 'success'
+        env:
+          TAG: ${{ steps.refresh.outputs.tag }}
+        run: |
+          # A tag pushed with this workflow's token does not start other
+          # workflows, so dispatch the release on the tag and wait for it.
+          gh workflow run publish-pypi.yml --ref "$TAG"
+          for _ in $(seq 30); do
+            run_id=$(gh run list --workflow publish-pypi.yml --event workflow_dispatch --branch "$TAG" --json databaseId --jq '.[0].databaseId')
+            test -n "$run_id" && break
+            sleep 10
+          done
+          test -n "$run_id" || { echo "release run for $TAG did not start"; exit 1; }
+          echo "Release run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run_id" | tee -a report.md
+          gh run watch "$run_id" --exit-status --interval 60 > /dev/null
+
+      - name: Open or update the failure issue
+        if: failure()
+        env:
+          PUSHED: ${{ steps.push.outcome }}
+          TAG: ${{ steps.refresh.outputs.tag }}
+        run: |
+          title="$SERVICE data refresh failed"
+          {
+            if [ "$PUSHED" = success ]; then
+              echo "The refreshed data was committed and tagged \`$TAG\`, but the release did not finish. Re-run the release workflow on that tag once the cause is fixed."
+            else
+              echo "Nothing was committed or released."
+            fi
+            echo
+            test -f report.md && cat report.md
+            echo
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > issue.md
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body-file issue.md
+          else
+            gh issue create --title "$title" --body-file issue.md
+          fi

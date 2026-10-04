@@ -7,7 +7,8 @@ Re-downloads the small mapping files recorded in data/manifest.json and
 compares SHA-256, checks the large data file's size and Last-Modified date,
 and reads oe.release for a release newer than the bundled one. Exits 1 with
 a Markdown report on any difference. Never modifies the bundled data;
-refreshing is a reviewed release (scripts/build_oews_db.py).
+scripts/refresh_data.py (run weekly by .github/workflows/data-refresh.yml)
+rebuilds, tests, and releases when this reports a difference.
 """
 
 from __future__ import annotations
