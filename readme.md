@@ -45,15 +45,15 @@ Choose the sources your work needs. Each server directory contains its own READM
 
 | MCP | Source coverage | Tools | Tests | Access |
 |---|---|---|---|---|
-| [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | Free key (local); keyless 4-tool hosted edition in directory review |
-| [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | 55 | 2,174 | No user API key |
-| [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | 8 | 379 | No user API key |
-| [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography, industry, and occupation (current OEWS release). | 8 | 276 | No user API key (bundled BLS release); keyless hosted edition in directory review |
-| [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | 7 | 544 | ZIP/state/M&IE keyless from bundled GSA files; free personal key required for city lookups; no user key in the Claude directory edition |
-| [eCFR](servers/ecfr-mcp) | Codified regulatory text, dates, and version comparisons. | 13 | 320 | No user API key |
-| [Acquisition.gov](servers/acquisition-gov-mcp) | FAR Overhaul model text, posted agency deviations, and guidance. | 5 | 239 | No user API key |
-| [Federal Register](servers/federal-register-mcp) | Published rules, notices, comment periods, and FAR cases. | 8 | 243 | No user API key |
-| [Regulations.gov](servers/regulations-gov-mcp) | Rulemaking dockets, documents, and public comments. | 9 | 241 | Free personal key required locally; no user key in the Claude directory edition |
+| [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | Local: free key. Hosted: no key (4-tool edition, in directory review) |
+| [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | 55 | 2,174 | No key |
+| [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | 8 | 379 | No key |
+| [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography, industry, and occupation (current OEWS release). | 8 | 276 | No key (BLS data ships with the package since v1.1.0); hosted edition in directory review |
+| [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | 7 | 544 | Local: free key for city lookups (ZIP, state, and M&IE work without one). Hosted: no key |
+| [eCFR](servers/ecfr-mcp) | Codified regulatory text, dates, and version comparisons. | 13 | 320 | No key |
+| [Acquisition.gov](servers/acquisition-gov-mcp) | FAR Overhaul model text, posted agency deviations, and guidance. | 5 | 239 | No key |
+| [Federal Register](servers/federal-register-mcp) | Published rules, notices, comment periods, and FAR cases. | 8 | 243 | No key |
+| [Regulations.gov](servers/regulations-gov-mcp) | Rulemaking dockets, documents, and public comments. | 9 | 241 | Local: free key. Hosted: no key |
 
 ## Install
 
