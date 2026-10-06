@@ -11,7 +11,9 @@ Terms: https://bls-oews.1102tools.com/terms
 Source: https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/bls-oews-mcp
 Category: Data & Analytics.
 
-Status: deployed on 2026-09-26 (container application `a032779f-43ea-45f4-abd5-449099e866b9`, created with `scripts/first_deploy_hosted.sh bls-oews`). The `bls-oews/v1.1.0` release through CI and the items under "Open before submission" come first.
+Status: **Claude: approved and listed October 6, 2026** at https://claude.ai/directory/bls-oews-by-1102tools. ChatGPT: in review.
+
+Earlier status: deployed on 2026-09-26 (container application `a032779f-43ea-45f4-abd5-449099e866b9`, created with `scripts/first_deploy_hosted.sh bls-oews`). The `bls-oews/v1.1.0` release through CI and the items under "Open before submission" come first.
 
 ## Open before submission
 

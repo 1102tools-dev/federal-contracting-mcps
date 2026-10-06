@@ -1,6 +1,6 @@
 # Acquisition.gov MCP
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests: 239](https://img.shields.io/badge/regression%20tests-239-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests: 239](https://img.shields.io/badge/regression%20tests-239-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/acquisition-gov-by-1102tools)
 
 
 <!-- mcp-name: com.1102tools/acquisition-gov-mcp -->
@@ -13,9 +13,11 @@ This server reports source content and metadata. It does **not** decide which ru
 
 | MCP | Claude | ChatGPT |
 |---|---|---|
-| Acquisition.gov | Coming soon | Coming soon |
+| Acquisition.gov | [Install](https://claude.ai/directory/acquisition-gov-by-1102tools) | Coming soon |
 
-Listings in the Claude and ChatGPT directories are coming soon. Until then, use the installation instructions below, then try a [matching prompt](https://1102tools.com/#far-overhaul-and-agency-deviations). Prompts that combine sources require every listed MCP to be connected.
+This MCP is published in the Claude directory. Open the listing to install and connect it; no user API key or local Python setup is required. A ChatGPT directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#far-overhaul-and-agency-deviations). Prompts that combine sources require every listed MCP to be connected.
+
+The installation instructions below cover direct setup in other compatible MCP clients.
 
 ## Install
 

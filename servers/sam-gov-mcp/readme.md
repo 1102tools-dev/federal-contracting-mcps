@@ -1,21 +1,21 @@
 # sam-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 20](https://img.shields.io/badge/tools-20-007a59)](#what-it-does) [![regression tests: 1,155](https://img.shields.io/badge/regression%20tests-1%2C155-007a59)](testing.md) [![hosted edition: coming soon](https://img.shields.io/badge/hosted%20edition-coming%20soon-b0770f)](#two-editions-hosted-or-full)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 20](https://img.shields.io/badge/tools-20-007a59)](#what-it-does) [![regression tests: 1,155](https://img.shields.io/badge/regression%20tests-1%2C155-007a59)](testing.md) [![Claude directory: listed (hosted edition)](https://img.shields.io/badge/Claude%20directory-listed%20%28hosted%20edition%29-172f2a)](https://claude.ai/directory/sam-gov-by-1102tools)
 
 
 <!-- mcp-name: com.1102tools/sam-gov-mcp -->
 
 Free, open-source MCP server for SAM.gov entity registration, exclusion/debarment, contract opportunity, contract award, federal hierarchy, and FFATA subaward data.
 
-This full edition has 20 tools and requires a free SAM.gov API key. Use the installation and configuration instructions below to connect it directly. A keyless hosted edition with 4 tools for contract opportunities is [coming soon](#two-editions-hosted-or-full) to the Claude and ChatGPT directories.
+This full edition has 20 tools and requires a free SAM.gov API key. Use the installation and configuration instructions below to connect it directly. A keyless hosted edition with 4 tools for contract opportunities is [published in the Claude directory](https://claude.ai/directory/sam-gov-by-1102tools); a ChatGPT listing is coming soon. See [the two editions](#two-editions-hosted-or-full).
 
 *Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,155 collected regression tests (781 offline, 374 live-gated). v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied across the suite. See [testing.md](testing.md) for the full testing record.*
 
 ## Two editions: hosted or full
 
-| | Hosted (coming soon) | Full (this README) |
+| | Hosted (Claude directory) | Full (this README) |
 |---|---|---|
-| Install | One click from the Claude and ChatGPT directories | On your own computer with `uvx` or `pip`, then connect it to your AI app |
+| Install | One click from the Claude directory (ChatGPT coming soon) | On your own computer with `uvx` or `pip`, then connect it to your AI app |
 | API key | None | Free SAM.gov key, which expires every 90 days |
 | Tools | 4 | 20 |
 | Covers | Contract opportunities, award notices, and justifications | Opportunities plus entity registrations, SBA certifications, exclusions, reps and certs, integrity records, contract award records, the federal hierarchy, and subawards |
@@ -24,7 +24,7 @@ This full edition has 20 tools and requires a free SAM.gov API key. Use the inst
 
 | MCP | Claude | ChatGPT |
 |---|---|---|
-| SAM.gov (hosted, keyless) | Coming soon | Coming soon |
+| SAM.gov (hosted, keyless) | [Install](https://claude.ai/directory/sam-gov-by-1102tools) | Coming soon |
 
 ### Hosted edition: 4 tools, no key
 

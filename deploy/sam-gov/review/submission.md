@@ -12,14 +12,16 @@ Source: https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/depl
 Documentation: https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/sam-gov-mcp
 Category: Data & Analytics.
 
-Status: deployed 2026-09-27 (Worker `sam-gov-mcp`, D1 `sam-gov-opportunities`). The nightly load (`.github/workflows/sam-opportunities-load.yml`, 10:15 UTC) mirrors SAM.gov's daily file: it adds new notices, updates changed ones and deletes the ones SAM.gov archives.
+Status: **Claude: approved and listed October 6, 2026** at https://claude.ai/directory/sam-gov-by-1102tools. ChatGPT: in review.
+
+Earlier status: deployed 2026-09-27 (Worker `sam-gov-mcp`, D1 `sam-gov-opportunities`). The nightly load (`.github/workflows/sam-opportunities-load.yml`, 10:15 UTC) mirrors SAM.gov's daily file: it adds new notices, updates changed ones and deletes the ones SAM.gov archives.
 
 ## Open before submission
 
 1. **Icons: done.** `review/assets/sam-gov-directory-{light,dark}.png` (512 px) and `sam-gov-composer-{light,dark}.png` (256 px) are independent 1102tools art (a notice with a magnifier), not the SAM.gov or GSA logo. The Claude form's single icon URL uses `docs/directory-icons/sam-gov.png` (light). Editable SVGs are in `Workspace/Artifacts/1102tools-samgov-logo/`.
 2. **Production tool test (Claude Code CLI): done 2026-09-27**, 9/9; see the verification record.
 3. **claude.ai custom connector test: not yet run.**
-4. **Public copy:** the README badge, the SAM.gov README and 1102tools.com still say the hosted edition is "coming soon". Switch them once the listing is live.
+4. ~~**Public copy:** the README badge, the SAM.gov README and 1102tools.com still say the hosted edition is "coming soon". Switch them once the listing is live.~~ Done October 6, 2026.
 5. **Portal attestations.** API ownership: the service calls no API. It serves a copy of SAM.gov's public download file. Answer the data-source question that way, and do not attest control of SAM.gov systems.
 
 ## Listing copy

@@ -1,6 +1,6 @@
 # bls-oews-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 276](https://img.shields.io/badge/regression%20tests-276-007a59)](testing.md) [![hosted edition: coming soon](https://img.shields.io/badge/hosted%20edition-coming%20soon-b0770f)](#available-in-claude-and-chatgpt)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 276](https://img.shields.io/badge/regression%20tests-276-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/bls-oews-by-1102tools)
 
 
 <!-- mcp-name: com.1102tools/bls-oews-mcp -->
@@ -15,9 +15,11 @@ No API key and no daily limit. The package bundles the current OEWS release (May
 
 | MCP | Claude | ChatGPT |
 |---|---|---|
-| BLS OEWS | Coming soon | Coming soon |
+| BLS OEWS | [Install](https://claude.ai/directory/bls-oews-by-1102tools) | Coming soon |
 
-A hosted edition is coming soon to the Claude and ChatGPT directories. It needs no user API key and no local setup. The local server needs no key either. Until the listings are live, use the installation and configuration instructions below, then try a [matching prompt](https://1102tools.com/#bls-oews).
+This MCP is published in the Claude directory. Open the listing to install and connect it; no user API key or local Python setup is required. A ChatGPT directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#bls-oews). Prompts that combine sources require every listed MCP to be connected.
+
+The installation and configuration sections below cover direct setup in other compatible MCP clients. The local server needs no key either.
 
 ## What it does
 
