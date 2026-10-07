@@ -1,6 +1,6 @@
 # Federal contracting MCPs
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,457](https://img.shields.io/badge/regression%20tests-5%2C457-007a59)](#testing-and-maintenance) [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 3 servers](https://img.shields.io/badge/ChatGPT%20directory-3%20servers-172f2a)](#available-in-claude-and-chatgpt)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,571](https://img.shields.io/badge/regression%20tests-5%2C571-007a59)](#testing-and-maintenance) [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 3 servers](https://img.shields.io/badge/ChatGPT%20directory-3%20servers-172f2a)](#available-in-claude-and-chatgpt)
 
 Free, open-source, read-only source tools for federal contracting research: opportunities, awards, company records, labor pricing, travel rates, regulations, and rulemaking.
 
@@ -9,7 +9,7 @@ Free, open-source, read-only source tools for federal contracting research: oppo
 ## Why these MCPs
 
 - **Free.** MIT-licensed, with no subscription and no credits. Directory installs need no account or API key.
-- **Tested.** 5,457 collected regression tests, including live-API tests, across 9 servers and 133 tools, with up to ten audit rounds per server against the live government APIs. Published testing records document each bug fixed and the tests added.
+- **Tested.** 5,571 collected regression tests, including live-API tests, across 9 servers and 133 tools, with up to ten audit rounds per server against the live government APIs. Published testing records document each bug fixed and the tests added.
 - **Listed, no keys.** All 9 servers are in the Claude directory and 3 are in the ChatGPT directory, with the rest in review for ChatGPT. Directory installs need no user API key.
 - **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
 
@@ -21,7 +21,7 @@ All nine MCPs install and run locally today; the **Local** column links to each 
 
 | MCP | Claude | ChatGPT | Local |
 |---|---|---|---|
-| SAM.gov | [Add to Claude](https://claude.ai/directory/sam-gov-by-1102tools) | In review | [Setup guide](servers/sam-gov-mcp#installation) (free key, full 20-tool edition) |
+| SAM.gov | [Add to Claude](https://claude.ai/directory/sam-gov-by-1102tools) (4-tool edition) | In review | [Setup guide](servers/sam-gov-mcp#installation) (free key, full 20-tool edition) |
 | USAspending | [Add to Claude](https://claude.ai/directory/usaspending-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) | [Setup guide](servers/usaspending-gov-mcp#installation) |
 | GSA CALC+ | [Add to Claude](https://claude.ai/directory/gsa-calc-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) | [Setup guide](servers/gsa-calc-mcp#installation) |
 | BLS OEWS | [Add to Claude](https://claude.ai/directory/bls-oews-by-1102tools) | In review | [Setup guide](servers/bls-oews-mcp#installation) |
@@ -41,11 +41,12 @@ After connecting, choose a [matching prompt](https://github.com/1102tools-dev/fe
 
 ## Server catalog
 
-Choose the sources your work needs. Each server directory contains its own README, code, configuration, tests, and release notes.
+Choose the sources your work needs. Each server directory contains its own README, code, configuration, tests, and release notes. SAM.gov comes in two editions: installing it from Claude or ChatGPT gives you the 4-tool directory edition, and the 20-tool full edition is a separate local install with your own free key. The directory edition's 27 tests (hosted service and nightly data load) are not in the 5,571 package total.
 
 | MCP | Source coverage | Tools | Tests | Access |
 |---|---|---|---|---|
-| [SAM.gov](servers/sam-gov-mcp) | Opportunities, entity registrations, exclusions, and contract-award records. | 20 | 1,155 | Local: free key. Hosted: no key (4-tool edition, in the Claude directory) |
+| [SAM.gov, directory edition](servers/sam-gov-mcp#hosted-edition-4-tools-no-key) | Contract opportunities, award notices, and justifications only, from SAM.gov's daily public file. This is what you get when you install SAM.gov from Claude or ChatGPT. | 4 | 27 | No key. [Claude directory](https://claude.ai/directory/sam-gov-by-1102tools); ChatGPT in review |
+| [SAM.gov, full edition](servers/sam-gov-mcp) | Opportunities plus entity registrations, SBA certifications, exclusions, reps and certs, integrity records, contract-award records, the federal hierarchy, and subawards. | 20 | 1,155 | Free SAM.gov key. Local install only; not in the directories |
 | [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | 55 | 2,174 | No key |
 | [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | 8 | 379 | No key |
 | [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography, industry, and occupation (current OEWS release). | 8 | 276 | No key (BLS data ships with the package since v1.1.0); hosted edition in the Claude directory |
