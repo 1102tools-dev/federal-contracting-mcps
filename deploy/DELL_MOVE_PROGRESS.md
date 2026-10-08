@@ -18,8 +18,8 @@ Branch: `claude/dell-origin`. Commit after every step.
   `/health`) so monitoring needs no new GitHub secret.
 - **New tunnel, separate config.** govnode has an old stopped tunnel
   "workspace" (d0bcbd63) whose DNS still points jobwatch, tsp, finance,
-  portal and timecard at it, with `/etc/cloudflared/config.yml`. Left
-  untouched. The MCP tunnel uses `/etc/cloudflared-mcp/` and its own unit, so
+  portal and timecard at it, with `/etc/cloudflared/config.yml`. Removed
+  2026-10-08 at James's request (see log). The MCP tunnel uses `/etc/cloudflared-mcp/` and its own unit, so
   the old config is never read.
 - **Fallback trigger.** Tool responses are JSON (headers arrive only when the
   tool finishes), so a 5 s header timeout would cut slow calls. Instead the
@@ -105,3 +105,9 @@ Branch: `claude/dell-origin`. Commit after every step.
   <slug> <live sha>`, Worker-only deploy; then live tests (backend header,
   stop a Dell container to prove fallback, listen stream, full monitor);
   merge the PR after the deploy.
+- Old "workspace" tunnel removed (James: no longer needed): tunnel d0bcbd63
+  deleted at Cloudflare with its five DNS records (finance, jobwatch, portal,
+  timecard, tsp). Its files moved to `/root/retired-workspace-tunnel-2026-10-08/`
+  on govnode (`/etc/cloudflared`, `/root/.cloudflared`). Five Cloudflare
+  Access apps for those hostnames remain (inert without DNS). `mcp-origin` is
+  the only tunnel and stays healthy.
