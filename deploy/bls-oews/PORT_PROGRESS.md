@@ -5,7 +5,7 @@ See `git log` for the latest checkpoint.
 
 No push, no deploy, no Cloudflare changes. Parent reviews and deploys.
 
-## Status (resumed 2026-10-08)
+## Status (complete 2026-10-08)
 
 - [x] Analysis. Commit a366817.
 - [x] `schema.sql` + `scripts/load_bls_oews.py`. Local full load 3.4 s, 1,000 INSERTs (<= 90 KB, no
@@ -52,7 +52,26 @@ No push, no deploy, no Cloudflare changes. Parent reviews and deploys.
 
       Every statement is a primary-key SEARCH (EXPLAIN QUERY PLAN on the full copy); no scans.
       A load writes ~372K rows and deletes the previous ~372K; its count checks read ~372K.
-- [ ] Final report.
+- [x] Final report (to the parent).
+
+## Known differences from the Python server
+
+Checked by scripts/parity.py (each has a check that the difference is only this):
+- tools/list, both eras: the Worker returns tools-contract.json verbatim (sorted by name, keys
+  sorted); Python lists tools in registration order. Same definitions; the rest of the body is
+  byte-identical.
+- Invalid handshake-era envelopes (malformed JSON, batches, wrong jsonrpc, list params): same HTTP 400
+  and error code, short message instead of the SDK's parser/pydantic dump.
+- NaN/Infinity literals in the request: the SDK's parser accepts them; the Worker answers -32700.
+- Extra argument names that look like integers ("10"): JavaScript lists them first, so pydantic's
+  extra-argument errors come in a different order.
+Not representable in the harness:
+- Duplicated Mcp-Method/Mcp-Name/MCP-Protocol-Version headers: Workers fold them, so the Worker
+  rejects with a -32020 mismatch message instead of "header appears more than once".
+- subscriptions/listen filters the shared edge handler declines (non-boolean flags such as "yes",
+  unknown keys): the SDK would coerce/ignore and stream; the Worker answers -32602 (HTTP 400).
+- `_meta` clientCapabilities validation is shallower (known capability keys must be objects).
+- /health admission values are fixed (no queue in a Worker).
 
 ## For the parent: release pipeline and cutover
 
