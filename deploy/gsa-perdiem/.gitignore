@@ -1,3 +1,4 @@
 node_modules/
 .wrangler/
 worker-configuration.d.ts
+parity/corpus.json

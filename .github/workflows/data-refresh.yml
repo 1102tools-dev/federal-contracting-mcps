@@ -128,6 +128,25 @@ jobs:
           git tag "$TAG"
           git push --atomic origin HEAD:main "$TAG"
 
+      - name: Load the refreshed GSA files into the hosted database
+        id: load
+        if: steps.push.outcome == 'success' && matrix.service == 'gsa-perdiem'
+        run: |
+          # The hosted GSA Per Diem Worker reads the bundled files from D1. The
+          # push above does not start push workflows, so dispatch the load on
+          # main (its environment is main-only) and wait for it.
+          since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          gh workflow run gsa-perdiem-load.yml --ref main
+          for _ in $(seq 30); do
+            run_id=$(gh run list --workflow gsa-perdiem-load.yml --event workflow_dispatch --branch main --json databaseId,createdAt \
+              --jq "[.[] | select(.createdAt >= \"$since\")] | last | .databaseId // empty")
+            test -n "$run_id" && break
+            sleep 10
+          done
+          test -n "$run_id" || { echo 'GSA Per Diem data load did not start'; exit 1; }
+          echo "Data load run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run_id" | tee -a report.md
+          gh run watch "$run_id" --exit-status --interval 30 > /dev/null
+
       - name: Release to Cloudflare and PyPI
         if: steps.push.outcome == 'success'
         env:

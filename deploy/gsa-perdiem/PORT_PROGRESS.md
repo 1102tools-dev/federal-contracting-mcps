@@ -35,24 +35,29 @@ changes from this branch.
       `@cloudflare/containers` (it needs `cloudflare:workers`).
 - [x] `wrangler.jsonc` D1 binding (top-level + production), tsconfig,
       package.json (`type: module`, `test`), `.gitignore`
-- [ ] tests (`test/*.test.ts`, node:test, node:sqlite D1 adapter with `batch`;
-      build the DB by running the loader `--local` into a temp file)
-- [ ] `tests/test_gsa_perdiem_loader.py` (idempotence, resume after crash,
-      release not switched on bad counts, GC, remote request shape via fake urlopen)
+- [x] `test/worker.test.ts` (16 tests, node:test, `test/d1.ts` node:sqlite D1
+      adapter with `batch`; DB built by the loader `--local`)
+- [x] `tests/test_gsa_perdiem_loader.py` (8 tests: idempotence, D1 limits,
+      resume after crash, release kept on bad counts, part GC, manifest
+      mismatch, remote mode against a fake D1 HTTP API, refusals)
 - [x] parity harness (`parity/build_corpus.py` -> `corpus.json`, `python_side.py`,
       `run.ts`): 1,329 calls in 9 scenarios (incl. a sweep of ZIPs, states,
       M&IE, Census places by county), 56 mocked GSA API calls, 1329/1329 identical (text byte for byte, isError, structuredContent,
       upstream request log). Fixed on the way: tools/list order (Python
       registration order, contract content), infinite floats surviving the
       response cache, budget retry rounding (ceil), `-32601` carries `data`.
-- [ ] workflows: `gsa-perdiem-hosted-tests.yml`, `gsa-perdiem-load.yml`, and a
-      dispatch hook in `data-refresh.yml` (bot pushes with GITHUB_TOKEN do not
-      trigger `on: push`)
-- [ ] `scripts/configure_hosted_image.py`: add `vars.RELEASE_SHA` (optional
-      `--release-sha`, default = image sha) so the Worker's /health reports it
-- [ ] `src/public-docs.ts` privacy text: cache is now Cloudflare edge cache
-      (24 h, per data center), budget/pacing state in D1 (no query content);
-      remove "Python application logging" / "stops after 2 idle minutes"
+- [x] workflows: `gsa-perdiem-hosted-tests.yml` (loader, check, test, parity,
+      dry run with `--containers-rollout=none`), `gsa-perdiem-load.yml`
+      (sam-data-load env, CLOUDFLARE_D1_TOKEN, id read from wrangler.jsonc,
+      refuses the placeholder), `data-refresh.yml` dispatches the load on main
+      and waits before the release
+- [x] SERVER_VERSION / User-Agent read from servers/gsa-perdiem-mcp/server.json
+      (refresh bumps it with pyproject), so the Worker follows version bumps
+- [ ] (parent) release pipeline: `vars.RELEASE_SHA` in wrangler.release.json,
+      /health.admission assert, D1 database id; see final report
+- [x] `src/public-docs.ts` privacy text: Cloudflare cache (24 h, per data
+      center), budget/pacing records (no query content); effective date left
+      as is (parent: update when deploying)
 - [ ] final report
 
 ## Key findings

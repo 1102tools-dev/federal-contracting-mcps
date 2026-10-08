@@ -2,7 +2,12 @@
 // to the gsa-perdiem-mcp Python server (python_side.py), with the same GSA
 // API fixtures on both sides, and compares the answers.
 //
+//   cd servers/gsa-perdiem-mcp && uv sync --frozen --python 3.12
 //   cd deploy/gsa-perdiem && node parity/run.ts [--python-results FILE] [--db FILE]
+//
+// corpus.json is generated from the package's data and fixtures by
+// build_corpus.py on every run (it is not committed), so a data refresh
+// never leaves it stale.
 //
 // Compared per request: HTTP status; for tool calls content[0].text byte for
 // byte, isError, and structuredContent (as JSON); for other methods the whole
@@ -16,12 +21,18 @@ import {serve} from "../src/mcp.ts";
 import {BASE_URL, type CacheLike} from "../src/upstream.ts";
 import {ROOT, d1, loadedDatabaseFile} from "../test/d1.ts";
 
-const HERE = new URL(".", import.meta.url);
-const corpus = JSON.parse(readFileSync(new URL("corpus.json", HERE), "utf8"));
 const arg = (name: string) => {
   const i = process.argv.indexOf(name);
   return i > 0 ? process.argv[i + 1] : undefined;
 };
+const PACKAGE = join(ROOT, "servers/gsa-perdiem-mcp");
+const PYTHON = join(PACKAGE, ".venv/bin/python");
+const CORPUS = join(ROOT, "deploy/gsa-perdiem/parity/corpus.json");
+const pythonEnv = {...process.env, PYTHONPATH: join(PACKAGE, "src")};
+if (!arg("--python-results")) {
+  execFileSync(PYTHON, [join(ROOT, "deploy/gsa-perdiem/parity/build_corpus.py")], {cwd: PACKAGE, env: pythonEnv, stdio: ["ignore", "ignore", "inherit"]});
+}
+const corpus = JSON.parse(readFileSync(CORPUS, "utf8"));
 
 // Differences that are expected and justified; keyed "scenario#request".
 const EXPECTED: Record<string, string> = {};
@@ -83,9 +94,8 @@ async function workerSide(dbPath: string): Promise<Outcome[]> {
 function pythonSide(): Outcome[] {
   const file = arg("--python-results");
   if (file) return JSON.parse(readFileSync(file, "utf8"));
-  const pkg = join(ROOT, "servers/gsa-perdiem-mcp");
-  const out = execFileSync(join(pkg, ".venv/bin/python"), [join(ROOT, "deploy/gsa-perdiem/parity/python_side.py"), join(ROOT, "deploy/gsa-perdiem/parity/corpus.json")], {
-    cwd: pkg, env: {...process.env, PYTHONPATH: join(pkg, "src")}, maxBuffer: 1 << 28, encoding: "utf8",
+  const out = execFileSync(PYTHON, [join(ROOT, "deploy/gsa-perdiem/parity/python_side.py"), CORPUS], {
+    cwd: PACKAGE, env: pythonEnv, maxBuffer: 1 << 28, encoding: "utf8",
   });
   return JSON.parse(out);
 }
