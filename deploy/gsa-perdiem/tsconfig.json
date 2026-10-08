@@ -8,10 +8,15 @@
     "noEmit": true,
     "types": [
       "node"
-    ]
+    ],
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "erasableSyntaxOnly": true
   },
   "include": [
     "src/**/*.ts",
+    "test/**/*.ts",
+    "parity/**/*.ts",
     "worker-configuration.d.ts"
   ]
 }

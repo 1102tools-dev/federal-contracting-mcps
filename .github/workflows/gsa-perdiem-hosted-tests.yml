@@ -1,0 +1,56 @@
+name: GSA Per Diem hosted tests
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/gsa-perdiem/**'
+      - 'deploy/shared/**'
+      - 'servers/gsa-perdiem-mcp/src/**'
+      - 'servers/gsa-perdiem-mcp/server.json'
+      - 'servers/gsa-perdiem-mcp/uv.lock'
+      - 'scripts/load_gsa_perdiem.py'
+      - 'tests/test_gsa_perdiem_loader.py'
+      - '.github/workflows/gsa-perdiem-hosted-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/gsa-perdiem/**'
+      - 'deploy/shared/**'
+      - 'servers/gsa-perdiem-mcp/src/**'
+      - 'servers/gsa-perdiem-mcp/server.json'
+      - 'servers/gsa-perdiem-mcp/uv.lock'
+      - 'scripts/load_gsa_perdiem.py'
+      - 'tests/test_gsa_perdiem_loader.py'
+      - '.github/workflows/gsa-perdiem-hosted-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Loader
+        run: uv run --python 3.12 --with pytest pytest -q tests/test_gsa_perdiem_loader.py
+      - name: Worker typecheck and tests
+        working-directory: deploy/gsa-perdiem
+        run: |
+          npm ci --ignore-scripts
+          npm run check
+          npm test
+      - name: Parity with the Python server
+        run: |
+          # The package as the container ran it, with the GSA API mocked
+          # identically on both sides; any unexplained difference fails.
+          uv sync --frozen --python 3.12 --directory servers/gsa-perdiem-mcp
+          cd deploy/gsa-perdiem && node parity/run.ts
+      - name: Deploy dry run
+        working-directory: deploy/gsa-perdiem
+        # The retained container is not rebuilt here; the release builds it.
+        run: npx wrangler deploy --dry-run --env production --containers-rollout=none --outdir "$RUNNER_TEMP/gsa-perdiem-dist"
