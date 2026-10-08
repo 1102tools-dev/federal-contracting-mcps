@@ -128,9 +128,13 @@ class RemoteD1:
         self.url = f"{API}/accounts/{account_id}/d1/database/{database_id}/query"
         self.token = token
 
+    ATTEMPTS = 8
+
     def query(self, sql):
         body = json.dumps({"sql": sql}).encode()
-        for attempt in range(6):
+        for attempt in range(self.ATTEMPTS):
+            last = attempt == self.ATTEMPTS - 1
+            wait = 2 ** attempt
             request = urllib.request.Request(self.url, data=body, method="POST", headers={
                 "Authorization": f"Bearer {self.token}", "Content-Type": "application/json",
                 "User-Agent": "1102tools-bls-oews-loader"})
@@ -140,12 +144,15 @@ class RemoteD1:
                 break
             except urllib.error.HTTPError as e:
                 detail = e.read()[:500].decode("utf-8", "replace")
-                if e.code not in (429, 500, 502, 503, 504) or attempt == 5:
+                if e.code not in (429, 500, 502, 503, 504) or last:
                     raise SystemExit(f"D1 API error {e.code}: {detail}")
+                retry_after = (e.headers or {}).get("Retry-After", "")
+                if retry_after.isdigit():
+                    wait = min(max(wait, int(retry_after)), 120)
             except (urllib.error.URLError, TimeoutError) as e:
-                if attempt == 5:
+                if last:
                     raise SystemExit(f"D1 API unreachable: {e}")
-            time.sleep(2 ** attempt)
+            time.sleep(wait)
         if not payload.get("success"):
             raise SystemExit(f"D1 API error: {json.dumps(payload.get('errors'))[:500]}")
         return payload["result"][0].get("results") or []
@@ -186,16 +193,17 @@ def _load(db, bundle, force, log):
     active = active[0] if active else None
     summary = {"release": manifest["release"]["description"], "data_year": manifest["data_year"],
                "database_sha256": manifest["database_sha256"]}
+    # Versions other than the active one were left by an interrupted run: a
+    # load that never switched, or an old version not fully deleted.
+    stale = [row["version"] for row in db.query("SELECT version FROM release;")
+             if not active or row["version"] != active["version"]]
+    keys = bundle.keys()
+    for version in stale:
+        log(f"Removing version {version}, left by an interrupted run.")
+        delete_version(db, version, keys)
     if active and active["database_sha256"] == manifest["database_sha256"] and not force:
         log(f"Release {manifest['release']['code']} is already active (version {active['version']}); nothing to do.")
-        return {**summary, "status": "unchanged", "version": active["version"]}
-
-    keys = bundle.keys()
-    # Remove anything an interrupted earlier load left behind.
-    for row in db.query("SELECT version FROM release;"):
-        if not active or row["version"] != active["version"]:
-            log(f"Removing unfinished version {row['version']}.")
-            delete_version(db, row["version"], keys)
+        return {**summary, "status": "unchanged", "version": active["version"], "removed_versions": stale}
 
     version = db.query("SELECT COALESCE(MAX(version), 0) + 1 AS v FROM release;")[0]["v"]
     loaded_at = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
