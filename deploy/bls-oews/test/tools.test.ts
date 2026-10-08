@@ -273,6 +273,8 @@ test("missing data or a D1 failure is a generic tool error without arguments in 
 test("HTTP edge: health, docs, origin, rate limit, methods, body limits, message kinds", async () => {
   const health = await worker.fetch(new Request("https://bls-oews.1102tools.com/health"), env());
   assert.deepEqual(await health.json(), {status: "ok", tools: 8, release_sha: "abc123", admission: {processing: 16, waiting: 32, total: 48, deadline_seconds: 55}});
+  const unset = await worker.fetch(new Request("https://bls-oews.1102tools.com/health"), {...env(), RELEASE_SHA: undefined});
+  assert.equal((await unset.json() as any).release_sha, "development");
   assert.equal((await worker.fetch(new Request("https://bls-oews.1102tools.com/privacy"), env())).status, 200);
   assert.equal((await worker.fetch(new Request("https://bls-oews.1102tools.com/nope"), env())).status, 404);
   const response = await worker.fetch(post({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "list_common_metros", arguments: {}}}), env());

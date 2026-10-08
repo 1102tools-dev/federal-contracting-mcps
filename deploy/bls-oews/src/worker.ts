@@ -100,7 +100,8 @@ export default {
     }
     if (url.pathname === "/health") {
       if (request.method !== "GET") return new Response(null, {status: 405});
-      return json({status: "ok", tools: TOOLS.length, release_sha: env.RELEASE_SHA ?? null, admission: ADMISSION});
+      // RELEASE_SHA is a Worker var set at deploy; "development" is the container's default.
+      return json({status: "ok", tools: TOOLS.length, release_sha: env.RELEASE_SHA || "development", admission: ADMISSION});
     }
     if (request.method !== "POST") return new Response("Use POST for stateless MCP requests.", {status: 405, headers: {Allow: "POST"}});
     if (Number(request.headers.get("Content-Length") ?? "0") > MAX_BODY_BYTES) return tooLarge();
