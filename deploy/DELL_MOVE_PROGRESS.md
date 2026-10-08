@@ -33,8 +33,8 @@ Branch: `claude/dell-origin`. Commit after every step.
 - [x] 1. Build the five images on govnode (`/opt/mcp-origin`, `update.sh`)
 - [x] 2. Docker Compose (gateway on 127.0.0.1:8790, 384 MB / 0.75 CPU / weight 256 each)
 - [x] 3. LAN isolation (`firewall.sh`, `mcp-origin-firewall.service`)
-- [ ] 4. cloudflared, tunnel, origin DNS
-- [ ] 5. Regulations.gov key via header
+- [x] 4. cloudflared, tunnel `mcp-origin` (b0c30636), origin DNS
+- [x] 5. Regulations.gov key via header (Dell side: `regulations_key.py`; Worker side in step 6)
 - [ ] 6. Worker origin-first code + tests
 - [ ] 7. Pull-based updater (systemd timer)
 - [ ] 8. Monitoring (`check_hosted_health.py`, `hosted-health.yml`)
@@ -53,3 +53,11 @@ Branch: `claude/dell-origin`. Commit after every step.
   verified with a dummy value, then the container was restarted to clear it.
   Firewall verified: router, govnode and other Docker networks blocked;
   ecfr.gov and regulations.gov open.
+- Step 4: cloudflared 2026.10.0 from pkg.cloudflare.com (apt, so it gets
+  security updates). Tunnel `mcp-origin` b0c30636-7240-4799-bf48-66a90daf3b77,
+  locally managed; credentials `/etc/cloudflared-mcp/credentials.json` (root
+  600, passed to a DynamicUser service via LoadCredential); unit
+  `cloudflared-mcp.service`. Five proxied CNAMEs `<slug>-origin.1102tools.com`
+  created with the one token. Checked from outside: `/health` 200 in ~0.1 s,
+  `/mcp` without secret 403. Old "workspace" tunnel and its five DNS records
+  left as they were.
