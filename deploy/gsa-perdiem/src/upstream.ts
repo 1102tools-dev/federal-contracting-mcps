@@ -3,11 +3,14 @@
 // response cache, an hourly upstream budget below api.data.gov's 1,000
 // requests/hour, spacing between calls, and the provider's 429 cooldown.
 // Budget and spacing live in D1 so they hold across every Worker isolate.
+import PACKAGE from "../../../servers/gsa-perdiem-mcp/server.json" with {type: "json"};
 import type {Database} from "./data.ts";
 import {PyFloat, dumps, loads, quote, quotePlus, repr, squash, strip, pySlice} from "./py.ts";
 
 export const BASE_URL = "https://api.gsa.gov/travel/perdiem/v2/rates";
-export const USER_AGENT = "gsa-perdiem-mcp/1.2.0";
+/** The gsa-perdiem-mcp package version (server.json, bumped with pyproject.toml). */
+export const PACKAGE_VERSION: string = PACKAGE.version;
+export const USER_AGENT = `gsa-perdiem-mcp/${PACKAGE_VERSION}`;
 export const HOURLY_UPSTREAM_CAP = 950;
 export const REGISTERED_KEY_INTERVAL = 0.6;
 // The container answered 504 after 55 seconds; a call that would wait for a

@@ -3,14 +3,14 @@ import {publicDocs} from "./public-docs.ts";
 import {Snapshot, type Database} from "./data.ts";
 import {dumps, loads} from "./py.ts";
 import {TOOLS, callTool, type Context} from "./tools.ts";
-import {DeadlineExceeded, Upstream, type CacheLike} from "./upstream.ts";
+import {DeadlineExceeded, PACKAGE_VERSION, Upstream, type CacheLike} from "./upstream.ts";
 
 // Stateless MCP over streamable HTTP with JSON responses, served by this
 // Worker: bundled GSA files from D1, live GSA Per Diem API calls with the
 // operator's key. Answers match the gsa-perdiem-mcp Python server.
 
 /** The gsa-perdiem-mcp package version this Worker answers as. */
-export const SERVER_VERSION = "1.2.0";
+export const SERVER_VERSION = PACKAGE_VERSION;
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 // The container's admission deadline; work still running then gets its 504.
 export const REQUEST_DEADLINE_MS = 55_000;
