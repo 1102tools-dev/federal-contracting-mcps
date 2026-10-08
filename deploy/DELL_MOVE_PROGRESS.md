@@ -39,9 +39,9 @@ Branch: `claude/dell-origin`. Commit after every step.
 - [x] 7. Pull-based updater (`mcp-origin-update.timer`, every 15 min)
 - [x] 8. Monitoring (`check_hosted_health.py` "Dell origin" row; cron unchanged)
 - [x] 9. Privacy pages (effective October 8, 2026; adjust if the deploy slips)
-- [~] 10. Tests: tunnel calls + burst done; fallback, listen and monitor right after step 11
-- [ ] 11. Worker-only deploys (needs James's approval)
-- [ ] 12. README badge, progress page
+- [x] 10. Tests: tunnel calls, burst, live fallback, listen, full monitor
+- [x] 11. Worker-only deploys (approved by James 2026-10-08)
+- [x] 12. README badge, progress page
 
 ## Log
 
@@ -111,3 +111,24 @@ Branch: `claude/dell-origin`. Commit after every step.
   on govnode (`/etc/cloudflared`, `/root/.cloudflared`). Five Cloudflare
   Access apps for those hostnames remain (inert without DNS). `mcp-origin` is
   the only tunnel and stays healthy.
+- **Step 11, live 2026-10-08 (UTC 2026-10-09 ~00:10).** Worker-only deploys,
+  images unchanged (wrangler: "no changes" for every container). Rollback =
+  redeploy the previous version (`npx wrangler rollback <id> --env production`
+  in `deploy/<slug>`):
+
+  | Worker | New version | Previous (rollback) | Image |
+  |---|---|---|---|
+  | ecfr-mcp | 9b1369ba-a734-4cd2-863c-d77bc1240637 | 02c2beb6-469f-499b-923a-7039f9072c8d | e63cc605 |
+  | usaspending-mcp | 62703778-0dec-401a-a352-70672c6c2648 | 79064608-d366-4350-a198-57663d5dc44d | e63cc605 |
+  | federal-register-mcp | c2179de3-c4a4-4cad-875d-0f3653af1314 | 88d337e8-5114-451e-b04a-fb38ab0d4f31 | e63cc605 |
+  | gsa-calc-mcp | 2adbd078-0b14-4403-8a31-fb04cff10f9a | a3343b52-aebc-4625-a192-bc100c063b82 | e63cc605 |
+  | regulations-gov-mcp | b41de64e-6a4c-459a-b353-d864eff0db73 | 90fff5ec-48dc-44dd-9c03-6fcd68d34f31 | 0691651c |
+
+  `ORIGIN_SECRET` set on all five (piped from govnode, never printed).
+- Step 10 live: eCFR `/health` and tool calls answered by `origin` in
+  0.1–0.25 s; listen stream still acknowledged at the edge; new privacy page
+  live. Fallback: stopped the Dell eCFR server, three tool calls answered by
+  `container` with real results; restarted it and traffic returned to
+  `origin` within the 30 s probe cache. Full `check_hosted_health.py`: all
+  nine ok, "Dell origin" ok (5/5), Regulations.gov in publisher-key mode with a
+  real upstream call through the Dell.
