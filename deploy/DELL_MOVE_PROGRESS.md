@@ -30,9 +30,9 @@ Branch: `claude/dell-origin`. Commit after every step.
 ## Steps
 
 - [x] 0. Branch, progress file
-- [ ] 1. Build the five images on govnode
-- [ ] 2. Docker Compose (gateway + five servers, 127.0.0.1, caps)
-- [ ] 3. LAN isolation (DOCKER-USER + INPUT rules)
+- [x] 1. Build the five images on govnode (`/opt/mcp-origin`, `update.sh`)
+- [x] 2. Docker Compose (gateway on 127.0.0.1:8790, 384 MB / 0.75 CPU / weight 256 each)
+- [x] 3. LAN isolation (`firewall.sh`, `mcp-origin-firewall.service`)
 - [ ] 4. cloudflared, tunnel, origin DNS
 - [ ] 5. Regulations.gov key via header
 - [ ] 6. Worker origin-first code + tests
@@ -47,3 +47,9 @@ Branch: `claude/dell-origin`. Commit after every step.
 
 - 2026-10-08: started. Live SHAs: usaspending/ecfr/federal-register/gsa-calc
   e63cc605, regulations-gov 0691651c.
+- Steps 1–3 done on govnode. All five healthy at the live SHAs, ~60 MB
+  each. Gateway: `/mcp` without secret 403, unknown host 404. Secret in
+  `/etc/mcp-origin/origin.env` (root:james 640). Regulations.gov key header
+  verified with a dummy value, then the container was restarted to clear it.
+  Firewall verified: router, govnode and other Docker networks blocked;
+  ecfr.gov and regulations.gov open.
