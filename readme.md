@@ -1,6 +1,6 @@
 # Federal contracting MCPs
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,571](https://img.shields.io/badge/regression%20tests-5%2C571-007a59)](#testing-and-maintenance) [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 3 servers](https://img.shields.io/badge/ChatGPT%20directory-3%20servers-172f2a)](#available-in-claude-and-chatgpt)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,571](https://img.shields.io/badge/regression%20tests-5%2C571-007a59)](#testing-and-maintenance) [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 4 servers](https://img.shields.io/badge/ChatGPT%20directory-4%20servers-172f2a)](#available-in-claude-and-chatgpt)
 
 Free, open-source, read-only source tools for federal contracting research: opportunities, awards, company records, labor pricing, travel rates, regulations, and rulemaking.
 
@@ -10,14 +10,14 @@ Free, open-source, read-only source tools for federal contracting research: oppo
 
 - **Free.** MIT-licensed, with no subscription and no credits. Directory installs need no account or API key.
 - **Tested.** 5,571 collected regression tests, including live-API tests, across 9 servers and 133 tools, with up to ten audit rounds per server against the live government APIs. Published testing records document each bug fixed and the tests added.
-- **Listed, no keys.** All 9 servers are in the Claude directory and 3 are in the ChatGPT directory, with the rest in review for ChatGPT. Directory installs need no user API key.
+- **Listed, no keys.** All 9 servers are in the Claude directory and 4 are in the ChatGPT directory, with the rest in review for ChatGPT. Directory installs need no user API key.
 - **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
 
 See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
 
 ## Available in Claude and ChatGPT
 
-All nine MCPs install and run locally today; the **Local** column links to each setup guide. All nine are also published in the Claude directory and three in ChatGPT, where installs need no user API key or local setup. The rest are in review for ChatGPT.
+All nine MCPs install and run locally today; the **Local** column links to each setup guide. All nine are also published in the Claude directory and four in ChatGPT, where installs need no user API key or local setup. The rest are in review for ChatGPT.
 
 | MCP | Claude | ChatGPT | Local |
 |---|---|---|---|
@@ -27,7 +27,7 @@ All nine MCPs install and run locally today; the **Local** column links to each 
 | BLS OEWS | [Add to Claude](https://claude.ai/directory/bls-oews-by-1102tools) | In review | [Setup guide](servers/bls-oews-mcp#installation) |
 | GSA Per Diem | [Add to Claude](https://claude.ai/directory/gsa-perdiem-by-1102tools) | In review | [Setup guide](servers/gsa-perdiem-mcp#installation) (free key) |
 | eCFR | [Add to Claude](https://claude.ai/directory/ecfr-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) | [Setup guide](servers/ecfr-mcp#installation) |
-| Acquisition.gov | [Add to Claude](https://claude.ai/directory/acquisition-gov-by-1102tools) | In review | [Setup guide](servers/acquisition-gov-mcp#install) |
+| Acquisition.gov | [Add to Claude](https://claude.ai/directory/acquisition-gov-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ab2757102e08191887f75cc506c2333) | [Setup guide](servers/acquisition-gov-mcp#install) |
 | Federal Register | [Add to Claude](https://claude.ai/directory/federal-register-by-1102tools) | In review | [Setup guide](servers/federal-register-mcp#installation) |
 | Regulations.gov | [Add to Claude](https://claude.ai/directory/regulations-gov-by-1102tools) | In review | [Setup guide](servers/regulations-gov-mcp#installation) (free key) |
 
