@@ -39,7 +39,7 @@ Branch: `claude/dell-origin`. Commit after every step.
 - [x] 7. Pull-based updater (`mcp-origin-update.timer`, every 15 min)
 - [x] 8. Monitoring (`check_hosted_health.py` "Dell origin" row; cron unchanged)
 - [x] 9. Privacy pages (effective October 8, 2026; adjust if the deploy slips)
-- [ ] 10. Tests: health via Dell, fallback, load burst, listen
+- [~] 10. Tests: tunnel calls + burst done; fallback, listen and monitor right after step 11
 - [ ] 11. Worker-only deploys (needs James's approval)
 - [ ] 12. README badge, progress page
 
@@ -94,3 +94,14 @@ Branch: `claude/dell-origin`. Commit after every step.
   removed first; that server keeps no request logs; Worker logs note which
   server answered. Regulations.gov's cache wording no longer implies the
   2-minute idle stop applies to every copy.
+- Step 10 (pre-deploy, simulating the Worker through Cloudflare): real tool
+  calls eCFR 0.30 s, USAspending 0.58 s, Federal Register 0.43 s; wrong
+  secret 403. Burst of 300 `tools/list` at 30 concurrent across the five:
+  300/300 200, avg 0.11 s, max 0.42 s (~210 req/s; busiest server peaks at
+  ~50/min). Servers stayed ~60 MB; Frigate unaffected.
+- **Next (needs James's go):** push the branch and open the PR; per slug
+  record the current Worker version, `wrangler secret put ORIGIN_SECRET
+  --env production` (value piped from govnode), `configure_hosted_image.py
+  <slug> <live sha>`, Worker-only deploy; then live tests (backend header,
+  stop a Dell container to prove fallback, listen stream, full monitor);
+  merge the PR after the deploy.
