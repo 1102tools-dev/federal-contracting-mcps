@@ -1,7 +1,7 @@
 # BLS OEWS port to Worker + D1: progress
 
 Branch: `worktree-agent-ae5aa281380a9a786`
-Last code checkpoint: PAUSE_SHA (the "pause checkpoint (WIP)" commit; `git log -1` shows the tip)
+Last code checkpoint: 4733104 ("pause checkpoint (WIP)"); the tip commit after it only records this SHA.
 
 No push, no deploy, no Cloudflare changes. Parent reviews and deploys.
 
