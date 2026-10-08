@@ -176,10 +176,13 @@ export async function fetchWithRetry(send: () => Promise<Response>, pauseMs = RE
 // when the tool finishes; a short header timeout would cut slow calls. A
 // cheap /health probe with a short timeout decides instead, cached per
 // isolate. Every tool is read-only, so retrying on the container is safe.
+// The Dell counts as up only when it runs this Worker's RELEASE_SHA, so after
+// a release the new container serves until the Dell's updater catches up.
 
 export interface OriginEnv {
   ORIGIN_URL?: string;
   ORIGIN_SECRET?: string;
+  RELEASE_SHA?: string;
 }
 
 export const ORIGIN_PROBE_MS = 5000;
@@ -205,15 +208,19 @@ function markOrigin(base: string, up: boolean, now = Date.now()): void {
   probes.set(base, {checked: now, up: Promise.resolve(up)});
 }
 
-export function originUp(base: string, now = Date.now(), probeMs = ORIGIN_PROBE_MS): Promise<boolean> {
+export function originUp(base: string, releaseSha?: string, now = Date.now(), probeMs = ORIGIN_PROBE_MS): Promise<boolean> {
   const cached = probes.get(base);
   if (cached && now - cached.checked < ORIGIN_PROBE_TTL_MS) return cached.up;
   // Concurrent requests share one probe.
   const up = (async () => {
     try {
       const response = await fetch(`${base}/health`, {signal: AbortSignal.timeout(probeMs)});
-      await response.body?.cancel();
-      return response.ok && isJson(response);
+      if (!response.ok || !isJson(response)) {
+        await response.body?.cancel();
+        return false;
+      }
+      const health = await response.json() as {status?: string; release_sha?: string};
+      return health.status === "ok" && (!releaseSha || health.release_sha === releaseSha);
     } catch {
       return false;
     }
@@ -256,7 +263,7 @@ export async function originFirst(
   let reason = "not_configured";
   if (base && env.ORIGIN_SECRET) {
     reason = "probe_failed";
-    if (await originUp(base)) {
+    if (await originUp(base, env.RELEASE_SHA)) {
       const headers = new Headers(init.headers);
       for (const name of CLIENT_HEADERS) headers.delete(name);
       for (const [name, value] of Object.entries(extra)) if (value) headers.set(name, value);

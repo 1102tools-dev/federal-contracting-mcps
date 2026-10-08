@@ -36,8 +36,8 @@ Branch: `claude/dell-origin`. Commit after every step.
 - [x] 4. cloudflared, tunnel `mcp-origin` (b0c30636), origin DNS
 - [x] 5. Regulations.gov key via header (Dell side: `regulations_key.py`; Worker side in step 6)
 - [x] 6. Worker origin-first code + tests (`originFirst` in `deploy/shared/edge.ts`)
-- [ ] 7. Pull-based updater (systemd timer)
-- [ ] 8. Monitoring (`check_hosted_health.py`, `hosted-health.yml`)
+- [x] 7. Pull-based updater (`mcp-origin-update.timer`, every 15 min)
+- [x] 8. Monitoring (`check_hosted_health.py` "Dell origin" row; cron unchanged)
 - [ ] 9. Privacy pages
 - [ ] 10. Tests: health via Dell, fallback, load burst, listen
 - [ ] 11. Worker-only deploys (needs James's approval)
@@ -74,3 +74,17 @@ Branch: `claude/dell-origin`. Commit after every step.
   14/14 edge tests pass; five Workers type-check; release dry-run shows the
   binding. Preview URLs don't work for Durable Object Workers, so the live
   Worker-to-Dell test happens right after the step 11 deploy.
+- Step 7: `mcp-origin-update.timer` runs `update.sh` as james every 15 min
+  (first run a no-op, success).
+- Release safety: `configure_hosted_image.py` now also writes
+  `vars.RELEASE_SHA` for Workers with `ORIGIN_URL` (D1 logic kept). The
+  Worker uses the Dell only when the Dell's `/health` `release_sha` matches,
+  so after a release the new container serves until the Dell rebuilds, and
+  `verify_hosted_release.py` still sees the new commit.
+- Step 8: services.json gets `origin` for the five; the monitor adds a
+  "Dell origin" row that fails (opening the usual issue) when a Dell origin is
+  unreachable or the public endpoint is answered by the container. Kept the
+  30-minute cron: these checks now hit the Dell, not the containers, so they
+  no longer cost container time (only Acquisition.gov's still wakes).
+  **Merge the PR only after the step 11 deploy**, or the row fails on the old
+  Workers (they send no `X-1102tools-Backend`). 64/64 release guard tests pass.

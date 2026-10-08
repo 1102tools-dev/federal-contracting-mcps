@@ -225,3 +225,20 @@ test("treats only non-JSON gateway and tunnel answers as origin failures", () =>
   for (const status of [200, 400, 405, 406, 413, 429]) assert.ok(!isOriginFailure(text(status)), String(status));
   assert.ok(!isOriginFailure(json({}, 503)));
 });
+
+test("skips a Dell that runs a different release than this Worker", async () => {
+  const mock = withFetch(url => url.endsWith("/health") ? json({status: "ok", release_sha: "old"}) : assert.fail("origin used"));
+  try {
+    const response = await originFirst({...ORIGIN, RELEASE_SHA: "new"}, "/mcp", init(), async () => json({}));
+    assert.equal(response.headers.get("X-1102tools-Backend"), "container");
+  } finally {
+    mock.restore();
+  }
+  const same = withFetch(url => url.endsWith("/health") ? json({status: "ok", release_sha: "new"}) : json({result: "dell"}));
+  try {
+    const response = await originFirst({...ORIGIN, RELEASE_SHA: "new"}, "/mcp", init(), async () => assert.fail("container used"));
+    assert.equal(response.headers.get("X-1102tools-Backend"), "origin");
+  } finally {
+    same.restore();
+  }
+});

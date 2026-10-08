@@ -5,4 +5,5 @@ interface Env {
   REGULATIONS_GOV_API_KEY?: string;
   ORIGIN_URL?: string;
   ORIGIN_SECRET?: string;
+  RELEASE_SHA?: string;
 }

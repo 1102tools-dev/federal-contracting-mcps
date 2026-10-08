@@ -3,4 +3,5 @@
 interface Env {
   ORIGIN_URL?: string;
   ORIGIN_SECRET?: string;
+  RELEASE_SHA?: string;
 }
