@@ -1,0 +1,60 @@
+name: BLS OEWS D1 load
+
+# Copies the OEWS release bundled with bls-oews-mcp
+# (servers/bls-oews-mcp/src/bls_oews_mcp/data/) into the D1 database behind
+# the hosted BLS OEWS MCP (bls-oews.1102tools.com). The load writes a new
+# version, checks its row counts against the manifest, then switches to it in
+# one statement and deletes the old one, so the Worker never sees a partial
+# release. When the bundled release is already active it changes nothing.
+# Never deploys the Worker.
+#
+# Runs when the bundled data, the loader, or the schema changes on main. The
+# weekly data refresh commits with the workflow token, which does not start
+# push workflows, so it must dispatch this one after a bls-oews data commit.
+#
+# Credential: the sam-data-load environment (main only) holds
+# CLOUDFLARE_D1_TOKEN, a Cloudflare API token limited to D1 edit on this
+# account. The release credential in cloudflare-production stays tag-only.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'servers/bls-oews-mcp/src/bls_oews_mcp/data/**'
+      - 'scripts/load_bls_oews.py'
+      - 'deploy/bls-oews/schema.sql'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Reload even if this release is already active'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bls-oews-load
+  cancel-in-progress: false
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: sam-data-load
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 846d3e41e48446abcd3570c0959f9fb5
+      CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+      BLS_OEWS_D1_DATABASE_ID: 4aeb1415-95e9-4e98-9e57-247529f2983d
+      FORCE: ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Check credential
+        run: test -n "$CLOUDFLARE_D1_TOKEN" || { echo 'Add CLOUDFLARE_D1_TOKEN to the sam-data-load environment'; exit 1; }
+      - name: Load the bundled OEWS release into D1
+        run: |
+          python scripts/load_bls_oews.py --remote $FORCE > status.json
+          { echo '```json'; cat status.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

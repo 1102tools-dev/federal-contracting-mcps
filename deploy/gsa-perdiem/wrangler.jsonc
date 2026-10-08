@@ -34,6 +34,13 @@
       ]
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gsa-perdiem",
+      "database_id": "ca35067d-f951-44aa-9bff-489700e4d331"
+    }
+  ],
   "ratelimits": [
     {
       "name": "REQUEST_LIMITER",
@@ -78,6 +85,13 @@
           }
         ]
       },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "gsa-perdiem",
+          "database_id": "ca35067d-f951-44aa-9bff-489700e4d331"
+        }
+      ],
       "ratelimits": [
         {
           "name": "REQUEST_LIMITER",

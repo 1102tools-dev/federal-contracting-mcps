@@ -1,7 +1,9 @@
-import { publicDocs } from "./public-docs";
-import { Container, getContainer } from "@cloudflare/containers";
-import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, readBounded, tooLarge } from "../../shared/edge";
+import {Container} from "@cloudflare/containers";
+import {serve} from "./mcp.ts";
 
+// The container that served this service before the D1 port. Kept exported
+// (with its Durable Object binding and migration) so the cutover can be
+// reversed; the fetch handler below never forwards to it.
 export class GSAPerDiem extends Container<Env> {
   defaultPort = 8080;
   sleepAfter = "2m";
@@ -11,46 +13,7 @@ export class GSAPerDiem extends Container<Env> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-    if (publicDocs[url.pathname] && request.method === "GET") return new Response(publicDocs[url.pathname], {headers: {"Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff"}});
-    if (url.pathname !== "/mcp" && url.pathname !== "/health") {
-      return new Response("GSA Per Diem MCP by 1102tools. Connect at /mcp.", {status: url.pathname === "/" ? 200 : 404});
-    }
-    const origin = request.headers.get("Origin");
-    if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-    if (!await env.REQUEST_LIMITER.limit({key: request.headers.get("CF-Connecting-IP") || "unknown"}).then(r => r.success)) {
-      return new Response("Request limit reached; retry later.", {status: 429, headers: {"Retry-After": "60"}});
-    }
-    if (url.pathname === "/mcp" && request.method !== "POST") {
-      return new Response("Use POST for stateless MCP requests.", {status: 405, headers: {Allow: "POST"}});
-    }
-    if (url.pathname === "/health" && request.method !== "GET") return new Response(null, {status: 405});
-    // Read the body at the edge, bounded, so slow or oversized uploads never
-    // hold one of the single container's admission slots.
-    let body: ArrayBuffer | null = null;
-    if (request.method === "POST") {
-      if (Number(request.headers.get("Content-Length") ?? "0") > MAX_BODY_BYTES) return tooLarge();
-      body = await readBounded(request);
-      if (body === null) return tooLarge();
-    }
-    const listen = listenAtEdge(request.headers, body);
-    if (listen) return listen;
-    try {
-      const headers = new Headers(request.headers);
-      headers.set("Host", "container.internal");
-      headers.delete("Origin");
-      headers.delete("Cookie");
-      headers.delete("Authorization");
-      headers.delete("Content-Length");
-      const forwarded = () => new Request(`http://container.internal${url.pathname}`, {
-        method: request.method, headers, body,
-      });
-      // A single named instance preserves process/file pacing across all users.
-      const backend = getContainer(env.BACKEND, "public-gsa-perdiem");
-      return await fetchWithRetry(() => backend.fetch(forwarded()));
-    } catch (error) {
-      console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
-      return Response.json({error: "GSA Per Diem service temporarily unavailable."}, {status: 503, headers: {"Retry-After": "15"}});
-    }
+    return serve(request, env);
   },
 } satisfies ExportedHandler<Env>;
+
