@@ -34,8 +34,16 @@ if (!arg("--python-results")) {
 }
 const corpus = JSON.parse(readFileSync(CORPUS, "utf8"));
 
-// Differences that are expected and justified; keyed "scenario#request".
-const EXPECTED: Record<string, string> = {};
+// Differences that are expected and justified, by request body. For these
+// only the JSON-RPC error message may differ; status, code, and id must match.
+const EXPECTED_MESSAGE_ONLY: Record<string, string> = {
+  '{not json': "Parse error text comes from each JSON parser (Python: 'Parse error: key must be a string at line 1 column 2').",
+  '{"jsonrpc": "1.0", "id": 1, "method": "ping"}': "Malformed envelope: the SDK appends pydantic's multi-model union error dump.",
+  '{"jsonrpc": "2.0", "id": 1, "method": 5}': "Malformed envelope: the SDK appends pydantic's multi-model union error dump.",
+  '{"jsonrpc": "2.0", "id": 1}': "Malformed envelope: the SDK appends pydantic's multi-model union error dump.",
+  '[{"jsonrpc": "2.0", "id": 1, "method": "ping"}]': "Batch: the SDK appends pydantic's multi-model union error dump.",
+  '"just a string"': "Not an object: the SDK appends pydantic's multi-model union error dump.",
+};
 
 interface Outcome {name: string; responses: {status: number; body: string}[]; upstream: {path: string; key_header: boolean; user_agent: string | null}[]}
 
@@ -105,7 +113,7 @@ function canonical(value: unknown): string {
     ? Object.fromEntries(Object.keys(v).sort().map(k => [k, v[k]])) : v));
 }
 
-function compare(py: {status: number; body: string}, ts: {status: number; body: string}): string[] {
+function compare(py: {status: number; body: string}, ts: {status: number; body: string}, ignoreErrorMessage = false): string[] {
   const problems: string[] = [];
   if (py.status !== ts.status) problems.push(`HTTP status ${py.status} vs ${ts.status}`);
   let a: any;
@@ -113,6 +121,10 @@ function compare(py: {status: number; body: string}, ts: {status: number; body: 
   try {
     a = JSON.parse(py.body);
     b = JSON.parse(ts.body);
+    if (ignoreErrorMessage && a?.error && b?.error) {
+      delete a.error.message;
+      delete b.error.message;
+    }
   } catch {
     if (py.body !== ts.body) problems.push(`body ${JSON.stringify(py.body.slice(0, 300))} vs ${JSON.stringify(ts.body.slice(0, 300))}`);
     return problems;
@@ -140,6 +152,7 @@ const python = pythonSide();
 let calls = 0;
 let identical = 0;
 let expected = 0;
+const expectedNotes = new Set<string>();
 const failures: string[] = [];
 corpus.scenarios.forEach((scenario: any, s: number) => {
   scenario.requests.forEach((body: string, r: number) => {
@@ -149,9 +162,9 @@ corpus.scenarios.forEach((scenario: any, s: number) => {
       identical++;
       return;
     }
-    const id = `${s}#${r}`;
-    if (EXPECTED[id]) {
+    if (EXPECTED_MESSAGE_ONLY[body] && !compare(python[s].responses[r], worker[s].responses[r], true).length) {
       expected++;
+      expectedNotes.add(EXPECTED_MESSAGE_ONLY[body]);
       return;
     }
     failures.push(`[${scenario.name} #${r}] ${body}\n${problems.join("\n")}`);
@@ -162,6 +175,7 @@ corpus.scenarios.forEach((scenario: any, s: number) => {
 });
 const upstreamCalls = python.reduce((n, o) => n + o.upstream.length, 0);
 for (const failure of failures) console.log(failure + "\n");
+for (const note of expectedNotes) console.log(`expected difference: ${note}`);
 const summary = {calls, identical, expected_differences: expected, unexplained_differences: failures.length, upstream_calls: upstreamCalls};
 console.log(JSON.stringify(summary));
 if (arg("--write-python-results")) writeFileSync(arg("--write-python-results")!, JSON.stringify(python));

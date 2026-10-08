@@ -41,8 +41,11 @@ changes from this branch.
       resume after crash, release kept on bad counts, part GC, manifest
       mismatch, remote mode against a fake D1 HTTP API, refusals)
 - [x] parity harness (`parity/build_corpus.py` -> `corpus.json`, `python_side.py`,
-      `run.ts`): 1,329 calls in 9 scenarios (incl. a sweep of ZIPs, states,
-      M&IE, Census places by county), 56 mocked GSA API calls, 1329/1329 identical (text byte for byte, isError, structuredContent,
+      `run.ts`; corpus generated per run, not committed): 1,344 calls in 9
+      scenarios (incl. a sweep of ZIPs, states, M&IE, Census places by
+      county, JSON-RPC edge cases), 56 mocked GSA API calls: 1,338 identical,
+      6 expected (JSON-RPC parse/envelope error *message* text only; status,
+      code, id match), 0 unexplained (text byte for byte, isError, structuredContent,
       upstream request log). Fixed on the way: tools/list order (Python
       registration order, contract content), infinite floats surviving the
       response cache, budget retry rounding (ceil), `-32601` carries `data`.

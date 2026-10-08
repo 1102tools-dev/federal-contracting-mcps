@@ -55,13 +55,17 @@ function withDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
   return Promise.race([work, deadline]).finally(() => clearTimeout(timer));
 }
 
+const INVALID_MESSAGE = "Validation error: expected one JSON-RPC 2.0 request or notification.";
+const isEnvelope = (message: Message) => message.jsonrpc === "2.0" && typeof message.method === "string";
+
 /** One JSON-RPC message; null for notifications. Throws DeadlineExceeded. */
 export async function handleMessage(message: Message, env: WorkerEnv, runtime: Runtime = {}): Promise<object | null> {
   const {id, method, params} = message;
-  if (message.jsonrpc !== "2.0" || typeof method !== "string") return rpcError(id, -32600, "Invalid JSON-RPC request.");
-  // Notifications (no id) get no response body.
-  if (id === undefined) return null;
-  switch (method) {
+  if (!isEnvelope(message)) return rpcError(null, -32602, INVALID_MESSAGE);
+  // The SDK reads a message whose id is not a string or integer (absent,
+  // null, 1.5) as a notification: no response body.
+  if (typeof id !== "string" && !Number.isInteger(id)) return null;
+  switch (method as string) {
     case "initialize": {
       const requested = params?.protocolVersion;
       return {
@@ -92,7 +96,7 @@ export async function handleMessage(message: Message, env: WorkerEnv, runtime: R
       const name = params?.name;
       const args = params?.arguments ?? {};
       if (typeof name !== "string" || typeof args !== "object" || Array.isArray(args)) {
-        return rpcError(id, -32602, "Invalid request parameters");
+        return rpcError(id, -32602, "Invalid request parameters", "");
       }
       const result = await withDeadline(callTool(context(env, runtime), name, args), runtime.deadlineMs ?? REQUEST_DEADLINE_MS);
       return {jsonrpc: "2.0", id, result};
@@ -135,8 +139,10 @@ export async function serve(request: Request, env: WorkerEnv, runtime: Runtime =
   } catch {
     return json(rpcError(null, -32700, "Parse error."), 400);
   }
-  if (Array.isArray(message) || typeof message !== "object" || message === null) {
-    return json(rpcError(null, -32600, "Send one JSON-RPC message per request."), 400);
+  // Batches, non-objects, and malformed envelopes: 400, as the SDK answers
+  // (it adds pydantic's union-validation text to the message).
+  if (Array.isArray(message) || typeof message !== "object" || message === null || !isEnvelope(message as Message)) {
+    return json(rpcError(null, -32602, INVALID_MESSAGE), 400);
   }
   let response: object | null;
   try {
