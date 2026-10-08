@@ -5,7 +5,7 @@
 // validation order, messages, keys, and number formatting.
 
 import CONTRACT from "../tools-contract.json" with {type: "json"};
-import {PyFloat, fixed, group, intStr, repr, round, str, strip, floatRepr, type Py} from "./pyjson.ts";
+import {PyFloat, fixed, group, intStr, parseJson, pyType, repr, round, str, strip, floatRepr, type Py} from "./pyjson.ts";
 
 type Row = Record<string, any>;
 export interface Statement {
@@ -70,13 +70,53 @@ const BLS_NOTICE = "BLS.gov cannot vouch for the data or analyses derived from t
 
 type Args = Record<string, unknown>;
 type Schema = {type?: string; anyOf?: Schema[]; enum?: string[]; items?: Schema; default?: unknown};
-type Issue = [loc: string, message: string];
+type Issue = {loc: string; type: string; msg: string; input: unknown};
 
-const typeName = (v: unknown) => v === null ? "None" : Array.isArray(v) ? "list" : typeof v === "object" ? "dict"
-  : typeof v === "boolean" ? "bool" : typeof v === "number" ? (Number.isInteger(v) ? "int" : "float") : "str";
+// Fields in the Python signature's order, which is the order pydantic checks
+// them in (tools-contract.json lists properties sorted by name).
+const FIELD_ORDER: Record<string, string[]> = {
+  compare_metros: ["occ_code", "metro_codes", "datatype", "year"],
+  compare_occupations: ["occ_codes", "scope", "area_code", "datatype", "year"],
+  detect_latest_year: [],
+  get_data_status: [],
+  get_wage_data: ["occ_code", "scope", "area_code", "industry", "datatypes", "year"],
+  igce_wage_benchmark: ["occ_code", "scope", "area_code", "burden_low", "burden_high", "year"],
+  list_common_metros: [],
+  list_common_soc_codes: [],
+};
+const PYDANTIC_DOCS = "https://errors.pydantic.dev/2.13/v/";
+const I64_LIMIT = 2 ** 63;
 
-/** Python float() of a string, or undefined. */
-function parseFloatStr(text: string): number | undefined {
+// Rust's char::is_whitespace, which pydantic-core trims before parsing a float.
+const RUST_SPACE = "\t\n\v\f\r \x85\xa0                　";
+const rustTrim = (text: string) => {
+  let start = 0;
+  let end = text.length;
+  while (start < end && RUST_SPACE.includes(text[start])) start++;
+  while (end > start && RUST_SPACE.includes(text[end - 1])) end--;
+  return text.slice(start, end);
+};
+
+/** Rust's f64::from_str. */
+function rustFloat(text: string): number | undefined {
+  if (!/^[+-]?(inf|infinity|nan|(\d+\.?\d*|\.\d+)(e[+-]?\d+)?)$/i.test(text)) return undefined;
+  const negative = text.startsWith("-");
+  const body = text.replace(/^[+-]/, "").toLowerCase();
+  if (body.startsWith("inf")) return negative ? -Infinity : Infinity;
+  if (body === "nan") return NaN;
+  return Number(text);
+}
+
+/** pydantic-core's str -> float: trimmed, else with underscores between digits removed. */
+function pydanticFloat(text: string): number | undefined {
+  const plain = rustFloat(rustTrim(text));
+  if (plain !== undefined) return plain;
+  if (text.startsWith("_") || text.endsWith("_") || /[^0-9]_|_[^0-9]/.test(text)) return undefined;
+  return rustFloat(text.replaceAll("_", ""));
+}
+
+/** Python float() of a string (for published values), or undefined. */
+function pyFloat(text: string): number | undefined {
   const s = strip(text).toLowerCase();
   if (/^[+-]?(inf|infinity)$/.test(s)) return s.startsWith("-") ? -Infinity : Infinity;
   if (/^[+-]?nan$/.test(s)) return NaN;
@@ -84,95 +124,125 @@ function parseFloatStr(text: string): number | undefined {
   return Number(s.replaceAll("_", ""));
 }
 
-/** One value against one JSON-schema branch, with pydantic's lax coercions. */
-function coerce(value: unknown, schema: Schema, loc: string, issues: Issue[]): unknown {
+type Result = {ok: true; value: unknown} | {ok: false; issues: Issue[]};
+const ok = (value: unknown): Result => ({ok: true, value});
+const fail = (loc: string, type: string, msg: string, input: unknown): Result => ({ok: false, issues: [{loc, type, msg, input}]});
+const isNumber = (v: unknown): v is number | PyFloat => typeof v === "number" || v instanceof PyFloat;
+const numberOf = (v: number | PyFloat) => (v instanceof PyFloat ? v.value : v);
+
+/** int in lax mode: bools and whole floats convert. */
+function laxInt(value: unknown, loc: string): Result {
+  if (typeof value === "boolean") return ok(value ? 1 : 0);
+  if (typeof value === "bigint" || (typeof value === "number" && Number.isInteger(value))) return ok(value);
+  if (isNumber(value)) {
+    const f = numberOf(value);
+    if (!Number.isFinite(f)) return fail(loc, "finite_number", "Input should be a finite number", value);
+    if (!Number.isInteger(f)) return fail(loc, "int_from_float", "Input should be a valid integer, got a number with a fractional part", value);
+    if (f >= I64_LIMIT || f <= -I64_LIMIT) return fail(loc, "int_parsing_size", "Unable to parse input string as an integer, exceeded maximum size", value);
+    return ok(Number.isSafeInteger(f) ? f : BigInt(f));
+  }
+  return fail(loc, "int_type", "Input should be a valid integer", value);
+}
+
+/** One value against one contract schema, with pydantic's lax coercions and error locations. */
+function validate(value: unknown, schema: Schema, loc: string): Result {
   if (schema.anyOf) {
-    // Smart union: an exact type match first, then the first lax match.
-    const exact = schema.anyOf.find(s => (s.type === "string" && typeof value === "string")
-      || (s.type === "integer" && typeof value === "number" && Number.isInteger(value))
-      || (s.type === "null" && value === null));
-    if (exact) return value;
-    const list = schema.anyOf.find(s => s.type === "array");
-    if (list && Array.isArray(value)) return coerce(value, list, loc, issues);
-    for (const branch of schema.anyOf) {
-      const trial: Issue[] = [];
-      const out = coerce(value, branch, loc, trial);
-      if (!trial.length) return out;
-    }
-    const kinds = schema.anyOf.map(s => ({string: "a valid string", integer: "a valid integer", array: "a valid list", null: "None"})[s.type!]);
-    issues.push([loc, `Input should be ${kinds.join(" or ")}, got ${typeName(value)}`]);
-    return undefined;
+    // Optional[X] is X that also takes None.
+    const branches = schema.anyOf.filter(s => s.type !== "null");
+    if (value === null && branches.length < schema.anyOf.length) return ok(null);
+    if (branches.length === 1) return validate(value, branches[0], loc);
+    // Union[str, int] in smart mode: an exact type first, then lax int;
+    // when both fail pydantic reports each branch (loc.str, loc.int).
+    if (typeof value === "string") return ok(value);
+    const int = laxInt(value, `${loc}.int`);
+    if (int.ok) return int;
+    return {ok: false, issues: [{loc: `${loc}.str`, type: "string_type", msg: "Input should be a valid string", input: value}, ...int.issues]};
   }
   if (schema.enum) {
-    if (typeof value === "string" && schema.enum.includes(value)) return value;
-    issues.push([loc, `Input should be ${schema.enum.map(e => `'${e}'`).join(", ").replace(/, ([^,]*)$/, " or $1")}`]);
-    return undefined;
+    if (typeof value === "string" && schema.enum.includes(value)) return ok(value);
+    const quoted = schema.enum.map(e => `'${e}'`);
+    return fail(loc, "literal_error", `Input should be ${quoted.slice(0, -1).join(", ")} or ${quoted.at(-1)}`, value);
   }
   switch (schema.type) {
     case "string":
-      if (typeof value === "string") return value;
-      issues.push([loc, "Input should be a valid string"]);
-      return undefined;
-    case "integer":
-      if (typeof value === "boolean") return value ? 1 : 0;
-      if (typeof value === "number" && Number.isInteger(value)) return value;
-      issues.push([loc, typeof value === "number" ? "Input should be a valid integer, got a number with a fractional part" : "Input should be a valid integer"]);
-      return undefined;
-    case "null":
-      if (value === null) return null;
-      issues.push([loc, "Input should be None"]);
-      return undefined;
+      return typeof value === "string" ? ok(value) : fail(loc, "string_type", "Input should be a valid string", value);
     case "number": {
-      if (typeof value === "boolean") return new PyFloat(value ? 1 : 0);
-      if (typeof value === "number") return new PyFloat(value);
-      const parsed = typeof value === "string" ? parseFloatStr(value) : undefined;
-      if (parsed !== undefined) return new PyFloat(parsed);
-      issues.push([loc, typeof value === "string" ? "Input should be a valid number, unable to parse string as a number" : "Input should be a valid number"]);
-      return undefined;
-    }
-    case "array":
-      if (!Array.isArray(value)) {
-        issues.push([loc, "Input should be a valid list"]);
-        return undefined;
+      if (typeof value === "boolean") return ok(new PyFloat(value ? 1 : 0));
+      if (isNumber(value)) return ok(new PyFloat(numberOf(value)));
+      if (typeof value === "bigint" && Number.isFinite(Number(value))) return ok(new PyFloat(Number(value)));
+      if (typeof value === "string") {
+        const parsed = pydanticFloat(value);
+        return parsed === undefined ? fail(loc, "float_parsing", "Input should be a valid number, unable to parse string as a number", value) : ok(new PyFloat(parsed));
       }
-      return value.map((item, i) => coerce(item, schema.items!, `${loc}.${i}`, issues));
+      return fail(loc, "float_type", "Input should be a valid number", value);
+    }
+    case "array": {
+      if (!Array.isArray(value)) return fail(loc, "list_type", "Input should be a valid list", value);
+      const issues: Issue[] = [];
+      const items = value.map((item, i) => {
+        const result = validate(item, schema.items!, `${loc}.${i}`);
+        if (!result.ok) issues.push(...result.issues);
+        return result.ok ? result.value : undefined;
+      });
+      return issues.length ? {ok: false, issues} : ok(items);
+    }
   }
   throw new Error(`unsupported schema at ${loc}`);
 }
 
-/** Validate tool arguments against the contract inputSchema, as FastMCP does:
- * JSON-looking strings pre-parsed, lax coercion, defaults, extra keys forbidden. */
+/** pydantic's input_value: the repr, cut to 25 + 24 UTF-8 bytes when over 50. */
+function inputValue(value: unknown): string {
+  const text = repr(value);
+  const bytes = new TextEncoder().encode(text);
+  if (bytes.length <= 50) return text;
+  const isStart = (i: number) => i >= bytes.length || (bytes[i] & 0xc0) !== 0x80;
+  let head = 25;
+  while (!isStart(head)) head--;
+  let tail = bytes.length - 24;
+  while (!isStart(tail)) tail++;
+  const decode = (part: Uint8Array) => new TextDecoder().decode(part);
+  return `${decode(bytes.slice(0, head))}...${decode(bytes.slice(tail))}`;
+}
+
+/** Validate tool arguments as the SDK does: JSON-looking strings pre-parsed
+ * (pre_parse_json), pydantic validation in signature order, extra keys
+ * forbidden, and pydantic's error text when anything fails. */
 export function validateArgs(name: string, args: Args): Record<string, any> {
   const tool = TOOLS.find(t => t.name === name)!;
   const properties = tool.inputSchema.properties as Record<string, Schema>;
   const required: string[] = (tool.inputSchema as {required?: string[]}).required ?? [];
+  // pre_parse_json: a string argument that parses to a list, object or null
+  // replaces the value (strings, numbers and booleans do not).
+  const input: Args = {...args};
+  for (const key of Object.keys(input)) {
+    const value = input[key];
+    if (!Object.hasOwn(properties, key) || typeof value !== "string") continue;
+    try {
+      const parsed = parseJson(value);
+      if (parsed === null || (typeof parsed === "object" && !(parsed instanceof PyFloat))) input[key] = parsed;
+    } catch {
+      // Not JSON; validate the string itself.
+    }
+  }
   const issues: Issue[] = [];
   const out: Record<string, any> = {};
-  for (const [key, schema] of Object.entries(properties)) {
-    let value = Object.hasOwn(args, key) ? args[key] : undefined;
-    if (value === undefined) {
-      if (required.includes(key)) issues.push([key, "Field required"]);
+  for (const key of FIELD_ORDER[name]) {
+    const schema = properties[key];
+    if (!Object.hasOwn(input, key)) {
+      if (required.includes(key)) issues.push({loc: key, type: "missing", msg: "Field required", input});
       else out[key] = schema.type === "number" ? new PyFloat(schema.default as number) : schema.default;
       continue;
     }
-    // FastMCP's pre_parse_json: a string that parses to a list, object or
-    // null replaces the value (strings, numbers and booleans do not).
-    if (typeof value === "string") {
-      try {
-        const parsed = JSON.parse(value);
-        if (parsed === null || typeof parsed === "object") value = parsed;
-      } catch {
-        // Not JSON; validate the string itself.
-      }
-    }
-    out[key] = coerce(value, schema, key, issues);
+    const result = validate(input[key], schema, key);
+    if (result.ok) out[key] = result.value;
+    else issues.push(...result.issues);
   }
-  for (const key of Object.keys(args)) {
-    if (!Object.hasOwn(properties, key)) issues.push([key, "Extra inputs are not permitted"]);
+  for (const key of Object.keys(input)) {
+    if (!Object.hasOwn(properties, key)) issues.push({loc: key, type: "extra_forbidden", msg: "Extra inputs are not permitted", input: input[key]});
   }
   if (issues.length) {
     throw new ToolError(`${issues.length} validation error${issues.length > 1 ? "s" : ""} for ${name}Arguments\n`
-      + issues.map(([loc, message]) => `${loc}\n  ${message}`).join("\n"));
+      + issues.map(i => `${i.loc}\n  ${i.msg} [type=${i.type}, input_value=${inputValue(i.input)}, input_type=${pyType(i.input)}]\n    For further information visit ${PYDANTIC_DOCS}${i.type}`).join("\n"));
   }
   return out;
 }
@@ -180,15 +250,14 @@ export function validateArgs(name: string, args: Args): Record<string, any> {
 // ---------- validators and normalizers (server.py) ----------
 
 const ASCII_DIGITS = /^[0-9]+$/;
-const typeOf = (v: unknown) => typeof v === "string" ? "str" : typeName(v);
 
 function coerceDigits(value: unknown, field: string, length?: number): string {
   if (value === null || value === undefined) throw new ToolError(`${field} cannot be None.`);
   if (typeof value === "boolean") throw new ToolError(`${field} must be an integer or digit-string, not bool.`);
   let s: string;
-  if (typeof value === "number") s = intStr(value);
+  if (typeof value === "number" || typeof value === "bigint") s = intStr(value);
   else if (typeof value === "string") s = strip(value);
-  else throw new ToolError(`${field} must be an integer or string. Got ${typeOf(value)}.`);
+  else throw new ToolError(`${field} must be an integer or string. Got ${pyType(value)}.`);
   if (!s) throw new ToolError(`${field} cannot be empty.`);
   if (!ASCII_DIGITS.test(s)) {
     throw new ToolError(`${field}=${repr(value)} must contain only ASCII digits 0-9 (no dashes, letters, whitespace, or Unicode digit characters).`);
@@ -201,13 +270,13 @@ function validateSoc(value: unknown, field = "occ_code"): string {
   if (value === null || value === undefined) throw new ToolError(`${field} cannot be None.`);
   if (typeof value === "boolean") throw new ToolError(`${field} must be an integer or digit-string, not bool.`);
   let s: string;
-  if (typeof value === "number") s = intStr(value);
+  if (typeof value === "number" || typeof value === "bigint") s = intStr(value);
   else if (typeof value === "string") {
     if (/[\0\n\r\t]/.test(value)) {
       throw new ToolError(`${field}=${repr(value)} contains control characters. SOC codes are 6 digits with an optional single dash: '15-1252'.`);
     }
     s = strip(value).replaceAll("-", "");
-  } else throw new ToolError(`${field} must be an integer or string. Got ${typeOf(value)}.`);
+  } else throw new ToolError(`${field} must be an integer or string. Got ${pyType(value)}.`);
   if (!s) throw new ToolError(`${field} cannot be empty.`);
   if (!ASCII_DIGITS.test(s)) {
     throw new ToolError(`${field}=${repr(value)} must be a SOC code like '15-1252' or '151252' (6 ASCII digits, optional single dash after the first 2). No letters, whitespace, or Unicode digits.`);
@@ -228,7 +297,7 @@ function validateDatatype(value: unknown, field = "datatype"): string {
 
 function normalizeArea(input: unknown): string {
   if (input === null || input === undefined) throw new ToolError("area_code cannot be None.");
-  const area = typeof input === "number" || typeof input === "boolean" ? str(input) : strip(str(input));
+  const area = typeof input === "number" || typeof input === "bigint" ? str(input) : strip(str(input));
   if (!area) throw new ToolError("area_code cannot be empty.");
   if (!ASCII_DIGITS.test(area)) throw new ToolError(`area_code=${repr(input)} must contain only ASCII digits 0-9. Got characters other than digits.`);
   if (area.length === 7) return area;
@@ -282,9 +351,9 @@ async function validateYear(year: Year, db: Database, field = "year"): Promise<v
   if (value === null) return;
   if (typeof value === "boolean") throw new ToolError(`${field} must be a year, not bool.`);
   let s: string;
-  if (typeof value === "number") s = intStr(value);
+  if (typeof value === "number" || typeof value === "bigint") s = intStr(value);
   else if (typeof value === "string") s = strip(value);
-  else throw new ToolError(`${field} must be an integer or year-string. Got ${typeOf(value)}.`);
+  else throw new ToolError(`${field} must be an integer or year-string. Got ${pyType(value)}.`);
   if (!s) return;
   if (!/^[0-9]{4}$/.test(s)) {
     throw new ToolError(`${field}=${repr(value)} must be a 4-digit year (e.g. '2024' or 2024). Decimals, whitespace, and leading zeros beyond 4 digits are rejected.`);
@@ -374,7 +443,7 @@ function parseValue(raw: string, dt: string, notes: string[]): Map<string, Py> {
   if (SPECIAL_VALUES.has(stripped) || stripped === "") {
     return out(notes.length ? `[Not published] ${notes[0]}` : `[Suppressed: ${stripped || "(empty)"}]`, null, true);
   }
-  const n = parseFloatStr(stripped);
+  const n = pyFloat(stripped);
   if (n === undefined) return out(`[Unparseable: ${stripped}]`, null, false);
   if (COUNT.has(dt)) return out(group(intStr(Math.trunc(n))), Math.trunc(n), false);
   if (RSE.has(dt)) return out(`${group(fixed(n, 1))}%`, new PyFloat(n), false);

@@ -10,13 +10,36 @@ export class PyFloat {
   }
 }
 
-export type Py = null | boolean | number | string | PyFloat | Py[] | Map<string, Py> | {[key: string]: Py | undefined};
+export type Py = null | boolean | number | bigint | string | PyFloat | Py[] | Map<string, Py> | {[key: string]: Py | undefined};
 
 const num = (x: number | PyFloat) => (x instanceof PyFloat ? x.value : x);
 
 /** Python int str(): every digit, never an exponent. */
-export function intStr(n: number): string {
-  return Math.abs(n) < 1e21 ? String(n) : BigInt(n).toString();
+export function intStr(n: number | bigint): string {
+  return typeof n === "bigint" || Math.abs(n) >= 1e21 ? BigInt(n).toString() : String(n);
+}
+
+/** Request JSON parsed the way Python's json module sees it: a number written
+ * with a fraction or exponent stays a float (PyFloat, so 2.0 is not 2), and
+ * an integer too large for a double keeps every digit (bigint). */
+export function parseJson(text: string): unknown {
+  const reviver = (_key: string, value: unknown, context?: {source?: string}) => {
+    if (typeof value !== "number" || context?.source === undefined) return value;
+    if (/[.eE]/.test(context.source)) return new PyFloat(value);
+    return Number.isSafeInteger(value) ? value : BigInt(context.source);
+  };
+  return JSON.parse(text, reviver as (key: string, value: unknown) => unknown);
+}
+
+/** type(value).__name__ for a value parsed from JSON. */
+export function pyType(value: unknown): string {
+  if (value === null || value === undefined) return "NoneType";
+  if (typeof value === "boolean") return "bool";
+  if (typeof value === "bigint") return "int";
+  if (value instanceof PyFloat) return "float";
+  if (typeof value === "number") return Number.isInteger(value) ? "int" : "float";
+  if (typeof value === "string") return "str";
+  return Array.isArray(value) ? "list" : "dict";
 }
 
 function shortest(x: number): {sign: string; digits: string; exp: number} {
@@ -114,16 +137,18 @@ function strRepr(text: string): string {
   return out + quote;
 }
 
-/** repr() of an argument value: 'x', 51, 1.8, True, None, ['a', 'b']. */
+/** repr() of a value parsed from JSON: 'x', 51, 1.8, True, None, ['a'], {'k': 1}. */
 export function repr(value: unknown): string {
   if (value === null || value === undefined) return "None";
   if (value === true) return "True";
   if (value === false) return "False";
   if (value instanceof PyFloat) return floatRepr(value);
+  if (typeof value === "bigint") return intStr(value);
   if (typeof value === "number") return Number.isInteger(value) ? intStr(value) : floatRepr(value);
   if (typeof value === "string") return strRepr(value);
   if (Array.isArray(value)) return `[${value.map(repr).join(", ")}]`;
-  return String(value);
+  const entries = value instanceof Map ? [...value.entries()] : Object.entries(value as object);
+  return `{${entries.map(([k, v]) => `${strRepr(k)}: ${repr(v)}`).join(", ")}}`;
 }
 
 /** str() of an argument value (a string stays as is). */
@@ -133,6 +158,7 @@ function write(value: Py | undefined, indent: number | undefined, pad: string): 
   if (value === null || value === undefined) return "null";
   if (value instanceof PyFloat) return floatJson(value.value);
   if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "bigint") return intStr(value);
   if (typeof value === "number") return Number.isInteger(value) ? intStr(value) : floatJson(value);
   if (typeof value === "string") return JSON.stringify(value);
   const inner = indent === undefined ? "" : pad + " ".repeat(indent);

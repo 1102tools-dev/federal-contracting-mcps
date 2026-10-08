@@ -1,6 +1,6 @@
 import SERVER from "../../../servers/bls-oews-mcp/server.json" with {type: "json"};
 import {publicDocs} from "./public-docs.ts";
-import {dumps, type Py} from "./pyjson.ts";
+import {dumps, parseJson, type Py} from "./pyjson.ts";
 import {HANDLERS, TOOLS, ToolError, type Database} from "./tools.ts";
 
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
@@ -35,9 +35,11 @@ const json = (body: Py, status = 200) =>
   new Response(dumps(body), {status, headers: {"Content-Type": "application/json"}});
 const rpcError = (id: unknown, code: number, message: string, data?: Py) =>
   ({jsonrpc: "2.0", id: (id ?? null) as Py, error: {code, message, data}});
+// A JSON object (parseJson turns floats into PyFloat objects, which are not).
 const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-const textResult = (text: string, isError: boolean) => ({content: [{type: "text", text}], isError});
+  typeof value === "object" && value !== null && Object.getPrototypeOf(value) === Object.prototype;
+// The SDK writes result keys in alphabetical order: content (text, type), isError, structuredContent.
+const textResult = (text: string, isError: boolean) => ({content: [{text, type: "text"}], isError});
 
 async function readBounded(request: Request): Promise<string | null> {
   const reader = request.body?.getReader();
@@ -69,7 +71,7 @@ export async function callTool(name: string, args: Record<string, unknown>, env:
   if (!handler) return textResult(`Unknown tool: ${name}`, true);
   try {
     const data = await handler(env.DB, args);
-    return {content: [{type: "text", text: dumps(data, 2)}], structuredContent: data, isError: false};
+    return {content: [{text: dumps(data, 2), type: "text"}], isError: false, structuredContent: data};
   } catch (error) {
     if (error instanceof ToolError) return textResult(`Error executing tool ${name}: ${error.message}`, true);
     console.log(JSON.stringify({event: "tool_failed", tool: name, reason: error instanceof Error ? error.message.slice(0, 200) : "unknown"}));
@@ -141,7 +143,7 @@ export default {
     if (body === null) return new Response("Request body too large.", {status: 413});
     let message: unknown;
     try {
-      message = JSON.parse(body);
+      message = parseJson(body);
     } catch {
       return json(rpcError(null, -32700, "Parse error."), 400);
     }
