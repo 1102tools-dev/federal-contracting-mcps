@@ -1,6 +1,6 @@
 import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
-import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, readBounded, tooLarge } from "../../shared/edge";
+import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, originFirst, readBounded, tooLarge } from "../../shared/edge";
 
 export class RegulationsGov extends Container<Env> {
   defaultPort = 8080;
@@ -47,7 +47,9 @@ export default {
       });
       // A single named instance preserves process/file pacing across all users.
       const backend = getContainer(env.BACKEND, "public-regulations-gov");
-      return await fetchWithRetry(() => backend.fetch(forwarded()));
+      // The Dell first (deploy/dell), then this container.
+      return await originFirst(env, url.pathname, {method: request.method, headers, body},
+        () => fetchWithRetry(() => backend.fetch(forwarded())), {"X-Regulations-Key": env.REGULATIONS_GOV_API_KEY ?? ""});
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
       return Response.json({error: "Regulations.gov service temporarily unavailable."}, {status: 503, headers: {"Retry-After": "15"}});

@@ -35,7 +35,7 @@ Branch: `claude/dell-origin`. Commit after every step.
 - [x] 3. LAN isolation (`firewall.sh`, `mcp-origin-firewall.service`)
 - [x] 4. cloudflared, tunnel `mcp-origin` (b0c30636), origin DNS
 - [x] 5. Regulations.gov key via header (Dell side: `regulations_key.py`; Worker side in step 6)
-- [ ] 6. Worker origin-first code + tests
+- [x] 6. Worker origin-first code + tests (`originFirst` in `deploy/shared/edge.ts`)
 - [ ] 7. Pull-based updater (systemd timer)
 - [ ] 8. Monitoring (`check_hosted_health.py`, `hosted-health.yml`)
 - [ ] 9. Privacy pages
@@ -61,3 +61,16 @@ Branch: `claude/dell-origin`. Commit after every step.
   created with the one token. Checked from outside: `/health` 200 in ~0.1 s,
   `/mcp` without secret 403. Old "workspace" tunnel and its five DNS records
   left as they were.
+- Step 6: `originFirst` probes `<ORIGIN_URL>/health` (5 s, cached 30 s per
+  isolate, shared by concurrent requests), sends `/mcp` and `/health` to the
+  Dell with `X-Origin-Auth` and without client IP/location/UA headers, and
+  falls back to the container (with `fetchWithRetry`) on a thrown fetch, a
+  58 s timeout, or a non-JSON 403/404/502–504/52x. JSON errors from the
+  server itself are returned as is. Responses carry
+  `X-1102tools-Backend: origin|container`; each call logs
+  `{"event":"backend",...}`. `ORIGIN_URL` is a production var in each
+  wrangler.jsonc; `ORIGIN_SECRET` is a Worker secret (set at deploy time).
+  Regulations.gov also sends `X-Regulations-Key` from its existing secret.
+  14/14 edge tests pass; five Workers type-check; release dry-run shows the
+  binding. Preview URLs don't work for Durable Object Workers, so the live
+  Worker-to-Dell test happens right after the step 11 deploy.
