@@ -29,7 +29,7 @@ export interface Env {
   RELEASE_SHA?: string;
 }
 
-type Message = {jsonrpc?: unknown; id?: unknown; method?: unknown; params?: any};
+type Message = {jsonrpc?: unknown; id?: unknown; method?: unknown; params?: any; result?: unknown; error?: unknown};
 
 const json = (body: Py, status = 200) =>
   new Response(dumps(body), {status, headers: {"Content-Type": "application/json"}});
@@ -79,16 +79,32 @@ export async function callTool(name: string, args: Record<string, unknown>, env:
   }
 }
 
-export async function handleMessage(message: Message, env: Env): Promise<Py | null> {
+// A JSON-RPC id the SDK accepts: a string or an integer (not a bool or 1.0).
+const validId = (id: unknown) => typeof id === "string" || typeof id === "bigint" || (typeof id === "number" && Number.isInteger(id));
+
+/** How the SDK classifies one message: a request it answers, a notification
+ * or client response it accepts silently, or an invalid message (HTTP 400). */
+export function classify(message: Message): "request" | "accepted" | "invalid" {
+  if (message.jsonrpc !== "2.0") return "invalid";
+  if (typeof message.method === "string") {
+    if (message.params !== undefined && message.params !== null && !isObject(message.params)) return "invalid";
+    // A message whose id is missing or unusable is read as a notification.
+    return validId(message.id) ? "request" : "accepted";
+  }
+  if (validId(message.id) && (isObject(message.result) || isObject(message.error))) return "accepted";
+  return "invalid";
+}
+
+/** The response to one request (classify() returned "request"). */
+export async function handleMessage(message: Message, env: Env): Promise<Py> {
   const {id, method, params} = message;
-  if (message.jsonrpc !== "2.0" || typeof method !== "string") return rpcError(id, -32600, "Invalid JSON-RPC request.");
-  // Notifications (no id) get no response body.
-  if (id === undefined) return null;
   const result = (value: Py) => ({jsonrpc: "2.0", id: id as Py, result: value});
   const invalid = () => rpcError(id, -32602, "Invalid request parameters", "");
   switch (method) {
     case "initialize": {
-      if (!isObject(params) || typeof params.protocolVersion !== "string" || !isObject(params.capabilities) || !isObject(params.clientInfo)) return invalid();
+      const client = params?.clientInfo;
+      if (!isObject(params) || typeof params.protocolVersion !== "string" || !isObject(params.capabilities)
+        || !isObject(client) || typeof client.name !== "string" || typeof client.version !== "string") return invalid();
       const requested = params.protocolVersion;
       return result({
         capabilities: CAPABILITIES,
@@ -110,14 +126,15 @@ export async function handleMessage(message: Message, env: Env): Promise<Py | nu
     case "resources/read":
       return isObject(params) && typeof params.uri === "string" ? rpcError(id, -32602, `Unknown resource: ${params.uri}`, {uri: params.uri}) : invalid();
     case "prompts/get":
-      return isObject(params) && typeof params.name === "string" ? rpcError(id, -32602, `Unknown prompt: ${params.name}`) : invalid();
+      // The SDK lets this ValueError through as error code 0.
+      return isObject(params) && typeof params.name === "string" ? rpcError(id, 0, `Unknown prompt: ${params.name}`) : invalid();
     case "tools/call": {
       const args = params?.arguments ?? {};
       if (!isObject(params) || typeof params.name !== "string" || !isObject(args)) return invalid();
       return result(await callTool(params.name, args, env));
     }
     default:
-      return rpcError(id, -32601, "Method not found", method);
+      return rpcError(id, -32601, "Method not found", method as string);
   }
 }
 
@@ -145,10 +162,13 @@ export default {
     try {
       message = parseJson(body);
     } catch {
-      return json(rpcError(null, -32700, "Parse error."), 400);
+      return json(rpcError(null, -32700, "Parse error: the body is not valid JSON."), 400);
     }
-    if (!isObject(message)) return json(rpcError(null, -32600, "Send one JSON-RPC message per request."), 400);
-    const response = await handleMessage(message as Message, env);
-    return response ? json(response) : new Response(null, {status: 202});
+    // Invalid messages get the SDK's status and code, without its pydantic dump.
+    if (!isObject(message)) return json(rpcError(null, -32602, "Validation error: send one JSON-RPC message (an object) per request."), 400);
+    const kind = classify(message);
+    if (kind === "invalid") return json(rpcError(null, -32602, "Validation error: not a valid JSON-RPC request, notification, or response."), 400);
+    if (kind === "accepted") return new Response(null, {status: 202});
+    return json(await handleMessage(message, env));
   },
 } satisfies ExportedHandler<Env>;

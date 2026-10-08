@@ -28,21 +28,51 @@ CASES = WORKER_DIR / "test/parity-cases.json"
 HEADERS = {"host": "localhost:8080", "accept": "application/json, text/event-stream",
            "content-type": "application/json"}
 
-# Cases whose answers differ on purpose, with the reason, and a check that
-# the difference is only that. Keep this short.
+# Cases whose answers differ on purpose: the reason, and a check (given both
+# {status, body} answers) that the difference is only that. Keep this short.
+TOOLS_LIST = (
+    "The Worker returns tools-contract.json verbatim (tools sorted by name, keys sorted, "
+    "as scripts/check_hosted_contract.py writes it); Python lists them in registration order. "
+    "Same tools, same definitions.",
+    lambda py, ts: py["status"] == ts["status"] and tools_by_name(py) == tools_by_name(ts),
+)
+INVALID_MESSAGE = (
+    "Invalid JSON-RPC messages get the SDK's HTTP 400 and error code, but a short message "
+    "instead of its parser or pydantic error dump.",
+    lambda py, ts: py["status"] == ts["status"] == 400 and error_code(py) == error_code(ts),
+)
 DOCUMENTED = {
-    "tools/list": (
-        "The Worker returns tools-contract.json verbatim (tools sorted by name, keys sorted, "
-        "as scripts/check_hosted_contract.py writes it); Python lists them in registration order. "
-        "Same tools, same definitions.",
-        lambda py, ts: by_name(py) == by_name(ts),
+    "tools/list": TOOLS_LIST,
+    "tools/list with cursor": TOOLS_LIST,
+    "invalid: malformed JSON": INVALID_MESSAGE,
+    "invalid: batch": INVALID_MESSAGE,
+    "invalid: jsonrpc 1.0": INVALID_MESSAGE,
+    "invalid: params is a list": INVALID_MESSAGE,
+    "invalid: NaN literal": (
+        "NaN and Infinity are not JSON (RFC 8259). The SDK's parser accepts them; the Worker "
+        "answers with a parse error (HTTP 400, -32700).",
+        lambda py, ts: ts["status"] == 400 and error_code(ts) == -32700,
+    ),
+    "numeric-looking extra argument names": (
+        "JavaScript objects list integer-like keys first, so pydantic's extra-argument errors "
+        "for keys such as \"10\" come in a different order. Same errors otherwise.",
+        lambda py, ts: py["status"] == ts["status"] and error_blocks(py) == error_blocks(ts),
     ),
 }
 
 
-def by_name(body):
-    tools = json.loads(body)["result"]["tools"]
-    return sorted(tools, key=lambda tool: tool["name"])
+def error_code(answer):
+    return json.loads(answer["body"])["error"]["code"]
+
+
+def error_blocks(answer):
+    """A tool's validation error text as its header plus the set of per-field errors."""
+    head, *lines = json.loads(answer["body"])["result"]["content"][0]["text"].split("\n")
+    return head, sorted("\n".join(lines[i:i + 3]) for i in range(0, len(lines), 3))
+
+
+def tools_by_name(answer):
+    return sorted(json.loads(answer["body"])["result"]["tools"], key=lambda tool: tool["name"])
 
 
 def request_body(case):
@@ -87,7 +117,7 @@ def run_worker(requests, database, scratch):
     path.write_text(json.dumps(requests, ensure_ascii=False))
     proc = subprocess.run(["node", "scripts/parity-run.ts", str(database), str(path)],
                           cwd=WORKER_DIR, capture_output=True, text=True, check=True)
-    lines = [json.loads(line) for line in proc.stdout.splitlines() if line.startswith("{")]
+    lines = [json.loads(line) for line in proc.stdout.split("\n") if line.startswith("{")]
     return {line["name"]: line for line in lines}
 
 
@@ -131,7 +161,7 @@ def main(argv=None):
             print(f"{name}: {ts['statements']} statements, {ts['round_trips']} round trips")
         if (py["status"], py["body"]) == (ts["status"], ts["body"]):
             continue
-        if name in DOCUMENTED and py["status"] == ts["status"] and DOCUMENTED[name][1](py["body"], ts["body"]):
+        if name in DOCUMENTED and DOCUMENTED[name][1](py, ts):
             documented += 1
             print(f"DOCUMENTED {name}: {DOCUMENTED[name][0]}")
             continue
