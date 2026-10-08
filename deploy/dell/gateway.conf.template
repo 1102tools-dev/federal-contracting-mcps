@@ -1,0 +1,79 @@
+# Routes <slug>-origin.1102tools.com to its server. Only the Workers know
+# ORIGIN_SECRET; /health is open because it shows what public /health shows.
+# No access log: the Workers already strip client IPs, and nothing here
+# needs per-request records.
+access_log off;
+map_hash_bucket_size 128;
+client_max_body_size 64k;
+proxy_http_version 1.1;
+proxy_read_timeout 60s;
+proxy_buffering off;
+# Every server's release image allows only this Host.
+proxy_set_header Host container.internal;
+proxy_set_header Connection "";
+proxy_set_header X-Origin-Auth "";
+proxy_set_header X-Forwarded-For "";
+proxy_set_header X-Real-IP "";
+proxy_set_header CF-Connecting-IP "";
+proxy_set_header CF-Connecting-IPv6 "";
+proxy_set_header True-Client-IP "";
+proxy_set_header CF-IPCountry "";
+proxy_set_header CF-Ray "";
+proxy_set_header CF-Visitor "";
+proxy_set_header CF-Worker "";
+proxy_set_header X-Regulations-Key "";
+resolver 127.0.0.11 valid=10s;
+
+map $http_x_origin_auth $origin_denied {
+    "${ORIGIN_SECRET}" 0;
+    default 1;
+}
+
+map $host $mcp_upstream {
+    usaspending-origin.1102tools.com usaspending;
+    ecfr-origin.1102tools.com ecfr;
+    federal-register-origin.1102tools.com federal-register;
+    gsa-calc-origin.1102tools.com gsa-calc;
+    regulations-gov-origin.1102tools.com regulations-gov;
+    default "";
+}
+
+server {
+    listen 8080 default_server;
+    server_tokens off;
+
+    if ($mcp_upstream = "") { return 404; }
+
+    location = /health {
+        limit_except GET { deny all; }
+        proxy_pass http://$mcp_upstream:8080;
+    }
+
+    location = /mcp {
+        # Guards against an empty ORIGIN_SECRET matching a missing header.
+        if ($http_x_origin_auth = "") { return 403; }
+        if ($origin_denied) { return 403; }
+        proxy_pass http://$mcp_upstream:8080;
+        proxy_set_header Host container.internal;
+        proxy_set_header Connection "";
+        proxy_set_header X-Origin-Auth "";
+        proxy_set_header X-Forwarded-For "";
+        proxy_set_header X-Real-IP "";
+        proxy_set_header CF-Connecting-IP "";
+        proxy_set_header CF-Connecting-IPv6 "";
+        proxy_set_header True-Client-IP "";
+        proxy_set_header CF-IPCountry "";
+        proxy_set_header CF-Ray "";
+        proxy_set_header CF-Visitor "";
+        proxy_set_header CF-Worker "";
+        proxy_set_header X-Regulations-Key $regulations_key;
+    }
+
+    location / { return 404; }
+}
+
+# The key goes only to the Regulations.gov server.
+map $host $regulations_key {
+    regulations-gov-origin.1102tools.com $http_x_regulations_key;
+    default "";
+}

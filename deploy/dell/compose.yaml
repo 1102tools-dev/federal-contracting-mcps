@@ -1,0 +1,59 @@
+# Five live-API MCP servers on govnode, behind the Workers (see
+# deploy/DELL_MOVE_PROGRESS.md). Images are built by update.sh from each
+# server's release tag; nothing here builds or pulls code.
+name: mcp-origin
+
+x-server: &server
+  restart: unless-stopped
+  networks: [mcp]
+  # The LAN is blocked by firewall.sh; public resolvers so DNS never needs it.
+  dns: [1.1.1.1, 9.9.9.9]
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  mem_limit: 384m
+  cpus: 0.75
+  # Frigate keeps priority under contention (default weight is 1024).
+  cpu_shares: 256
+  pids_limit: 128
+  logging: &logging
+    driver: json-file
+    options: {max-size: 5m, max-file: "2"}
+
+services:
+  usaspending:
+    <<: *server
+    image: mcp-origin/usaspending:live
+  ecfr:
+    <<: *server
+    image: mcp-origin/ecfr:live
+  federal-register:
+    <<: *server
+    image: mcp-origin/federal-register:live
+  gsa-calc:
+    <<: *server
+    image: mcp-origin/gsa-calc:live
+  regulations-gov:
+    <<: *server
+    image: mcp-origin/regulations-gov:live
+    # The key arrives from the Worker per request; see regulations_key.py.
+    volumes: ["./regulations_key.py:/dell/regulations_key.py:ro"]
+    command: ["/app/.venv/bin/python", "/dell/regulations_key.py"]
+
+  gateway:
+    image: nginx:1.29.1-alpine
+    restart: unless-stopped
+    networks: [mcp]
+    ports: ["127.0.0.1:8790:8080"]
+    env_file: /etc/mcp-origin/origin.env
+    volumes: ["./gateway.conf.template:/etc/nginx/templates/default.conf.template:ro"]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 64m
+    cpus: 0.5
+    cpu_shares: 256
+    logging: *logging
+    depends_on: [usaspending, ecfr, federal-register, gsa-calc, regulations-gov]
+
+networks:
+  mcp:
+    ipam:
+      config: [{subnet: 172.31.250.0/24}]
