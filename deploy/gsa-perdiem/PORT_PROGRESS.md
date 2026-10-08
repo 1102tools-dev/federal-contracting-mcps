@@ -26,10 +26,14 @@ changes from this branch.
       `REPLACE_WITH_D1_DATABASE_ID` (top level + production); containers,
       durable_objects, migrations kept; still plain JSON.
 - [x] `test/worker.test.ts`: 17 node:test tests on node:sqlite (`test/d1.ts`).
+- [x] `npm run check` clean; `wrangler deploy --dry-run --env production
+      --containers-rollout=none` bundles (143 KiB); without that flag the dry
+      run needs Docker for the retained container image.
 - [x] Parity: `node parity/run.ts` (corpus built per run by
       `parity/build_corpus.py`, Python side `parity/python_side.py` runs the
-      package's real HTTP app in hosted mode). 1,344 calls, 56 mocked GSA API
-      calls: 1,338 identical, 6 expected, 0 unexplained.
+      package's real HTTP app in hosted mode). 1,345 calls, 56 mocked GSA API
+      calls: 1,338 identical, 7 expected (error message text only), 0
+      unexplained.
 - [x] Workflows: `gsa-perdiem-hosted-tests.yml`, `gsa-perdiem-load.yml`,
       load dispatch in `data-refresh.yml`.
 - [x] Privacy text updated for the Cloudflare cache and D1 budget records.
@@ -42,9 +46,11 @@ isError, structuredContent), pydantic argument errors, upstream request
 paths/headers, initialize, tools/list (contract content, Python order),
 ping, prompts/resources lists, unknown method/tool, invalid params.
 
-- JSON-RPC parse errors and malformed envelopes (batch, non-object, wrong
-  `jsonrpc`, bad `method`): same HTTP 400, code, and id; the message is a
-  short text instead of the SDK's JSON-parser text / pydantic union dump.
+- JSON-RPC parse errors (incl. lone surrogate escapes and invalid UTF-8,
+  which the SDK's parser also rejects) and malformed envelopes (batch,
+  non-object, wrong `jsonrpc`, bad `method`): same HTTP 400, code, and id;
+  the message is a short text instead of the SDK's JSON-parser text /
+  pydantic union dump.
 - 2026-07-28 era (`server/discover`, `subscriptions/listen`): -32601, as the
   SAM.gov Worker; clients fall back to `initialize`.
 - Hourly budget: shared in D1 minute buckets (window 59-60 min) instead of a
