@@ -1,0 +1,63 @@
+name: BLS OEWS hosted tests
+
+# The hosted BLS OEWS Worker answers from D1 instead of the Python container.
+# This checks the loader offline, the Worker's types and tests, and parity
+# with the Python server (every case in deploy/bls-oews/test/parity-cases.json
+# sent to both, compared byte for byte), so a change to either side that
+# makes them disagree fails here.
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/bls-oews/**'
+      - 'deploy/shared/**'
+      - 'scripts/load_bls_oews.py'
+      - 'tests/test_bls_loader.py'
+      - 'servers/bls-oews-mcp/src/**'
+      - 'servers/bls-oews-mcp/pyproject.toml'
+      - 'servers/bls-oews-mcp/uv.lock'
+      - 'servers/bls-oews-mcp/server.json'
+      - '.github/workflows/bls-oews-hosted-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/bls-oews/**'
+      - 'deploy/shared/**'
+      - 'scripts/load_bls_oews.py'
+      - 'tests/test_bls_loader.py'
+      - 'servers/bls-oews-mcp/src/**'
+      - 'servers/bls-oews-mcp/pyproject.toml'
+      - 'servers/bls-oews-mcp/uv.lock'
+      - 'servers/bls-oews-mcp/server.json'
+      - '.github/workflows/bls-oews-hosted-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Loader
+        run: uv run --python 3.12 --with pytest pytest -q tests/test_bls_loader.py
+      - name: Worker typecheck, tools, and contract
+        working-directory: deploy/bls-oews
+        run: |
+          npm ci --ignore-scripts
+          npm run check
+          npm test
+          node --test ../shared/edge.test.ts
+      - name: Parity with the Python server
+        # Python 3.12 like the container: 3.13+ strips docstring indentation,
+        # which changes tool descriptions.
+        run: uv run --frozen --python 3.12 --project servers/bls-oews-mcp python deploy/bls-oews/scripts/parity.py
+      - name: Deploy dry run
+        working-directory: deploy/bls-oews
+        # The retained container is not rebuilt here; the Worker bundle is what changed.
+        run: npx wrangler deploy --dry-run --env production --containers-rollout=none --outdir "$RUNNER_TEMP/bls-oews-dist"
