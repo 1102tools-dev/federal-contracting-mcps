@@ -103,7 +103,7 @@ test("initialize matches the live Python server", async () => {
 test("HTTP edge: health, docs, methods, origin, limits, parse errors, notifications", async () => {
   const {env} = setup();
   const health = await serve(new Request("https://gsa-perdiem.1102tools.com/health"), env);
-  assert.deepEqual(await health.json(), {status: "ok", tools: 7, release_sha: "abc123"});
+  assert.deepEqual(await health.json(), {status: "ok", tools: 7, release_sha: "abc123", admission: {processing: 16, waiting: 32, total: 48, deadline_seconds: 55}});
   assert.equal((await serve(new Request("https://gsa-perdiem.1102tools.com/health", {method: "POST"}), env)).status, 405);
   const unreleased = await serve(new Request("https://gsa-perdiem.1102tools.com/health"), {...env, RELEASE_SHA: undefined});
   assert.equal(((await unreleased.json()) as any).release_sha, "development");

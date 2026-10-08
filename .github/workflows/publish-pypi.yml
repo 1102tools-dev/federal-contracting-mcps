@@ -259,6 +259,8 @@ jobs:
         run: |
           npm ci --prefix "deploy/$SLUG" --ignore-scripts
           npm run check --prefix "deploy/$SLUG"
+          # Worker + D1 services answer from the Worker itself; test it, not just the image.
+          npm run test --if-present --prefix "deploy/$SLUG"
           node --test deploy/shared/edge.test.ts
           docker build --platform linux/amd64 --build-arg RELEASE_SHA="$GITHUB_SHA" -f "deploy/$SLUG/Dockerfile" -t "$SLUG-mcp:$GITHUB_SHA" .
           # Operator-keyed images refuse to start without their key; a placeholder

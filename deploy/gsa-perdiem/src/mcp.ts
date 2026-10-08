@@ -14,6 +14,9 @@ export const SERVER_VERSION = PACKAGE_VERSION;
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 // The container's admission deadline; work still running then gets its 504.
 export const REQUEST_DEADLINE_MS = 55_000;
+// scripts/verify_hosted_release.py checks /health for the container's
+// admission limits; a Worker has no queue, so the values are fixed.
+const ADMISSION = {processing: 16, waiting: 32, total: 48, deadline_seconds: 55};
 
 export interface WorkerEnv {
   DB: Database;
@@ -137,7 +140,7 @@ export async function serve(request: Request, env: WorkerEnv, runtime: Runtime =
   if (url.pathname === "/health") {
     if (request.method !== "GET") return new Response(null, {status: 405});
     // As the container reported it: "development" when no release is recorded.
-    return json({status: "ok", tools: TOOLS.length, release_sha: env.RELEASE_SHA || "development"});
+    return json({status: "ok", tools: TOOLS.length, release_sha: env.RELEASE_SHA || "development", admission: ADMISSION});
   }
   if (request.method !== "POST") return new Response("Use POST for stateless MCP requests.", {status: 405, headers: {Allow: "POST"}});
   if (Number(request.headers.get("Content-Length") ?? "0") > MAX_BODY_BYTES) return tooLarge();

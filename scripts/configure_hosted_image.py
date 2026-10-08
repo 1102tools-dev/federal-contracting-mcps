@@ -10,6 +10,8 @@ def main():
     for entry in [config,*config.get('env',{}).values()]:
         for container in entry.get('containers',[]):
             container['image']=image;container.pop('image_build_context',None)
+        # Worker + D1 services answer /health themselves; env blocks don't inherit vars.
+        if config.get('d1_databases'):entry.setdefault('vars',{})['RELEASE_SHA']=args.sha
     output=config_path.with_name('wrangler.release.json');output.write_text(json.dumps(config,indent=2)+'\n')
     print(image)
 if __name__=='__main__':main()
