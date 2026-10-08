@@ -198,17 +198,21 @@ export class Upstream {
     const minute = Math.floor(now / 60);
     const [reserved] = await this.db.batch<{calls: number}>([
       this.db.prepare(
-        "INSERT INTO upstream_calls (minute, calls) SELECT ?1, 1 WHERE " +
+        "INSERT INTO upstream_calls (minute, calls, first_at) SELECT ?1, 1, ?3 WHERE " +
         "(SELECT COALESCE(SUM(calls), 0) FROM upstream_calls WHERE minute > ?1 - 60) < ?2 " +
         "ON CONFLICT(minute) DO UPDATE SET calls = calls + 1 RETURNING calls",
-      ).bind(minute, this.hourlyCap),
+      ).bind(minute, this.hourlyCap, now),
       this.db.prepare("DELETE FROM upstream_calls WHERE minute <= ?1 - 60").bind(minute),
     ]);
     if (reserved.results.length) return;
-    const {results} = await this.db.prepare("SELECT MIN(minute) AS oldest FROM upstream_calls WHERE minute > ?1 - 60")
-      .bind(minute).all<{oldest: number | null}>();
-    const oldest = results[0]?.oldest ?? minute;
-    const retry = Math.trunc((oldest + 60) * 60 - now) + 1;
+    // Seconds until the oldest call in the window ages out. Python's
+    // int(x) + 1 on its nanosecond clock is ceil(x) in practice; this clock
+    // has millisecond steps, where int(x) + 1 would overshoot by a second.
+    const {results} = await this.db.prepare(
+      "SELECT first_at FROM upstream_calls WHERE minute > ?1 - 60 ORDER BY minute LIMIT 1",
+    ).bind(minute).all<{first_at: number}>();
+    const oldest = results[0]?.first_at ?? now;
+    const retry = Math.max(1, Math.ceil(oldest + 3600 - now));
     throw new ToolError(`The hourly GSA Per Diem request budget (${this.hourlyCap} upstream calls) is used up. Retry in about ${retry} seconds.`);
   }
 
@@ -277,7 +281,7 @@ export class Upstream {
     payload = redactPayload(payload, key);
     // A null payload is never served from the container's cache either.
     if (cacheKey && payload !== null) {
-      await this.cache!.put(cacheKey, new Response(dumps(payload, null), {
+      await this.cache!.put(cacheKey, new Response(dumps(payload, null, true), {
         headers: {"Content-Type": "application/json", "Cache-Control": `max-age=${this.cacheSeconds}`},
       }));
     }

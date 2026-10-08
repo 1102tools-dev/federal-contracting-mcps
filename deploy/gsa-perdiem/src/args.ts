@@ -87,7 +87,7 @@ function render(title: string, errors: LineError[]): string {
 }
 
 // Rust's char::is_whitespace, which pydantic_core strips before parsing ints.
-const RUST_EDGES = /^[\t\n\v\f\r \x85\xa0  -     　]+|[\t\n\v\f\r \x85\xa0  -     　]+$/g;
+const RUST_EDGES = /^[\t\n\v\f\r \x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[\t\n\v\f\r \x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/g;
 const INT_TEXT = /^([+-]?)(\d(?:_?\d)*)(?:\.0+)?$/;
 const I64 = 2 ** 63;
 

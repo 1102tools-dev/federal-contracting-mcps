@@ -16,8 +16,20 @@ import {BASE_URL, DeadlineExceeded, ToolError, Upstream} from "./upstream.ts";
 export {DataUnavailable, DeadlineExceeded, ToolError};
 export type {Database};
 
-/** tools/list, exactly as the Python server publishes it. */
-export const TOOLS: unknown[] = CONTRACT;
+// The reviewed contract (sorted by name) in the order the Python server
+// registers and lists its tools.
+const TOOL_ORDER = [
+  "get_data_status", "lookup_city_perdiem", "lookup_zip_perdiem", "lookup_state_rates",
+  "get_mie_breakdown", "estimate_travel_cost", "compare_locations",
+];
+
+/** tools/list: exactly the tool definitions in tools-contract.json. */
+export const TOOLS: {name: string}[] = TOOL_ORDER.map(name => {
+  const tool = (CONTRACT as {name: string}[]).find(t => t.name === name);
+  if (!tool) throw new Error(`tools-contract.json lacks ${name}`);
+  return tool;
+});
+if (TOOLS.length !== CONTRACT.length) throw new Error("tools-contract.json lists a tool this Worker does not serve");
 
 /** A ValueError raised by a tool: shown to the caller as the tool error. */
 export class ValueError extends Error {}
@@ -349,14 +361,14 @@ function parseRateEntry(raw: unknown): Rate {
   return out;
 }
 
-const PY_PUNCT = /['’‘.,\-/]/g;
+const PY_PUNCT = /['\u2019\u2018.,\-/]/g;
 
 function normalizeForMatch(s: string): string {
   return squash(s.toLowerCase().replace(PY_PUNCT, " "));
 }
 
 function normalizeCityForUrl(city: string): string {
-  const s = squash(city.replaceAll("'", " ").replaceAll("’", " ").replaceAll("-", " "));
+  const s = squash(city.replaceAll("'", " ").replaceAll("\u2019", " ").replaceAll("-", " "));
   try {
     return quote(s);
   } catch {

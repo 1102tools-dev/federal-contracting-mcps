@@ -35,7 +35,8 @@ type Message = {jsonrpc?: unknown; id?: unknown; method?: unknown; params?: any}
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {status, headers: {"Content-Type": "application/json"}});
-const rpcError = (id: unknown, code: number, message: string) => ({jsonrpc: "2.0", id: id ?? null, error: {code, message}});
+const rpcError = (id: unknown, code: number, message: string, data?: unknown) =>
+  ({jsonrpc: "2.0", id: id ?? null, error: data === undefined ? {code, message} : {code, message, data}});
 
 function context(env: WorkerEnv, runtime: Runtime): Context {
   const cache = runtime.cache !== undefined ? runtime.cache : (globalThis as any).caches?.default ?? null;
@@ -97,7 +98,7 @@ export async function handleMessage(message: Message, env: WorkerEnv, runtime: R
       return {jsonrpc: "2.0", id, result};
     }
     default:
-      return rpcError(id, -32601, "Method not found");
+      return rpcError(id, -32601, "Method not found", method);
   }
 }
 

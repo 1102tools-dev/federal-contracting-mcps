@@ -58,7 +58,8 @@ CREATE TABLE IF NOT EXISTS places (
 -- for the shared api.data.gov key behind live GSA API calls.
 CREATE TABLE IF NOT EXISTS upstream_calls (
   minute INTEGER PRIMARY KEY,  -- Unix time / 60
-  calls INTEGER NOT NULL
+  calls INTEGER NOT NULL,
+  first_at REAL NOT NULL       -- Unix seconds of the minute's first call
 );
 
 CREATE TABLE IF NOT EXISTS upstream_state (

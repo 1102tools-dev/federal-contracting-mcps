@@ -25,9 +25,10 @@ export const mul = (a: unknown, b: unknown) => wrap(num(a) * num(b), a, b);
 const wrap = (value: number, a: unknown, b: unknown) => (isFloat(a) || isFloat(b) ? float(value) : value);
 
 /** Python's float formatting: pydantic_core JSON (json = true) or repr()/str(). */
-function floatText(value: number, json: boolean): string {
+function floatText(value: number, json: boolean, exact = false): string {
   if (Number.isNaN(value)) return json ? "null" : "nan";
-  if (!Number.isFinite(value)) return json ? "null" : value > 0 ? "inf" : "-inf";
+  // exact: JSON that loads() reads back as the same infinite float.
+  if (!Number.isFinite(value)) return json ? (exact ? (value > 0 ? "1e400" : "-1e400") : "null") : value > 0 ? "inf" : "-inf";
   if (value === 0) return Object.is(value, -0) ? "-0.0" : "0.0";
   const [mantissa, exponentText] = value.toExponential().split("e");
   const exponent = Number(exponentText);
@@ -48,12 +49,13 @@ export function numStr(value: unknown): string {
  * pydantic_core.to_json(value, indent=2), which the SDK uses for the text
  * content; with indent null, the same value as compact JSON. Maps are dicts
  * whose key order must survive (JavaScript objects move integer-like keys).
+ * exact keeps infinite floats (as 1e400) for a round trip through loads().
  */
-export function dumps(value: unknown, indent: string | null = ""): string {
+export function dumps(value: unknown, indent: string | null = "", exact = false): string {
   if (value === null || value === undefined) return "null";
-  if (value instanceof PyFloat) return floatText(value.value, true);
+  if (value instanceof PyFloat) return floatText(value.value, true, exact);
   if (typeof value === "bigint") return String(value);
-  if (typeof value === "number") return Number.isInteger(value) ? String(value) : floatText(value, true);
+  if (typeof value === "number") return Number.isInteger(value) ? String(value) : floatText(value, true, exact);
   if (typeof value === "string" || typeof value === "boolean") return JSON.stringify(value);
   const inner = indent === null ? null : indent + "  ";
   const open = inner === null ? "" : "\n" + inner;
@@ -61,13 +63,13 @@ export function dumps(value: unknown, indent: string | null = ""): string {
   const close = inner === null ? "" : "\n" + indent;
   if (Array.isArray(value)) {
     if (!value.length) return "[]";
-    return "[" + open + value.map(v => dumps(v, inner)).join(sep) + close + "]";
+    return "[" + open + value.map(v => dumps(v, inner, exact)).join(sep) + close + "]";
   }
   const entries = (value instanceof Map ? [...value.entries()] : Object.entries(value as object))
     .filter(([, v]) => v !== undefined);
   if (!entries.length) return "{}";
   const colon = inner === null ? ":" : ": ";
-  return "{" + open + entries.map(([k, v]) => JSON.stringify(String(k)) + colon + dumps(v, inner)).join(sep) + close + "}";
+  return "{" + open + entries.map(([k, v]) => JSON.stringify(String(k)) + colon + dumps(v, inner, exact)).join(sep) + close + "}";
 }
 
 /** The same value as plain JSON data. */

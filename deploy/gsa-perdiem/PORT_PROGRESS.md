@@ -39,7 +39,12 @@ changes from this branch.
       build the DB by running the loader `--local` into a temp file)
 - [ ] `tests/test_gsa_perdiem_loader.py` (idempotence, resume after crash,
       release not switched on bad counts, GC, remote request shape via fake urlopen)
-- [ ] parity harness + results
+- [x] parity harness (`parity/build_corpus.py` -> `corpus.json`, `python_side.py`,
+      `run.ts`): 188 calls in 8 scenarios, 56 mocked GSA API calls,
+      188/188 identical (text byte for byte, isError, structuredContent,
+      upstream request log). Fixed on the way: tools/list order (Python
+      registration order, contract content), infinite floats surviving the
+      response cache, budget retry rounding (ceil), `-32601` carries `data`.
 - [ ] workflows: `gsa-perdiem-hosted-tests.yml`, `gsa-perdiem-load.yml`, and a
       dispatch hook in `data-refresh.yml` (bot pushes with GITHUB_TOKEN do not
       trigger `on: push`)

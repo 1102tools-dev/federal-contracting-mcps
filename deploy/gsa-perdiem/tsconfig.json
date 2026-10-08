@@ -16,6 +16,7 @@
   "include": [
     "src/**/*.ts",
     "test/**/*.ts",
+    "parity/**/*.ts",
     "worker-configuration.d.ts"
   ]
 }
