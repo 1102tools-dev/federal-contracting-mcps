@@ -1,5 +1,6 @@
 import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
+import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, readBounded, tooLarge } from "../../shared/edge";
 
 export class FederalRegister extends Container {
   defaultPort = 8080;
@@ -22,17 +23,29 @@ export default {
       return new Response("Use POST for stateless MCP requests.", {status: 405, headers: {Allow: "POST"}});
     }
     if (url.pathname === "/health" && request.method !== "GET") return new Response(null, {status: 405});
+    // Read the body at the edge, bounded, so slow or oversized uploads never
+    // hold one of the single container's admission slots.
+    let body: ArrayBuffer | null = null;
+    if (request.method === "POST") {
+      if (Number(request.headers.get("Content-Length") ?? "0") > MAX_BODY_BYTES) return tooLarge();
+      body = await readBounded(request);
+      if (body === null) return tooLarge();
+    }
+    const listen = listenAtEdge(request.headers, body);
+    if (listen) return listen;
     try {
       const headers = new Headers(request.headers);
       headers.set("Host", "container.internal");
       headers.delete("Origin");
       headers.delete("Cookie");
       headers.delete("Authorization");
-      const forwarded = new Request(`http://container.internal${url.pathname}`, {
-        method: request.method, headers, body: request.body,
+      headers.delete("Content-Length");
+      const forwarded = () => new Request(`http://container.internal${url.pathname}`, {
+        method: request.method, headers, body,
       });
       // A single named instance preserves process/file pacing across all users.
-      return await getContainer(env.BACKEND, "public-federal-register").fetch(forwarded);
+      const backend = getContainer(env.BACKEND, "public-federal-register");
+      return await fetchWithRetry(() => backend.fetch(forwarded()));
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
       return Response.json({error: "Federal Register service temporarily unavailable."}, {status: 503, headers: {"Retry-After": "15"}});
