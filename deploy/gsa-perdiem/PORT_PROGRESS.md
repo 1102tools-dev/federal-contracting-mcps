@@ -1,67 +1,86 @@
 # GSA Per Diem Worker + D1 port: progress
 
 Branch: `worktree-agent-a22db7e792f1d6e15`
-Latest commit: see `git log -1` (pause checkpoint, 2026-10-08)
+Latest commit: see `git log -1` (port complete, 2026-10-08)
 Base: `fe60f58` (main at start)
 
 Port of the hosted GSA Per Diem MCP from Worker -> Durable Object -> Python
 container to Worker + D1 (SAM.gov pattern). No push, no deploy, no Cloudflare
 changes from this branch.
 
-## Status (paused)
+## Status: complete (parent: release pipeline items below)
 
-- [x] Study SAM.gov Worker, loader, workflows; Python server; hosted checks
-- [x] `deploy/gsa-perdiem/schema.sql` (done, used by loader)
-- [x] `scripts/load_gsa_perdiem.py` (done; `--local` tested twice: first load
-      writes 8 parts / 326,743 data rows in <1 s, second run is a no-op
-      `already_current`). Remote mode (D1 HTTP API) written, NOT exercised.
-- [x] Worker source compiles (`tsc --noEmit` clean, `erasableSyntaxOnly` so
-      node --test can strip types). Not yet run against data:
-  - `src/py.ts` (Python compat: PyFloat, `dumps` = pydantic_core indent-2
-    text, `plain`, float-preserving `loads`, `repr`, Python whitespace,
-    `quote`/`quotePlus`, `title`, code-point `pyLen`/`pySlice`)
-  - `src/data.ts` (Database interface incl. `batch`, `_geo.py` port
-    `norm/countyKey/placeKey`, `Year` = snapshot.Year port, `Places` lookup,
-    `Snapshot` per-call loader with isolate cache keyed by part id,
-    `DataUnavailable`)
-  - `src/upstream.ts` (`Upstream.get(path)`: Cache API 24 h, hosted key check,
-    D1 hourly budget 950 in minute buckets, D1 start-slot pacing 0.6 s with
-    429 cooldown, 15 s timeout, Python error texts, redaction; `ToolError`,
-    `DeadlineExceeded` -> HTTP 504)
-- [x] `src/args.ts` (pydantic arg validation incl. exact ValidationError text,
-      pre_parse_json), `src/tools.ts` (all 7 tools + `callTool`), `src/mcp.ts`
-      (JSON-RPC + HTTP edge, 55 s deadline -> 504), `src/index.ts` (Container
-      class kept + default fetch -> `serve`). Split so node tests never import
-      `@cloudflare/containers` (it needs `cloudflare:workers`).
-- [x] `wrangler.jsonc` D1 binding (top-level + production), tsconfig,
-      package.json (`type: module`, `test`), `.gitignore`
-- [x] `test/worker.test.ts` (16 tests, node:test, `test/d1.ts` node:sqlite D1
-      adapter with `batch`; DB built by the loader `--local`)
-- [x] `tests/test_gsa_perdiem_loader.py` (8 tests: idempotence, D1 limits,
-      resume after crash, release kept on bad counts, part GC, manifest
-      mismatch, remote mode against a fake D1 HTTP API, refusals)
-- [x] parity harness (`parity/build_corpus.py` -> `corpus.json`, `python_side.py`,
-      `run.ts`; corpus generated per run, not committed): 1,344 calls in 9
-      scenarios (incl. a sweep of ZIPs, states, M&IE, Census places by
-      county, JSON-RPC edge cases), 56 mocked GSA API calls: 1,338 identical,
-      6 expected (JSON-RPC parse/envelope error *message* text only; status,
-      code, id match), 0 unexplained (text byte for byte, isError, structuredContent,
-      upstream request log). Fixed on the way: tools/list order (Python
-      registration order, contract content), infinite floats surviving the
-      response cache, budget retry rounding (ceil), `-32601` carries `data`.
-- [x] workflows: `gsa-perdiem-hosted-tests.yml` (loader, check, test, parity,
-      dry run with `--containers-rollout=none`), `gsa-perdiem-load.yml`
-      (sam-data-load env, CLOUDFLARE_D1_TOKEN, id read from wrangler.jsonc,
-      refuses the placeholder), `data-refresh.yml` dispatches the load on main
-      and waits before the release
-- [x] SERVER_VERSION / User-Agent read from servers/gsa-perdiem-mcp/server.json
-      (refresh bumps it with pyproject), so the Worker follows version bumps
-- [ ] (parent) release pipeline: `vars.RELEASE_SHA` in wrangler.release.json,
-      /health.admission assert, D1 database id; see final report
-- [x] `src/public-docs.ts` privacy text: Cloudflare cache (24 h, per data
-      center), budget/pacing records (no query content); effective date left
-      as is (parent: update when deploying)
-- [ ] final report
+- [x] `schema.sql`; `scripts/load_gsa_perdiem.py` (`--local`, `--remote` via
+      the D1 HTTP API; 8 parts / 326,743 rows / 14.5 MB; atomic release
+      switch, idempotent, resumable, statements < 90 KB, no bound params on
+      writes). `tests/test_gsa_perdiem_loader.py`: 8 tests incl. remote mode
+      against a fake D1 HTTP API.
+- [x] Worker: `src/py.ts` (Python value/text semantics), `src/data.ts`
+      (snapshot.py + _geo.py over D1), `src/upstream.ts` (live GSA API: 24 h
+      Cloudflare cache, D1 hourly budget 950 and 0.6 s start pacing with
+      Retry-After cooldown, 15 s timeout, redaction), `src/args.ts` (pydantic
+      argument validation with exact ValidationError text), `src/tools.ts`
+      (7 tools), `src/mcp.ts` (JSON-RPC + HTTP edge, 55 s deadline -> 504),
+      `src/index.ts` (keeps the `GSAPerDiem` Container export; fetch -> `serve`).
+- [x] `wrangler.jsonc`: D1 binding `DB` / `gsa-perdiem` /
+      `REPLACE_WITH_D1_DATABASE_ID` (top level + production); containers,
+      durable_objects, migrations kept; still plain JSON.
+- [x] `test/worker.test.ts`: 17 node:test tests on node:sqlite (`test/d1.ts`).
+- [x] Parity: `node parity/run.ts` (corpus built per run by
+      `parity/build_corpus.py`, Python side `parity/python_side.py` runs the
+      package's real HTTP app in hosted mode). 1,344 calls, 56 mocked GSA API
+      calls: 1,338 identical, 6 expected, 0 unexplained.
+- [x] Workflows: `gsa-perdiem-hosted-tests.yml`, `gsa-perdiem-load.yml`,
+      load dispatch in `data-refresh.yml`.
+- [x] Privacy text updated for the Cloudflare cache and D1 budget records.
+- [ ] Parent: release pipeline (see "Parent to do").
+
+## Documented differences from the Python server
+
+Verified identical by the harness: every tool result (text byte for byte,
+isError, structuredContent), pydantic argument errors, upstream request
+paths/headers, initialize, tools/list (contract content, Python order),
+ping, prompts/resources lists, unknown method/tool, invalid params.
+
+- JSON-RPC parse errors and malformed envelopes (batch, non-object, wrong
+  `jsonrpc`, bad `method`): same HTTP 400, code, and id; the message is a
+  short text instead of the SDK's JSON-parser text / pydantic union dump.
+- 2026-07-28 era (`server/discover`, `subscriptions/listen`): -32601, as the
+  SAM.gov Worker; clients fall back to `initialize`.
+- Hourly budget: shared in D1 minute buckets (window 59-60 min) instead of a
+  per-process exact 3600 s deque; the retry text uses the oldest bucket's
+  first call, so it matches in practice.
+- Response cache: Cloudflare cache per data center (24 h) instead of one
+  in-memory 2,048-entry cache in the single container.
+- Pacing: 0.6 s between upstream starts (D1 slot claim) instead of 0.6 s
+  after the previous completion; a wait > 40 s answers 504 at once.
+- 429 diagnostics order: fetch sorts headers, so `{'limit': ..,
+  'remaining': ..}` is listed alphabetically, not in response order.
+- Network failure text comes from fetch, not httpx (e.g. "timed out" matches;
+  connection errors are worded differently).
+- Integers above 2**53 inside GSA responses would lose precision (Python
+  keeps them); not seen in GSA data.
+- A release switch between two D1 queries of one call could pair a year
+  from one release with places from the next; old parts are kept until the
+  following load, so no query fails.
+
+## Parent to do (release pipeline)
+
+1. Create the D1 database, put its id in `wrangler.jsonc` (both places), run
+   `gsa-perdiem-load.yml` (sam-data-load env, CLOUDFLARE_D1_TOKEN) before the
+   Worker deploy. The token needs D1 edit on the new database.
+2. `scripts/configure_hosted_image.py`: add `vars: {RELEASE_SHA: <sha>}` to
+   the top level and `env.production` of wrangler.release.json (vars are not
+   inherited by envs), or `/health.release_sha` stays "development" and
+   `verify_hosted_release.py` waits until its deadline.
+3. `scripts/verify_hosted_release.py` asserts `/health.admission` equals the
+   container's queue for every slug but acquisition-gov; the Worker has no
+   admission queue and does not report one. Exempt gsa-perdiem.
+4. `publish-pypi.yml` hosted job: also run `npm test` (and optionally
+   `node parity/run.ts`, needs `uv sync` in servers/gsa-perdiem-mcp) for
+   gsa-perdiem; the container image is still built/pushed and its
+   pre-deploy check still exercises the Python container, not the Worker.
+5. Privacy notice effective date (src/public-docs.ts) when deploying.
 
 ## Key findings
 
@@ -75,8 +94,9 @@ changes from this branch.
   Note this in the final report.
 - `scripts/verify_hosted_release.py` asserts `/health.admission` equals the
   container values above for gsa-perdiem and `init.instructions` absent, and
-  waits for `/health.release_sha == --sha`. Worker /health must keep
-  `status, tools, release_sha, admission`.
+  waits for `/health.release_sha == --sha`. The Worker's /health reports
+  `status, tools, release_sha` (default "development", as the container) and
+  no `admission` (it has no queue); see "Parent to do" 2-3.
 - `scripts/check_hosted_health.py` needs `get_data_status.live_lookup_access
   == "hosted_publisher_key"`, `lookup_zip_perdiem {"zip_code":"22201"}` without
   `error`, and a rotating `lookup_city_perdiem` with `status: resolved` and
@@ -104,13 +124,15 @@ changes from this branch.
   lone surrogates raise. Python floats in results: `mie_first_last_day`,
   estimate `first_last_day_mie`/`mie_total`/`grand_total`, all M&IE tier
   values (bundled JSON stores `16.0`; API path uses `_safe_number`).
-- TODO when the HTTP harness runs: check whether `null` values (e.g.
-  `match_note: null`) survive in wire `structuredContent` (exclude_none?).
+- `null` values (e.g. `match_note: null`) are kept in wire
+  `structuredContent` (confirmed by the harness).
 
 ### Argument validation (pydantic lax mode + `pre_parse_json`), verified offline
 
 - Fields in signature order, then extras in input order; extra keys ->
-  `extra_forbidden`. Messages: `N validation error(s) for <tool>Arguments\n<loc>\n  <msg> [type=..., input_value=<repr, >50 chars -> repr[:25]+'...'+repr[-24:]>, input_type=...]\n    For further information visit https://errors.pydantic.dev/2.13/v/<type>`.
+  `extra_forbidden`. Messages: `N validation error(s) for <tool>Arguments\n<loc>\n  <msg> [type=..., input_value=<repr>, input_type=...]\n    For further information visit https://errors.pydantic.dev/2.13/v/<type>`.
+  A repr over 50 UTF-8 bytes is cut to its first 25 and last 24 bytes, moved
+  inward to character boundaries, joined by `...`.
 - int: bool -> 0/1; integral float ok, 3.5 -> `int_from_float`; strings
   stripped, `+2026`, `02026`, `2_026`, `2026.0` ok; `2026.5`, `2026.`, `.5`,
   `1e3`, `''`, Unicode digits -> `int_parsing`; list/dict/None -> `int_type`.
@@ -131,66 +153,9 @@ changes from this branch.
 - `years` (7 rows, 54-58 KB JSON each: year file minus zips, plus `source`).
 - `zips` (283,064 rows, WITHOUT ROWID PK (part, zip)).
 - `places` (43,665 rows, WITHOUT ROWID PK (part, key)).
-- `upstream_calls` (minute buckets), `upstream_state` (next_start, cooldown_until).
+- `upstream_calls` (minute buckets with the minute's first call time),
+  `upstream_state` (next_start, cooldown_until).
 - Local SQLite file: 14.5 MB. Part id = sha256(layout + file bytes)[:16].
 - Expected rows read: year blob 2 (release + years); ZIP 2 more; places 1 + hits;
-  get_data_status 1. To measure for real, run the handlers on Miniflare D1.
+  get_data_status 1. The tests assert at most 2 statements for a ZIP lookup.
 
-## Next: `src/tools.ts` plan (port of server.py, hosted mode)
-
-- Imports `../tools-contract.json` (`with {type: "json"}`) as TOOLS, unchanged.
-- `ValueError` class; dispatcher wraps ValueError/ToolError as
-  `Error executing tool X: msg`; DataUnavailable/other -> isError with
-  "temporarily unavailable"; DeadlineExceeded propagates to index.ts -> 504
-  `{"error":"Request deadline exceeded while waiting or processing; retry later."}`.
-- Signatures for arg validation:
-  city/state str; fiscal_year int?; county str?; zip_code str; num_nights int;
-  travel_month str?; locations list[dict[str,str]]. Order per Python signature.
-- Port helpers: `_safe_dict/_as_list/_safe_int/_safe_number` (Python int()/float()
-  string rules; inf -> "cannot convert float infinity to integer"),
-  `_validate_*` (exact messages, `\p{Nd}` for ZIP digits, code-point lengths,
-  Python whitespace), `_parse_rate_entry`, `_normalize_for_match`,
-  `_normalize_city_for_url` (py `quote`), `_from_area_record`,
-  `_parsed_entries`, `_rate_signature`, `_candidate_summary`, `_api_source`,
-  `_area_id_for`, `_is_full_state_list`, `_census_suggestion` (py `title`),
-  `_resolve_city`, `_resolve_city_by_county`, `_lookup_city`,
-  `_unresolved_payload`, `_match_note` (repr of list), `_no_rates_hint`,
-  `_format_lodging_range`, `_fiscal_year_for_month`, round2 (Python
-  half-even on exact halves), then the 7 tools in Python key order with
-  `null` kept (not undefined) and floats wrapped with `float()`.
-- `compare_locations`: catch ToolError only, `pySlice(msg, 200)`; stable
-  descending sort on `max_daily_total ?? 0`.
-- Current FY / next-month FY from UTC date (`now` injectable for tests and
-  boundary-date parity).
-
-## Parity harness plan
-
-- `deploy/gsa-perdiem/parity/`: `corpus.json` (scenarios: optional fixed
-  `today`, `hourly_cap`, upstream fixture map path -> status/headers/body),
-  `python_side.py` (runs `gsa_perdiem_mcp.http.create_app()` in-process via
-  `httpx.ASGITransport` inside `app.app.router.lifespan_context`, patches
-  `server._date`, `_get_client` with `httpx.MockTransport`, resets
-  `_response_cache`/`_upstream_starts`, env PERDIEM_HOSTED=1,
-  MCP_RESPONSE_CACHE_SECONDS=86400, PERDIEM_API_KEY=test key,
-  FEDERAL_API_MIN_INTERVAL_SECONDS=0), `run.ts` (loader -> sqlite, TS side
-  with mocked fetch/cache, diff: structuredContent + parsed text JSON-equal,
-  isError equal, byte-equal text counted; validation errors compare first line).
-- Fixtures: reuse `servers/gsa-perdiem-mcp/tests/fixtures/gsa_city/*.json`
-  (9 real FY2027 city responses); a few DEMO_KEY recordings >=4 s apart
-  (e.g. Boston MA, Washington DC, Arlington VA, conus/mie/2020,
-  state/VA/year/2020, zip/22201/year/2020); synthetic 403/404/429/500/HTML/
-  non-JSON/malformed-month/redaction cases. Do not make unmocked calls from
-  probes: one earlier probe accidentally reached api.gsa.gov once with a fake
-  key (403).
-
-## Resume
-
-```
-# Python side (parity, loader tests)
-cd servers/gsa-perdiem-mcp && uv sync --frozen --python 3.12
-PYTHONPATH=src .venv/bin/python -c "import gsa_perdiem_mcp.server"
-# Loader
-python3 scripts/load_gsa_perdiem.py --local /tmp/perdiem.sqlite
-# Worker (after tools.ts/index.ts exist)
-cd deploy/gsa-perdiem && npm ci --ignore-scripts && npm run check && npm test
-```
