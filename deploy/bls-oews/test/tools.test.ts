@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
-import {test} from "node:test";
+import {mock, test} from "node:test";
 import worker, {callTool, handleMessage} from "../src/worker.ts";
 import {dumps, fixed, floatRepr, parseJson, PyFloat, repr, strip} from "../src/pyjson.ts";
 import {TOOLS, validateArgs} from "../src/tools.ts";
@@ -68,7 +68,7 @@ const errorText = async (name: string, args: Record<string, unknown>) => {
   return result.content[0].text as string;
 };
 const post = (body: unknown, headers: Record<string, string> = {}) =>
-  new Request("https://bls-oews.1102tools.com/mcp", {method: "POST", headers: {"Content-Type": "application/json", ...headers}, body: typeof body === "string" ? body : JSON.stringify(body)});
+  new Request("https://bls-oews.1102tools.com/mcp", {method: "POST", headers: {"Content-Type": "application/json", Accept: "application/json, text/event-stream", ...headers}, body: typeof body === "string" ? body : JSON.stringify(body)});
 
 // ---------- contract and protocol ----------
 
@@ -288,6 +288,70 @@ test("HTTP edge: health, docs, origin, rate limit, methods, body limits, message
   assert.equal((await worker.fetch(post("{"), env())).status, 400);
   assert.equal((await worker.fetch(post([{jsonrpc: "2.0", id: 1, method: "ping"}]), env())).status, 400);
   assert.equal((await worker.fetch(post("x".repeat(70000)), env())).status, 413);
+  assert.equal((await worker.fetch(post({jsonrpc: "2.0", id: 1, method: "ping"}, {"Content-Type": "text/plain"}), env())).status, 400);
+  assert.equal((await worker.fetch(post({jsonrpc: "2.0", id: 1, method: "ping"}, {Accept: "text/event-stream"}), env())).status, 406);
+});
+
+// ---------- MCP 2026-07-28 ----------
+
+const META = {"io.modelcontextprotocol/protocolVersion": "2026-07-28", "io.modelcontextprotocol/clientCapabilities": {}};
+const modern = (method: string, params: Record<string, unknown> = {}, headers: Record<string, string> = {}) =>
+  post({jsonrpc: "2.0", id: 7, method, params: {...params, _meta: META}},
+    {"MCP-Protocol-Version": "2026-07-28", "Mcp-Method": method, ...(typeof params.name === "string" ? {"Mcp-Name": params.name} : {}), ...headers});
+
+test("2026-07-28 requests get the SDK's envelope: discover, decorated results, json.dumps text", async () => {
+  const stamp = `"_meta":{"io.modelcontextprotocol/serverInfo":{"name":"bls-oews","version":"${SERVER.version}"}}`;
+  const discover = await worker.fetch(modern("server/discover"), env());
+  assert.equal(await discover.text(), `{"jsonrpc":"2.0","id":7,"result":{"cacheScope":"private","capabilities":{"prompts":{"listChanged":true},"resources":{"listChanged":true,"subscribe":true},"tools":{"listChanged":true}},"resultType":"complete","supportedVersions":["2026-07-28"],"ttlMs":0,${stamp}}}`);
+  const list = JSON.parse(await (await worker.fetch(modern("tools/list"), env())).text());
+  assert.deepEqual(Object.keys(list.result), ["cacheScope", "resultType", "tools", "ttlMs", "_meta"]);
+  const call = await worker.fetch(modern("tools/call", {name: "get_wage_data", arguments: {occ_code: "é"}}), env());
+  const text = await call.text();
+  assert.ok(text.includes("occ_code='\\u00e9' must be a SOC code"), "non-ASCII is escaped like json.dumps");
+  assert.ok(text.endsWith(`"isError":true,"resultType":"complete",${stamp}}}`));
+  const ok = JSON.parse(await (await worker.fetch(modern("tools/call", {name: "list_common_metros", arguments: {}}), env())).text());
+  assert.deepEqual(Object.keys(ok.result), ["content", "isError", "resultType", "structuredContent", "_meta"]);
+});
+
+test("2026-07-28 validation ladder, statuses, and methods outside the 2026 surface", async () => {
+  const answer = async (request: Request) => {
+    const response = await worker.fetch(request, env());
+    return [response.status, (await response.json() as any).error] as const;
+  };
+  assert.deepEqual(await answer(modern("tools/call", {name: "get_data_status"}, {"Mcp-Name": "other"})),
+    [400, {code: -32020, message: "mcp-name header does not match the request body's 'name' parameter"}]);
+  assert.deepEqual(await answer(modern("tools/list", {}, {"Mcp-Method": "tools/call"})),
+    [400, {code: -32020, message: "mcp-method header does not match the request body's method"}]);
+  assert.deepEqual(await answer(post({jsonrpc: "2.0", id: 1, method: "tools/list", params: {_meta: {...META, "io.modelcontextprotocol/protocolVersion": "2027-01-01"}}},
+    {"MCP-Protocol-Version": "2027-01-01", "Mcp-Method": "tools/list"})),
+    [400, {code: -32022, message: "Unsupported protocol version", data: {supported: ["2026-07-28"], requested: "2027-01-01"}}]);
+  assert.deepEqual(await answer(post({jsonrpc: "2.0", id: 1, method: "tools/list"}, {"MCP-Protocol-Version": "2026-07-28", "Mcp-Method": "tools/list"})),
+    [400, {code: -32602, message: "params._meta must be an object carrying the required 'io.modelcontextprotocol/protocolVersion' and 'io.modelcontextprotocol/clientCapabilities' envelope keys"}]);
+  assert.deepEqual(await answer(modern("ping")), [404, {code: -32601, message: "Method not found", data: "ping"}]);
+  assert.deepEqual(await answer(modern("tools/call", {arguments: {}})), [400, {code: -32602, message: "Invalid request parameters", data: ""}]);
+  assert.deepEqual(await answer(modern("prompts/get", {name: "p"})), [200, {code: -32603, message: "Internal server error"}]);
+  const base64 = await worker.fetch(modern("tools/call", {name: "list_common_metros", arguments: {}}, {"Mcp-Name": "=?base64?bGlzdF9jb21tb25fbWV0cm9z?="}), env());
+  assert.equal(base64.status, 200);
+  const notification = await worker.fetch(post({jsonrpc: "2.0", method: "notifications/initialized", params: {_meta: META}}, {"MCP-Protocol-Version": "2026-07-28", "Mcp-Method": "notifications/initialized"}), env());
+  assert.deepEqual([notification.status, await notification.text()], [400, '{"jsonrpc":"2.0","error":{"code":-32600,"message":"Body must be a single JSON-RPC request object"},"id":null}']);
+});
+
+test("2026-07-28 listen streams open at the edge with the SDK's acknowledgement", async () => {
+  // Fake timers, so the stream's 15-second keepalive does not hold the test open.
+  mock.timers.enable({apis: ["setTimeout"]});
+  try {
+    const response = await worker.fetch(modern("subscriptions/listen", {notifications: {toolsListChanged: true}}), env());
+    assert.equal(response.headers.get("Content-Type"), "text/event-stream");
+    const reader = response.body!.getReader();
+    const first = new TextDecoder().decode((await reader.read()).value);
+    assert.match(first, /^event: message\r\ndata: \{"jsonrpc":"2.0","method":"notifications\/subscriptions\/acknowledged"/);
+    await new Promise(resolve => setImmediate(resolve)); // the stream is now waiting on its (fake) keepalive timer
+    await reader.cancel();
+  } finally {
+    mock.timers.reset();
+  }
+  const jsonOnly = await worker.fetch(modern("subscriptions/listen", {notifications: {}}, {Accept: "application/json"}), env());
+  assert.equal(jsonOnly.status, 406);
 });
 
 // ---------- Python formatting helpers ----------

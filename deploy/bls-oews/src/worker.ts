@@ -1,18 +1,18 @@
-import SERVER from "../../../servers/bls-oews-mcp/server.json" with {type: "json"};
+import {MAX_BODY_BYTES, listenAtEdge, readBounded, tooLarge} from "../../shared/edge.ts";
+import {handleModern} from "./modern.ts";
 import {publicDocs} from "./public-docs.ts";
 import {dumps, parseJson, type Py} from "./pyjson.ts";
-import {HANDLERS, TOOLS, ToolError, type Database} from "./tools.ts";
+import {SERVER_INFO, accepts, callTool, isObject, validId, type Env} from "./rpc.ts";
+import {TOOLS} from "./tools.ts";
+
+export {callTool, type Env};
 
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
 // this Worker from D1. No container, no session state. Answers match the
-// Python server (bls-oews-mcp) the container ran: the same initialize
-// result, tool list, tool results, and error text.
+// Python server (bls-oews-mcp) the container ran, in both protocol eras:
+// initialize-handshake versions here, 2026-07-28 in modern.ts.
 
-// The package version (server.json is kept equal to pyproject.toml by
-// scripts/validate_versions.py), reported as serverInfo.version.
-const SERVER_VERSION: string = SERVER.version;
-const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
-const MAX_BODY_BYTES = 65536;
+const HANDSHAKE_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const CAPABILITIES = {
   experimental: {},
   prompts: {listChanged: false},
@@ -23,64 +23,12 @@ const CAPABILITIES = {
 // admission limits; a Worker has no queue, so the values are fixed.
 const ADMISSION = {processing: 16, waiting: 32, total: 48, deadline_seconds: 55};
 
-export interface Env {
-  DB: Database;
-  REQUEST_LIMITER: {limit(options: {key: string}): Promise<{success: boolean}>};
-  RELEASE_SHA?: string;
-}
-
 type Message = {jsonrpc?: unknown; id?: unknown; method?: unknown; params?: any; result?: unknown; error?: unknown};
 
 const json = (body: Py, status = 200) =>
   new Response(dumps(body), {status, headers: {"Content-Type": "application/json"}});
 const rpcError = (id: unknown, code: number, message: string, data?: Py) =>
   ({jsonrpc: "2.0", id: (id ?? null) as Py, error: {code, message, data}});
-// A JSON object (parseJson turns floats into PyFloat objects, which are not).
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && Object.getPrototypeOf(value) === Object.prototype;
-// The SDK writes result keys in alphabetical order: content (text, type), isError, structuredContent.
-const textResult = (text: string, isError: boolean) => ({content: [{text, type: "text"}], isError});
-
-async function readBounded(request: Request): Promise<string | null> {
-  const reader = request.body?.getReader();
-  if (!reader) return "";
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  for (;;) {
-    const {done, value} = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > MAX_BODY_BYTES) {
-      await reader.cancel();
-      return null;
-    }
-    chunks.push(value);
-  }
-  const out = new Uint8Array(size);
-  let offset = 0;
-  for (const chunk of chunks) {
-    out.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return new TextDecoder().decode(out);
-}
-
-/** tools/call result, shaped like the Python SDK's CallToolResult. */
-export async function callTool(name: string, args: Record<string, unknown>, env: Env): Promise<Py> {
-  const handler = Object.hasOwn(HANDLERS, name) ? HANDLERS[name] : undefined;
-  if (!handler) return textResult(`Unknown tool: ${name}`, true);
-  try {
-    const data = await handler(env.DB, args);
-    return {content: [{text: dumps(data, 2), type: "text"}], isError: false, structuredContent: data};
-  } catch (error) {
-    if (error instanceof ToolError) return textResult(`Error executing tool ${name}: ${error.message}`, true);
-    console.log(JSON.stringify({event: "tool_failed", tool: name, reason: error instanceof Error ? error.message.slice(0, 200) : "unknown"}));
-    return textResult(`Error executing tool ${name}: BLS OEWS data is temporarily unavailable. Try again shortly.`, true);
-  }
-}
-
-// A JSON-RPC id the SDK accepts: a string or an integer (not a bool or 1.0).
-const validId = (id: unknown) => typeof id === "string" || typeof id === "bigint" || (typeof id === "number" && Number.isInteger(id));
 
 /** How the SDK classifies one message: a request it answers, a notification
  * or client response it accepts silently, or an invalid message (HTTP 400). */
@@ -108,8 +56,8 @@ export async function handleMessage(message: Message, env: Env): Promise<Py> {
       const requested = params.protocolVersion;
       return result({
         capabilities: CAPABILITIES,
-        protocolVersion: PROTOCOL_VERSIONS.includes(requested) ? requested : PROTOCOL_VERSIONS[0],
-        serverInfo: {name: "bls-oews", version: SERVER_VERSION},
+        protocolVersion: HANDSHAKE_VERSIONS.includes(requested) ? requested : HANDSHAKE_VERSIONS[0],
+        serverInfo: {...SERVER_INFO},
       });
     }
     case "ping":
@@ -155,12 +103,27 @@ export default {
       return json({status: "ok", tools: TOOLS.length, release_sha: env.RELEASE_SHA ?? null, admission: ADMISSION});
     }
     if (request.method !== "POST") return new Response("Use POST for stateless MCP requests.", {status: 405, headers: {Allow: "POST"}});
-    if (Number(request.headers.get("Content-Length") ?? "0") > MAX_BODY_BYTES) return new Response("Request body too large.", {status: 413});
+    if (Number(request.headers.get("Content-Length") ?? "0") > MAX_BODY_BYTES) return tooLarge();
     const body = await readBounded(request);
-    if (body === null) return new Response("Request body too large.", {status: 413});
+    if (body === null) return tooLarge();
+    // Long-lived 2026-07-28 listen streams, as the Worker served them before.
+    const listen = listenAtEdge(request.headers, body);
+    if (listen) return listen;
+    if (!(request.headers.get("Content-Type") ?? "").toLowerCase().startsWith("application/json")) {
+      return new Response("Invalid Content-Type header", {status: 400});
+    }
+    // Like the SDK: any protocol-version header that is not a handshake version is the 2026-07-28 path.
+    const version = request.headers.get("MCP-Protocol-Version");
+    if (version !== null && !HANDSHAKE_VERSIONS.includes(version)) return handleModern(request, body, env);
+    if (!accepts(request.headers.get("Accept")).json) {
+      return json(rpcError(null, -32600, "Not Acceptable: Client must accept application/json"), 406);
+    }
+    if (!(request.headers.get("Content-Type") ?? "").split(";")[0].split(",").some(part => part.trim() === "application/json")) {
+      return json(rpcError(null, -32600, "Unsupported Media Type: Content-Type must be application/json"), 415);
+    }
     let message: unknown;
     try {
-      message = parseJson(body);
+      message = parseJson(new TextDecoder("utf-8", {fatal: true}).decode(body));
     } catch {
       return json(rpcError(null, -32700, "Parse error: the body is not valid JSON."), 400);
     }

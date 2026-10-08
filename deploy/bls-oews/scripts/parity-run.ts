@@ -5,8 +5,8 @@
 //
 //   node scripts/parity-run.ts <d1.sqlite> <requests.json>
 //
-// requests.json is a list of {name, body}; parity.py writes it from
-// test/parity-cases.json so both servers receive the same bytes.
+// requests.json is a list of {name, body, headers}; parity.py writes it from
+// test/parity-cases.json so both servers receive the same bytes and headers.
 import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
 import worker from "../src/worker.ts";
@@ -15,11 +15,12 @@ import {d1} from "../test/d1.ts";
 const [database, requestsFile] = process.argv.slice(2);
 const db = d1(new DatabaseSync(database, {readOnly: true}));
 const env = {DB: db, REQUEST_LIMITER: {limit: async () => ({success: true})}, RELEASE_SHA: "parity"};
-const requests: {name: string; body: string}[] = JSON.parse(readFileSync(requestsFile, "utf8"));
+const requests: {name: string; body: string; headers: Record<string, string>}[] = JSON.parse(readFileSync(requestsFile, "utf8"));
 
-for (const {name, body} of requests) {
+for (const {name, body, headers} of requests) {
+  delete headers.host;
   const start = db.log.length;
-  const response = await worker.fetch(new Request("https://bls-oews.1102tools.com/mcp", {method: "POST", headers: {"Content-Type": "application/json"}, body}), env as any);
+  const response = await worker.fetch(new Request("https://bls-oews.1102tools.com/mcp", {method: "POST", headers, body}), env as any);
   const statements = db.log.slice(start);
   console.log(JSON.stringify({name, status: response.status, body: await response.text(),
     statements: statements.length, round_trips: new Set(statements.map(s => s.batch)).size}));

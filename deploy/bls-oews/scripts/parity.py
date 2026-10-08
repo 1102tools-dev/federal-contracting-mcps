@@ -34,7 +34,7 @@ TOOLS_LIST = (
     "The Worker returns tools-contract.json verbatim (tools sorted by name, keys sorted, "
     "as scripts/check_hosted_contract.py writes it); Python lists them in registration order. "
     "Same tools, same definitions.",
-    lambda py, ts: py["status"] == ts["status"] and tools_by_name(py) == tools_by_name(ts),
+    lambda py, ts: py["status"] == ts["status"] and same_except_tool_order(py, ts),
 )
 INVALID_MESSAGE = (
     "Invalid JSON-RPC messages get the SDK's HTTP 400 and error code, but a short message "
@@ -44,6 +44,9 @@ INVALID_MESSAGE = (
 DOCUMENTED = {
     "tools/list": TOOLS_LIST,
     "tools/list with cursor": TOOLS_LIST,
+    "modern: tools/list": TOOLS_LIST,
+    "modern: tools/list with cursor": TOOLS_LIST,
+    "modern: capabilities with unknown keys": TOOLS_LIST,
     "invalid: malformed JSON": INVALID_MESSAGE,
     "invalid: batch": INVALID_MESSAGE,
     "invalid: jsonrpc 1.0": INVALID_MESSAGE,
@@ -71,23 +74,55 @@ def error_blocks(answer):
     return head, sorted("\n".join(lines[i:i + 3]) for i in range(0, len(lines), 3))
 
 
-def tools_by_name(answer):
-    return sorted(json.loads(answer["body"])["result"]["tools"], key=lambda tool: tool["name"])
+def same_except_tool_order(py, ts):
+    """The same tool definitions (compared as data), and the rest of the body byte for byte."""
+    def split(answer):
+        message = json.loads(answer["body"])
+        tools = sorted(message["result"].pop("tools"), key=lambda tool: tool["name"])
+        return json.dumps(message), tools
+    return split(py) == split(ts)
 
 
-def request_body(case):
+MODERN = "2026-07-28"
+META = {"io.modelcontextprotocol/protocolVersion": MODERN, "io.modelcontextprotocol/clientCapabilities": {},
+        "io.modelcontextprotocol/clientInfo": {"name": "parity", "version": "1"}}
+NAME_PARAM = {"tools/call": "name", "prompts/get": "name", "resources/read": "uri"}
+
+
+def request(case):
+    """The exact body and headers both servers receive for one case.
+
+    "modern": true sends it as MCP 2026-07-28 does: params._meta carries the
+    envelope and the routing headers mirror the body. "headers" adds to or
+    (with null) removes headers.
+    """
+    headers = dict(HEADERS)
     if "raw" in case:
-        return case["raw"]
-    message = {"jsonrpc": "2.0"}
-    if not case.get("notification"):
-        message["id"] = 1
-    if "tool" in case:
-        message.update(method="tools/call", params={"name": case["tool"], "arguments": case["arguments"]})
+        body = case["raw"]
     else:
-        message["method"] = case["method"]
-        if "params" in case:
-            message["params"] = case["params"]
-    return json.dumps(message, ensure_ascii=False)
+        message = {"jsonrpc": "2.0"}
+        if not case.get("notification"):
+            message["id"] = case.get("id", 1)
+        if "tool" in case:
+            message.update(method="tools/call", params={"name": case["tool"], "arguments": case["arguments"]})
+        else:
+            message["method"] = case["method"]
+            if "params" in case:
+                message["params"] = case["params"]
+        if case.get("modern"):
+            params = message.setdefault("params", {})
+            params.setdefault("_meta", case.get("meta", META))
+            headers["mcp-protocol-version"] = MODERN
+            headers["mcp-method"] = message["method"]
+            if isinstance(params.get(NAME_PARAM.get(message["method"])), str):
+                headers["mcp-name"] = params[NAME_PARAM[message["method"]]]
+        body = json.dumps(message, ensure_ascii=False)
+    for name, value in case.get("headers", {}).items():
+        if value is None:
+            headers.pop(name, None)
+        else:
+            headers[name] = value
+    return {"name": case["name"], "body": body, "headers": headers}
 
 
 def build_database(path):
@@ -107,7 +142,7 @@ def run_python(requests, data_dir):
     out = {}
     with TestClient(http.create_app()) as client:
         for item in requests:
-            response = client.post("/mcp", headers=HEADERS, content=item["body"].encode())
+            response = client.post("/mcp", headers=item["headers"], content=item["body"].encode())
             out[item["name"]] = {"status": response.status_code, "body": response.text}
     return out
 
@@ -116,7 +151,9 @@ def run_worker(requests, database, scratch):
     path = Path(scratch) / "requests.json"
     path.write_text(json.dumps(requests, ensure_ascii=False))
     proc = subprocess.run(["node", "scripts/parity-run.ts", str(database), str(path)],
-                          cwd=WORKER_DIR, capture_output=True, text=True, check=True)
+                          cwd=WORKER_DIR, capture_output=True, text=True)
+    if proc.returncode:
+        raise SystemExit(f"The Worker run failed:\n{proc.stderr[-3000:]}")
     lines = [json.loads(line) for line in proc.stdout.split("\n") if line.startswith("{")]
     return {line["name"]: line for line in lines}
 
@@ -144,7 +181,7 @@ def main(argv=None):
     names = [case["name"] for case in cases]
     if len(set(names)) != len(names):
         raise SystemExit("Case names must be unique.")
-    requests = [{"name": case["name"], "body": request_body(case)} for case in cases]
+    requests = [request(case) for case in cases]
 
     with tempfile.TemporaryDirectory(prefix="bls-parity-") as scratch:
         database = args.db

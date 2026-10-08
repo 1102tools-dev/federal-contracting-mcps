@@ -156,26 +156,36 @@ export function repr(value: unknown): string {
 /** str() of an argument value (a string stays as is). */
 export const str = (value: unknown): string => (typeof value === "string" ? value : repr(value));
 
-function write(value: Py | undefined, indent: number | undefined, pad: string): string {
+// Python's json.dumps (ensure_ascii, the SDK's 2026-07-28 responses): every
+// character outside printable ASCII escaped, floats written as repr().
+const asciiString = (text: string) =>
+  JSON.stringify(text).replace(/[\u007f-\uffff]/g, ch => `\\u${ch.charCodeAt(0).toString(16).padStart(4, "0")}`);
+const reprJson = (x: number) => (Number.isNaN(x) ? "NaN" : !Number.isFinite(x) ? (x > 0 ? "Infinity" : "-Infinity") : floatRepr(x));
+
+function write(value: Py | undefined, indent: number | undefined, pad: string, python = false): string {
   if (value === null || value === undefined) return "null";
-  if (value instanceof PyFloat) return floatJson(value.value);
+  if (value instanceof PyFloat) return python ? reprJson(value.value) : floatJson(value.value);
   if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "bigint") return intStr(value);
-  if (typeof value === "number") return Number.isInteger(value) ? intStr(value) : floatJson(value);
-  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number") return Number.isInteger(value) ? intStr(value) : python ? reprJson(value) : floatJson(value);
+  if (typeof value === "string") return python ? asciiString(value) : JSON.stringify(value);
   const inner = indent === undefined ? "" : pad + " ".repeat(indent);
   const open = indent === undefined ? "" : "\n" + inner;
   const close = indent === undefined ? "" : "\n" + pad;
   const sep = indent === undefined ? "," : ",\n" + inner;
   const colon = indent === undefined ? ":" : ": ";
+  const key = python ? asciiString : JSON.stringify;
   if (Array.isArray(value)) {
     if (!value.length) return "[]";
-    return `[${open}${value.map(item => write(item, indent, inner)).join(sep)}${close}]`;
+    return `[${open}${value.map(item => write(item, indent, inner, python)).join(sep)}${close}]`;
   }
   const entries = (value instanceof Map ? [...value.entries()] : Object.entries(value)).filter(([, v]) => v !== undefined);
   if (!entries.length) return "{}";
-  return `{${open}${entries.map(([k, v]) => JSON.stringify(k) + colon + write(v, indent, inner)).join(sep)}${close}}`;
+  return `{${open}${entries.map(([k, v]) => key(k) + colon + write(v, indent, inner, python)).join(sep)}${close}}`;
 }
 
 /** JSON as pydantic_core.to_json writes it (indent 2 for tool text; compact without indent). */
 export const dumps = (value: Py, indent?: number) => write(value, indent, "");
+
+/** Compact JSON as Python's json.dumps(separators=(",", ":")) writes it. */
+export const dumpsPython = (value: Py) => write(value, undefined, "", true);
