@@ -1,40 +1,10 @@
 import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
+import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, readBounded, tooLarge } from "../../shared/edge";
 
 export class BLSOEWS extends Container<Env> {
   defaultPort = 8080;
   sleepAfter = "2m";
-}
-
-// Matches the container's max_request_body_size; MCP tool calls are small.
-const MAX_BODY_BYTES = 65536;
-
-function tooLarge(): Response {
-  return new Response("Request body too large.", {status: 413});
-}
-
-async function readBounded(request: Request): Promise<ArrayBuffer | null> {
-  const reader = request.body?.getReader();
-  if (!reader) return new ArrayBuffer(0);
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  for (;;) {
-    const {done, value} = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > MAX_BODY_BYTES) {
-      await reader.cancel();
-      return null;
-    }
-    chunks.push(value);
-  }
-  const out = new Uint8Array(new ArrayBuffer(size));
-  let offset = 0;
-  for (const chunk of chunks) {
-    out.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return out.buffer;
 }
 
 export default {
@@ -61,6 +31,8 @@ export default {
       body = await readBounded(request);
       if (body === null) return tooLarge();
     }
+    const listen = listenAtEdge(request.headers, body);
+    if (listen) return listen;
     try {
       const headers = new Headers(request.headers);
       headers.set("Host", "container.internal");
@@ -68,11 +40,12 @@ export default {
       headers.delete("Cookie");
       headers.delete("Authorization");
       headers.delete("Content-Length");
-      const forwarded = new Request(`http://container.internal${url.pathname}`, {
+      const forwarded = () => new Request(`http://container.internal${url.pathname}`, {
         method: request.method, headers, body,
       });
       // A single named instance serves every user from the same bundled release.
-      return await getContainer(env.BACKEND, "public-bls-oews").fetch(forwarded);
+      const backend = getContainer(env.BACKEND, "public-bls-oews");
+      return await fetchWithRetry(() => backend.fetch(forwarded()));
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
       return Response.json({error: "BLS OEWS service temporarily unavailable."}, {status: 503, headers: {"Retry-After": "15"}});
