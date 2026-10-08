@@ -33,10 +33,45 @@ No push, no deploy, no Cloudflare changes. Parent reviews and deploys.
       11 documented, 0 unexpected.
 - [x] `test/tools.test.ts` (18 node:test cases incl. 2026-07-28). `npm test` passes.
 - [x] `tests/test_bls_loader.py` (13 cases). Passes in 3 s.
-- [ ] Workflows: `bls-oews-hosted-tests.yml`, `bls-oews-load.yml`.
-- [ ] Release-pipeline notes for the parent (RELEASE_SHA, data-refresh dispatch).
-- [ ] Rows-read report.
+- [x] Workflows: `.github/workflows/bls-oews-hosted-tests.yml` (loader tests, check, npm test, shared
+      edge test, parity on Python 3.12, wrangler dry run with `--containers-rollout=none`) and
+      `.github/workflows/bls-oews-load.yml` (push to main on data/loader/schema paths + dispatch with
+      `force`; environment sam-data-load; CLOUDFLARE_D1_TOKEN; database id placeholder).
+      tests/test_release_guards.py still passes (63).
+- [x] Rows-read report (`scripts/rows-read.ts`: full copy into Miniflare's D1, D1's own meta):
+
+      call                                             round trips  rows read  rows written
+      get_data_status / detect_latest_year / list_*    1            2          0
+      get_wage_data (default or all 17 datatypes)      1            8          0
+      get_wage_data with year=2025                     2            10         0
+      compare_metros, 3 metros                         1            18         0
+      compare_metros, 50 metros (the maximum)          1            124        0
+      compare_occupations, 4 SOCs, state               1            22         0
+      igce_wage_benchmark, metro                       1            8          0
+      argument errors                                  0            0          0
+
+      Every statement is a primary-key SEARCH (EXPLAIN QUERY PLAN on the full copy); no scans.
+      A load writes ~372K rows and deletes the previous ~372K; its count checks read ~372K.
 - [ ] Final report.
+
+## For the parent: release pipeline and cutover
+
+1. Create the D1 database `bls-oews`; put its id in `deploy/bls-oews/wrangler.jsonc` (top level and
+   env.production) and `.github/workflows/bls-oews-load.yml`. Load it (dispatch bls-oews-load.yml,
+   or `CLOUDFLARE_D1_TOKEN=... python scripts/load_bls_oews.py --remote --database-id <id>`) BEFORE
+   deploying this Worker; with an empty D1 every tool answers "temporarily unavailable".
+2. `scripts/configure_hosted_image.py` must also write `vars.RELEASE_SHA = <sha>` (top level and
+   env.production) into wrangler.release.json. The container got it as a Docker build arg; the
+   Worker reads `env.RELEASE_SHA` (else "development"), and verify_hosted_release.py waits for it.
+3. publish-pypi.yml `hosted-build` validates the Python container image, not this Worker: add
+   `npm test --prefix deploy/$SLUG` (and the parity run) for bls-oews. The deploy step still pushes
+   and rolls out the retained container; `--containers-rollout=none` would skip that if wanted.
+4. data-refresh.yml pushes with the workflow token, which does not start push workflows: after a
+   bls-oews data commit, `gh workflow run bls-oews-load.yml --ref main` (it already has
+   actions: write), ideally waiting for it like the release run.
+5. The D1 HTTP load is ~1,050 sequential API requests (~90 KB each). The loader retries 429/5xx and
+   honors Retry-After; watch the first run against the API's 1,200 requests / 5 minutes limit.
+6. `/health.admission` stays the fixed container values verify_hosted_release.py asserts.
 
 ## Key findings (analysis)
 
