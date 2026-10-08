@@ -40,8 +40,8 @@ changes from this branch.
 - [ ] `tests/test_gsa_perdiem_loader.py` (idempotence, resume after crash,
       release not switched on bad counts, GC, remote request shape via fake urlopen)
 - [x] parity harness (`parity/build_corpus.py` -> `corpus.json`, `python_side.py`,
-      `run.ts`): 188 calls in 8 scenarios, 56 mocked GSA API calls,
-      188/188 identical (text byte for byte, isError, structuredContent,
+      `run.ts`): 1,329 calls in 9 scenarios (incl. a sweep of ZIPs, states,
+      M&IE, Census places by county), 56 mocked GSA API calls, 1329/1329 identical (text byte for byte, isError, structuredContent,
       upstream request log). Fixed on the way: tools/list order (Python
       registration order, contract content), infinite floats surviving the
       response cache, budget retry rounding (ceil), `-32601` carries `data`.

@@ -413,7 +413,32 @@ def scenarios():
             call("compare_locations", {"locations": [{"city": "McLean", "state": "VA"}, {"city": "Arlington", "state": "VA", "county": "Arlington"}]}),
         ],
     })
+    out.append(sweep(y2027))
     return out
+
+
+def sweep(y2027):
+    """A deterministic sample across the bundled data: ZIPs (with and without
+    county), every state, every M&IE table, and Census places by county."""
+    requests = []
+    for fy in (2027, 2024, 2021):
+        year = snapshot.load_year(fy)
+        zips = sorted(year.zips)
+        requests += [call("lookup_zip_perdiem", {"zip_code": z, "fiscal_year": fy}) for z in zips[fy % 97::211]]
+        requests.append(call("get_mie_breakdown", {"fiscal_year": fy}))
+    states = sorted({d["state"] for d in y2027.destinations.values()} | {"WY", "ND", "DE"})
+    requests += [call("lookup_state_rates", {"state": st, "fiscal_year": 2026}) for st in states]
+    places = snapshot.places()
+    for key in sorted(places)[::157]:
+        state, name = key.split("|", 1)
+        for county, _kind in places[key][:2]:
+            requests.append(call("lookup_city_perdiem", {"city": name.title(), "state": state, "county": county.split("|", 1)[1]}))
+    ambiguous = [z for z, e in sorted(y2027.zips.items()) if len(e) > 1][::23]
+    for z in ambiguous:
+        for area, st in y2027.zip_areas(z):
+            county = "Nowhere" if area == snapshot.STANDARD else y2027.destinations[area]["location_defined"].split("/")[0].split(",")[0]
+            requests.append(call("lookup_zip_perdiem", {"zip_code": z, "county": county}))
+    return {"name": "sweep of the bundled data", "today": "2026-10-08", "requests": requests}
 
 
 def main():
