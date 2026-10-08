@@ -38,7 +38,7 @@ Branch: `claude/dell-origin`. Commit after every step.
 - [x] 6. Worker origin-first code + tests (`originFirst` in `deploy/shared/edge.ts`)
 - [x] 7. Pull-based updater (`mcp-origin-update.timer`, every 15 min)
 - [x] 8. Monitoring (`check_hosted_health.py` "Dell origin" row; cron unchanged)
-- [ ] 9. Privacy pages
+- [x] 9. Privacy pages (effective October 8, 2026; adjust if the deploy slips)
 - [ ] 10. Tests: health via Dell, fallback, load burst, listen
 - [ ] 11. Worker-only deploys (needs James's approval)
 - [ ] 12. README badge, progress page
@@ -88,3 +88,9 @@ Branch: `claude/dell-origin`. Commit after every step.
   no longer cost container time (only Acquisition.gov's still wakes).
   **Merge the PR only after the step 11 deploy**, or the row fails on the old
   Workers (they send no `X-1102tools-Backend`). 64/64 release guard tests pass.
+- Step 9: the five `/privacy` pages now say requests are usually answered by
+  a 1102tools-operated server through an encrypted Cloudflare Tunnel, with a
+  Cloudflare-hosted copy as fallback; IP, location and user-agent headers are
+  removed first; that server keeps no request logs; Worker logs note which
+  server answered. Regulations.gov's cache wording no longer implies the
+  2-minute idle stop applies to every copy.
