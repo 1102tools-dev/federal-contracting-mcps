@@ -127,6 +127,7 @@ def scenarios():
             '[{"jsonrpc": "2.0", "id": 1, "method": "ping"}]',
             '"just a string"',
             '{not json',
+            '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "lookup_city_perdiem", "arguments": {"city": "\\ud800", "state": "VA"}}}',
             call("get_data_status"),
             call("lookup_zip_perdiem", {"zip_code": "22201"}),
             call("lookup_zip_perdiem", {"zip_code": " 02101-1234 "}),

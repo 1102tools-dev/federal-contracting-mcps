@@ -8,7 +8,7 @@ import CONTRACT from "../tools-contract.json" with {type: "json"};
 import {ArgumentError, validateArguments, type PyInt} from "./args.ts";
 import {DataUnavailable, STANDARD, Snapshot, type Area, type AreaRecord, type Database, type Year} from "./data.ts";
 import {
-  add, cmp, dumps, float, isDict, isFloat, mul, num, numStr, plain, pyLen, pySlice, quote, repr, round2,
+  add, cmp, dumps, float, isDict, isFloat, mul, num, numStr, pyLen, pySlice, quote, repr, round2,
   squash, strip, title, PyFloat,
 } from "./py.ts";
 import {BASE_URL, DeadlineExceeded, ToolError, Upstream} from "./upstream.ts";
@@ -1048,6 +1048,3 @@ export async function callTool(ctx: Context, name: unknown, args: Record<string,
 }
 
 const errorResult = (text: string): CallResult => ({content: [{type: "text", text}], isError: true});
-
-/** structuredContent as plain JSON, for callers that do not use dumps(). */
-export const plainResult = (result: CallResult) => ({...result, structuredContent: plain(result.structuredContent)});

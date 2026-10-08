@@ -106,6 +106,16 @@ export async function handleMessage(message: Message, env: WorkerEnv, runtime: R
   }
 }
 
+// With the u flag a surrogate pair is one code point; only a lone half matches.
+const LONE_SURROGATE = /\p{Cs}/u;
+
+function wellFormed(value: unknown): boolean {
+  if (typeof value === "string") return !LONE_SURROGATE.test(value);
+  if (Array.isArray(value)) return value.every(wellFormed);
+  if (value && typeof value === "object") return Object.entries(value).every(([k, v]) => !LONE_SURROGATE.test(k) && wellFormed(v));
+  return true;
+}
+
 /** Tool arguments with Python's int/float distinction kept (1.0 is a float). */
 function withExactArguments(body: string, message: Message): Message {
   if (message.method !== "tools/call" || typeof message.params?.arguments !== "object" || message.params.arguments === null) return message;
@@ -133,10 +143,13 @@ export async function serve(request: Request, env: WorkerEnv, runtime: Runtime =
   if (Number(request.headers.get("Content-Length") ?? "0") > MAX_BODY_BYTES) return tooLarge();
   const raw = await readBounded(request);
   if (raw === null) return tooLarge();
-  const body = new TextDecoder().decode(raw);
   let message: unknown;
+  let body: string;
   try {
+    // The SDK's JSON parser rejects invalid UTF-8 and lone surrogate escapes.
+    body = new TextDecoder("utf-8", {fatal: true}).decode(raw);
     message = JSON.parse(body);
+    if (!wellFormed(message)) throw new SyntaxError("lone surrogate");
   } catch {
     return json(rpcError(null, -32700, "Parse error."), 400);
   }

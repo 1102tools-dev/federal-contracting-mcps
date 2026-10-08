@@ -38,6 +38,8 @@ const corpus = JSON.parse(readFileSync(CORPUS, "utf8"));
 // only the JSON-RPC error message may differ; status, code, and id must match.
 const EXPECTED_MESSAGE_ONLY: Record<string, string> = {
   '{not json': "Parse error text comes from each JSON parser (Python: 'Parse error: key must be a string at line 1 column 2').",
+  '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "lookup_city_perdiem", "arguments": {"city": "\\ud800", "state": "VA"}}}':
+    "A lone surrogate escape is a parse error on both sides; the parser's text differs (Python: 'unexpected end of hex escape ...').",
   '{"jsonrpc": "1.0", "id": 1, "method": "ping"}': "Malformed envelope: the SDK appends pydantic's multi-model union error dump.",
   '{"jsonrpc": "2.0", "id": 1, "method": 5}': "Malformed envelope: the SDK appends pydantic's multi-model union error dump.",
   '{"jsonrpc": "2.0", "id": 1}': "Malformed envelope: the SDK appends pydantic's multi-model union error dump.",
