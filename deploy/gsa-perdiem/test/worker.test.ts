@@ -105,6 +105,8 @@ test("HTTP edge: health, docs, methods, origin, limits, parse errors, notificati
   const health = await serve(new Request("https://gsa-perdiem.1102tools.com/health"), env);
   assert.deepEqual(await health.json(), {status: "ok", tools: 7, release_sha: "abc123"});
   assert.equal((await serve(new Request("https://gsa-perdiem.1102tools.com/health", {method: "POST"}), env)).status, 405);
+  const unreleased = await serve(new Request("https://gsa-perdiem.1102tools.com/health"), {...env, RELEASE_SHA: undefined});
+  assert.equal(((await unreleased.json()) as any).release_sha, "development");
   const privacy = await serve(new Request("https://gsa-perdiem.1102tools.com/privacy"), env);
   assert.match(await privacy.text(), /privacy notice/);
   assert.equal((await serve(new Request("https://gsa-perdiem.1102tools.com/"), env)).status, 200);
