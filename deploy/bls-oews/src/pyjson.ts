@@ -84,6 +84,8 @@ export function fixed(value: number | PyFloat, places: number): string {
   const x = num(value);
   if (!Number.isFinite(x)) return Number.isNaN(x) ? "nan" : x > 0 ? "inf" : "-inf";
   const sign = x < 0 || Object.is(x, -0) ? "-" : "";
+  // toFixed switches to exponent notation from 1e21; such doubles are whole numbers.
+  if (Math.abs(x) >= 1e21) return sign + BigInt(Math.abs(x)).toString() + (places ? `.${"0".repeat(places)}` : "");
   const exact = Math.abs(x).toFixed(Math.min(100, places + 60));
   const dot = exact.indexOf(".");
   if (!/^50*$/.test(exact.slice(dot + 1 + places))) return sign + Math.abs(x).toFixed(places);
