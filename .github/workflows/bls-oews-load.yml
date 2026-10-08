@@ -45,7 +45,7 @@ jobs:
     env:
       CLOUDFLARE_ACCOUNT_ID: 846d3e41e48446abcd3570c0959f9fb5
       CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
-      BLS_OEWS_D1_DATABASE_ID: REPLACE_WITH_D1_DATABASE_ID
+      BLS_OEWS_D1_DATABASE_ID: 4aeb1415-95e9-4e98-9e57-247529f2983d
       FORCE: ${{ github.event.inputs.force == 'true' && '--force' || '' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

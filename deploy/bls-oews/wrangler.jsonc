@@ -38,7 +38,7 @@
     {
       "binding": "DB",
       "database_name": "bls-oews",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+      "database_id": "4aeb1415-95e9-4e98-9e57-247529f2983d"
     }
   ],
   "ratelimits": [
@@ -89,7 +89,7 @@
         {
           "binding": "DB",
           "database_name": "bls-oews",
-          "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+          "database_id": "4aeb1415-95e9-4e98-9e57-247529f2983d"
         }
       ],
       "ratelimits": [
