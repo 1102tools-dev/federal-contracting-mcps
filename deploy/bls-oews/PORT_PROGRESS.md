@@ -1,53 +1,32 @@
 # BLS OEWS port to Worker + D1: progress
 
 Branch: `worktree-agent-ae5aa281380a9a786`
-Last code checkpoint: 4733104 ("pause checkpoint (WIP)"); the tip commit after it only records this SHA.
+See `git log` for the latest checkpoint.
 
 No push, no deploy, no Cloudflare changes. Parent reviews and deploys.
 
-## Status (paused at the parent's request)
+## Status (resumed 2026-10-08)
 
-- [x] Analysis (below). Commit a366817.
-- [x] `deploy/bls-oews/schema.sql` + `scripts/load_bls_oews.py`. Commit aedfa6a.
-      Local mode tested: full load 3.4 s, 1,000 INSERT statements (max 90 KB each, no bound params),
-      89.7 MB of SQL, resulting SQLite 58 MB; re-run is a no-op ("unchanged"); `--force` loads
-      version 2, switches, deletes version 1. Remote mode (D1 HTTP API `/query`, one statement per
-      request, retries on 429/5xx) is written but NOT exercised (no Cloudflare calls allowed).
-- [~] Worker + tool handlers: written, typecheck passes (`npm run check`), smoke-tested.
-  - `src/worker.ts`: SAM-style stateless JSON-RPC handler + fetch (publicDocs, Origin check,
-    REQUEST_LIMITER, /health with status/tools/release_sha/admission, POST /mcp only, 64 KiB body).
-    initialize mirrors Python exactly (checked); tools/list returns tools-contract.json as imported;
-    prompts/list, resources/list, resources/templates/list return empty lists like Python;
-    unknown methods -32601 "Method not found" with data=method (Python's shape).
-  - `src/index.ts`: exports the unchanged `BLSOEWS` Container class + `worker` default. Logic lives
-    in worker.ts because `@cloudflare/containers` cannot load under node:test.
-  - `src/tools.ts`: all 8 tools ported step by step from server.py; pydantic-style argument
-    validation driven by the contract inputSchema (pre_parse_json, lax coercions, extra keys
-    forbidden); one D1 batch per call (release row + cells + names), plus one extra query only when
-    an explicit `year` is passed (its range check needs the release).
-  - `src/pyjson.ts`: Python-compatible serializer (pydantic_core.to_json indent=2), float repr,
-    half-even `round`/`format`, `str.strip` whitespace set, `repr`.
-  - Smoke test via `scripts/parity-run.ts` over the local D1 copy: initialize, get_wage_data,
-    igce_wage_benchmark (burden ints -> "2.0x"), and a validation error all look identical to the
-    Python output captured earlier. No systematic parity run yet.
-  - `wrangler.jsonc`: D1 binding added top-level and in env.production (placeholder id); containers,
-    durable_objects, migrations untouched; still plain JSON (configure_hosted_image.py uses json.loads).
-  - `package.json`: added "type": "module" and `test` script. `tsconfig.json`: resolveJsonModule,
-    allowImportingTsExtensions.
-- [ ] node:test suite `deploy/bls-oews/test/*.test.ts` (adapter `test/d1.ts` exists; no tests yet).
-- [ ] Parity harness `deploy/bls-oews/scripts/parity.py` (+ `test/parity-cases.json`, 40+ cases).
-      TS side runner exists: `scripts/parity-run.ts`. Python side: use starlette TestClient on
-      `bls_oews_mcp.http.create_app()` with BLS_HOSTED=1 (see Resume for the probe script pattern).
-- [ ] Offline loader tests `tests/test_bls_loader.py` (pattern: tests/test_sam_loader.py).
-- [ ] Workflows: `.github/workflows/bls-oews-hosted-tests.yml` (model: sam-gov-hosted-tests.yml) and
-      `.github/workflows/bls-oews-load.yml` (env sam-data-load, secret CLOUDFLARE_D1_TOKEN,
-      BLS_OEWS_D1_DATABASE_ID: REPLACE_WITH_D1_DATABASE_ID, push on data path + workflow_dispatch).
-- [ ] Release-pipeline glue (decide/flag to parent):
-      1. `scripts/configure_hosted_image.py` should set `vars.RELEASE_SHA` in wrangler.release.json
-         for D1 configs; otherwise verify_hosted_release.py waits for release_sha and fails.
-      2. data-refresh.yml commits with GITHUB_TOKEN, which does not fire `push` workflows: add a
-         `gh workflow run bls-oews-load.yml --ref main` step after a bls-oews data push.
-- [ ] Rows-read report (EXPLAIN QUERY PLAN; optionally miniflare local D1 meta.rows_read).
+- [x] Analysis. Commit a366817.
+- [x] `schema.sql` + `scripts/load_bls_oews.py`. Local full load 3.4 s, 1,000 INSERTs (<= 90 KB, no
+      bound params), 58 MB SQLite. Re-run is a no-op that also removes versions an interrupted run
+      left; `--force` loads a new version, switches, deletes the old one. Remote mode (D1 HTTP API
+      `/query`, one statement per request, retries 429/5xx with Retry-After) is unit-tested with a
+      fake urlopen only; no Cloudflare calls were made.
+- [x] Worker + 8 tools (`src/worker.ts`, `src/tools.ts`, `src/pyjson.ts`), `npm run check` passes.
+- [x] Parity harness `scripts/parity.py` + `test/parity-cases.json` (145 cases), Python side in
+      hosted mode on Python 3.12 (the container's). Result: 137 identical, 8 documented, 0 unexpected.
+      Fixes it drove: result key order (content[text,type], isError, structuredContent), pydantic's
+      exact validation text (per-branch union errors, input_value repr/truncation, input_type,
+      signature field order, docs URL), floats/big ints kept from the request JSON, pydantic float
+      parsing, SDK message classification (bad id -> notification 202, client responses 202,
+      invalid envelopes 400 with the SDK's code), initialize needs clientInfo.version,
+      prompts/get code 0.
+- [x] `test/tools.test.ts` (15 node:test cases). `npm test` passes.
+- [x] `tests/test_bls_loader.py` (13 cases). Passes in 3 s.
+- [ ] Workflows: `bls-oews-hosted-tests.yml`, `bls-oews-load.yml`.
+- [ ] Release-pipeline notes for the parent (RELEASE_SHA, data-refresh dispatch).
+- [ ] Rows-read report.
 - [ ] Final report.
 
 ## Key findings (analysis)
