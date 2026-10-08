@@ -4,7 +4,7 @@
 // requests/hour, spacing between calls, and the provider's 429 cooldown.
 // Budget and spacing live in D1 so they hold across every Worker isolate.
 import type {Database} from "./data.ts";
-import {quote, quotePlus, repr, squash, strip, pySlice} from "./py.ts";
+import {PyFloat, dumps, loads, quote, quotePlus, repr, squash, strip, pySlice} from "./py.ts";
 
 export const BASE_URL = "https://api.gsa.gov/travel/perdiem/v2/rates";
 export const USER_AGENT = "gsa-perdiem-mcp/1.2.0";
@@ -61,7 +61,7 @@ export function redact(text: string, key: string | null | undefined): string {
 function redactPayload(value: unknown, key: string): unknown {
   if (typeof value === "string") return redact(value, key);
   if (Array.isArray(value)) return value.map(v => redactPayload(v, key));
-  if (value && typeof value === "object") {
+  if (value && typeof value === "object" && !(value instanceof PyFloat)) {
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, redactPayload(v, key)]));
   }
   return value;
@@ -239,7 +239,7 @@ export class Upstream {
     const cacheKey = this.cacheRequest(path);
     if (cacheKey) {
       const hit = await this.cache!.match(cacheKey);
-      if (hit) return JSON.parse(await hit.text());
+      if (hit) return loads(await hit.text());
     }
     const key = this.key;
     if (!key) throw new ToolError(HOSTED_KEY_MISSING);
@@ -251,6 +251,8 @@ export class Upstream {
     try {
       response = await this.fetcher(`${BASE_URL}/${path}`, {
         headers: {"User-Agent": USER_AGENT, "X-Api-Key": key},
+        // httpx does not follow redirects; a 3xx is reported, not chased.
+        redirect: "manual",
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
       text = await response.text();
@@ -266,7 +268,7 @@ export class Upstream {
     if (response.status >= 400) throw new ToolError(formatError(response.status, text, key));
     let payload: unknown;
     try {
-      payload = JSON.parse(text);
+      payload = loads(text);
     } catch {
       const preview = pySlice(cleanErrorBody(text || "(empty body)", key), 200);
       const type = response.headers.get("content-type") ?? "?";
@@ -275,7 +277,7 @@ export class Upstream {
     payload = redactPayload(payload, key);
     // A null payload is never served from the container's cache either.
     if (cacheKey && payload !== null) {
-      await this.cache!.put(cacheKey, new Response(JSON.stringify(payload), {
+      await this.cache!.put(cacheKey, new Response(dumps(payload, null), {
         headers: {"Content-Type": "application/json", "Cache-Control": `max-age=${this.cacheSeconds}`},
       }));
     }

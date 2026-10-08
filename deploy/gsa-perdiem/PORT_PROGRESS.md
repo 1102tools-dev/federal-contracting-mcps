@@ -15,7 +15,8 @@ changes from this branch.
 - [x] `scripts/load_gsa_perdiem.py` (done; `--local` tested twice: first load
       writes 8 parts / 326,743 data rows in <1 s, second run is a no-op
       `already_current`). Remote mode (D1 HTTP API) written, NOT exercised.
-- [~] Worker source, written but never compiled or run:
+- [x] Worker source compiles (`tsc --noEmit` clean, `erasableSyntaxOnly` so
+      node --test can strip types). Not yet run against data:
   - `src/py.ts` (Python compat: PyFloat, `dumps` = pydantic_core indent-2
     text, `plain`, float-preserving `loads`, `repr`, Python whitespace,
     `quote`/`quotePlus`, `title`, code-point `pyLen`/`pySlice`)
@@ -27,14 +28,13 @@ changes from this branch.
     D1 hourly budget 950 in minute buckets, D1 start-slot pacing 0.6 s with
     429 cooldown, 15 s timeout, Python error texts, redaction; `ToolError`,
     `DeadlineExceeded` -> HTTP 504)
-- [ ] `src/tools.ts` NOT STARTED (next step; plan below)
-- [ ] `src/index.ts` rewrite (SAM structure; keep `GSAPerDiem` Container class
-      text unchanged; still imports `@cloudflare/containers`)
-- [ ] `wrangler.jsonc`: add D1 binding (`DB`, `gsa-perdiem`,
-      `REPLACE_WITH_D1_DATABASE_ID`) top-level and `env.production`; keep
-      containers/durable_objects/migrations; `tsconfig` needs
-      `resolveJsonModule` + `allowImportingTsExtensions`; package.json add
-      `"type": "module"`, `test`, keep `check`
+- [x] `src/args.ts` (pydantic arg validation incl. exact ValidationError text,
+      pre_parse_json), `src/tools.ts` (all 7 tools + `callTool`), `src/mcp.ts`
+      (JSON-RPC + HTTP edge, 55 s deadline -> 504), `src/index.ts` (Container
+      class kept + default fetch -> `serve`). Split so node tests never import
+      `@cloudflare/containers` (it needs `cloudflare:workers`).
+- [x] `wrangler.jsonc` D1 binding (top-level + production), tsconfig,
+      package.json (`type: module`, `test`), `.gitignore`
 - [ ] tests (`test/*.test.ts`, node:test, node:sqlite D1 adapter with `batch`;
       build the DB by running the loader `--local` into a temp file)
 - [ ] `tests/test_gsa_perdiem_loader.py` (idempotence, resume after crash,

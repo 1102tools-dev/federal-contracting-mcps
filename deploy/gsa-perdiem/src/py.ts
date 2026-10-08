@@ -5,40 +5,77 @@
 
 /** A Python float. Plain numbers are Python ints; 51.0 must print as 51.0. */
 export class PyFloat {
-  constructor(readonly value: number) {}
+  readonly value: number;
+  constructor(value: number) {
+    this.value = value;
+  }
 }
 
 export const float = (value: number) => new PyFloat(value);
-export const num = (value: number | PyFloat) => (value instanceof PyFloat ? value.value : value);
+export const num = (value: unknown): number =>
+  value instanceof PyFloat ? value.value : typeof value === "bigint" ? Number(value) : (value as number);
+export const isFloat = (value: unknown): value is PyFloat => value instanceof PyFloat;
+/** A Python dict: a plain object, never a list, None, or a float. */
+export const isDict = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value) && !(value instanceof PyFloat) && !(value instanceof Map);
 
-// Shortest round-trip digits, as Python and pydantic_core print floats. The
-// values here are dollar amounts; exponent forms only matter for huge input.
-function floatRepr(value: number): string {
-  if (Math.abs(value) >= 1e16) return value.toExponential();
-  if (Number.isInteger(value)) return (Object.is(value, -0) ? "-0" : String(value)) + ".0";
-  return String(value);
+/** Python arithmetic: int op int stays int; a float on either side gives a float. */
+export const add = (a: unknown, b: unknown) => wrap(num(a) + num(b), a, b);
+export const mul = (a: unknown, b: unknown) => wrap(num(a) * num(b), a, b);
+const wrap = (value: number, a: unknown, b: unknown) => (isFloat(a) || isFloat(b) ? float(value) : value);
+
+/** Python's float formatting: pydantic_core JSON (json = true) or repr()/str(). */
+function floatText(value: number, json: boolean): string {
+  if (Number.isNaN(value)) return json ? "null" : "nan";
+  if (!Number.isFinite(value)) return json ? "null" : value > 0 ? "inf" : "-inf";
+  if (value === 0) return Object.is(value, -0) ? "-0.0" : "0.0";
+  const [mantissa, exponentText] = value.toExponential().split("e");
+  const exponent = Number(exponentText);
+  if (exponent >= 16) return `${mantissa}e+${json ? exponent : String(exponent).padStart(2, "0")}`;
+  if (!json && exponent < -4) return `${mantissa}e-${String(-exponent).padStart(2, "0")}`;
+  const text = String(value);
+  return Number.isInteger(value) ? text + ".0" : text;
 }
 
-/** pydantic_core.to_json(value, indent=2), which the SDK uses for the text content. */
-export function dumps(value: unknown, indent = ""): string {
+/** str() / repr() of a Python number. */
+export function numStr(value: unknown): string {
+  if (value instanceof PyFloat) return floatText(value.value, false);
+  if (typeof value === "bigint") return String(value);
+  return Number.isInteger(value) ? String(value) : floatText(value as number, false);
+}
+
+/**
+ * pydantic_core.to_json(value, indent=2), which the SDK uses for the text
+ * content; with indent null, the same value as compact JSON. Maps are dicts
+ * whose key order must survive (JavaScript objects move integer-like keys).
+ */
+export function dumps(value: unknown, indent: string | null = ""): string {
   if (value === null || value === undefined) return "null";
-  if (value instanceof PyFloat) return floatRepr(value.value);
-  if (typeof value === "number") return Number.isInteger(value) ? String(value) : floatRepr(value);
+  if (value instanceof PyFloat) return floatText(value.value, true);
+  if (typeof value === "bigint") return String(value);
+  if (typeof value === "number") return Number.isInteger(value) ? String(value) : floatText(value, true);
   if (typeof value === "string" || typeof value === "boolean") return JSON.stringify(value);
-  const inner = indent + "  ";
+  const inner = indent === null ? null : indent + "  ";
+  const open = inner === null ? "" : "\n" + inner;
+  const sep = inner === null ? "," : ",\n" + inner;
+  const close = inner === null ? "" : "\n" + indent;
   if (Array.isArray(value)) {
     if (!value.length) return "[]";
-    return "[\n" + value.map(v => inner + dumps(v, inner)).join(",\n") + "\n" + indent + "]";
+    return "[" + open + value.map(v => dumps(v, inner)).join(sep) + close + "]";
   }
-  const entries = Object.entries(value as Record<string, unknown>).filter(([, v]) => v !== undefined);
+  const entries = (value instanceof Map ? [...value.entries()] : Object.entries(value as object))
+    .filter(([, v]) => v !== undefined);
   if (!entries.length) return "{}";
-  return "{\n" + entries.map(([k, v]) => inner + JSON.stringify(k) + ": " + dumps(v, inner)).join(",\n") + "\n" + indent + "}";
+  const colon = inner === null ? ":" : ": ";
+  return "{" + open + entries.map(([k, v]) => JSON.stringify(String(k)) + colon + dumps(v, inner)).join(sep) + close + "}";
 }
 
-/** The same value as plain JSON data (structuredContent). */
+/** The same value as plain JSON data. */
 export function plain(value: unknown): unknown {
   if (value instanceof PyFloat) return value.value;
+  if (typeof value === "bigint") return Number(value);
   if (Array.isArray(value)) return value.map(plain);
+  if (value instanceof Map) return plain(Object.fromEntries(value));
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value)) if (v !== undefined) out[k] = plain(v);
@@ -47,10 +84,39 @@ export function plain(value: unknown): unknown {
   return value;
 }
 
-/** JSON.parse that keeps Python's int/float distinction (1.0 stays a float). */
-export function loads(text: string): any {
-  return (JSON.parse as any)(text, (_key: string, value: unknown, context?: {source?: string}) =>
-    typeof value === "number" && context?.source && /[.eE]/.test(context.source) ? new PyFloat(value) : value);
+/**
+ * JSON.parse that keeps Python's int/float distinction (1.0 stays a float).
+ * With bigints, integers beyond 2**53 stay exact, as Python ints do.
+ */
+export function loads(text: string, options: {bigints?: boolean} = {}): any {
+  return (JSON.parse as any)(text, (_key: string, value: unknown, context?: {source?: string}) => {
+    if (typeof value !== "number" || !context?.source) return value;
+    if (/[.eE]/.test(context.source)) return new PyFloat(value);
+    if (options.bigints && !Number.isSafeInteger(value)) return BigInt(context.source);
+    return value;
+  });
+}
+
+/** Python's round(x, 2): the double nearest the decimal rounded half to even. */
+export function round2(value: number): PyFloat {
+  if (!Number.isFinite(value) || Math.abs(value) >= 1e15) return float(value);
+  const [whole, fraction] = Math.abs(value).toFixed(100).split(".");
+  let scaled = BigInt(whole + fraction.slice(0, 2));
+  const rest = fraction.slice(2).replace(/0+$/, "");
+  if (rest > "5" || (rest === "5" && scaled % 2n === 1n)) scaled += 1n;
+  const rounded = Number(scaled) / 100;
+  return float(value < 0 || Object.is(value, -0) ? -rounded : rounded);
+}
+
+/** Python's sort order for strings: by code point. */
+export function cmp(a: string, b: string): number {
+  const x = [...a];
+  const y = [...b];
+  for (let i = 0; i < Math.min(x.length, y.length); i++) {
+    const d = x[i].codePointAt(0)! - y[i].codePointAt(0)!;
+    if (d) return d;
+  }
+  return x.length - y.length;
 }
 
 // Python's str.isspace() set, which \s and strip() use.
@@ -93,10 +159,10 @@ export function repr(value: unknown): string {
   if (value === null || value === undefined) return "None";
   if (value === true) return "True";
   if (value === false) return "False";
-  if (value instanceof PyFloat) return floatRepr(value.value);
-  if (typeof value === "number") return Number.isInteger(value) ? String(value) : floatRepr(value);
+  if (value instanceof PyFloat || typeof value === "number" || typeof value === "bigint") return numStr(value);
   if (typeof value === "string") return reprString(value);
   if (Array.isArray(value)) return "[" + value.map(repr).join(", ") + "]";
+  if (value instanceof Map) return "{" + [...value].map(([k, v]) => repr(k) + ": " + repr(v)).join(", ") + "}";
   return "{" + Object.entries(value as object).map(([k, v]) => repr(k) + ": " + repr(v)).join(", ") + "}";
 }
 

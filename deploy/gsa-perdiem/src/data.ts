@@ -65,11 +65,15 @@ export const placeKey = (state: string, place: string) => `${strip(state).toUppe
 // ---------- snapshot.py ----------
 
 export class Year {
+  readonly data: YearData;
   readonly fiscal_year: number;
   readonly destinations = new Map<number, Destination>();
+  private places: Places;
   private byStateName = new Map<string, number>();
 
-  constructor(readonly data: YearData, private places: Places) {
+  constructor(data: YearData, places: Places) {
+    this.data = data;
+    this.places = places;
     this.fiscal_year = data.fiscal_year;
     for (const d of data.destinations) this.destinations.set(d.id, d);
     for (const [st, ids] of Object.entries(data.state_members)) {
@@ -152,7 +156,10 @@ export class Year {
 /** Census names from the places table, memoized for one tool call. */
 export class Places {
   private memo = new Map<string, Hits | null>();
-  constructor(private db: Database) {}
+  private db: Database;
+  constructor(db: Database) {
+    this.db = db;
+  }
 
   async get(keys: string[]): Promise<Map<string, Hits>> {
     const missing = [...new Set(keys)].filter(k => !this.memo.has(k));
@@ -181,9 +188,11 @@ const PART = "(SELECT json_extract(parts, '$.' || ?1) FROM release WHERE id = 1)
 /** Per-call access to the active release. */
 export class Snapshot {
   readonly places: Places;
+  private db: Database;
   private years = new Map<number, Promise<Year | null>>();
 
-  constructor(private db: Database) {
+  constructor(db: Database) {
+    this.db = db;
     this.places = new Places(db);
   }
 

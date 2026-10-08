@@ -1,8 +1,10 @@
 {
   "name": "1102tools-gsa-perdiem-remote",
   "private": true,
+  "type": "module",
   "scripts": {
     "check": "wrangler types && tsc --noEmit",
+    "test": "node --test \"test/*.test.ts\"",
     "dry-run": "wrangler deploy --dry-run --env production",
     "deploy": "wrangler deploy --env production"
   },
