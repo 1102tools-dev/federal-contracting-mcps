@@ -245,8 +245,15 @@ export class Upstream {
   async get(path: string): Promise<any> {
     const cacheKey = this.cacheRequest(path);
     if (cacheKey) {
-      const hit = await this.cache!.match(cacheKey);
-      if (hit) return loads(await hit.text());
+      // The cache only saves upstream calls; if it fails, ask GSA.
+      const hit = await this.cache!.match(cacheKey).then(r => r?.text(), () => undefined);
+      if (hit !== undefined) {
+        try {
+          return loads(hit);
+        } catch {
+          // A damaged entry is replaced below.
+        }
+      }
     }
     const key = this.key;
     if (!key) throw new ToolError(HOSTED_KEY_MISSING);
@@ -286,7 +293,7 @@ export class Upstream {
     if (cacheKey && payload !== null) {
       await this.cache!.put(cacheKey, new Response(dumps(payload, null, true), {
         headers: {"Content-Type": "application/json", "Cache-Control": `max-age=${this.cacheSeconds}`},
-      }));
+      })).catch(() => undefined);
     }
     return payload;
   }

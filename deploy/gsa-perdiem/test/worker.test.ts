@@ -164,6 +164,15 @@ test("live lookups send the key only in X-Api-Key, cache for a day, and never ec
   assert.match(first.content[0].text, /Echo \[REDACTED\]/);
 });
 
+test("a failing cache never fails a lookup", async () => {
+  const broken: CacheLike = {match: async () => { throw new Error("cache down"); }, put: async () => { throw new Error("cache down"); }};
+  const city = CITY("Boise", [rate("Boise", "Ada", 86, 150)]);
+  const {call} = setup({runtime: {cache: broken, fetch: gsa({[city.path]: {body: city.body}})}});
+  const result = await call("lookup_city_perdiem", {city: "Boise", state: "VA"});
+  assert.equal(result.isError, false);
+  assert.equal(result.structuredContent.match_type, "exact");
+});
+
 test("upstream errors are redacted and reported as tool errors", async () => {
   const path = CITY("Broken", []).path;
   const {call} = setup({runtime: {fetch: gsa({[path]: {status: 500, body: `oops ${KEY}`, headers: {"content-type": "text/plain"}}})}});
