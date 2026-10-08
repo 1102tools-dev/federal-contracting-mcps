@@ -15,14 +15,23 @@ No push, no deploy, no Cloudflare changes. Parent reviews and deploys.
       fake urlopen only; no Cloudflare calls were made.
 - [x] Worker + 8 tools (`src/worker.ts`, `src/tools.ts`, `src/pyjson.ts`), `npm run check` passes.
 - [x] Parity harness `scripts/parity.py` + `test/parity-cases.json` (145 cases), Python side in
-      hosted mode on Python 3.12 (the container's). Result: 137 identical, 8 documented, 0 unexpected.
+      hosted mode on Python 3.12 (the container's).
       Fixes it drove: result key order (content[text,type], isError, structuredContent), pydantic's
       exact validation text (per-branch union errors, input_value repr/truncation, input_type,
       signature field order, docs URL), floats/big ints kept from the request JSON, pydantic float
       parsing, SDK message classification (bad id -> notification 202, client responses 202,
       invalid envelopes 400 with the SDK's code), initialize needs clientInfo.version,
       prompts/get code 0.
-- [x] `test/tools.test.ts` (15 node:test cases). `npm test` passes.
+- [x] MCP 2026-07-28 (found while checking parity: the live SDK serves it and Claude uses it, see
+      deploy/shared/edge.ts). `src/modern.ts` mirrors the SDK's single-exchange path: Accept 406,
+      parse/-32600 envelope errors with `id:null` last, the `_meta`/routing-header ladder (-32602,
+      -32020, -32022), the 2026 method surface (ping/initialize -> 404), server/discover, results
+      with cacheScope/ttlMs/resultType and the serverInfo `_meta` stamp, statuses 400/404, and
+      json.dumps output (ASCII escapes, repr floats). subscriptions/listen streams go through
+      `listenAtEdge` exactly as the previous Worker did. The SDK's Content-Type (400/415) and Accept
+      (406) checks are mirrored for the handshake era too. Parity now 208 cases: 197 identical,
+      11 documented, 0 unexpected.
+- [x] `test/tools.test.ts` (18 node:test cases incl. 2026-07-28). `npm test` passes.
 - [x] `tests/test_bls_loader.py` (13 cases). Passes in 3 s.
 - [ ] Workflows: `bls-oews-hosted-tests.yml`, `bls-oews-load.yml`.
 - [ ] Release-pipeline notes for the parent (RELEASE_SHA, data-refresh dispatch).
