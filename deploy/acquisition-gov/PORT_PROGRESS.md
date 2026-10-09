@@ -1,7 +1,17 @@
 # Acquisition.gov port to Worker + D1: progress
 
-Branch: `worktree-agent-a7712d90cbb54b2c9` (base fe60f58). Latest commit: the one adding this file
-(`git log -1 --format=%H`). Status: PAUSED at a checkpoint. No push, no deploy, no Cloudflare changes.
+Branch: `worktree-agent-a7712d90cbb54b2c9`, main merged in on 2026-10-08 (after PR #35 and #37).
+Status: ACTIVE (restarted 2026-10-08 night from Desktop handoff 3, one session, no agents). No push, no
+deploy, no Cloudflare changes until James says go.
+
+## Session log (newest last)
+- Merged main (clean). Recording crawl resumed with `--record-only` in the background
+  (`.snapshot.nosync/crawl2.log`).
+- Loader: `--replay` of the partial recording into a fresh sqlite works (304 docs parsed, 68 s); a second
+  run on top reuses every doc and switches snapshot 1 -> 2. Fixed: the end-of-run carry-forward rule (a PDF
+  carries over unless this run or the resumed one stored it fresh; one query instead of one per PDF, which
+  mattered for remote D1), and the `fetched` counter. The guidance_pdf timeout fallback already matches the
+  live server's timeout answer; left as is.
 
 ## Done
 - Studied SAM (`deploy/sam-gov`), the container Worker, the Python package, mcp SDK 2.0.0 serializers,

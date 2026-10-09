@@ -596,7 +596,8 @@ class Loader:
         self.now = now or (lambda: dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat())
         self.parsers = asyncio.Semaphore(2)
         self.pending: list[asyncio.Task] = []
-        self.counts = {"fetched": 0, "parsed": 0, "reused": 0, "fetch_errors": 0, "carried_forward": 0}
+        self.stored: set[str] = set()  # source keys this run wrote fresh rows for
+        self.counts = {"fetched": 0, "parsed": 0, "reused": 0, "fetch_errors": 0, "transient_kept": 0, "carried_forward": 0}
 
     def meta(self) -> dict:
         return {r["key"]: r["value"] for r in self.db.query("SELECT key, value FROM meta")}
@@ -625,6 +626,7 @@ class Loader:
         row = {"snapshot": snapshot, "key": key, "url": fetched["url"], "final_url": fetched.get("final_url"),
                "source_id": None, "retrieved_at": fetched["fetched_at"], "content_sha256": fetched.get("sha256"),
                "error": fetched.get("error"), "doc": None}
+        self.counts["fetched"] += 1
         if "error" in fetched:
             self.counts["fetch_errors"] += 1
         else:
@@ -643,6 +645,7 @@ class Loader:
                 else:
                     self.counts["reused"] += 1
         self.db.execute(inserts("sources", list(row), [list(row.values())]))
+        self.stored.add(key)
         return row
 
     def later(self, coroutine):
@@ -694,26 +697,28 @@ class Loader:
                 continue
             old = previous_sources.get(f"pdf:{url}")
             if fetched.get("transient") and old and not old["error"]:
-                self.counts["carried_forward"] += 1  # keep the last good copy
+                self.counts["transient_kept"] += 1  # keep the last good copy
                 continue
             self.later(self.store(staging, f"pdf:{url}", fetched, None, "pdf"))
             if i % 50 == 0:
                 self.log(f"  {i}/{len(fetch)} PDFs ({time.monotonic() - started:.0f}s)")
         await self.drain()
 
-        # Everything not fetched this run carries over from the current snapshot.
+        # Indexed PDFs that neither this run nor the resumed one stored fresh
+        # (not rechecked, or a transient failure) carry over from the current
+        # snapshot; staged PDFs the index no longer lists are dropped.
         keep = [f"pdf:{u}" for u in urls]
-        carried = [k for k in keep if k in previous_sources and k not in done and k not in {f"pdf:{u}" for u in fetch}]
-        carried += [k for k in keep if k in previous_sources and k in {f"pdf:{u}" for u in fetch}
-                    and not self.db.query("SELECT 1 FROM sources WHERE snapshot = ? AND key = ?", [staging, k])]
+        carried = [k for k in keep if k in previous_sources and k not in done and k not in self.stored]
         for start in range(0, len(carried), 80):
             batch = carried[start:start + 80]
             self.db.execute([f"INSERT OR REPLACE INTO sources SELECT {staging}, key, url, final_url, source_id, retrieved_at, "
                              f"content_sha256, error, doc FROM sources WHERE snapshot = {current} AND key IN ({', '.join(quote(k) for k in batch)});"])
-        stale = [r["key"] for r in self.db.query("SELECT key FROM sources WHERE snapshot = ? AND key LIKE 'pdf:%'", [staging]) if r["key"] not in set(keep)]
+        self.counts["carried_forward"] = len(carried)
+        staged_now = {r["key"] for r in self.db.query("SELECT key FROM sources WHERE snapshot = ? AND key LIKE 'pdf:%'", [staging])}
+        stale = sorted(staged_now - set(keep))
         for start in range(0, len(stale), 80):
             self.db.execute([f"DELETE FROM sources WHERE snapshot = {staging} AND key IN ({', '.join(quote(k) for k in stale[start:start + 80])});"])
-        missing = [k for k in keep if not self.db.query("SELECT 1 FROM sources WHERE snapshot = ? AND key = ?", [staging, k])] if len(keep) < 5000 else []
+        missing = [k for k in keep if k not in staged_now]
         if missing:
             raise Abort(f"{len(missing)} indexed PDFs have no stored copy (first: {missing[0]}); stopping without switching.")
         return self.switch(current, staging, started, len(urls))
