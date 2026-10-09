@@ -311,11 +311,23 @@ class Recorder:
         return f"{url} {kind[0][0]}"
 
     def save(self, url: str, kind, result: dict):
-        entry = {k: v for k, v in result.items() if k != "body"}
+        entry = {k: v for k, v in result.items() if k not in ("body", "parsed")}
         if "body" in result:
-            (self.path / "bodies" / result["sha256"]).write_bytes(result["body"])
+            body = self.path / "bodies" / result["sha256"]
+            if not body.exists():
+                partial = body.with_suffix(".partial")
+                partial.write_bytes(result["body"])
+                os.replace(partial, body)
         self.entries[self.key(url, kind)] = entry
-        (self.path / "manifest.json").write_text(json.dumps(self.entries, indent=1, sort_keys=True))
+        manifest = self.path / "manifest.json"
+        partial = manifest.with_suffix(".partial")
+        partial.write_text(json.dumps(self.entries, indent=1, sort_keys=True))
+        os.replace(partial, manifest)
+
+    def has(self, url: str, kind) -> bool:
+        """A recorded body, or an error that a retry would not change."""
+        entry = self.entries.get(self.key(url, kind))
+        return entry is not None and not entry.get("transient")
 
     def load(self, url: str, kind) -> dict | None:
         entry = self.entries.get(self.key(url, kind))
@@ -330,8 +342,11 @@ class Recorder:
 class Fetcher:
     """Fetches the way the tools did, through the package's _fetch_bytes (pacing, redirects, limits)."""
 
-    def __init__(self, recorder: Recorder | None = None, replay: Recorder | None = None, retry_pause: float = 30.0):
+    def __init__(self, recorder: Recorder | None = None, replay: Recorder | None = None, retry_pause: float = 30.0,
+                 max_cooldown: float = 0.0, log=print):
         self.recorder, self.replay, self.retry_pause = recorder, replay, retry_pause
+        self.max_cooldown, self.log = max_cooldown, log
+        self.allow_missing = False
         self.requests = self.bytes = 0
         self.cache: dict[tuple, dict] = {}
         server.USER_AGENT = USER_AGENT
@@ -344,6 +359,8 @@ class Fetcher:
         if self.replay:
             result = self.replay.load(url, kind)
             if result is None:
+                if self.allow_missing:
+                    return None
                 raise Abort(f"{url} is not in the replayed recording")
         else:
             result = await self._fetch(url, kind)
@@ -356,15 +373,27 @@ class Fetcher:
 
     async def _fetch(self, url: str, kind) -> dict:
         allowed, max_bytes = kind
-        for attempt in range(2):
+        attempt = waits = 0
+        while attempt < 2:
             self.requests += 1
             try:
                 body, content_type, final_url = await server._fetch_bytes(url, allowed_types=allowed, max_bytes=max_bytes)
             except (RuntimeError, ValueError) as exc:
                 message = str(exc)
+                cooldown = re.search(r"cooldown remains active for approximately (\d+) seconds", message)
+                if cooldown and int(cooldown.group(1)) <= self.max_cooldown and waits < 5:
+                    waits += 1
+                    # Retry-After from an earlier 429, recorded by the package's pacer.
+                    self.log(f"Acquisition.gov asked us to wait {cooldown.group(1)} s; waiting.")
+                    await asyncio.sleep(int(cooldown.group(1)) + 5)
+                    continue
+                if "rate limited the request" in message and self.max_cooldown and "Retry-After=" in message and waits < 5:
+                    waits += 1
+                    continue  # the next attempt reports the recorded cooldown
                 if fatal(message):
                     raise Abort(f"Stopping without switching snapshots: {message}")
                 if transient(message) and attempt == 0:
+                    attempt += 1
                     await asyncio.sleep(self.retry_pause)
                     continue
                 return {"url": url, "error": message, "transient": transient(message), "fetched_at": server._now()}
@@ -660,6 +689,9 @@ class Loader:
         self.log(f"PDFs: {len(new)} new or failed, {len(fetch) - len(new)} rechecked, {len(done)} already staged")
         for i, url in enumerate(fetch, 1):
             fetched = await self.fetcher.fetch(url, PDF)
+            if fetched is None:  # --allow-missing: absent from a partial recording
+                urls.remove(url)
+                continue
             old = previous_sources.get(f"pdf:{url}")
             if fetched.get("transient") and old and not old["error"]:
                 self.counts["carried_forward"] += 1  # keep the last good copy
@@ -708,6 +740,40 @@ class Loader:
         return stats
 
 
+async def record_only(recorder: Recorder, log=print) -> dict:
+    """Fetch every resource the tools can request into a recording, resuming where it stopped.
+
+    Nothing is parsed or stored in a database; build from the recording with --replay.
+    """
+    fetcher = Fetcher(recorder=recorder, max_cooldown=3600, log=log)
+    started, skipped = time.monotonic(), 0
+
+    async def get(url, kind):
+        nonlocal skipped
+        if recorder.has(url, kind):
+            skipped += 1
+            return recorder.load(url, kind)
+        return await fetcher.fetch(url, kind)
+
+    index = await get(constants.RFO_INDEX_URL, HTML)
+    if "error" in index:
+        raise Abort(f"Index unavailable: {index['error']}")
+    parts = _html._parse_index(index["body"], index["final_url"])
+    urls = list(dict.fromkeys(d["source_url"] for p in parts for d in p["agency_deviations"]))
+    log(f"index: {len(parts)} parts, {len(urls)} PDFs")
+    for n in PARTS:
+        await get(f"{constants.RFO_INDEX_URL}/far-overhaul-part-{n}", HTML)
+    for name, url in constants.GUIDANCE_URLS.items():
+        await get(url, PDF if name == "deviation_guidance" else HTML)
+    for i, url in enumerate(urls, 1):
+        await get(url, PDF)
+        if i % 25 == 0:
+            log(f"  {i}/{len(urls)} PDFs, {fetcher.requests} requests, {fetcher.bytes / 1e6:.0f} MB, {time.monotonic() - started:.0f}s")
+    errors = sum(1 for e in recorder.entries.values() if "error" in e)
+    return {"pdfs": len(urls), "requests": fetcher.requests, "skipped": skipped, "bytes": fetcher.bytes,
+            "errors": errors, "seconds": round(time.monotonic() - started, 1)}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     target = parser.add_mutually_exclusive_group()
@@ -718,10 +784,18 @@ def main(argv=None):
     parser.add_argument("--replay", type=Path, help="use responses saved by --record; no network")
     parser.add_argument("--revalidate", type=int, default=100, help="also recheck this many least recently fetched PDFs")
     parser.add_argument("--full", action="store_true", help="refetch every PDF")
+    parser.add_argument("--allow-missing", action="store_true", help="with --replay: leave out PDFs a partial recording lacks")
+    parser.add_argument("--record-only", action="store_true", help="with --record: fetch everything into the recording, resuming; no database")
     parser.add_argument("--parse-worker", nargs=2, metavar=("KIND", "ARGS"), help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.parse_worker:
         return parse_worker(args.parse_worker[0], json.loads(args.parse_worker[1]))
+    if args.record_only:
+        if not args.record:
+            raise SystemExit("--record-only needs --record DIR.")
+        stats = asyncio.run(record_only(Recorder(args.record), log=lambda m: print(m, file=sys.stderr, flush=True)))
+        print(json.dumps(stats, indent=2))
+        return
     if args.remote:
         token = os.environ.get("CLOUDFLARE_D1_TOKEN") or os.environ.get("CLOUDFLARE_API_TOKEN")
         if not token:
@@ -732,6 +806,7 @@ def main(argv=None):
     else:
         raise SystemExit("Pass --remote or --local PATH.")
     fetcher = Fetcher(Recorder(args.record) if args.record else None, Recorder(args.replay) if args.replay else None)
+    fetcher.allow_missing = args.allow_missing
     stats = asyncio.run(Loader(db, fetcher, revalidate=args.revalidate, full=args.full or bool(args.replay),
                                log=lambda m: print(m, file=sys.stderr, flush=True)).run())
     print(json.dumps(stats, indent=2))
