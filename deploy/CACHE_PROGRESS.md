@@ -45,3 +45,10 @@ no stats); eCFR `XmlCache` (5 minutes, 128 entries, 32 MiB, coalesces misses wit
   lock, so the 2-4 in-flight limits still apply to different questions).
 
 ## Log
+
+- **Step 1 code (2026-10-09):** `toolName()` / `logToolCall()` in `deploy/shared/edge.ts`; the five
+  Dell-fronted Workers log `{"event":"tool_call","service","tool","backend","status","ms"}` after each
+  answer. Tool name only, never arguments; a name that isn't a plain identifier logs as "other".
+  Test in `deploy/shared/edge.test.ts` (17/17). `tsc` clean on four; Regulations.gov shows only its
+  pre-existing container-class type error (same on main). Not deployed on its own: it ships with
+  the step 7 releases (each release redeploys that service's Worker), so one deploy per service.

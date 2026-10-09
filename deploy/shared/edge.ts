@@ -289,6 +289,37 @@ export async function originFirst(
   return tagged(response, "container");
 }
 
+// --- Tool-call log ------------------------------------------------------------
+//
+// One line per tools/call so Workers Logs can count which tools people use.
+// It names the tool only, never its arguments: they can hold what people
+// typed. A name that isn't a plain tool identifier logs as "other".
+
+const TOOL_NAME = /^[a-z][a-z0-9_]{0,63}$/;
+
+/** The tools/call tool name in a request body, or null for anything else. */
+export function toolName(body: ArrayBuffer | null): string | null {
+  if (!body) return null;
+  let message: unknown;
+  try {
+    message = JSON.parse(new TextDecoder().decode(body));
+  } catch {
+    return null;
+  }
+  if (!isObject(message) || message.method !== "tools/call") return null;
+  const name = isObject(message.params) ? message.params.name : undefined;
+  return typeof name === "string" && TOOL_NAME.test(name) ? name : "other";
+}
+
+export function logToolCall(service: string, body: ArrayBuffer | null, response: Response, started: number): void {
+  const tool = toolName(body);
+  if (tool === null) return;
+  console.log(JSON.stringify({
+    event: "tool_call", service, tool, backend: response.headers.get("X-1102tools-Backend"),
+    status: response.status, ms: Date.now() - started,
+  }));
+}
+
 // --- Per-address request limits ---------------------------------------------
 //
 // Every caller gets REQUEST_LIMITER's limit (120 a minute per address). AI
