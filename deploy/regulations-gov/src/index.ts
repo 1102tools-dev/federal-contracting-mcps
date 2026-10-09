@@ -2,11 +2,12 @@ import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
 import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit } from "../../shared/edge";
 
-export class RegulationsGov extends Container<Env> {
+export class RegulationsGov extends Container {
   defaultPort = 8080;
   sleepAfter = "2m";
   // The operator's api.data.gov key stays in Cloudflare secrets; users never supply or see it.
-  envVars = {REGULATIONS_GOV_API_KEY: this.env.REGULATIONS_GOV_API_KEY ?? ""};
+  // (The secret is typed on Env in secrets.d.ts, not on the generated Cloudflare.Env.)
+  envVars = {REGULATIONS_GOV_API_KEY: (this.env as Env).REGULATIONS_GOV_API_KEY ?? ""};
 }
 
 export default {
