@@ -113,3 +113,10 @@ no stats); eCFR `XmlCache` (5 minutes, 128 entries, 32 MiB, coalesces misses wit
 - CI: `publish-pypi.yml` shared-safety-tests runs `sync_response_cache.py --check` and
   `tests/test_response_cache.py`; `release-guard-checks.yml` too. New repo test: the five hosted
   Dockerfiles set `MCP_RESPONSE_CACHE=1`.
+- **Step 7 checks (2026-10-09):** `test_release_guards.py` 64 pass; `test_hosted_admission.py` 97 pass;
+  `sync_pacing.py --check` and `sync_response_cache.py --check` clean; `validate_versions.py` 9 ok;
+  `check_hosted_contract.py` unchanged for all five (8, 8, 13, 55, 9 tools) under Python 3.11 like
+  CI. (Under this Mac's Python 3.14 every tool shows "changed": 3.13+ strips docstring
+  indentation. Environmental, not a tool change.) All five package suites and the shared tests
+  also pass on 3.11. Release versions: gsa-calc 1.0.10, federal-register 1.0.10, ecfr 1.0.11,
+  usaspending 1.0.10, regulations-gov 2.0.1.
