@@ -191,7 +191,7 @@ def test_all_http_sites_are_paced_and_helpers_are_synchronized() -> None:
         "gsa-perdiem-mcp/src/gsa_perdiem_mcp/server.py": 1,
         "regulations-gov-mcp/src/regulationsgov_mcp/server.py": 1,
         "sam-gov-mcp/src/sam_gov_mcp/server.py": 1,
-        "usaspending-gov-mcp/src/usaspending_gov_mcp/server.py": 4,
+        "usaspending-gov-mcp/src/usaspending_gov_mcp/server.py": 1,  # every call goes through _send
     }
     canonical = (ROOT / "shared" / "federal_api_pacing.py").read_bytes()
     for relative, count in expected_counts.items():

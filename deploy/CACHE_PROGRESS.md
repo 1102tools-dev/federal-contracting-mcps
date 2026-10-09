@@ -120,3 +120,15 @@ no stats); eCFR `XmlCache` (5 minutes, 128 entries, 32 MiB, coalesces misses wit
   indentation. Environmental, not a tool change.) All five package suites and the shared tests
   also pass on 3.11. Release versions: gsa-calc 1.0.10, federal-register 1.0.10, ecfr 1.0.11,
   usaspending 1.0.10, regulations-gov 2.0.1.
+- **Release attempt 1 (2026-10-09 04:18 UTC):** PR #44 merged (cc26f40). Tag `gsa-calc/v1.0.10` failed in
+  shared-safety-tests before anything deployed: `tests/test_federal_api_pacing.py` counts
+  `.request_slot()` sites and USAspending now has 1 (all calls go through `_send`), not 4. I had not
+  run that test locally. Cancelled the queued `federal-register/v1.0.10` run and deleted both tags
+  before the Dell's 04:28 updater run, so the Dell never built them. Fix PR: count 1, plus a
+  type-only fix so `deploy/regulations-gov` passes `npm run check` (the release runs it; it failed on
+  main too): class `extends Container` and reads the secret via `(this.env as Env)`.
+- Pre-release Worker versions (rollback with `npx wrangler rollback <id> --env production` in
+  `deploy/<slug>`): gsa-calc a07ae445-5187-4c84-8c81-2073b50ad353, federal-register
+  1cea4694-20f2-4fd2-bae9-168b9401ef68, ecfr 225f3214-569e-4512-be78-90f5c0fa0c35, usaspending
+  a3d30a7d-6868-4058-8f43-125f11d7bd32, regulations-gov 27142581-9255-4622-9517-a9d002912982.
+  Previous release tags: v1.0.32 (e63cc60) for four, regulations-gov/v2.0.0 (0691651).
