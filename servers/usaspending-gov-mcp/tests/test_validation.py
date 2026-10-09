@@ -508,6 +508,8 @@ def test_ensure_dict_response_catches_none():
     class FakeResp:
         status_code = 200
         def raise_for_status(self): pass
+        @property
+        def content(self): return __import__('json').dumps(self.json()).encode()
         def json(self): return None
     class FakeClient:
         is_closed = False
@@ -528,6 +530,8 @@ def test_ensure_dict_response_catches_list():
     class FakeResp:
         status_code = 200
         def raise_for_status(self): pass
+        @property
+        def content(self): return __import__('json').dumps(self.json()).encode()
         def json(self): return []
     class FakeClient:
         is_closed = False
@@ -548,6 +552,8 @@ def test_ensure_dict_response_catches_int():
     class FakeResp:
         status_code = 200
         def raise_for_status(self): pass
+        @property
+        def content(self): return __import__('json').dumps(self.json()).encode()
         def json(self): return 42
     class FakeClient:
         is_closed = False
@@ -568,6 +574,8 @@ def test_ensure_dict_response_catches_string():
     class FakeResp:
         status_code = 200
         def raise_for_status(self): pass
+        @property
+        def content(self): return __import__('json').dumps(self.json()).encode()
         def json(self): return "oops"
     class FakeClient:
         is_closed = False

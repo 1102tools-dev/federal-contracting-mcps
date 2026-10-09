@@ -10,7 +10,7 @@ worktree `.claude/worktrees/hosted-cache`. Started 2026-10-08 (late) at James's 
 - [x] 2. GSA CALC+ cache
 - [x] 3. Federal Register cache
 - [x] 4. eCFR cache (extend the existing one)
-- [ ] 5. USAspending cache
+- [x] 5. USAspending cache
 - [ ] 6. Regulations.gov: longer cache for detail lookups
 - [ ] 7. Checks, PR, James's go, release
 - [ ] 8. Verify on the Dell
@@ -89,3 +89,14 @@ no stats); eCFR `XmlCache` (5 minutes, 128 entries, 32 MiB, coalesces misses wit
   Live record/replay: **22/22 identical**; 33 live calls with cache off vs 23 with it on (the
   latest-date lookup repeats inside one session); repeat pass 1 call (the deliberate 404);
   median 1.04 s live (up to 6.1 s on XML) vs 0.5 ms cached.
+- **Step 5 USAspending 1.0.10 (2026-10-09):** `_post`, `_get`, and the inline GETs in
+  `get_recipient_children` and `list_states` all go through `_cached()` -> `_send()` (the paced
+  call, miss only). Key includes the canonical POST body. Times (`_cache_seconds`): references,
+  autocompletes and the state list 24 h; `awards/last_updated` 15 min; `search/*`, `subawards/`,
+  `awards/count/*`, recipient search and federal-account list 1 h; everything else (award, IDV,
+  recipient, state profile, agency, federal-account details) 6 h. State *profile* is 6 h (it's
+  spending data, like details); the state *list* is 24 h as the plan says. 48 MiB / 4 MiB.
+  GETs keep their exact old call shapes (`list_states` sends no params argument). 11 old test
+  fakes now carry `.content` bytes. Tests 1,806 pass. Live record/replay: **23/23 identical**;
+  repeat pass 1 call (the deliberate missing award, errors never kept); median 0.60 s live (up to
+  4.4 s) vs 0.1 ms cached.

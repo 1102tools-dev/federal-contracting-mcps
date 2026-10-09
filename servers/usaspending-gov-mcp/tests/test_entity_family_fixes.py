@@ -112,6 +112,8 @@ def _patch_children_client(monkeypatch, json_data, status=200):
                 resp = _httpx.Response(status, request=req)
                 raise _httpx.HTTPStatusError(f"HTTP {status}", request=req, response=resp)
 
+        @property
+        def content(self): return __import__('json').dumps(self.json()).encode()
         def json(self):
             return json_data
 

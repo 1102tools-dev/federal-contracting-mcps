@@ -636,6 +636,8 @@ def test_get_recipient_children_mock_path(monkeypatch):
         status_code = 200
         def raise_for_status(self):
             pass
+        @property
+        def content(self): return __import__('json').dumps(self.json()).encode()
         def json(self):
             return [{"recipient_id": "d7df489c-5a15-3e1b-e7fa-0e93eb94a166-C"}]
 
@@ -922,6 +924,8 @@ def test_list_states_wraps_array_response(monkeypatch):
         async def get(self, path):
             class R:
                 def raise_for_status(self): pass
+                @property
+                def content(self): return __import__('json').dumps(self.json()).encode()
                 def json(self): return [{"fips":"38","code":"ND","name":"North Dakota"}]
             return R()
     monkeypatch.setattr(srv, "_get_client", lambda: _MockClient())
@@ -935,6 +939,8 @@ def test_list_states_passes_dict_through(monkeypatch):
         async def get(self, path):
             class R:
                 def raise_for_status(self): pass
+                @property
+                def content(self): return __import__('json').dumps(self.json()).encode()
                 def json(self): return {"results":[{"fips":"38"}],"page_metadata":{}}
             return R()
     monkeypatch.setattr(srv, "_get_client", lambda: _MockClient())
@@ -2083,6 +2089,8 @@ def _patch_states_client(monkeypatch, json_data):
                 req = _httpx.Request("GET", "https://api.usaspending.gov/x")
                 resp = _httpx.Response(self.status_code, request=req)
                 raise _httpx.HTTPStatusError(f"HTTP {self.status_code}", request=req, response=resp)
+        @property
+        def content(self): return __import__('json').dumps(self.json()).encode()
         def json(self):
             return self._data
     class _MC:
@@ -2202,6 +2210,8 @@ def test_states_q18_invalid_response_type_raises(monkeypatch):
             class R:
                 status_code = 200
                 def raise_for_status(self): pass
+                @property
+                def content(self): return __import__('json').dumps(self.json()).encode()
                 def json(self): return 42  # weird response
             return R()
     monkeypatch.setattr(srv, "_get_client", lambda: _MC())
@@ -2223,6 +2233,8 @@ def test_states_q19_http_error_surfaced(monkeypatch):
                     req = _httpx.Request("GET", "https://api.usaspending.gov/x")
                     resp = _httpx.Response(500, request=req, content=b'{"detail":"db down"}')
                     raise _httpx.HTTPStatusError("HTTP 500", request=req, response=resp)
+                @property
+                def content(self): return __import__('json').dumps(self.json()).encode()
                 def json(self): return {}
             return R()
     monkeypatch.setattr(srv, "_get_client", lambda: _MC())
