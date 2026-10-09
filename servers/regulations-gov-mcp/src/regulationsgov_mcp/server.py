@@ -14,7 +14,6 @@ rulemaking docket structure, public comments, and comment period status.
 from __future__ import annotations
 
 import collections
-import copy
 import json as _json
 import os
 import time
@@ -29,6 +28,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__
 from ._pacing import FederalApiPacer
+from ._response_cache import HOUR, MINUTE, ResponseCache, cache_key
 from .constants import (
     BASE_URL,
     DEFAULT_PAGE_SIZE,
@@ -456,16 +456,18 @@ REGISTERED_KEY_INTERVAL = 0.6
 HOURLY_UPSTREAM_CAP = int(os.environ.get("API_DATA_GOV_HOURLY_CAP", "950"))
 _upstream_starts: collections.deque[float] = collections.deque()
 
-# Hosted deployments opt in to a bounded response cache (off by default locally).
-# Regulations.gov pages can be hundreds of KB, so the cache is bounded by
-# approximate serialized size, not just entry count (the hosted container is a
-# small instance). Single responses above the per-entry limit are not cached.
-RESPONSE_CACHE_SECONDS = float(os.environ.get("MCP_RESPONSE_CACHE_SECONDS", "0") or 0)
-_RESPONSE_CACHE_MAX_ENTRIES = 2048
-_RESPONSE_CACHE_MAX_BYTES = int(os.environ.get("MCP_RESPONSE_CACHE_MAX_BYTES", str(24 * 1024 * 1024)))
-_RESPONSE_CACHE_MAX_ENTRY_BYTES = 1024 * 1024
-_response_cache: dict[str, tuple[float, Any, int]] = {}
-_response_cache_bytes = 0
+# Hosted only (MCP_RESPONSE_CACHE=1): a bounded cache of Regulations.gov answers,
+# stored after the API key is redacted from them. Docket, document and comment
+# details are kept 6 hours; searches and open comment periods 15 minutes.
+_cache = ResponseCache(max_bytes=48 * 1024 * 1024, max_entry_bytes=2 * 1024 * 1024)
+
+
+def _cache_seconds(path: str) -> float:
+    return 15 * MINUTE if path in ("documents", "comments", "dockets") else 6 * HOUR
+
+
+class _EmptyBody(Exception):
+    """A null body: answered as {} and never kept."""
 
 
 def _reserve_hourly_upstream() -> None:
@@ -479,43 +481,6 @@ def _reserve_hourly_upstream() -> None:
             f"calls) is used up. Retry in about {retry} seconds."
         )
     _upstream_starts.append(now)
-
-
-def _cache_get(cache_key: str) -> Any:
-    if RESPONSE_CACHE_SECONDS <= 0:
-        return None
-    hit = _response_cache.get(cache_key)
-    if hit is None:
-        return None
-    expires, value, _size = hit
-    if expires <= time.monotonic():
-        _cache_evict(cache_key)
-        return None
-    return copy.deepcopy(value)
-
-
-def _cache_evict(cache_key: str) -> None:
-    global _response_cache_bytes
-    hit = _response_cache.pop(cache_key, None)
-    if hit is not None:
-        _response_cache_bytes -= hit[2]
-
-
-def _cache_put(cache_key: str, value: Any) -> None:
-    global _response_cache_bytes
-    if RESPONSE_CACHE_SECONDS <= 0:
-        return
-    size = len(_json.dumps(value, default=str))
-    if size > _RESPONSE_CACHE_MAX_ENTRY_BYTES:
-        return
-    _cache_evict(cache_key)
-    while _response_cache and (
-        len(_response_cache) >= _RESPONSE_CACHE_MAX_ENTRIES
-        or _response_cache_bytes + size > _RESPONSE_CACHE_MAX_BYTES
-    ):
-        _cache_evict(next(iter(_response_cache)))
-    _response_cache[cache_key] = (time.monotonic() + RESPONSE_CACHE_SECONDS, copy.deepcopy(value), size)
-    _response_cache_bytes += size
 
 
 def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
@@ -606,10 +571,17 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
 
 async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """GET helper. Returns parsed JSON; empty/null bodies become {}."""
-    cache_key = path + "?" + urllib.parse.urlencode(sorted((params or {}).items()))
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        return cached
+    try:
+        return await _cache.get_or_fetch(
+            cache_key("GET", path, params), _cache_seconds(path),
+            lambda: _fetch(path, params), _json.loads,
+        )
+    except _EmptyBody:
+        return {}
+
+
+async def _fetch(path: str, params: dict[str, Any] | None) -> bytes:
+    """One paced, budgeted Regulations.gov request; only cache misses get here."""
     key = _get_api_key()
     _reserve_hourly_upstream()
     # The key travels in the X-Api-Key header (as Regulations.gov documents),
@@ -642,14 +614,14 @@ async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any
         ) from e
     data = _redact_sensitive_payload(data, key)
     if data is None:
-        return {}
+        raise _EmptyBody
     if not isinstance(data, dict):
         raise ToolError(
             f"Regulations.gov returned unexpected JSON type {type(data).__name__}: "
             f"{str(data)[:200]}"
         )
-    _cache_put(cache_key, data)
-    return data
+    # Re-serialized after redaction, so the cache never holds the key.
+    return _json.dumps(data).encode("utf-8")
 
 
 def _validate_page_size(page_size: Any, max_size: int = MAX_TOOL_PAGE_SIZE) -> int:

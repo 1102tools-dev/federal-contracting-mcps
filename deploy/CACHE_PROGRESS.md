@@ -11,7 +11,7 @@ worktree `.claude/worktrees/hosted-cache`. Started 2026-10-08 (late) at James's 
 - [x] 3. Federal Register cache
 - [x] 4. eCFR cache (extend the existing one)
 - [x] 5. USAspending cache
-- [ ] 6. Regulations.gov: longer cache for detail lookups
+- [x] 6. Regulations.gov: longer cache for detail lookups
 - [ ] 7. Checks, PR, James's go, release
 - [ ] 8. Verify on the Dell
 - [ ] 9. Measure the gains after about a week; update the progress page
@@ -100,3 +100,16 @@ no stats); eCFR `XmlCache` (5 minutes, 128 entries, 32 MiB, coalesces misses wit
   fakes now carry `.content` bytes. Tests 1,806 pass. Live record/replay: **23/23 identical**;
   repeat pass 1 call (the deliberate missing award, errors never kept); median 0.60 s live (up to
   4.4 s) vs 0.1 ms cached.
+- **Step 6 Regulations.gov 2.0.1 (2026-10-09):** old `_cache_get/_cache_put` replaced by the shared
+  cache. `_fetch` (key, 950/hour reservation, pacer) runs only on a miss; it returns the answer
+  re-serialized *after* key redaction, so the cache never holds the key. Details 6 h, searches and
+  open comment periods 15 min. Null bodies answer {} and are never kept. 48 MiB / 2 MiB.
+  `MCP_RESPONSE_CACHE=1` replaces `MCP_RESPONSE_CACHE_SECONDS=900` in the Dockerfile. Old cache
+  tests ported (hit adds nothing to the hourly budget; key never stored). Tests 125 pass.
+  Live record/replay: **22/22 identical**; repeat pass 3 calls (three IDs that don't exist; errors
+  are never kept); median 0.81 s live vs 0.5 ms cached. Used the Keychain key
+  `com.1102tools.api.REGULATIONS_GOV_API_KEY` (its own 1,000/hour bucket: 999 left at the probe),
+  not the Worker's publisher key. api.data.gov `DEMO_KEY` was exhausted (429, retry in ~20 h).
+- CI: `publish-pypi.yml` shared-safety-tests runs `sync_response_cache.py --check` and
+  `tests/test_response_cache.py`; `release-guard-checks.yml` too. New repo test: the five hosted
+  Dockerfiles set `MCP_RESPONSE_CACHE=1`.

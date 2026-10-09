@@ -64,11 +64,14 @@ jobs:
       - name: Verify synchronized pacing helpers
         run: python scripts/sync_pacing.py --check
 
+      - name: Verify synchronized response caches
+        run: python scripts/sync_response_cache.py --check
+
       - name: Run shared offline safety tests
         run: >-
           uv run --with pytest --with pytest-asyncio --with httpx
           --with "${{ matrix.filelock }}" --with platformdirs --with starlette
-          pytest -q tests/test_federal_api_pacing.py tests/test_hosted_admission.py
+          pytest -q tests/test_federal_api_pacing.py tests/test_hosted_admission.py tests/test_response_cache.py
 
       - name: Test release safeguards
         run: uv run --with pytest --with packaging --with pyyaml pytest -q tests/test_release_guards.py

@@ -171,20 +171,11 @@ def test_partitioning_advice_matches_real_parameters():
 # Cache bounds
 # ---------------------------------------------------------------------------
 
-def test_cache_is_bounded_by_bytes(monkeypatch):
-    monkeypatch.setattr(srv, "RESPONSE_CACHE_SECONDS", 900.0)
-    monkeypatch.setattr(srv, "_RESPONSE_CACHE_MAX_BYTES", 10_000)
-    monkeypatch.setattr(srv, "_response_cache", {})
-    monkeypatch.setattr(srv, "_response_cache_bytes", 0)
-    for i in range(50):
-        srv._cache_put(f"k{i}", {"blob": "x" * 900})
-    assert srv._response_cache_bytes <= 10_000
-    assert srv._response_cache_bytes == sum(v[2] for v in srv._response_cache.values())
-    assert "k49" in srv._response_cache and "k0" not in srv._response_cache
-    monkeypatch.setattr(srv, "_RESPONSE_CACHE_MAX_ENTRY_BYTES", 500)
-    srv._cache_put("huge", {"blob": "y" * 5000})
-    assert "huge" not in srv._response_cache
-    assert srv._cache_get("k49") == {"blob": "x" * 900}
+def test_cache_is_bounded_by_bytes():
+    # Bounds and eviction are tested in tests/test_response_cache.py; the
+    # hosted container has 384 MB, so this cache stays well inside 64 MiB.
+    assert srv._cache.max_bytes <= 64 * 1024 * 1024
+    assert srv._cache.max_entry_bytes <= 2 * 1024 * 1024
 
 
 # ---------------------------------------------------------------------------

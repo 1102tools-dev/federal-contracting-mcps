@@ -271,3 +271,10 @@ def test_cache_key(rc):
     assert key("POST", "/p", body={"a": 1, "b": [1, 2]}) == key("POST", "/p", body={"b": [1, 2], "a": 1})
     assert key("POST", "/p", body={"b": [1, 2]}) != key("POST", "/p", body={"b": [2, 1]})
     assert len(key("POST", "/p", body={"x": "y" * 60000})) == 64
+
+
+def test_the_five_hosted_images_turn_the_cache_on():
+    for slug in ("ecfr", "federal-register", "gsa-calc", "regulations-gov", "usaspending"):
+        dockerfile = (ROOT / "deploy" / slug / "Dockerfile").read_text()
+        assert "MCP_RESPONSE_CACHE=1" in dockerfile, slug
+        assert "MCP_RESPONSE_CACHE_SECONDS" not in dockerfile, slug
