@@ -6,14 +6,14 @@ worktree `.claude/worktrees/hosted-cache`. Started 2026-10-08 (late) at James's 
 ## Checklist
 
 - [x] 0. Setup and map the code
-- [ ] 1. Count which tools get called (Worker logs, no arguments)
+- [x] 1. Count which tools get called (Worker logs, no arguments) — shipped; counts still to collect
 - [x] 2. GSA CALC+ cache
 - [x] 3. Federal Register cache
 - [x] 4. eCFR cache (extend the existing one)
 - [x] 5. USAspending cache
 - [x] 6. Regulations.gov: longer cache for detail lookups
-- [ ] 7. Checks, PR, James's go, release
-- [ ] 8. Verify on the Dell
+- [x] 7. Checks, PR, James's go, release
+- [x] 8. Verify on the Dell
 - [ ] 9. Measure the gains after about a week; update the progress page
 
 ## Where each server calls the government (step 0)
@@ -132,3 +132,25 @@ no stats); eCFR `XmlCache` (5 minutes, 128 entries, 32 MiB, coalesces misses wit
   1cea4694-20f2-4fd2-bae9-168b9401ef68, ecfr 225f3214-569e-4512-be78-90f5c0fa0c35, usaspending
   a3d30a7d-6868-4058-8f43-125f11d7bd32, regulations-gov 27142581-9255-4622-9517-a9d002912982.
   Previous release tags: v1.0.32 (e63cc60) for four, regulations-gov/v2.0.0 (0691651).
+- **Step 7 releases (2026-10-09, all green):** PR #45 (7125a93) fixed the two checks. Tags on 7125a93:
+  `gsa-calc/v1.0.10`, `federal-register/v1.0.10`, `ecfr/v1.0.11`, `usaspending/v1.0.10`,
+  `regulations-gov/v2.0.1`, released one at a time (the workflow's concurrency group cancels a
+  second waiting run). eCFR needed two reruns, both flakes: `test_real_overlap_bounded_to_two_across_instances`
+  (wall-clock spacing on a busy runner) and the post-deploy verifier reading one `initialize` from
+  an old Worker copy during rollout (production showed 1.0.11 from the Dell on every try after).
+- **Step 8 Dell (2026-10-09 ~05:00 UTC):** `check_hosted_health.py`: all nine ok plus "Dell origin: 5
+  services answered by the Dell". All five `/health` show `release_sha` 7125a93, backend `origin`,
+  and a `cache` object. Same question twice through the public endpoint: CALC+ igce_benchmark
+  1.08 s then 0.22 s; Federal Register get_document 1.31 s then 0.27 s; eCFR get_cfr_content 0.87 s
+  then 0.14 s (the rest is the Cloudflare + tunnel round trip). Dell memory unchanged (60-64 MiB
+  of 384). The `tool_call` log line ships with these Worker versions; `wrangler tail` from the Mac
+  captured nothing, so read the counts in Workers Logs (dashboard) for step 9.
+- **Progress page (2026-10-09):** govnode `/srv/dashboards/1102tools-progress.html`, backup
+  `.bak-20261009-dell-cache`. Cache noted in "Where all 9 servers stand" (per-server times, next step
+  "Check cache savings around Oct 16", two cards), Speed and capacity keeps today's numbers as
+  floors for new questions (James's call: no new estimates until hit rates are measured), CALC+
+  "What runs out first" corrected to our own 500/hour cap, stale "Regulations.gov 15 min" text
+  fixed in the diagram, storage map, limits table and data panel; PR #44 added to Recent PRs.
+- **Next (step 9, around Oct 16):** per server, hit rate from `/health` (counts reset on restart),
+  government calls/day = calls minus hits, answer times; tool counts from Workers Logs. Then
+  replace the capacity floors with measured numbers: capacity = today's number / (1 - hit rate).
