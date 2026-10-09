@@ -1,7 +1,7 @@
 // Run: node --test deploy/shared/edge.test.ts
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, originFirst, resetOriginProbes} from "./edge.ts";
+import {fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, originFirst, resetOriginProbes, isAiPlatform, withinLimit} from "./edge.ts";
 
 const HEADERS = {
   "content-type": "application/json",
@@ -241,4 +241,22 @@ test("skips a Dell that runs a different release than this Worker", async () => 
   } finally {
     same.restore();
   }
+});
+
+test("AI platform addresses get the higher per-address limit", async () => {
+  // Anthropic's outbound range (Claude users) and one of OpenAI's ChatGPT connector ranges.
+  for (const address of ["160.79.106.12", "160.79.104.0", "160.79.111.255", "104.210.139.200"]) assert.equal(isAiPlatform(address), true, address);
+  for (const address of ["160.79.112.1", "160.79.103.255", "136.50.132.183", "2600:100c::1", "unknown", "1.2.3", "300.1.1.1"]) {
+    assert.equal(isAiPlatform(address), false, address);
+  }
+  const used: string[] = [];
+  const limiter = (name: string, success = true) => ({limit: async ({key}: {key: string}) => (used.push(`${name}:${key}`), {success})});
+  const request = (ip: string) => new Request("https://x.1102tools.com/mcp", {method: "POST", headers: {"CF-Connecting-IP": ip}});
+  const env = {REQUEST_LIMITER: limiter("normal"), AI_LIMITER: limiter("ai")};
+  assert.equal(await withinLimit(request("160.79.106.12"), env), true);
+  assert.equal(await withinLimit(request("136.50.132.183"), env), true);
+  // A Worker without AI_LIMITER keeps the normal limit for everyone.
+  assert.equal(await withinLimit(request("160.79.106.12"), {REQUEST_LIMITER: limiter("normal")}), true);
+  assert.equal(await withinLimit(request("8.8.8.8"), {REQUEST_LIMITER: limiter("normal", false), AI_LIMITER: limiter("ai")}), false);
+  assert.deepEqual(used, ["ai:160.79.106.12", "normal:136.50.132.183", "normal:160.79.106.12", "normal:8.8.8.8"]);
 });

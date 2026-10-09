@@ -1,4 +1,4 @@
-import {MAX_BODY_BYTES, readBounded, tooLarge} from "../../shared/edge.ts";
+import {MAX_BODY_BYTES, readBounded, tooLarge, withinLimit} from "../../shared/edge.ts";
 import {publicDocs} from "./public-docs.ts";
 import {Snapshot, type Database} from "./data.ts";
 import {dumps, loads} from "./py.ts";
@@ -21,6 +21,7 @@ const ADMISSION = {processing: 16, waiting: 32, total: 48, deadline_seconds: 55}
 export interface WorkerEnv {
   DB: Database;
   REQUEST_LIMITER: {limit(options: {key: string}): Promise<{success: boolean}>};
+  AI_LIMITER?: {limit(options: {key: string}): Promise<{success: boolean}>};
   PERDIEM_API_KEY?: string;
   RELEASE_SHA?: string;
 }
@@ -134,7 +135,7 @@ export async function serve(request: Request, env: WorkerEnv, runtime: Runtime =
   }
   const origin = request.headers.get("Origin");
   if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-  if (!await env.REQUEST_LIMITER.limit({key: request.headers.get("CF-Connecting-IP") || "unknown"}).then(r => r.success)) {
+  if (!await withinLimit(request, env)) {
     return new Response("Request limit reached; retry later.", {status: 429, headers: {"Retry-After": "60"}});
   }
   if (url.pathname === "/health") {

@@ -1,4 +1,5 @@
 import {publicDocs} from "./public-docs.ts";
+import {withinLimit} from "../../shared/edge.ts";
 import {HANDLERS, TOOLS, ToolError, type Database} from "./tools.ts";
 
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
@@ -11,6 +12,7 @@ const MAX_BODY_BYTES = 65536;
 export interface Env {
   DB: Database;
   REQUEST_LIMITER: {limit(options: {key: string}): Promise<{success: boolean}>};
+  AI_LIMITER?: {limit(options: {key: string}): Promise<{success: boolean}>};
   RELEASE_SHA?: string;
 }
 
@@ -99,7 +101,7 @@ export default {
     }
     const origin = request.headers.get("Origin");
     if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-    if (!await env.REQUEST_LIMITER.limit({key: request.headers.get("CF-Connecting-IP") || "unknown"}).then(r => r.success)) {
+    if (!await withinLimit(request, env)) {
       return new Response("Request limit reached; retry later.", {status: 429, headers: {"Retry-After": "60"}});
     }
     if (url.pathname === "/health") {

@@ -42,6 +42,14 @@
         "limit": 120,
         "period": 60
       }
+    },
+    {
+      "name": "AI_LIMITER",
+      "namespace_id": "110271",
+      "simple": {
+        "limit": 600,
+        "period": 60
+      }
     }
   ],
   "observability": {
@@ -84,6 +92,14 @@
           "namespace_id": "110261",
           "simple": {
             "limit": 120,
+            "period": 60
+          }
+        },
+        {
+          "name": "AI_LIMITER",
+          "namespace_id": "110271",
+          "simple": {
+            "limit": 600,
             "period": 60
           }
         }

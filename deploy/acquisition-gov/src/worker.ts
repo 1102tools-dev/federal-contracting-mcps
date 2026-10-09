@@ -1,4 +1,4 @@
-import {MAX_BODY_BYTES, listenAtEdge, readBounded, tooLarge} from "../../shared/edge.ts";
+import {MAX_BODY_BYTES, listenAtEdge, readBounded, tooLarge, withinLimit} from "../../shared/edge.ts";
 import {handleModern} from "./modern.ts";
 import {publicDocs} from "./public-docs.ts";
 import {dumps, parseJson, type Py} from "./pyjson.ts";
@@ -95,7 +95,7 @@ export default {
     }
     const origin = request.headers.get("Origin");
     if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-    if (!await env.REQUEST_LIMITER.limit({key: request.headers.get("CF-Connecting-IP") || "unknown"}).then(r => r.success)) {
+    if (!await withinLimit(request, env)) {
       return new Response("Request limit reached; retry later.", {status: 429, headers: {"Retry-After": "60"}});
     }
     if (url.pathname === "/health") {
