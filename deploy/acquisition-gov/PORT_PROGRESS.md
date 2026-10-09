@@ -53,6 +53,25 @@ deploy, no Cloudflare changes until James says go.
   nightly load. All CI steps pass locally under bash. `configure_hosted_image.py` already writes
   `vars.RELEASE_SHA` for any config with `d1_databases`, so nothing to change there.
 
+## Cutover plan (steps 7-9 of Desktop handoff 3; needs James's go)
+
+1. Push the branch, open the PR (CI: acquisition-gov-hosted-tests.yml).
+2. `npx wrangler d1 create acquisition-gov`; put the id in `deploy/acquisition-gov/wrangler.jsonc` (top level and
+   env.production); commit.
+3. First load from the Mac, from the complete recording, so the site is not crawled twice:
+   `CLOUDFLARE_D1_TOKEN=$(security find-generic-password -s cloudflare-api-token -w) PYTHONPATH=servers/acquisition-gov-mcp/src
+   servers/acquisition-gov-mcp/.venv/bin/python scripts/load_acquisition_gov.py --remote --replay deploy/acquisition-gov/.snapshot.nosync/rec`
+   (retrieved_at = the recording's fetch times). The daily workflow then refreshes the index/parts/guidance and
+   rechecks 100 PDFs a day.
+4. Worker-only deploy keeping the live image: SHA from `/health` or
+   `npx wrangler containers info a03e7823-29ff-4e0c-82ef-1f83bed25b55`; `python3 scripts/configure_hosted_image.py
+   acquisition-gov <sha>`; in deploy/acquisition-gov `npx wrangler deployments list --env production` (record the
+   rollback version), then `npx wrangler deploy --config wrangler.release.json --env production`.
+5. Verify: `python3 scripts/verify_hosted_release.py acquisition-gov --sha <sha>`, `python3 scripts/check_hosted_health.py`,
+   spot check vs the old container's answers (captured before the deploy), a subscriptions/listen test. Merge.
+6. Later: drop acquisition-gov from container deploys (services.json / publish-pypi.yml / release_plan.py; PyPI and
+   check_hosted_health.py stay); update the govnode progress page; a week later delete the container + DO class.
+
 ## Done
 - Studied SAM (`deploy/sam-gov`), the container Worker, the Python package, mcp SDK 2.0.0 serializers,
   `check_hosted_health.py`, `verify_hosted_release.py`, the release workflow (`publish-pypi.yml`).
