@@ -1,0 +1,10 @@
+[Unit]
+Description=Rebuild Dell MCP servers when a new release tag appears
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=james
+ExecStart=/opt/mcp-origin/update.sh
+Nice=10

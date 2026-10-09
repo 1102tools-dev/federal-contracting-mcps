@@ -1,0 +1,20 @@
+[Unit]
+Description=Cloudflare Tunnel for the MCP origin
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+DynamicUser=yes
+LoadCredential=tunnel.json:/etc/cloudflared-mcp/credentials.json
+# An explicit --config so the old /etc/cloudflared/config.yml is never read.
+ExecStart=/usr/bin/cloudflared --no-autoupdate --config /etc/cloudflared-mcp/config.yml tunnel --credentials-file ${CREDENTIALS_DIRECTORY}/tunnel.json run
+Restart=always
+RestartSec=5s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

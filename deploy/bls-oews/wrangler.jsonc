@@ -34,6 +34,13 @@
       ]
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bls-oews",
+      "database_id": "4aeb1415-95e9-4e98-9e57-247529f2983d"
+    }
+  ],
   "ratelimits": [
     {
       "name": "REQUEST_LIMITER",
@@ -78,6 +85,13 @@
           }
         ]
       },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "bls-oews",
+          "database_id": "4aeb1415-95e9-4e98-9e57-247529f2983d"
+        }
+      ],
       "ratelimits": [
         {
           "name": "REQUEST_LIMITER",

@@ -87,7 +87,10 @@
             "period": 60
           }
         }
-      ]
+      ],
+      "vars": {
+        "ORIGIN_URL": "https://usaspending-origin.1102tools.com"
+      }
     }
   }
 }

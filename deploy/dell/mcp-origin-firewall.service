@@ -1,0 +1,12 @@
+[Unit]
+Description=Keep the MCP origin containers off the LAN
+After=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/mcp-origin/firewall.sh
+
+[Install]
+WantedBy=docker.service

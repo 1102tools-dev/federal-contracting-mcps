@@ -1,6 +1,6 @@
 # Federal contracting MCPs
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,571](https://img.shields.io/badge/regression%20tests-5%2C571-007a59)](#testing-and-maintenance) [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 4 servers](https://img.shields.io/badge/ChatGPT%20directory-4%20servers-172f2a)](#available-in-claude-and-chatgpt)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,571](https://img.shields.io/badge/regression%20tests-5%2C571-007a59)](#testing-and-maintenance) [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 4 servers](https://img.shields.io/badge/ChatGPT%20directory-4%20servers-172f2a)](#available-in-claude-and-chatgpt) [![hosting: Cloudflare + self-hosted](https://img.shields.io/badge/hosting-Cloudflare%20%2B%20self--hosted-172f2a?logo=cloudflare&logoColor=white)](#)
 
 Free, open-source, read-only source tools for federal contracting research: opportunities, awards, company records, labor pricing, travel rates, regulations, and rulemaking.
 
