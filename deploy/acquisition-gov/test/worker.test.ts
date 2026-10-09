@@ -4,9 +4,9 @@
 // is scripts/parity.py; this covers the contract, snapshot handling, D1 use,
 // failures, the HTTP edge and the Python string helpers.
 //
-// ACQ_TEST_DB names a database built that way (CI builds it with the package's
-// Python); otherwise the test builds one with ACQ_PYTHON, the package's .venv,
-// or python3.
+// ACQ_TEST_DB names a database built that way (the hosted tests workflow builds
+// it); otherwise the test builds one with ACQ_PYTHON, the package's .venv, or
+// `uv run` in the package's project (as the release workflow runs npm test).
 import assert from "node:assert/strict";
 import {execFileSync} from "node:child_process";
 import {copyFileSync, existsSync, mkdtempSync, readFileSync} from "node:fs";
@@ -30,12 +30,15 @@ const UPLOADS = "https://www.acquisition.gov/sites/default/files/page_file_uploa
 
 function fixtureDatabase(): string {
   if (process.env.ACQ_TEST_DB) return process.env.ACQ_TEST_DB;
-  const venv = join(ROOT, "servers/acquisition-gov-mcp/.venv/bin/python");
-  const python = process.env.ACQ_PYTHON ?? (existsSync(venv) ? venv : "python3");
+  const project = join(ROOT, "servers/acquisition-gov-mcp");
+  const venv = join(project, ".venv/bin/python");
+  // The loader parses with the package, so it needs the package's dependencies.
+  const [python, ...prefix] = process.env.ACQ_PYTHON ? [process.env.ACQ_PYTHON]
+    : existsSync(venv) ? [venv] : ["uv", "run", "--frozen", "--python", "3.12", "--project", project, "python"];
   const dir = mkdtempSync(join(tmpdir(), "acquisition-gov-"));
-  const options = {stdio: ["ignore", "ignore", "inherit"] as any, env: {...process.env, PYTHONPATH: join(ROOT, "servers/acquisition-gov-mcp/src")}};
-  execFileSync(python, [join(ROOT, "deploy/acquisition-gov/test/fixture_recording.py"), join(dir, "rec")], options);
-  execFileSync(python, [join(ROOT, "scripts/load_acquisition_gov.py"), "--local", join(dir, "d1.sqlite"), "--replay", join(dir, "rec")], options);
+  const options = {stdio: ["ignore", "ignore", "inherit"] as any, env: {...process.env, PYTHONPATH: join(project, "src")}};
+  execFileSync(python, [...prefix, join(ROOT, "deploy/acquisition-gov/test/fixture_recording.py"), join(dir, "rec")], options);
+  execFileSync(python, [...prefix, join(ROOT, "scripts/load_acquisition_gov.py"), "--local", join(dir, "d1.sqlite"), "--replay", join(dir, "rec")], options);
   return join(dir, "d1.sqlite");
 }
 
