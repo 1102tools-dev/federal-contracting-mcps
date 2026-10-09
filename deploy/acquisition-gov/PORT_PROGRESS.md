@@ -12,6 +12,15 @@ deploy, no Cloudflare changes until James says go.
   carries over unless this run or the resumed one stored it fresh; one query instead of one per PDF, which
   mattered for remote D1), and the `fetched` counter. The guidance_pdf timeout fallback already matches the
   live server's timeout answer; left as is.
+- Worker written (`src/`): `worker.ts`, `modern.ts`, `rpc.ts`, `pyjson.ts` copied from BLS (both protocol eras,
+  listen streams via `listenAtEdge`); new `tools.ts` (five tools over D1), `args.ts` (pydantic emulation incl.
+  lax int strings and pre_parse_json, Literal is pre-parsed, plain `str` is not), `text.ts` (Python whitespace,
+  splitlines, code-point slicing, sorted), `casefold.ts` (Python casefold; 0 mismatches over all code points).
+  `index.ts` keeps exporting the `AcquisitionGov` container class. wrangler.jsonc: D1 binding `DB`
+  (`REPLACE_WITH_D1_DATABASE_ID`, top level + production), per-IP limit 120/min. `npm run check` passes; smoke
+  test answers all five tools in 1 D1 round trip (2 with an agency filter).
+  Gotcha: the file-writing tool turns `\u2028`-style escapes into raw characters, which breaks regex literals;
+  escape non-ASCII after writing.
 
 ## Done
 - Studied SAM (`deploy/sam-gov`), the container Worker, the Python package, mcp SDK 2.0.0 serializers,
