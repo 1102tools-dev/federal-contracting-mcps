@@ -1,0 +1,47 @@
+# Caching on the five Dell servers: progress
+
+Plan: `~/Desktop/1102tools-handoff-4-dell-caching-2026-10-08.md`. Branch `claude/hosted-cache`,
+worktree `.claude/worktrees/hosted-cache`. Started 2026-10-08 (late) at James's go ("do this work").
+
+## Checklist
+
+- [x] 0. Setup and map the code
+- [ ] 1. Count which tools get called (Worker logs, no arguments)
+- [ ] 2. GSA CALC+ cache
+- [ ] 3. Federal Register cache
+- [ ] 4. eCFR cache (extend the existing one)
+- [ ] 5. USAspending cache
+- [ ] 6. Regulations.gov: longer cache for detail lookups
+- [ ] 7. Checks, PR, James's go, release
+- [ ] 8. Verify on the Dell
+- [ ] 9. Measure the gains after about a week; update the progress page
+
+## Where each server calls the government (step 0)
+
+Each Dell container runs one uvicorn process (`http.py` / `regulations_key.py`), so an in-memory
+cache is shared by every user of that server. Memory before caching (Oct 9, `docker stats`):
+57-65 MiB of 384 MiB per server.
+
+| Server | Every tool funnels through | Pacer | Government endpoints |
+|---|---|---|---|
+| GSA CALC+ | `_get(params_str)` in `server.py` | `GsaCalcPacer` (`_throughput.py`): 0.6 s, 2 at once, 500 attempts/hour | one: `BASE_URL?<query>` (ceiling rates; search, suggest, aggregations) |
+| Federal Register | `_get(url)` in `server.py` | `FederalRegisterPacer`: 0.6 s, 2 at once, 500 per 5 min | `documents.json` (search_documents; open_comment_periods and far_case_history call search_documents), `documents/<n>.json` and `documents/<n1,n2>.json`, `documents/facets/<facet>`, `public-inspection-documents/current.json`, `agencies.json` |
+| eCFR | `_get_json(path, params)`; `_get_xml` -> `XmlCache` -> `_get_xml_uncached` | `EcfrPacer` 0.6 s, 2 at once, 500 per 5 min; XML also `EcfrXmlPacer` | `versioner/v1/titles.json` (latest date; every "current" lookup), `versioner/v1/structure/<date>/...`, `versioner/v1/ancestry/<date>/...`, `versioner/v1/full/<date>/...` (XML), `versioner/v1/versions/...`, `search/v1/results` (+ counts), `admin/v1/agencies.json`, `admin/v1/corrections...` |
+| USAspending | `_post(path, json)`, `_get(path, params)`, plus one inline GET in `get_recipient_children` | `USASpendingPacer`: 0.6 s, 4 at once, 500 per 5 min | `/api/v2/...`: search/*, awards/*, idvs/*, recipient/*, agency/*, references/*, autocomplete/*, federal_accounts/*, subawards/ |
+| Regulations.gov | `_get(path, params)` in `server.py` | `_reserve_hourly_upstream()` (950/hour) + `FederalApiPacer` 0.6 s on the key | `documents`, `documents/<id>`, `comments`, `comments/<id>`, `dockets`, `dockets/<id>` |
+
+Existing caches: Regulations.gov `_cache_get/_cache_put` (one 15-minute TTL, 24 MiB, no coalescing,
+no stats); eCFR `XmlCache` (5 minutes, 128 entries, 32 MiB, coalesces misses with one lock).
+
+## Design notes
+
+- New canonical module `shared/response_cache.py`, vendored to each of the five packages as
+  `_response_cache.py` by `scripts/sync_response_cache.py` (same pattern as the pacing helper).
+- It stores the raw response bytes of a good 200 answer and each hit re-parses them, so a hit runs
+  exactly the code an uncached call runs after its fetch (no shared mutable objects, exact sizes).
+- Off unless `MCP_RESPONSE_CACHE=1` (set only in `deploy/<slug>/Dockerfile`). PyPI users unchanged.
+- Hits never enter the pacer, so they use no spacing, no in-flight slot and no budget.
+- Identical misses wait for the one government call already running (per-key, not one global
+  lock, so the 2-4 in-flight limits still apply to different questions).
+
+## Log
