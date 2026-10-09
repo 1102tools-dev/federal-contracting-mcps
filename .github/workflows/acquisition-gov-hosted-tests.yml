@@ -1,0 +1,75 @@
+name: Acquisition.gov hosted tests
+
+# The hosted Acquisition.gov Worker answers from a D1 snapshot of the site
+# instead of the Python container. This checks the snapshot loader offline,
+# the Worker's types and tests, and parity with the Python server: every case
+# in deploy/acquisition-gov/test/fixture-cases.json is sent to both, compared
+# byte for byte, over a small recording of the site (the package's fixtures
+# plus generated PDFs that reach the 200,000-character extraction cap). The
+# full-site parity run (test/parity-cases.json) needs the 0.5 GB recording and
+# runs locally; see deploy/acquisition-gov/PORT_PROGRESS.md.
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/acquisition-gov/**'
+      - 'deploy/shared/**'
+      - 'scripts/load_acquisition_gov.py'
+      - 'tests/test_acquisition_gov_loader.py'
+      - 'servers/acquisition-gov-mcp/src/**'
+      - 'servers/acquisition-gov-mcp/tests/fixtures/**'
+      - 'servers/acquisition-gov-mcp/pyproject.toml'
+      - 'servers/acquisition-gov-mcp/uv.lock'
+      - 'servers/acquisition-gov-mcp/server.json'
+      - '.github/workflows/acquisition-gov-hosted-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/acquisition-gov/**'
+      - 'deploy/shared/**'
+      - 'scripts/load_acquisition_gov.py'
+      - 'tests/test_acquisition_gov_loader.py'
+      - 'servers/acquisition-gov-mcp/src/**'
+      - 'servers/acquisition-gov-mcp/tests/fixtures/**'
+      - 'servers/acquisition-gov-mcp/pyproject.toml'
+      - 'servers/acquisition-gov-mcp/uv.lock'
+      - 'servers/acquisition-gov-mcp/server.json'
+      - '.github/workflows/acquisition-gov-hosted-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # The package's own environment (it parses pages and PDFs), on the container's Python.
+      PY: uv run --frozen --python 3.12 --project servers/acquisition-gov-mcp
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Loader
+        run: $PY --with pytest pytest -q tests/test_acquisition_gov_loader.py
+      - name: Fixture snapshot
+        run: |
+          $PY python deploy/acquisition-gov/test/fixture_recording.py "$RUNNER_TEMP/rec"
+          $PY python scripts/load_acquisition_gov.py --local "$RUNNER_TEMP/d1.sqlite" --replay "$RUNNER_TEMP/rec"
+      - name: Worker typecheck and tests
+        working-directory: deploy/acquisition-gov
+        env:
+          ACQ_TEST_DB: ${{ runner.temp }}/d1.sqlite
+        run: |
+          npm ci --ignore-scripts
+          npm run check
+          npm test
+          node --test ../shared/edge.test.ts
+      - name: Parity with the Python server
+        run: $PY python deploy/acquisition-gov/scripts/parity.py --rec "$RUNNER_TEMP/rec" --db "$RUNNER_TEMP/d1.sqlite" --cases deploy/acquisition-gov/test/fixture-cases.json
+      - name: Deploy dry run
+        working-directory: deploy/acquisition-gov
+        # The retained container is not rebuilt here; the Worker bundle is what changed.
+        run: npx wrangler deploy --dry-run --env production --containers-rollout=none --outdir "$RUNNER_TEMP/acquisition-gov-dist"

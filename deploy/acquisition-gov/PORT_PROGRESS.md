@@ -36,6 +36,22 @@ deploy, no Cloudflare changes until James says go.
   37 windows hit the cap. It found a loader bug: applicability lines were stored as text beside the page body, so a
   long matching line could exceed D1's statement limit and abort a load. Now stored as [start, end] offsets
   (FORMAT 2); the Worker squashes the line from the page text.
+- Tests: `test/worker.test.ts` (10 node:test cases over the fixture snapshot: contract verbatim and no "live"
+  promises, initialize, snapshot fetch times, round trips, windowed reads, atomic snapshot switch, generic error
+  without arguments in logs, HTTP edge, 2026-07-28 calls and listen streams, Python string helpers);
+  `tests/test_acquisition_gov_loader.py` (8 pytest cases: first load/reuse/cleanup, incremental carry-forward,
+  transient failure keeps last good copy, 404 replaces it, abort on index error/shrink/429 without switching,
+  resume of an interrupted run, D1 statement limits, code-point splitting, applicability offsets). The resume
+  test found that an aborted run dropped PDFs it had fetched but not yet stored; `run()` now drains pending
+  stores before stopping.
+- Workflows: `acquisition-gov-hosted-tests.yml` (loader tests, fixture snapshot, check, npm test, shared edge
+  test, parity on `test/fixture-cases.json` = 84 protocol + 81 fixture cases, wrangler dry run with
+  `--containers-rollout=none`); `acquisition-gov-load.yml` (daily 09:40 UTC + dispatch with `full`; environment
+  `sam-data-load`, secret `CLOUDFLARE_D1_TOKEN`, database id from wrangler.jsonc). Decision: NOT dispatched from
+  `data-refresh.yml` (handoff 3 asked for that): data-refresh rebuilds package-bundled files weekly and cuts a
+  release; this data comes from the live site and the loader is built for daily incremental runs, like SAM's
+  nightly load. All CI steps pass locally under bash. `configure_hosted_image.py` already writes
+  `vars.RELEASE_SHA` for any config with `d1_databases`, so nothing to change there.
 
 ## Done
 - Studied SAM (`deploy/sam-gov`), the container Worker, the Python package, mcp SDK 2.0.0 serializers,

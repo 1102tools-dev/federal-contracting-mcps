@@ -1,0 +1,57 @@
+name: Acquisition.gov snapshot load
+
+# Refreshes the D1 snapshot of Acquisition.gov's FAR Overhaul pages that the
+# hosted Acquisition.gov MCP (acquisition-gov.1102tools.com) answers from.
+# Each run fetches the RFO index, the 53 part pages and the three guidance
+# resources, every deviation PDF new to the index or previously failed, and
+# the 100 least recently checked PDFs (each PDF is rechecked about every two
+# weeks), one request at a time, 3 seconds apart. Pages and PDFs are parsed
+# with the acquisition-gov-mcp package's own code. Readers switch to the new
+# snapshot in one statement only when it is complete; on HTTP 403/429 or a
+# missing or shrunken index the run stops and the current snapshot keeps
+# serving, and the next run resumes. Never deploys the Worker.
+#
+# Runs daily and on demand (full: refetch every PDF, about 75 minutes). Its
+# data comes from the live site, not from files bundled in the package, so the
+# weekly bundled-data refresh does not drive it.
+#
+# Credential: the sam-data-load environment (main only) holds
+# CLOUDFLARE_D1_TOKEN, a Cloudflare API token limited to D1 edit on this
+# account. The database id comes from deploy/acquisition-gov/wrangler.jsonc.
+
+on:
+  schedule:
+    - cron: '40 9 * * *'
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Refetch every deviation PDF (about 75 minutes)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acquisition-gov-load
+  cancel-in-progress: false
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    environment: sam-data-load
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 846d3e41e48446abcd3570c0959f9fb5
+      CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+      FULL: ${{ github.event.inputs.full == 'true' && '--full' || '' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - name: Check credential
+        run: test -n "$CLOUDFLARE_D1_TOKEN" || { echo 'Add CLOUDFLARE_D1_TOKEN to the sam-data-load environment'; exit 1; }
+      - name: Snapshot Acquisition.gov into D1
+        run: |
+          uv run --frozen --python 3.12 --project servers/acquisition-gov-mcp \
+            python scripts/load_acquisition_gov.py --remote $FULL > status.json
+          { echo '```json'; cat status.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
