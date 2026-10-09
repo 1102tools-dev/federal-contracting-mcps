@@ -95,6 +95,7 @@ const DOC_OF = `(SELECT doc FROM sources WHERE snapshot = ${CURRENT} AND key = ?
 const PDF_KEY = `('pdf:' || (SELECT url FROM index_deviations WHERE doc = ${DOC_OF} AND source_id = ? ORDER BY seq LIMIT 1))`;
 
 interface Source {
+  doc: string;
   final_url: string;
   source_id: string | null;
   retrieved_at: string;
@@ -115,6 +116,8 @@ function fetched(rows: Row[], key: string): Source {
 // code points), so a call reads only the rows its page overlaps.
 const STREAM_END = `SELECT start + length AS total FROM chunks WHERE doc = ${DOC_OF} AND stream = ? ORDER BY seq DESC LIMIT 1`;
 const STREAM_ROWS = `SELECT start, body FROM chunks WHERE doc = ${DOC_OF} AND stream = ? AND start < ? AND start + length > ? ORDER BY seq`;
+// A second read names the doc the first one found, so a snapshot switch in between cannot mix pages.
+const DOC_ROWS = "SELECT start, body FROM chunks WHERE doc = ? AND stream = ? AND start < ? AND start + length > ? ORDER BY seq";
 
 /** stream[from:to], from the rows STREAM_ROWS returned for that range. */
 function streamText(rows: Row[], from: number, to: number): string {
@@ -156,7 +159,7 @@ async function htmlDocument(db: Database, key: string, heading: string | null, c
     const {start, end: stop} = candidates[0];
     length = stop - start;
     window = chunkWindow(length, cursor, maximum);
-    const {results} = await db.prepare(STREAM_ROWS).bind(key, "sections", start + window[1], start + window[0]).all();
+    const {results} = await db.prepare(DOC_ROWS).bind(src.doc, "sections", start + window[1], start + window[0]).all();
     content = streamText(results, start + window[0], start + window[1]);
   }
   return {src, page: {...chunkResult(content, window, length), issuance_date: info.issuance_date, updated_date: info.updated_date}};
@@ -461,7 +464,7 @@ async function getRfoGuidance(db: Database, args: Args): Promise<Py> {
     if (heading === null) {
       content = streamText(rows.results, window[0], window[1]);
     } else {
-      const {results} = await db.prepare(STREAM_ROWS).bind(key, stream, offset + window[1], offset + window[0]).all();
+      const {results} = await db.prepare(DOC_ROWS).bind(src.doc, stream, offset + window[1], offset + window[0]).all();
       content = streamText(results, offset + window[0], offset + window[1]);
     }
     const page = chunkResult(content, window, total - offset);
