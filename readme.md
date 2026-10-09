@@ -43,7 +43,7 @@ All nine are in the Claude directory and four are in ChatGPT as hosted installs.
 | **Works in** | Claude or ChatGPT desktop apps and other AI apps, on a desktop or laptop | Claude or ChatGPT on web, desktop, and phone |
 | **Setup** | Ask your AI to set it up or walk you through it, using the setup guide. Free keys for 3 servers | One click. No keys |
 | **Rate limits** | Your own, in full | Pooled across all users. Your lookups stay private |
-| **Relies on** | The government service | Cloudflare and 1102tools being up |
+| **Relies on** | The government service | The government service and Cloudflare |
 | **SAM.gov** | Full edition: 20 tools, free key | 4 tools, no key |
 
 **Use hosted if** you're on your phone, your work computer blocks installs, or you want SAM.gov opportunity search without a key.
