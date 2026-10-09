@@ -32,6 +32,7 @@ class AdmissionControl(AdmissionQueue):
                 "status": "ok", "tools": len(await mcp.list_tools()),
                 "release_sha": os.environ.get("RELEASE_SHA", "development"),
                 "admission": self.admission_limits,
+                "cache": server._cache.stats(),
             })(scope, receive, send)
         return await super().__call__(scope, receive, send)
 

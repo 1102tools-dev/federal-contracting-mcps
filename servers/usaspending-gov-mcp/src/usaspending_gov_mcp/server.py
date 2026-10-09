@@ -12,6 +12,7 @@ defaults matching common federal acquisition workflows.
 
 from __future__ import annotations
 
+import json as _json
 import os
 import re
 from datetime import date
@@ -22,6 +23,7 @@ from mcp.server import MCPServer
 
 from . import __version__
 from ._throughput import USASpendingPacer
+from ._response_cache import DAY, HOUR, MINUTE, ResponseCache, cache_key
 from .constants import (
     AWARD_TYPE_GROUPS,
     BASE_URL,
@@ -69,6 +71,21 @@ ACQUISITION_AGENT_TOOLS = frozenset(
 
 _client: httpx.AsyncClient | None = None
 _pacer = USASpendingPacer()
+# Hosted only (MCP_RESPONSE_CACHE=1); see _cache_seconds for how long.
+_cache = ResponseCache(max_bytes=48 * 1024 * 1024, max_entry_bytes=4 * 1024 * 1024)
+
+
+def _cache_seconds(path: str) -> float:
+    """How long a hosted answer is kept, by endpoint. USAspending reloads nightly."""
+    if path.startswith(("/api/v2/references/", "/api/v2/autocomplete/")) or path == "/api/v2/recipient/state/":
+        return DAY  # reference lists, autocompletes, the state list
+    if path == "/api/v2/awards/last_updated/":
+        return 15 * MINUTE
+    if path.startswith(("/api/v2/search/", "/api/v2/subawards/", "/api/v2/awards/count/")) or path in (
+        "/api/v2/recipient/", "/api/v2/federal_accounts/",
+    ):
+        return HOUR  # searches, totals and counts
+    return 6 * HOUR  # award, IDV, recipient, agency and federal-account details
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -208,50 +225,57 @@ def _ensure_dict_response(data: Any, *, path: str) -> dict[str, Any]:
     )
 
 
-async def _post(path: str, json: dict[str, Any]) -> dict[str, Any]:
-    """POST helper with actionable error translation."""
+async def _send(
+    method: str, path: str, *, params: dict[str, Any] | None = None, body: Any = None,
+) -> bytes:
+    """One paced USAspending request; only cache misses get here."""
+    async with _pacer.request_slot() as pacing:
+        if method == "POST":
+            r = await _get_client().post(path, json=body)
+        elif params is None:
+            r = await _get_client().get(path)
+        else:
+            r = await _get_client().get(path, params=params)
+        pacing.observe_response(r)
+        if getattr(r, "status_code", 200) == 429:
+            try:
+                r.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                pacing.raise_if_rate_limited(
+                    r,
+                    service="USASpending",
+                    guidance=_format_http_error(exc),
+                )
+    r.raise_for_status()
+    return r.content
+
+
+async def _cached(method: str, path: str, parse, *, params=None, body=None):
+    """Send through the hosted cache, with actionable error translation."""
     try:
-        async with _pacer.request_slot() as pacing:
-            r = await _get_client().post(path, json=json)
-            pacing.observe_response(r)
-            if getattr(r, "status_code", 200) == 429:
-                try:
-                    r.raise_for_status()
-                except httpx.HTTPStatusError as exc:
-                    pacing.raise_if_rate_limited(
-                        r,
-                        service="USASpending",
-                        guidance=_format_http_error(exc),
-                    )
-        r.raise_for_status()
-        return _ensure_dict_response(r.json(), path=path)
+        return await _cache.get_or_fetch(
+            cache_key(method, path, params, body), _cache_seconds(path),
+            lambda: _send(method, path, params=params, body=body), parse,
+        )
     except httpx.HTTPStatusError as e:
         raise RuntimeError(_format_http_error(e)) from e
     except httpx.RequestError as e:
         raise RuntimeError(f"Network error calling USASpending: {e}") from e
+
+
+async def _post(path: str, json: dict[str, Any]) -> dict[str, Any]:
+    """POST helper with actionable error translation."""
+    return await _cached(
+        "POST", path, lambda content: _ensure_dict_response(_json.loads(content), path=path), body=json,
+    )
 
 
 async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """GET helper with actionable error translation."""
-    try:
-        async with _pacer.request_slot() as pacing:
-            r = await _get_client().get(path, params=params or {})
-            pacing.observe_response(r)
-            if getattr(r, "status_code", 200) == 429:
-                try:
-                    r.raise_for_status()
-                except httpx.HTTPStatusError as exc:
-                    pacing.raise_if_rate_limited(
-                        r,
-                        service="USASpending",
-                        guidance=_format_http_error(exc),
-                    )
-        r.raise_for_status()
-        return _ensure_dict_response(r.json(), path=path)
-    except httpx.HTTPStatusError as e:
-        raise RuntimeError(_format_http_error(e)) from e
-    except httpx.RequestError as e:
-        raise RuntimeError(f"Network error calling USASpending: {e}") from e
+    return await _cached(
+        "GET", path, lambda content: _ensure_dict_response(_json.loads(content), path=path),
+        params=params or {},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1601,27 +1625,13 @@ async def get_recipient_children(
     # audit this call went through _get, whose dict-only guard would have
     # rejected every successful response; nobody noticed because the hash
     # validation above the call meant no request could ever succeed.
-    try:
-        async with _pacer.request_slot() as pacing:
-            r = await _get_client().get(
-                f"/api/v2/recipient/children/{ident}/", params=params
-            )
-            pacing.observe_response(r)
-            if getattr(r, "status_code", 200) == 429:
-                try:
-                    r.raise_for_status()
-                except httpx.HTTPStatusError as exc:
-                    pacing.raise_if_rate_limited(
-                        r,
-                        service="USASpending",
-                        guidance=_format_http_error(exc),
-                    )
-        r.raise_for_status()
-        data = r.json()
-    except httpx.HTTPStatusError as e:
-        raise RuntimeError(_format_http_error(e)) from e
-    except httpx.RequestError as e:
-        raise RuntimeError(f"Network error calling USASpending: {e}") from e
+    return await _cached(
+        "GET", f"/api/v2/recipient/children/{ident}/", _parse_recipient_children, params=params,
+    )
+
+
+def _parse_recipient_children(content: bytes) -> dict[str, Any]:
+    data = _json.loads(content)
     if isinstance(data, list):
         return {"results": data, "total": len(data)}
     if isinstance(data, dict):
@@ -1664,25 +1674,11 @@ async def list_states() -> dict[str, Any]:
     wrap it in {"results": [...]} to keep the tool return type consistent
     with every other endpoint in this MCP.
     """
-    try:
-        async with _pacer.request_slot() as pacing:
-            r = await _get_client().get("/api/v2/recipient/state/")
-            pacing.observe_response(r)
-            if getattr(r, "status_code", 200) == 429:
-                try:
-                    r.raise_for_status()
-                except httpx.HTTPStatusError as exc:
-                    pacing.raise_if_rate_limited(
-                        r,
-                        service="USASpending",
-                        guidance=_format_http_error(exc),
-                    )
-        r.raise_for_status()
-        data = r.json()
-    except httpx.HTTPStatusError as e:
-        raise RuntimeError(_format_http_error(e)) from e
-    except httpx.RequestError as e:
-        raise RuntimeError(f"Network error calling USASpending: {e}") from e
+    return await _cached("GET", "/api/v2/recipient/state/", _parse_state_list)
+
+
+def _parse_state_list(content: bytes) -> dict[str, Any]:
+    data = _json.loads(content)
     if isinstance(data, list):
         return {"results": data, "total": len(data)}
     if isinstance(data, dict):

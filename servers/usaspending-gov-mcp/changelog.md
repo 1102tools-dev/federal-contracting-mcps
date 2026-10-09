@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.10
+
+- Hosted service only: answer repeat questions from a bounded in-memory copy of
+  USAspending's answers (USAspending reloads nightly). Reference lists,
+  autocompletes and the state list are kept 24 hours; award, IDV, recipient,
+  agency and federal-account details 6 hours; searches, totals and counts 1
+  hour; the last-updated date 15 minutes. A repeat makes no USAspending call
+  and uses no pacing slot or budget; identical questions asked at the same time
+  share one call. Errors and refusals are never kept. 48 MiB total, 4 MiB per
+  answer. `/health` reports cache counts.
+- Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package behaves exactly as
+  before. Tools, schemas, pacing and budgets are unchanged.
+
 ## 1.0.7
 
 Unifies the hosted HTTP wrapper and existing published tool annotations with the

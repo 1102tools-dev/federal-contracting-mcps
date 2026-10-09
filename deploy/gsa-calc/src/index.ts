@@ -1,7 +1,7 @@
 import { HourlyBudget, readBoundedBody, BodyTimeoutError } from "./hourly-budget";
 import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
-import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, originFirst, readBounded, tooLarge, withinLimit } from "../../shared/edge";
+import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit } from "../../shared/edge";
 
 export class GSACalc extends Container {
   defaultPort = 8080;
@@ -81,8 +81,11 @@ export default {
       // A single named instance preserves process/file pacing across all users.
       const backend = getContainer(env.BACKEND, "public-gsa-calc");
       // The Dell first (deploy/dell), then this container.
-      return await originFirst(env, url.pathname, {method: request.method, headers, body},
+      const started = Date.now();
+      const response = await originFirst(env, url.pathname, {method: request.method, headers, body},
         () => fetchWithRetry(() => backend.fetch(forwarded())));
+      logToolCall("gsa-calc", body, response, started);
+      return response;
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
       return Response.json({error: "GSA CALC+ service temporarily unavailable."}, {status: 503, headers: {"Retry-After": "15"}});

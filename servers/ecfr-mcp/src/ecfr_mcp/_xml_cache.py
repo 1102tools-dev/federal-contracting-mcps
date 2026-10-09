@@ -1,4 +1,7 @@
-"""Bounded five-minute cache of public, dated eCFR XML, with miss coalescing."""
+"""Bounded cache of public, dated eCFR XML, with miss coalescing.
+
+Five minutes by default; the hosted service passes longer times per call.
+"""
 from collections import OrderedDict
 import time
 import xml.etree.ElementTree as ET
@@ -15,6 +18,8 @@ class XmlCache:
         self.clock=clock
         self.entries=OrderedDict()
         self.bytes=0
+        self.hits=0
+        self.misses=0
 
     def _get(self, key):
         now=self.clock()
@@ -25,16 +30,23 @@ class XmlCache:
         self.entries.move_to_end(key)
         return self.entries[key][1]
 
-    async def get_or_fetch(self, key, fetch):
+    def stats(self):
+        return {"hits": self.hits, "misses": self.misses, "entries": len(self.entries), "bytes": self.bytes}
+
+    async def get_or_fetch(self, key, fetch, ttl=None):
+        ttl=self.ttl if ttl is None else ttl
         found=self._get(key)
         if found is not None:
+            self.hits+=1
             return found
         # XML misses are already serialized upstream. One same-loop lock also
         # coalesces duplicate misses without an unbounded per-query lock map.
         async with _process_lock(f"ecfr-xml-cache:{id(self)}"):
             found=self._get(key)
             if found is not None:
+                self.hits+=1
                 return found
+            self.misses+=1
             value=await fetch()  # Errors/cancellation never populate the cache.
             size=len(value.encode('utf-8'))
             if size>min(self.max_entry_bytes,self.max_bytes) or self.max_entries<1:
@@ -46,6 +58,6 @@ class XmlCache:
             while self.entries and (len(self.entries)>=self.max_entries or self.bytes+size>self.max_bytes):
                 _,old=self.entries.popitem(last=False)
                 self.bytes-=old[2]
-            self.entries[key]=(self.clock()+self.ttl,value,size)
+            self.entries[key]=(self.clock()+ttl,value,size)
             self.bytes+=size
             return value

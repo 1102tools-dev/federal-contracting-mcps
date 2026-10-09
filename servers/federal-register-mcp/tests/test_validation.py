@@ -548,6 +548,8 @@ def test_ensure_json_container_rejects_none():
         def raise_for_status(self): pass
         def json(self): return None
         @property
+        def content(self): return __import__('json').dumps(self.json()).encode()
+        @property
         def text(self): return ""
     class FakeClient:
         is_closed = False
@@ -566,6 +568,8 @@ def test_ensure_json_container_rejects_int():
         status_code = 200
         def raise_for_status(self): pass
         def json(self): return 42
+        @property
+        def content(self): return __import__('json').dumps(self.json()).encode()
         @property
         def text(self): return "42"
     class FakeClient:
@@ -587,6 +591,8 @@ def test_ensure_json_container_accepts_list():
         def raise_for_status(self): pass
         def json(self): return [{"id": 1, "name": "A", "slug": "a"}]
         @property
+        def content(self): return __import__('json').dumps(self.json()).encode()
+        @property
         def text(self): return "[]"
     class FakeClient:
         is_closed = False
@@ -601,6 +607,8 @@ def test_ensure_json_container_rejects_string():
         status_code = 200
         def raise_for_status(self): pass
         def json(self): return "oops"
+        @property
+        def content(self): return __import__('json').dumps(self.json()).encode()
         @property
         def text(self): return "oops"
     class FakeClient:

@@ -1,7 +1,7 @@
 // Run: node --test deploy/shared/edge.test.ts
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, originFirst, resetOriginProbes, isAiPlatform, withinLimit} from "./edge.ts";
+import {fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withinLimit} from "./edge.ts";
 
 const HEADERS = {
   "content-type": "application/json",
@@ -259,4 +259,31 @@ test("AI platform addresses get the higher per-address limit", async () => {
   assert.equal(await withinLimit(request("160.79.106.12"), {REQUEST_LIMITER: limiter("normal")}), true);
   assert.equal(await withinLimit(request("8.8.8.8"), {REQUEST_LIMITER: limiter("normal", false), AI_LIMITER: limiter("ai")}), false);
   assert.deepEqual(used, ["ai:160.79.106.12", "normal:136.50.132.183", "normal:160.79.106.12", "normal:8.8.8.8"]);
+});
+
+test("logs the tool name of a tools/call and never its arguments", () => {
+  const body = (message: unknown) => new TextEncoder().encode(JSON.stringify(message)).buffer as ArrayBuffer;
+  const call = body({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "keyword_search", arguments: {keyword: "secret words"}}});
+  assert.equal(toolName(call), "keyword_search");
+  assert.equal(toolName(body({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "Drop me; secret"}})), "other");
+  assert.equal(toolName(body({jsonrpc: "2.0", id: 1, method: "tools/call", params: {}})), "other");
+  assert.equal(toolName(body({jsonrpc: "2.0", id: 1, method: "tools/list"})), null);
+  assert.equal(toolName(new TextEncoder().encode("not json").buffer as ArrayBuffer), null);
+  assert.equal(toolName(null), null);
+
+  const lines: string[] = [];
+  const original = console.log;
+  console.log = (line: string) => { lines.push(line); };
+  try {
+    const response = new Response("{}", {status: 200, headers: {"X-1102tools-Backend": "origin"}});
+    logToolCall("gsa-calc", call, response, Date.now() - 5);
+    logToolCall("gsa-calc", body({jsonrpc: "2.0", id: 2, method: "tools/list"}), response, Date.now());
+  } finally {
+    console.log = original;
+  }
+  assert.equal(lines.length, 1);
+  const line = JSON.parse(lines[0]);
+  assert.deepEqual({...line, ms: 0}, {event: "tool_call", service: "gsa-calc", tool: "keyword_search", backend: "origin", status: 200, ms: 0});
+  assert.ok(line.ms >= 0);
+  assert.ok(!lines[0].includes("secret"));
 });

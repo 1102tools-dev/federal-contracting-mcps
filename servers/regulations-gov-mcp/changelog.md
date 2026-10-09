@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.1
+
+- Hosted service: the response cache now keeps docket, document and comment
+  details for 6 hours (was 15 minutes); searches and open comment periods stay
+  at 15 minutes. Identical questions asked at the same time share one
+  Regulations.gov call, and a repeat uses no pacing slot or hourly budget.
+  Answers are stored after the API key is redacted from them, so the cache
+  never holds the key. Errors, refusals and empty bodies are never kept.
+  48 MiB total (was 24), 2 MiB per answer (was 1). `/health` reports cache
+  counts. Turned on by `MCP_RESPONSE_CACHE=1` (replaces
+  `MCP_RESPONSE_CACHE_SECONDS`).
+- The PyPI package behaves exactly as before (no cache). Tools, schemas,
+  pacing and the 950-per-hour budget are unchanged.
+
 ## 2.0.0
 
 - **Breaking: a key is required.** The shared `DEMO_KEY` fallback is gone. Without `REGULATIONS_GOV_API_KEY` the server still starts and lists its tools, but data tools return setup instructions (free key at https://open.gsa.gov/api/regulationsgov/#getting-started) instead of calling Regulations.gov. `get_access_status` reports `key_missing` in place of `limited_fallback`, and results no longer carry `access_note`. Hosted behavior is unchanged.

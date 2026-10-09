@@ -12,6 +12,8 @@ on:
       - 'tests/test_release_guards.py'
       - 'tests/test_hosted_admission.py'
       - 'shared/hosted_admission.py'
+      - 'shared/response_cache.py'
+      - 'tests/test_response_cache.py'
       - 'servers/**'
   push:
     branches: [main]
@@ -25,6 +27,8 @@ on:
       - 'tests/test_release_guards.py'
       - 'tests/test_hosted_admission.py'
       - 'shared/hosted_admission.py'
+      - 'shared/response_cache.py'
+      - 'tests/test_response_cache.py'
       - 'servers/**'
 
 permissions:
@@ -44,6 +48,10 @@ jobs:
         run: uv run --with pytest --with packaging --with pyyaml pytest -q tests/test_release_guards.py
       - name: Test bounded hosted admission queue
         run: uv run --with pytest --with pytest-asyncio --with starlette pytest -q tests/test_hosted_admission.py
+      - name: Test the hosted response cache and its five copies
+        run: |
+          python scripts/sync_response_cache.py --check
+          uv run --with pytest --with pytest-asyncio pytest -q tests/test_response_cache.py
       - name: Test Acquisition.gov offline hardening
         env:
           FEDERAL_API_MIN_INTERVAL_SECONDS: "0"

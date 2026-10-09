@@ -11,6 +11,7 @@ changing, what has changed, and what comment periods are open.
 
 from __future__ import annotations
 
+import json
 import re
 import urllib.parse
 from datetime import date
@@ -21,6 +22,7 @@ from mcp.server import MCPServer
 
 from . import __version__
 from ._throughput import FederalRegisterPacer
+from ._response_cache import DAY, HOUR, MINUTE, ResponseCache, cache_key
 from .constants import (
     BASE_URL,
     DEFAULT_FIELDS,
@@ -229,6 +231,9 @@ def _clean_error_body(text: str) -> str:
 
 _client: httpx.AsyncClient | None = None
 _pacer = FederalRegisterPacer()
+# Hosted only (MCP_RESPONSE_CACHE=1); see _cache_seconds for how long.
+_cache = ResponseCache(max_bytes=48 * 1024 * 1024, max_entry_bytes=4 * 1024 * 1024)
+_API_PATH = urllib.parse.urlsplit(BASE_URL).path
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -287,18 +292,38 @@ def _ensure_json_container(data: Any, *, url: str) -> dict[str, Any] | list[Any]
     )
 
 
+def _cache_seconds(url: str) -> float:
+    """How long a hosted answer is kept, by endpoint."""
+    path = urllib.parse.urlsplit(url).path
+    if path == f"{_API_PATH}/public-inspection-documents/current.json":
+        return 10 * MINUTE  # changes during the business day
+    if path == f"{_API_PATH}/agencies.json":
+        return DAY
+    if path.startswith(f"{_API_PATH}/documents/") and not path.startswith(f"{_API_PATH}/documents/facets/"):
+        return DAY  # published documents (single or batch) don't change
+    return HOUR  # searches, open comment periods, FAR case history, facet counts
+
+
+async def _fetch(url: str) -> bytes:
+    """One paced Federal Register request; only cache misses get here."""
+    async with _pacer.request_slot() as pacing:
+        r = await _get_client().get(url)
+        pacing.observe_response(r)
+        pacing.raise_if_rate_limited(
+            r,
+            service="Federal Register",
+            guidance=_format_error(r.status_code, r.text[:500]),
+        )
+    r.raise_for_status()
+    return r.content
+
+
 async def _get(url: str) -> Any:
     try:
-        async with _pacer.request_slot() as pacing:
-            r = await _get_client().get(url)
-            pacing.observe_response(r)
-            pacing.raise_if_rate_limited(
-                r,
-                service="Federal Register",
-                guidance=_format_error(r.status_code, r.text[:500]),
-            )
-        r.raise_for_status()
-        return _ensure_json_container(r.json(), url=url)
+        return await _cache.get_or_fetch(
+            cache_key("GET", url), _cache_seconds(url), lambda: _fetch(url),
+            lambda content: _ensure_json_container(json.loads(content), url=url),
+        )
     except httpx.HTTPStatusError as e:
         raise RuntimeError(_format_error(e.response.status_code, e.response.text[:500])) from e
     except httpx.RequestError as e:

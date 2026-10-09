@@ -8,6 +8,7 @@ from starlette.responses import JSONResponse
 
 from ._admission import AdmissionQueue
 from .server import mcp
+from . import server
 
 
 def create_app():
@@ -31,6 +32,7 @@ class AdmissionControl(AdmissionQueue):
                 "status": "ok", "tools": len(await mcp.list_tools()),
                 "release_sha": os.environ.get("RELEASE_SHA", "development"),
                 "admission": self.admission_limits,
+                "cache": server._cache_stats(),
             })(scope, receive, send)
         return await super().__call__(scope, receive, send)
 
