@@ -38,7 +38,7 @@
     {
       "binding": "DB",
       "database_name": "acquisition-gov",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+      "database_id": "158b0481-c351-4a03-ba07-288f342d348a"
     }
   ],
   "ratelimits": [
@@ -89,7 +89,7 @@
         {
           "binding": "DB",
           "database_name": "acquisition-gov",
-          "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+          "database_id": "158b0481-c351-4a03-ba07-288f342d348a"
         }
       ],
       "ratelimits": [
