@@ -7,7 +7,7 @@ worktree `.claude/worktrees/hosted-cache`. Started 2026-10-08 (late) at James's 
 
 - [x] 0. Setup and map the code
 - [ ] 1. Count which tools get called (Worker logs, no arguments)
-- [ ] 2. GSA CALC+ cache
+- [x] 2. GSA CALC+ cache
 - [ ] 3. Federal Register cache
 - [ ] 4. eCFR cache (extend the existing one)
 - [ ] 5. USAspending cache
@@ -52,3 +52,20 @@ no stats); eCFR `XmlCache` (5 minutes, 128 entries, 32 MiB, coalesces misses wit
   Test in `deploy/shared/edge.test.ts` (17/17). `tsc` clean on four; Regulations.gov shows only its
   pre-existing container-class type error (same on main). Not deployed on its own: it ships with
   the step 7 releases (each release redeploys that service's Worker), so one deploy per service.
+- **Shared module (2026-10-09):** `shared/response_cache.py` + `scripts/sync_response_cache.py` (vendors
+  `_response_cache.py` into the five packages) + `tests/test_response_cache.py` (73 pass: off by
+  default, hit/miss/expiry, LRU byte and entry limits, oversized answers served but not kept,
+  errors/cancellations/bad bodies never kept, 10 concurrent identical misses -> 1 call, different
+  questions still run in parallel, failed shared call -> waiters retry, cancelled waiter doesn't
+  cancel the shared call, key canonicalization, five copies identical).
+- **Step 2 GSA CALC+ 1.0.10 (2026-10-09):** `_get` -> `_cache.get_or_fetch(...)`; `_fetch` (paced call)
+  runs only on a miss; `_parse_body` is the old JSON/dict check and runs on every hit and miss.
+  12 h (GSA: ceiling-rate data refreshes once a day overnight, open.gsa.gov/api/dx-calc-api).
+  48 MiB / 4 MiB per answer. `/health` has `cache`. `MCP_RESPONSE_CACHE=1` in
+  `deploy/gsa-calc/Dockerfile`. Package tests 275 pass; new `tests/test_response_cache_hosted.py`
+  proves with the real `GsaCalcPacer` budget file that a hit adds no start to the budget.
+  Live check (record GSA answers once, replay with cache off/on): **22/22 identical**, 24 live GSA
+  calls, repeat pass 0 GSA calls, median 0.60 s live vs 1.1 ms cached; 24 answers = 1.9 MB.
+  Finding: GSA gives a different answer to the same question a second apart (an Elasticsearch
+  `took` timing field and approximate percentiles), so live off-vs-on can't match byte for byte
+  without replay; the cache also makes repeat answers consistent within 12 h.

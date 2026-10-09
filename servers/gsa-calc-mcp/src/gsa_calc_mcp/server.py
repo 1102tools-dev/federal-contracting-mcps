@@ -27,6 +27,7 @@ from typing_extensions import Annotated
 
 from . import __version__
 from ._throughput import GsaCalcPacer, CalcBudgetUnavailable
+from ._response_cache import HOUR, ResponseCache, cache_key
 from mcp.server.mcpserver.exceptions import ToolError
 from .constants import (
     BASE_URL,
@@ -404,6 +405,10 @@ def _clean_error_body(text: str) -> str:
 
 _client: httpx.AsyncClient | None = None
 _pacer = GsaCalcPacer()
+# Hosted only (MCP_RESPONSE_CACHE=1). GSA refreshes CALC+ ceiling rates once a
+# day overnight, so 12 hours keeps an answer at most one refresh behind.
+_cache = ResponseCache(max_bytes=48 * 1024 * 1024, max_entry_bytes=4 * 1024 * 1024)
+_CACHE_SECONDS = 12 * HOUR
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -454,42 +459,53 @@ async def _get(params_str: str) -> dict[str, Any]:
     """GET helper. Builds full URL from query string."""
     url = f"{BASE_URL}?{params_str}"
     try:
-        async with _pacer.request_slot() as pacing:
-            r = await _get_client().get(url)
-            pacing.observe_response(r)
-            try:
-                pacing.raise_if_rate_limited(
-                    r,
-                    service="GSA CALC+",
-                    guidance=_format_error(r.status_code, r.text[:500]),
-                )
-            except RuntimeError as e:
-                # This helper raises only for an expected provider 429. Show
-                # its retry guidance while keeping unrelated crashes masked.
-                raise ToolError(str(e)) from e
-        r.raise_for_status()
-        try:
-            data = r.json()
-        except json.JSONDecodeError as e:
-            body_preview = _clean_error_body(r.text or "(empty body)")
-            raise RuntimeError(
-                f"GSA CALC+ returned non-JSON response on 200 OK. "
-                f"This often happens during API maintenance or when an HTML "
-                f"error page is served without an error status. "
-                f"Body: {body_preview}"
-            ) from e
-        if not isinstance(data, dict):
-            raise RuntimeError(
-                f"GSA CALC+ response was not a JSON object. "
-                f"Got {type(data).__name__}: {str(data)[:200]}"
-            )
-        return data
+        return await _cache.get_or_fetch(
+            cache_key("GET", url), _CACHE_SECONDS, lambda: _fetch(url), _parse_body,
+        )
     except CalcBudgetUnavailable as e:
         raise ToolError(str(e)) from e
     except httpx.HTTPStatusError as e:
         raise RuntimeError(_format_error(e.response.status_code, e.response.text[:500])) from e
     except httpx.RequestError as e:
         raise RuntimeError(f"Network error calling GSA CALC+: {e}") from e
+
+
+async def _fetch(url: str) -> bytes:
+    """One paced GSA CALC+ request; only cache misses get here."""
+    async with _pacer.request_slot() as pacing:
+        r = await _get_client().get(url)
+        pacing.observe_response(r)
+        try:
+            pacing.raise_if_rate_limited(
+                r,
+                service="GSA CALC+",
+                guidance=_format_error(r.status_code, r.text[:500]),
+            )
+        except RuntimeError as e:
+            # This helper raises only for an expected provider 429. Show
+            # its retry guidance while keeping unrelated crashes masked.
+            raise ToolError(str(e)) from e
+    r.raise_for_status()
+    return r.content
+
+
+def _parse_body(content: bytes) -> dict[str, Any]:
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError as e:
+        body_preview = _clean_error_body(content.decode("utf-8", "replace") or "(empty body)")
+        raise RuntimeError(
+            f"GSA CALC+ returned non-JSON response on 200 OK. "
+            f"This often happens during API maintenance or when an HTML "
+            f"error page is served without an error status. "
+            f"Body: {body_preview}"
+        ) from e
+    if not isinstance(data, dict):
+        raise RuntimeError(
+            f"GSA CALC+ response was not a JSON object. "
+            f"Got {type(data).__name__}: {str(data)[:200]}"
+        )
+    return data
 
 
 # ---------------------------------------------------------------------------

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.10
+
+- Hosted service only: answer repeat questions from a bounded in-memory copy of
+  GSA's answers for 12 hours (GSA refreshes ceiling rates once a day overnight).
+  A repeat makes no GSA call and uses no pacing slot or hourly budget; identical
+  questions asked at the same time share one GSA call. Errors and refusals are
+  never kept. 48 MiB total, 4 MiB per answer. `/health` reports cache counts.
+- Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package behaves exactly as
+  before. Tools, schemas, pacing and budgets are unchanged.
+
 ## 1.0.8
 
 - Replace completion-serialized three-second pacing with a shared 500-attempt
