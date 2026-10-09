@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.11
+
+- Hosted service only: answer repeat questions from a bounded in-memory copy of
+  eCFR's answers. Text, structure and ancestry for a past date are kept 24
+  hours (the past doesn't change); for dates in the last week, which is what
+  "current" resolves to, 6 hours. The latest-date lookup is kept 15 minutes,
+  the agency list 24 hours, and searches, recent changes, version history and
+  corrections 1 hour. A repeat makes no eCFR call and uses no pacing slot or
+  budget; identical questions asked at the same time share one call. Errors
+  and refusals are never kept. 24 MiB for JSON plus 40 MiB for XML.
+  `/health` reports cache counts.
+- Off unless `MCP_RESPONSE_CACHE=1`. The PyPI package behaves exactly as
+  before, including its existing 5-minute XML cache. Tools, schemas, pacing
+  and budgets are unchanged.
+
 ## 1.0.9
 
 - Separate fast JSON pacing from controlled XML retrieval. Use a shared

@@ -9,7 +9,7 @@ worktree `.claude/worktrees/hosted-cache`. Started 2026-10-08 (late) at James's 
 - [ ] 1. Count which tools get called (Worker logs, no arguments)
 - [x] 2. GSA CALC+ cache
 - [x] 3. Federal Register cache
-- [ ] 4. eCFR cache (extend the existing one)
+- [x] 4. eCFR cache (extend the existing one)
 - [ ] 5. USAspending cache
 - [ ] 6. Regulations.gov: longer cache for detail lookups
 - [ ] 7. Checks, PR, James's go, release
@@ -78,3 +78,14 @@ no stats); eCFR `XmlCache` (5 minutes, 128 entries, 32 MiB, coalesces misses wit
   48 MiB / 4 MiB. Tests 149 pass (4 old fakes now carry `.content` bytes like a real response).
   Live record/replay: **22/22 identical**; repeat pass made 1 call, the deliberate 404
   (errors are never kept); median 0.60 s live vs 0.5 ms cached.
+- **Step 4 eCFR 1.0.11 (2026-10-09):** `_get_json` -> `ResponseCache` (24 MiB); `_fetch_json` keeps the
+  exact old error messages (validates with `r.json()`), `_parse_json_body` runs on hits and misses.
+  XML keeps `XmlCache` (it already coalesces; XML misses are serialized by the 3 s XML lane): locally
+  unchanged (5 min, 128 entries, 32 MiB; it was already on for PyPI users), hosted it gets
+  per-call times and 4096 entries / 40 MiB / 4 MiB per answer. Total 64 MiB. Times
+  (`_cache_seconds`): dated full/structure/ancestry 24 h, or 6 h if the date is within the last
+  7 days (what "current" resolves to); titles.json (latest date) 15 min; agencies 24 h; search,
+  recent changes, versions, corrections 1 h. `/health` cache = JSON + XML counts. Tests 208 pass.
+  Live record/replay: **22/22 identical**; 33 live calls with cache off vs 23 with it on (the
+  latest-date lookup repeats inside one session); repeat pass 1 call (the deliberate 404);
+  median 1.04 s live (up to 6.1 s on XML) vs 0.5 ms cached.

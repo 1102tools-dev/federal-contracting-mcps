@@ -16,6 +16,7 @@ from __future__ import annotations
 import html
 import json as _json
 import re
+from datetime import date as _date, timedelta
 from typing import Any
 
 import httpx
@@ -23,6 +24,7 @@ from mcp.server import MCPServer
 
 from . import __version__
 from ._throughput import EcfrPacer, EcfrXmlPacer
+from ._response_cache import DAY, HOUR, MINUTE, ResponseCache, cache_key
 from ._xml_cache import XmlCache
 from .constants import (
     BASE_URL,
@@ -305,7 +307,37 @@ def _validate_query_safe(value: str, *, field: str) -> str:
 _client: httpx.AsyncClient | None = None
 _pacer = EcfrPacer()
 _xml_pacer = EcfrXmlPacer()
-_xml_cache = XmlCache()
+# Hosted only (MCP_RESPONSE_CACHE=1): JSON answers in _cache, and the XML cache
+# keeps answers longer and holds more (see _cache_seconds). Together they stay
+# within 64 MiB. Locally the XML cache keeps its 5-minute default.
+_cache = ResponseCache(max_bytes=24 * 1024 * 1024, max_entry_bytes=4 * 1024 * 1024)
+_xml_cache = XmlCache(
+    max_entries=4096, max_bytes=40 * 1024 * 1024, max_entry_bytes=4 * 1024 * 1024,
+) if _cache.enabled else XmlCache()
+_DATED_PATH = re.compile(r"^/api/versioner/v1/(?:full|structure|ancestry)/(\d{4}-\d{2}-\d{2})/")
+
+
+def _cache_seconds(path: str) -> float:
+    """How long a hosted answer is kept, by endpoint."""
+    dated = _DATED_PATH.match(path)
+    if dated:
+        try:
+            day = _date.fromisoformat(dated.group(1))
+        except ValueError:
+            return HOUR
+        # Text as of a past date doesn't change. The newest dates are what
+        # "current" resolves to; give those a shorter life to be safe.
+        return 6 * HOUR if day >= _date.today() - timedelta(days=7) else DAY
+    if path == "/api/versioner/v1/titles.json":
+        return 15 * MINUTE  # latest date per title
+    if path == "/api/admin/v1/agencies.json":
+        return DAY
+    return HOUR  # search, recent changes, version history, corrections
+
+
+def _cache_stats() -> dict[str, int]:
+    json_stats, xml_stats = _cache.stats(), _xml_cache.stats()
+    return {name: json_stats[name] + xml_stats[name] for name in json_stats}
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -368,6 +400,14 @@ async def _get_json(
     timeout: float = DEFAULT_TIMEOUT_JSON,
 ) -> dict[str, Any]:
     """GET helper for JSON endpoints. Always returns a dict (empty if API returned null)."""
+    return await _cache.get_or_fetch(
+        cache_key("GET", path, params), _cache_seconds(path),
+        lambda: _fetch_json(path, params, timeout), _parse_json_body,
+    )
+
+
+async def _fetch_json(path: str, params: dict[str, Any] | None, timeout: float) -> bytes:
+    """One paced eCFR JSON request; only cache misses get here."""
     try:
         async with _pacer.request_slot() as pacing:
             r = await _get_client().get(path, params=params or {}, timeout=timeout)
@@ -382,7 +422,7 @@ async def _get_json(
     if r.status_code >= 400:
         raise RuntimeError(_format_error(r.status_code, r.text))
     try:
-        data = r.json()
+        r.json()
     except (ValueError, _json.JSONDecodeError) as e:
         preview = _clean_error_body(r.text or "(empty body)")[:200]
         ct = r.headers.get("content-type", "?")
@@ -390,6 +430,11 @@ async def _get_json(
             f"eCFR returned a non-JSON response (status {r.status_code}, "
             f"content-type={ct!r}): {preview}"
         ) from e
+    return r.content
+
+
+def _parse_json_body(content: bytes) -> dict[str, Any]:
+    data = _json.loads(content)
     if data is None:
         return {}
     if not isinstance(data, (dict, list)):
@@ -401,7 +446,8 @@ async def _get_json(
 
 async def _get_xml(path: str, params: dict[str, Any] | None = None) -> str:
     key = _json.dumps([path, params or {}], sort_keys=True, separators=(",", ":"))
-    return await _xml_cache.get_or_fetch(key, lambda: _get_xml_uncached(path, params))
+    ttl = _cache_seconds(path) if _cache.enabled else None
+    return await _xml_cache.get_or_fetch(key, lambda: _get_xml_uncached(path, params), ttl)
 
 
 async def _get_xml_uncached(path: str, params: dict[str, Any] | None = None) -> str:
