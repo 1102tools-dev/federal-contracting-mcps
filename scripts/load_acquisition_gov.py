@@ -40,7 +40,7 @@ sys.path.insert(0, str(ROOT / "servers/acquisition-gov-mcp/src"))  # the package
 from acquisition_gov_mcp import __version__, _html, _pdf, constants, server  # noqa: E402
 
 # Bump when the stored layout or derived data changes, so content is re-parsed.
-FORMAT = 1
+FORMAT = 2
 PARSER_VERSION = f"{__version__}+{FORMAT}"
 HTML = (("text/html",), constants.MAX_HTML_BYTES)
 PDF = (("application/pdf",), constants.MAX_PDF_BYTES)
@@ -121,11 +121,15 @@ def labeled_dates(joined: str) -> dict:
 
 
 def applicability(page: int, text: str) -> list:
+    """[start, end] of each line _extract_document_fields reports as applicability.
+
+    Offsets, not text: a long matching line would not fit beside the page in one row.
+    """
     lines, offset = [], 0
     for line in text.splitlines(keepends=True):
         content = line.splitlines()[0] if line.splitlines() else ""
         if _pdf._extract_document_fields([(page, content)])["applicability_text"] is not None:
-            lines.append([offset, offset + len(content), " ".join(content.split())])
+            lines.append([offset, offset + len(content)])
         offset += len(line)
     return lines
 

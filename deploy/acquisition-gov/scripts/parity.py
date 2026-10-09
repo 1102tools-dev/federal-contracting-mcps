@@ -18,8 +18,10 @@ Run from the repository root with the container's Python (3.12):
         python deploy/acquisition-gov/scripts/parity.py --rec REC_DIR [--db d1.sqlite] [--show]
 
 (In an iCloud checkout add PYTHONPATH=servers/acquisition-gov-mcp/src.)
-REC_DIR defaults to deploy/acquisition-gov/.snapshot.nosync/rec. Cases must
-only name PDFs the recording holds.
+REC_DIR defaults to deploy/acquisition-gov/.snapshot.nosync/rec (the full
+recording, not in git). Cases must only name PDFs the recording holds. CI runs
+test/fixture-cases.json against the small recording test/fixture_recording.py
+writes (--rec DIR --cases deploy/acquisition-gov/test/fixture-cases.json).
 
 Exits 1 on any difference not listed in DOCUMENTED.
 """
@@ -199,10 +201,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--rec", type=Path, default=WORKER_DIR / ".snapshot.nosync/rec", help="the recording both sides read")
     parser.add_argument("--db", type=Path, help="a local D1 copy built from --rec (default: build one)")
+    parser.add_argument("--cases", type=Path, default=CASES, help="the cases to send (default: test/parity-cases.json; "
+                        "CI uses test/fixture-cases.json with the recording test/fixture_recording.py writes)")
     parser.add_argument("--show", action="store_true", help="print every case's statements and round trips")
     args = parser.parse_args(argv)
 
-    cases = json.loads(CASES.read_text())
+    cases = json.loads(args.cases.read_text())
     names = [case["name"] for case in cases]
     if len(set(names)) != len(names):
         raise SystemExit("Case names must be unique.")

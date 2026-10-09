@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS pages (
   length INTEGER NOT NULL,    -- the page's full length (on every row)
   failure TEXT,               -- exception name when extraction failed
   over_cap INTEGER NOT NULL DEFAULT 0,
-  applicability TEXT,         -- JSON [[line start, line end, cleaned line], ...]
+  applicability TEXT,         -- JSON [[line start, line end], ...] of applicability lines
   body TEXT NOT NULL,
   PRIMARY KEY (doc, page, seq)
 );

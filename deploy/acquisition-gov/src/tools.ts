@@ -307,6 +307,7 @@ async function listRfoAgencyDeviations(db: Database, args: Args): Promise<Py> {
 const APPLICABILITY = new RegExp(`(?<![${WORD}])(?:applicability|applies to|applicable to)(?![${WORD}])`, "iu");
 
 interface Page {number: number; text: string; start: number; applicability: string[]}
+type Stored = {text: string; start: number; failure: string | null; overCap: boolean; applicability: [number, number][]};
 type Read = [text: string, status: string, warnings: string[], fields: Record<string, Py>, total: number, end: number];
 
 /** _extract_document_fields over the selected pages, from each page's stored
@@ -337,12 +338,12 @@ function readPdf(info: Record<string, any>, rows: Row[], pageStart: PyInt, pageE
   if (pageStart > total) return ["", "error", [`page_start must be between 1 and ${total}; this PDF has ${total} page(s).`], {}, total, 0];
   const start = Number(pageStart);
   let end = Math.min(total, pageEnd !== null ? Number(pageEnd) : Math.min(total, start + 9));
-  const stored = new Map<number, {text: string; start: number; failure: string | null; overCap: boolean; applicability: string[]}>();
+  const stored = new Map<number, Stored>();
   for (const r of rows) {
     const page = stored.get(r.page);
     if (page) page.text += r.body;
     else stored.set(r.page, {text: r.body, start: r.start, failure: r.failure, overCap: !!r.over_cap,
-      applicability: r.applicability ? JSON.parse(r.applicability).map((line: [number, number, string]) => line[2]) : []});
+      applicability: r.applicability ? JSON.parse(r.applicability) : []});
   }
   const warnings: string[] = [];
   const pages: Page[] = [];
@@ -353,7 +354,7 @@ function readPdf(info: Record<string, any>, rows: Row[], pageStart: PyInt, pageE
     if (!page) throw new Error(`page ${number} is missing from the stored PDF`);
     if (page.failure) warnings.push(`Page ${number} extraction failed: ${page.failure}.`);
     let cleaned = page.text;
-    let applicability = page.applicability;
+    let applicability = page.applicability.map(([from, to]) => squash(cpSlice(page.text, from, to)));
     const remaining = MAX_PDF_TEXT_CHARACTERS - extracted;
     // A page over the cap on its own was stored cut at the cap.
     if (page.overCap || cpLen(cleaned) > remaining) {

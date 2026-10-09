@@ -30,6 +30,12 @@ deploy, no Cloudflare changes until James says go.
   `PYTHONPATH=servers/acquisition-gov-mcp/src servers/acquisition-gov-mcp/.venv/bin/python deploy/acquisition-gov/scripts/parity.py [--db X]`
 - Reads only the text rows a page overlaps (part 52's text is 1.9M characters): 1 D1 round trip per call,
   2 for a section/heading lookup or an agency filter.
+- CI-sized parity: `test/fixture_recording.py OUT` writes a small recording from the package fixtures plus generated
+  PDFs (45 pages, ~11K characters a page, one page over 200K) so 25-page windows hit the 200,000-character cap at
+  many offsets (no posted PDF does: largest real window 75K). `test/fixture-cases.json` (81 cases): 81 identical,
+  37 windows hit the cap. It found a loader bug: applicability lines were stored as text beside the page body, so a
+  long matching line could exceed D1's statement limit and abort a load. Now stored as [start, end] offsets
+  (FORMAT 2); the Worker squashes the line from the page text.
 
 ## Done
 - Studied SAM (`deploy/sam-gov`), the container Worker, the Python package, mcp SDK 2.0.0 serializers,
