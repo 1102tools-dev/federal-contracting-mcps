@@ -1,30 +1,35 @@
 # sam-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 20](https://img.shields.io/badge/tools-20-007a59)](#what-it-does) [![regression tests: 1,155](https://img.shields.io/badge/regression%20tests-1%2C155-007a59)](testing.md) [![Claude directory: listed (hosted edition)](https://img.shields.io/badge/Claude%20directory-listed%20%28hosted%20edition%29-172f2a)](https://claude.ai/directory/sam-gov-by-1102tools)
-
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 20](https://img.shields.io/badge/tools-20-007a59)](#what-it-does) [![regression tests: 1,155](https://img.shields.io/badge/regression%20tests-1%2C155-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/sam-gov-mcp -->
 
 Free, open-source MCP server for SAM.gov entity registration, exclusion/debarment, contract opportunity, contract award, federal hierarchy, and FFATA subaward data.
 
-This full edition has 20 tools and requires a free SAM.gov API key. Use the installation and configuration instructions below to connect it directly. A keyless hosted edition with 4 tools for contract opportunities is [published in the Claude directory](https://claude.ai/directory/sam-gov-by-1102tools); a ChatGPT listing is coming soon. See [the two editions](#two-editions-hosted-or-full).
+Two editions: **hosted**, with 4 keyless tools for contract opportunities, and **local**, the full 20 tools with a free SAM.gov key. See [Local or hosted](#local-or-hosted).
 
 *Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,155 collected regression tests (781 offline, 374 live-gated). v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied across the suite. See [testing.md](testing.md) for the full testing record.*
 
-## Two editions: hosted or full
+<a id="two-editions-hosted-or-full"></a>
 
-| | Hosted (Claude directory) | Full (this README) |
-|---|---|---|
-| Install | One click from the Claude directory (ChatGPT coming soon) | On your own computer with `uvx` or `pip`, then connect it to your AI app |
-| API key | None | Free SAM.gov key, which expires every 90 days |
-| Tools | 4 | 20 |
-| Covers | Contract opportunities, award notices, and justifications | Opportunities plus entity registrations, SBA certifications, exclusions, reps and certs, integrity records, contract award records, the federal hierarchy, and subawards |
-| Data | SAM.gov's public contract opportunities file, refreshed daily | Live SAM.gov APIs, within your key's daily limit |
-| Works in | Claude and ChatGPT | Most MCP clients |
+## Local or hosted
 
-| MCP | Claude | ChatGPT |
+SAM.gov comes in two editions. Hosted is the only one with no key.
+
+| | Local (full edition) | Hosted |
 |---|---|---|
-| SAM.gov (hosted, keyless) | [Install](https://claude.ai/directory/sam-gov-by-1102tools) | Coming soon |
+| Install | On your computer. Give your AI this page's link and ask it to set it up, or start at [Installation](#installation) | One click from the Claude directory (ChatGPT coming soon) |
+| API key | Free SAM.gov key, which expires every 90 days | None |
+| Tools | 20 | 4 |
+| Covers | Opportunities plus entity registrations, SBA certifications, exclusions, reps and certs, integrity records, contract award records, the federal hierarchy, and subawards | Contract opportunities, award notices, and justifications |
+| Data | Live SAM.gov APIs, within your key's daily limit | SAM.gov's public contract opportunities file, refreshed daily |
+| Works in | Claude or ChatGPT desktop apps and other AI apps, on a desktop or laptop | Claude or ChatGPT on web, desktop, and phone |
+
+| Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
+|---|---|---|
+| [Local setup](#installation) | [Install](https://claude.ai/directory/sam-gov-by-1102tools) | Coming soon |
+
+[Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#catching-opportunities)
 
 ### Hosted edition: 4 tools, no key
 
@@ -39,11 +44,11 @@ The hosted edition is for finding and reading contract opportunities. It serves 
 
 It does not include attachments (results link to the notice on sam.gov) or archived notices from past years. Pair it with the [USAspending MCP](../usaspending-gov-mcp) for full award history.
 
-### Full edition: when you need more
+### Local full edition: when you need more
 
 Use the full edition when you need to look up a company: registrations, UEI and CAGE codes, SBA certification dates, exclusions, reps and certs, integrity records (FAPIIS), or SAM.gov's contract award records, federal hierarchy, and subawards.
 
-There is no one-click directory install for the full edition. You run it on your own computer with your own free SAM.gov key and connect it to your AI app. Your key's daily limit applies; see [Authentication](#authentication). Setup starts at [Installation](#installation).
+The full edition is local only. Give your AI this page's link and ask it to set it up, or start at [Installation](#installation). It needs your own free SAM.gov key, and that key's daily limit applies; see [Authentication](#authentication).
 
 ## What it does
 
@@ -192,25 +197,6 @@ Once configured, these examples illustrate the server's advanced standalone use.
 ## Part of
 
 [federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 9 MCP servers for federal contracting data. Pair these sources with the [MCP prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
-
-## Request pacing
-
-| Default setting | Value |
-| --- | --- |
-| Wait after each upstream request completes | **3 seconds** |
-| Maximum upstream requests in flight per pacing identity | **1** |
-| Rolling attempt counter in this pacer | **None**; provider quotas still apply |
-
-The next request starts after the previous request's duration **plus 3 seconds**. This is a completion delay, not a 3-second start interval. Local processes sharing the same pacing directory and identity share this gate; a separate local counter does not create additional provider quota.
-
-See the [complete pacing reference](../../docs/pacing.md) for all nine servers, shared credentials/IPs, configuration and hosting differences.
-
-Every request, including composite-tool subrequests, uses a provisional
-3-second cross-process anti-burst interval by default. The local gate uses a
-one-way key fingerprint and never stores the raw SAM key. It does not create
-additional daily quota or coordinate the same key on another computer.
-Override with `FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately
-disable it, and use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
 
 ## License
 

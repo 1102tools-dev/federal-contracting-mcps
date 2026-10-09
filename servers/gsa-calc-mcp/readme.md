@@ -1,25 +1,25 @@
 # gsa-calc-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 379](https://img.shields.io/badge/regression%20tests-379-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/gsa-calc-by-1102tools) [![ChatGPT directory: listed](https://img.shields.io/badge/ChatGPT%20directory-listed-172f2a)](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1)
-
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 379](https://img.shields.io/badge/regression%20tests-379-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/gsa-calc-mcp -->
 
 Free, open-source MCP server for the GSA CALC+ Labor Ceiling Rates API. Query awarded GSA MAS schedule hourly rates for IGCE development, price reasonableness analysis, and market research.
 
-No authentication required. Connect through the published Claude or ChatGPT listing below, or use the installation and configuration instructions for another compatible MCP client.
+No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
 *Tested and hardened through six audit rounds against the GSA CALC+ API. 379 collected regression tests (270 offline, 109 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). See [testing.md](testing.md) for the full testing record.*
 
-## Available in Claude and ChatGPT
+## Local or hosted
 
-| MCP | Claude | ChatGPT |
+| Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|
-| GSA CALC+ | [Install](https://claude.ai/directory/gsa-calc-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) |
+| [Local setup](#installation) | [Install](https://claude.ai/directory/gsa-calc-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) |
 
-This MCP is published in the Claude and ChatGPT directories. Open a listing to install and connect it; no user API key or local Python setup is required. Then try a [matching prompt](https://1102tools.com/#gsa-calc). Prompts that combine sources require every listed MCP to be connected.
+- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
+- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
 
-The installation and configuration sections below cover direct setup in other compatible MCP clients.
+[Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#gsa-calc)
 
 ## What it does
 
@@ -93,35 +93,6 @@ CALC+ data represents the maximum hourly rate a contractor can charge under thei
 - From vendor Price Proposal Tables (self-reported by contractors)
 
 Always note sample size and remind users these are ceiling rates when presenting analysis.
-
-## Request pacing
-
-| Default setting | Value |
-| --- | --- |
-| Minimum upstream request-start interval | **0.6 seconds** (approximately 100 starts/minute while capacity remains) |
-| Maximum upstream requests in flight | **2** |
-| Rolling upstream attempt budget | **500 per 3,600 seconds (1 hour)** |
-| Hosted HTTP entrance limit | **120 requests per 60 seconds**, per incoming IP and Cloudflare location |
-| Hosted processing slots | **16 total**, shared by this service's users |
-| Hosted FIFO waiting slots | **32 additional**, for **48 accepted requests total** |
-| Hosted total request deadline | **55 seconds**, including upload, queue wait and processing |
-| Persistent hosted admission budget | **500 tool requests per rolling hour**, shared by all users |
-
-Waiting requests enter processing in arrival order as slots become available. Client disconnects, cancellations and deadlines release their slots. A full 16 + 32 admission queue returns HTTP 429 with `Retry-After: 5`; an expired deadline returns HTTP 504 if no response has started. Slots count HTTP requests, not people, and accepting a request does not guarantee completion before its deadline.
-
-The upstream budget and concurrency are shared by **all hosted users of this MCP**, even when their incoming IPs differ. Independently hosted/local installations have their own pacing histories; processes sharing a pacing directory and identity share its counter. The separate IP-based entrance limit can also be shared by users of a cloud AI client. HTTP requests include protocol traffic and are not equivalent to upstream data requests.
-
-The 0.6-second start interval supports short batches at approximately 100 starts per minute; the 500-attempt hourly budget prevents sustained 500-per-five-minute use. All eight current CALC+ tools make at most one upstream request. These are 1102tools safeguards, not a published provider quota.
-
-The hosted hourly admission counter and observed provider cooldowns persist in Durable Object SQLite storage across container sleep/replacement. Failed or invalid hosted tool requests consume an admission; protocol-only requests do not. `X-1102tools-Hourly-Remaining` reports that balance, not an agency allowance. Exhausting the budget or encountering a provider cooldown longer than 30 seconds returns an MCP tool error with a retry interval rather than holding the connection open. HTTP 200 alone does not mean a tool succeeded.
-
-Failed and cancelled upstream attempts remain counted. Observed `Retry-After` extends the shared cooldown; the MCP does not automatically retry the failed upstream call.
-
-`FEDERAL_API_PACING_DIR` selects the local coordination directory. `FEDERAL_API_MIN_INTERVAL_SECONDS` can slow requests; positive values below 0.6 are clamped to 0.6. Explicit zero disables pacing for offline or externally managed use. Hosted deployments use 0.6.
-
-Local history survives process restarts while the pacing directory remains. Deleting the directory or replacing a hosted container can reset its filesystem history. The persistent hosted admission budget and provider cooldown above remain in place across container replacement. Update local processes together rather than mixing old and new pacing implementations against one directory.
-
-See the [complete pacing reference](../../docs/pacing.md) for all nine servers, local versus hosted behavior, shared IPs, retry intervals and state persistence.
 
 ## License
 

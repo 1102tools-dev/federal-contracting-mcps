@@ -1,6 +1,8 @@
 # Federal contracting MCPs
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,571](https://img.shields.io/badge/regression%20tests-5%2C571-007a59)](#testing-and-maintenance) [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-172f2a)](#local-or-hosted) [![ChatGPT directory: 4 servers](https://img.shields.io/badge/ChatGPT%20directory-4%20servers-172f2a)](#local-or-hosted) [![hosting: Cloudflare + self-hosted](https://img.shields.io/badge/hosting-Cloudflare%20%2B%20self--hosted-172f2a?logo=cloudflare&logoColor=white)](#)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,571](https://img.shields.io/badge/regression%20tests-5%2C571-007a59)](#why-these-mcps)
+
+[![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-6f42c1?logo=claude&logoColor=white)](#local-or-hosted) [![ChatGPT directory: 4 servers](https://img.shields.io/badge/ChatGPT%20directory-4%20servers-6f42c1?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyBmaWxsPSJ3aGl0ZSIgcm9sZT0iaW1nIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI%2BPHRpdGxlPk9wZW5BSTwvdGl0bGU%2BPHBhdGggZD0iTTIyLjI4MTkgOS44MjExYTUuOTg0NyA1Ljk4NDcgMCAwIDAtLjUxNTctNC45MTA4IDYuMDQ2MiA2LjA0NjIgMCAwIDAtNi41MDk4LTIuOUE2LjA2NTEgNi4wNjUxIDAgMCAwIDQuOTgwNyA0LjE4MThhNS45ODQ3IDUuOTg0NyAwIDAgMC0zLjk5NzcgMi45IDYuMDQ2MiA2LjA0NjIgMCAwIDAgLjc0MjcgNy4wOTY2IDUuOTggNS45OCAwIDAgMCAuNTExIDQuOTEwNyA2LjA1MSA2LjA1MSAwIDAgMCA2LjUxNDYgMi45MDAxQTUuOTg0NyA1Ljk4NDcgMCAwIDAgMTMuMjU5OSAyNGE2LjA1NTcgNi4wNTU3IDAgMCAwIDUuNzcxOC00LjIwNTggNS45ODk0IDUuOTg5NCAwIDAgMCAzLjk5NzctMi45MDAxIDYuMDU1NyA2LjA1NTcgMCAwIDAtLjc0NzUtNy4wNzI5em0tOS4wMjIgMTIuNjA4MWE0LjQ3NTUgNC40NzU1IDAgMCAxLTIuODc2NC0xLjA0MDhsLjE0MTktLjA4MDQgNC43NzgzLTIuNzU4MmEuNzk0OC43OTQ4IDAgMCAwIC4zOTI3LS42ODEzdi02LjczNjlsMi4wMiAxLjE2ODZhLjA3MS4wNzEgMCAwIDEgLjAzOC4wNTJ2NS41ODI2YTQuNTA0IDQuNTA0IDAgMCAxLTQuNDk0NSA0LjQ5NDR6bS05LjY2MDctNC4xMjU0YTQuNDcwOCA0LjQ3MDggMCAwIDEtLjUzNDYtMy4wMTM3bC4xNDIuMDg1MiA0Ljc4MyAyLjc1ODJhLjc3MTIuNzcxMiAwIDAgMCAuNzgwNiAwbDUuODQyOC0zLjM2ODV2Mi4zMzI0YS4wODA0LjA4MDQgMCAwIDEtLjAzMzIuMDYxNUw5Ljc0IDE5Ljk1MDJhNC40OTkyIDQuNDk5MiAwIDAgMS02LjE0MDgtMS42NDY0ek0yLjM0MDggNy44OTU2YTQuNDg1IDQuNDg1IDAgMCAxIDIuMzY1NS0xLjk3MjhWMTEuNmEuNzY2NC43NjY0IDAgMCAwIC4zODc5LjY3NjVsNS44MTQ0IDMuMzU0My0yLjAyMDEgMS4xNjg1YS4wNzU3LjA3NTcgMCAwIDEtLjA3MSAwbC00LjgzMDMtMi43ODY1QTQuNTA0IDQuNTA0IDAgMCAxIDIuMzQwOCA3Ljg3MnptMTYuNTk2MyAzLjg1NThMMTMuMTAzOCA4LjM2NCAxNS4xMTkyIDcuMmEuMDc1Ny4wNzU3IDAgMCAxIC4wNzEgMGw0LjgzMDMgMi43OTEzYTQuNDk0NCA0LjQ5NDQgMCAwIDEtLjY3NjUgOC4xMDQydi01LjY3NzJhLjc5Ljc5IDAgMCAwLS40MDctLjY2N3ptMi4wMTA3LTMuMDIzMWwtLjE0Mi0uMDg1Mi00Ljc3MzUtMi43ODE4YS43NzU5Ljc3NTkgMCAwIDAtLjc4NTQgMEw5LjQwOSA5LjIyOTdWNi44OTc0YS4wNjYyLjA2NjIgMCAwIDEgLjAyODQtLjA2MTVsNC44MzAzLTIuNzg2NmE0LjQ5OTIgNC40OTkyIDAgMCAxIDYuNjgwMiA0LjY2ek04LjMwNjUgMTIuODYzbC0yLjAyLTEuMTYzOGEuMDgwNC4wODA0IDAgMCAxLS4wMzgtLjA1NjdWNi4wNzQyYTQuNDk5MiA0LjQ5OTIgMCAwIDEgNy4zNzU3LTMuNDUzN2wtLjE0Mi4wODA1TDguNzA0IDUuNDU5YS43OTQ4Ljc5NDggMCAwIDAtLjM5MjcuNjgxM3ptMS4wOTc2LTIuMzY1NGwyLjYwMi0xLjQ5OTggMi42MDY5IDEuNDk5OHYyLjk5OTRsLTIuNTk3NCAxLjQ5OTctMi42MDY3LTEuNDk5N1oiLz48L3N2Zz4%3D)](#local-or-hosted) [![Cloudflare Workers](https://img.shields.io/badge/hosted%20on-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/deploy)
 
 Free, open-source, read-only source tools for federal contracting research: opportunities, awards, company records, labor pricing, travel rates, regulations, and rulemaking.
 
@@ -8,9 +10,9 @@ Free, open-source, read-only source tools for federal contracting research: oppo
 
 ## Why these MCPs
 
-- **Free.** MIT-licensed, with no subscription and no credits. Directory installs need no account or API key.
+- **Free.** MIT-licensed, with no subscription and no credits. Hosted installs need no account or API key.
 - **Tested.** 5,571 collected regression tests, including live-API tests, across 9 servers and 133 tools, with up to ten audit rounds per server against the live government APIs. Published testing records document each bug fixed and the tests added.
-- **Listed, no keys.** All 9 servers are in the Claude directory and 4 are in the ChatGPT directory, with the rest in review for ChatGPT. Directory installs need no user API key.
+- **Listed.** All 9 servers are in the Claude directory and 4 are in the ChatGPT directory, with the rest in review for ChatGPT. Hosted installs need no user API key.
 - **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
 
 See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
@@ -46,7 +48,7 @@ All nine are in the Claude directory and four are in ChatGPT as hosted installs.
 
 **Use hosted if** you're on your phone, your work computer blocks installs, or you want SAM.gov opportunity search without a key.
 
-- **SAM.gov comes in two editions.** The directory version (in the Claude directory) has 4 keyless tools for contract opportunities, award notices, and justifications. The full version has 20 tools and adds entity registrations, SBA certifications, exclusions, and contract award records. It needs a free SAM.gov key and a local install; there is no one-click directory install for it. [Compare the editions](servers/sam-gov-mcp#two-editions-hosted-or-full).
+- **SAM.gov comes in two editions.** Hosted has 4 keyless tools for contract opportunities, award notices, and justifications. Local is the full edition: 20 tools that add entity registrations, SBA certifications, exclusions, and contract award records, with a free SAM.gov key. [Compare the editions](servers/sam-gov-mcp#two-editions-hosted-or-full).
 - **Hosted privacy.** The hosted servers don't store your queries, results, or conversations, and request logging is turned off. Their code and Cloudflare setup are public in [federal-contracting-mcps](deploy). Cloudflare still handles connection data such as IP addresses, and Claude or ChatGPT handles your conversation under its own privacy policy.
 
 ### Local setup
@@ -81,83 +83,29 @@ All nine are in the Claude directory and four are in ChatGPT as hosted installs.
 
 If your app says it can't find `uvx`, use its full path instead: run `which uvx` on macOS or `where uvx` on Windows.
 
-After connecting, choose a [matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) and replace the bracketed details. If a prompt lists multiple MCPs, connect every one it requires. For other sources or compatible MCP clients, use the server setup instructions below.
+After connecting, choose a [matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) and replace the bracketed details. If a prompt lists more than one MCP, connect each one.
 
-## Server catalog
+## Match the work to the source
 
-Choose the sources your work needs. Each server directory contains its own README, code, configuration, tests, and release notes. SAM.gov comes in two editions: installing it from Claude or ChatGPT gives you the 4-tool directory edition, and the 20-tool full edition is a separate local install with your own free key. The directory edition's 27 tests (hosted service and nightly data load) are not in the 5,571 package total.
-
-| MCP | Source coverage | Tools | Tests | Access |
-|---|---|---|---|---|
-| [SAM.gov, directory edition](servers/sam-gov-mcp#hosted-edition-4-tools-no-key) | Contract opportunities, award notices, and justifications only, from SAM.gov's daily public file. This is what you get when you install SAM.gov from Claude or ChatGPT. | 4 | 27 | No key. [Claude directory](https://claude.ai/directory/sam-gov-by-1102tools); ChatGPT in review |
-| [SAM.gov, full edition](servers/sam-gov-mcp) | Opportunities plus entity registrations, SBA certifications, exclusions, reps and certs, integrity records, contract-award records, the federal hierarchy, and subawards. | 20 | 1,155 | Free SAM.gov key. Local install only; not in the directories |
-| [USAspending](servers/usaspending-gov-mcp) | Awards, obligations, recipients, agencies, and reported subawards. | 55 | 2,174 | No key |
-| [GSA CALC+](servers/gsa-calc-mcp) | Awarded labor-category ceiling rates and comparison data. | 8 | 379 | No key |
-| [BLS OEWS](servers/bls-oews-mcp) | Occupational wages by geography, industry, and occupation (current OEWS release). | 8 | 276 | No key (BLS data ships with the package since v1.1.0); hosted edition in the Claude directory |
-| [GSA Per Diem](servers/gsa-perdiem-mcp) | Lodging and meals-and-incidental-expense rates by locality. | 7 | 544 | Local: free key for city lookups (ZIP, state, and M&IE work without one). Hosted: no key |
-| [eCFR](servers/ecfr-mcp) | Codified regulatory text, dates, and version comparisons. | 13 | 320 | No key |
-| [Acquisition.gov](servers/acquisition-gov-mcp) | FAR Overhaul model text, posted agency deviations, and guidance. | 5 | 239 | No key |
-| [Federal Register](servers/federal-register-mcp) | Published rules, notices, comment periods, and FAR cases. | 8 | 243 | No key |
-| [Regulations.gov](servers/regulations-gov-mcp) | Rulemaking dockets, documents, and public comments. | 9 | 241 | Local: free key. Hosted: no key |
-
-## Install
-
-1. For local use, follow the [local setup guide](#local-setup) and the server's README, or ask your AI to do it for you. For hosted installs in Claude or ChatGPT, use the [directory links above](#local-or-hosted).
-2. Configure any required API keys outside chat. The server README identifies the exact environment variables and access limits.
-3. Restart or reconnect the client as needed, and confirm the server's tools are visible. Where provided, `get_access_status` reports local credential readiness; it does not validate the key with the upstream provider.
-4. Choose a [prompt](https://github.com/1102tools-dev/federal-contracting-prompts), connect every MCP named beneath it, and replace the bracketed details.
-
-A prompt does not install a server. Local command configuration and remote endpoint configuration differ; use the supported setup documented for the selected server. The directory links above identify the published Claude and ChatGPT listings; other servers use their documented setup instructions.
-
-**USAspending package naming:** its package is `usaspending-gov-mcp` and its executable is `usaspending-mcp`. Use the exact configuration in [its README](servers/usaspending-gov-mcp); do not substitute a similarly named package.
+| What you want to do | MCP to connect | Matching prompts |
+|---|---|---|
+| Find solicitations and check company registrations | [SAM.gov](servers/sam-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#catching-opportunities) |
+| Research awards, competitors, agencies, and recompetes | [USAspending](servers/usaspending-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#competitor-intelligence) |
+| Compare awarded labor-rate ceilings | [GSA CALC+](servers/gsa-calc-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#gsa-calc) |
+| Look up occupation and location wage data | [BLS OEWS](servers/bls-oews-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#bls-oews) |
+| Estimate lodging and meals for travel | [GSA Per Diem](servers/gsa-perdiem-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#gsa-per-diem) |
+| Read and compare codified FAR, DFARS, and CFR text | [eCFR](servers/ecfr-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#ecfr) |
+| Research FAR Overhaul model text and posted agency deviations | [Acquisition.gov](servers/acquisition-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#far-overhaul-and-agency-deviations) |
+| Follow proposed rules, final rules, and FAR cases | [Federal Register](servers/federal-register-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#federal-register) |
+| Explore rulemaking dockets and public comments | [Regulations.gov](servers/regulations-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#regulationsgov) |
 
 ## Use the sources together
 
-- **Competitors and teaming:** combine USAspending award records with SAM.gov entity and exclusion evidence from the full local edition.
+- **Competitors and teaming:** combine USAspending award records with SAM.gov entity and exclusion records from its local full edition.
 - **Pricing inputs:** compare BLS wages, CALC+ ceiling rates, and GSA travel rates while keeping their different pricing bases clear.
 - **Regulations and policy:** use eCFR for codified text, Federal Register and Regulations.gov for rulemaking, and Acquisition.gov for FAR Overhaul model text and posted deviations.
 
 Results reflect upstream data and retrieval time. Check dates, completeness, identity matches, and reported limitations. The MCPs provide evidence; they do not make a contracting or procurement-specific applicability decision.
-
-## Request pacing and hosted limits
-
-These are default MCP safeguards, measured in upstream requests to the government data source. One tool call can require multiple upstream requests. They are not agency-published quotas or guaranteed response times.
-
-| MCP | Minimum interval between upstream starts | Maximum simultaneous upstream requests | Rolling upstream attempt budget |
-| --- | --- | --- | --- |
-| [USAspending](servers/usaspending-gov-mcp#request-pacing) | **0.6 seconds** | **4** | **500 per 5 minutes** |
-| [GSA CALC+](servers/gsa-calc-mcp#request-pacing) | **0.6 seconds** | **2** | **500 per hour** |
-| [eCFR JSON](servers/ecfr-mcp#request-pacing-and-cache) | **0.6 seconds** | **2**, shared with XML | **500 per 5 minutes**, shared with XML |
-| [Federal Register](servers/federal-register-mcp#request-pacing) | **0.6 seconds** | **2** | **500 per 5 minutes** |
-
-A **0.6-second interval** permits approximately **100 request starts per minute**, while budget and concurrency slots remain available. Two simultaneous requests means two may be awaiting responses; it does not mean two start every 0.6 seconds. A rolling window counts the immediately preceding five minutes or hour. Failed and cancelled upstream attempts remain counted.
-
-**eCFR XML:** uncached XML is fetched one request at a time, with **three seconds after the previous XML request completes** before the next begins. Eligible XML responses are cached for **300 seconds**; a cache hit skips that XML download and its pacing wait. The cache holds **128 entries**, **32 MiB total**, and **2 MiB per entry**. Entries can be evicted earlier for capacity. Tools may still require JSON calls, such as resolving the latest date.
-
-**Local versus hosted:** running the MCP server yourself gives you its local pacing budget. Processes using the same pacing directory and identity share that budget. Connecting any client to a 1102tools hosted endpoint uses the hosted budget, even if the client application runs on your computer.
-
-| Limit | Local MCP process / stdio | Hosted endpoint / plugin for the four services above |
-| --- | --- | --- |
-| Upstream budget and concurrency | Shared by local processes using the same pacing directory and identity | **Shared by all users of that MCP**, regardless of their incoming IPs |
-| Cloudflare entrance limit | Does not apply | **600 HTTP requests per 60 seconds** for Claude and ChatGPT addresses (Anthropic's and OpenAI's published ranges), **120** for every other address; per incoming IP and Cloudflare location |
-| Hosted backend admission | Does not apply | **16 processing + 32 FIFO waiting = 48 accepted requests total**, shared across this service's users |
-| Hosted total request deadline | Local/client timeouts apply | **55 seconds including upload, queue wait and processing**; startup and network latency may add time |
-
-**Shared IPs and shared service capacity are separate limits.** People using the same calling IP can share its entrance counter. With a cloud AI client, that IP may belong to the AI provider rather than your computer. Cloudflare's counter is approximate and location-specific. Different incoming IPs still share the hosted MCP's upstream budget. For example, ten hosted USAspending users share **500 upstream attempts per five minutes**, not 500 each. The four services above have separate budgets; USAspending use does not consume eCFR, CALC+ or Federal Register capacity.
-
-Queued requests enter processing in arrival order when a slot opens. Disconnects, cancellations and deadlines free their slots. A full 48-request admission queue returns HTTP 429 with `Retry-After: 5`; requests exceeding the deadline return HTTP 504 if no response has started. The upstream limits above remain unchanged, so 16 processing slots do not mean 16 simultaneous agency API calls.
-
-HTTP requests include connection setup, tool discovery and tool calls. They are not equivalent to upstream data requests. Government providers can apply additional limits, including to a shared outbound IP or API key. The 500-per-hour CALC+ policy supports short batches at 0.6-second starts; it does not permit continuous 500-per-five-minute use.
-
-For all nine servers' exact defaults, retry intervals, cache rules, shared-IP behavior and budget persistence, see the [complete pacing reference](docs/pacing.md). Acquisition.gov's hosted endpoint answers from a daily copy stored in Cloudflare D1 and uses the same entrance limits. The other servers retain their documented three- or four-second completion delays. [Cloudflare rate-limit behavior](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
-
-## Testing and maintenance
-
-Acquisition.gov has [236 offline tests and recorded live checks across all five tools](servers/acquisition-gov-mcp/testing.md), including P0–P3 coverage for HTML/PDF parsing and transport boundaries.
-
-Current source-specific evidence is in each server's `testing.md` or `TESTING.md`, with changes in its changelog. Packages version independently. The shared request-pacing code reduces bursts and handles provider errors; it does not create additional provider quota.
-
-This September 2026 documentation refresh changes the public entry points and removes retired setup links. It does not change MCP runtime behavior or claim a new live test of the entire suite. Earlier release narrative is preserved in [historical documentation](docs/readme-before-mcp-reboot.md).
 
 ## License and author
 

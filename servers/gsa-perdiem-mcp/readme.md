@@ -1,25 +1,25 @@
 # gsa-perdiem-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 7](https://img.shields.io/badge/tools-7-007a59)](#what-it-does) [![regression tests: 544](https://img.shields.io/badge/regression%20tests-544-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/gsa-perdiem-by-1102tools)
-
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 7](https://img.shields.io/badge/tools-7-007a59)](#what-it-does) [![regression tests: 544](https://img.shields.io/badge/regression%20tests-544-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/gsa-perdiem-mcp -->
 
 Free, open-source MCP server for the GSA Per Diem Rates API. Federal travel lodging and M&IE rates for IGCEs and travel cost estimation.
 
-ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network call: they are answered from GSA's published rate, ZIP, and M&IE files bundled in the package. City lookups use the GSA Per Diem API, which resolves city names to rate areas; they need a free api.data.gov key in `PERDIEM_API_KEY`. The published Claude listing below needs no user API key for any lookup. For other compatible MCP clients, use the installation and configuration instructions below.
+ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network call: they are answered from GSA's published rate, ZIP, and M&IE files bundled in the package. City lookups use the GSA Per Diem API, which resolves city names to rate areas; they need a free api.data.gov key in `PERDIEM_API_KEY`. The hosted version needs no key for any lookup. See [Local or hosted](#local-or-hosted).
 
 *Tested and hardened through seven rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 544 collected regression tests (277 offline, 267 live-gated) covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, 14 round-7 findings, and the 1.1.0 rate-area ambiguity fixes. See [testing.md](testing.md) for the full testing record.*
 
-## Available in Claude and ChatGPT
+## Local or hosted
 
-| MCP | Claude | ChatGPT |
+| Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|
-| GSA Per Diem | [Install](https://claude.ai/directory/gsa-perdiem-by-1102tools) | Coming soon |
+| [Local setup](#installation) | [Install](https://claude.ai/directory/gsa-perdiem-by-1102tools) | Coming soon |
 
-This MCP is published in the Claude directory. Open the listing to install and connect it; no user API key or local Python setup is required. A ChatGPT directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#gsa-per-diem). Prompts that combine sources require every listed MCP to be connected.
+- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. City lookups need a free api.data.gov key. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
+- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
 
-The installation and configuration sections below cover direct setup in other compatible MCP clients.
+[Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#gsa-per-diem)
 
 ## What it does
 
@@ -121,25 +121,6 @@ Per diem rates are federal reimbursement ceilings per 41 CFR 301-11. They are no
 ## Companion tools
 
 Use alongside `bls-oews-mcp` (wage data) and `gsa-calc-mcp` (ceiling rates) for complete IGCE development. Per diem covers the travel component; BLS and CALC+ cover labor.
-
-## Request pacing
-
-| Default setting | Value |
-| --- | --- |
-| Wait after each upstream request completes | **4 seconds** |
-| Maximum upstream requests in flight per pacing identity | **1** |
-| Rolling attempt counter in this pacer | **None**; provider quotas still apply |
-
-The next request starts after the previous request's duration **plus 4 seconds**. This is a completion delay, not a 4-second start interval. Local processes sharing the same pacing directory and identity share this gate; a separate local counter does not create additional provider quota.
-
-See the [complete pacing reference](../../docs/pacing.md) for all nine servers, shared credentials/IPs, configuration and hosting differences.
-
-Every request uses a provisional 4-second
-cross-process anti-burst interval by default. Per Diem and Regulations.gov
-share a local `api.data.gov` bucket when they use the same key. This does not
-increase provider quota or coordinate the key on another computer. Override
-with `FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it,
-and use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
 
 ## License
 

@@ -1,25 +1,25 @@
 # bls-oews-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 276](https://img.shields.io/badge/regression%20tests-276-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/bls-oews-by-1102tools)
-
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 276](https://img.shields.io/badge/regression%20tests-276-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/bls-oews-mcp -->
 
 Free, open-source MCP server for BLS Occupational Employment and Wage Statistics (OEWS) market wages. For IGCE development, price analysis, and labor market research.
 
-No API key and no daily limit. The package bundles the current OEWS release (May 2025 estimates, published by BLS on May 15, 2026) as a read-only database built from BLS's published flat files, so every answer is local and each result cites the BLS release, publication date, retrieval date, and source file. Use the installation and configuration instructions below to connect this MCP directly.
+No API key and no daily limit. The package bundles the current OEWS release (May 2025 estimates, published by BLS on May 15, 2026) as a read-only database built from BLS's published flat files, so every answer is local and each result cites the BLS release, publication date, retrieval date, and source file. See [Local or hosted](#local-or-hosted).
 
 *Tested and hardened through a 5-round retroactive live audit with a real BLS API key after the initial smoke test reported zero bugs, then round 7's full-source re-audit. 276 collected regression tests (275 offline, 1 live parity check against the BLS API), covering the 1 P0 usability-breaking bug (SOC format), 10 P1 silent-wrong-data bugs, 12 P1 response-shape crash paths, and 7 P2 validation gaps fixed in that audit. See [TESTING.md](TESTING.md) for the full testing record.*
 
-## Available in Claude and ChatGPT
+## Local or hosted
 
-| MCP | Claude | ChatGPT |
+| Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|
-| BLS OEWS | [Install](https://claude.ai/directory/bls-oews-by-1102tools) | Coming soon |
+| [Local setup](#installation) | [Install](https://claude.ai/directory/bls-oews-by-1102tools) | Coming soon |
 
-This MCP is published in the Claude directory. Open the listing to install and connect it; no user API key or local Python setup is required. A ChatGPT directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#bls-oews). Prompts that combine sources require every listed MCP to be connected.
+- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
+- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
 
-The installation and configuration sections below cover direct setup in other compatible MCP clients. The local server needs no key either.
+[Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#bls-oews)
 
 ## What it does
 
@@ -98,10 +98,6 @@ OEWS publishes about a year in arrears. The server answers from the bundled rele
 ## Companion tools
 
 Use alongside `gsa-calc-mcp` (GSA CALC+ ceiling rates) for complete pricing analysis. BLS provides what the market pays; CALC+ provides what GSA contractors charge. Together they form the IGCE pricing toolkit.
-
-## Request pacing
-
-None. Every tool answers from the bundled database, so the server makes no upstream requests and has no BLS quota. See the [pacing reference](../../docs/pacing.md) for the other servers.
 
 ## License
 

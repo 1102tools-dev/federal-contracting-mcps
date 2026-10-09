@@ -1,25 +1,25 @@
 # regulationsgov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 9](https://img.shields.io/badge/tools-9-007a59)](#what-it-does) [![regression tests: 241](https://img.shields.io/badge/regression%20tests-241-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/regulations-gov-by-1102tools)
-
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 9](https://img.shields.io/badge/tools-9-007a59)](#what-it-does) [![regression tests: 241](https://img.shields.io/badge/regression%20tests-241-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/regulations-gov-mcp -->
 
 Free, open-source MCP server for the Regulations.gov API. Federal rulemaking dockets, proposed rules, final rules, public comments, and comment period tracking.
 
-No user API key through the published Claude listing below. Local installs in other compatible MCP clients need a free api.data.gov key; see the installation and configuration instructions.
+Hosted: no key. Local: a free api.data.gov key. See [Local or hosted](#local-or-hosted).
 
 *Tested and hardened through four rounds of integration testing against the live Regulations.gov API, plus a round-7 independent re-audit with live verification. 241 collected regression tests (122 offline, 119 live-gated) covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, 12 round-7 findings, and the 1.1.0 hosted-directory fixes (compact results, publisher-key fail-closed). See [testing.md](testing.md) for the full testing record.*
 
-## Available in Claude and ChatGPT
+## Local or hosted
 
-| MCP | Claude | ChatGPT |
+| Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|
-| Regulations.gov | [Install](https://claude.ai/directory/regulations-gov-by-1102tools) | Coming soon |
+| [Local setup](#installation) | [Install](https://claude.ai/directory/regulations-gov-by-1102tools) | Coming soon |
 
-This MCP is published in the Claude directory. Open the listing to install and connect it; no user API key or local Python setup is required. A ChatGPT directory listing is coming soon. Then try a [matching prompt](https://1102tools.com/#regulationsgov). Prompts that combine sources require every listed MCP to be connected.
+- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. It needs a free api.data.gov key. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
+- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
 
-The installation and configuration sections below cover direct setup in other compatible MCP clients, which needs a free api.data.gov key.
+[Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#regulationsgov)
 
 ## What it does
 
@@ -107,25 +107,6 @@ Regulations.gov filter values are CASE-SENSITIVE. Use exact casing:
 - `ecfr-mcp`: what the regulation currently says after amendments
 
 Together these three cover the full regulatory pipeline from proposal through public comment to codified rule.
-
-## Request pacing
-
-| Default setting | Value |
-| --- | --- |
-| Wait after each upstream request completes | **4 seconds** |
-| Maximum upstream requests in flight per pacing identity | **1** |
-| Rolling attempt counter in this pacer | **None**; provider quotas still apply |
-
-The next request starts after the previous request's duration **plus 4 seconds**. This is a completion delay, not a 4-second start interval. Local processes sharing the same pacing directory and identity share this gate; a separate local counter does not create additional provider quota.
-
-See the [complete pacing reference](../../docs/pacing.md) for all nine servers, shared credentials/IPs, configuration and hosting differences.
-
-Every request and pagination subrequest uses a provisional 4-second
-cross-process anti-burst interval by default. Regulations.gov and Per Diem
-share a local `api.data.gov` bucket when they use the same key. This does not
-increase provider quota or coordinate the key on another computer. Override
-with `FEDERAL_API_MIN_INTERVAL_SECONDS`, use `0` to deliberately disable it,
-and use `FEDERAL_API_PACING_DIR` to relocate local pacing state.
 
 ## License
 
