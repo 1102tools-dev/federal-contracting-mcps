@@ -656,6 +656,14 @@ class Loader:
         self.pending.append(asyncio.ensure_future(coroutine))
 
     async def run(self) -> dict:
+        try:
+            return await self._run()
+        except Abort:
+            # Store what was already fetched, so the next run resumes after it.
+            await self.drain()
+            raise
+
+    async def _run(self) -> dict:
         started = time.monotonic()
         current, staging = self.setup()
         self.log(f"current snapshot {current}, staging {staging}")
