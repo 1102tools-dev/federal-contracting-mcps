@@ -11,6 +11,7 @@ export const SERVER_INFO = {name: "bls-oews", version: SERVER.version as string}
 export interface Env {
   DB: Database;
   REQUEST_LIMITER: {limit(options: {key: string}): Promise<{success: boolean}>};
+  AI_LIMITER?: {limit(options: {key: string}): Promise<{success: boolean}>};
   RELEASE_SHA?: string;
 }
 
