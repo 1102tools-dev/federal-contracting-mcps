@@ -1,8 +1,23 @@
 # Acquisition.gov port to Worker + D1: progress
 
 Branch: `worktree-agent-a7712d90cbb54b2c9`, main merged in on 2026-10-08 (after PR #35 and #37).
-Status: ACTIVE (restarted 2026-10-08 night from Desktop handoff 3, one session, no agents). No push, no
-deploy, no Cloudflare changes until James says go.
+Status: LIVE on Worker + D1 since 2026-10-08 20:25 CDT (PR #38, deployed from the branch before merge, as
+James approved step 7). Rollback: `npx wrangler rollback 4c2980ac-4464-459f-9fdd-82856de97d0c --env production`
+in deploy/acquisition-gov (the previous container-forwarding Worker; the container and image are unchanged).
+
+## Cutover record (2026-10-08)
+- D1 `acquisition-gov` created in WNAM: 158b0481-c351-4a03-ba07-288f342d348a.
+- First load: the full snapshot built locally from the recording (snapshot 1, fetch times 2026-10-08 03:03-
+  2026-10-09 01:09 UTC), exported as SQL (schema + 394 INSERT statements under 100 KB, 31 MB) and imported with
+  `wrangler d1 execute acquisition-gov --remote --file` (Wrangler OAuth, no API token handled; 8 s, 41 MB).
+  Remote row counts and character totals equal the local snapshot. From the first daily run on main,
+  acquisition-gov-load.yml keeps it current.
+- Worker-only deploy keeping image e63cc60512f35e84068818dd948ce282760424ef: previous Worker version
+  4c2980ac-4464-459f-9fdd-82856de97d0c, new b9b62472-3cf5-4a80-a933-07e20aaa7b62; container "no changes".
+- Verified: verify_hosted_release.py passed (1.0.8, 5 tools, part 52 at 1.9M characters, NSF Part 1 PDF);
+  check_hosted_health.py all nine ok plus the Dell origin row; spot check 9 of 9 identical to the container's
+  answers taken just before the deploy, now 0.1-0.2 s a call (was 0.8-12 s); subscriptions/listen streams its
+  acknowledgement at the edge; a 2026-07-28 tools/call answers.
 
 ## Session log (newest last)
 - Merged main (clean). Recording crawl resumed with `--record-only` in the background
