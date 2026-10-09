@@ -21,6 +21,15 @@ deploy, no Cloudflare changes until James says go.
   test answers all five tools in 1 D1 round trip (2 with an agency filter).
   Gotcha: the file-writing tool turns `\u2028`-style escapes into raw characters, which breaks regex literals;
   escape non-ASCII after writing.
+- Parity harness `scripts/parity.py` + `test/parity-cases.json` (263 cases: BLS's protocol cases with our tool
+  names, all 53 parts, sections, cursors, every validation path, agency/acronym matching, dates, 25-page PDF
+  windows, a failed page, a 404 PDF, multi-part duplicates, 40,000-character truncation, the three guidance
+  resources, 2026-07-28 tool calls). Python side = `acquisition_gov_mcp.http.create_app()` with `_fetch_bytes`
+  answered from the recording and `_now` = last fetch time. Result: 254 identical, 9 documented (the same
+  protocol-level ones BLS documents), 0 unexpected. Run:
+  `PYTHONPATH=servers/acquisition-gov-mcp/src servers/acquisition-gov-mcp/.venv/bin/python deploy/acquisition-gov/scripts/parity.py [--db X]`
+- Reads only the text rows a page overlaps (part 52's text is 1.9M characters): 1 D1 round trip per call,
+  2 for a section/heading lookup or an agency filter.
 
 ## Done
 - Studied SAM (`deploy/sam-gov`), the container Worker, the Python package, mcp SDK 2.0.0 serializers,

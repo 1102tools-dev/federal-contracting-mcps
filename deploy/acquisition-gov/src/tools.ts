@@ -67,13 +67,16 @@ function validateHeading(section: string | null): string | null {
   return squash(section);
 }
 
-function chunk(text: string, cursor: string | null, maximum: number): Record<string, Py> {
+/** _chunk's page of a text `length` code points long: [start, end), or its cursor error. */
+function chunkWindow(length: number, cursor: string | null, maximum: number): [number, number] {
   const start = cursor === null ? 0 : Number(cursor);
-  const length = cpLen(text);
   if (start > length) throw new ToolError(`cursor is outside the source text (length ${length}).`);
-  const end = Math.min(length, start + maximum);
+  return [start, Math.min(length, start + maximum)];
+}
+
+function chunkResult(content: string, [start, end]: [number, number], length: number): Record<string, Py> {
   return {
-    content: cpSlice(text, start, end),
+    content,
     cursor: String(start),
     next_cursor: end < length ? String(end) : null,
     truncated: end < length,
@@ -108,26 +111,55 @@ function fetched(rows: Row[], key: string): Source {
   return {...row, info: JSON.parse(row.info)} as Source;
 }
 
-const text = (rows: Row[]) => rows.map(r => r.body).join("");
+// Long texts are stored as rows of a stream (chunks.start and length count
+// code points), so a call reads only the rows its page overlaps.
+const STREAM_END = `SELECT start + length AS total FROM chunks WHERE doc = ${DOC_OF} AND stream = ? ORDER BY seq DESC LIMIT 1`;
+const STREAM_ROWS = `SELECT start, body FROM chunks WHERE doc = ${DOC_OF} AND stream = ? AND start < ? AND start + length > ? ORDER BY seq`;
 
-/** _parse_html_document over a stored page: its whole text, or one heading's section. */
-function htmlDocument(info: Record<string, any>, stream: string, headings: Row[], heading: string | null,
-  cursor: string | null, maximum: number): Record<string, Py> {
+/** stream[from:to], from the rows STREAM_ROWS returned for that range. */
+function streamText(rows: Row[], from: number, to: number): string {
+  if (!rows.length || to <= from) return "";
+  return cpSlice(rows.map(r => r.body).join(""), from - rows[0].start, to - rows[0].start);
+}
+
+/** _parse_html_document over a stored page (part or guidance): one page of its
+ * whole text, or of one heading's section. Reads the page's source row, and
+ * for a section its headings, in one round trip, then the text it returns. */
+async function htmlDocument(db: Database, key: string, heading: string | null, cursor: string | null,
+  maximum: number): Promise<{src: Source; page: Record<string, Py>}> {
+  // Without a heading the page is a window of the text stream, known up front.
+  const first = cursor === null ? 0 : Number(cursor);
+  const [source, end, rows, headings] = await db.batch([
+    db.prepare(SOURCE + "?").bind(key),
+    db.prepare(STREAM_END).bind(key, "text"),
+    db.prepare(STREAM_ROWS).bind(key, "text", heading === null ? first + maximum : 0, first),
+    db.prepare(`SELECT key, start, end FROM headings WHERE doc = ${DOC_OF} AND ? ORDER BY idx`).bind(key, heading === null ? 0 : 1),
+  ]);
+  const src = fetched(source.results, key);
+  const info = src.info;
   if (info.error) throw new ToolError(info.error);
-  let body: string;
+  let content: string;
+  let window: [number, number];
+  let length: number;
   if (heading === null) {
     if (info.text_error) throw new ToolError(info.text_error);
-    body = stream;
+    length = end.results[0]?.total ?? 0;
+    window = chunkWindow(length, cursor, maximum);
+    content = streamText(rows.results, window[0], window[1]);
   } else {
     const needle = casefold(heading);
     const pattern = new RegExp(`(?<![${WORD}.])${escapeRegex(needle)}(?![${WORD}.])`, "u");
-    const exact = headings.filter(h => h.key === needle);
-    const candidates = exact.length ? exact : headings.filter(h => pattern.test(h.key));
+    const exact = headings.results.filter(h => h.key === needle);
+    const candidates = exact.length ? exact : headings.results.filter(h => pattern.test(h.key));
     if (!candidates.length) throw new ToolError(`section ${repr(heading)} was not found in the official source.`);
     if (candidates.length > 1) throw new ToolError(`section ${repr(heading)} matches multiple headings; use a more specific heading.`);
-    body = cpSlice(stream, candidates[0].start, candidates[0].end);
+    const {start, end: stop} = candidates[0];
+    length = stop - start;
+    window = chunkWindow(length, cursor, maximum);
+    const {results} = await db.prepare(STREAM_ROWS).bind(key, "sections", start + window[1], start + window[0]).all();
+    content = streamText(results, start + window[0], start + window[1]);
   }
-  return {...chunk(body, cursor, maximum), issuance_date: info.issuance_date, updated_date: info.updated_date};
+  return {src, page: {...chunkResult(content, window, length), issuance_date: info.issuance_date, updated_date: info.updated_date}};
 }
 
 interface Index {
@@ -216,14 +248,7 @@ async function getRfoPart(db: Database, args: Args): Promise<Py> {
   const wanted = validatePart(a.part);
   validateChunkInputs(a.cursor, a.max_characters);
   const heading = validateHeading(a.section);
-  const key = `part:${wanted}`;
-  const [source, stream, headings] = await db.batch([
-    db.prepare(SOURCE + "?").bind(key),
-    db.prepare(`SELECT body FROM chunks WHERE doc = ${DOC_OF} AND stream = ? ORDER BY seq`).bind(key, heading === null ? "text" : "sections"),
-    db.prepare(`SELECT key, start, end FROM headings WHERE doc = ${DOC_OF} AND ? ORDER BY idx`).bind(key, heading === null ? 0 : 1),
-  ]);
-  const src = fetched(source.results, key);
-  const page = htmlDocument(src.info, text(stream.results), headings.results, heading, a.cursor, Number(a.max_characters));
+  const {src, page} = await htmlDocument(db, `part:${wanted}`, heading, a.cursor, Number(a.max_characters));
   const warnings = ["RFO model text is not operative for an agency unless that agency adopts it through a deviation."];
   if (page.issuance_date === null && page.updated_date === null) {
     warnings.push("The page text does not state issuance or update dates; list_rfo_parts reports dates from the separate index cards.");
@@ -413,19 +438,32 @@ async function getRfoGuidance(db: Database, args: Args): Promise<Py> {
   if (!GUIDANCE.includes(a.resource)) throw new ToolError("resource must be faq, policy_and_guidance, or deviation_guidance.");
   const key = `guidance:${a.resource}`;
   if (a.resource === "deviation_guidance") {
-    // Guidance PDF headings are its lines; the first containing the heading starts the text.
-    const [source, stream, found] = await db.batch([
+    // Its headings are its lines: the first line containing the heading starts
+    // the text, in the lines stream. Without one it is the whole text stream.
+    const stream = heading === null ? "text" : "lines";
+    const first = a.cursor === null ? 0 : Number(a.cursor);
+    const [source, end, found, rows] = await db.batch([
       db.prepare(SOURCE + "?").bind(key),
-      db.prepare(`SELECT body FROM chunks WHERE doc = ${DOC_OF} AND stream = ? ORDER BY seq`).bind(key, heading === null ? "text" : "lines"),
+      db.prepare(STREAM_END).bind(key, stream),
       db.prepare(`SELECT start FROM headings WHERE doc = ${DOC_OF} AND instr(key, ?) > 0 ORDER BY idx LIMIT 1`).bind(key, heading === null ? "" : casefold(heading)),
+      db.prepare(STREAM_ROWS).bind(key, stream, heading === null ? first + DEFAULT_MAX_CHARACTERS : 0, first),
     ]);
     const src = fetched(source.results, key);
-    let body = text(stream.results);
+    const total = end.results[0]?.total ?? 0;
+    let offset = 0;
     if (heading !== null) {
       if (!found.results.length) throw new ToolError(`heading ${repr(heading)} was not found in the guidance PDF.`);
-      body = cpSlice(body, found.results[0].start);
+      offset = found.results[0].start;
     }
-    const page = chunk(body, a.cursor, DEFAULT_MAX_CHARACTERS);
+    const window = chunkWindow(total - offset, a.cursor, DEFAULT_MAX_CHARACTERS);
+    let content: string;
+    if (heading === null) {
+      content = streamText(rows.results, window[0], window[1]);
+    } else {
+      const {results} = await db.prepare(STREAM_ROWS).bind(key, stream, offset + window[1], offset + window[0]).all();
+      content = streamText(results, offset + window[0], offset + window[1]);
+    }
+    const page = chunkResult(content, window, total - offset);
     return {
       source_id: src.source_id, source_kind: "nonregulatory_guidance", agency: "FAR Council", far_parts: [],
       source_url: src.final_url, updated_date: null, ...src.info.fields, retrieved_at: src.retrieved_at,
@@ -434,13 +472,7 @@ async function getRfoGuidance(db: Database, args: Args): Promise<Py> {
       heading, ...page,
     };
   }
-  const [source, stream, headings] = await db.batch([
-    db.prepare(SOURCE + "?").bind(key),
-    db.prepare(`SELECT body FROM chunks WHERE doc = ${DOC_OF} AND stream = ? ORDER BY seq`).bind(key, heading === null ? "text" : "sections"),
-    db.prepare(`SELECT key, start, end FROM headings WHERE doc = ${DOC_OF} AND ? ORDER BY idx`).bind(key, heading === null ? 0 : 1),
-  ]);
-  const src = fetched(source.results, key);
-  const page = htmlDocument(src.info, text(stream.results), headings.results, heading, a.cursor, DEFAULT_MAX_CHARACTERS);
+  const {src, page} = await htmlDocument(db, key, heading, a.cursor, DEFAULT_MAX_CHARACTERS);
   return {
     source_id: src.source_id, source_kind: "nonregulatory_guidance", agency: "Acquisition.gov", far_parts: [],
     source_url: src.final_url, effective_date: null, expiration_date: null, applicability_text: null,
