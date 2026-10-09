@@ -29,14 +29,14 @@ CALC+ can serve a short batch at the 0.6-second pace, but it cannot sustain 500 
 
 ## Local installation versus the hosted plugin
 
-The following hosting table applies to USAspending, GSA CALC+, eCFR and Federal Register. Acquisition.gov retains a separate 60-request/minute entrance limit, as documented below.
+The following hosting table applies to USAspending, GSA CALC+, eCFR and Federal Register. Acquisition.gov's hosted endpoint works differently, as documented below.
 
 The default upstream pacing above is the same code in both installation methods. The difference is who shares its budget and which additional hosting limits apply. Connecting any AI client to a 1102tools hosted URL has the hosted behavior, even if that client runs on your computer.
 
 | Limit or resource | Local process / stdio installation | 1102tools hosted endpoint, including ChatGPT plugins |
 | --- | --- | --- |
 | Upstream budget and concurrency | Shared by processes using the same pacing directory and pacing identity; independent installations do not share that local counter | Shared by all users of that particular hosted MCP, regardless of their incoming IP addresses |
-| Cloudflare entrance limit | Does not apply to a local process calling the data source directly | 120 HTTP requests per 60 seconds, per incoming IP seen by Cloudflare, per Cloudflare location, per MCP service |
+| Cloudflare entrance limit | Does not apply to a local process calling the data source directly | 600 HTTP requests per 60 seconds for Claude and ChatGPT addresses (Anthropic's and OpenAI's published outbound ranges) and 120 for every other address, per incoming IP seen by Cloudflare, per Cloudflare location, per MCP service |
 | Hosted backend admission | Does not apply to stdio | 16 processing slots plus 32 FIFO waiting slots: 48 accepted HTTP requests across this service's users |
 | Hosted total request deadline | Does not apply to stdio; the package/client's own timeouts still apply | 55 seconds including upload, queue wait and processing; startup/network time may add latency |
 | Hosted request-body limit | Does not apply to stdio | 65,536 bytes (64 KiB) |
@@ -47,16 +47,16 @@ The four services in the first table have separate hosted budgets, concurrency s
 
 ### Shared IP addresses: two different parts of the request path
 
-1. **AI client to Cloudflare:** the 120-per-minute entrance counter uses the calling IP visible to Cloudflare. If several people share that IP and reach the same Cloudflare location, they share that entrance counter for the same MCP. For a cloud AI service, the calling IP may belong to that service rather than the user's phone or computer. Different incoming IPs still share the hosted backend's upstream budget.
+1. **AI client to Cloudflare:** the entrance counter (600 a minute for Claude and ChatGPT addresses, 120 for others) uses the calling IP visible to Cloudflare. If several people share that IP and reach the same Cloudflare location, they share that entrance counter for the same MCP. For a cloud AI service, the calling IP may belong to that service rather than the user's phone or computer. Different incoming IPs still share the hosted backend's upstream budget.
 2. **MCP to the government data source:** hosted requests leave through the hosting infrastructure. The data provider may impose additional limits on that outbound traffic. Local users also may share an outbound address through an office, home router or VPN. Separate local pacing files do not create separate agency allowances.
 
-Cloudflare's entrance limit is approximate and location-specific. It is an additional admission check, not a dedicated 120-request allowance for each person. [Cloudflare rate-limiting documentation](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
+Cloudflare's entrance limit is approximate and location-specific. It is an additional admission check, not a dedicated allowance for each person. [Cloudflare rate-limiting documentation](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
 
 Waiting requests enter processing in FIFO arrival order. The deadline starts when the backend accepts the request, not when processing starts. Each request releases its slot on completion, failure, cancellation, disconnect or timeout; a disconnected queued request is removed. Uploads are bounded to 64 KiB each and consume an admission slot. Health checks bypass this backend queue. Slots count requests, not users.
 
 The 16 processing slots allow more HTTP requests to wait on the existing provider pacer; they do not increase the two/four upstream concurrency limits or provider budgets. A slow provider, an exhausted budget, or cold XML downloads can still cause deadlines. This is a bounded request queue, not persistent background work; a process restart drops outstanding requests.
 
-The entrance counter includes MCP initialization, tool discovery, pings, tool requests and health checks. Therefore, 120 HTTP requests/minute is not the same as 120 upstream data requests/minute. A tool can make multiple upstream calls, while an XML cache hit can avoid an upstream download.
+The entrance counter includes MCP initialization, tool discovery, pings, tool requests and health checks. Therefore, the HTTP entrance limit is not the same as a limit on upstream data requests. A tool can make multiple upstream calls, while an XML cache hit can avoid an upstream download.
 
 ### Budget persistence and retry behavior
 
@@ -89,7 +89,7 @@ Pacing identities incorporate the API bucket and credential where applicable. GS
 
 ### Acquisition.gov hosted limits
 
-The Acquisition.gov hosted endpoint has a **60 HTTP requests per 60 seconds** entrance limit, per incoming IP and Cloudflare location. Its shared backend admits **4 active MCP HTTP requests**, with a **55-second backend processing timeout** and **64 KiB request-body limit**. All hosted users share its one-upstream-request-at-a-time gate and three-second completion delay. These settings were not changed by the four-server acceleration work.
+The Acquisition.gov hosted endpoint answers from a daily copy of Acquisition.gov stored in Cloudflare D1, so hosted requests make no upstream call and share no upstream gate. Its entrance limit matches the other hosted servers: **600 HTTP requests per 60 seconds** for Claude and ChatGPT addresses and **120** for every other address, per incoming IP and Cloudflare location. The local package still calls Acquisition.gov one request at a time, with a three-second completion delay.
 
 ## Configuration and evidence
 

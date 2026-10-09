@@ -1,6 +1,6 @@
 # Federal contracting MCPs
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,571](https://img.shields.io/badge/regression%20tests-5%2C571-007a59)](#testing-and-maintenance) [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-172f2a)](#available-in-claude-and-chatgpt) [![ChatGPT directory: 4 servers](https://img.shields.io/badge/ChatGPT%20directory-4%20servers-172f2a)](#available-in-claude-and-chatgpt) [![hosting: Cloudflare + self-hosted](https://img.shields.io/badge/hosting-Cloudflare%20%2B%20self--hosted-172f2a?logo=cloudflare&logoColor=white)](#)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,571](https://img.shields.io/badge/regression%20tests-5%2C571-007a59)](#testing-and-maintenance) [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-172f2a)](#run-on-your-computer-or-in-one-click) [![ChatGPT directory: 4 servers](https://img.shields.io/badge/ChatGPT%20directory-4%20servers-172f2a)](#run-on-your-computer-or-in-one-click) [![hosting: Cloudflare + self-hosted](https://img.shields.io/badge/hosting-Cloudflare%20%2B%20self--hosted-172f2a?logo=cloudflare&logoColor=white)](#)
 
 Free, open-source, read-only source tools for federal contracting research: opportunities, awards, company records, labor pricing, travel rates, regulations, and rulemaking.
 
@@ -15,27 +15,68 @@ Free, open-source, read-only source tools for federal contracting research: oppo
 
 See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
 
-## Available in Claude and ChatGPT
+<a id="available-in-claude-and-chatgpt"></a>
 
-All nine MCPs install and run locally today; the **Local** column links to each setup guide. All nine are also published in the Claude directory and four in ChatGPT, where installs need no user API key or local setup. The rest are in review for ChatGPT.
+## Run on your computer or in one click
 
-| MCP | Claude | ChatGPT | Local |
+All nine MCPs run on your computer, and that is the setup we recommend for daily work. All nine are also in the Claude directory and four are in ChatGPT for one-click installs with no user API key. The rest are in review for ChatGPT.
+
+| MCP | On your computer (recommended) | Claude | ChatGPT |
 |---|---|---|---|
-| SAM.gov | [Add to Claude](https://claude.ai/directory/sam-gov-by-1102tools) (4-tool edition) | In review | [Setup guide](servers/sam-gov-mcp#installation) (free key, full 20-tool edition) |
-| USAspending | [Add to Claude](https://claude.ai/directory/usaspending-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) | [Setup guide](servers/usaspending-gov-mcp#installation) |
-| GSA CALC+ | [Add to Claude](https://claude.ai/directory/gsa-calc-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) | [Setup guide](servers/gsa-calc-mcp#installation) |
-| BLS OEWS | [Add to Claude](https://claude.ai/directory/bls-oews-by-1102tools) | In review | [Setup guide](servers/bls-oews-mcp#installation) |
-| GSA Per Diem | [Add to Claude](https://claude.ai/directory/gsa-perdiem-by-1102tools) | In review | [Setup guide](servers/gsa-perdiem-mcp#installation) (free key) |
-| eCFR | [Add to Claude](https://claude.ai/directory/ecfr-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) | [Setup guide](servers/ecfr-mcp#installation) |
-| Acquisition.gov | [Add to Claude](https://claude.ai/directory/acquisition-gov-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ab2757102e08191887f75cc506c2333) | [Setup guide](servers/acquisition-gov-mcp#install) |
-| Federal Register | [Add to Claude](https://claude.ai/directory/federal-register-by-1102tools) | In review | [Setup guide](servers/federal-register-mcp#installation) |
-| Regulations.gov | [Add to Claude](https://claude.ai/directory/regulations-gov-by-1102tools) | In review | [Setup guide](servers/regulations-gov-mcp#installation) (free key) |
+| SAM.gov | [Setup guide](servers/sam-gov-mcp#installation) (full 20-tool edition, free key) | [Add to Claude](https://claude.ai/directory/sam-gov-by-1102tools) (4-tool edition, no key) | In review |
+| USAspending | [Setup guide](servers/usaspending-gov-mcp#installation) | [Add to Claude](https://claude.ai/directory/usaspending-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) |
+| GSA CALC+ | [Setup guide](servers/gsa-calc-mcp#installation) | [Add to Claude](https://claude.ai/directory/gsa-calc-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) |
+| BLS OEWS | [Setup guide](servers/bls-oews-mcp#installation) | [Add to Claude](https://claude.ai/directory/bls-oews-by-1102tools) | In review |
+| GSA Per Diem | [Setup guide](servers/gsa-perdiem-mcp#installation) (free key) | [Add to Claude](https://claude.ai/directory/gsa-perdiem-by-1102tools) | In review |
+| eCFR | [Setup guide](servers/ecfr-mcp#installation) | [Add to Claude](https://claude.ai/directory/ecfr-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) |
+| Acquisition.gov | [Setup guide](servers/acquisition-gov-mcp#install) | [Add to Claude](https://claude.ai/directory/acquisition-gov-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ab2757102e08191887f75cc506c2333) |
+| Federal Register | [Setup guide](servers/federal-register-mcp#installation) | [Add to Claude](https://claude.ai/directory/federal-register-by-1102tools) | In review |
+| Regulations.gov | [Setup guide](servers/regulations-gov-mcp#installation) (free key) | [Add to Claude](https://claude.ai/directory/regulations-gov-by-1102tools) | In review |
 
-**Directory install or local install?**
+| | On your computer (recommended) | One click in Claude or ChatGPT |
+|---|---|---|
+| **Setup** | About 5 minutes: install uv, then add a few lines to your app's settings | One click from the directory. Nothing to install |
+| **Works in** | Claude and ChatGPT desktop apps, Claude Code, Codex, Cursor, and other MCP apps on a desktop or laptop | Claude and ChatGPT on the web, desktop, and phone |
+| **Request budget** | Yours alone | Shared with everyone using that server |
+| **API keys** | Your own free key for GSA Per Diem and Regulations.gov: 1,000 requests an hour, yours alone. Six servers need no key | None needed. The server's keys are shared by all users |
+| **Relies on** | Your computer and the agency's site | Cloudflare and that 1102tools server being up |
+| **Your lookups** | Go straight from your computer to the agency | Pass through Cloudflare. 1102tools doesn't store or log them |
+| **SAM.gov** | Full edition, 20 tools: adds entity registrations, exclusions, and SBA certifications. Needs a free SAM.gov key, which has a daily limit | 4 tools for opportunities, award notices, and justifications. No key and no daily limit |
 
-- **Claude and ChatGPT:** Install from the directory listing. No API key and no setup. The MCP runs on Cloudflare at its own 1102tools.com address, such as `usaspending.1102tools.com`, and your AI app connects to it over the internet. The hosted servers don't store your queries, results, or conversations, and request logging is turned off, so no one at 1102tools sees what you look up. The server code and Cloudflare setup are public in [federal-contracting-mcps](deploy). Cloudflare still handles connection data such as IP addresses, and Claude or ChatGPT handles your conversation under its own privacy policy.
-- **Local:** The MCP runs on your own computer and works with any MCP-compatible app. Requests go straight from your computer to the government source, and nothing passes through 1102tools.com. SAM.gov, GSA Per Diem and Regulations.gov need a free API key from the agency. Each setup guide shows how to get one.
+**Use one click if** you're on your phone, your work computer won't let you install software, or you want SAM.gov opportunity search without a key.
+
 - **SAM.gov comes in two editions.** The directory version (in the Claude directory) has 4 keyless tools for contract opportunities, award notices, and justifications. The full version has 20 tools and adds entity registrations, SBA certifications, exclusions, and contract award records. It needs a free SAM.gov key and a local install; there is no one-click directory install for it. [Compare the editions](servers/sam-gov-mcp#two-editions-hosted-or-full).
+- **Hosted privacy.** The hosted servers don't store your queries, results, or conversations, and request logging is turned off. Their code and Cloudflare setup are public in [federal-contracting-mcps](deploy). Cloudflare still handles connection data such as IP addresses, and Claude or ChatGPT handles your conversation under its own privacy policy.
+
+### Set up on your computer
+
+1. **Install uv**, the free tool that downloads and runs the servers ([uv install guide](https://docs.astral.sh/uv/getting-started/installation/)).
+
+   macOS or Linux:
+
+   ```sh
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+   Windows (PowerShell):
+
+   ```powershell
+   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+   ```
+
+2. **Add the server to your app.** Each server's setup guide has the exact command.
+   - **Claude desktop app:** Settings → Developer → Edit Config. Paste the server's block from its setup guide into `claude_desktop_config.json`, save, and restart Claude.
+   - **ChatGPT desktop app:** Settings → MCP servers → Add server. Choose STDIO, enter `uvx` and the arguments from the setup guide, save, and restart.
+   - **Claude Code or Codex:** one command. For example, USAspending:
+
+     ```sh
+     claude mcp add usaspending -- uvx --from usaspending-gov-mcp usaspending-mcp
+     codex mcp add usaspending -- uvx --from usaspending-gov-mcp usaspending-mcp
+     ```
+
+3. **Add a key if the server needs one.** SAM.gov, GSA Per Diem, and Regulations.gov take a free key from the agency. The setup guide shows where to get it and which setting to use.
+
+If your app says it can't find `uvx`, use its full path instead: run `which uvx` on macOS or `where uvx` on Windows.
 
 After connecting, choose a [matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) and replace the bracketed details. If a prompt lists multiple MCPs, connect every one it requires. For other sources or compatible MCP clients, use the server setup instructions below.
 
@@ -58,7 +99,7 @@ Choose the sources your work needs. Each server directory contains its own READM
 
 ## Install
 
-1. For the published Claude and ChatGPT listings, use the [directory links above](#available-in-claude-and-chatgpt). For other sources or MCP clients, open the selected server's README and follow its installation and configuration instructions.
+1. To run a server on your computer, follow [Set up on your computer](#set-up-on-your-computer) and the server's README. For one-click installs in Claude or ChatGPT, use the [directory links above](#run-on-your-computer-or-in-one-click).
 2. Configure any required API keys outside chat. The server README identifies the exact environment variables and access limits.
 3. Restart or reconnect the client as needed, and confirm the server's tools are visible. Where provided, `get_access_status` reports local credential readiness; it does not validate the key with the upstream provider.
 4. Choose a [prompt](https://github.com/1102tools-dev/federal-contracting-prompts), connect every MCP named beneath it, and replace the bracketed details.
@@ -95,17 +136,17 @@ A **0.6-second interval** permits approximately **100 request starts per minute*
 | Limit | Local MCP process / stdio | Hosted endpoint / plugin for the four services above |
 | --- | --- | --- |
 | Upstream budget and concurrency | Shared by local processes using the same pacing directory and identity | **Shared by all users of that MCP**, regardless of their incoming IPs |
-| Cloudflare entrance limit | Does not apply | **120 HTTP requests per 60 seconds**, per incoming IP and Cloudflare location |
+| Cloudflare entrance limit | Does not apply | **600 HTTP requests per 60 seconds** for Claude and ChatGPT addresses (Anthropic's and OpenAI's published ranges), **120** for every other address; per incoming IP and Cloudflare location |
 | Hosted backend admission | Does not apply | **16 processing + 32 FIFO waiting = 48 accepted requests total**, shared across this service's users |
 | Hosted total request deadline | Local/client timeouts apply | **55 seconds including upload, queue wait and processing**; startup and network latency may add time |
 
-**Shared IPs and shared service capacity are separate limits.** People using the same calling IP can share the 120-per-minute entrance counter. With a cloud AI client, that IP may belong to the AI provider rather than your computer. Cloudflare's counter is approximate and location-specific. Different incoming IPs still share the hosted MCP's upstream budget. For example, ten hosted USAspending users share **500 upstream attempts per five minutes**, not 500 each. The four services above have separate budgets; USAspending use does not consume eCFR, CALC+ or Federal Register capacity.
+**Shared IPs and shared service capacity are separate limits.** People using the same calling IP can share its entrance counter. With a cloud AI client, that IP may belong to the AI provider rather than your computer. Cloudflare's counter is approximate and location-specific. Different incoming IPs still share the hosted MCP's upstream budget. For example, ten hosted USAspending users share **500 upstream attempts per five minutes**, not 500 each. The four services above have separate budgets; USAspending use does not consume eCFR, CALC+ or Federal Register capacity.
 
 Queued requests enter processing in arrival order when a slot opens. Disconnects, cancellations and deadlines free their slots. A full 48-request admission queue returns HTTP 429 with `Retry-After: 5`; requests exceeding the deadline return HTTP 504 if no response has started. The upstream limits above remain unchanged, so 16 processing slots do not mean 16 simultaneous agency API calls.
 
 HTTP requests include connection setup, tool discovery and tool calls. They are not equivalent to upstream data requests. Government providers can apply additional limits, including to a shared outbound IP or API key. The 500-per-hour CALC+ policy supports short batches at 0.6-second starts; it does not permit continuous 500-per-five-minute use.
 
-For all nine servers' exact defaults, retry intervals, cache rules, shared-IP behavior and budget persistence, see the [complete pacing reference](docs/pacing.md). Acquisition.gov's hosted entrance limit remains **60 HTTP requests per minute**. The other servers retain their documented three- or four-second completion delays. [Cloudflare rate-limit behavior](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
+For all nine servers' exact defaults, retry intervals, cache rules, shared-IP behavior and budget persistence, see the [complete pacing reference](docs/pacing.md). Acquisition.gov's hosted endpoint answers from a daily copy stored in Cloudflare D1 and uses the same entrance limits. The other servers retain their documented three- or four-second completion delays. [Cloudflare rate-limit behavior](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
 
 ## Testing and maintenance
 
