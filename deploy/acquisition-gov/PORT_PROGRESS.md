@@ -52,6 +52,15 @@ deploy, no Cloudflare changes until James says go.
   release; this data comes from the live site and the loader is built for daily incremental runs, like SAM's
   nightly load. All CI steps pass locally under bash. `configure_hosted_image.py` already writes
   `vars.RELEASE_SHA` for any config with `d1_databases`, so nothing to change there.
+- Recording complete (2026-10-08 20:09 CDT): 1,458 requests total, about an hour at 3.1 s each, no 429/403;
+  471 MB. 14 fetch errors, all HTTP 404 (parts 20 and 21 and 12 dead PDF links), as the live server reports.
+  Full snapshot from it: 1,444 docs, 41 MB SQLite, 6 minutes. Largest 25-page PDF window 92,743 characters
+  (under the 200K cap); 77 PDF pages fail extraction, as in the package.
+- Full parity on the complete snapshot: 263 cases, 254 identical, 9 documented, 0 unexpected. Plus 60 random
+  PDFs from the whole index (default range, windows around failed pages, pages 3-27): 60 identical.
+- Live spot check (local Worker over the full snapshot vs the live container, fetch times ignored): 9 of 9 calls
+  identical. The container took 0.8-12 s a call. Live release_sha before cutover:
+  e63cc60512f35e84068818dd948ce282760424ef.
 
 ## Cutover plan (steps 7-9 of Desktop handoff 3; needs James's go)
 
