@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.10
+
+- Hosted service only: answer repeat questions from a bounded in-memory copy of
+  the Federal Register's answers. Published documents and the agency list are
+  kept 24 hours; searches, facet counts, open comment periods and FAR case
+  history 1 hour; current public inspection 10 minutes. A repeat makes no
+  Federal Register call and uses no pacing slot or budget; identical questions
+  asked at the same time share one call. Errors and refusals are never kept.
+  48 MiB total, 4 MiB per answer. `/health` reports cache counts.
+- Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package behaves exactly as
+  before. Tools, schemas, pacing and budgets are unchanged.
+
 ## 1.0.8
 
 - Replace completion-serialized three-second pacing with a shared 500-attempt

@@ -8,7 +8,7 @@ worktree `.claude/worktrees/hosted-cache`. Started 2026-10-08 (late) at James's 
 - [x] 0. Setup and map the code
 - [ ] 1. Count which tools get called (Worker logs, no arguments)
 - [x] 2. GSA CALC+ cache
-- [ ] 3. Federal Register cache
+- [x] 3. Federal Register cache
 - [ ] 4. eCFR cache (extend the existing one)
 - [ ] 5. USAspending cache
 - [ ] 6. Regulations.gov: longer cache for detail lookups
@@ -69,3 +69,12 @@ no stats); eCFR `XmlCache` (5 minutes, 128 entries, 32 MiB, coalesces misses wit
   Finding: GSA gives a different answer to the same question a second apart (an Elasticsearch
   `took` timing field and approximate percentiles), so live off-vs-on can't match byte for byte
   without replay; the cache also makes repeat answers consistent within 12 h.
+- **Step 3 Federal Register 1.0.10 (2026-10-09):** `_get` -> cache; `_fetch` paced call on a miss only.
+  Times by endpoint (`_cache_seconds`): `documents/<n>.json` and batches 24 h, `agencies.json` 24 h,
+  `public-inspection-documents/current.json` 10 min, everything else (search_documents,
+  facet counts, open_comment_periods, far_case_history) 1 h. far_case_history stays at 1 h, not the
+  plan's 6 h: it runs through search_documents' endpoint and splitting it out wasn't worth the code.
+  open_comment_periods keys on today's date, so its "as_of" always matches its data.
+  48 MiB / 4 MiB. Tests 149 pass (4 old fakes now carry `.content` bytes like a real response).
+  Live record/replay: **22/22 identical**; repeat pass made 1 call, the deliberate 404
+  (errors are never kept); median 0.60 s live vs 0.5 ms cached.
