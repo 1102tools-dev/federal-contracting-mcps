@@ -108,8 +108,8 @@ Branch: `claude/dell-origin`. Commit after every step.
 - Old "workspace" tunnel removed (James: no longer needed): tunnel d0bcbd63
   deleted at Cloudflare with its five DNS records (finance, jobwatch, portal,
   timecard, tsp). Its files moved to `/root/retired-workspace-tunnel-2026-10-08/`
-  on govnode (`/etc/cloudflared`, `/root/.cloudflared`). Five Cloudflare
-  Access apps for those hostnames remain (inert without DNS). `mcp-origin` is
+  on govnode (`/etc/cloudflared`, `/root/.cloudflared`). The five Cloudflare
+  Access apps for those hostnames were deleted too (James, 2026-10-08). `mcp-origin` is
   the only tunnel and stays healthy.
 - **Step 11, live 2026-10-08 (UTC 2026-10-09 ~00:10).** Worker-only deploys,
   images unchanged (wrangler: "no changes" for every container). Rollback =
@@ -132,3 +132,4 @@ Branch: `claude/dell-origin`. Commit after every step.
   `origin` within the 30 s probe cache. Full `check_hosted_health.py`: all
   nine ok, "Dell origin" ok (5/5), Regulations.gov in publisher-key mode with a
   real upstream call through the Dell.
+- PR #37 merged after all checks passed; the scheduled health check now runs the "Dell origin" row.
