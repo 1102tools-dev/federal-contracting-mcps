@@ -1,25 +1,25 @@
 # ecfr-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 13](https://img.shields.io/badge/tools-13-007a59)](#what-it-does) [![regression tests: 320](https://img.shields.io/badge/regression%20tests-320-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/ecfr-by-1102tools) [![ChatGPT directory: listed](https://img.shields.io/badge/ChatGPT%20directory-listed-172f2a)](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34)
-
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 13](https://img.shields.io/badge/tools-13-007a59)](#what-it-does) [![regression tests: 320](https://img.shields.io/badge/regression%20tests-320-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/ecfr-mcp -->
 
 Free, open-source MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplement text with no authentication required.
 
-Connect through the published Claude or ChatGPT listing below, or use the installation and configuration instructions for another compatible MCP client.
+No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
 *Tested and hardened through six rounds of integration testing against the live eCFR API. 320 collected regression tests (202 offline, 118 live-gated) covering 2 P0 catastrophic bugs, 26 P1 silent-wrong-data bugs, 32 P2 validation gaps, and the round-6 audit fixes (Title 48 chapter whitelist, table extraction, appendix access). See [testing.md](testing.md) for the full testing record.*
 
-## Available in Claude and ChatGPT
+## Local or hosted
 
-| MCP | Claude | ChatGPT |
+| Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|
-| eCFR | [Install](https://claude.ai/directory/ecfr-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) |
+| [Local setup](#installation) | [Install](https://claude.ai/directory/ecfr-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) |
 
-This MCP is published in the Claude and ChatGPT directories. Open a listing to install and connect it; no user API key or local Python setup is required. Then try a [matching prompt](https://1102tools.com/#ecfr). Prompts that combine sources require every listed MCP to be connected.
+- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
+- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
 
-The installation and configuration sections below cover direct setup in other compatible MCP clients.
+[Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#ecfr)
 
 ## What it does
 
@@ -128,36 +128,6 @@ All data from [ecfr.gov](https://www.ecfr.gov), the continuously updated online 
 ## Part of
 
 [federal-contracting-mcps](https://github.com/1102tools-dev/federal-contracting-mcps): monorepo of 9 MCP servers for federal contracting data. Pair these sources with the [MCP prompt library](https://github.com/1102tools-dev/federal-contracting-prompts).
-
-## Request pacing and cache
-
-| Default setting | Value |
-| --- | --- |
-| Minimum JSON request-start interval | **0.6 seconds** (approximately 100 starts/minute while capacity remains) |
-| Maximum upstream requests in flight | **2 across JSON and XML combined** |
-| Rolling upstream attempt budget | **500 per 300 seconds (5 minutes), shared by JSON and XML** |
-| Hosted HTTP entrance limit | **120 requests per 60 seconds**, per incoming IP and Cloudflare location |
-| Hosted processing slots | **16 total**, shared by this service's users |
-| Hosted FIFO waiting slots | **32 additional**, for **48 accepted requests total** |
-| Hosted total request deadline | **55 seconds**, including upload, queue wait and processing |
-| Uncached XML | **1 fetch at a time; 3 seconds after previous XML completion** |
-| XML cache | **300 seconds; 128 entries; 32 MiB total; 2 MiB per entry** |
-
-Waiting requests enter processing in arrival order as slots become available. Client disconnects, cancellations and deadlines release their slots. A full 16 + 32 admission queue returns HTTP 429 with `Retry-After: 5`; an expired deadline returns HTTP 504 if no response has started. Slots count HTTP requests, not people, and accepting a request does not guarantee completion before its deadline.
-
-The upstream budget and concurrency are shared by **all hosted users of this MCP**, even when their incoming IPs differ. Independently hosted/local installations have their own pacing histories; processes sharing a pacing directory and identity share its counter. The separate IP-based entrance limit can also be shared by users of a cloud AI client. HTTP requests include protocol traffic and are not equivalent to upstream data requests.
-
-An XML cache hit makes **zero additional XML downloads** and skips the XML pacing wait. A tool may still need JSON calls, for example to resolve the latest date. XML misses also consume the shared rolling budget and an upstream concurrency slot.
-
-The cache key includes the date, path and filters. Concurrent duplicate misses reuse one download. Only valid XML within the size limit is cached; errors and larger responses are not. Entries expire after 300 seconds and can be evicted earlier for capacity. Upstream corrections may take up to five minutes to appear in a cached result. Restarting the process clears the cache. These are 1102tools safeguards, not published agency quotas or guaranteed response times.
-
-Failed and cancelled upstream attempts remain counted. Observed `Retry-After` extends the shared cooldown; the MCP does not automatically retry the failed upstream call.
-
-`FEDERAL_API_PACING_DIR` selects the local coordination directory. `FEDERAL_API_MIN_INTERVAL_SECONDS` can slow requests; positive values below 0.6 are clamped to 0.6. Explicit zero disables pacing for offline or externally managed use. Hosted deployments use 0.6. Uncached XML retains its three-second completion gap for positive settings.
-
-Local history survives process restarts while the pacing directory remains. Deleting the directory or replacing a hosted container can reset its filesystem history. Update local processes together rather than mixing old and new pacing implementations against one directory.
-
-See the [complete pacing reference](../../docs/pacing.md) for all nine servers, local versus hosted behavior, shared IPs, retry intervals and state persistence.
 
 ## License
 

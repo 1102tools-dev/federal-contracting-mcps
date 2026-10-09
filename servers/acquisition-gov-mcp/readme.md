@@ -1,7 +1,6 @@
 # Acquisition.gov MCP
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests: 239](https://img.shields.io/badge/regression%20tests-239-007a59)](testing.md) [![Claude directory: listed](https://img.shields.io/badge/Claude%20directory-listed-172f2a)](https://claude.ai/directory/acquisition-gov-by-1102tools) [![ChatGPT directory: listed](https://img.shields.io/badge/ChatGPT%20directory-listed-172f2a)](https://chatgpt.com/plugins/plugin_asdk_app_6ab2757102e08191887f75cc506c2333)
-
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests: 239](https://img.shields.io/badge/regression%20tests-239-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/acquisition-gov-mcp -->
 
@@ -9,15 +8,16 @@ Free, open-source, read-only, deterministic MCP access to the official Acquisiti
 
 This server reports source content and metadata. It does **not** decide which rule governs a procurement. In particular, model deviation text is not treated as operative for an agency without that agency's posted deviation.
 
-## Available in Claude and ChatGPT
+## Local or hosted
 
-| MCP | Claude | ChatGPT |
+| Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|
-| Acquisition.gov | [Install](https://claude.ai/directory/acquisition-gov-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6ab2757102e08191887f75cc506c2333) |
+| [Local setup](#install) | [Install](https://claude.ai/directory/acquisition-gov-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6ab2757102e08191887f75cc506c2333) |
 
-This MCP is published in the Claude and ChatGPT directories. Open a listing to install and connect it; no user API key or local Python setup is required. Then try a [matching prompt](https://1102tools.com/#far-overhaul-and-agency-deviations). Prompts that combine sources require every listed MCP to be connected.
+- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
+- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
 
-The installation instructions below cover direct setup in other compatible MCP clients.
+[Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#far-overhaul-and-agency-deviations)
 
 ## Install
 
@@ -25,21 +25,7 @@ The installation instructions below cover direct setup in other compatible MCP c
 uvx acquisition-gov-mcp==1.0.8
 ```
 
-The server uses stdio, requires no credentials, and defaults to a three-second cross-process interval between Acquisition.gov requests. `FEDERAL_API_MIN_INTERVAL_SECONDS` may increase or decrease that interval for controlled testing; production clients should retain three seconds.
-
-## Request pacing
-
-| Default setting | Value |
-| --- | --- |
-| Wait after each upstream request completes | **3 seconds** |
-| Maximum upstream requests in flight per pacing identity | **1** |
-| Rolling attempt counter in this pacer | **None**; provider quotas still apply |
-
-The next request starts after the previous request's duration **plus 3 seconds**. This is a completion delay, not a 3-second start interval. Local processes sharing the same pacing directory and identity share this gate; a separate local counter does not create additional provider quota.
-
-See the [complete pacing reference](../../docs/pacing.md) for all nine servers, shared credentials/IPs, configuration and hosting differences.
-
-The hosted Acquisition.gov endpoint retains **60 HTTP requests per 60 seconds per incoming IP and Cloudflare location**, **4 active MCP HTTP requests**, a **55-second backend processing timeout**, and **64 KiB request bodies**. Its one-upstream-request-at-a-time gate is shared by all hosted users.
+The server uses stdio and requires no credentials.
 
 ## Tools
 
