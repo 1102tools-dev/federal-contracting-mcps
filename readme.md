@@ -1,6 +1,6 @@
 # Federal contracting MCPs
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,571](https://img.shields.io/badge/regression%20tests-5%2C571-007a59)](#testing-and-maintenance) [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-172f2a)](#run-on-your-computer-or-in-one-click) [![ChatGPT directory: 4 servers](https://img.shields.io/badge/ChatGPT%20directory-4%20servers-172f2a)](#run-on-your-computer-or-in-one-click) [![hosting: Cloudflare + self-hosted](https://img.shields.io/badge/hosting-Cloudflare%20%2B%20self--hosted-172f2a?logo=cloudflare&logoColor=white)](#)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 5,571](https://img.shields.io/badge/regression%20tests-5%2C571-007a59)](#testing-and-maintenance) [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-172f2a)](#local-or-hosted) [![ChatGPT directory: 4 servers](https://img.shields.io/badge/ChatGPT%20directory-4%20servers-172f2a)](#local-or-hosted) [![hosting: Cloudflare + self-hosted](https://img.shields.io/badge/hosting-Cloudflare%20%2B%20self--hosted-172f2a?logo=cloudflare&logoColor=white)](#)
 
 Free, open-source, read-only source tools for federal contracting research: opportunities, awards, company records, labor pricing, travel rates, regulations, and rulemaking.
 
@@ -17,11 +17,13 @@ See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon pla
 
 <a id="available-in-claude-and-chatgpt"></a>
 
-## Run on your computer or in one click
+## Local or hosted
 
-All nine MCPs run on your computer, and that is the setup we recommend for daily work. All nine are also in the Claude directory and four are in ChatGPT for one-click installs with no user API key. The rest are in review for ChatGPT.
+Every MCP works in Claude or ChatGPT two ways. **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. **Hosted** runs it on Cloudflare, so it works anywhere you use Claude or ChatGPT. Local is the better setup for daily work, and you don't have to set it up by hand: give your AI the [local setup guide](#local-setup) and ask it to set it up or walk you through it.
 
-| MCP | On your computer (recommended) | Claude | ChatGPT |
+All nine are in the Claude directory and four are in ChatGPT as hosted installs. The rest are in review for ChatGPT.
+
+| MCP | Local setup (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|---|
 | SAM.gov | [Setup guide](servers/sam-gov-mcp#installation) (full 20-tool edition, free key) | [Add to Claude](https://claude.ai/directory/sam-gov-by-1102tools) (4-tool edition, no key) | In review |
 | USAspending | [Setup guide](servers/usaspending-gov-mcp#installation) | [Add to Claude](https://claude.ai/directory/usaspending-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) |
@@ -33,22 +35,22 @@ All nine MCPs run on your computer, and that is the setup we recommend for daily
 | Federal Register | [Setup guide](servers/federal-register-mcp#installation) | [Add to Claude](https://claude.ai/directory/federal-register-by-1102tools) | In review |
 | Regulations.gov | [Setup guide](servers/regulations-gov-mcp#installation) (free key) | [Add to Claude](https://claude.ai/directory/regulations-gov-by-1102tools) | In review |
 
-| | On your computer (recommended) | One click in Claude or ChatGPT |
+| | Local | Hosted |
 |---|---|---|
-| **Setup** | About 5 minutes: install uv, then add a few lines to your app's settings | One click from the directory. Nothing to install |
-| **Works in** | Claude and ChatGPT desktop apps, Claude Code, Codex, Cursor, and other MCP apps on a desktop or laptop | Claude and ChatGPT on the web, desktop, and phone |
-| **Request budget** | Yours alone | Shared with everyone using that server |
-| **API keys** | Your own free key for GSA Per Diem and Regulations.gov: 1,000 requests an hour, yours alone. Six servers need no key | None needed. The server's keys are shared by all users |
-| **Relies on** | Your computer and the agency's site | Cloudflare and that 1102tools server being up |
-| **Your lookups** | Go straight from your computer to the agency | Pass through Cloudflare. 1102tools doesn't store or log them |
-| **SAM.gov** | Full edition, 20 tools: adds entity registrations, exclusions, and SBA certifications. Needs a free SAM.gov key, which has a daily limit | 4 tools for opportunities, award notices, and justifications. No key and no daily limit |
+| **Works in** | Claude or ChatGPT desktop apps, and other AI apps | Claude or ChatGPT on web, desktop, and phone |
+| **Setup** | Ask your AI to set it up or walk you through it, using the setup guide. Free keys for 3 servers | One click. No keys |
+| **Rate limits** | Your own | Pooled across all users. Your lookups stay private |
+| **Relies on** | Your computer | Cloudflare and 1102tools being up |
+| **SAM.gov** | Full edition: 20 tools, free key | 4 tools, no key |
 
-**Use one click if** you're on your phone, your work computer won't let you install software, or you want SAM.gov opportunity search without a key.
+**Use hosted if** you're on your phone, your work computer blocks installs, or you want SAM.gov opportunity search without a key.
 
 - **SAM.gov comes in two editions.** The directory version (in the Claude directory) has 4 keyless tools for contract opportunities, award notices, and justifications. The full version has 20 tools and adds entity registrations, SBA certifications, exclusions, and contract award records. It needs a free SAM.gov key and a local install; there is no one-click directory install for it. [Compare the editions](servers/sam-gov-mcp#two-editions-hosted-or-full).
 - **Hosted privacy.** The hosted servers don't store your queries, results, or conversations, and request logging is turned off. Their code and Cloudflare setup are public in [federal-contracting-mcps](deploy). Cloudflare still handles connection data such as IP addresses, and Claude or ChatGPT handles your conversation under its own privacy policy.
 
-### Set up on your computer
+### Local setup
+
+**You don't have to do this by hand.** Give this page's link to Claude or ChatGPT and ask it to set up the MCP you want, or to walk you through it. The steps:
 
 1. **Install uv**, the free tool that downloads and runs the servers ([uv install guide](https://docs.astral.sh/uv/getting-started/installation/)).
 
@@ -99,7 +101,7 @@ Choose the sources your work needs. Each server directory contains its own READM
 
 ## Install
 
-1. To run a server on your computer, follow [Set up on your computer](#set-up-on-your-computer) and the server's README. For one-click installs in Claude or ChatGPT, use the [directory links above](#run-on-your-computer-or-in-one-click).
+1. For local use, follow the [local setup guide](#local-setup) and the server's README, or ask your AI to do it for you. For hosted installs in Claude or ChatGPT, use the [directory links above](#local-or-hosted).
 2. Configure any required API keys outside chat. The server README identifies the exact environment variables and access limits.
 3. Restart or reconnect the client as needed, and confirm the server's tools are visible. Where provided, `get_access_status` reports local credential readiness; it does not validate the key with the upstream provider.
 4. Choose a [prompt](https://github.com/1102tools-dev/federal-contracting-prompts), connect every MCP named beneath it, and replace the bracketed details.
