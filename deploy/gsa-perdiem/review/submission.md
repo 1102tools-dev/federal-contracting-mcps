@@ -11,7 +11,7 @@ Terms: https://gsa-perdiem.1102tools.com/terms
 Source: https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp
 Category: Government / travel.
 
-Status: **Claude: approved and listed September 30, 2026** at https://claude.ai/directory/gsa-perdiem-by-1102tools. ChatGPT: not yet submitted; the items under "Open before submission" still apply to OpenAI.
+Status: **Claude: approved and listed September 30, 2026** at https://claude.ai/directory/gsa-perdiem-by-1102tools. **ChatGPT: approved and listed October 9, 2026** at https://chatgpt.com/plugins/plugin_asdk_app_6ab85f56d4ec8191970ab75fdeddd2f9.
 
 Earlier status: prepared, **not ready to submit**. 1.2.0 is released and verified in production (tag `gsa-perdiem/v1.2.0`, commit `0691651`, 2026-09-26). Resolve every item under "Open before submission" first.
 

@@ -14,7 +14,7 @@ No API key and no daily limit. The package bundles the current OEWS release (May
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|
-| [Local setup](#installation) | [Install](https://claude.ai/directory/bls-oews-by-1102tools) | Coming soon |
+| [Local setup](#installation) | [Install](https://claude.ai/directory/bls-oews-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6ab872bf5360819186af0917c923e57e) |
 
 - **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
 - **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
