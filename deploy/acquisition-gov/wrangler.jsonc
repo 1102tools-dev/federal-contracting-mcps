@@ -34,12 +34,19 @@
       ]
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "acquisition-gov",
+      "database_id": "158b0481-c351-4a03-ba07-288f342d348a"
+    }
+  ],
   "ratelimits": [
     {
       "name": "REQUEST_LIMITER",
       "namespace_id": "110263",
       "simple": {
-        "limit": 60,
+        "limit": 120,
         "period": 60
       }
     }
@@ -78,12 +85,19 @@
           }
         ]
       },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "acquisition-gov",
+          "database_id": "158b0481-c351-4a03-ba07-288f342d348a"
+        }
+      ],
       "ratelimits": [
         {
           "name": "REQUEST_LIMITER",
           "namespace_id": "110263",
           "simple": {
-            "limit": 60,
+            "limit": 120,
             "period": 60
           }
         }
