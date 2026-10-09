@@ -12,8 +12,12 @@ not repeat a city within the hosted 24-hour response cache. The lookup is then
 very likely, though not guaranteed, to reach GSA: another client may have asked
 for the same city recently, and manual runs use up rotation slots. When it does
 reach GSA, a revoked or rate-limited publisher key fails the check.
+
+Services with an "origin" also run on James's Dell (deploy/dell). The Worker
+falls back to the container when the Dell is down, so users never notice; the
+"Dell origin" row fails instead, so a home outage or a stuck updater is seen.
 """
-import argparse, importlib.util, json, os, sys, time
+import argparse, importlib.util, json, os, subprocess, sys, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -116,20 +120,65 @@ def check(slug, service):
     return detail
 
 
+def served_by(url):
+    """The Worker's X-1102tools-Backend header for a GET: origin or container."""
+    result = subprocess.run(["curl", "-fsS", "--max-time", "65", "-o", "/dev/null", "-D", "-", url],
+                            capture_output=True, text=True)
+    if result.returncode:
+        raise RuntimeError("Endpoint unavailable: " + result.stderr[:200])
+    for line in result.stdout.splitlines():
+        name, _, value = line.partition(":")
+        if name.strip().lower() == "x-1102tools-backend":
+            return value.strip()
+    return None
+
+
+def check_origins(slugs, services):
+    """Each Dell origin is healthy and is what the public endpoint uses."""
+    problems = []
+    for slug in slugs:
+        try:
+            health = _verify.request(services[slug]["origin"] + "/health")
+            if health.get("status") != "ok":
+                problems.append(f"{slug}: Dell /health {health.get('status')!r}")
+                continue
+            backend = served_by(services[slug]["endpoint"].removesuffix("/mcp") + "/health")
+            if backend != "origin":
+                problems.append(f"{slug}: answered by {backend or 'an unknown backend'} "
+                                f"(Dell on {str(health.get('release_sha'))[:7]})")
+        except Exception as e:  # noqa: BLE001 - report every origin
+            problems.append(f"{slug}: Dell unreachable ({type(e).__name__})")
+    return problems
+
+
 def main():
     p = argparse.ArgumentParser(); p.add_argument("slugs", nargs="*"); args = p.parse_args()
     services = json.loads((ROOT / "deploy/services.json").read_text())
     rows, failed = [], []
-    for slug in args.slugs or list(services):
+    slugs = args.slugs or list(services)
+    for slug in slugs:
         try:
             rows.append(f"| {slug} | ok | {check(slug, services[slug])} |")
         except Exception as e:  # noqa: BLE001 - report every service
             failed.append(slug)
             rows.append(f"| {slug} | **FAILED** | {type(e).__name__}: {str(e)[:160]} |")
+    origins = [slug for slug in slugs if services[slug].get("origin")]
+    if origins:
+        problems = check_origins(origins, services)
+        if problems:
+            failed.append("Dell origin")
+            rows.append("| Dell origin | **FAILED** | Containers are serving instead (users unaffected). "
+                        + "; ".join(problems)[:400] + " |")
+        else:
+            rows.append(f"| Dell origin | ok | {len(origins)} services answered by the Dell |")
     print("| Service | Result | Detail |\n|---|---|---|\n" + "\n".join(rows))
     if failed:
         print(f"\nFailing: {', '.join(failed)}. Check the service's /health, its Worker secret, and "
               "upstream API status; see docs/unified-release.md for rollback.")
+        if "Dell origin" in failed:
+            print("\nDell origin: on govnode check `systemctl status cloudflared-mcp mcp-origin-update` and "
+                  "`docker compose -f /opt/mcp-origin/compose.yaml ps`. Just after a release the Dell "
+                  "rebuilds within about 20 minutes; until then the new container serves.")
     return 1 if failed else 0
 
 

@@ -1,0 +1,16 @@
+# MCP origin tunnel (Dell move). Separate from the old 'workspace'
+# tunnel in /etc/cloudflared, which stays stopped.
+tunnel: b0c30636-7240-4799-bf48-66a90daf3b77
+metrics: 127.0.0.1:20241
+ingress:
+  - hostname: usaspending-origin.1102tools.com
+    service: http://127.0.0.1:8790
+  - hostname: ecfr-origin.1102tools.com
+    service: http://127.0.0.1:8790
+  - hostname: federal-register-origin.1102tools.com
+    service: http://127.0.0.1:8790
+  - hostname: gsa-calc-origin.1102tools.com
+    service: http://127.0.0.1:8790
+  - hostname: regulations-gov-origin.1102tools.com
+    service: http://127.0.0.1:8790
+  - service: http_status:404

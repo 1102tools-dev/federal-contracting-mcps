@@ -531,3 +531,19 @@ def test_bls_monitor_requires_the_bundled_source(monkeypatch):
     monkeypatch.setattr(hc._verify, 'request', stub('bls_public_api'))
     with pytest.raises(RuntimeError, match='expected bundled_bls_oews_files'):
         hc.check('bls-oews', service)
+
+
+def test_monitor_fails_the_dell_row_when_the_container_is_serving(monkeypatch):
+    hc = _health_check()
+    services = {'ecfr': {'endpoint': 'https://ecfr.example/mcp', 'origin': 'https://ecfr-origin.example'},
+                'usaspending': {'endpoint': 'https://usa.example/mcp', 'origin': 'https://usa-origin.example'}}
+    monkeypatch.setattr(hc._verify, 'request', lambda url, payload=None: {'status': 'ok', 'release_sha': 'abc1234'})
+    monkeypatch.setattr(hc, 'served_by', lambda url: 'origin')
+    assert hc.check_origins(list(services), services) == []
+    monkeypatch.setattr(hc, 'served_by', lambda url: 'origin' if 'usa' in url else 'container')
+    assert hc.check_origins(list(services), services) == ['ecfr: answered by container (Dell on abc1234)']
+
+    def down(url, payload=None):
+        raise RuntimeError('Endpoint unavailable')
+    monkeypatch.setattr(hc._verify, 'request', down)
+    assert hc.check_origins(['ecfr'], services) == ['ecfr: Dell unreachable (RuntimeError)']

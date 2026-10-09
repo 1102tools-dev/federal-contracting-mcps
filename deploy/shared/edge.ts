@@ -166,3 +166,125 @@ export async function fetchWithRetry(send: () => Promise<Response>, pauseMs = RE
   await sleep(pauseMs);
   return await send();
 }
+
+// --- Dell origin, container fallback ----------------------------------------
+//
+// USAspending, eCFR, Federal Register, GSA CALC+ and Regulations.gov also run
+// on James's Dell behind a Cloudflare Tunnel (deploy/dell). The Worker tries
+// it first and falls back to the container, which then only wakes when the
+// Dell is unreachable. Tool responses are JSON, so their headers arrive only
+// when the tool finishes; a short header timeout would cut slow calls. A
+// cheap /health probe with a short timeout decides instead, cached per
+// isolate. Every tool is read-only, so retrying on the container is safe.
+// The Dell counts as up only when it runs this Worker's RELEASE_SHA, so after
+// a release the new container serves until the Dell's updater catches up.
+
+export interface OriginEnv {
+  ORIGIN_URL?: string;
+  ORIGIN_SECRET?: string;
+  RELEASE_SHA?: string;
+}
+
+export const ORIGIN_PROBE_MS = 5000;
+export const ORIGIN_PROBE_TTL_MS = 30_000;
+// Just past the server's 55-second admission deadline.
+export const ORIGIN_DEADLINE_MS = 58_000;
+
+// The Dell never sees who is calling.
+const CLIENT_HEADERS = [
+  "cf-connecting-ip", "cf-connecting-ipv6", "cf-pseudo-ipv4", "true-client-ip", "x-forwarded-for",
+  "x-real-ip", "forwarded", "cf-ipcountry", "cf-ipcity", "cf-ipcontinent", "cf-iplatitude",
+  "cf-iplongitude", "cf-postal-code", "cf-region", "cf-region-code", "cf-metro-code", "cf-timezone",
+  "cf-ray", "cf-visitor", "cf-worker", "cdn-loop", "user-agent", "referer", "host",
+];
+
+const probes = new Map<string, {checked: number; up: Promise<boolean>}>();
+
+export function resetOriginProbes(): void {
+  probes.clear();
+}
+
+function markOrigin(base: string, up: boolean, now = Date.now()): void {
+  probes.set(base, {checked: now, up: Promise.resolve(up)});
+}
+
+export function originUp(base: string, releaseSha?: string, now = Date.now(), probeMs = ORIGIN_PROBE_MS): Promise<boolean> {
+  const cached = probes.get(base);
+  if (cached && now - cached.checked < ORIGIN_PROBE_TTL_MS) return cached.up;
+  // Concurrent requests share one probe.
+  const up = (async () => {
+    try {
+      const response = await fetch(`${base}/health`, {signal: AbortSignal.timeout(probeMs)});
+      if (!response.ok || !isJson(response)) {
+        await response.body?.cancel();
+        return false;
+      }
+      const health = await response.json() as {status?: string; release_sha?: string};
+      return health.status === "ok" && (!releaseSha || health.release_sha === releaseSha);
+    } catch {
+      return false;
+    }
+  })();
+  probes.set(base, {checked: now, up});
+  return up;
+}
+
+function isJson(response: Response): boolean {
+  return (response.headers.get("Content-Type") ?? "").toLowerCase().includes("json");
+}
+
+// Answers from the tunnel, gateway or Cloudflare rather than the MCP server:
+// HTML or text 403 (secret mismatch), 404 (unknown host), 502-504 (server or
+// gateway down) and 52x (tunnel down). The MCP server answers JSON.
+export function isOriginFailure(response: Response): boolean {
+  if (isJson(response)) return false;
+  return [403, 404, 502, 503, 504].includes(response.status) || response.status >= 520;
+}
+
+function tagged(response: Response, backend: string): Response {
+  const out = new Response(response.body, response);
+  out.headers.set("X-1102tools-Backend", backend);
+  return out;
+}
+
+/**
+ * Sends the request to the Dell origin when it is configured and up, else to
+ * `container`. `headers` are the container-bound headers; client-identifying
+ * ones are removed for the origin. `extra` adds origin-only headers.
+ */
+export async function originFirst(
+  env: OriginEnv,
+  path: string,
+  init: {method: string; headers: Headers; body: ArrayBuffer | null},
+  container: () => Promise<Response>,
+  extra: Record<string, string> = {},
+): Promise<Response> {
+  const base = env.ORIGIN_URL?.replace(/\/+$/, "");
+  let reason = "not_configured";
+  if (base && env.ORIGIN_SECRET) {
+    reason = "probe_failed";
+    if (await originUp(base, env.RELEASE_SHA)) {
+      const headers = new Headers(init.headers);
+      for (const name of CLIENT_HEADERS) headers.delete(name);
+      for (const [name, value] of Object.entries(extra)) if (value) headers.set(name, value);
+      headers.set("X-Origin-Auth", env.ORIGIN_SECRET);
+      try {
+        const response = await fetch(`${base}${path}`, {
+          method: init.method, headers, body: init.body, signal: AbortSignal.timeout(ORIGIN_DEADLINE_MS),
+        });
+        if (!isOriginFailure(response)) {
+          console.log(JSON.stringify({event: "backend", backend: "origin", status: response.status}));
+          return tagged(response, "origin");
+        }
+        reason = `origin_${response.status}`;
+        await response.body?.cancel();
+      } catch (error) {
+        reason = error instanceof Error && error.name === "TimeoutError" ? "origin_timeout" : "origin_unreachable";
+      }
+      markOrigin(base, false);
+    }
+  }
+  const response = await container();
+  console.log(JSON.stringify({event: "backend", backend: "container", reason, status: response.status}));
+  return tagged(response, "container");
+}
