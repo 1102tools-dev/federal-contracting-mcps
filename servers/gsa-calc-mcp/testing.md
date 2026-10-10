@@ -9,14 +9,14 @@ older live test or establish an official provider quota.
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The MCP ships with 435 regression tests (314 offline plus 121 live-gated).
+This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The MCP ships with 438 regression tests (317 offline plus 121 live-gated).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
 | Total regression tests | 438 (317 offline, 121 live-gated) |
 | Tests per tool | 54.8 |
-| Audit rounds completed | 10 |
+| Audit rounds completed | 11 |
 | P1 crashes (shape-shift) found and fixed | 19 |
 | P1 silent-wrong-data bugs found and fixed | 33 (30 in 0.2.x, 3 in round 6) |
 | P2 validation gaps found and fixed | 20 (19 in 0.2.x, 1 in round 6) |
@@ -24,7 +24,7 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | Round 5 Hypothesis + live findings | 0 (shape-only assertions; see round 6 for what that missed) |
 | Round 6 differential-count findings | 3 high-severity (worksite ignored, experience_min exact-match, vendor_rate_card unpageable) + 4 dead hardcoded SINs + 1 validation gap |
 | Retroactive additional findings | 12 |
-| Current release | 1.0.15 |
+| Current release | 1.0.16 |
 | PyPI status | Published as `gsa-calc-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -534,3 +534,66 @@ The one Round 4 P2 is fully fixed and verified in the published package/public
 service; no postrelease finding or partial fix remains. Source/capability caps,
 unsupported filters, thin populations, vendor legal names, ceiling-price limits
 and potential single-field sort ties remain explicit limitations.
+
+
+## Round 5: new labor/vendor workflows and source-derived recovery (1.0.16)
+
+A fresh uncached official by-name PyPI **1.0.16** installation, using the
+unconstrained dependency resolver and actual current **MCP 2.3.0** from
+`site-packages`, completed **172 valid new ordinary/power-user questions across
+all eight tools**, each through the installed registered-tool pipeline and a
+separate actual public HTTPS call. These are not 172 stdio calls. The public
+service retains release SHA `4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`; installed
+modules, official wheel, reviewed source and all eight catalogs match.
+
+New subjects cover industrial hygiene, cartography, paralegal work, biology,
+geology, mechanical engineering, economics, archives, photography and
+acoustical engineering; six vendor families (Battelle, Serco, Westat, Abt,
+Riverside and Peraton); eight source-discovered SINs and five contracts.
+Followups cover exact/BA-MA2–9-year eligibility, $95/$145 proposals, broader
+4–14-year/$35–240 markets, observed hit-ID exclusions, next-year row ordering,
+current aggregate scope, vendor selection/continuation and business/clearance
+segments. Ten composed ceiling-budget workflows use 1.75 FTE at 1,840 hours
+(3,220 hours), preserving comparability, sample and ceiling-versus-paid-price
+limits.
+
+The complete eligible Archivist inventory has 25 rows; excluding nine identified
+manager row IDs leaves exactly 16 nonmanager rows. The `exclude` parameter
+accepts hit IDs, not words: ten initial harness translations using `Manager`
+were preserved and excluded from the valid corpus. Ten corrected observed-ID
+exclusions and the complete Archivist workflow verify population subtraction.
+Thus each transport has 182 attempts including those ten excluded translations,
+with 172 valid content cases. Source-discovered Geologist 1/2 populations remain
+empty under BA/MA2–9-year eligibility; an observed Geologist Jr. title returns
+one eligible rate. Its proposal correctly returns `LOW_SAMPLE`, withholds
+categorical verdicts and retains explicitly labeled reference deltas.
+
+**22 actual installed console stdio calls** separately cover all eight tools
+and the Archivist/Geologist recovery; eight meaningful console checks pass.
+**4,703 source/data comparisons**, **1,970 source/behavior checks** and **600
+semantic/workflow checks** pass. The 190 primary captures are unaugmented parsed
+GSA objects deep-copied before application augmentation, with retrieval UTC and
+URL; they are not claimed raw transport bytes. The full fresh installed suite
+passed **317**, skipped **121 optional live**, and collected **438**. Actual
+Python/SDK/module/test-source provenance is recorded separately from earlier
+frozen MCP 2.0 runs. No runtime/Worker change or new Worker execution is claimed.
+
+There are 91 approximate percentile scalar differences, at most
+**$3.787003/hour**, with no observed bucket or tied-row differences. Two direct
+WESTAT primary repeats reproduce P90 values $360.359985 and $364.146988 (the
+public value), with count 123 and identical min/max/average. Raw standard
+variation is only $2.84217e-14/hour; displayed standard deviation is identical.
+This is qualified source equivalence, not identical responses. Existing source
+caps, unsupported filters, hit-ID-only exclusions, thin/empty populations,
+current-year aggregate scope, vendor legal names, ceiling-price boundaries and
+potential single-field ties remain explicit. The audit did not override/reset
+the 500-attempt hourly policy or require a budget retry.
+
+**P0/P1/P2: zero. One P3 documentation correction:** the current summary still
+claimed 435 tests (314 offline) and the current-release table said 1.0.15, while
+current badge/table, official/public identity and the fresh suite verified
+438 (317 offline) and 1.0.16. Those current claims are corrected with source
+before/after checks; historical sections remain intact. No runtime correction,
+package bump, partial fix or unresolved product defect is required. Evidence is
+retained under `Artifacts/mcp-e2e-20261010/round5/gsa-calc/`; independent review
+and round closure remain coordinator-owned.
