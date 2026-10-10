@@ -9,7 +9,7 @@ older live test or establish an official provider quota.
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The 1.0.17 candidate ships with 443 regression tests (322 offline plus 121 live-gated).
+This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The published 1.0.17 release ships with 443 regression tests (322 offline plus 121 live-gated).
 
 | Metric | Value |
 |---|---|
@@ -24,7 +24,7 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | Round 5 Hypothesis + live findings | 0 (shape-only assertions; see round 6 for what that missed) |
 | Round 6 differential-count findings | 3 high-severity (worksite ignored, experience_min exact-match, vendor_rate_card unpageable) + 4 dead hardcoded SINs + 1 validation gap |
 | Retroactive additional findings | 12 |
-| Current candidate | 1.0.17 (published baseline: 1.0.16) |
+| Current release | 1.0.17 |
 | PyPI status | Published as `gsa-calc-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -146,7 +146,7 @@ Rounds 1-5 asserted response shape on live calls: `isinstance(data, dict)`. A fi
 
 ## Test Coverage
 
-The current 1.0.17 candidate suite collects 443 regression tests: 322 offline and 121 live-gated. Both candidate SDK lanes passed 322 tests with all 121 optional live tests skipped; selected source checks are recorded below. Collection counts do not imply every optional live test was run.
+The current published 1.0.17 suite collects 443 regression tests: 322 offline and 121 live-gated. The actual fresh official by-name install with MCP 2.3.0 passed 322 tests with all 121 optional live tests skipped. Both prior candidate SDK lanes also passed; selected source checks are recorded below. Collection counts do not imply every optional live test was run.
 
 | File | Purpose | Test count |
 |---|---|---|
@@ -715,3 +715,52 @@ current summary/coverage/map/readme claims now use 443/322/121, while dated
 historical counts retain their original context. Final publication, current
 GitHub-document verification and round closure remain coordinator-owned and
 pending; no tag, release, deployment or next audit is claimed here.
+
+
+## Round 6 published acceptance (1.0.17)
+
+The complete release workflow succeeded at source
+`881bad8f1e46f67dbd6bfe4fab95636b7cccb8dd`. A new environment installed
+**gsa-calc-mcp==1.0.17 by name from uncached official PyPI**; the first index
+propagation miss and successful retry are retained. No candidate wheel was
+substituted. Actual installed **MCP 2.3.0** and package module paths are recorded.
+The archived release-test suite passed **322**, skipped **121 optional live**,
+and collected **443**. The earlier candidate MCP 2.0.0 lane remains separate.
+
+All **154 registered installed-package questions and 154 public HTTPS
+questions** passed the complete original/followup replay. These are not 154
+stdio calls. The separate **25 actual installed console stdio calls**, covering
+all eight tools, also passed. Fresh primary captures contain **165 parsed
+unaugmented responses**, rather than raw transport bytes. All **4,239 data
+checks**, **1,759 source/behavior checks** and **613 semantic/workflow checks**
+passed: **6,611 assertions** in total. The nine composed two-role ceiling
+scenarios retain actual row qualifications and caller responsibility for fit.
+
+The original full ocean-engineering title returns **one $176.10 row**, and its
+MA-qualified followup returns **zero**, on installed, public and stdio surfaces.
+The distinct ordinary **Ocean Engineer I** control remains **one $72.54 row**.
+Literal-keyword/discovery recovery remains explicit. All eight tool definitions
+in installed/public/reviewed catalogs match. All eight Python modules match
+between the official hash-verified wheel, installed package and release source;
+public health/initialize report the same release SHA and version.
+
+The new replay records **68 approximate percentile scalar differences**, with
+maximum **$1.043841/hour**. Each installed percentile preserves its own captured
+source value, and public quantiles remain ordered within source bounds. Editor
+discovery retains the same 100 names and leading suggestion; shared bucket
+counts differ by at most two within the published error bound of five. This is
+qualified source variation, not identical parity. Source caps, sort ties,
+unsupported worksite filtering, empty/thin samples, grade comparability and
+ceiling-versus-paid-price limits remain. The existing **500/hour** safety policy
+was preserved without reset, override or observed budget block.
+
+Evidence is under
+`Artifacts/mcp-e2e-20261010/round6/gsa-calc/final-published`, including
+`final-acceptance.json`, installation/suite provenance, retained original and
+followup answers, primary captures, official artifact hashes and payload checks.
+Independent BLS published acceptance separately confirmed the two originals and
+ordinary control on real stdio/public surfaces. The earlier candidate and
+baseline records above remain historical. Current summary, coverage table,
+per-file map and README claims agree with measured 443/322/121 and 55.4 tests per
+tool. Final GitHub publication of this record and whole-round/site closure are
+coordinator-owned; no next content round is claimed here.
