@@ -47,6 +47,61 @@ source request. The imported module came from installed site-packages.
 The release records below are historical evidence with their original
 versions, counts and dates. Their counts are not the current inventory.
 
+## October 10, 2026 round 3 — published opportunities mirror 1.0.3
+
+This new content and usability audit executed 110 realistic questions and
+followups plus data status against all four public tools: 52 searches, 44 full
+notice/solicitation lookups and 14 summaries across all ten grouping dimensions.
+Workflows covered logistics, transportation, facilities, environmental services,
+telecom/security, utilities, research, manufacturing, agency-specific purchases,
+set-asides, Alaska/Puerto Rico/Guam/overseas work, deadlines, older active awards,
+all notice types, pagination and recovery from empty results.
+
+A fresh official Contract Opportunities Full CSV download completed HTTP 200
+with 212,081,646 bytes and SHA-256
+`0a35bf09b261259ea385ddf183d28e6bc2fe594521b3df054e1daa737e83bfa9`.
+All 110 final published source comparisons and 345 returned-row checks of raw
+primary metadata passed. Twelve practical workflow interpretations were checked,
+including eligibility text, incidental keyword hits, timezone disclosure and
+award details. The SQL comparison imports no production query builder; snapshot
+normalization/version flags are shared with the retained validated source
+database, built from a CSV whose hash matches this fresh download. Raw fields
+were checked separately.
+
+One new P3 discovery issue was fixed in mirror 1.0.3: the summary tool's
+description excluded historical notices although older notices can remain
+active. The corrected description permits those records while explaining that
+a complete historical archive is unavailable. The FY2025 environmental-award
+summary retained 18 notices (GSA 12, EPA 5, Interior 1); an independent peer
+reproduced these counts directly from the fresh raw CSV. All 110 content outputs
+were preserved exactly. Only the reviewed summary description changed in the
+catalog; names, schemas, annotations and other metadata remained identical.
+The Worker suite passed 28 tests. There were no new P0, P1 or P2 findings and
+no unresolved or publication-pending round-3 SAM findings.
+
+Actual final public initialization reported mirror 1.0.3 and health reported
+source `0d87bdcf9d0c645428a57271736e4c35891bca53`. The four-tool catalog matched
+the reviewed contract, and all 110 original/followup calls plus status passed.
+Status retained `2026-10-10T15:52:32Z`, 64,417 active rows and 46,083 latest
+versions. No data reload, loader or schema change was required.
+
+A new isolated, uncached official PyPI package-name installation of unchanged
+Python 1.0.13 launched its actual console entrypoint and verified initialization,
+the 20-tool catalog and no-key access guidance. Nineteen newly framed realistic
+keyed workflows were recorded but not executed without `SAM_API_KEY`; these
+are unavailable source checks, not passes. The 1,155-case Python inventory and
+earlier 781 offline passes / 374 optional live-source skips remain separate
+historical regression evidence, not new round-3 package-suite execution. The
+mirror audit does not establish keyed API correctness, complete archived
+history, attachment contents, missing timezones or missing work locations.
+
+Evidence is retained in `Artifacts/mcp-e2e-20261010/round3/sam-gov/`:
+`REPORT.md`, `public-corpus.json`, `source-download.json`,
+`final-source-comparison.json`, `candidate-verification.json`,
+`semantic-workflow-review.json`, `final-published-corpus.json`,
+`final-published-completion.json`, `fresh-pypi-install.log`,
+`fresh-pypi-metadata.json`, `python-readiness.json` and validation logs.
+
 ## October 10, 2026 round 2 — published opportunities mirror 1.0.2
 
 This content and usability audit covered 87 ordinary and power-user questions

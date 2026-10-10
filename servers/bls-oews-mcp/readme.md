@@ -12,6 +12,8 @@ Version **1.1.4** preserves BLS publication footnotes when a requested wage meas
 
 The current suite has **298 collected tests: 297 passed and one optional live BLS API parity test skipped** in both frozen and fresh dependency environments. After publishing 1.1.4, a fresh official PyPI installation and the public service each completed a separate 46-question corpus covering all eight tools, source values, IGCE arithmetic and useful followups. Twenty sampled current BLS API cells and footnotes matched the bundled source. The native Worker passed 31 tests; Python/Worker parity covered 227 cases with zero unexpected differences. See [testing.md](testing.md) for the historical audits, fixes and release checks.
 
+The next content audit, round 3, found **zero new defects** across 58 new ordinary and power-user questions. The actual published CLI and public service each completed all 58 questions and followups; 431 measure/benchmark objects matched the bundled source and IGCE arithmetic, and 28 fresh official BLS API cells and footnotes matched. The flat-file footnote refresh returned HTTP 403 and is recorded as unavailable, separate from those successful API checks.
+
 ## Local or hosted
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |

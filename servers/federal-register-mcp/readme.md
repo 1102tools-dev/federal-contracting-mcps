@@ -10,6 +10,8 @@ No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
 *Tested and hardened through nine audit rounds and integration testing against the live Federal Register API. 286 collected regression tests (181 offline, 105 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines, FAR Council agency mapping, presidential filters, parent-agency public inspection, and page limits. See [testing.md](testing.md) for the full testing record.*
 
+The October 10, 2026 content research round 3 found zero new defects in 54 ordinary and power-user calls across all eight tools. All 54 public answers matched primary-source comparisons, and all 54 answers from a fresh official PyPI 1.0.14 CLI installation matched the public service. The current offline suite passed 181 tests with 105 live-gated skips; no new full live-suite run is claimed. See [the round 3 record](testing.md#content-research-round-3-2026-10-10-published-1014) for coverage and source limits.
+
 ## Local or hosted
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |

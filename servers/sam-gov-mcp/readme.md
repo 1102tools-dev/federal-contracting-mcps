@@ -10,6 +10,8 @@ Two editions: **hosted**, with 4 keyless tools for contract opportunities, and *
 
 *Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,155 collected regression tests (781 offline, 374 live-gated). v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied across the suite. See [testing.md](testing.md) for the full testing record.*
 
+The October 10, 2026 round-3 content audit verified published hosted mirror 1.0.3 with 110 realistic questions and followups plus data status. All 110 fresh official CSV comparisons and 345 returned-row checks passed. A fresh PyPI installation of the unchanged local 1.0.13 completed actual CLI initialization, its 20-tool catalog and access guidance; 19 keyed data workflows remained unexecuted without `SAM_API_KEY`. Optional live-test skips are not source passes. See [the round-3 record](testing.md#october-10-2026-round-3--published-opportunities-mirror-103) for scope and evidence.
+
 <a id="two-editions-hosted-or-full"></a>
 
 ## Local or hosted
@@ -42,7 +44,7 @@ The hosted edition is for finding and reading contract opportunities. It serves 
 | `summarize_opportunities` | Counts by agency, NAICS, set-aside, or notice type |
 | `get_data_status` | The date of the file behind every answer, and how many notices it holds |
 
-It does not include attachments (results link to the notice on sam.gov) or archived notices from past years. Pair it with the [USAspending MCP](../usaspending-gov-mcp) for full award history.
+Older notices can appear when they remain active, including notices posted in earlier fiscal years. This is not a complete historical archive; archived notices and attachments are not included (results link to the notice on sam.gov). Pair it with the [USAspending MCP](../usaspending-gov-mcp) for broader award history.
 
 ### Local full edition: when you need more
 
