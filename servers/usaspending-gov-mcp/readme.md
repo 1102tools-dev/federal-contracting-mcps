@@ -233,9 +233,13 @@ MIT
 ## Regression tests
 
 Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
-package directory. The frozen SDK 2.0.0 lane passes 1,933 cases and skips 379 live
-cases. Set `USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts
-below include parametrized and live-gated cases collected for 1.0.20.
+package directory. For candidate 1.0.22, the measured Python 3.12.13 / frozen
+SDK 2.0.0 lane passes 1,939 cases and skips 379 live cases. The actually installed
+candidate wheel with SDK 2.3.0 measures 1,084 passed, 855 failed and 379 skipped;
+those failures remain explicit and are not a passing latest-SDK suite. Set
+`USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts below include
+parametrized and live-gated cases collected for candidate 1.0.22 (publication
+pending); the latest published 1.0.21 has 2,315 collected cases.
 
 | Test file | Cases | Coverage |
 |---|---:|---|
@@ -259,4 +263,6 @@ below include parametrized and live-gated cases collected for 1.0.20.
 | [test_subaward_period_scope_1017.py](tests/test_subaward_period_scope_1017.py) | 3 | Cumulative FFATA scope and complete dated-report recovery |
 | [test_federal_account_program_scope_1018.py](tests/test_federal_account_program_scope_1018.py) | 3 | Captured all-year program scope, complete list and single-year financial recovery |
 | [test_federal_account_available_fy_1020.py](tests/test_federal_account_available_fy_1020.py) | 3 | Current-FY source availability, supported recovery and unchanged 503 control |
-| **Total** | **2,312** | **1,933 offline; 379 live-gated** |
+| [test_naics_current_retired_1021.py](tests/test_naics_current_retired_1021.py) | 3 | Actual retired rows versus active rows omitted by the requested limit |
+| [test_award_date_overlap_r6.py](tests/test_award_date_overlap_r6.py) | 3 | Award interval overlap versus complete dated-transaction recovery |
+| **Total** | **2,318** | **1,939 frozen offline passes; 379 live-gated skips** |
