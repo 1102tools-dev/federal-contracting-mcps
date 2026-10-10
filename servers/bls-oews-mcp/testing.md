@@ -33,6 +33,9 @@ national ratio requests return an actionable state/metro validation error.
 
 Measured checks: **293 offline passed, 1 live test skipped** in the ordinary run;
 the separately enabled **live BLS API parity test passed** for its 25 series.
+An additional direct official BLS API check matched all eight mean/median,
+hourly/annual series and footnote codes for the musicians original and actors
+followup.
 The Worker suite passed **29 tests** and typechecking passed. The full-release
 Python/Worker harness checked **222 cases: 211 identical, 11 pre-existing
 documented transport/format differences, 0 unexpected differences**. All eight
