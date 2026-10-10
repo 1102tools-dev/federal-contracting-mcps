@@ -886,8 +886,9 @@ research codes; their retirement filtering is preserved. Actual candidate
 console originals and larger-limit recovery expose the highway code.
 Candidate evidence is not actual published 1.0.21 acceptance.
 
-The candidate frozen full suite measured **1,936 passed / 379 skipped**;
-a separate collection measured **2,315 collected**. The latest-SDK focused
+The candidate frozen Python 3.14.3/MCP 2.0.0 full suite measured **1,936
+passed / 379 skipped**; a separate collection in that same environment
+measured **2,315 collected**. The latest-SDK focused
 lane passed three tests; no latest-SDK full-suite pass is claimed. The
 historical actual published 1.0.20 latest-SDK full record remains **1,078
 passed / 855 failed / 379 skipped / 2,312 collected**. Legacy negative/error
