@@ -1,21 +1,33 @@
 {
-  "provenance": "Actual public2.0.5 round3 final corpus115 docs_heat +target_docket_heat; captured-provider followup, not keyed local parity",
+  "provenance": "Actual public2.0.5 round3 final corpus115: docs_heat fourth result OSHA-2021-0009-25576 and target_docket_heat. Selected matching heat rulemaking, rather than incidental Cadmium attachment keyword match. Captured-provider followup, not keyed local parity.",
   "document": {
     "type": "documents",
-    "id": "OSHA-2012-0005-0017",
+    "id": "OSHA-2021-0009-25576",
     "attributes": {
       "agencyId": "OSHA",
-      "objectId": "09000064b9490893",
-      "documentType": "Supporting & Related Material",
+      "objectId": "09000064b8fdc11c",
+      "frDocNum": "2025-18670",
+      "documentType": "Proposed Rule",
       "withdrawn": false,
-      "lastModifiedDate": "2026-08-25T03:26:52Z",
+      "commentStartDate": "2025-09-25T04:00:00Z",
+      "lastModifiedDate": "2025-10-11T14:23:09Z",
       "openForComment": false,
       "withinCommentPeriod": false,
-      "postedDate": "2026-08-24T04:00:00Z",
-      "title": "Supporting Statement for the Information Collection Requirements in the Cadmium in General Industry Standard (29 CFR 1910.1027); Office of Management and Budget (OMB) Control No. 1218-0185 (August 2026)",
-      "docketId": "OSHA-2012-0005",
-      "subtype": "ICR Supporting Statement",
-      "allowLateComments": false
+      "postedDate": "2025-09-25T04:00:00Z",
+      "title": "Heat Injury and Illness Prevention in Outdoor and Indoor Work Settings",
+      "docketId": "OSHA-2021-0009",
+      "subtype": "Extension of Comment Period",
+      "allowLateComments": false,
+      "commentDeadlineEastern": "Oct 2, 2025 11:59 PM ET",
+      "commentEndDateUtc": "2025-10-03T03:59:59Z",
+      "commentDeadlineVerification": {
+        "status": "source_metadata_only",
+        "controlling_deadline_established": false,
+        "note": "This date is reported by Regulations.gov metadata, not verified as the controlling deadline. Read the notice's DATES text and later extensions or corrections; a post-hearing deadline can apply only to eligible filers. If those sources are unavailable, the controlling date cannot be established.",
+        "document_url": "https://www.regulations.gov/document/OSHA-2021-0009-25576",
+        "docket_url": "https://www.regulations.gov/docket/OSHA-2021-0009",
+        "federal_register_notice_url": "https://www.federalregister.gov/api/v1/documents/2025-18670.json"
+      }
     }
   },
   "docket": {
