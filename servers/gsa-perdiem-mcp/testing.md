@@ -308,3 +308,63 @@ live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
 ## RC5 pacing remediation (2026-08-22)
 
 Version 1.0.5 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (186 tests; 255 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 6 tools.
+
+## October 10, 2026: Round 6 new travel-task content audit (1.2.4)
+
+The unchanged published **1.2.4** package and native Worker/D1 service at
+`7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336` completed **135 actual public
+calls and 135 actual installed-console stdio calls** across all seven tools.
+These comprise 131 planned questions and four county-recovery followups,
+with 133 unique tool/argument combinations. Twenty-five destination task
+families are new relative to the Round 2–5 city lists, including Reno,
+Sacramento, Palm Springs, Flagstaff, Cody, Bend and College Station; this
+is not a claim that every destination is absent from all historical tests.
+No new P0/P1/P2/P3 content finding was confirmed.
+
+Nine freshly retrieved raw GSA rate/M&IE/ZIP files cover FY2021, FY2022,
+FY2024, FY2026 and FY2027 and match the recorded source hashes. Independent
+parsing verifies **132 public numeric questions**, **130 local numeric
+questions**, **48 travel estimates** and **25 ZIP memberships**, with no
+mismatch. Fourteen ZIP records explicitly identify the supplied county;
+eleven standard-rate ZIP records have no county field, so those assignments
+are qualified against the user-supplied county's absence from the master
+nonstandard-area definitions. This does not independently establish city
+geography for the standard-rate rows.
+
+Nine caller-composed workflows finish real fiscal-year and seasonal
+itineraries, repeated staff trips, actual-lodging assumptions, furnished
+meals, a 45-night detail and day-trip eligibility. They add no tool calls.
+A fresh compressed official 41 CFR 301-11 XML capture supports seven
+policy sections. Agency decisions about reduced rates, return travel,
+exceptions and eligibility remain explicit; hypothetical hotel receipts
+are not reported as actual expenses. The Yuma March–April detail retains
+its constant official rate, and crossing itineraries count M&IE once.
+Initial web reads for two policy sections failed (503/access wall); the
+successful XML capture supplies their evidence rather than treating those
+failures as absent policy.
+
+**133 keyless substantive answers match**, including 132 exact structured
+answers and one expected local/hosted credential-status difference. Two
+local city-only requests need an API key; the actual county-based lookup
+and December-budget recoveries work without a key. Public city-only rates
+are separately checked against the official tables. Juneau and Guam
+receive OCONUS source handoffs, not invented CONUS rates. No locally keyed
+API request, new production SQL query or data reload is claimed.
+
+Separate verification records frozen MCP 2.0 / Python 3.12 **316 passed /
+267 optional skips / 583 collected**, and fresh officially installed MCP
+2.3 / Python 3.12 **300 passed / 16 failed / 267 skipped / 583 collected**.
+The 16 existing negative error-message failures remain outside this
+ordinary-content campaign; the fresh full suite is not reported as passing.
+Worker tests pass 29, type checking passes, and Python/Worker parity records
+1,368 cases: 1,361 identical, seven documented differences, zero unexpected.
+All seven actual tool contracts and 17 official-wheel/installed/source
+payload files (eight Python modules) agree. An initial Python 3.14
+metadata-indentation/parity attempt is retained separately; the production
+Python 3.12 check passes without editing metadata or the baseline.
+
+Evidence: `Artifacts/mcp-e2e-20261010/round6/gsa-perdiem/summary.json`,
+`audit-report.md`, `source-comparisons.json`, `workflow-completions.json`,
+`policy-source-review.json`, and `suite-provenance.json`. No runtime,
+version or data changes were needed. Independent review and root round
+closure are recorded separately; Round 7 has not started.
