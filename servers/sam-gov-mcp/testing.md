@@ -51,6 +51,76 @@ no editable or local-wheel origin. Its full fresh SDK 2.3 suite executed
 The release records below are historical evidence with their original
 versions, counts and dates. Their counts are not the current inventory.
 
+## October 10, 2026 round 5 — native discovery candidate 1.0.4
+
+The published native mirror 1.0.3 at source
+`0d87bdcf9d0c645428a57271736e4c35891bca53` answered **127** new content
+questions and composed followups plus data status: 65 searches, 50 full-notice
+or solicitation lookups, and 12 summaries across all ten grouping dimensions.
+Domains included archaeology, museums, translation, court reporting,
+geophysics, calibration, satellite communications, rail equipment, nursery and
+fish hatchery work, dredging, remediation, records, accessibility, legal
+support, leases, NASA/NOAA/parks, Alaska/Puerto Rico/Guam, prior FY2022 awards,
+NATO eligibility and legacy amendments. Paging, exact lookups, earlier versions,
+zero-result refinements, scope and deadline interpretation completed the tasks.
+Finite surplus and legacy-amendment source records overlap earlier rounds;
+those workflows do not establish new source coverage by themselves.
+
+A fresh official conditional request returned HTTP **304**, confirming the
+retained 212,081,646-byte CSV with SHA-256
+`0a35bf09b261259ea385ddf183d28e6bc2fe594521b3df054e1daa737e83bfa9`.
+This is authoritative fresh byte-identity evidence, not a new full download.
+All **127** independent SQL comparisons and **347** returned-row raw-field
+checks passed. Thirty-four substantive workflow interpretations with selected
+raw CSV rows and 14 exact decimal notice-amount comparisons supplement counts.
+Shared snapshot normalization, latest-version flags and timezone inference
+remain qualified; they are not independent amendment-parent proof. Notice
+amounts are not verified obligations or prices paid.
+
+One **P3** affects native discovery: the search description says past-deadline
+notices are excluded without mentioning the deliberate award/justification
+exception. Actual FY2022 environmental award research returns **45** by default
+and **45** with `include_past_deadlines`, including official active Brookstone
+award notice `ed0eb96e89734c6eae2a6d65eebf2834`, posted September 29, 2022,
+with a past response deadline and archive date September 28, 2027. Query results
+are correct; the top-level description needs the qualification already present
+in the parameter description and response notes. Candidate native **1.0.4**
+clarifies the exception and the supported include-past behavior. An actual local
+Wrangler Worker `tools/list` verifies exactly one changed description with all
+four names, schemas and annotations unchanged. No brittle prose test was added.
+Worker tests pass **28**, with zero skips; typecheck passes. Python, loader,
+schema, data and deployment configuration are unchanged. Root owns publication;
+actual native 1.0.4 verification remains pending.
+
+A new uncached official by-name PyPI **1.0.14** installation completes actual
+console initialization, its 20-tool catalog and `get_access_status` without a
+key. All 19 planned keyed workflows remain **unexecuted** with missing
+`SAM_API_KEY`. The actual installed package suite under freshly resolved MCP
+SDK **2.3.0** passes **784**, skips **374** optional source tests and collects
+**1,158**; those skips are not source passes. Runtime module bytes match the
+reviewed baseline; suite executable, module, SDK, dependency and command
+provenance are retained separately.
+
+Source limitations remain explicit. Dredging text says bid date will be set by
+amendment despite a future machine deadline; a Cocoa lease's narrative and date
+field disagree; other source records contain future award dates or conflicting
+award numbers. These do not establish a controlling deadline or action without
+the original amendments. Full-text stemming can find incidental archaeology or
+aircraft access-door matches, so narrowed business scope and source text matter.
+Secured attachments, bid criteria and NATO Declaration-of-Eligibility versus bid
+closing dates require the linked source. Old active records with no description
+or deadline are not proof of current bidability. Zero matches are scoped to the
+active file, not complete history or every federal requirement.
+
+Evidence is in `Artifacts/mcp-e2e-20261010/round5/sam-gov/`, including
+`public-corpus.json`, `final-source-comparison.json`, `source-capture.json`,
+`selected-primary-semantic-evidence.json`, `semantic-workflow-review.json`,
+`metadata-deadline-before.json`, `actual-candidate-tools-list.json`,
+`metadata-compatibility.json`, `python-readiness.json` and
+`python-suite-provenance.json`. One P3 is source-fixed; no new P0/P1/P2,
+partial source fixes or unresolved confirmed source defects remain in this
+completed corpus. Candidate checks are not published 1.0.4 acceptance.
+
 ## October 10, 2026 round 4 — content audit and published local 1.0.14
 
 The native mirror 1.0.3 at source `0d87bdcf9d0c645428a57271736e4c35891bca53`
