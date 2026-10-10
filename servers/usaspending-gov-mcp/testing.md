@@ -347,9 +347,12 @@ questions to the appropriate tools. `get_submission_periods` now describes
 global reporting-calendar deadlines and rejects their interpretation as
 agency-completion evidence. The established Python 3.12 baseline generator
 changes exactly those two description fields; all 55 names, schemas,
-annotations and other metadata remain identical. No directory resubmission
-is required by this user-authorized change. Internal peer review found no
-blocker.
+annotations and other metadata remain identical. Current [official OpenAI documentation](https://developers.openai.com/plugins/deploy/app-review#how-published-mcp-metadata-versions-work)
+uses continuous review for published tool-definition updates: passing updates
+replace the previous definitions automatically, without a new plugin version
+or manual republication. Previous definitions remain live while automated
+checks are pending, so the unchanged names/schemas preserve compatibility.
+Internal peer review found no blocker.
 
 Two actual tools/list regressions fail against 1.0.14 and pass corrected.
 The full Python lane passes **1,918 cases with 379 live-gated skips (2,297
