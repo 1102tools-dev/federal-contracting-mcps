@@ -5,7 +5,7 @@ import {HANDLERS, TOOLS, ToolError, type Database} from "./tools.ts";
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
 // this Worker from D1. No container, no session state, no SAM.gov API key.
 
-const SERVER_VERSION = "1.0.3";
+const SERVER_VERSION = "1.0.4";
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const MAX_BODY_BYTES = 65536;
 
