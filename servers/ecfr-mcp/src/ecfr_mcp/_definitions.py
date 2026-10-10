@@ -38,8 +38,9 @@ _QUERY_TAIL = re.compile(r"(?:\s+(?:means|is\s+defined\s+as|meaning))+\s*[—–
 
 
 def key(text: str) -> str:
-    """Compare names on letters and digits only: hyphens, spaces and case don't matter."""
-    return re.sub(r"[^a-z0-9&]", "", text.lower())
+    """Compare names without punctuation, case, spacing or possessive suffixes."""
+    text = re.sub(r"['’]s\b", "", text.lower())
+    return re.sub(r"[^a-z0-9&]", "", text)
 
 
 def singular(text: str) -> str:

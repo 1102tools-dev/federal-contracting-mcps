@@ -1582,11 +1582,10 @@ async def get_corrections(
         def touches(c: dict[str, Any]) -> bool:
             for ref in _as_list(c.get("cfr_references")):
                 h = _safe_dict(_safe_dict(ref).get("hierarchy"))
-                if section and str(h.get("section")) == section:
-                    return True
-                if part and str(h.get("part")) == part:
-                    return True
-                if chapter and str(h.get("chapter")) == chapter:
+                if all(
+                    not wanted or str(h.get(field)) == wanted
+                    for field, wanted in (("section", section), ("part", part), ("chapter", chapter))
+                ):
                     return True
             return False
         corrections = [c for c in corrections if touches(c)]
@@ -1757,7 +1756,7 @@ async def compare_versions(
         raise UserInputError(
             f"Section {section_id} is not in the eCFR text of title {title_number} on "
             f"{date_before} or on {date_after}. Check the section number and title; "
-            f"get_version_history(section='{section_id}') lists the dates it existed."
+            f"get_version_history(section='{section_id}', title_number={title_number}) lists the dates it existed."
         )
     if before.get("present") is False or after.get("present") is False:
         added = before.get("present") is False
@@ -1775,7 +1774,7 @@ async def compare_versions(
             "after": after,
             "note": (
                 f"{section_id} was {'added' if added else 'removed'} between {date_before} and "
-                f"{date_after}. get_version_history(section='{section_id}') gives the exact date."
+                f"{date_after}. get_version_history(section='{section_id}', title_number={title_number}) gives the exact date."
             ),
         }
         if changes_only or _xml_text.size_of(result) > _xml_text.PAGE_CHARS:
@@ -1810,7 +1809,9 @@ async def compare_versions(
         ("Only the changes are shown (changes_only)." if changes_only else
          "Both full texts together are too long to send, so only the changes are shown.")
         + f" Read either full text with get_cfr_content(section='{section_id}', "
-        f"date=...), which comes in pages."
+        f"title_number={title_number}, "
+        + (f"chapter={chapter!r}, " if chapter else "")
+        + "date=...), which comes in pages."
     )
     if not changes:
         result["note"] = f"The parsed text is the same on {date_before} and {date_after}. " + result["note"]
