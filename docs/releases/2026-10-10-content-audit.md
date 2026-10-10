@@ -1,6 +1,6 @@
 # October 10, 2026 MCP content audit and release record
 
-**Package, Cloudflare and all-five Dell release checks passed. Website publication and final round closure remain pending.** This record distinguishes executed checks, collected tests and source limitations. The subsequent zero-new-P0/P1/P2 audit has not started. Evidence paths are relative to `Artifacts/mcp-e2e-20261010/`.
+**Round 1 complete: all 36 findings fully fixed; actual PyPI, Cloudflare, all-five Dell, applicable data and published website checks passed.** This record distinguishes executed checks, collected tests and source limitations. The subsequent zero-new-P0/P1/P2 audit has not started. Evidence paths are relative to `Artifacts/mcp-e2e-20261010/`.
 
 ## Scope and findings ledger
 
@@ -18,9 +18,9 @@ The authoritative `coordinator/release-state.json` ledger records **36 newly con
 | eCFR | 1 / 2 / 2 | Unavailable snapshot dates cannot imply a removed section; reject cross-title citation conflicts with recovery; changes-only removal summaries omit full text; patched tooling; recovery survives fresh MCP 2.3. `ecfr/CHECKPOINT.md`, `ecfr/final-1.1.2-7754923/FINAL.json` | First-release hosted content verified; fresh 1.1.1 CLI lost recovery details. Published 1.1.2 verifies that correction, CLI guidance and all 13 public tools; physical Dell takeover passed. |
 | Federal Register | 0 / 2 / 1 | Explicit partial comment scans and FAR lower-bound metadata; API archive start distinguished from first publication in 1936; patched tooling. `federal-register/checkpoint.json`, `release-status.json` | All three fixed; actual PyPI and public 1.0.14 verified. The bounded scan remains a disclosed source limitation, not a partially fixed defect. |
 | Regulations.gov | 0 / 3 / 0 | Workflow wrappers retain past-end/last-page recovery; failed organization lookup leaves organization unknown; patched tooling. `regulations/final.json` | All three fixed and actual PyPI/public 2.0.4 verified. Direct-source live checks remain quota/credential limited. |
-| Shared privacy | 0 / 1 / 0 | Replace claims of no stored results/global hashed cache keys with accurate temporary bounded memory public-response caching and no retained query/result logs. Current reviewed README and service privacy copy; coordinator ledger | Root README corrected in merged PR93. Final website publication remains pending. |
+| Shared privacy | 0 / 1 / 0 | Replace claims of no stored results/global hashed cache keys with accurate temporary bounded memory public-response caching and no retained query/result logs. Current reviewed README and service privacy copy; coordinator ledger | Root README corrected in merged PR93; website source PR1 and deployment PR3 merged, published and verified. |
 
-All 35 server findings are fully fixed and final-package/public-content verified; none are partially fixed or unresolved. The shared P2 documentation correction is corrected in source; its website publication remains pending, so it is not yet counted as fully published. Automatic directory review outcomes are not observable from public tools/list; deployed correct metadata does not prove directory propagation.
+All 36 findings, comprising 35 server findings and one shared documentation correction, are fully fixed and published verified; none are partially fixed or unresolved. Automatic directory review outcomes are not observable from public tools/list; deployed correct metadata does not prove directory propagation.
 
 ## Versions, PRs and immutable source identities
 
@@ -58,7 +58,7 @@ Authoritative source examples: Federal Register specific Oct10–13 deadline sea
 
 Npm audit remediation uses Wrangler 4.149.0 and records zero advisories after upgrades. Typechecks and Worker bundle dry-runs passed. Local Docker CLI was unavailable; successful first-release CI image builds clear that local container-build gap for the first publication. All five final scoped releases passed their own build/deployment gates.
 
-## Actual completed destinations and pending final slots
+## Actual completed destinations
 
 First-release actual verification is retained, not reused as evidence of later targets:
 
@@ -78,17 +78,17 @@ First-release actual verification is retained, not reused as evidence of later t
 
 All five bind to7754923b8c77e51022e2c561856fd6ccf4eab874. Unchanged Federal Register and Regulations retain b379d69; SAM retains its independent mirror SHA. Complete directory definitions remain subject to OpenAI automatic continuous checks; [current official maintenance rules](https://developers.openai.com/plugins/deploy/app-review#how-published-mcp-metadata-versions-work) require no manual republication solely for changed descriptions, but plugin info/skills and origin changes have different requirements. Keep old definitions compatible while checks run.
 
-**Shared documentation/site slot — PENDING:** root to insert repository docs commit, website source/build commit, public URL/version/count comparison, deployment conclusion and final live copy evidence. Candidate counts must be6,024 overall, not6,022 or6,021; FR rounds9; Per Diem city+county keyless; privacy must disclose temporary bounded memory caching. Do not infer public-site success from a local generated build.
+**Published documentation and website — PASSED:** repository README changes and release record merged in [PR93](https://github.com/1102tools-dev/federal-contracting-mcps/pull/93) and [PR96](https://github.com/1102tools-dev/federal-contracting-mcps/pull/96). Website [source PR1](https://github.com/1102tools-dev/federal-contracting-prompts/pull/1) merged at `5d0f56836bdfca3fbd65a4c77c64a9b0b7438544`; deployment snapshot [PR3](https://github.com/1102tools-dev/1102tools-deploy/pull/3) merged at `3c7beea76e3fa8027c23ffda9735666d6518006f`. Cloudflare Pages deployment [6213f0a5](https://6213f0a5.1102tools.pages.dev) succeeded. [1102tools.com](https://1102tools.com) passed published-byte checks for all 49 served assets (HTML comparison removes only Cloudflare-injected analytics) plus source/deployment checks for two configuration files; four additional live copy checks passed. Actual browser verification confirmed current versions, 6,024 **collected** tests and the dated release link. The 57 prompts and 15-page PDF remain unchanged. Evidence: `coordinator/website-public-all-assets.json`, `coordinator/website-final-copy-proof.json`.
 
-**Round closure — PENDING WEBSITE:** final owner evidence, all five workflows and destination matrices have passed. Website publication/live evidence is the remaining current-round gate. A subsequent complete eight-server ordinary-content round with zero new P0/P1/P2 is still required by the user’s loop instruction; this record makes no claim that condition is satisfied.
+**Round 1 closure — COMPLETE:** final owner evidence, all five scoped workflows, eight package/public destination matrices, all five Dell origins and website publication have passed. A subsequent complete eight-server ordinary-content round with zero new P0/P1/P2 is still required by the user's loop instruction; this record makes no claim that condition is satisfied. Acquisition.gov remains excluded.
 
 ## Source limitations and enhancements
 
-These remain honest limits, distinct from unresolved confirmed defects: SAM daily active-only file lacks authoritative amendment parent chains/archive/attachments and Python live operations require credentials; USAspending lag, account-linkage gaps and unsupported IDV time filters; CALC mixed-field keyword scope, capped/approximate aggregations and unsupported worksite filter; BLS May2025-only bundle and unpublished/top-coded estimates; Per Diem CONUS scope, Census2020 geography and itinerary/date-aware pricing enhancement; eCFR snapshot lag/2017-onward history; Federal Register500-row bounded scans/1994-onward API archive; Regulations quota/credentials, posted-versus-received counts and attachment URLs without extraction. No fabricated source totals or blanket corrected in sourceness claims are made.
+These remain honest limits, distinct from unresolved confirmed defects: SAM daily active-only file lacks authoritative amendment parent chains/archive/attachments and Python live operations require credentials; USAspending lag, account-linkage gaps and unsupported IDV time filters; CALC mixed-field keyword scope, capped/approximate aggregations and unsupported worksite filter; BLS May2025-only bundle and unpublished/top-coded estimates; Per Diem CONUS scope, Census2020 geography and itinerary/date-aware pricing enhancement; eCFR snapshot lag/2017-onward history; Federal Register500-row bounded scans/1994-onward API archive; Regulations quota/credentials, posted-versus-received counts and attachment URLs without extraction. No fabricated source totals or blanket source-completeness claims are made.
 
 ## Separate Acquisition.gov appendix — excluded from goal acceptance
 
-The all-current-round coordinator ledger has41 findings (P0=0/P1=3/P2=23/P3=15). Subtracting the excluded Acquisition track's five (P1=1/P2=2/P3=2) yields the eight-server36 above. Acquisition255 collected tests contribute only to the repository-wide6,024 total. Published1.0.10 package/CLI evidence and first b379d69 service checks exist in `acquisition/final-published-cli-validation.json` and `final-published-wheel-validation.json`. Its parser4 full reload proceeds separately; **root to fill current reload result**, without making it a blocker for the eight-server goal or future loop. No new Acquisition scoped tag belongs to the five final releases above.
+The all-current-round coordinator ledger has41 findings (P0=0/P1=3/P2=23/P3=15). Subtracting the excluded Acquisition track's five (P1=1/P2=2/P3=2) yields the eight-server36 above. Acquisition255 collected tests contribute only to the repository-wide6,024 total. Published1.0.10 package/CLI evidence and first b379d69 service checks exist in `acquisition/final-published-cli-validation.json` and `final-published-wheel-validation.json`. Its parser4 full reload proceeds separately; as of 16:22 UTC, staging contained 1,305 PDFs, with all 1,293 successful PDFs on parser +4; the prior active snapshot remained protected pending atomic completion, without making it a blocker for the eight-server goal or future loop. No new Acquisition scoped tag belongs to the five final releases above.
 
 ## Per-owner fix counts at package/deployment verification
 
@@ -102,7 +102,7 @@ The all-current-round coordinator ledger has41 findings (P0=0/P1=3/P2=23/P3=15).
 | GSA CALC+ | 0 | 1 | 2 | 1 | 4 | 0 | 0 |
 | GSA Per Diem | 0 | 0 | 2 | 4 | 6 | 0 | 0 |
 | BLS OEWS | 0 | 0 | 3 | 1 | 4 | 0 | 0 |
-| Shared documentation | 0 | 0 | 1 | 0 | 0 | 1 (website pending) | 0 |
+| Shared documentation | 0 | 0 | 1 | 0 | 1 | 0 | 0 |
 
 Final public metadata independently matches all112 hosted tool definitions across eight services. Allfive Dell checks passed: USA1.0.15/eCFR1.1.2/CALC1.0.14 at7754923; unchanged FR1.0.14/Regulations2.0.4 atb379d69. Public GET and POST report origin backend; physical origin health and direct container initialize match each expected tag/version/SHA. Evidence: `coordinator/eight-server-final-contracts.json`, `coordinator/dell-corrective-7754923-verified.json`.
 
