@@ -432,3 +432,28 @@ def test_live_g8_sin_54151S_categories_match_api():
         assert abs(got[k] - want[k]) <= max(2, want[k] * 0.01), (k, got[k], want[k])
     other = r["labor_categories"]["records_in_titles_not_listed"]
     assert abs(other - agg["sum_other_doc_count"]) <= agg["sum_other_doc_count"] * 0.01
+
+
+# ---------------------------------------------------------------------------
+# G-10: worksite counts in the statistics
+# ---------------------------------------------------------------------------
+
+def test_g10_stats_include_worksite_counts(monkeypatch):
+    body = _stats_response(6613, price=146.59)
+    body["aggregations"]["worksite"] = {"buckets": [
+        {"key": "Customer_Facility", "doc_count": 3635},
+        {"key": "Contractor_Facility", "doc_count": 2665},
+        {"key": "Virtual", "doc_count": 313},
+    ]}
+    monkeypatch.setattr(srv, "_get", _MockGet(body))
+    r = _payload(asyncio.run(_call("igce_benchmark", labor_category="Systems Engineer")))
+    assert r["worksite_breakdown"] == {"Customer_Facility": 3635, "Contractor_Facility": 2665, "Virtual": 313}
+
+
+@live
+def test_live_g10_systems_engineer_worksite_counts_match_api():
+    api = _api("keyword=Systems+Engineer&page=1&page_size=1&ordering=current_price&sort=asc")
+    want = {b["key"]: b["doc_count"] for b in api["aggregations"]["worksite"]["buckets"]}
+    r = _payload(asyncio.run(_call("igce_benchmark", labor_category="Systems Engineer")))
+    assert r["worksite_breakdown"] == want
+    assert sum(want.values()) == r["total_rates"]

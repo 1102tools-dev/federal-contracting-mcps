@@ -649,6 +649,9 @@ def _extract_stats(data: Any) -> dict[str, Any]:
     percentiles = _safe_dict(_safe_dict(aggs.get("histogram_percentiles")).get("values"))
     ed_counts = _as_list(_safe_dict(aggs.get("education_level_counts")).get("buckets"))
     biz_size = _as_list(_safe_dict(aggs.get("business_size")).get("buckets"))
+    # Counts only: GSA ignores a worksite filter, so a per-site price split
+    # is not available from one call, but the counts show the mix.
+    worksites = _as_list(_safe_dict(aggs.get("worksite")).get("buckets"))
     std_bounds = _safe_dict(wage_stats.get("std_deviation_bounds"))
 
     hits = _safe_dict(data.get("hits"))
@@ -713,6 +716,7 @@ def _extract_stats(data: Any) -> dict[str, Any]:
         "outlier_bounds_2sigma": outlier_bounds,
         "education_breakdown": _bucket_dict(ed_counts),
         "business_size_breakdown": _bucket_dict(biz_size),
+        "worksite_breakdown": _bucket_dict(worksites),
     }
 
 
@@ -1022,7 +1026,9 @@ async def igce_benchmark(
 
     Returns statistical summary for a labor category: count, min, max, avg,
     median, standard deviation, percentile distribution (P10-P90), education
-    breakdown, and outlier bounds.
+    breakdown, worksite counts (worksite_breakdown: Customer_Facility /
+    Contractor_Facility / Virtual; counts only, prices are pooled across
+    sites), and outlier bounds.
 
     This is the primary tool for building Independent Government Cost
     Estimates. The returned statistics represent the market distribution
