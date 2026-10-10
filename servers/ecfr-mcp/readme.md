@@ -1,6 +1,6 @@
 # ecfr-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 13](https://img.shields.io/badge/tools-13-007a59)](#what-it-does) [![regression tests: 450](https://img.shields.io/badge/regression%20tests-450-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 13](https://img.shields.io/badge/tools-13-007a59)](#what-it-does) [![regression tests: 451](https://img.shields.io/badge/regression%20tests-451-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/ecfr-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the eCFR (Electronic Code of Federal Regulation
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through eight rounds of testing against the live eCFR API. 450 collected regression tests (332 offline, 118 live-gated), including a check that every piece of text in ten saved eCFR responses comes out exactly once and in order. Round 8 (1.1.0, October 2026) fixed 18 P2 and about 20 P3 findings from a six-agent bug hunt plus an everyday-questions pass. The 1.1.4 release carries three P2 corrections in definition matching, historical-read followups and scoped editorial corrections. Its published package completed 73 installed-CLI research calls and the public service completed 70, with 55 primary-source checks passing. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through eight rounds of testing against the live eCFR API. 451 collected regression tests (333 offline, 118 live-gated), including a check that every piece of text in ten saved eCFR responses comes out exactly once and in order. Round 8 (1.1.0, October 2026) fixed 18 P2 and about 20 P3 findings from a six-agent bug hunt plus an everyday-questions pass. The 1.1.4 release carries three P2 corrections in definition matching, historical-read followups and scoped editorial corrections. Its published package completed 73 installed-CLI research calls and the public service completed 70, with 55 primary-source checks passing. See [testing.md](testing.md) for the full testing record.*
 
 ## Local or hosted
 

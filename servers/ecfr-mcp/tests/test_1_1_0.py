@@ -354,7 +354,7 @@ def test_version_history_of_a_section_not_in_the_title_is_an_error(monkeypatch):
     async def fake(path, params=None, timeout=None):
         return {"content_versions": [], "meta": {"result_count": "0"}}
     monkeypatch.setattr(srv, "_get_json", fake)
-    with pytest.raises(ValueError, match="not in this title"):
+    with pytest.raises(ValueError, match="no version history"):
         _run(srv.get_version_history(section="200.318"))
 
 

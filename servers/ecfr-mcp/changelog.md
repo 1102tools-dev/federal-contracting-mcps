@@ -3,7 +3,8 @@
 ## 1.1.5
 
 - Version history now sorts each section chronologically before pagination, preserving the advertised oldest-first timeline even when eCFR returns source records out of order. A saved Section 508 source fixture checks the original timeline and page followups.
-- History discovery guidance distinguishes older version metadata from point-in-time text snapshots, which begin in 2017. One compatible tool-description correction; schemas remain unchanged.
+- Comparisons now use available historical XML before 2017, including the source-backed Section 508 December 2016 snapshot. An unavailable older snapshot produces recovery guidance rather than a false section addition/removal.
+- History and comparison discovery guidance reflects section-specific metadata/text availability instead of a false global 2017 floor. Two compatible tool-description corrections; schemas remain unchanged.
 
 ## 1.1.4
 
