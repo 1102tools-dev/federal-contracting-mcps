@@ -1,3 +1,14 @@
+## 1.0.17 — 2026-10-10
+
+- Preserve literal colons in source-discovered exact field values by using the
+  supported keyword query and verifying the complete exact field population
+  before returning its unchanged source statistics. GSA's exact-field query
+  otherwise truncates the title at the colon and can return unrelated rows.
+- Withhold unprovable mixed, capped or approximate populations with actionable
+  recovery guidance; ordinary exact searches retain their original query.
+- Add source-derived ocean-engineering regressions and ordinary/nonexact/
+  approximate-population controls. Existing tool identities and schemas remain.
+
 ## 1.0.15 — 2026-10-10
 
 - Preserve actionable guidance for expected caller errors under MCP 2.3, including

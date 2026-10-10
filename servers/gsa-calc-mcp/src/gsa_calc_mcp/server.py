@@ -896,6 +896,14 @@ async def exact_search(
     return 0 results.
 
     Fields: labor_category, vendor_name, idv_piid (GSA MAS contract number).
+
+    For a discovered value containing a colon, GSA's exact-field search can
+    return only the text before the colon. This tool uses literal keyword
+    search instead and accepts its statistics only when the complete,
+    non-approximate requested-field aggregation proves every rate row has
+    the exact value. If that cannot be verified, it withholds the misleading
+    population and gives keyword_search recovery guidance. Source statistics
+    remain unchanged; empty results and thin samples retain their limits.
     """
     _validate_no_control_chars(value, field="value")
     value = _strip_or_none(value)
@@ -917,13 +925,52 @@ async def exact_search(
         experience_max=experience_max, price_min=price_min, price_max=price_max,
         business_size=business_size,
     )
+    literal_fallback = ":" in value
     qs = _build_query_string(
-        search_field=field, search_value=value, filters=filters,
-        page=page, page_size=page_size, ordering=ordering, sort=sort,
+        keyword=value if literal_fallback else None,
+        search_field=None if literal_fallback else field,
+        search_value=None if literal_fallback else value,
+        filters=filters, page=page, page_size=page_size,
+        ordering=ordering, sort=sort,
     )
     data = await _get(qs)
+    if literal_fallback:
+        # Keyword matches several fields, so prove the whole population,
+        # not only the displayed page, before calling this an exact match.
+        aggs = _safe_dict(data.get("aggregations"))
+        count = _safe_dict(aggs.get("wage_stats")).get("count")
+        agg = _safe_dict(aggs.get(field))
+        buckets = _as_list(agg.get("buckets"))
+        pairs = [_safe_bucket_key(b) for b in buckets]
+        verified = (
+            isinstance(count, int) and not isinstance(count, bool)
+            and agg.get("sum_other_doc_count") == 0
+            and agg.get("doc_count_error_upper_bound") == 0
+            and all(p is not None and isinstance(p[0], str)
+                    and p[0].casefold() == value.casefold() for p in pairs)
+            and sum(p[1] for p in pairs if p is not None) == count
+            and (count == 0 or bool(pairs))
+        )
+        if not verified:
+            raise UserInputError(
+                f"GSA cannot verify the complete exact {field} population for "
+                f"'{value}'. Its exact-field search truncates values at a colon; "
+                "literal keyword search can also include other field matches, "
+                "and capped or approximate aggregations cannot prove exactness. "
+                "Use keyword_search with the full value to inspect actual rows "
+                "and their scope, or suggest_contains to discover another "
+                "exact value. Do not treat that wider keyword population as "
+                "exact-title or exact-vendor statistics."
+            )
     stats = _extract_stats(data)
     result = {**data, "_stats": stats}
+    if literal_fallback:
+        result["_exact_match_note"] = (
+            "GSA exact-field search truncates colon-containing values. "
+            "Used literal keyword search; the complete, non-approximate "
+            f"{field} aggregation verifies every rate row has the exact value. "
+            "Statistics are unchanged source ceiling rates, not paid prices."
+        )
     return _attach_pagination_flags(result, page=page, page_size=page_size, total=stats.get("total_rates"))
 
 
