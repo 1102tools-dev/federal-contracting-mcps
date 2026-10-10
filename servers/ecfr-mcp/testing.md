@@ -1,5 +1,13 @@
 # eCFR MCP: Testing Record
 
+## October 10 E2E followup (1.1.1)
+
+A fresh hosted 1.1.0 content/usability audit exercised all 13 tools with realistic questions, then repeated 19 source-backed workflow calls on the fixed implementation. It confirmed three defects: comparison to an unavailable snapshot falsely claimed section removal (P1); explicit citation titles were discarded by some navigation/list/change filters (P2); changes-only returned full text for added/removed sections (P3). All three are fixed.
+
+Ten defect regressions failed before their fixes. Two additional recovery checks verify correct parameter guidance and a successful corrected-title followup; all twelve pass through the MCP tool pipeline. Under Python 3.12, the final offline suite passed **322**, with **118 live-gated tests skipped** (**440 collected**). A built 1.1.1 wheel passed the twelve new regressions; wheel/sdist builds, version validation, new-version PyPI guard, and all 13 unchanged hosted tool definitions passed. The complete retained live suite also passed: **432 tests, including all 118 live-gated tests**, in 7m52s. It started before eight final offline citation/recovery checks were added; the final offline run above covers all 322 offline tests, and the final source-backed workflow run verifies the changed behaviors. Skipped offline tests are not counted as live verification.
+
+The original October 1-to-today comparison now rejects the unavailable October 10 date and suggests the latest snapshot (October 7); the corrected October 1-to-7 followup is identical. An actual CAS 9904.407 removal still works and respects changes-only. `2 CFR 200` with default Title 48 rejects the conflict; selecting Title 2 returns the correct Uniform Guidance sections. The audit evidence is preserved in the shared Workspace `Artifacts/mcp-e2e-20261010/ecfr` collection. This record does not claim a new production deployment before release verification.
+
 ## September 2026 throughput validation
 
 See [keyless throughput evidence](../../docs/keyless-throughput.md) for the
