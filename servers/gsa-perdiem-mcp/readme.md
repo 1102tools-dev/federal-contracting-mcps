@@ -8,7 +8,7 @@ Free, open-source MCP server for the GSA Per Diem Rates API. Federal travel lodg
 
 ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network call: they are answered from GSA's published rate, ZIP, and M&IE files bundled in the package. City lookups use the GSA Per Diem API, which resolves city names to rate areas; they need a free api.data.gov key in `PERDIEM_API_KEY`. The hosted version needs no key for any lookup. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through nine rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 573 collected Python regression tests (306 offline, 267 live-gated) covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, 14 round-7 findings, the 1.1.0 rate-area ambiguity fixes, and the 1.2.1 and 1.2.2 content-test corrections. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through ten rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 574 collected Python regression tests (307 offline, 267 live-gated) covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, 14 round-7 findings, the 1.1.0 rate-area ambiguity fixes, and the 1.2.1 and 1.2.2 content-test corrections. See [testing.md](testing.md) for the full testing record.*
 
 ## Local or hosted
 

@@ -1575,14 +1575,16 @@ async def compare_locations(
                     "mie": best["meals"],
                     "max_daily_total": best["lodging_max"] + best["meals"],
                     "seasonal": best["has_seasonal_variation"],
+                    "source": source,
                 })
             elif res["status"] == "no_data":
                 results.append({
                     "location": label,
                     "error": "no rates found" + _no_rates_hint(year),
+                    "source": source,
                 })
             else:
-                entry = {"location": label, **_unresolved_payload(res, city_clean, state_upper)}
+                entry = {"location": label, **_unresolved_payload(res, city_clean, state_upper), "source": source}
                 if "candidates" in entry:
                     entry["candidates"] = [
                         {"destination": c["destination"], "max_daily_total": c["max_daily_total"]}
