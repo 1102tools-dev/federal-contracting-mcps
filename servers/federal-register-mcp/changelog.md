@@ -2,6 +2,8 @@
 
 ## 1.0.14
 
+- Upgrade the deployment-only Wrangler toolchain to 4.149.0, clearing the four high-severity npm audit entries; Worker types and bundle dry-run verified.
+
 - Open-comment answers explicitly report scan completeness and truncation, warn when an unscanned document can close earlier, and preserve FAR Council scan metadata and lower-bound counts. The bounded 500-document scan is unchanged.
 - Correct the live smoke assertion to inspect comment deadlines rather than every date in the serialized answer. Add four completeness regressions and a reproducible 12-question content workflow.
 
