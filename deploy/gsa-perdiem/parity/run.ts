@@ -3,11 +3,12 @@
 // API fixtures on both sides, and compares the answers.
 //
 //   cd servers/gsa-perdiem-mcp && uv sync --frozen --python 3.12
-//   cd deploy/gsa-perdiem && node parity/run.ts [--python-results FILE] [--db FILE]
+//   cd deploy/gsa-perdiem && node parity/run.ts [--python-results FILE] [--corpus FILE] [--db FILE]
 //
 // corpus.json is generated from the package's data and fixtures by
 // build_corpus.py on every run (it is not committed), so a data refresh
-// never leaves it stale.
+// never leaves it stale. --corpus replays a separate findings corpus without
+// regenerating the default; both implementations use that same supplied corpus.
 //
 // Compared per request: HTTP status; for tool calls content[0].text byte for
 // byte, isError, and structuredContent (as JSON); for other methods the whole
@@ -27,9 +28,9 @@ const arg = (name: string) => {
 };
 const PACKAGE = join(ROOT, "servers/gsa-perdiem-mcp");
 const PYTHON = join(PACKAGE, ".venv/bin/python");
-const CORPUS = join(ROOT, "deploy/gsa-perdiem/parity/corpus.json");
+const CORPUS = arg("--corpus") ?? join(ROOT, "deploy/gsa-perdiem/parity/corpus.json");
 const pythonEnv = {...process.env, PYTHONPATH: join(PACKAGE, "src")};
-if (!arg("--python-results")) {
+if (!arg("--python-results") && !arg("--corpus")) {
   execFileSync(PYTHON, [join(ROOT, "deploy/gsa-perdiem/parity/build_corpus.py")], {cwd: PACKAGE, env: pythonEnv, stdio: ["ignore", "ignore", "inherit"]});
 }
 const corpus = JSON.parse(readFileSync(CORPUS, "utf8"));
