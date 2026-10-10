@@ -1,0 +1,47 @@
+{
+  "provenance": "Actual public2.0.5 round3 final corpus115 docs_heat +target_docket_heat; captured-provider followup, not keyed local parity",
+  "document": {
+    "type": "documents",
+    "id": "OSHA-2012-0005-0017",
+    "attributes": {
+      "agencyId": "OSHA",
+      "objectId": "09000064b9490893",
+      "documentType": "Supporting & Related Material",
+      "withdrawn": false,
+      "lastModifiedDate": "2026-08-25T03:26:52Z",
+      "openForComment": false,
+      "withinCommentPeriod": false,
+      "postedDate": "2026-08-24T04:00:00Z",
+      "title": "Supporting Statement for the Information Collection Requirements in the Cadmium in General Industry Standard (29 CFR 1910.1027); Office of Management and Budget (OMB) Control No. 1218-0185 (August 2026)",
+      "docketId": "OSHA-2012-0005",
+      "subtype": "ICR Supporting Statement",
+      "allowLateComments": false
+    }
+  },
+  "docket": {
+    "id": "OSHA-2021-0009",
+    "type": "dockets",
+    "attributes": {
+      "displayProperties": [
+        {
+          "name": "shortTitle",
+          "label": "Short Title",
+          "tooltip": "A combination of letters and or numbers assigned to an agency's regulatory action for purposes of brevity."
+        }
+      ],
+      "keywords": [
+        "Heat Illness",
+        "Heat"
+      ],
+      "modifyDate": "2025-11-25T13:07:53Z",
+      "dkAbstract": "OSHA is proposing to issue a new standard, titled Heat Injury and Illness Prevention in Outdoor and Indoor Work Settings. The standard would apply to all employers conducting outdoor and indoor work in all general industry, construction, maritime, and agriculture sectors where OSHA has jurisdiction, with some exceptions. It would be a programmatic standard that would require employers to create a plan to evaluate and control heat hazards in their workplace. It would more clearly set forth employer obligations and the measures necessary to effectively protect employees from hazardous heat.",
+      "agencyId": "OSHA",
+      "shortTitle": "Heat Injury and Illness Prevention",
+      "title": "Heat Injury and Illness Prevention in Outdoor and Indoor Work Settings",
+      "docketType": "Rulemaking",
+      "rin": "1218-AD39",
+      "subType": "Safety Rulemaking",
+      "objectId": "0b00006484d8cfbd"
+    }
+  }
+}

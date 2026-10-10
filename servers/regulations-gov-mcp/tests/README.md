@@ -1,7 +1,7 @@
 # Test suite map
 
-295 collected tests: 176 offline and 119 live-gated (Python 3.12, 2026-10-10).
-The offline release gate passed all 176; the 119 live tests were skipped.
+298 collected tests: 179 offline and 119 live-gated (Python 3.12, 2026-10-10).
+The offline release gate passed all 179; the 119 live tests were skipped.
 Files are named by the audit round or fix-wave that
 produced them and are append-only history: each maps to a section of
 [../testing.md](../testing.md), which narrates what every round found and
@@ -18,9 +18,10 @@ fixed. That traceability is deliberate; do not consolidate or rename rounds.
 | `test_hosted_throughput.py` | Hosted pacing, budget, and throughput contract | 8 | 0 |
 | `test_round_4.py` | Round 4 property validation and live source audit | 125 | 106 |
 | `test_validation.py` | Foundational input validation and source checks | 51 | 5 |
+| `test_ordinary_recovery_guidance.py` | 2.0.6 ordinary filter/date recovery and unexpected-error preservation | 3 | 0 |
 | `test_deadline_source_guidance.py` | 2.0.5 source-attributed deadline verification and linked notice recovery | 9 | 0 |
 | `test_workflow_content_audit.py` | 2.0.4 workflow recovery and unavailable organizations | 7 | 0 |
-| **Total** | | **295** | **119** |
+| **Total** | | **298** | **119** |
 
 Live tests need `REGULATIONS_LIVE_TESTS=1 + REGULATIONS_GOV_API_KEY`, are paced automatically by `conftest.py` (which
 also resets the cached async client per test so batched live runs cannot hit
@@ -40,3 +41,5 @@ The 2.0.4 content audit also exercised all nine hosted tools separately (33 call
 That hosted coverage does not replace the 119 skipped direct-source tests.
 
 Round 3 adds `test_deadline_source_guidance.py`: nine captured-data regressions for source-attributed dates and linked controlling-deadline verification across four tools. Current candidate: 176 passed, 119 optional live skipped, 295 collected.
+
+2.0.6 installed-wheel suites with MCP SDK 2.0.0 and 2.3.0 each passed179/skipped119,298collected. Original ordinary console errors recover; corrected content followups use an explicitly captured-provider adapter.

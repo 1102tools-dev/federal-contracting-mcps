@@ -8,7 +8,7 @@ Free, open-source MCP server for the Regulations.gov API. Federal rulemaking doc
 
 Hosted: no key. Local: a free api.data.gov key. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through four rounds of integration testing against the live Regulations.gov API, plus a round-7 independent re-audit with live verification. 295 collected regression tests (176 offline, 119 live-gated) covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, 12 round-7 findings, the 1.1.0 hosted-directory fixes (compact results, publisher-key fail-closed), and the 2.0.3 content fixes (Eastern deadlines, posted-count labels, organization lookup, lifecycle subtypes, pagination limits, and comment text), plus 2.0.4 workflow recovery and truthful partial organization results, and 2.0.5 source-attributed deadline verification links. The 2026-10-10 offline run passed 176 tests; 119 live-gated tests were skipped because DEMO_KEY returned HTTP 429. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through four rounds of integration testing against the live Regulations.gov API, plus a round-7 independent re-audit with live verification. 298 collected regression tests (179 offline, 119 live-gated) covering 1 P0 catastrophic bug, 10 P1 silent-wrong-data bugs (including `agency_id=""` returning all 1,951,938 records), 7 P2 validation gaps, 12 round-7 findings, the 1.1.0 hosted-directory fixes (compact results, publisher-key fail-closed), and the 2.0.3 content fixes (Eastern deadlines, posted-count labels, organization lookup, lifecycle subtypes, pagination limits, and comment text), plus 2.0.4 workflow recovery and truthful partial organization results, and 2.0.5 source-attributed deadline verification links. The 2026-10-10 offline run passed 179 tests; 119 live-gated tests were skipped because DEMO_KEY returned HTTP 429. See [testing.md](testing.md) for the full testing record.*
 
 ## Local or hosted
 
@@ -111,3 +111,12 @@ Together these three cover the full regulatory pipeline from proposal through pu
 ## License
 
 MIT
+
+
+The published 2.0.5 Round 3 replay completed 115 actual public questions across
+all nine tools and recovered the conditional OSHA deadline from the linked
+notice. A fresh install with MCP SDK 2.3.0 exposed hidden repair guidance;
+the 2.0.6 candidate preserves anticipated filter/date guidance across SDK
+versions. Both SDK 2.0.0 and 2.3.0 suites pass 179 tests and skip 119 optional
+live checks (298 collected). See [testing.md](testing.md) for separate actual
+console, captured-provider, public, and primary-source evidence.

@@ -47,6 +47,10 @@ from .constants import (
     USER_AGENT,
 )
 
+class UserInputError(ValueError, ToolError):
+    """Anticipated input repair guidance, compatible with helpers and MCP SDKs."""
+
+
 mcp = MCPServer(
     "regulationsgov",
     version=__version__,
@@ -81,9 +85,9 @@ def _as_list(value: Any) -> list[Any]:
 
 def _clamp(value: int, *, field: str, lo: int, hi: int) -> int:
     if value < lo:
-        raise ValueError(f"{field} must be >= {lo}. Got {value}.")
+        raise UserInputError(f"{field} must be >= {lo}. Got {value}.")
     if value > hi:
-        raise ValueError(f"{field} exceeds maximum of {hi}. Got {value}. Paginate instead.")
+        raise UserInputError(f"{field} exceeds maximum of {hi}. Got {value}. Paginate instead.")
     return value
 
 
@@ -172,18 +176,18 @@ def _validate_sort(value: Any, *, field: str, valid_fields: set[str]) -> str | N
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a string like '-postedDate'.")
+        raise UserInputError(f"{field} must be a string like '-postedDate'.")
     s = value.strip()
     if not s:
         return None
     parts = [p.strip() for p in s.split(",")]
     if any(not p for p in parts):
-        raise ValueError(f"{field}={value!r} has an empty entry in the comma list.")
+        raise UserInputError(f"{field}={value!r} has an empty entry in the comma list.")
     for part in parts:
         bare = part[1:] if part.startswith("-") else part
         if bare not in valid_fields:
             sample = ", ".join(sorted(valid_fields))
-            raise ValueError(
+            raise UserInputError(
                 f"{field} entry {part!r} is not a valid sort field. "
                 f"Use one of: {sample} (prefix with '-' for descending; "
                 f"comma-separate for multi-field sorts)."
@@ -196,12 +200,12 @@ def _validate_date_ymd(value: str | None, *, field: str) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a YYYY-MM-DD string. Got {type(value).__name__}.")
+        raise UserInputError(f"{field} must be a YYYY-MM-DD string. Got {type(value).__name__}.")
     s = value.strip()
     if not s:
         return None
     if not _YYYYMMDD_RE.match(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} must be YYYY-MM-DD (e.g. '2026-04-18'). "
             f"ISO 8601 with T/Z is rejected by the API."
         )
@@ -209,7 +213,7 @@ def _validate_date_ymd(value: str | None, *, field: str) -> str | None:
         parts = s.split("-")
         _date(int(parts[0]), int(parts[1]), int(parts[2]))
     except (ValueError, IndexError) as exc:
-        raise ValueError(f"{field}={value!r} is not a valid calendar date: {exc}") from exc
+        raise UserInputError(f"{field}={value!r} is not a valid calendar date: {exc}") from exc
     return s
 
 
@@ -219,12 +223,12 @@ def _validate_datetime_ymdhms(value: str | None, *, field: str) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a datetime string.")
+        raise UserInputError(f"{field} must be a datetime string.")
     s = value.strip()
     if not s:
         return None
     if not _YYYYMMDD_HMS_RE.match(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} must be 'YYYY-MM-DD HH:MM:SS' (space-separated, "
             f"24-hour time, no T or Z). Example: '2026-04-18 14:30:00'. "
             f"ISO 8601 is rejected by the API."
@@ -232,7 +236,7 @@ def _validate_datetime_ymdhms(value: str | None, *, field: str) -> str | None:
     try:
         _datetime.strptime(s, "%Y-%m-%d %H:%M:%S")
     except ValueError as exc:
-        raise ValueError(f"{field}={value!r} is not a valid datetime: {exc}") from exc
+        raise UserInputError(f"{field}={value!r} is not a valid datetime: {exc}") from exc
     return s
 
 
@@ -241,7 +245,7 @@ def _check_date_range(
 ) -> None:
     """Reject a range where the ge bound is after the le bound."""
     if ge and le and ge > le:
-        raise ValueError(
+        raise UserInputError(
             f"{field_pair[0]}={ge!r} is after {field_pair[1]}={le!r}. "
             f"The 'ge' (>=) bound must be <= the 'le' (<=) bound."
         )
@@ -251,17 +255,17 @@ def _validate_search_term(value: str | None, *, field: str = "search_term") -> s
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a string.")
+        raise UserInputError(f"{field} must be a string.")
     # Check raw value for control chars BEFORE strip() eats \n/\r/\t.
     if _CONTROL_CHARS_RE.search(value) or any(c in value for c in ("\n", "\r", "\t")):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} contains control characters. Remove them and retry."
         )
     s = value.strip()
     if not s:
         return None
     if len(s) > _SEARCH_TERM_MAX:
-        raise ValueError(
+        raise UserInputError(
             f"{field} exceeds {_SEARCH_TERM_MAX} chars. Regulations.gov silently "
             f"truncates long searches -- narrow your query first."
         )
@@ -283,23 +287,23 @@ def _validate_agency_id(value: str | None, *, field: str = "agency_id") -> str |
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a string.")
+        raise UserInputError(f"{field} must be a string.")
     s = value.strip()
     if not s:
-        raise ValueError(
+        raise UserInputError(
             f"{field} cannot be empty. An empty agency_id returns ALL "
             f"documents in Regulations.gov (~1.95M). Pass None to skip the "
             f"filter or a valid agency code like 'FAR', 'DARS', 'GSA'."
         )
     tokens = [t.strip() for t in s.split(",")]
     if any(not t for t in tokens):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} has an empty entry in the comma list. "
             f"Use 'FAR,GSA' with no trailing comma."
         )
     for token in tokens:
         if not _AGENCY_ID_RE.match(token):
-            raise ValueError(
+            raise UserInputError(
                 f"{field} entry {token!r} is not a valid agency code. Agency "
                 f"codes are short letter-prefixed strings like 'FAR', 'DARS', "
                 f"'GSA', 'DoD'; comma-separate for multiple agencies."
@@ -321,7 +325,7 @@ def _validate_optional_id(value: str | None, *, field: str) -> str | None:
     if value is None:
         return None
     if isinstance(value, str) and not value.strip():
-        raise ValueError(
+        raise UserInputError(
             f"{field} cannot be empty or whitespace. An empty {field} would "
             f"silently drop the filter and search the entire corpus. Pass "
             f"None to skip the filter."
@@ -339,7 +343,7 @@ def _validate_comment_on_id(value: str | None, *, field: str = "comment_on_id") 
     if s is None:
         return None
     if not _OBJECT_ID_RE.match(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={s!r} looks like a documentId, but the API requires the "
             f"document's hex objectId (e.g. '0900006486531e6b'). Get it from "
             f"get_document_detail or search_documents: it is the "
@@ -357,17 +361,17 @@ def _validate_id(value: Any, *, field: str) -> str:
     (500/301); pre-reject them so callers get a clear error.
     """
     if value is None:
-        raise ValueError(f"{field} is required.")
+        raise UserInputError(f"{field} is required.")
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a string.")
+        raise UserInputError(f"{field} must be a string.")
     # Check raw value for control chars BEFORE strip() eats them.
     if _CONTROL_CHARS_RE.search(value) or any(c in value for c in ("\n", "\r", "\t")):
-        raise ValueError(f"{field}={value!r} contains control characters.")
+        raise UserInputError(f"{field}={value!r} contains control characters.")
     s = value.strip()
     if not s:
-        raise ValueError(f"{field} cannot be empty.")
+        raise UserInputError(f"{field} cannot be empty.")
     if not _ID_SAFE_RE.match(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} contains characters outside [A-Za-z0-9_.-] "
             f"or starts with a non-alphanumeric. Example valid IDs: "
             f"'FAR-2023-0008', 'FAR-2023-0008-0023'."
@@ -634,9 +638,9 @@ async def _fetch(path: str, params: dict[str, Any] | None) -> bytes:
 
 def _validate_page_size(page_size: Any, max_size: int = MAX_TOOL_PAGE_SIZE) -> int:
     if not isinstance(page_size, int) or isinstance(page_size, bool):
-        raise ValueError(f"page_size must be an int {MIN_PAGE_SIZE}-{max_size}.")
+        raise UserInputError(f"page_size must be an int {MIN_PAGE_SIZE}-{max_size}.")
     if page_size > max_size:
-        raise ValueError(
+        raise UserInputError(
             f"page_size exceeds maximum of {max_size}. Got {page_size}. "
             f"Paginate with page_number instead."
         )
@@ -645,7 +649,7 @@ def _validate_page_size(page_size: Any, max_size: int = MAX_TOOL_PAGE_SIZE) -> i
 
 def _validate_page_number(page_number: Any) -> int:
     if not isinstance(page_number, int) or isinstance(page_number, bool):
-        raise ValueError("page_number must be a positive int.")
+        raise UserInputError("page_number must be a positive int.")
     # The published docs say 20 pages, but the live API accepts up to 40
     # (its own 400 at page 1000 says "Maximum value is 40", and page 21
     # returns real data). 40 x 250 = 10,000 reachable records per query.
@@ -1034,7 +1038,7 @@ async def _search_documents(
     agency_id = _validate_agency_id(agency_id, field="agency_id")
     docket_id = _validate_optional_id(docket_id, field="docket_id")
     if within_comment_period is False:
-        raise ValueError(
+        raise UserInputError(
             "within_comment_period=False is not supported by the API "
             "(only 'true' is an acceptable filter value; false returns "
             "HTTP 400). Omit the parameter to search all documents "
@@ -1163,9 +1167,9 @@ async def search_comments(
     page_size = _validate_page_size(page_size)
     page_number = _validate_page_number(page_number)
     if not isinstance(include_organization, bool):
-        raise ValueError("include_organization must be true or false.")
+        raise UserInputError("include_organization must be true or false.")
     if include_organization and page_size > _ORG_LOOKUP_MAX_ROWS:
-        raise ValueError(
+        raise UserInputError(
             f"include_organization=True reads one comment detail per row, so "
             f"page_size is capped at {_ORG_LOOKUP_MAX_ROWS} (got {page_size}). "
             f"Lower page_size and page through."
@@ -1439,15 +1443,15 @@ async def open_comment_periods(
     """
     if agency_ids is not None:
         if not isinstance(agency_ids, list):
-            raise ValueError("agency_ids must be a list of agency codes.")
+            raise UserInputError("agency_ids must be a list of agency codes.")
         if len(agency_ids) == 0:
-            raise ValueError(
+            raise UserInputError(
                 "agency_ids cannot be empty. Pass None to use the default "
                 "procurement-agency list, or a non-empty list of codes like "
                 "['FAR', 'DARS']."
             )
         if len(agency_ids) > 20:
-            raise ValueError(
+            raise UserInputError(
                 f"agency_ids capped at 20 entries (got {len(agency_ids)})."
             )
         validated = []
