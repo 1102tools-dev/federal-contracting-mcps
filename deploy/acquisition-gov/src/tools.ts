@@ -324,11 +324,12 @@ function documentFields(pages: Page[], dates: Record<string, [number, number, st
   const from = pages[0].start;
   const to = pages.at(-1)!.start + cpLen(pages.at(-1)!.text);
   const labeled = (label: string) => {
-    const match = dates[label].find(([start, end]) => start >= from && end <= to);
+    // Snapshots loaded before format 3 have no "Standalone" list.
+    const match = (dates[label] ?? []).find(([start, end]) => start >= from && end <= to);
     return match ? match[2] : null;
   };
   return {
-    issuance_date: labeled("Issued") ?? labeled("Date"),
+    issuance_date: labeled("Issued") ?? labeled("Date") ?? labeled("Standalone"),
     effective_date: labeled("Effective"),
     expiration_date: labeled("Expiration") ?? labeled("Expires"),
     applicability_text: applicability || null,
