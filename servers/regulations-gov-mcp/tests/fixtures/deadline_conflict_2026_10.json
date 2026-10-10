@@ -1,0 +1,40 @@
+{
+  "provenance": {
+    "kind": "Captured hosted2.0.4 fields; provider commentEndDate restored from preserved commentEndDateUtc, not independently keyed raw capture",
+    "case": "docs_heat",
+    "primary_notice": "2025-18670",
+    "primary_dates_text": "The post-hearing comment period that was set by the presiding administrative law judge on July 2, 2025, is extended. Post-hearing comments from individuals and organizations who filed a timely NOITA at the hearing must be submitted by October 30, 2025."
+  },
+  "conflict": {
+    "type": "documents",
+    "id": "OSHA-2021-0009-25576",
+    "attributes": {
+      "agencyId": "OSHA",
+      "objectId": "09000064b8fdc11c",
+      "frDocNum": "2025-18670",
+      "documentType": "Proposed Rule",
+      "withdrawn": false,
+      "commentStartDate": "2025-09-25T04:00:00Z",
+      "lastModifiedDate": "2025-10-11T14:23:09Z",
+      "openForComment": false,
+      "withinCommentPeriod": false,
+      "postedDate": "2025-09-25T04:00:00Z",
+      "title": "Heat Injury and Illness Prevention in Outdoor and Indoor Work Settings",
+      "docketId": "OSHA-2021-0009",
+      "subtype": "Extension of Comment Period",
+      "allowLateComments": false,
+      "commentEndDate": "2025-10-03T03:59:59Z"
+    }
+  },
+  "normal": {
+    "id": "EPA-HQ-OPPT-2015-0436-0048",
+    "attributes": {
+      "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Generic Clearance for TSCA Section 4 Test Rules, Test Orders, Enforceable Consent Agreements, Voluntary Data Submissions, and Exemptions from Testing Requirement (Renewal)",
+      "agencyId": "EPA",
+      "docketId": "EPA-HQ-OPPT-2015-0436",
+      "frDocNum": "2026-16311",
+      "commentEndDate": "2026-10-14T03:59:59Z"
+    }
+  },
+  "normal_expected": "Oct 13, 2026 11:59 PM ET"
+}

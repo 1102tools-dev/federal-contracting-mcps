@@ -738,6 +738,29 @@ def _html_to_text(value: Any) -> Any:
     return _BLANK_LINES_RE.sub("\n\n", text).strip()
 
 
+def _deadline_verification(attrs: dict[str, Any], document_id: Any) -> dict[str, Any]:
+    """Explain what the provider date can establish, without replacing it."""
+    verification: dict[str, Any] = {
+        "status": "source_metadata_only",
+        "controlling_deadline_established": False,
+        "note": (
+            "This date is reported by Regulations.gov metadata, not verified as the "
+            "controlling deadline. Read the notice's DATES text and later extensions "
+            "or corrections; a post-hearing deadline can apply only to eligible filers. "
+            "If those sources are unavailable, the controlling date cannot be established."
+        ),
+    }
+    if document_id:
+        verification["document_url"] = f"https://www.regulations.gov/document/{document_id}"
+    if attrs.get("docketId"):
+        verification["docket_url"] = f"https://www.regulations.gov/docket/{attrs['docketId']}"
+    if attrs.get("frDocNum"):
+        verification["federal_register_notice_url"] = (
+            f"https://www.federalregister.gov/api/v1/documents/{attrs['frDocNum']}.json"
+        )
+    return verification
+
+
 def _compact_record(value: Any) -> Any:
     """Drop JSON:API self-links and empty attributes from one record.
 
@@ -759,6 +782,7 @@ def _compact_record(value: Any) -> Any:
             if eastern:
                 attrs["commentDeadlineEastern"] = eastern
             attrs["commentEndDateUtc"] = raw
+            attrs["commentDeadlineVerification"] = _deadline_verification(attrs, out.get("id"))
         out["attributes"] = attrs
     return out
 
@@ -964,9 +988,12 @@ async def search_documents(
     because the API counts it site-wide. meta.totalElements is the full
     match count.
 
-    Comment deadlines: attributes.commentDeadlineEastern is the closing time
-    in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw
-    commentEndDateUtc is a UTC instant whose date reads one day late.
+    Comment deadlines: attributes.commentDeadlineEastern is the date reported
+    by Regulations.gov metadata in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw
+    commentEndDateUtc is the provider UTC instant. commentDeadlineVerification
+    links to the notice/docket: read DATES, eligibility, and later extensions
+    before treating this metadata date as controlling. If unavailable, the
+    controlling deadline cannot be established.
 
     Page size: 5-100. page_number: 1-40. The API serves 40 pages; when more
     records match, page_limit_note (and truncated=true on page 40) says how
@@ -1075,9 +1102,12 @@ async def get_document_detail(
 
     Set include_attachments=True to get attachment objects with download URLs.
 
-    Comment deadlines: attributes.commentDeadlineEastern is the closing time
-    in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw
-    commentEndDateUtc is a UTC instant whose date reads one day late.
+    Comment deadlines: attributes.commentDeadlineEastern is the date reported
+    by Regulations.gov metadata in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw
+    commentEndDateUtc is the provider UTC instant. commentDeadlineVerification
+    links to the notice/docket: read DATES, eligibility, and later extensions
+    before treating this metadata date as controlling. If unavailable, the
+    controlling deadline cannot be established.
 
     document_id format: FAR-2023-0008-0023
     """
@@ -1384,18 +1414,20 @@ async def open_comment_periods(
     page_size: int = DEFAULT_PAGE_SIZE,
     page_number: int = 1,
 ) -> dict[str, Any]:
-    """Find documents with currently open comment periods.
+    """Find documents Regulations.gov reports as open for comment.
 
     Searches for documents where withinCommentPeriod=true, sorted by
-    soonest closing deadline (ascending commentEndDate), so page 1 holds
-    the deadlines you can still act on. Returns document IDs, titles,
+    soonest reported closing date (ascending commentEndDate). Page 1 holds
+    the earliest metadata dates; verify the notice before planning a submission. Returns document IDs, titles,
     agencies, document types and subtypes, Federal Register document
     numbers, comment deadlines, docket IDs, and the API-true total_open.
-    comment_deadline is the closing time in Eastern time (e.g. 'Oct 22,
-    2026 11:59 PM ET'); comment_end_date_utc is the raw UTC instant, whose
-    date reads one day late.
+    comment_deadline is the Regulations.gov metadata date in Eastern time
+    (e.g. 'Oct 22, 2026 11:59 PM ET'); comment_end_date_utc preserves its UTC
+    instant. comment_deadline_verification links to the notice/docket. Read
+    DATES, eligibility, and later extensions before treating it as controlling;
+    if those sources are unavailable, the controlling date is not established.
     When more documents exist, truncated=true and next_page_number gives
-    the page that continues the list (later pages close later).
+    the page that continues the list (later pages have later reported dates).
 
     page_size: 5-100 documents per page (default 25). page_number: 1-40.
 
@@ -1454,6 +1486,8 @@ async def open_comment_periods(
             "fr_doc_num": attrs.get("frDocNum"),
             "comment_deadline": attrs.get("commentDeadlineEastern"),
             "comment_end_date_utc": attrs.get("commentEndDateUtc"),
+            **({"comment_deadline_verification": attrs["commentDeadlineVerification"]}
+               if "commentDeadlineVerification" in attrs else {}),
             "docket_id": attrs.get("docketId"),
             "url": f"https://www.regulations.gov/document/{item.get('id')}",
         })
@@ -1477,7 +1511,7 @@ async def open_comment_periods(
         first = (page_number - 1) * page_size + 1
         response["truncated_note"] = (
             f"Showing open documents {first}-{first + len(all_docs) - 1} of {api_total}, "
-            f"soonest-closing first; the rest close later. "
+            f"earliest reported dates first; later pages have later metadata dates. "
             + _continue_hint(response, f"more, or a larger page_size (up to {MAX_TOOL_PAGE_SIZE})")
         )
     if undated:
@@ -1503,8 +1537,11 @@ async def far_case_history(
     Register document numbers, dates, and URLs. subtype tells a withdrawal,
     extension, or correction apart from a new proposed rule (a withdrawal
     keeps document_type 'Proposed Rule').
-    comment_deadline is the closing time in Eastern time; comment_end_date_utc
-    is the raw UTC instant, whose date reads one day late. Page 1 also gives
+    comment_deadline is the Regulations.gov metadata date in Eastern time;
+    comment_end_date_utc preserves its UTC instant. comment_deadline_verification
+    links to the notice/docket. Read DATES, eligibility, and later extensions
+    before treating it as controlling; if unavailable, the controlling date
+    cannot be established. Page 1 also gives
     posted_comments for the whole docket: comments posted publicly, not
     comments received (mass-mail duplicates and unposted comments are not
     in it).
@@ -1541,6 +1578,8 @@ async def far_case_history(
             "posted_date": attrs.get("postedDate"),
             "comment_deadline": attrs.get("commentDeadlineEastern"),
             "comment_end_date_utc": attrs.get("commentEndDateUtc"),
+            **({"comment_deadline_verification": attrs["commentDeadlineVerification"]}
+               if "commentDeadlineVerification" in attrs else {}),
             "within_comment_period": attrs.get("withinCommentPeriod"),
             "url": f"https://www.regulations.gov/document/{item.get('id')}",
         })
