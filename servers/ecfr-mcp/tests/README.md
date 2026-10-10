@@ -23,7 +23,7 @@ fixed. That traceability is deliberate; do not consolidate or rename rounds.
 
 Counts above are actual collected pytest cases under Python 3.12, including parameterized cases. The 1.1.2 offline lane passed 323 with 118 skipped under both frozen MCP 2.0.0 and fresh installed-wheel MCP 2.3.0. The preserved 1.1.1 full live run passed all 118 live-gated tests; the new stdio recovery test uses mocked upstream data and makes no government API call.
 
-The 1.1.3 candidate passed 330 offline tests with 118 live skips under both frozen SDK 2.0.0 and fresh installed-wheel SDK 2.3.0; the full live run is pending. Seven new content regressions use saved source fixtures or mocked upstream responses. The actual candidate CLI completed 73 source-backed original/followup calls.
+The 1.1.3 candidate passed 330 offline tests with 118 live skips under both frozen SDK 2.0.0 and fresh installed-wheel SDK 2.3.0; the complete live lane then passed all 448 tests, including all 118 live cases, with no skips (651.26 seconds). Seven new content regressions use saved source fixtures or mocked upstream responses. The actual candidate CLI completed 73 source-backed original/followup calls.
 
 Live tests need `ECFR_LIVE_TESTS=1 (or MCP_LIVE_TESTS=1); keyless API`, are paced automatically by `conftest.py` (which
 also resets the cached async client per test so batched live runs cannot hit
