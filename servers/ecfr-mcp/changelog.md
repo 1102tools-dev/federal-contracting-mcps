@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2
+
+- Expected validation and domain errors now inherit SDK `ToolError` as well as `ValueError`. Fresh MCP SDK 2.3.0 installations preserve the latest-date and corrected-title recovery guidance, matching the frozen hosted SDK 2.0.0 behavior. Ordinary internal/network failures keep their existing exception classes.
+- Added a real stdio regression that repeats the unavailable-date and Title 2 questions, checks the recovery guidance, and completes the corrected followups. No tool metadata changes; dependency support remains unchanged.
+
 ## 1.1.1
 
 - Hosted deployment development tooling upgrades Wrangler to 4.149.0; npm audit drops from four high-severity development-chain findings to zero. No tool metadata change.

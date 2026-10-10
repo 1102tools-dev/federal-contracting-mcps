@@ -13,6 +13,8 @@ never needs to process raw XML. Structure and metadata endpoints return JSON.
 
 from __future__ import annotations
 
+from ._errors import UserInputError
+
 import asyncio
 import difflib
 import hashlib
@@ -94,9 +96,9 @@ def _strip_or_none(value: Any) -> str | None:
 
 def _clamp(value: int, *, field: str, lo: int, hi: int) -> int:
     if value < lo:
-        raise ValueError(f"{field} must be >= {lo}. Got {value}.")
+        raise UserInputError(f"{field} must be >= {lo}. Got {value}.")
     if value > hi:
-        raise ValueError(f"{field} exceeds maximum of {hi}. Got {value}. Paginate instead.")
+        raise UserInputError(f"{field} exceeds maximum of {hi}. Got {value}. Paginate instead.")
     return value
 
 
@@ -104,7 +106,7 @@ def _clamp_str_len(value: str | None, *, field: str, maximum: int) -> str | None
     if value is None:
         return None
     if len(value) > maximum:
-        raise ValueError(f"{field} exceeds maximum length of {maximum}. Got {len(value)}.")
+        raise UserInputError(f"{field} exceeds maximum length of {maximum}. Got {len(value)}.")
     return value
 
 
@@ -149,20 +151,20 @@ def _validate_date_ymd(value: str | None, *, field: str) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a YYYY-MM-DD string. Got {type(value).__name__}.")
+        raise UserInputError(f"{field} must be a YYYY-MM-DD string. Got {type(value).__name__}.")
     s = value.strip()
     if not s:
-        raise ValueError(
+        raise UserInputError(
             f"{field} cannot be empty or whitespace. Use YYYY-MM-DD (e.g. '2026-04-16'), "
             f"or omit to auto-resolve the latest available date."
         )
     if s.lower() == "current":
-        raise ValueError(
+        raise UserInputError(
             f"{field}='current' is not accepted. Use a specific YYYY-MM-DD date, "
             f"or omit {field} to auto-resolve to the latest available."
         )
     if not _YYYYMMDD_RE.match(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be YYYY-MM-DD (e.g. '2026-04-16'). Got {value!r}."
         )
     try:
@@ -170,23 +172,23 @@ def _validate_date_ymd(value: str | None, *, field: str) -> str | None:
         parts = s.split("-")
         _date(int(parts[0]), int(parts[1]), int(parts[2]))
     except (ValueError, IndexError) as exc:
-        raise ValueError(f"{field}={value!r} is not a valid calendar date: {exc}") from exc
+        raise UserInputError(f"{field}={value!r} is not a valid calendar date: {exc}") from exc
     return s
 
 
 def _validate_title_number(value: Any, *, field: str = "title_number") -> int:
     """CFR titles are 1-50."""
     if value is None:
-        raise ValueError(f"{field} is required.")
+        raise UserInputError(f"{field} is required.")
     if isinstance(value, bool):
-        raise ValueError(f"{field} must be an int 1-50, not bool.")
+        raise UserInputError(f"{field} must be an int 1-50, not bool.")
     try:
         n = int(value)
     except (TypeError, ValueError, OverflowError) as exc:
         # OverflowError catches inf/nan float coercion. Round 6 fix.
-        raise ValueError(f"{field} must be an int 1-50. Got {value!r}.") from exc
+        raise UserInputError(f"{field} must be an int 1-50. Got {value!r}.") from exc
     if n < 1 or n > 50:
-        raise ValueError(f"{field} must be between 1 and 50. Got {n}.")
+        raise UserInputError(f"{field} must be between 1 and 50. Got {n}.")
     return n
 
 
@@ -223,7 +225,7 @@ def _check_cited_title(
 ) -> None:
     cited = _cited_title(value)
     if cited is not None and cited != title_number:
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} is in title {cited}, but {title_field} is {title_number}. "
             f"Pass {title_field}={cited}."
         )
@@ -248,16 +250,16 @@ def _coerce_cfr_str(
     if value is None:
         return None
     if isinstance(value, bool):
-        raise ValueError(f"{field} must be a string or integer, not bool.")
+        raise UserInputError(f"{field} must be a string or integer, not bool.")
     if not isinstance(value, (str, int)):
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be a string or integer. Got {type(value).__name__}."
         )
     raw = str(value)
     if "\x00" in raw:
-        raise ValueError(f"{field}={value!r} contains a null byte.")
+        raise UserInputError(f"{field}={value!r} contains a null byte.")
     if any(c in raw for c in ("\n", "\r", "\t")):
-        raise ValueError(f"{field}={value!r} must not contain newline/tab characters.")
+        raise UserInputError(f"{field}={value!r} must not contain newline/tab characters.")
     s = raw.strip()
     if not s:
         return None
@@ -275,7 +277,7 @@ def _coerce_cfr_str(
         if not s:
             return None
     if len(s) > maxlen:
-        raise ValueError(
+        raise UserInputError(
             f"{field} exceeds maximum length of {maxlen} chars. Got {len(s)}."
         )
     return s
@@ -289,7 +291,7 @@ def _validate_chapter(value: Any, *, title_number: int | None = None) -> str | N
     # For title 48 we know every legitimate chapter.
     if title_number == 48 and s not in TITLE_48_CHAPTERS:
         listing = "; ".join(f"{k} = {v.split(' (')[0]}" for k, v in TITLE_48_CHAPTERS.items())
-        raise ValueError(
+        raise UserInputError(
             f"chapter={value!r} is not a valid Title 48 chapter. Title 48 chapters: {listing}. "
             f"For a section or part number, leave chapter out."
         )
@@ -312,10 +314,10 @@ def _validate_agency_slugs(value: list[str] | str | None) -> list[str] | None:
     for item in items:
         s = _strip_or_none(item)
         if s is None:
-            raise ValueError("agency_slugs entries cannot be empty or whitespace.")
+            raise UserInputError("agency_slugs entries cannot be empty or whitespace.")
         s = s.lower()
         if len(s) > 100 or not _SLUG_RE.match(s):
-            raise ValueError(
+            raise UserInputError(
                 f"agency_slugs entry {item!r} is not a valid agency slug "
                 f"(lowercase letters, digits, hyphens). Use list_agencies() to find slugs."
             )
@@ -333,7 +335,7 @@ def _validate_query_safe(value: str, *, field: str) -> str:
     """Pre-reject strings that break our URL construction."""
     for pattern, desc in _INJECT_PATTERNS:
         if pattern.search(value):
-            raise ValueError(f"{field} contains {desc}.")
+            raise UserInputError(f"{field} contains {desc}.")
     return value
 
 
@@ -636,12 +638,12 @@ async def _resolve_date(title_number: int) -> str:
                 reason = "this title is marked 'reserved'" if t.get("reserved") else (
                     "the API did not return up_to_date_as_of"
                 )
-                raise ValueError(
+                raise UserInputError(
                     f"Cannot resolve a date for title {title_number}: {reason}. "
                     f"Reserved or un-issued titles have no published content."
                 )
             return utd
-    raise ValueError(f"Title {title_number} not found in eCFR titles list.")
+    raise UserInputError(f"Title {title_number} not found in eCFR titles list.")
 
 
 # eCFR's version history comes 1,000 versions to a page.
@@ -690,7 +692,7 @@ def _check_title48_chapter(chapter: str | None, identifier: str | None) -> str |
     if owner is None or owner not in TITLE_48_CHAPTERS:
         return chapter
     if chapter and chapter != owner:
-        raise ValueError(
+        raise UserInputError(
             f"{identifier} is in Title 48 chapter {owner} ({TITLE_48_CHAPTERS[owner]}), not "
             f"chapter {chapter}. Leave chapter out; the number is enough."
         )
@@ -732,7 +734,7 @@ async def get_latest_date(title_number: int = 48) -> dict[str, Any]:
             utd = t.get("up_to_date_as_of")
             if not isinstance(utd, str) or not utd.strip():
                 reserved = t.get("reserved")
-                raise ValueError(
+                raise UserInputError(
                     f"Title {title_number} has no available content "
                     f"(reserved={reserved}). Reserved titles are placeholders "
                     f"in the CFR numbering scheme without published regulations."
@@ -745,7 +747,7 @@ async def get_latest_date(title_number: int = 48) -> dict[str, Any]:
                 "latest_issue_date": t.get("latest_issue_date"),
                 "reserved": bool(t.get("reserved", False)),
             }
-    raise ValueError(f"Title {title_number} not found.")
+    raise UserInputError(f"Title {title_number} not found.")
 
 
 @mcp.tool(annotations={"title": "Get CFR Content", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -811,7 +813,7 @@ async def get_cfr_content(
         _check_title48_chapter(chapter, section or subpart or part)
 
     if not any((section, part, subpart, chapter, appendix)):
-        raise ValueError(
+        raise UserInputError(
             "get_cfr_content requires at least one of: section, subpart, part, "
             "chapter, appendix. "
             "Calling without any filter returns the entire title (often 20+ MB)."
@@ -920,7 +922,7 @@ async def get_cfr_structure(
     if depth is not None:
         depth = _clamp(depth, field="depth", lo=1, hi=10)
     if subchapter and not chapter and title_number == 48:
-        raise ValueError(
+        raise UserInputError(
             "subchapter needs chapter in Title 48: every chapter has its own subchapter "
             "A, B, ... (FAR subchapter A is chapter='1', DFARS subchapter A is chapter='2')."
         )
@@ -958,7 +960,7 @@ async def get_cfr_structure(
         if not found:
             listed = f" Appendices here: {', '.join(names[:20])}." if names else (
                 " Give the part or chapter the appendix belongs to.")
-            raise ValueError(f"No appendix named {appendix!r} in this structure.{listed}")
+            raise UserInputError(f"No appendix named {appendix!r} in this structure.{listed}")
         tree = dict(found[0])
     result = dict(tree)
     result["date"] = date
@@ -1054,7 +1056,7 @@ async def get_version_history(
     page = _clamp(page, field="page", lo=1, hi=10_000)
 
     if not any((part, section, subpart)):
-        raise ValueError(
+        raise UserInputError(
             "get_version_history requires at least one of: part, subpart, section."
         )
 
@@ -1069,7 +1071,7 @@ async def get_version_history(
     versions, meta, complete = await _all_versions(title_number, params)
     if not versions:
         what = f"section {section}" if section else (f"subpart {subpart}" if subpart else f"part {part}")
-        raise ValueError(
+        raise UserInputError(
             f"eCFR has no version history for {what} in title {title_number}, so it is "
             f"not in this title (every section in eCFR has at least its 2017-01-01 "
             f"version). Check title_number: for example 200.318 is 2 CFR, not 48 CFR."
@@ -1082,7 +1084,7 @@ async def get_version_history(
     total = len(versions)
     total_pages = max(1, -(-total // per_page))
     if page > total_pages:
-        raise ValueError(f"page={page} does not exist; there are {total_pages} page(s) of {per_page}.")
+        raise UserInputError(f"page={page} does not exist; there are {total_pages} page(s) of {per_page}.")
     shown = []
     for v in versions[(page - 1) * per_page: page * per_page]:
         v = {k: val for k, val in v.items() if k != "title"}
@@ -1215,14 +1217,14 @@ async def search_cfr(
     """
     q = _strip_or_none(query)
     if q is None:
-        raise ValueError("query is required and cannot be empty or whitespace-only.")
+        raise UserInputError("query is required and cannot be empty or whitespace-only.")
     q = _clamp_str_len(q, field="query", maximum=500)
     q = _validate_query_safe(q, field="query")
 
     per_page = _clamp(per_page, field="per_page", lo=1, hi=SEARCH_MAX_PER_PAGE)
     page = _clamp(page, field="page", lo=1, hi=SEARCH_MAX_TOTAL)
     if page * per_page > SEARCH_MAX_TOTAL:
-        raise ValueError(
+        raise UserInputError(
             f"page {page} of {per_page} reaches past result {SEARCH_MAX_TOTAL:,}, eCFR's limit. "
             f"Narrow the search with title, chapter or part filters instead."
         )
@@ -1249,7 +1251,7 @@ async def search_cfr(
     if order_clean is not None:
         order_clean = order_clean.lower()
         if order_clean not in SEARCH_ORDERS:
-            raise ValueError(
+            raise UserInputError(
                 f"order must be one of {sorted(SEARCH_ORDERS)}. Got {order!r}."
             )
     slugs = _validate_agency_slugs(agency_slugs)
@@ -1289,7 +1291,7 @@ async def search_cfr(
         probe = await _get_json("/api/search/v1/results",
                                 {**params, "hierarchy[chapter]": roman, "per_page": "1", "page": "1"})
         if _as_list(_safe_dict(probe).get("results")):
-            raise ValueError(
+            raise UserInputError(
                 f"Title {title} numbers its chapters in Roman numerals, so chapter='{chapter}' "
                 f"finds nothing. Use chapter='{roman}'."
             )
@@ -1459,7 +1461,7 @@ async def _check_agency_slugs(slugs: list[str]) -> None:
         guesses += difflib.get_close_matches(slug, list(known), n=3, cutoff=0.6)
         guesses = list(dict.fromkeys(guesses))[:5]
         hint = f" Did you mean: {', '.join(guesses)}?" if guesses else ""
-        raise ValueError(
+        raise UserInputError(
             f"agency_slugs entry {slug!r} is not an eCFR agency, so the search would "
             f"silently find nothing.{hint} list_agencies() lists every slug."
         )
@@ -1649,7 +1651,7 @@ async def lookup_far_clause(
     """
     section_id = _coerce_cfr_str(section_id, field="section_id", strip_prefixes=True, strip_cites=True)
     if not section_id:
-        raise ValueError(
+        raise UserInputError(
             "section_id is required. Pass a section like '15.305', '52.212-4' or '252.204-7012'. "
             f"Common sections: {', '.join(list(COMMON_FAR_SECTIONS.keys())[:5])}."
         )
@@ -1699,24 +1701,24 @@ async def compare_versions(
     _check_cited_title(section_id, title_number, "section_id")
     section_id = _coerce_cfr_str(section_id, field="section_id", strip_prefixes=True, strip_cites=True)
     if not section_id:
-        raise ValueError(
+        raise UserInputError(
             "section_id is required. Pass a section like '15.305', not a whole part."
         )
     date_before = _validate_date_ymd(date_before, field="date_before")
     date_after = _validate_date_ymd(date_after, field="date_after")
     if date_before is None or date_after is None:
-        raise ValueError("Both date_before and date_after are required YYYY-MM-DD dates.")
+        raise UserInputError("Both date_before and date_after are required YYYY-MM-DD dates.")
     if date_before == date_after:
-        raise ValueError(
+        raise UserInputError(
             f"date_before and date_after are identical ({date_before}); "
             f"there is nothing to compare. Pick two distinct dates."
         )
     if date_before > date_after:
-        raise ValueError(
+        raise UserInputError(
             f"date_before ({date_before}) must be earlier than date_after ({date_after})."
         )
     if date_before < ECFR_EARLIEST_DATE:
-        raise ValueError(
+        raise UserInputError(
             f"date_before ({date_before}) precedes {ECFR_EARLIEST_DATE}. eCFR "
             f"point-in-time history begins {ECFR_EARLIEST_DATE}; earlier "
             f"snapshots do not exist and always return 404."
@@ -1727,7 +1729,7 @@ async def compare_versions(
 
     latest = await _resolve_date(title_number)
     if date_after > latest:
-        raise ValueError(
+        raise UserInputError(
             f"date_after ({date_after}) exceeds the latest available eCFR snapshot "
             f"({latest}) for title {title_number}. Choose a date on or before {latest}; "
             "an unavailable snapshot does not mean the section was removed."
@@ -1752,7 +1754,7 @@ async def compare_versions(
     before = await text_on(date_before)
     after = await text_on(date_after)
     if before.get("present") is False and after.get("present") is False:
-        raise ValueError(
+        raise UserInputError(
             f"Section {section_id} is not in the eCFR text of title {title_number} on "
             f"{date_before} or on {date_after}. Check the section number and title; "
             f"get_version_history(section='{section_id}') lists the dates it existed."
@@ -1891,7 +1893,7 @@ async def list_sections_in_part(
         _check_cited_title(raw, title_number, field)
     part_number = _coerce_cfr_str(part_number, field="part_number", strip_prefixes=True)
     if not part_number:
-        raise ValueError("part_number is required. Pass something like '15' or '252'.")
+        raise UserInputError("part_number is required. Pass something like '15' or '252'.")
     chapter = _validate_chapter(chapter, title_number=title_number)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
     date = _validate_date_ymd(date, field="date")
@@ -1946,7 +1948,7 @@ async def list_sections_in_part(
 
     walk(structure, None)
     if chapter and found_chapter and str(found_chapter[0]) != chapter:
-        raise ValueError(
+        raise UserInputError(
             f"Part {part_number} is in chapter {found_chapter[0]}, not chapter {chapter}. "
             f"Leave chapter out; the part number is enough."
         )
@@ -1965,7 +1967,7 @@ async def list_sections_in_part(
     result["sections"] = entries
     if _xml_text.size_of(result) <= _xml_text.PAGE_CHARS:
         if page != 1:
-            raise ValueError(f"This list fits on one page; page={page} does not exist.")
+            raise UserInputError(f"This list fits on one page; page={page} does not exist.")
         return result
     # Too long to send at once: split the entries into pages.
     budget = _xml_text.PAGE_CHARS - _xml_text.size_of({**result, "sections": []}) - 600
@@ -1979,7 +1981,7 @@ async def list_sections_in_part(
         pages[-1].append(entry)
         used += cost
     if page > len(pages):
-        raise ValueError(f"page={page} does not exist; this list has {len(pages)} pages.")
+        raise UserInputError(f"page={page} does not exist; this list has {len(pages)} pages.")
     result["sections"] = pages[page - 1]
     result["page"] = page
     result["total_pages"] = len(pages)
@@ -2023,9 +2025,9 @@ async def find_far_definition(
     """
     term_clean = _strip_or_none(term)
     if term_clean is None:
-        raise ValueError("term is required and cannot be empty or whitespace-only.")
+        raise UserInputError("term is required and cannot be empty or whitespace-only.")
     if len(term_clean) < 3:
-        raise ValueError(
+        raise UserInputError(
             f"term must be at least 3 characters (got {len(term_clean)}). "
             f"Short terms match too broadly and return junk."
         )
@@ -2033,7 +2035,7 @@ async def find_far_definition(
     max_matches = _clamp(max_matches, field="max_matches", lo=1, hi=100)
     date = _validate_date_ymd(date, field="date")
     if not _definitions.clean_query(term_clean):
-        raise ValueError(f"term={term!r} has no words left to look up.")
+        raise UserInputError(f"term={term!r} has no words left to look up.")
 
     if date is None:
         date = await _resolve_date(48)
@@ -2192,7 +2194,7 @@ async def find_recent_changes(
     """
     since_date = _validate_date_ymd(since_date, field="since_date")
     if since_date is None:
-        raise ValueError("since_date is required (YYYY-MM-DD).")
+        raise UserInputError("since_date is required (YYYY-MM-DD).")
     title = _validate_title_number(title, field="title")
     _check_cited_title(part, title, "part", title_field="title")
     chapter = _validate_chapter(chapter, title_number=title)
@@ -2243,7 +2245,7 @@ async def find_recent_changes(
     total = len(changes)
     total_pages = max(1, -(-total // per_page))
     if page > total_pages:
-        raise ValueError(f"page={page} does not exist; there are {total_pages} page(s) of {per_page}.")
+        raise UserInputError(f"page={page} does not exist; there are {total_pages} page(s) of {per_page}.")
     shown = changes[(page - 1) * per_page: page * per_page]
     summary = {kind: sum(c["change"] == kind for c in changes)
                for kind in ("amended", "removed", "re-issued, no text change")}
