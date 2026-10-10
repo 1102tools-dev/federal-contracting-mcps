@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.7
+
+- Recognize explicitly introduced numbered subtype definitions in FAR 2.101,
+  including individual surety, corporate surety and cosurety. These lookups
+  return complete defining text without claiming the term is absent. A Surety
+  lookup continues to return the entire parent definition and all three types.
+- Round 5 completed new research coverage across all 13 tools and twelve titles.
+  The actual installed candidate passed 95 research calls and source comparisons;
+  twelve additional source checks pass. Both SDK lanes pass 343 tests with
+  118 explicit live skips (461 collected). Actual publication acceptance remains
+  release-owner controlled.
+
 ## 1.1.6
 
 - Expected missing-source HTTP 404 errors preserve actionable recovery guidance through fresh MCP SDK installations. Legacy section questions can proceed to history, available dated text and removal comparisons. Direct RuntimeError compatibility remains; unexpected failures keep their existing classification.

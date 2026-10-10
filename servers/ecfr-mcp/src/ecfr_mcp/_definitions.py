@@ -35,6 +35,11 @@ _QUERY_NOISE = re.compile(
     re.IGNORECASE,
 )
 _QUERY_TAIL = re.compile(r"(?:\s+(?:means|is\s+defined\s+as|meaning))+\s*[—–:-]*\s*$", re.IGNORECASE)
+# An explicitly introduced list of types can define names without italic leads,
+# as Surety does. Ordinary numbered requirements are not such definitions.
+_TYPES = re.compile(r"\btypes\b.*\bare as follows:\s*$", re.IGNORECASE)
+_TYPE_LEAD = re.compile(r"^\((\d+)\)\s+(?:An?\s+)?([A-Za-z][A-Za-z '-]*?)\s+(?:is|means)\s", re.IGNORECASE)
+_NUMBERED = re.compile(r"^\((\d+)\)\s")
 
 
 def key(text: str) -> str:
@@ -112,6 +117,22 @@ def index_definitions(paragraphs: list[str]) -> list[dict[str, Any]]:
                            "acronyms": acronyms, "start": i, "end": i + 1})
         elif blocks:
             blocks[-1]["end"] = i + 1
+    # Keep the parent's complete block, and separately index each explicit
+    # subtype through the next sibling. A parent query still returns all types.
+    subtypes: list[dict[str, Any]] = []
+    for block in blocks:
+        if not _TYPES.search(paragraphs[block["start"]]):
+            continue
+        for i in range(block["start"] + 1, block["end"]):
+            lead = _TYPE_LEAD.match(paragraphs[i])
+            if not lead:
+                continue
+            end = next((j for j in range(i + 1, block["end"])
+                        if _NUMBERED.match(paragraphs[j])), block["end"])
+            name = lead.group(2)
+            subtypes.append({"term": name, "names": [name], "acronyms": [],
+                             "start": i, "end": end})
+    blocks.extend(subtypes)
     for block in blocks:
         keys = set()
         for name in block["names"]:

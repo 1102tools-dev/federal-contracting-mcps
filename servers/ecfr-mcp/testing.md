@@ -1,5 +1,17 @@
 # eCFR MCP: Testing Record
 
+## Content research round 5 (1.1.7 candidate, October 10, 2026)
+
+A new ordinary and power-user corpus covered all 13 tools across 12 titles: SNAP income and deductions, consumer energy definitions, national-bank BSA programs, securities antifraud, FDA nutrition and prescription-device labeling, ITAR technical-data renumbering, FHA property titles, business-expense deductions, ADA service animals, FERPA access and disclosure, VA reasonable doubt, and FAR ethics, suspension, progress payments, definitions and travel costs. An uncached install by name from official PyPI selected published 1.1.6 and SDK 2.3.0. Its actual console executable and the public service each completed 54 originals and 39 useful followups: 93 valid calls each. All shared content agreed; 92 answers matched exactly and one search response differed only in relevance scores. Neither surface returned a wire error. The public service retained release SHA `4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`.
+
+One new P2 was confirmed. Looking up individual surety returned its defining sentence as a mention but falsely said FAR 2.101 does not define it; sibling corporate-surety and cosurety followups reproduced the same problem. Fresh official XML explicitly defines all three numbered types under Surety. The candidate recognizes explicit numbered subtype definitions while preserving the complete parent block and unrelated mentions and numbered conditions. Three meaningful regression cases fail on the published package and two controls pass; all five pass on the candidate. An existing census now includes the unchanged 253 italic lead definitions plus the three types, retaining its complete per-name and per-block assertions.
+
+Fresh primary capture covered 66 unique official URLs, all HTTP 200; a separate targeted Surety confirmation has the same URL and bytes as the captured 2.101 source. Each published surface's 93 source comparisons has 90 passes and the three confirmed subtype failures. Twelve additional independent checks pass for capture hashes, fallback defining text, FDA graphics, editorial notes and ordered table rows with footnote associations, and complete FERPA access-subpart identities and ordered text. Text coverage includes all current and historical FDA pages, table cells and headers, footnote associations, ITAR search continuations and all 86 recent-change records. Comparisons use history-discovered dates for the ITAR citation's changed purpose, a BSA non-substantive republication, FDA substantive amendments and an available 2016 securities snapshot. Initial local comparison assumptions about heading strings, tied correction dates and separate legal-authority blocks were corrected using retained captures; those traces are not product findings or additional source requests. One initial direct capture omitted required compression and received 406; the corrected compressed capture succeeded and the rejected request is excluded.
+
+Python 3.12 collected 461 tests. Frozen SDK 2.0.0 and fresh installed candidate-wheel SDK 2.3.0 each passed 343 with 118 explicit live skips. Both 13-tool contracts, consistent version surfaces, all 12 installed/wheel/source Python modules, wheel/sdist build and the new-version PyPI guard pass. No new full live-suite run is claimed. The actual installed candidate console completed 95 research calls with no wire errors. All 95 primary-source comparisons pass, including the two extra natural subtype followups. Of the 93 shared baseline calls, 90 substantive answers remain unchanged and only the three intended subtype answers change. The twelve additional primary checks also pass. Publication and final actual published 1.1.7 acceptance remain release-owner gates. Evidence: `Artifacts/mcp-e2e-20261010/round5/ecfr`.
+
+The available snapshots are October 7 or 8 by title, rather than the October 10 audit date. Historical text availability remains title-, section- and date-specific; available 2016 text is confirmed directly without assuming a universal floor. FDA graphics are preserved as links with a warning, not reconstructed as text. The bounded FAR definition fallback and the sampled regulation scopes do not establish comprehensive coverage of the CFR. No additional confirmed content finding or unresolved content blocker was found in this completed new corpus.
+
 ## Published round 4 verification (1.1.6, October 10, 2026)
 
 Scoped release workflow `38083173160` completed successfully at source `4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`. A new Python 3.12 environment installed eCFR 1.1.6 uncached by name from official PyPI, selecting MCP SDK 2.3.0. Its first attempt preceded simple-index propagation and is preserved/excluded; the second succeeded without a candidate substitute. Actual imports came from that environment's site-packages. Both initialize responses reported 1.1.6, the public health response matched the release SHA, both 13-tool contracts matched the reviewed baseline, and all 12 installed/official-wheel Python modules matched exact reviewed source. The official wheel SHA-256 matched PyPI metadata.
@@ -117,12 +129,12 @@ All 13 tools kept their names. No privacy promise or cache time changed.
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across eight audit rounds. Rounds 1-7 surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. Round 8 (1.1.0, 2026-10-10) was a six-agent bug hunt against eCFR's own data plus a 47-question everyday-use pass; it found the text parser, the definition finder and eCFR's search index were the sources of 18 P2 and about 20 P3 problems, all fixed. The current source collects 456 regression tests (338 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
+This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across eight audit rounds. Rounds 1-7 surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. Round 8 (1.1.0, 2026-10-10) was a six-agent bug hunt against eCFR's own data plus a 47-question everyday-use pass; it found the text parser, the definition finder and eCFR's search index were the sources of 18 P2 and about 20 P3 problems, all fixed. The current source collects 461 regression tests (343 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 13 |
-| Total regression tests | 456 (338 offline, 118 live-gated) |
+| Total regression tests | 461 (343 offline, 118 live-gated) |
 | Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 2 |
 | P1 silent-wrong-data bugs found and fixed | 26 |
@@ -130,8 +142,8 @@ This Model Context Protocol server exposes the eCFR (Electronic Code of Federal 
 | P3 cleanup items found and fixed | 12 |
 | Round 6 external re-audit findings, fixed in 1.0.2 | 12 (2 high, 5 medium, 5 low) |
 | Round 8 bug hunt findings, fixed in 1.1.0 | 18 P2, about 20 P3, plus 6 everyday-use fixes |
-| Source package version | 1.1.6 |
-| PyPI status | Published 1.1.6; actual official installed CLI and public service verified |
+| Source package version | 1.1.7 candidate |
+| PyPI status | Published 1.1.6 previously verified; candidate 1.1.7 publication and final acceptance pending |
 
 ## 1.0.4 Safety Release Verification
 
