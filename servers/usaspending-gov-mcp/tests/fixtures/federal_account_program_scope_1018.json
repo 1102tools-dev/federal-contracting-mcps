@@ -1,0 +1,550 @@
+{
+  "question": "Which program activities did the Energy Science account fund in FY2024, and can I see the complete list?",
+  "affected_version": "1.0.17",
+  "account_code": "089-0222",
+  "account_id": 5778,
+  "requested_fiscal_year": 2024,
+  "original_output": {
+    "results": [
+      {
+        "code": "656PQBGYSCE",
+        "name": "AMERICAN SCIENCE CLOUD (PL 119-21)",
+        "type": "PARK"
+      },
+      {
+        "code": "656PQBGYSAD",
+        "name": "SCIENCE",
+        "type": "PARK"
+      },
+      {
+        "code": "63YPT7L1YUJ",
+        "name": "SCIENCE PROGRAMS",
+        "type": "PARK"
+      },
+      {
+        "code": "5ZCQYAMXC7R",
+        "name": "SCIENCE (REIMBURSABLE)",
+        "type": "PARK"
+      },
+      {
+        "code": "5ZCQYAMXBYG",
+        "name": "SCIENCE PROGRAM DIRECTION",
+        "type": "PARK"
+      },
+      {
+        "code": "0801",
+        "name": "SCIENCE (REIMBURSABLE)",
+        "type": "PAC/PAN"
+      },
+      {
+        "code": "0072",
+        "name": "MATERIAL MANAGEMENT AND MINIMIZATION",
+        "type": "PAC/PAN"
+      },
+      {
+        "code": "0014",
+        "name": "ACCELERATOR R&D AND PRODUCTION",
+        "type": "PAC/PAN"
+      },
+      {
+        "code": "0013",
+        "name": "ISOTOPE R&D AND PRODUCTION",
+        "type": "PAC/PAN"
+      },
+      {
+        "code": "0012",
+        "name": "SMALL BUSINESS TECHNOLOGY TRANSFER",
+        "type": "PAC/PAN"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "total": 25,
+      "limit": 10,
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false
+    }
+  },
+  "source_captures": [
+    {
+      "url": "https://api.usaspending.gov/api/v2/federal_accounts/089-0222/program_activities/?page=1&limit=10",
+      "params": {
+        "page": 1,
+        "limit": 10
+      },
+      "status": 200,
+      "raw": {
+        "results": [
+          {
+            "code": "656PQBGYSCE",
+            "name": "AMERICAN SCIENCE CLOUD (PL 119-21)",
+            "type": "PARK"
+          },
+          {
+            "code": "656PQBGYSAD",
+            "name": "SCIENCE",
+            "type": "PARK"
+          },
+          {
+            "code": "63YPT7L1YUJ",
+            "name": "SCIENCE PROGRAMS",
+            "type": "PARK"
+          },
+          {
+            "code": "5ZCQYAMXC7R",
+            "name": "SCIENCE (REIMBURSABLE)",
+            "type": "PARK"
+          },
+          {
+            "code": "5ZCQYAMXBYG",
+            "name": "SCIENCE PROGRAM DIRECTION",
+            "type": "PARK"
+          },
+          {
+            "code": "0801",
+            "name": "SCIENCE (REIMBURSABLE)",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0072",
+            "name": "MATERIAL MANAGEMENT AND MINIMIZATION",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0014",
+            "name": "ACCELERATOR R&D AND PRODUCTION",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0013",
+            "name": "ISOTOPE R&D AND PRODUCTION",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0012",
+            "name": "SMALL BUSINESS TECHNOLOGY TRANSFER",
+            "type": "PAC/PAN"
+          }
+        ],
+        "page_metadata": {
+          "page": 1,
+          "total": 25,
+          "limit": 10,
+          "next": 2,
+          "previous": null,
+          "hasNext": true,
+          "hasPrevious": false
+        }
+      },
+      "transport_response_sha256": "aadef27260834c7250270c8215d210963de07d3e33ac2612d2659e6caeb9ef43"
+    },
+    {
+      "url": "https://api.usaspending.gov/api/v2/federal_accounts/089-0222/program_activities/?page=2&limit=10",
+      "params": {
+        "page": 2,
+        "limit": 10
+      },
+      "status": 200,
+      "raw": {
+        "results": [
+          {
+            "code": "0012",
+            "name": "SMALL BUSINESS TECHNOLOGY TRANSFER RESEARCH",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0011",
+            "name": "SMALL BUSINESS INNOVATION RESEARCH",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0010",
+            "name": "SAFEGUARDS AND SECURITY",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0009",
+            "name": "WORKFORCE DEVELOPMENT FOR TEACHERS AND SCIENTISTS",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0008",
+            "name": "SCIENCE PROGRAM DIRECTION",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0007",
+            "name": "SCIENCE LABORATORIES INFRASTRUCTURE",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0006",
+            "name": "FUSION ENERGY SCIENCES",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0005",
+            "name": "NUCLEAR PHYSICS",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0004",
+            "name": "HIGH ENERGY PHYSICS",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0003",
+            "name": "BIOLOGICAL AND ENVIRONMENTAL RESEARCH",
+            "type": "PAC/PAN"
+          }
+        ],
+        "page_metadata": {
+          "page": 2,
+          "total": 25,
+          "limit": 10,
+          "next": 3,
+          "previous": 1,
+          "hasNext": true,
+          "hasPrevious": true
+        }
+      },
+      "transport_response_sha256": "c1a494fb700b3eda458bfbfbf37c72657e41466cde7aff5de7c2868e7c42af18"
+    },
+    {
+      "url": "https://api.usaspending.gov/api/v2/federal_accounts/089-0222/program_activities/?page=3&limit=10",
+      "params": {
+        "page": 3,
+        "limit": 10
+      },
+      "status": 200,
+      "raw": {
+        "results": [
+          {
+            "code": "0002",
+            "name": "ADVANCED SCIENTIFIC COMPUTING RESEARCH",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0001",
+            "name": "BASIC ENERGY SCIENCES",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0000",
+            "name": "UNKNOWN",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0000",
+            "name": "UNKNOWN/OTHER",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0000",
+            "name": "UNKNOWN/OTHER",
+            "type": "PARK"
+          }
+        ],
+        "page_metadata": {
+          "page": 3,
+          "total": 25,
+          "limit": 10,
+          "next": null,
+          "previous": 2,
+          "hasNext": false,
+          "hasPrevious": true
+        }
+      },
+      "transport_response_sha256": "09114abea578ca6bd651d55fd49e3de64c260f8c2c33b71e61777e2d6a45ea3e"
+    },
+    {
+      "url": "https://api.usaspending.gov/api/v2/federal_accounts/089-0222/program_activities/?page=1&limit=100",
+      "params": {
+        "page": 1,
+        "limit": 100
+      },
+      "status": 200,
+      "raw": {
+        "results": [
+          {
+            "code": "656PQBGYSCE",
+            "name": "AMERICAN SCIENCE CLOUD (PL 119-21)",
+            "type": "PARK"
+          },
+          {
+            "code": "656PQBGYSAD",
+            "name": "SCIENCE",
+            "type": "PARK"
+          },
+          {
+            "code": "63YPT7L1YUJ",
+            "name": "SCIENCE PROGRAMS",
+            "type": "PARK"
+          },
+          {
+            "code": "5ZCQYAMXC7R",
+            "name": "SCIENCE (REIMBURSABLE)",
+            "type": "PARK"
+          },
+          {
+            "code": "5ZCQYAMXBYG",
+            "name": "SCIENCE PROGRAM DIRECTION",
+            "type": "PARK"
+          },
+          {
+            "code": "0801",
+            "name": "SCIENCE (REIMBURSABLE)",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0072",
+            "name": "MATERIAL MANAGEMENT AND MINIMIZATION",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0014",
+            "name": "ACCELERATOR R&D AND PRODUCTION",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0013",
+            "name": "ISOTOPE R&D AND PRODUCTION",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0012",
+            "name": "SMALL BUSINESS TECHNOLOGY TRANSFER",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0012",
+            "name": "SMALL BUSINESS TECHNOLOGY TRANSFER RESEARCH",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0011",
+            "name": "SMALL BUSINESS INNOVATION RESEARCH",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0010",
+            "name": "SAFEGUARDS AND SECURITY",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0009",
+            "name": "WORKFORCE DEVELOPMENT FOR TEACHERS AND SCIENTISTS",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0008",
+            "name": "SCIENCE PROGRAM DIRECTION",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0007",
+            "name": "SCIENCE LABORATORIES INFRASTRUCTURE",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0006",
+            "name": "FUSION ENERGY SCIENCES",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0005",
+            "name": "NUCLEAR PHYSICS",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0004",
+            "name": "HIGH ENERGY PHYSICS",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0003",
+            "name": "BIOLOGICAL AND ENVIRONMENTAL RESEARCH",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0002",
+            "name": "ADVANCED SCIENTIFIC COMPUTING RESEARCH",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0001",
+            "name": "BASIC ENERGY SCIENCES",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0000",
+            "name": "UNKNOWN",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0000",
+            "name": "UNKNOWN/OTHER",
+            "type": "PAC/PAN"
+          },
+          {
+            "code": "0000",
+            "name": "UNKNOWN/OTHER",
+            "type": "PARK"
+          }
+        ],
+        "page_metadata": {
+          "page": 1,
+          "total": 25,
+          "limit": 100,
+          "next": null,
+          "previous": null,
+          "hasNext": false,
+          "hasPrevious": false
+        }
+      },
+      "transport_response_sha256": "8c5177daccee8ceaf71a235ef0afc13a1e4f8d64607ccae6a0c95116b71ae606"
+    }
+  ],
+  "full_programs": [
+    {
+      "code": "656PQBGYSCE",
+      "name": "AMERICAN SCIENCE CLOUD (PL 119-21)",
+      "type": "PARK"
+    },
+    {
+      "code": "656PQBGYSAD",
+      "name": "SCIENCE",
+      "type": "PARK"
+    },
+    {
+      "code": "63YPT7L1YUJ",
+      "name": "SCIENCE PROGRAMS",
+      "type": "PARK"
+    },
+    {
+      "code": "5ZCQYAMXC7R",
+      "name": "SCIENCE (REIMBURSABLE)",
+      "type": "PARK"
+    },
+    {
+      "code": "5ZCQYAMXBYG",
+      "name": "SCIENCE PROGRAM DIRECTION",
+      "type": "PARK"
+    },
+    {
+      "code": "0801",
+      "name": "SCIENCE (REIMBURSABLE)",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0072",
+      "name": "MATERIAL MANAGEMENT AND MINIMIZATION",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0014",
+      "name": "ACCELERATOR R&D AND PRODUCTION",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0013",
+      "name": "ISOTOPE R&D AND PRODUCTION",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0012",
+      "name": "SMALL BUSINESS TECHNOLOGY TRANSFER",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0012",
+      "name": "SMALL BUSINESS TECHNOLOGY TRANSFER RESEARCH",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0011",
+      "name": "SMALL BUSINESS INNOVATION RESEARCH",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0010",
+      "name": "SAFEGUARDS AND SECURITY",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0009",
+      "name": "WORKFORCE DEVELOPMENT FOR TEACHERS AND SCIENTISTS",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0008",
+      "name": "SCIENCE PROGRAM DIRECTION",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0007",
+      "name": "SCIENCE LABORATORIES INFRASTRUCTURE",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0006",
+      "name": "FUSION ENERGY SCIENCES",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0005",
+      "name": "NUCLEAR PHYSICS",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0004",
+      "name": "HIGH ENERGY PHYSICS",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0003",
+      "name": "BIOLOGICAL AND ENVIRONMENTAL RESEARCH",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0002",
+      "name": "ADVANCED SCIENTIFIC COMPUTING RESEARCH",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0001",
+      "name": "BASIC ENERGY SCIENCES",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0000",
+      "name": "UNKNOWN",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0000",
+      "name": "UNKNOWN/OTHER",
+      "type": "PAC/PAN"
+    },
+    {
+      "code": "0000",
+      "name": "UNKNOWN/OTHER",
+      "type": "PARK"
+    }
+  ],
+  "fy_snapshot": {
+    "results": {
+      "outlay": 8750765853.13,
+      "budget_authority": 9599660322.2,
+      "obligated": 9281790861.2,
+      "unobligated": 317869461.0,
+      "balance_brought_forward": 365613657.48,
+      "other_budgetary_resources": 727344919.72,
+      "appropriations": 8506701745.0,
+      "name": "Science, Energy Programs, Energy"
+    }
+  },
+  "official_source_commit": "03b9e2554837998c4c261c65e2947dc79f23855a"
+}

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.18
+
+- Disclose that federal-account program activities span all reported years, contain no dollar amounts and do not apply a requested fiscal year.
+- Retrieve program-list pages internally, up to 2,000 records, with explicit completeness; preserve source codes, names and types and existing tool arguments.
+- Correct catalog guidance for agency budgetary resources (no mandatory/discretionary split) and federal-account default FY (latest available, not necessarily current).
+- Add three captured-source regressions: two fail before, all three pass corrected, with unchanged single-year account financial amounts. Full suite: 1,930 passed, 379 skipped (2,309 collected).
+
 ## 1.0.17
 
 - Clarify grouped FFATA totals as cumulative reported subawards for matching primes, not fiscal-period subaward rankings; add a requested-window scope note and dated-report recovery guidance.

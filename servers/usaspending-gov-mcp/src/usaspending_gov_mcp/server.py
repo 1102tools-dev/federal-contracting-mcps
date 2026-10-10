@@ -2142,8 +2142,10 @@ def _validate_fy(fy: int | str | None, *, field: str = "fiscal_year") -> str | N
 async def get_agency_budgetary_resources(toptier_code: str) -> dict[str, Any]:
     """Get an agency's budgetary resources by fiscal year.
 
-    Returns total budgetary resources, obligations, outlays, and discretionary
-    vs mandatory breakdown for each fiscal year on file.
+    Returns agency budgetary resources, obligations and outlays for each
+    fiscal year on file, plus government-wide budgetary resources and the
+    agency's obligations by reported fiscal period. This endpoint does not
+    provide a discretionary-versus-mandatory breakdown.
     """
     toptier_code = _normalize_toptier(toptier_code)
     return await _get(f"/api/v2/agency/{toptier_code}/budgetary_resources/")
@@ -2796,7 +2798,10 @@ async def list_federal_accounts(
 ) -> dict[str, Any]:
     """List Treasury federal accounts (TAS) with budgetary resources.
 
-    keyword filters by account name or AID. fiscal_year defaults to current FY.
+    keyword filters by account name or AID. fiscal_year controls the reported
+    budgetary-resource values, not which account rows are included. When
+    omitted, the source uses its latest available fiscal year, which may
+    differ from the current fiscal year; check the returned fy value.
     sort is a dict like {'field':'budgetary_resources','direction':'desc'}.
     """
     if page < 1:
@@ -2845,15 +2850,70 @@ async def get_federal_account_program_activities(
     account_code: str,
     fiscal_year: int | str | None = None,
 ) -> dict[str, Any]:
-    """Get the program activities funded under a federal account."""
+    """List program activity codes and names associated with a federal account.
+
+    The source lists distinct programs across all reported fiscal years; it
+    has no fiscal-year filter and includes no dollar amounts. fiscal_year is
+    retained for compatibility, but does not filter this list. The response
+    explicitly discloses any requested year that was not applied.
+
+    Retrieves source pages internally, up to 2,000 records, and reports whether
+    the list is complete. For single-year account resources and obligations,
+    use get_federal_account_fy_snapshot with the numeric account_id returned
+    by list_federal_accounts. get_agency_program_activities provides fiscal-year
+    program amounts for an agency, not for this individual federal account.
+    """
     account_code = _validate_tas(account_code)
     fy = _validate_fy(fiscal_year)
-    params: dict[str, Any] = {}
-    if fy:
-        params["fiscal_year"] = fy
-    return await _get(
-        f"/api/v2/federal_accounts/{account_code}/program_activities/", params=params,
+    results: list[dict[str, Any]] = []
+    first: dict[str, Any] | None = None
+    complete = False
+    for page in range(1, 21):
+        part = await _get(
+            f"/api/v2/federal_accounts/{account_code}/program_activities/",
+            params={"page": page, "limit": 100},
+        )
+        if "results" not in part:
+            return part
+        if first is None:
+            first = part
+        results.extend(part["results"])
+        metadata = part.get("page_metadata", {})
+        if not metadata.get("hasNext"):
+            complete = True
+            break
+    assert first is not None
+    result = {**first, "results": results}
+    if page > 1:
+        result["page_metadata"] = {
+            **first["page_metadata"], "page": 1, "limit": len(results),
+            "next": None if complete else metadata.get("next"),
+            "hasNext": not complete,
+        }
+    result.update(
+        requested_fiscal_year=fy,
+        fiscal_year_filter_applied=False,
+        program_activity_scope="all_reported_fiscal_years",
+        program_activity_list_complete=complete,
+        source_pages_retrieved=page,
     )
+    note = (
+        "Program activity codes and names span all reported fiscal years; "
+        "this source does not filter by fiscal year or return program dollar amounts. "
+    )
+    if fy:
+        note += f"The requested FY{fy} was not applied to this list. "
+    if complete:
+        note += f"The complete source list contains {len(results)} records. "
+    else:
+        note += "Only the first 2,000 source records were retrieved; the list is incomplete. "
+    note += (
+        "For single-year account resources and obligations, use "
+        "get_federal_account_fy_snapshot with the numeric account_id from "
+        "list_federal_accounts. get_agency_program_activities returns "
+        "fiscal-year amounts for the whole agency, not this account."
+    )
+    return _add_note(result, note)
 
 
 @mcp.tool(annotations={"title": "Get Federal Account Fiscal Year Snapshot", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})

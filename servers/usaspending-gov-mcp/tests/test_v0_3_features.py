@@ -899,7 +899,8 @@ def test_get_federal_account_prog_activities_path(monkeypatch):
     asyncio.run(_call("get_federal_account_program_activities", account_code="097-0100", fiscal_year=2026))
     path, params = mock.calls[-1]
     assert path == "/api/v2/federal_accounts/097-0100/program_activities/"
-    assert params["fiscal_year"] == "2026"
+    # The documented source route has paging but no fiscal-year filter.
+    assert params == {"page": 1, "limit": 100}
 
 
 def test_get_federal_account_fy_snapshot_with_year(monkeypatch):
@@ -1749,7 +1750,14 @@ def test_q02_response_passthrough(tool, kwargs, _, monkeypatch):
     mock = _make_post_mock(sentinel) if _is_post(tool) else _make_get_mock(sentinel)
     _patch_for(tool, mock, monkeypatch)
     r = asyncio.run(_call(tool, **kwargs))
-    assert _payload(r) == sentinel
+    out = _payload(r)
+    if tool == "get_federal_account_program_activities":
+        # The complete-list wrapper adds scope/completeness facts while
+        # preserving the source's original fields and program records.
+        assert {key: out[key] for key in sentinel} == sentinel
+        assert out["program_activity_list_complete"] is True
+    else:
+        assert out == sentinel
 
 
 # ---------------------------------------------------------------------------
