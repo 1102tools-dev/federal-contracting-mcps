@@ -8,7 +8,9 @@ Free, open-source MCP server for BLS Occupational Employment and Wage Statistics
 
 No API key and no daily limit. The package bundles the current OEWS release (May 2025 estimates, published by BLS on May 15, 2026) as a read-only database built from BLS's published flat files, so every answer is local and each result cites the BLS release, publication date, retrieval date, and source file. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through a 5-round retroactive live audit with a real BLS API key after the initial smoke test reported zero bugs, then round 7's full-source re-audit and round 9's source-backed content corrections. 295 collected regression tests (294 offline, 1 live parity check against the BLS API), covering the 1 P0 usability-breaking bug (SOC format), 10 P1 silent-wrong-data bugs, 12 P1 response-shape crash paths, and 7 P2 validation gaps fixed in that audit. See [testing.md](testing.md) for the full testing record.*
+Version **1.1.4** preserves BLS publication footnotes when a requested wage measure has no numeric value. Teacher hourly and performer annual comparisons explain the alternate published measure and suggest a useful annual or hourly followup. Topcoded wages retain BLS's published lower bound; the server does not invent an exact wage or annualize hourly-only occupations.
+
+The current suite has **298 collected tests: 297 passed and one optional live BLS API parity test skipped** in both frozen and fresh dependency environments. After publishing 1.1.4, a fresh official PyPI installation and the public service each completed a separate 46-question corpus covering all eight tools, source values, IGCE arithmetic and useful followups. Twenty sampled current BLS API cells and footnotes matched the bundled source. The native Worker passed 31 tests; Python/Worker parity covered 227 cases with zero unexpected differences. See [testing.md](testing.md) for the historical audits, fixes and release checks.
 
 ## Local or hosted
 
@@ -16,7 +18,7 @@ No API key and no daily limit. The package bundles the current OEWS release (May
 |---|---|---|
 | [Local setup](#installation) | [Install](https://claude.ai/directory/bls-oews-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6ab872bf5360819186af0917c923e57e) |
 
-- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
+- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. Answers come from the bundled BLS database, with no government API calls or request limits. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
 - **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#bls-oews)
