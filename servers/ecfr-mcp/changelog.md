@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.5
+
+- Version history now sorts each section chronologically before pagination, preserving the advertised oldest-first timeline even when eCFR returns source records out of order. A saved Section 508 source fixture checks the original timeline and page followups.
+- Comparisons now use available historical XML before 2017, including the source-backed Section 508 December 2016 snapshot. An unavailable older snapshot produces recovery guidance rather than a false section addition/removal.
+- History and comparison discovery guidance reflects section-specific metadata/text availability instead of a false global 2017 floor. Two compatible tool-description corrections; schemas remain unchanged.
+
 ## 1.1.4
 
 - Pacing tests measure durable shared reservations rather than scheduler-dependent request-body timestamps. The two-in-flight limit, cross-process/crash checks and 500-attempt rolling 300-second budget remain strict.

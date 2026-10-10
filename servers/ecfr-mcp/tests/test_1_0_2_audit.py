@@ -137,9 +137,13 @@ def test_cite_with_no_base_section_becomes_none():
     assert srv._coerce_cfr_str("(a)(2)", field="section", strip_cites=True) is None
 
 
-def test_compare_versions_rejects_pre_2017_dates():
+def test_compare_versions_reports_unavailable_old_snapshot(monkeypatch):
+    async def latest(*args):return "2026-10-07"
+    async def absent(*args,**kwargs):raise RuntimeError("HTTP 404: not found")
+    monkeypatch.setattr(srv,"_resolve_date",latest)
+    monkeypatch.setattr(srv,"_get_xml",absent)
     asyncio.run(_call_expect_error(
-        "compare_versions", "2017-01-01",
+        "compare_versions", "unavailable old snapshot",
         section_id="52.212-4", date_before="2016-06-01", date_after="2026-01-01",
     ))
 

@@ -1,5 +1,13 @@
 # eCFR MCP: Testing Record
 
+## Content research round 3 (1.1.5 candidate, October 10, 2026)
+
+A new corpus covered all 13 tools across eight titles: FAR safeguards, telecom and trafficking clauses, DFARS technical data rights, DHS and GSA supplements, employee ethics, I-9 records, export scope, USERRA, accessibility, travel and FEMA costs. The published 1.1.4 service completed 76 attempted calls, including 46 original questions; 75 calls were valid. One valid comparison call exposed a confirmed product error, while 74 valid calls returned successful wire answers. One harness call supplied an unsupported subpart argument to recent-change discovery. Its initial error was retained, corrected to the published part filter, and both pages of the 142-change answer were read. The broader audit includes literal comparison hints, source-date continuations and a reserved DHS clause followed by discovery/read of current safeguarding provisions.
+
+Fresh primary sources confirmed two P2 issues: Section 508 history was out of chronological order despite the oldest-first contract, and a natural history-to-comparison followup rejected an available 2016 snapshot with a false global date floor. One P3: the catalog falsely said pre-2017 history is unavailable. The candidate sorts section/date/issue records before pagination and compares available old XML, while reporting an unavailable older 404 as a source-availability error rather than a section addition/removal. Two primary-source fixture regressions failed before and pass after, covering chronological pages and a 2016-to-2017 pending-amendment change. Official XML identity confirms distinct versions: January 2017 adds the 82 FR 5832 amendment link absent in December 2016. Both catalog descriptions now explain section-specific historical availability. The retained all-page test still checks all 2,001 synthetic records, upstream pages and date filtering, with the last-page expectation reconciled to documented section grouping.
+
+Python 3.12 collected 451 cases (333 offline, 118 live-gated). Frozen SDK 2.0.0 and freshly installed candidate-wheel SDK 2.3.0 each passed 333 cases with 118 explicit live skips (13.81 and 13.91 seconds). The final candidate installed executable completed all 80 original/followup calls, including both chronology pages, older metadata discovery, actual 2016 text retrieval and the formerly blocked comparison. All 83 primary comparisons passed against candidate answers. Of 73 shared corpus calls, 72 were exactly equal to the published service; the intended Section 508 chronology changed. Its actual installed catalog matches the reviewed 13-tool contract and all 12 installed Python modules match source. Both SDK contract checks, package build, nine-package version validation and new-version PyPI guard passed. Candidate evidence: `Artifacts/mcp-e2e-20261010/round3/ecfr`. Final actual published 1.1.5 verification follows the root-controlled release. The actual published 1.1.4 executable completed a seven-call history/page/older-metadata/text workflow and reproduced the original ordering and false comparison rejection. Eighty-three primary-source comparisons were run against the original answers: 81 passed and two independently demonstrated the confirmed P2 defects. No unavailable source check is counted as a pass; no new full live-suite run is claimed.
+
 ## Published round 2 verification (1.1.4, October 10, 2026)
 
 The scoped release completed at source `d0b3e9883b2a70ac0c250b83f7fdd30234349fd8`. A fresh, uncached install by package name from official PyPI selected eCFR 1.1.4 with MCP SDK 2.3.0. Its actual installed executable completed all 73 original/followup calls; the public service completed all 70 calls without errors. Both initialize responses reported 1.1.4, both 13-tool contracts matched the reviewed baseline, all 12 installed Python modules matched source, and the published wheel payload matched the reviewed build.
@@ -73,12 +81,12 @@ All 13 tools kept their names. No privacy promise or cache time changed.
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across eight audit rounds. Rounds 1-7 surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. Round 8 (1.1.0, 2026-10-10) was a six-agent bug hunt against eCFR's own data plus a 47-question everyday-use pass; it found the text parser, the definition finder and eCFR's search index were the sources of 18 P2 and about 20 P3 problems, all fixed. The MCP ships with 449 collected regression tests (331 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
+This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across eight audit rounds. Rounds 1-7 surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. Round 8 (1.1.0, 2026-10-10) was a six-agent bug hunt against eCFR's own data plus a 47-question everyday-use pass; it found the text parser, the definition finder and eCFR's search index were the sources of 18 P2 and about 20 P3 problems, all fixed. The MCP ships with 451 collected regression tests (333 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 13 |
-| Total regression tests | 449 (331 offline, 118 live-gated) |
+| Total regression tests | 451 (333 offline, 118 live-gated) |
 | Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 2 |
 | P1 silent-wrong-data bugs found and fixed | 26 |
@@ -86,8 +94,8 @@ This Model Context Protocol server exposes the eCFR (Electronic Code of Federal 
 | P3 cleanup items found and fixed | 12 |
 | Round 6 external re-audit findings, fixed in 1.0.2 | 12 (2 high, 5 medium, 5 low) |
 | Round 8 bug hunt findings, fixed in 1.1.0 | 18 P2, about 20 P3, plus 6 everyday-use fixes |
-| Source package version | 1.1.4 |
-| PyPI status | 1.1.4 published as `ecfr-mcp`; actual fresh-install and public checks passed |
+| Source package version | 1.1.5 |
+| PyPI status | 1.1.5 candidate pending publication; 1.1.4 remains published |
 
 ## 1.0.4 Safety Release Verification
 

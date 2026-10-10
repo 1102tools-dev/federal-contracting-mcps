@@ -342,7 +342,9 @@ def test_version_history_reads_every_page_and_pages_its_answer(monkeypatch):
     assert "page=2" in r["note"] and "title" not in r["content_versions"][0]
     assert r["content_versions"][0]["name"] == "52.0 Name."
     last = _run(srv.get_version_history(part="52", page=11))
-    assert last["content_versions"][-1]["identifier"] == "52.240-1"
+    # Pages follow section grouping, not the upstream arrival order.
+    assert last["content_versions"][-1]["identifier"] == "52.999"
+    assert len(last["content_versions"]) == 1
     recent = _run(srv.get_version_history(part="52", since_date="2026-01-01"))
     assert [v["identifier"] for v in recent["content_versions"]] == ["52.240-1"]
     assert recent["total_before_date_filter"] == 2001
@@ -352,7 +354,7 @@ def test_version_history_of_a_section_not_in_the_title_is_an_error(monkeypatch):
     async def fake(path, params=None, timeout=None):
         return {"content_versions": [], "meta": {"result_count": "0"}}
     monkeypatch.setattr(srv, "_get_json", fake)
-    with pytest.raises(ValueError, match="not in this title"):
+    with pytest.raises(ValueError, match="no version history"):
         _run(srv.get_version_history(section="200.318"))
 
 

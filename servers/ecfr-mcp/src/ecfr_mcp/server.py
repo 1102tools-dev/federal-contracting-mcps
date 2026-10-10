@@ -450,7 +450,7 @@ def _format_error(status: int, body: Any) -> str:
             "(3) 'current' is not a valid date keyword -- use a specific YYYY-MM-DD date; "
             "(4) paragraph cites like '15.305(a)(2)' are not separate documents -- "
             "request the base section and read the paragraph from its text; "
-            f"(5) point-in-time history begins {ECFR_EARLIEST_DATE} -- earlier dates always 404; "
+            f"(5) older snapshot availability varies by section (common baseline {ECFR_EARLIEST_DATE}) -- consult get_version_history; "
             "(6) a chapter that doesn't own the section (Title 48: 52.x is chapter 1, "
             "252.x chapter 2, 552.x chapter 5) -- leave chapter out. "
             f"API response: {cleaned}"
@@ -1039,8 +1039,11 @@ async def get_version_history(
 
     'removed' true means the section was removed on that date.
 
-    History starts 2017-01-01 (eCFR's baseline: a 2017-01-01 version means
-    unchanged since before 2017). Pre-2017 changes are not tracked.
+    Version metadata and text snapshots may include dates before 2017.
+    Availability varies by title and section. Use the returned history
+    dates for reads or comparisons; a missing old snapshot produces an
+    availability error. A 2017-01-01 baseline often means unchanged since
+    before 2017.
 
     part/subpart/section accept int or string.
     """
@@ -1073,14 +1076,21 @@ async def get_version_history(
         what = f"section {section}" if section else (f"subpart {subpart}" if subpart else f"part {part}")
         raise UserInputError(
             f"eCFR has no version history for {what} in title {title_number}, so it is "
-            f"not in this title (every section in eCFR has at least its 2017-01-01 "
-            f"version). Check title_number: for example 200.318 is 2 CFR, not 48 CFR."
+            f"not listed for this filter; it may not be in this title. "
+            f"Check the identifier and title_number: "
+            f"for example 200.318 is 2 CFR, not 48 CFR."
         )
     total_listed = len(versions)
     if since_date:
         versions = [v for v in versions if (v.get("date") or "") >= since_date]
     if until_date:
         versions = [v for v in versions if (v.get("date") or "") <= until_date]
+    # Upstream groups are not reliably chronological (e.g. Section 508).
+    # Sort the full filtered history before slicing so page followups remain
+    # stable and honor the documented section/oldest-first timeline.
+    versions = sorted(versions, key=lambda v: (str(v.get("identifier") or ""),
+                                             v.get("date") or "",
+                                             v.get("issue_date") or ""))
     total = len(versions)
     total_pages = max(1, -(-total // per_page))
     if page > total_pages:
@@ -1688,9 +1698,10 @@ async def compare_versions(
     changes_only=True leaves the full texts out every time: the short answer
     to "what changed".
 
-    Dates must be in YYYY-MM-DD format and within the eCFR's tracking range
-    (January 2017 to present). Both dates must not exceed the title's
-    up_to_date_as_of value.
+    Dates must be in YYYY-MM-DD format. Historical snapshot availability
+    varies by title and section, including some dates before 2017. Use
+    get_version_history to discover dates. Both dates must not exceed the
+    title's up_to_date_as_of value.
 
     This tool always returns the section-level XML parsed -- pass a small
     section_id like '15.305', not a whole part. Whole-part comparisons can
@@ -1715,12 +1726,6 @@ async def compare_versions(
     if date_before > date_after:
         raise UserInputError(
             f"date_before ({date_before}) must be earlier than date_after ({date_after})."
-        )
-    if date_before < ECFR_EARLIEST_DATE:
-        raise UserInputError(
-            f"date_before ({date_before}) precedes {ECFR_EARLIEST_DATE}. eCFR "
-            f"point-in-time history begins {ECFR_EARLIEST_DATE}; earlier "
-            f"snapshots do not exist and always return 404."
         )
     chapter = _validate_chapter(chapter, title_number=title_number)
     if title_number == 48:
@@ -1747,6 +1752,14 @@ async def compare_versions(
         except RuntimeError as e:
             if not str(e).startswith("HTTP 404"):
                 raise
+            if day < ECFR_EARLIEST_DATE:
+                raise UserInputError(
+                    f"eCFR has no available text snapshot for section {section_id} "
+                    f"in title {title_number} on {day}. Older availability varies "
+                    "by title and section; use get_version_history to choose a "
+                    "recorded date. An unavailable old snapshot does not mean "
+                    "the section was added or removed."
+                ) from e
             return {"date": day, "present": False}
         return {"date": day, **_parse_xml_to_text(xml, day)}
 
