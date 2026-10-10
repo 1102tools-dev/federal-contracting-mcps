@@ -13,9 +13,12 @@ never needs to process raw XML. Structure and metadata endpoints return JSON.
 
 from __future__ import annotations
 
+import asyncio
+import hashlib
 import html
 import json as _json
 import re
+import time
 from datetime import date as _date, timedelta
 from typing import Any
 
@@ -315,10 +318,19 @@ _xml_cache = XmlCache(
     max_entries=4096, max_bytes=40 * 1024 * 1024, max_entry_bytes=4 * 1024 * 1024,
 ) if _cache.enabled else XmlCache()
 _DATED_PATH = re.compile(r"^/api/versioner/v1/(?:full|structure|ancestry)/(\d{4}-\d{2}-\d{2})/")
+_TITLES = "/api/versioner/v1/titles.json"
+# eCFR's update state (a fingerprint of every title's dates) and when it was read.
+_version: tuple[str | None, float] = (None, float("-inf"))
+_version_lock: asyncio.Lock | None = None
 
 
-def _cache_seconds(path: str) -> float:
-    """How long a hosted answer is kept, by endpoint."""
+def _cache_seconds(path: str, versioned: bool = False) -> float:
+    """How long a hosted answer is kept, by endpoint.
+
+    An answer filed under eCFR's current update state (``versioned``) is kept a
+    full day: eCFR's next daily update changes the state, which retires it.
+    Without the state, the shorter times apply.
+    """
     dated = _DATED_PATH.match(path)
     if dated:
         try:
@@ -326,13 +338,49 @@ def _cache_seconds(path: str) -> float:
         except ValueError:
             return HOUR
         # Text as of a past date doesn't change. The newest dates are what
-        # "current" resolves to; give those a shorter life to be safe.
-        return 6 * HOUR if day >= _date.today() - timedelta(days=7) else DAY
-    if path == "/api/versioner/v1/titles.json":
+        # "current" resolves to; give those a shorter life unless versioned.
+        recent = day >= _date.today() - timedelta(days=7)
+        return 6 * HOUR if recent and not versioned else DAY
+    if path == _TITLES:
         return 15 * MINUTE  # latest date per title
     if path == "/api/admin/v1/agencies.json":
         return DAY
+    if versioned:
+        return DAY  # until eCFR's next daily update
     return HOUR  # search, recent changes, version history, corrections
+
+
+async def _data_version() -> str | None:
+    """eCFR's update state, read at most every 15 minutes (hosted only).
+
+    A short fingerprint of every title's up-to-date, amended and issue dates.
+    Hosted answers are filed under it, so eCFR's next daily update retires the
+    answers kept from before it. It is read straight from eCFR, outside the
+    cache, so it never counts as a hit or miss. If it can't be read, answers use
+    the shorter times and it is read again after a minute.
+    """
+    global _version, _version_lock
+    if not _cache.enabled:
+        return None
+    value, read_at = _version
+    if time.monotonic() - read_at < 15 * MINUTE:
+        return value
+    if _version_lock is None:
+        _version_lock = asyncio.Lock()
+    async with _version_lock:
+        value, read_at = _version
+        if time.monotonic() - read_at < 15 * MINUTE:
+            return value
+        try:
+            titles = _json.loads(await _fetch_json(_TITLES, None, DEFAULT_TIMEOUT_JSON)).get("titles") or []
+            state = [[t.get("number"), t.get("up_to_date_as_of"), t.get("latest_amended_on"), t.get("latest_issue_date")]
+                     for t in titles if isinstance(t, dict)]
+            value = hashlib.sha256(_json.dumps(state, separators=(",", ":")).encode()).hexdigest()[:16] if state else None
+            _version = (value, time.monotonic())
+        except Exception:
+            value = None
+            _version = (None, time.monotonic() - 14 * MINUTE)
+    return value
 
 
 def _cache_stats() -> dict[str, int]:
@@ -400,8 +448,12 @@ async def _get_json(
     timeout: float = DEFAULT_TIMEOUT_JSON,
 ) -> dict[str, Any]:
     """GET helper for JSON endpoints. Always returns a dict (empty if API returned null)."""
+    version = None if path == _TITLES else await _data_version()
+    key = cache_key("GET", path, params)
+    if version:
+        key = f"{version}|{key}"
     return await _cache.get_or_fetch(
-        cache_key("GET", path, params), _cache_seconds(path),
+        key, _cache_seconds(path, versioned=version is not None),
         lambda: _fetch_json(path, params, timeout), _parse_json_body,
     )
 
@@ -445,8 +497,9 @@ def _parse_json_body(content: bytes) -> dict[str, Any]:
 
 
 async def _get_xml(path: str, params: dict[str, Any] | None = None) -> str:
-    key = _json.dumps([path, params or {}], sort_keys=True, separators=(",", ":"))
-    ttl = _cache_seconds(path) if _cache.enabled else None
+    version = await _data_version()
+    key = _json.dumps([path, params or {}, version], sort_keys=True, separators=(",", ":"))
+    ttl = _cache_seconds(path, versioned=version is not None) if _cache.enabled else None
     return await _xml_cache.get_or_fetch(key, lambda: _get_xml_uncached(path, params), ttl)
 
 

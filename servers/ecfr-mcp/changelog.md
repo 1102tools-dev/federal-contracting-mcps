@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.12
+
+- Hosted service only: answers are filed under eCFR's update state, a short
+  fingerprint of every title's up-to-date, amended and issue dates read from
+  `/api/versioner/v1/titles.json` at most every 15 minutes, outside the cache.
+  Searches, recent changes, version history, corrections and the last week of
+  dated text filed under that state are kept 24 hours; eCFR's next daily update
+  changes the state and retires them. Older dated text stays 24 hours. If the
+  state can't be read, answers use the 1.0.11 times and it is read again after
+  a minute.
+- Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package behaves exactly as
+  before. Tools, schemas, pacing and budgets are unchanged.
+
 ## 1.0.11
 
 - Hosted service only: answer repeat questions from a bounded in-memory copy of

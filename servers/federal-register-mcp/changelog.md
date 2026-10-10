@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.11
+
+- Hosted service only: answers are filed under the newest publication date,
+  read at most every 15 minutes outside the cache. Searches, open comment
+  periods, FAR case history and facet counts filed under that date are kept 24
+  hours; the next daily issue changes the date and retires them. Published
+  documents stay 24 hours and public inspection 10 minutes. If the date can't
+  be read, answers use the 1.0.10 times and it is read again after a minute.
+- Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package behaves exactly as
+  before. Tools, schemas, pacing and budgets are unchanged.
+
 ## 1.0.10
 
 - Hosted service only: answer repeat questions from a bounded in-memory copy of
