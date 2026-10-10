@@ -478,3 +478,59 @@ Evidence: `Artifacts/mcp-e2e-20261010/round4/gsa-calc/`. P0/P1/P3 counts are zer
 one P2 is fixed in the candidate. Six separate Worker tests, TypeScript checks, the eight-tool contract check,
 package version consistency and a Wrangler dry run also pass. Publication and
 final public/official-PyPI 1.0.16 acceptance remain coordinator-owned and pending.
+
+
+### Final published 1.0.16 acceptance
+
+After scoped release workflow `38082856566` succeeded, a fresh uncached
+**official by-name PyPI 1.0.16** installation and actual public service passed
+final verification at reviewed release SHA
+`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`. All eight installed Python modules
+match the official wheel and reviewed source. All eight installed/public/release
+tool definitions match; public health and initialization report the expected
+SHA/version. The first official install's index-lag failure is preserved, with
+no candidate substitution.
+
+The complete **152** new questions passed through the installed registered-tool
+pipeline and **152** separate public HTTPS calls. These are not 152 stdio calls.
+**18 actual installed console stdio calls** cover all eight tools, both affected
+grade-specific originals and the exact-title recovery. Nine specific console
+checks and three public original/recovery checks pass: mixed-grade verdicts are
+withheld, exact counts are three and zero, and exact-search recovery returns
+three rates with the applicable sample/source limitations.
+
+The full fresh installed-package suite passed **317**, skipped **121 optional
+live**, and collected **438** using actual **MCP 2.3.0** from `site-packages`.
+Official SDK PyPI metadata also identified current 2.3.0. Import/version
+provenance is recorded separately from the earlier frozen MCP 2.0 candidate
+lane. Test sources came from the release SHA without a package-source
+`PYTHONPATH`. An initial missing Hypothesis test dependency collection failure
+is preserved; the complete suite passed after installing that test dependency.
+
+**1,742 source/behavior checks** and **3,738 source/data comparisons** pass.
+The 170 retained parsed GSA captures can include application augmentation;
+authoritative `hits` and `aggregations` fields are checked directly, without a
+raw-transport-byte claim. The comparison records **244 approximate percentile
+scalar differences**, maximum **$2.551834/hour**, and one capped Technical
+Writer suggestion-tail variation. Shared counts differ by at most four within
+the published five-record error bound. Two fresh primary aggregation repeats
+and one exact-title primary proof verify all public tail titles, including the
+otherwise unseen Quantech Technical Writer IV title. This is qualified source
+equivalence, not identical responses.
+
+The existing local **500-attempt hourly safety budget** blocked 51 initial
+registered calls and six additional retry attempts. Verification honored each
+returned retry window and preserved initial errors; only blocked local cases
+were retried, without resetting or overriding the policy. The 152 successful
+unique registered workflows therefore required **209 registered attempts**.
+All 152 public calls succeeded initially and were not repeated. This expected
+safety-limit delay is separate from product findings.
+
+Final evidence is retained under
+`Artifacts/mcp-e2e-20261010/round4/gsa-calc/final-published/`, including SDK/import
+provenance, official wheel/payload identity, corpus, actual console results,
+source comparisons, approximation proofs, initial failures and retry records.
+The one Round 4 P2 is fully fixed and verified in the published package/public
+service; no postrelease finding or partial fix remains. Source/capability caps,
+unsupported filters, thin populations, vendor legal names, ceiling-price limits
+and potential single-field sort ties remain explicit limitations.
