@@ -407,11 +407,55 @@ all six pass corrected. Full Python validation: **1,924 passed, 379 live-gated
 skipped (2,303 collected)**. Skips are not credited as executed live tests.
 Package/contract/version gates and a built-wheel real installed-CLI workflow
 are recorded separately in the shared `Artifacts/mcp-e2e-20261010/round2/usaspending`
-evidence. Actual 1.0.16 publication and final public acceptance await root’s
-serial release and are not claimed by this source record.
+evidence. At source-validation time, actual 1.0.16 publication and final
+public acceptance remained pending; the completed publication record follows.
 
 One prior audit-corpus label is corrected explicitly: the Round 1 hardcoded
 children UEI `ZFN2JJXBLZT3` is Lockheed Martin’s, although its question said
 Leidos. That was an audit-harness labeling limitation, not a product finding
 or a passed Leidos child-mapping workflow. Round 2 derives the UEI from the
 actual Lockheed parent result and completes the correctly named chain.
+
+
+## Round 14 published verification (1.0.16, 2026-10-10)
+
+The [scoped release workflow](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38071313999)
+completed successfully on attempt 2 for tag `usaspending/v1.0.16`, source SHA
+`d0b3e9883b2a70ac0c250b83f7fdd30234349fd8`, including PyPI, Cloudflare,
+registry and release jobs. A new Python 3.12 environment installed
+`usaspending-gov-mcp==1.0.16` by name from official PyPI with `--no-cache` and
+MCP SDK 2.3.0. No bootstrap index failure or locally built candidate
+substitution occurred. The installed module, distribution and CLI paths,
+PyPI metadata, initialization identities and workflow result are saved.
+
+Both the actual installed CLI and public deployment passed **127 corpus
+questions across all 55 tools**, plus **11 discovered-recipient and fiscal
+followup calls per surface**. Both actual tool catalogs exactly match the
+approved 55-tool contract. The final replay corpus explicitly records the
+old hash-guidance failure and corrected UEI followup; it does not turn the
+original failed workflow into a retroactive baseline pass.
+
+The recipient chain discovers Lockheed Martin's parent row from autocomplete
+and search, uses its hash for profiles, and uses its returned UEI for 217
+subsidiaries, then opens a returned subsidiary profile. Annual FY2025 new
+awards total 23,992. The partial September–October 2024 window splits into
+FY2024=2,574 and FY2025=2,190. Both surfaces crossfoot those annual counts
+against fresh official fiscal-quarter responses; quarter/month rows and
+messages remain equal to the fresh official responses. The official children
+response also matches both surfaces. These live content checks are separate
+from the **1,924 passed / 379 skipped / 2,303 collected** regression lane;
+skipped tests are not credited as executed.
+
+Root's initial deploy verification observed a version mismatch after the
+health SHA matched. No failed backend header established a concrete cause,
+which remains unknown. Attempt 2 and final acceptance passed at the same tag.
+Public metadata is verified; propagation into every directory client was not
+independently observed. Correcting this README/testing record requires no
+new directory submission or republication.
+
+Evidence: `Artifacts/mcp-e2e-20261010/round2/usaspending`, especially
+`final-verification-1.0.16.json`, `published-install-provenance.json`,
+`published-installed-cli-full-campaign.json`, `final-hosted-campaign.json`,
+`published-installed-cli-followups.json`, `published-hosted-followups.json`
+and `published-source-semantic-checks.json`. No Round 3 content audit is
+claimed by this publication verification.

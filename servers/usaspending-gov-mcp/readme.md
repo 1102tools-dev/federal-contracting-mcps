@@ -10,6 +10,11 @@ No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
 *The 1.0.16 source validation collected 2,303 regression cases: 1,924 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
 
+Published 1.0.16 verification also passed all 127 content-corpus questions and
+11 recipient/fiscal followups on both a fresh official PyPI installation and
+the public deployment, with all 55 tool definitions matched. See
+[the publication record](testing.md#round-14-published-verification-1016-2026-10-10).
+
 ## Local or hosted
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
