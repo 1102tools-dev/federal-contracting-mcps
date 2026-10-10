@@ -17,6 +17,9 @@ export const NOTICE_TYPES = [
   "Modification/Amendment/Cancel", "Consolidate/(Substantially) Bundle", "Sale of Surplus Property",
 ];
 
+/** Notice types nobody responds to; never dropped by the past-deadline filter. */
+const NO_RESPONSE_TYPES = ["Award Notice", "Justification", "Justification and Approval (J&A)"];
+
 export const SET_ASIDE_CODES = [
   "SBA", "SBP", "8A", "8AN", "HZC", "HZS", "SDVOSBC", "SDVOSBS", "WOSB", "WOSBSS", "EDWOSB",
   "EDWOSBSS", "VSA", "VSS", "ISBEE", "IEE", "BICiv", "LAS", "ESB", "NONE",
@@ -57,7 +60,7 @@ const FILTERS = {
   posted_to: dateField("Latest posted date, YYYY-MM-DD."),
   deadline_from: dateField("Earliest response deadline date, YYYY-MM-DD, in the deadline's own time zone."),
   deadline_to: dateField("Latest response deadline date, YYYY-MM-DD."),
-  include_past_deadlines: {type: "boolean", default: false, description: "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Notices without a deadline, such as award notices, are always included."},
+  include_past_deadlines: {type: "boolean", default: false, description: "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Award notices and justifications are always included, even when they list a past deadline, and so are notices with no deadline."},
   include_earlier_versions: {type: "boolean", default: false, description: "Include earlier versions of amended notices. SAM.gov's file lists every version of a notice as its own row; by default only the latest version of each is included."},
 };
 
@@ -257,9 +260,11 @@ function buildQuery(args: Args, now: Date): Query {
     q.where.push("o.is_latest = 1");
   }
   if (!bool(args, "include_past_deadlines")) {
-    q.where.push("(o.response_deadline_utc IS NULL OR o.response_deadline_utc >= ?)");
-    q.params.push(now.toISOString().slice(0, 19) + "Z");
-    q.notes.push("Notices whose response deadline has passed are excluded; set include_past_deadlines to true to include them.");
+    // Award notices and justifications take no responses; a deadline on them
+    // (e.g. GSA's placeholder on schedule awards) is not one to filter on.
+    q.where.push(`(o.notice_type IN (${NO_RESPONSE_TYPES.map(() => "?").join(", ")}) OR o.response_deadline_utc IS NULL OR o.response_deadline_utc >= ?)`);
+    q.params.push(...NO_RESPONSE_TYPES, now.toISOString().slice(0, 19) + "Z");
+    q.notes.push("Notices whose response deadline has passed are excluded (award notices and justifications are kept); set include_past_deadlines to true to include them.");
   }
   return q;
 }

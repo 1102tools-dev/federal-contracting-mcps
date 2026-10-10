@@ -44,10 +44,10 @@ const NOTICES = [
   notice(8, {title: "Zero trust network upgrade", description: "Earlier version: zero trust.", solicitation_number: "sol-1", is_latest: 0, response_deadline: "2026-10-05T14:00:00-04:00", response_deadline_utc: "2026-10-05T18:00:00Z", posted_at: "2026-08-20 10:00:00", posted_date: "2026-08-20"}),
 ];
 
-function database(loaded = true) {
+function database(loaded = true, rows: Record<string, unknown>[] = NOTICES) {
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(schema);
-  for (const row of NOTICES) {
+  for (const row of rows) {
     const columns = Object.keys(row);
     sqlite.prepare(`INSERT INTO opportunities (${columns.join(", ")}) VALUES (${columns.map(() => "?").join(", ")})`).run(...(Object.values(row) as any[]));
   }
@@ -80,6 +80,25 @@ test("default search hides past deadlines and archived notices, soonest deadline
   assert.equal(result.results[0].link, `https://sam.gov/opp/${id(7)}/view`);
   assert.ok(result.notes[0].includes("include_past_deadlines"));
   assert.deepEqual(ids(await search({include_past_deadlines: true})), [3, 7, 2, 4, 1, 5]);
+});
+
+test("award notices and justifications are never dropped by the past-deadline filter", async () => {
+  // GSA MAS award notices carry a placeholder deadline equal to the award day
+  // (e.g. 2026-09-15T11:12:13-05:00); justifications have no real response deadline.
+  const gsa = {department: "GENERAL SERVICES ADMINISTRATION", sub_tier: "FEDERAL ACQUISITION SERVICE", office: "GSA/FAS ADMIN SVCS ACQUISITION BR(2", solicitation_number: "47QSMD20R0001"};
+  const rows = [
+    ...NOTICES,
+    notice(20, {...gsa, notice_type: "Award Notice", response_deadline: "2026-09-15T11:12:13-05:00", response_deadline_utc: "2026-09-15T16:12:13Z", award_number: "47QTCA26D0001", awardee: "Vendor A", award_amount: 475000, posted_date: "2026-09-15", posted_at: "2026-09-15 12:00:00"}),
+    notice(21, {notice_type: "Justification", response_deadline: "2026-09-10T12:00:00-04:00", response_deadline_utc: "2026-09-10T16:00:00Z"}),
+    notice(22, {notice_type: "Justification and Approval (J&A)", response_deadline: "2026-09-10T12:00:00-04:00", response_deadline_utc: "2026-09-10T16:00:00Z"}),
+  ];
+  const awards = database(true, rows);
+  const found = await searchOpportunities(awards, {}, NOW);
+  assert.deepEqual(ids(found).sort((a, b) => a - b), [1, 2, 4, 5, 7, 20, 21, 22], "past-deadline solicitation 3 stays out; award 20 and justifications 21, 22 stay in");
+  const byAgency = await summarizeOpportunities(awards, {group_by: "agency", notice_types: ["Award Notice"]}, NOW);
+  assert.deepEqual(byAgency.groups, [{value: "DEPT OF DEFENSE", count: 1}, {value: "GENERAL SERVICES ADMINISTRATION", count: 1}]);
+  const description = (TOOLS[0].inputSchema.properties as any).include_past_deadlines.description;
+  assert.match(description, /Award notices and justifications are always included/);
 });
 
 test("only the latest version of an amended notice is shown unless asked", async () => {

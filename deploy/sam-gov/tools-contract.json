@@ -118,7 +118,7 @@
         "include_past_deadlines": {
           "type": "boolean",
           "default": false,
-          "description": "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Notices without a deadline, such as award notices, are always included."
+          "description": "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Award notices and justifications are always included, even when they list a past deadline, and so are notices with no deadline."
         },
         "include_earlier_versions": {
           "type": "boolean",
@@ -318,7 +318,7 @@
         "include_past_deadlines": {
           "type": "boolean",
           "default": false,
-          "description": "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Notices without a deadline, such as award notices, are always included."
+          "description": "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Award notices and justifications are always included, even when they list a past deadline, and so are notices with no deadline."
         },
         "include_earlier_versions": {
           "type": "boolean",
