@@ -159,7 +159,7 @@
   },
   {
     "name": "get_opportunity",
-    "description": "Get one SAM.gov notice in full: description, response deadline, set-aside, NAICS and PSC codes, place of performance, contracting office, points of contact, award details for award notices, and the public sam.gov link. Also lists other active notices with the same solicitation number, such as earlier versions, amendments, or the award.\n\nPass the 32-character notice ID from search results, or a solicitation number (returns its most recently posted notice). Attachments are not retrieved; open the sam.gov link for them.",
+    "description": "Get one SAM.gov notice in full: description, response deadline, set-aside, NAICS and PSC codes, place of performance, contracting office, points of contact, award details for award notices, and the public sam.gov link. Also lists other active notices with the same solicitation number, such as earlier versions, amendments, or awards (with awardee and amount).\n\nPass the 32-character notice ID from search results, or a solicitation number (returns its most recently posted current notice, preferring the solicitation over award notices and justifications). Attachments are not retrieved; open the sam.gov link for them.",
     "inputSchema": {
       "type": "object",
       "properties": {

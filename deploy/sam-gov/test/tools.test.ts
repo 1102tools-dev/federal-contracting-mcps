@@ -209,8 +209,13 @@ test("get_opportunity returns full details, related notices, and handles misses"
   assert.equal(old.latest_version, false);
   assert.match(old.notes[0], /newer version/);
   const bySol = await getOpportunity(db, {solicitation_number: "SOL-1"}) as any;
-  assert.equal(bySol.notice_id, id(5), "most recently posted latest version");
-  assert.deepEqual(bySol.award, {number: "W91-26-C-0001", date: null, amount: 1250000, awardee: "Acme Corp"});
+  assert.equal(bySol.notice_id, id(1), "the current solicitation, not the newer award notice");
+  assert.deepEqual(bySol.related_notices[0], {notice_id: id(5), notice_type: "Award Notice", title: "Award of network upgrade", posted_date: "2026-09-26", response_deadline: null, award_number: "W91-26-C-0001", awardee: "Acme Corp", award_amount: 1250000, latest_version: true, link: `https://sam.gov/opp/${id(5)}/view`});
+  assert.equal(bySol.related_notices[1].awardee, undefined, "award fields only on award notices");
+  const award = await getOpportunity(db, {notice_id: id(5)}) as any;
+  assert.deepEqual(award.award, {number: "W91-26-C-0001", date: null, amount: 1250000, awardee: "Acme Corp"});
+  const awardsOnly = await getOpportunity(database(true, [notice(40, {notice_type: "Award Notice", award_number: "A1", awardee: "X"})]), {solicitation_number: "SOL-40"}) as any;
+  assert.equal(awardsOnly.notice_id, id(40), "an award notice when that is all there is");
   const miss = await getOpportunity(db, {notice_id: "f".repeat(32)}) as any;
   assert.equal(miss.found, false);
   assert.equal(miss.link, `https://sam.gov/opp/${"f".repeat(32)}/view`);

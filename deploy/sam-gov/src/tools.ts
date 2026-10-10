@@ -82,7 +82,7 @@ export const TOOLS = [
   },
   {
     name: "get_opportunity",
-    description: "Get one SAM.gov notice in full: description, response deadline, set-aside, NAICS and PSC codes, place of performance, contracting office, points of contact, award details for award notices, and the public sam.gov link. Also lists other active notices with the same solicitation number, such as earlier versions, amendments, or the award.\n\nPass the 32-character notice ID from search results, or a solicitation number (returns its most recently posted notice). Attachments are not retrieved; open the sam.gov link for them.",
+    description: "Get one SAM.gov notice in full: description, response deadline, set-aside, NAICS and PSC codes, place of performance, contracting office, points of contact, award details for award notices, and the public sam.gov link. Also lists other active notices with the same solicitation number, such as earlier versions, amendments, or awards (with awardee and amount).\n\nPass the 32-character notice ID from search results, or a solicitation number (returns its most recently posted current notice, preferring the solicitation over award notices and justifications). Attachments are not retrieved; open the sam.gov link for them.",
     inputSchema: {
       type: "object",
       properties: {
@@ -401,7 +401,10 @@ export async function getOpportunity(db: Database, args: Args) {
     if (!NOTICE_ID.test(id)) throw new ToolError("notice_id must be the 32-character hexadecimal notice ID from SAM.gov.");
     rows = (await db.prepare("SELECT * FROM opportunities WHERE notice_id = ?").bind(id.toLowerCase()).all()).results;
   } else if (sol !== undefined) {
-    rows = (await db.prepare("SELECT * FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE ORDER BY is_latest DESC, posted_at DESC LIMIT 1").bind(sol).all()).results;
+    // Prefer the solicitation (or other current notice) over the award
+    // notices and justifications that share its number.
+    const awardFirst = `notice_type IN (${NO_RESPONSE_TYPES.map(() => "?").join(", ")})`;
+    rows = (await db.prepare(`SELECT * FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE ORDER BY is_latest DESC, ${awardFirst}, posted_at DESC LIMIT 1`).bind(sol, ...NO_RESPONSE_TYPES).all()).results;
   } else {
     throw new ToolError("Pass notice_id or solicitation_number.");
   }
@@ -419,12 +422,17 @@ export async function getOpportunity(db: Database, args: Args) {
   let relatedTotal = 0;
   if (row.solicitation_number) {
     const [page, count] = await Promise.all([
-      db.prepare("SELECT notice_id, notice_type, title, posted_date, response_deadline, is_latest FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE AND notice_id != ? ORDER BY is_latest DESC, posted_at DESC LIMIT 20")
+      db.prepare("SELECT notice_id, notice_type, title, posted_date, response_deadline, award_number, awardee, award_amount, is_latest FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE AND notice_id != ? ORDER BY is_latest DESC, posted_at DESC LIMIT 20")
         .bind(row.solicitation_number, row.notice_id).all<Row>(),
       db.prepare("SELECT COUNT(*) AS n FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE AND notice_id != ?")
         .bind(row.solicitation_number, row.notice_id).all<{n: number}>(),
     ]);
-    related = page.results.map(({is_latest, ...r}) => ({...r, latest_version: is_latest === 1, link: publicLink(r.notice_id)}));
+    related = page.results.map(({is_latest, award_number, awardee, award_amount, ...r}) => ({
+      ...r,
+      ...(r.notice_type === "Award Notice" ? {award_number, awardee, award_amount} : {}),
+      latest_version: is_latest === 1,
+      link: publicLink(r.notice_id),
+    }));
     relatedTotal = count.results[0]?.n ?? 0;
   }
   const notes = ["Attachments and amendment documents are not included; open the sam.gov link for them."];
