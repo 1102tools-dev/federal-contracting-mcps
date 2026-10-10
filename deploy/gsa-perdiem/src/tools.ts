@@ -786,6 +786,8 @@ async function lookupStateRates(ctx: Context, args: Dict): Promise<Dict> {
       mie: r.meals,
       max_daily: add(r.lodging_max, r.meals),
       seasonal: r.has_seasonal_variation,
+      // Season months, so "Virginia Beach in July" needs no second call.
+      ...(r.has_seasonal_variation ? {lodging_by_month: r.lodging_by_month} : {}),
     })),
     source,
   };

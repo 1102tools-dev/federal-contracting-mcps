@@ -1187,7 +1187,8 @@ async def lookup_state_rates(
     """Get all Non-Standard Area (NSA) per diem rates for a state.
 
     Returns every city/county with rates above the standard rate in that
-    state, plus the state's standard rate. Useful for comparing rates
+    state, plus the state's standard rate. Seasonal areas include their
+    lodging rate for each month (lodging_by_month). Useful for comparing rates
     across cities within a state or for building a travel IGCE with
     multiple destinations. Bundled fiscal years are answered from GSA's
     published files with no API call.
@@ -1250,6 +1251,8 @@ async def lookup_state_rates(
                 "mie": r["meals"],
                 "max_daily": r["lodging_max"] + r["meals"],
                 "seasonal": r["has_seasonal_variation"],
+                # Season months, so "Virginia Beach in July" needs no second call.
+                **({"lodging_by_month": r["lodging_by_month"]} if r["has_seasonal_variation"] else {}),
             }
             for r in nsa_only
         ],

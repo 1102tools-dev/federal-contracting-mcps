@@ -126,6 +126,15 @@ def test_state_rates_from_snapshot_match_gsa_state_list():
     assert r["standard_rate"] == {"lodging": 113, "mie": 68}
 
 
+def test_state_rates_show_season_months_for_seasonal_areas():
+    # P3-2 (content test 2026-10-10). GSA FY2027 rate file: Virginia Beach
+    # $129 Oct-May, $212 Jun-Aug, $129 Sep; Richmond is flat.
+    rows = {x["city"]: x for x in _run(srv.lookup_state_rates("VA", 2027))["rates"]}
+    vb = rows["Virginia Beach"]["lodging_by_month"]
+    assert (vb["Oct"], vb["May"], vb["Jun"], vb["Jul"], vb["Aug"], vb["Sep"]) == (129, 129, 212, 212, 212, 129)
+    assert rows["Richmond"]["seasonal"] is False and "lodging_by_month" not in rows["Richmond"]
+
+
 def test_mie_breakdown_from_snapshot():
     r = _run(srv.get_mie_breakdown(2027))
     assert [t["total"] for t in r["tiers"]] == [68, 74, 80, 86, 92]

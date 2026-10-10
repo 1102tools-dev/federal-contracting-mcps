@@ -371,3 +371,14 @@ test("the M&IE table explains why its file is named FY 2025 (P3-5)", async () =>
   assert.match(fy2027.mie_note, /FY2025.*FY2027/);
   assert.equal((await call("get_mie_breakdown", {fiscal_year: 2025})).structuredContent.mie_note, undefined);
 });
+
+test("state lists show season months for seasonal areas (P3-2)", async () => {
+  // GSA FY2027 rate file: Virginia Beach $129 Oct-May, $212 Jun-Aug, $129 Sep; Richmond is flat.
+  const {call} = setup();
+  const rows = JSON.parse((await call("lookup_state_rates", {state: "VA", fiscal_year: 2027})).content[0].text).rates;
+  const vb = rows.find((r: any) => r.city === "Virginia Beach").lodging_by_month;
+  assert.deepEqual([vb.Oct, vb.May, vb.Jun, vb.Jul, vb.Aug, vb.Sep], [129, 129, 212, 212, 212, 129]);
+  const richmond = rows.find((r: any) => r.city === "Richmond");
+  assert.equal(richmond.seasonal, false);
+  assert.equal(richmond.lodging_by_month, undefined);
+});

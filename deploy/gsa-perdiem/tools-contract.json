@@ -236,7 +236,7 @@
       "readOnlyHint": true,
       "title": "Lookup State Rates"
     },
-    "description": "Get all Non-Standard Area (NSA) per diem rates for a state.\n\n    Returns every city/county with rates above the standard rate in that\n    state, plus the state's standard rate. Useful for comparing rates\n    across cities within a state or for building a travel IGCE with\n    multiple destinations. Bundled fiscal years are answered from GSA's\n    published files with no API call.\n\n    CONUS only: AK, HI, and territories return a pointer to DoD/State rates\n    instead of an empty list that would falsely imply the standard CONUS\n    rate applies there.\n    ",
+    "description": "Get all Non-Standard Area (NSA) per diem rates for a state.\n\n    Returns every city/county with rates above the standard rate in that\n    state, plus the state's standard rate. Seasonal areas include their\n    lodging rate for each month (lodging_by_month). Useful for comparing rates\n    across cities within a state or for building a travel IGCE with\n    multiple destinations. Bundled fiscal years are answered from GSA's\n    published files with no API call.\n\n    CONUS only: AK, HI, and territories return a pointer to DoD/State rates\n    instead of an empty list that would falsely imply the standard CONUS\n    rate applies there.\n    ",
     "inputSchema": {
       "properties": {
         "fiscal_year": {
