@@ -187,3 +187,31 @@ live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
 ## RC5 pacing remediation (2026-08-22)
 
 Version 1.0.4 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (85 tests; 119 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 8 tools.
+
+## Content test fixes (2.0.3, 2026-10-10)
+
+A content test asked 40 real-user questions of the hosted server and checked
+each answer against api.regulations.gov and the Federal Register (22 pass, 16
+pass with friction, 2 fail; five P2s). 2.0.3 fixes the five P2s and most P3s.
+`tests/test_content_fixes.py` holds one or more tests per bug (35 cases),
+using `tests/fixtures/content_test_2026_10.json`, slimmed from the API
+responses the test saved. Every test was run against the code before its fix
+and failed there.
+
+| Bug | Fix | Tests (failed before the fix) |
+|---|---|---|
+| R1 deadlines read one day late (raw UTC) | `commentDeadlineEastern` / `comment_deadline` in Eastern time, raw kept as `commentEndDateUtc` / `comment_end_date_utc`; zoneinfo with a US-rules fallback | 15 |
+| R3 comment counts unlabeled | `posted_comments` + `count_note` (posted, not received); `far_case_history` page 1 count | 4 |
+| R10 withdrawal read as a new proposed rule | `subtype` and `fr_doc_num` on workflow rows | 3 |
+| R2 no organization on comment search rows | `search_comments(include_organization=True)`, `organization_note` otherwise | 3 |
+| R8 `lastPage: true` at the 40-page ceiling | `truncated`, `records_beyond_page_limit`, `page_limit_note` on all three searches | 3 |
+| P3: R4, R5, R7, R9, R11, docket sorts | `document_type` on `open_comment_periods`; self-filtered facets dropped; plain-text comments and snippets; description and `no_data_reason` guidance | 5 |
+
+Repro gate: the findings repros were rerun against the saved API responses
+(the DEMO_KEY quota was spent, so no live Regulations.gov calls) and checked
+against Federal Register records: 15 of 15 passed, including 21 documents
+whose Eastern deadline matches the Federal Register closing date with no
+mismatch. Offline suite: 160 passed, 119 live-gated skipped. Release guards
+64 passed; `validate_versions.py` and `check_hosted_contract.py
+regulations-gov` (Python 3.12) pass. No change to pacing, the hourly budget,
+cache times or logging.
