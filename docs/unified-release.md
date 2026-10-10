@@ -70,11 +70,21 @@ Python 3.12, matching the currently hosted runtime; newer Python versions can
 format docstrings differently. No server instructions are currently published;
 the transport check also rejects unexpected instructions.
 
-For a compatible backend fix, deploy to the same existing endpoint. If reviewed
-tool metadata changes, complete the relevant directory review before approving
-a new baseline and releasing that change. Do not regenerate baselines merely
-to make the check pass. See the official
-[OpenAI maintenance rules](https://developers.openai.com/plugins/deploy/app-review#how-published-mcp-metadata-versions-work).
+For a compatible backend fix, deploy to the same existing endpoint. Review and
+approve intentional tool-description, schema or annotation changes in the PR,
+then regenerate the baseline under Python 3.12 and inspect the exact diff. Do not
+regenerate baselines merely to make the check pass. Keep the backend compatible
+with the previously published definition while directory checks run.
+
+OpenAI's current continuous review automatically scans changed tool definitions
+and replaces each published definition after its checks pass. Tool-description
+corrections do not require a new plugin version or manual directory republication.
+Changes to submitted plugin information or imported skills still require a new
+draft; changing an origin requires a new plugin. Existing endpoint identities,
+tool names and input schemas are preserved by the October 10 description fixes.
+See the official
+[OpenAI maintenance rules](https://developers.openai.com/plugins/deploy/app-review#how-published-mcp-metadata-versions-work)
+(verified October 10, 2026).
 
 ## Verification and recovery
 
