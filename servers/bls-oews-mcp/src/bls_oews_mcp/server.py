@@ -18,6 +18,7 @@ import re
 from typing import Any, Literal, Union
 
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__, snapshot
 from .constants import (
@@ -35,6 +36,10 @@ from .constants import (
     SPECIAL_VALUES,
     STATE_FIPS,
 )
+
+class UserInputError(ValueError, ToolError):
+    """Expected user-input failure, visible with MCP 2.0 and 2.3 alike."""
+
 
 mcp = MCPServer("bls-oews", version=__version__, log_level="WARNING")
 
@@ -78,24 +83,24 @@ def _coerce_str_digits(value: Any, *, field: str, length: int | None = None) -> 
     Rejects Unicode digits (fullwidth, etc), whitespace, dashes. If length is
     given, enforces exact length after stripping."""
     if value is None:
-        raise ValueError(f"{field} cannot be None.")
+        raise UserInputError(f"{field} cannot be None.")
     if isinstance(value, bool):
-        raise ValueError(f"{field} must be an integer or digit-string, not bool.")
+        raise UserInputError(f"{field} must be an integer or digit-string, not bool.")
     if isinstance(value, int):
         s = str(value)
     elif isinstance(value, str):
         s = value.strip()
     else:
-        raise ValueError(f"{field} must be an integer or string. Got {type(value).__name__}.")
+        raise UserInputError(f"{field} must be an integer or string. Got {type(value).__name__}.")
     if not s:
-        raise ValueError(f"{field} cannot be empty.")
+        raise UserInputError(f"{field} cannot be empty.")
     if not _ASCII_DIGITS_RE.match(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} must contain only ASCII digits 0-9 "
             f"(no dashes, letters, whitespace, or Unicode digit characters)."
         )
     if length is not None and len(s) != length:
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} must be exactly {length} digits. Got {len(s)}."
         )
     return s
@@ -108,15 +113,15 @@ def _validate_soc(value: Any, *, field: str = "occ_code") -> str:
     Returns the un-dashed 6-digit form used in OEWS series IDs.
     """
     if value is None:
-        raise ValueError(f"{field} cannot be None.")
+        raise UserInputError(f"{field} cannot be None.")
     if isinstance(value, bool):
-        raise ValueError(f"{field} must be an integer or digit-string, not bool.")
+        raise UserInputError(f"{field} must be an integer or digit-string, not bool.")
     if isinstance(value, int):
         s = str(value)
     elif isinstance(value, str):
         # Reject control chars before strip() eats them.
         if any(c in value for c in ("\x00", "\n", "\r", "\t")):
-            raise ValueError(
+            raise UserInputError(
                 f"{field}={value!r} contains control characters. "
                 f"SOC codes are 6 digits with an optional single dash: '15-1252'."
             )
@@ -124,19 +129,19 @@ def _validate_soc(value: Any, *, field: str = "occ_code") -> str:
         # can paste "15-1252" directly from BLS publications.
         s = value.strip().replace("-", "")
     else:
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be an integer or string. Got {type(value).__name__}."
         )
     if not s:
-        raise ValueError(f"{field} cannot be empty.")
+        raise UserInputError(f"{field} cannot be empty.")
     if not _ASCII_DIGITS_RE.match(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} must be a SOC code like '15-1252' or '151252' "
             f"(6 ASCII digits, optional single dash after the first 2). "
             f"No letters, whitespace, or Unicode digits."
         )
     if len(s) != 6:
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} must be exactly 6 digits (got {len(s)}). "
             f"SOC codes are 'XX-XXXX' format, e.g. '15-1252' (Software Developers)."
         )
@@ -153,7 +158,7 @@ def _validate_datatype(value: Any, *, field: str = "datatype") -> str:
     s = _coerce_str_digits(value, field=field, length=2)
     if s not in DATATYPE_LABELS:
         sample = ", ".join(sorted(DATATYPE_LABELS.keys()))
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} is not a known OEWS datatype. Valid: {sample}."
         )
     return s
@@ -169,30 +174,30 @@ def _validate_year(value: Any, *, field: str = "year") -> str:
     if value is None:
         return str(OEWS_CURRENT_YEAR)
     if isinstance(value, bool):
-        raise ValueError(f"{field} must be a year, not bool.")
+        raise UserInputError(f"{field} must be a year, not bool.")
     if isinstance(value, int):
         s = str(value)
     elif isinstance(value, str):
         s = value.strip()
     else:
-        raise ValueError(f"{field} must be an integer or year-string. Got {type(value).__name__}.")
+        raise UserInputError(f"{field} must be an integer or year-string. Got {type(value).__name__}.")
     if not s:
         return str(OEWS_CURRENT_YEAR)
     if not _YEAR_RE.match(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} must be a 4-digit year (e.g. '2024' or 2024). "
             f"Decimals, whitespace, and leading zeros beyond 4 digits are rejected."
         )
     y = int(s)
     if y > int(OEWS_CURRENT_YEAR):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={y} is beyond the latest OEWS release ({OEWS_RELEASE_NAME}, "
             f"data year {OEWS_CURRENT_YEAR}). BLS publishes OEWS about a year in "
             f"arrears, so {y} estimates do not exist yet. "
             f"Omit the year or pass {OEWS_CURRENT_YEAR}."
         )
     if y < int(OEWS_CURRENT_YEAR):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={y} is before the current OEWS release. This server "
             f"answers from the current release only ({OEWS_RELEASE_NAME}, data "
             f"year {OEWS_CURRENT_YEAR}). For historical OEWS data, download "
@@ -257,7 +262,7 @@ async def _query_series(
     release does not contain, so the tools parse one format.
     """
     if len(series_ids) > MAX_SERIES:
-        raise ValueError(
+        raise UserInputError(
             f"Too many series ({len(series_ids)}). Max {MAX_SERIES} per request. "
             "Split into multiple calls."
         )
@@ -310,15 +315,15 @@ def _normalize_area(area_input: Any) -> str:
     Requires ASCII digits only; rejects letters, unicode digits, whitespace.
     """
     if area_input is None:
-        raise ValueError("area_code cannot be None.")
+        raise UserInputError("area_code cannot be None.")
     if isinstance(area_input, int):
         area = str(area_input)
     else:
         area = str(area_input).strip()
     if not area:
-        raise ValueError("area_code cannot be empty.")
+        raise UserInputError("area_code cannot be empty.")
     if not _ASCII_DIGITS_RE.match(area):
-        raise ValueError(
+        raise UserInputError(
             f"area_code={area_input!r} must contain only ASCII digits 0-9. "
             f"Got characters other than digits."
         )
@@ -331,7 +336,7 @@ def _normalize_area(area_input: Any) -> str:
     if len(area) == 1:
         # Single-digit state FIPS (CA=6, AK=2, etc.) — auto-pad.
         return f"0{area}00000"
-    raise ValueError(
+    raise UserInputError(
         f"Unrecognized area code '{area}' (length {len(area)}). "
         "Expected: 1-2 digit state FIPS (e.g., '6' for CA, '51' for VA), "
         "5-digit MSA (e.g., '47900'), or 7-digit full code (e.g., '0047900')."
@@ -348,20 +353,20 @@ def _check_area_for_scope(scope: str, area: str, *, field: str = "area_code") ->
     """
     if scope == "state":
         if not area.endswith("00000"):
-            raise ValueError(
+            raise UserInputError(
                 f"{field}={area!r} does not look like a state FIPS code. "
                 f"scope='state' takes a 2-digit FIPS (e.g. '51' for VA). "
                 f"For MSA codes use scope='metro'."
             )
         fips = area[:2]
         if fips not in STATE_FIPS:
-            raise ValueError(
+            raise UserInputError(
                 f"{field} FIPS {fips!r} is not a state/territory OEWS "
                 f"publishes. Valid FIPS: {', '.join(sorted(STATE_FIPS))}."
             )
     elif scope == "metro":
         if area.endswith("00000"):
-            raise ValueError(
+            raise UserInputError(
                 f"{field}={area!r} looks like a 2-digit state FIPS, not an "
                 f"MSA code. scope='metro' takes a 5-digit MSA (e.g. '47900' "
                 f"for the DC metro). For states use scope='state'."
@@ -515,7 +520,7 @@ async def get_wage_data(
     if datatypes is None:
         datatypes = list(IGCE_DATATYPES)
     if not datatypes:
-        raise ValueError(
+        raise UserInputError(
             "datatypes cannot be empty. Pass None for defaults or specify at least one code."
         )
     validated_datatypes = [_validate_datatype(dt, field="datatypes[i]") for dt in datatypes]
@@ -523,7 +528,7 @@ async def get_wage_data(
     seen: set[str] = set()
     validated_datatypes = [x for x in validated_datatypes if not (x in seen or seen.add(x))]
     if scope == "national" and any(dt in RATIO_DATATYPES for dt in validated_datatypes):
-        raise ValueError("Datatypes 16 and 17 are available only at state/metro scope; BLS does not publish national ratios.")
+        raise UserInputError("Datatypes 16 and 17 are available only at state/metro scope; BLS does not publish national ratios.")
 
     prefix_map = {"national": "OEUN", "state": "OEUS", "metro": "OEUM"}
     prefix = prefix_map[scope]
@@ -535,12 +540,12 @@ async def get_wage_data(
         area = "0000000"
     else:
         if area_code is None or (isinstance(area_code, str) and not area_code.strip()):
-            raise ValueError(f"area_code is required for scope='{scope}'.")
+            raise UserInputError(f"area_code is required for scope='{scope}'.")
         area = _normalize_area(area_code)
         _check_area_for_scope(scope, area)
 
     if industry != "000000" and scope != "national":
-        raise ValueError(
+        raise UserInputError(
             "Industry-specific estimates are only available at the national level "
             "(scope='national'). Cannot combine state/metro scope with industry filter."
         )
@@ -648,7 +653,7 @@ async def compare_metros(
     datatype = _validate_datatype(datatype)
     year = _validate_year(year)
     if not metro_codes:
-        raise ValueError("metro_codes list cannot be empty.")
+        raise UserInputError("metro_codes list cannot be empty.")
 
     # Dedup on the NORMALIZED form: '47900' and '0047900' are the same metro
     # and must collapse to one series (first spelling wins the label).
@@ -664,7 +669,7 @@ async def compare_metros(
         # state record, not a metro. That silently produces zero-result
         # series. Enforce that metro_codes look like metros.
         if area.endswith("00000"):
-            raise ValueError(
+            raise UserInputError(
                 f"metro_codes[{code!r}] looks like a 2-digit state FIPS. "
                 f"compare_metros requires MSA codes (5 or 7 digits). "
                 f"For states, use compare_occupations with scope='state' instead."
@@ -743,12 +748,12 @@ async def compare_occupations(
     Up to 50 occupations per call.
     """
     if not occ_codes:
-        raise ValueError("occ_codes list cannot be empty.")
+        raise UserInputError("occ_codes list cannot be empty.")
 
     datatype = _validate_datatype(datatype)
     year = _validate_year(year)
     if scope == "national" and datatype in RATIO_DATATYPES:
-        raise ValueError("Datatypes 16 and 17 are available only at state/metro scope; BLS does not publish national ratios.")
+        raise UserInputError("Datatypes 16 and 17 are available only at state/metro scope; BLS does not publish national ratios.")
 
     prefix_map = {"national": "OEUN", "state": "OEUS", "metro": "OEUM"}
     prefix = prefix_map[scope]
@@ -757,7 +762,7 @@ async def compare_occupations(
         area = "0000000"
     else:
         if area_code is None or (isinstance(area_code, str) and not area_code.strip()):
-            raise ValueError(f"area_code required for scope='{scope}'.")
+            raise UserInputError(f"area_code required for scope='{scope}'.")
         area = _normalize_area(area_code)
         _check_area_for_scope(scope, area)
 
@@ -779,7 +784,7 @@ async def compare_occupations(
         occ_labels[sid] = validated
 
     if not series_ids:
-        raise ValueError("occ_codes contained no usable SOC codes.")
+        raise UserInputError("occ_codes contained no usable SOC codes.")
 
     data = await _query_series(series_ids, start_year=year)
 
@@ -894,17 +899,17 @@ async def igce_wage_benchmark(
     Reasonable range: 1.3 (lean) to 4.0 (high-overhead/clearance).
     """
     if not isinstance(burden_low, (int, float)) or not isinstance(burden_high, (int, float)):
-        raise ValueError("burden_low and burden_high must be numeric.")
+        raise UserInputError("burden_low and burden_high must be numeric.")
     if burden_low <= 0 or burden_high <= 0:
-        raise ValueError(
+        raise UserInputError(
             f"Burden multipliers must be positive. Got low={burden_low}, high={burden_high}."
         )
     if burden_low > burden_high:
-        raise ValueError(
+        raise UserInputError(
             f"burden_low ({burden_low}) must be <= burden_high ({burden_high})."
         )
     if burden_high > 10.0:
-        raise ValueError(
+        raise UserInputError(
             f"burden_high={burden_high} is implausibly large. "
             f"Reasonable max ~4.0x for high-overhead (SCIF/deployed) work."
         )
