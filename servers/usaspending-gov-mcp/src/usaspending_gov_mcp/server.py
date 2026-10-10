@@ -359,7 +359,9 @@ def _current_fiscal_year() -> int:
     return today.year + 1 if today.month >= 10 else today.year
 
 
-_DOD_NAMES = {"department of defense", "dod"}
+_DOD_NAMES = {"department of defense", "dod", "097", "096", "usace",
+              "corps of engineers - civil works",
+              "u.s. army corps of engineers - civil program financing only"}
 _DOD_LAG_DAYS = 90
 
 
@@ -387,9 +389,10 @@ def _dod_lag_note(window_end: date | str | None, *, agencies: tuple[str | None, 
         return None
     available = (min(end, _today()) + timedelta(days=_DOD_LAG_DAYS)).isoformat()
     return (
-        f"DoD contract and IDV actions are published {_DOD_LAG_DAYS} days after the "
-        f"action date, so DoD actions after {cutoff.isoformat()} are mostly missing "
-        f"here and any DoD (or government-wide) total for this period is understated "
+        f"DoD and U.S. Army Corps of Engineers (USACE) contract and IDV actions are "
+        f"published {_DOD_LAG_DAYS} days after the action date, so their actions after "
+        f"{cutoff.isoformat()} are mostly missing here and any DoD/USACE "
+        f"(or government-wide) total for this period is understated "
         f"until about {available}. Don't compare it with earlier full years yet."
     )
 
@@ -402,18 +405,16 @@ def _add_note(result: Any, note: str | None) -> Any:
 
 def _agency_dod_lag_note(toptier_code: str, fy: int | str) -> str | None:
     """DoD (097) fiscal years whose last 90 days are not yet published."""
-    if toptier_code != "097":
+    if toptier_code not in ("097", "096"):
         return None
     return _dod_lag_note(date(int(fy), 9, 30), award_types=None)
 
 
 def _window_end(start: str | None, end: str | None) -> str | None:
-    """The end of a search window (already validated); open-ended means today."""
+    """The end of a search window; open-ended and all-time searches include today."""
     if end:
         return end
-    if start:
-        return _today().isoformat()
-    return None
+    return _today().isoformat()
 
 
 def _last_completed_fiscal_year() -> int:
@@ -1746,6 +1747,8 @@ async def get_state_profile(state_fips: str, year: str | int | None = None) -> d
         if year_str not in ("all", "latest"):
             year_str = str(_validate_fiscal_year(_parse_year_int(year_str, field="year")))
     result = await _get(f"/api/v2/recipient/state/{state_fips.strip()}/", params={"year": year_str})
+    end = date(int(year_str), 9, 30) if year_str.isdigit() else _today()
+    result = _add_note(result, _dod_lag_note(end, award_types=None))
     return _echo_fiscal_year(result, year_str, defaulted=defaulted, param="year")
 
 
@@ -2334,7 +2337,10 @@ async def get_award_funding_rollup(award_id: str) -> dict[str, Any]:
     Useful for a one-line summary of an award's funding picture.
     """
     award_id = _validate_generated_award_id(award_id)
-    return await _post("/api/v2/awards/funding_rollup/", {"award_id": award_id})
+    result = await _post("/api/v2/awards/funding_rollup/", {"award_id": award_id})
+    return _add_note(result, "File C funding can be partial or lagged; this rollup is not "
+                     "the full award obligation or amount paid. Compare with "
+                     "get_award_detail total_obligation for award obligations.")
 
 
 @mcp.tool(annotations={"title": "Get Award Subaward Count", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -2431,7 +2437,11 @@ async def spending_by_transaction(
         "filters": filters, "fields": fields,
         "sort": sort, "order": order, "limit": limit, "page": page,
     }
-    return await _post("/api/v2/search/spending_by_transaction/", payload)
+    result = await _post("/api/v2/search/spending_by_transaction/", payload)
+    return _add_note(result, _dod_lag_note(
+        _window_end(time_period_start, time_period_end),
+        agencies=(awarding_agency, funding_agency), award_types=award_type,
+    ))
 
 
 @mcp.tool(annotations={"title": "Spending by Geography", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -2477,7 +2487,11 @@ async def spending_by_geography(
             "or naics_codes/psc_codes."
         )
     payload = {"filters": filters, "scope": scope, "geo_layer": geo_layer}
-    return await _post("/api/v2/search/spending_by_geography/", payload)
+    result = await _post("/api/v2/search/spending_by_geography/", payload)
+    return _add_note(result, _dod_lag_note(
+        _window_end(time_period_start, time_period_end),
+        agencies=(awarding_agency, funding_agency), award_types=award_type,
+    ))
 
 
 @mcp.tool(annotations={"title": "New Awards Over Time", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -2512,7 +2526,16 @@ async def new_awards_over_time(
         )
     filters["time_period"] = [{"start_date": start, "end_date": end}]
     payload = {"group": group, "filters": filters}
-    return await _post("/api/v2/search/new_awards_over_time/", payload)
+    result = await _post("/api/v2/search/new_awards_over_time/", payload)
+    result = _add_note(result, _dod_lag_note(end, award_types=None))
+    if isinstance(result, dict):
+        result["time_period_note"] = (
+            "Buckets use federal fiscal years (October through September): month 1 "
+            "is October, month 12 is September; quarter 1 is October-December. "
+            "Only the requested date window is included, so a fiscal-year bucket "
+            "can represent a partial year."
+        )
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -2540,7 +2563,11 @@ async def get_idv_amounts(award_id: str) -> dict[str, Any]:
     the IDV. Pass a CONT_IDV_* generated_internal_id.
     """
     award_id = _validate_idv_award_id(award_id)
-    return await _get(f"/api/v2/idvs/amounts/{award_id}/")
+    result = await _get(f"/api/v2/idvs/amounts/{award_id}/")
+    return _add_note(result, "Child award obligations and option values describe reported "
+                     "contracts; child account obligations and outlays come from File C "
+                     "and can be partial or lagged. File C outlays do not establish the "
+                     "amount paid to each contractor.")
 
 
 @mcp.tool(annotations={"title": "Get IDV Funding", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -2560,14 +2587,20 @@ async def get_idv_funding(
         "award_id": award_id, "sort": sort, "order": order,
         "limit": limit, "page": page,
     }
-    return await _post("/api/v2/idvs/funding/", payload)
+    result = await _post("/api/v2/idvs/funding/", payload)
+    return _add_note(result, "File C funding records associated with this IDV can be partial "
+                     "or lagged; they do not establish the full child-order obligation or "
+                     "amount paid. Use get_idv_amounts for child-order obligation totals.")
 
 
 @mcp.tool(annotations={"title": "Get IDV Funding Rollup", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_idv_funding_rollup(award_id: str) -> dict[str, Any]:
     """Funding rollup totals for an IDV (single dict, not paginated)."""
     award_id = _validate_idv_award_id(award_id)
-    return await _post("/api/v2/idvs/funding_rollup/", {"award_id": award_id})
+    result = await _post("/api/v2/idvs/funding_rollup/", {"award_id": award_id})
+    return _add_note(result, "File C funding can be partial or lagged; this rollup is not "
+                     "the full child-order obligation or amount paid. Compare with "
+                     "get_idv_amounts for child-order obligation totals.")
 
 
 @mcp.tool(annotations={"title": "Get IDV Activity", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -2683,7 +2716,11 @@ async def get_submission_periods() -> dict[str, Any]:
     """Return the list of agency submission periods (when each agency last
     submitted data for each fiscal period). Useful for understanding which
     quarters of which fiscal years have full data coverage."""
-    return await _get("/api/v2/references/submission_periods/")
+    result = await _get("/api/v2/references/submission_periods/")
+    return _add_note(result, "These are reporting-calendar periods and submission/certification "
+                     "deadlines, not records of when individual agencies actually submitted "
+                     "or certified data. A listed period does not establish complete agency "
+                     "data coverage.")
 
 
 # ---------------------------------------------------------------------------
