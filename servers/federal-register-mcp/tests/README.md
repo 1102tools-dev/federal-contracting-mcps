@@ -1,6 +1,6 @@
 # Test suite map
 
-232 collected tests. Files are named by the audit round or fix-wave that
+282 collected tests. Files are named by the audit round or fix-wave that
 produced them and are append-only history: each maps to a section of
 [../testing.md](../testing.md), which narrates what every round found and
 fixed. That traceability is deliberate; do not consolidate or rename rounds.
@@ -11,6 +11,7 @@ fixed. That traceability is deliberate; do not consolidate or rename rounds.
 | `test_round_5.py` | Round 5 live audit: search semantics, facets, public inspection against production | 42 | 20 live |
 | `test_round_6.py` | 1.0.1 fix-wave regressions: pre-2011 document numbers rejected (17-year lockout), open_comment_periods sorted descending and dropped soonest-closing docs, FAR-case history returned partial sets | 26 | 5 live |
 | `test_audit_r7.py` | Round 7 super-cycle: one-call-per-test live anchors (FAR Case 2017-016 completeness, 2005 documents reachable, close dates ascending) | 4 | 4 live_smoke |
+| `test_round_8.py` | 1.0.13 content-test regressions and direct government API comparisons | 30 | 5 live |
 
 Live tests need `FR_LIVE_TESTS=1; keyless API`, are paced automatically by `conftest.py` (which
 also resets the cached async client per test so batched live runs cannot hit

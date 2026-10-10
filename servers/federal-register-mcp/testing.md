@@ -2,15 +2,15 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the Federal Register API as 8 callable tools for rulemaking tracking, FAR case history, comment-period monitoring, and regulatory research since 1994. It was hardened across six audit rounds: an initial hardening pass that fixed 17 findings, a retroactive deep audit that surfaced 12 more hidden bugs, a Hypothesis property-testing round, and a round 6 correctness audit against the live archive and the API's own OpenAPI spec that surfaced 12 further verified findings. Two signature findings, one per methodology era: a pydantic validation crash on every `list_agencies` call that was invisible to unit tests awaiting raw coroutines instead of invoking through the FastMCP pipeline, and a document-number validator that rejected the entire pre-2011 archive because prior rounds only ever tested junk inputs, never legacy-real ones. The MCP ships with 232 regression tests (132 offline plus 100 live-gated).
+This Model Context Protocol server exposes the Federal Register API as 8 callable tools for rulemaking tracking, FAR case history, comment-period monitoring, and regulatory research since 1994. It was hardened across six audit rounds: an initial hardening pass that fixed 17 findings, a retroactive deep audit that surfaced 12 more hidden bugs, a Hypothesis property-testing round, and a round 6 correctness audit against the live archive and the API's own OpenAPI spec that surfaced 12 further verified findings. Two signature findings, one per methodology era: a pydantic validation crash on every `list_agencies` call that was invisible to unit tests awaiting raw coroutines instead of invoking through the FastMCP pipeline, and a document-number validator that rejected the entire pre-2011 archive because prior rounds only ever tested junk inputs, never legacy-real ones. The MCP ships with 282 regression tests (177 offline plus 105 live-gated).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 232 (132 offline, 100 live-gated) |
-| Audit rounds completed | 7 |
+| Total regression tests | 282 (177 offline, 105 live-gated) |
+| Audit rounds completed | 8 |
 | Total items addressed | 44 (17 initial, 1 cross-fix, 12 deep audit, 2 round 5, 12 round 6) |
-| Current release | 1.0.3 |
+| Current release | 1.0.13 |
 | PyPI status | Published as `federal-register-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -210,3 +210,16 @@ live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
 ## RC5 pacing remediation (2026-08-22)
 
 Version 1.0.4 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (132 tests; 100 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 8 tools.
+
+## 1.0.13 content-test verification (2026-10-10)
+
+FAR Council co-filing, presidential filters and fields, public inspection
+agency descendants, page limits, capped counts, batch order, correction
+guidance, and case-history match provenance.
+
+The full Python 3.12 offline suite passed 177 tests with 105 live-gated
+tests skipped. All 30 tests in `test_round_8.py` passed with the live flag
+enabled, including 5 comparisons against the government API. All 19 findings
+repro gates passed against the live government API. Hosted tool
+contract checks, version validation for all nine packages, and all 64 release
+guard tests passed. The Worker type check passed; this Worker has no npm test script.
