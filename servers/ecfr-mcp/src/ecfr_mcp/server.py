@@ -25,7 +25,7 @@ from typing import Any
 import httpx
 from mcp.server import MCPServer
 
-from . import __version__, _xml_text
+from . import __version__, _definitions, _xml_text
 from ._throughput import EcfrPacer, EcfrXmlPacer
 from ._response_cache import DAY, HOUR, MINUTE, ResponseCache, cache_key, positive_int_from_env
 from ._xml_cache import XmlCache
@@ -1331,17 +1331,26 @@ async def find_far_definition(
     date: str | None = None,
     max_matches: int = 20,
 ) -> dict[str, Any]:
-    """Search for a term's definition in FAR 2.101 (master definition section).
+    """Find a term's definition in FAR 2.101, the FAR's main definitions section.
 
-    FAR 2.101 contains definitions used throughout the Federal Acquisition
-    Regulation. This tool fetches the full section and searches for paragraphs
-    containing the term, returning matching paragraphs with surrounding context.
+    Returns each matching definition whole (the defining paragraph and every
+    sub-paragraph under it), first, marked kind='definition'. Matching
+    ignores case, hyphens, spacing, plurals, a trailing "means", and the
+    acronym 2.101 puts in a name, so 'service-disabled veteran-owned small
+    business concern', 'SDVOSB concern', 'COTS', 'commercial services' and
+    'contract means' all find their definitions. Other 2.101 paragraphs that
+    use the term (whole words only) follow as kind='mention', each naming
+    the definition it sits in.
 
-    Note: FAR 2.101 is large (~109KB XML). This tool parses the full section
-    server-side and returns only matching paragraphs.
+    When 2.101 doesn't define the term, the tool searches the rest of the
+    FAR (chapter 1) for "<term>" means and returns where it is defined, with
+    the definition text, under defined_elsewhere (for example 19.001 and
+    52.219-14 for 'similarly situated entity'), plus did_you_mean
+    suggestions from 2.101.
 
-    term must be at least 3 characters. max_matches caps returned matches
-    (default 20, max 100); common terms like 'offeror' hit many paragraphs.
+    term must be at least 3 characters. max_matches caps the number of
+    matches returned (default 20, max 100); definitions are never cut, and
+    truncated says whether mentions were left out.
     """
     term_clean = _strip_or_none(term)
     if term_clean is None:
@@ -1354,6 +1363,8 @@ async def find_far_definition(
     term_clean = _clamp_str_len(term_clean, field="term", maximum=100)
     max_matches = _clamp(max_matches, field="max_matches", lo=1, hi=100)
     date = _validate_date_ymd(date, field="date")
+    if not _definitions.clean_query(term_clean):
+        raise ValueError(f"term={term!r} has no words left to look up.")
 
     if date is None:
         date = await _resolve_date(48)
@@ -1362,36 +1373,112 @@ async def find_far_definition(
         f"/api/versioner/v1/full/{date}/title-48.xml",
         {"section": "2.101"},
     )
-    parsed = _parse_xml_to_text(xml)
+    paragraphs = _parse_xml_to_text(xml, date).get("paragraphs", [])
+    found = _definitions.find(paragraphs, term_clean)
+    definitions, mentions = found["definitions"], found["mentions"]
+    room = max(0, max_matches - len(definitions))
+    matches = definitions + mentions[:room]
 
-    term_lower = term_clean.lower()
-    paragraphs = parsed.get("paragraphs", [])
-    matches: list[dict[str, Any]] = []
-    for i, para in enumerate(paragraphs):
-        if term_lower in para.lower():
-            start = max(0, i - 1)
-            end = min(len(paragraphs), i + 3)
-            matches.append({
-                "paragraph_index": i,
-                "context": paragraphs[start:end],
-            })
-            if len(matches) >= max_matches:
-                break
-
-    # Count all matches beyond the cap for the caller's awareness.
-    total_matches = sum(1 for p in paragraphs if term_lower in p.lower())
-
-    return {
+    result: dict[str, Any] = {
         "section": "2.101",
         "date": date,
         "search_term": term_clean,
+        "definition_count": len(definitions),
         "match_count": len(matches),
-        "total_matches": total_matches,
-        "truncated": total_matches > len(matches),
+        "total_matches": len(definitions) + len(mentions),
+        "truncated": len(mentions) > room,
         "max_matches": max_matches,
         "matches": matches,
         "total_paragraphs": len(paragraphs),
     }
+    if definitions:
+        result["note"] = (
+            "Matches with kind='definition' come first and are complete: the defining "
+            "paragraph and every paragraph under it. kind='mention' entries are other "
+            "definitions that use the term."
+        )
+        return result
+
+    result["did_you_mean"] = found["did_you_mean"]
+    elsewhere = await _defined_elsewhere(found["query"], date)
+    result["defined_elsewhere"] = elsewhere
+    if any(e.get("definition") for e in elsewhere):
+        result["note"] = (
+            f"FAR 2.101 does not define '{found['query']}'. It is defined elsewhere in the "
+            f"FAR: see defined_elsewhere (section, heading and the definition text)."
+        )
+    elif elsewhere:
+        result["note"] = (
+            f"FAR 2.101 does not define '{found['query']}'. These FAR sections use the "
+            f"phrase near 'means' but no definition paragraph was confirmed; read them "
+            f"with lookup_far_clause."
+        )
+    else:
+        result["note"] = (
+            f"FAR 2.101 does not define '{found['query']}', and no other FAR (chapter 1) "
+            f"section defines it with 'means'." + (
+                f" Close 2.101 terms: {', '.join(found['did_you_mean'])}."
+                if found["did_you_mean"] else ""
+            )
+        )
+    return result
+
+
+async def _defined_elsewhere(query: str, date: str) -> list[dict[str, Any]]:
+    """FAR sections outside 2.101 that define query, with the definition text.
+
+    Searches chapter 1 for '"query" means', keeps the newest version of each
+    section, and reads up to three of them to find the defining paragraphs.
+    """
+    params = {
+        "query": f'"{query}" means',
+        "hierarchy[title]": "48",
+        "hierarchy[chapter]": "1",
+        "date": date,
+        "per_page": "20",
+    }
+    data = await _get_json("/api/search/v1/results", params)
+    newest: dict[str, dict[str, Any]] = {}
+    for row in _as_list(_safe_dict(data).get("results")):
+        row = _safe_dict(row)
+        section = _safe_dict(row.get("hierarchy")).get("section")
+        if not section or section == "2.101":
+            continue
+        kept = newest.get(section)
+        if kept is None or (row.get("starts_on") or "") > (kept.get("starts_on") or ""):
+            newest[section] = row
+    out: list[dict[str, Any]] = []
+    read = 0
+    # Definitions sections (19.001, 4.2101) first, then search order.
+    ordered = sorted(newest.items(), key=lambda item: "definition" not in str(
+        _safe_dict(item[1].get("headings")).get("section") or "").lower())
+    for section, row in ordered:
+        entry: dict[str, Any] = {
+            "section": section,
+            "heading": _safe_dict(row.get("headings")).get("section"),
+        }
+        if read < 3:
+            read += 1
+            try:
+                xml = await _get_xml(
+                    f"/api/versioner/v1/full/{date}/title-48.xml", {"section": section},
+                )
+            except RuntimeError:
+                xml = None  # not in force on this date; leave it as a pointer
+            if xml is not None:
+                block = _definitions.defining_block(_parse_xml_to_text(xml, date).get("paragraphs", []), query)
+                if block:
+                    entry["definition"] = block
+                else:
+                    entry["note"] = "uses the phrase, but no defining paragraph was found"
+        else:
+            entry["note"] = "not read; only the first three matches are checked"
+        out.append(entry)
+        if len(out) >= 8:
+            break
+    # Confirmed definitions first.
+    out.sort(key=lambda e: "definition" not in e)
+    return out
 
 
 @mcp.tool(annotations={"title": "Find Recent Changes", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
