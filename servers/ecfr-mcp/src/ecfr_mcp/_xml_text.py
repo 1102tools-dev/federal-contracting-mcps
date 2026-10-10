@@ -24,6 +24,8 @@ paragraph, row and section boundaries.
 
 from __future__ import annotations
 
+from ._errors import UserInputError
+
 import html
 import json
 import re
@@ -661,7 +663,7 @@ class _Plan:
     def page(self, page: int, narrower: str) -> dict[str, Any]:
         total = len(self.pages)
         if page > total:
-            raise ValueError(f"page={page} does not exist; this answer has {total} pages.")
+            raise UserInputError(f"page={page} does not exist; this answer has {total} pages.")
         pieces: list[dict[str, Any]] = []
         by_unit: dict[int, dict[str, Any]] = {}
         for index, kind, value in self.pages[page - 1]:
@@ -714,7 +716,7 @@ def paginate(result: dict[str, Any], page: int, *, limit: int = PAGE_CHARS, narr
     """
     if size_of(result) <= limit:
         if page != 1:
-            raise ValueError(f"This answer fits on one page; page={page} does not exist. Use page=1.")
+            raise UserInputError(f"This answer fits on one page; page={page} does not exist. Use page=1.")
         return result
     return _Plan(result, limit).page(page, narrower)
 

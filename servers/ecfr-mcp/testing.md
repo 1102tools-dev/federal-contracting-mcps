@@ -1,5 +1,11 @@
 # eCFR MCP: Testing Record
 
+## Fresh-install delivery correction (1.1.2)
+
+The final actual PyPI 1.1.1 install selected MCP SDK 2.3.0. Its stdio client replaced ordinary unavailable-date and citation-conflict guidance with generic errors. Public hosted content remained correct under frozen SDK 2.0.0, but a fresh installed CLI could not see the same recovery instructions. This was a new P2 found by release verification of the original user questions, separate from the content audit.
+
+Expected validation/domain errors now inherit both ValueError and SDK ToolError; unexpected internal/network errors are unchanged. A real stdio test verifies both messages and successful corrected-date/title followups. Under Python 3.12, **323 offline tests passed and 118 live-gated tests were skipped (441 collected)** with both frozen SDK 2.0.0 and a fresh SDK 2.3.0 wheel installation. Before correction, fresh 1.1.1 had 270 passes and 52 failures because message expectations were hidden. The candidate installed CLI now preserves both original recovery messages and completes the followups. All 13 tool definitions remain unchanged; package builds, version consistency, and new-version PyPI guard pass. Final published 1.1.2 verification follows release; these are candidate checks.
+
 ## October 10 E2E followup (1.1.1)
 
 A fresh hosted 1.1.0 content/usability audit exercised all 13 tools with realistic questions, then repeated 19 source-backed workflow calls on the fixed implementation. It confirmed three defects: comparison to an unavailable snapshot falsely claimed section removal (P1); explicit citation titles were discarded by some navigation/list/change filters (P2); changes-only returned full text for added/removed sections (P3). All three are fixed.
