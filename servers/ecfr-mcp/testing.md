@@ -1,5 +1,17 @@
 # eCFR MCP: Testing Record
 
+## Published round 6 verification (1.1.8, October 10, 2026)
+
+Scoped release workflow `38092076631` completed successfully at source `881bad8f1e46f67dbd6bfe4fab95636b7cccb8dd`. A new Python 3.12 environment installed 1.1.8 uncached by name from official PyPI on its first attempt, selecting current MCP SDK 2.3.0. Actual imports came from that environment's site-packages, with no direct-URL candidate installation. Both initialize responses reported 1.1.8; public health matched the exact release SHA. Both 13-tool catalogs matched the reviewed contract, and all 12 installed Python modules matched the exact source and both official wheel/sdist archives. Both archive hashes matched official PyPI metadata.
+
+The actual installed executable and public service each completed the entire 85-call corpus across all 13 tools and fourteen titles, plus one dedicated dated MCL/PFAS followup per surface. No tool, provider or transport errors occurred, and no research retry was needed. Eighty-three shared answers matched exactly; all 85 matched substantively, with only search scores differing. All 85 published answers also substantively matched the reviewed candidate. Newness remains 77 strictly novel tool/argument signatures plus eight disclosed supporting repeats within new workflows.
+
+All 170 primary comparisons and 33 supplemental checks pass against the 53 retained fresh Round 6 primary captures (all HTTP 200). The supplemental total is sixteen content checks per surface plus one shared capture-integrity check. These are retained source bodies, not 53 newly fetched post-release responses. One separate fresh official titles capture confirmed unchanged metadata and October 7 or 8 snapshot dates for all fourteen audited titles.
+
+Two independent numeric checks read the dioxin coefficient and adjacent sign/digit SUP nodes directly from the raw primary XML, using Decimal arithmetic without the product renderer or the earlier bad superscript normalizer. Both actual published answers correctly preserve `3 × 10^−8 mg/l`, or `0.00000003 mg/l`. Both dated followups return the same complete corrected rule: all six tables, 134 rows and genuine PFAS footnote 1/SSCT footnote 3 remain intact. The one confirmed Round 6 P2 is verified fixed in the actual published package and public service. The original 169-file provisional zero-finding seal, its explicit numeric-checker corrigendum and the 72-file candidate proof seal remain unchanged.
+
+The actual published SDK 2.3.0 suite passed 346 tests with 118 explicit live skips in 15.40 seconds; separate collection measured 464. Test and runtime files match the immutable release source. No new full live-suite run is claimed. Source availability remains title-, section- and date-specific; graphics remain linked, FAR fallback remains bounded, and large textile comparisons explicitly omit full text and guide dated-read recovery while retaining the unincorporated-amendment caveat. Sampled scopes do not prove comprehensive CFR coverage or absence of future defects. Evidence and SHA-256 seal: `Artifacts/mcp-e2e-20261010/round6/ecfr/final-1.1.8`. Registry, website/data, physical Dell and full-round closure remain coordinator-owned.
+
 ## Content research round 6 (1.1.8 candidate, October 10, 2026)
 
 The new-context corpus contains 85 calls per surface across all 13 tools and fourteen titles. Seventy-seven tool/argument signatures are strictly new relative to Rounds 2–5; eight repeat supporting inputs (five title freshness requests, agency discovery, COTS definition and FAR 52.222-41) within new composed workflows. This is not a replay of an earlier research corpus. Both actual official by-name PyPI 1.1.7 installed console and public service completed 85 calls without tool errors; 83 shared answers matched exactly and two differed only in search scores. Its fresh SDK 2.3.0 suite passed 343 tests with 118 live skips (461 collected).
@@ -168,8 +180,8 @@ This Model Context Protocol server exposes the eCFR (Electronic Code of Federal 
 | P3 cleanup items found and fixed | 12 |
 | Round 6 external re-audit findings, fixed in 1.0.2 | 12 (2 high, 5 medium, 5 low) |
 | Round 8 bug hunt findings, fixed in 1.1.0 | 18 P2, about 20 P3, plus 6 everyday-use fixes |
-| Source package version | 1.1.8 candidate |
-| PyPI status | 1.1.8 pending publication; actual published 1.1.7 baseline verified separately |
+| Source package version | 1.1.8 |
+| PyPI status | Published 1.1.8 verified by fresh official by-name install, actual 85-call console/public replays plus dated followups and full offline SDK 2.3.0 suite |
 
 ## 1.0.4 Safety Release Verification
 
