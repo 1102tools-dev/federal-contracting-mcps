@@ -11,9 +11,9 @@ DEFAULT_TIMEOUT_CONTENT = 60.0
 
 USER_AGENT = f"ecfr-mcp/{__version__}"
 
-# eCFR point-in-time coverage starts here. Every versioner request for an
-# earlier date is a guaranteed 404.
-ECFR_EARLIEST_DATE = "2017-01-03"
+# eCFR point-in-time coverage starts here (the version history's baseline
+# date). Every versioner request for an earlier date is a guaranteed 404.
+ECFR_EARLIEST_DATE = "2017-01-01"
 
 # Search caps
 SEARCH_MAX_PER_PAGE = 5000

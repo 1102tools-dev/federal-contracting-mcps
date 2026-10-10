@@ -18,7 +18,7 @@ executed. Findings covered here:
   are the only carriers of chapters 2/30/34/52/54/61.
 - Trailing paragraph cites (section='15.305(a)') were forwarded verbatim
   and 404'd.
-- compare_versions accepted dates before the 2017-01-03 history floor.
+- compare_versions accepted dates before the history floor (2017-01-03 then; 2017-01-01 since 1.1.0).
 - USER_AGENT was pinned at a stale version string.
 
 Tiers:
@@ -139,7 +139,7 @@ def test_cite_with_no_base_section_becomes_none():
 
 def test_compare_versions_rejects_pre_2017_dates():
     asyncio.run(_call_expect_error(
-        "compare_versions", "2017-01-03",
+        "compare_versions", "2017-01-01",
         section_id="52.212-4", date_before="2016-06-01", date_after="2026-01-01",
     ))
 
@@ -172,7 +172,7 @@ def test_agency_slugs_rejects_invalid_slug():
 def test_404_guidance_mentions_cites_and_history_floor():
     msg = srv._format_error(404, "not found")
     assert "15.305(a)" in msg
-    assert "2017-01-03" in msg
+    assert "2017-01-01" in msg
 
 
 def test_user_agent_matches_installed_version():
