@@ -404,6 +404,22 @@ def _add_note(result: Any, note: str | None) -> Any:
     return result
 
 
+def _award_window_note(start: str | None, end: str | None, date_type: str | None) -> str | None:
+    """Disclose the source's default award-envelope filter without changing it."""
+    if date_type is not None or not (start or end):
+        return None
+    return (
+        f"Default award date window: latest action on/after {start or _EARLIEST_SEARCH_DATE} "
+        f"and first signing on/before {end or '2099-09-30'}. This interval overlap "
+        "does not prove an action occurred inside the window; the returned awards "
+        "and counts are not an in-window action population. For actual dated actions, "
+        "use spending_by_transaction with the dates and paginate every page; "
+        "deduplicate award identifiers for distinct awards. Use get_transactions "
+        "for a discovered award's complete action dates. Explicit date_type='action_date' "
+        "bounds only the latest action, not any action."
+    )
+
+
 def _agency_dod_lag_note(toptier_code: str, fy: int | str) -> str | None:
     """DoD (097) fiscal years whose last 90 days are not yet published."""
     if toptier_code not in ("097", "096"):
@@ -776,13 +792,15 @@ async def search_awards(
     by 'End Date' over an action-date window returns long-ended awards that
     had a closeout mod; filter the End Date column yourself.
 
-    date_type controls what the time window means. Omitted (the default),
-    an award counts if it had any action in the window, so totals and
-    counts include old awards that were only modified (a closeout mod in
-    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
-    'new_awards_only' keeps only awards first signed in the window: use it
-    for "how many new awards / contracts awarded in FY2026". 'date_signed',
-    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type controls the award date window. Omitted (the default),
+    the latest action must be on/after the window start and the first signing
+    on/before its end. This interval overlap does NOT prove an action occurred
+    inside the window. For actual dated actions use spending_by_transaction,
+    read every page, and deduplicate award identifiers for distinct awards;
+    get_transactions provides a discovered award's complete action history.
+    'action_date' bounds the latest action, not any action; 'date_signed'
+    bounds first signing; 'last_modified_date' bounds the latest update.
+    'new_awards_only' keeps awards first signed in the window.
     date_type needs time_period_start and/or time_period_end.
     """
     codes = _resolve_award_type(award_type)
@@ -874,6 +892,9 @@ async def search_awards(
         "fields": fields,
     }
     result = await _post("/api/v2/search/spending_by_award/", payload)
+    scope_note = _award_window_note(time_period_start, time_period_end, date_type)
+    if scope_note:
+        result["time_period_note"] = scope_note
     return _add_note(result, _dod_lag_note(
         _window_end(time_period_start, time_period_end),
         agencies=(awarding_agency, funding_agency), award_types=award_type,
@@ -917,13 +938,15 @@ async def get_award_count(
     At least one filter is required (the API rejects empty filter sets with HTTP 400).
     Typical usage: pass time_period_start + time_period_end, or a keywords/agency filter.
 
-    date_type controls what the time window means. Omitted (the default),
-    an award counts if it had any action in the window, so totals and
-    counts include old awards that were only modified (a closeout mod in
-    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
-    'new_awards_only' keeps only awards first signed in the window: use it
-    for "how many new awards / contracts awarded in FY2026". 'date_signed',
-    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type controls the award date window. Omitted (the default),
+    the latest action must be on/after the window start and the first signing
+    on/before its end. This interval overlap does NOT prove an action occurred
+    inside the window. For actual dated actions use spending_by_transaction,
+    read every page, and deduplicate award identifiers for distinct awards;
+    get_transactions provides a discovered award's complete action history.
+    'action_date' bounds the latest action, not any action; 'date_signed'
+    bounds first signing; 'last_modified_date' bounds the latest update.
+    'new_awards_only' keeps awards first signed in the window.
     date_type needs time_period_start and/or time_period_end.
     """
     _validate_strings_no_control_chars(keywords, field="keywords")
@@ -959,6 +982,9 @@ async def get_award_count(
             "Typical: time_period_start + time_period_end, or keywords, or awarding_agency."
         )
     result = await _post("/api/v2/search/spending_by_award_count/", {"filters": filters})
+    scope_note = _award_window_note(time_period_start, time_period_end, date_type)
+    if scope_note:
+        result["time_period_note"] = scope_note
     return _add_note(result, _dod_lag_note(
         _window_end(time_period_start, time_period_end),
         agencies=(awarding_agency, funding_agency), award_types=None,
@@ -1008,13 +1034,14 @@ async def spending_over_time(
     At least one filter is required (the API rejects empty filter sets with HTTP 400).
     Typical usage: pass time_period_start + time_period_end.
 
-    date_type controls what the time window means. Omitted (the default),
-    an award counts if it had any action in the window, so totals and
-    counts include old awards that were only modified (a closeout mod in
-    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
-    'new_awards_only' keeps only awards first signed in the window: use it
-    for "how many new awards / contracts awarded in FY2026". 'date_signed',
-    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type controls the transaction date window. Omitted (the default)
+    or 'action_date', it selects transaction actions inside the window.
+    'date_signed' selects the associated award's first signing date;
+    'last_modified_date' selects transaction update dates. 'new_awards_only'
+    retains in-window actions associated with awards first signed in the
+    window. These are transaction obligation totals, not new-award counts:
+    use new_awards_over_time for counts. Award search/count tools use a
+    different default interval-overlap rule.
     date_type needs time_period_start and/or time_period_end.
     """
     _validate_strings_no_control_chars(keywords, field="keywords")
@@ -1098,13 +1125,14 @@ async def spending_by_category(
     aggregate the entire USASpending database (all years, all agencies),
     which is never what a caller wants.
 
-    date_type controls what the time window means. Omitted (the default),
-    an award counts if it had any action in the window, so totals and
-    counts include old awards that were only modified (a closeout mod in
-    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
-    'new_awards_only' keeps only awards first signed in the window: use it
-    for "how many new awards / contracts awarded in FY2026". 'date_signed',
-    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type controls the transaction date window. Omitted (the default)
+    or 'action_date', it selects transaction actions inside the window.
+    'date_signed' selects the associated award's first signing date;
+    'last_modified_date' selects transaction update dates. 'new_awards_only'
+    retains in-window actions associated with awards first signed in the
+    window. These are transaction obligation totals, not new-award counts:
+    use new_awards_over_time for counts. Award search/count tools use a
+    different default interval-overlap rule.
     date_type needs time_period_start and/or time_period_end.
     """
     limit = _clamp_limit(limit, cap=100)

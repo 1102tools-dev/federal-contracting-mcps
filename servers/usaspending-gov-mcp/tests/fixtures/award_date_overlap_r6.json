@@ -1,0 +1,1097 @@
+{
+  "source_sha": "03b9e2554837998c4c261c65e2947dc79f23855a",
+  "search": {
+    "method": "POST",
+    "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+    "params": null,
+    "body": {
+      "subawards": false,
+      "limit": 100,
+      "page": 1,
+      "sort": "Award Amount",
+      "order": "desc",
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "agencies": [
+          {
+            "type": "awarding",
+            "tier": "toptier",
+            "name": "Department of Energy"
+          }
+        ],
+        "naics_codes": [
+          "541715"
+        ],
+        "time_period": [
+          {
+            "start_date": "2025-08-01",
+            "end_date": "2025-08-31"
+          }
+        ]
+      },
+      "fields": [
+        "Award ID",
+        "Recipient Name",
+        "Recipient UEI",
+        "Description",
+        "Awarding Agency",
+        "Awarding Sub Agency",
+        "Funding Agency",
+        "Award Amount",
+        "Total Outlays",
+        "Contract Award Type",
+        "Start Date",
+        "End Date",
+        "NAICS",
+        "PSC",
+        "generated_internal_id",
+        "Last Modified Date"
+      ]
+    },
+    "raw": {
+      "spending_level": "awards",
+      "limit": 100,
+      "results": [
+        {
+          "internal_id": 292026551,
+          "Award ID": "89233018CNR000004",
+          "Recipient Name": "FLUOR MARINE PROPULSION, LLC",
+          "Recipient UEI": "CWHMVCX7K1N6",
+          "Description": "MANAGEMENT AND OPERATION OF THE NAVAL NUCLEAR LABORATORY AND NAVAL NUCLEAR PROPULSION PROGRAM SUPPORT",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 14754114287.21,
+          "Total Outlays": 10139709686.17,
+          "Contract Award Type": "DEFINITIVE CONTRACT",
+          "Start Date": "2018-07-12",
+          "End Date": "2028-09-30",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "M1HA",
+            "description": "OPERATION OF GOVERNMENT-OWNED CONTRACTOR-OPERATED (GOCO) R&D FACILITIES"
+          },
+          "generated_internal_id": "CONT_AWD_89233018CNR000004_8900_-NONE-_-NONE-",
+          "Last Modified Date": "2026-09-29 10:10:22",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292027803,
+          "Award ID": "89243024CSC000002",
+          "Recipient Name": "FERMI FORWARD DISCOVERY GROUP, LLC",
+          "Recipient UEI": "VLS6K3EVCMW5",
+          "Description": "MANAGEMENT AND OPERATING CONTRACT FOR THE FERMI NATIONAL ACCELERATOR LABORATORY (FNAL)",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 2508091708.12,
+          "Total Outlays": 1346724066.92,
+          "Contract Award Type": "DEFINITIVE CONTRACT",
+          "Start Date": "2024-09-30",
+          "End Date": "2029-12-31",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "M1HA",
+            "description": "OPERATION OF GOVERNMENT-OWNED CONTRACTOR-OPERATED (GOCO) R&D FACILITIES"
+          },
+          "generated_internal_id": "CONT_AWD_89243024CSC000002_8900_-NONE-_-NONE-",
+          "Last Modified Date": "2026-09-29 16:44:32",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292036677,
+          "Award ID": "89303321CEM000080",
+          "Recipient Name": "BATTELLE SAVANNAH RIVER ALLIANCE, LLC",
+          "Recipient UEI": "KNXDWU1G3E81",
+          "Description": "SAVANNAH RIVER NATIONAL LABORATORY MANAGEMENT AND OPERATING (M&O) CONTRACT",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 1643484968.75,
+          "Total Outlays": 1302747460.09,
+          "Contract Award Type": "DEFINITIVE CONTRACT",
+          "Start Date": "2021-02-16",
+          "End Date": "2030-02-15",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "AJ12",
+            "description": "GENERAL SCIENCE AND TECHNOLOGY R&D SERVICES; GENERAL SCIENCE AND TECHNOLOGY; APPLIED RESEARCH"
+          },
+          "generated_internal_id": "CONT_AWD_89303321CEM000080_8900_-NONE-_-NONE-",
+          "Last Modified Date": "2026-09-21 15:17:47",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292028975,
+          "Award ID": "89243318CFE000003",
+          "Recipient Name": "LEIDOS, INC.",
+          "Recipient UEI": "MYKLJHTX3MM7",
+          "Description": "RESEARCH SUPPORT SERVICES (RSS)",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 1083287885.0,
+          "Total Outlays": 818135409.57,
+          "Contract Award Type": "DEFINITIVE CONTRACT",
+          "Start Date": "2018-12-31",
+          "End Date": "2028-12-30",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "R425",
+            "description": "SUPPORT- PROFESSIONAL: ENGINEERING/TECHNICAL"
+          },
+          "generated_internal_id": "CONT_AWD_89243318CFE000003_8900_-NONE-_-NONE-",
+          "Last Modified Date": "2026-09-25 09:22:06",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292026799,
+          "Award ID": "89233119CNA000063",
+          "Recipient Name": "GENERAL ATOMICS",
+          "Recipient UEI": "TVRYQ3N3B8H5",
+          "Description": "RESEARCH&DEVELOPMENT AND FABRICATION OF INERTIAL CONFINEMENT FUSION (ICF) TARGETS FOR THE OFFICE OF RTD&E NA-11, EXPERIMENTAL SCIENCES NA-113",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 179974624.06,
+          "Total Outlays": 149392145.67,
+          "Contract Award Type": "DEFINITIVE CONTRACT",
+          "Start Date": "2019-08-01",
+          "End Date": "2024-09-30",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "R425",
+            "description": "SUPPORT- PROFESSIONAL: ENGINEERING/TECHNICAL"
+          },
+          "generated_internal_id": "CONT_AWD_89233119CNA000063_8900_-NONE-_-NONE-",
+          "Last Modified Date": "2025-08-01 11:20:29",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292027364,
+          "Award ID": "89233124CNA000365",
+          "Recipient Name": "GENERAL ATOMICS",
+          "Recipient UEI": "TVRYQ3N3B8H5",
+          "Description": "RESEARCH & DEVELOPMENT AND FABRICATION OF INERTIAL CONFINEMENT FUSION (ICF) TARGETS FOR THE OFFICE OF RTD&E NA-11, EXPERIMENTAL SCIENCES NA-113",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 92366341.4,
+          "Total Outlays": 67587042.04,
+          "Contract Award Type": "DEFINITIVE CONTRACT",
+          "Start Date": "2024-10-01",
+          "End Date": "2029-09-30",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "AJ12",
+            "description": "GENERAL SCIENCE AND TECHNOLOGY R&D SERVICES; GENERAL SCIENCE AND TECHNOLOGY; APPLIED RESEARCH"
+          },
+          "generated_internal_id": "CONT_AWD_89233124CNA000365_8900_-NONE-_-NONE-",
+          "Last Modified Date": "2026-09-10 23:41:27",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292027571,
+          "Award ID": "89233125FNA400697",
+          "Recipient Name": "THE AEROSPACE CORPORATION",
+          "Recipient UEI": "YA8LJBJCND19",
+          "Description": "SYSTEM ENGINEERING AND INTEGRATION (SE&I) SUPPORT AND INDEPENDENT TECHNICAL AND PROGRAMMATIC ANALYSIS FOR THE OFFICES OF DEFENSE NUCLEAR NONPROLIFERATION AND DEFENSE PROGRAMS",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 41772736.47,
+          "Total Outlays": 24426512.82,
+          "Contract Award Type": "DELIVERY ORDER",
+          "Start Date": "2025-06-01",
+          "End Date": "2027-05-31",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "AR14",
+            "description": "SPACE R&D SERVICES; SPACE FLIGHT, RESEARCH AND SUPPORTING ACTIVITIES; R&D ADMINISTRATIVE EXPENSES"
+          },
+          "generated_internal_id": "CONT_AWD_89233125FNA400697_8900_89233125DNA000062_8900",
+          "Last Modified Date": "2026-09-14 14:10:28",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292027570,
+          "Award ID": "89233125FNA400696",
+          "Recipient Name": "THE AEROSPACE CORPORATION",
+          "Recipient UEI": "YA8LJBJCND19",
+          "Description": "SYSTEM ENGINEERING AND INTEGRATION (SE&I) SUPPORT AND INDEPENDENT TECHNICAL AND PROGRAMMATIC ANALYSIS FOR THE OFFICES OF DEFENSE NUCLEAR NONPROLIFERATION (DNN - NA-20)",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 20491125.0,
+          "Total Outlays": 12017516.6,
+          "Contract Award Type": "DELIVERY ORDER",
+          "Start Date": "2025-06-01",
+          "End Date": "2027-05-31",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "AR14",
+            "description": "SPACE R&D SERVICES; SPACE FLIGHT, RESEARCH AND SUPPORTING ACTIVITIES; R&D ADMINISTRATIVE EXPENSES"
+          },
+          "generated_internal_id": "CONT_AWD_89233125FNA400696_8900_89233125DNA000062_8900",
+          "Last Modified Date": "2026-08-26 13:40:40",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292028699,
+          "Award ID": "89243218CNE000001",
+          "Recipient Name": "ELECTRIC POWER RESEARCH INSTITUTE INC",
+          "Recipient UEI": "JBV2SMLRBK29",
+          "Description": "MONITORING THE HIGH BURN-UP LONG TERM STORAGE CASK DEMONSTRATION PROJECT",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 18897805.11,
+          "Total Outlays": 10585648.81,
+          "Contract Award Type": "DEFINITIVE CONTRACT",
+          "Start Date": "2018-10-16",
+          "End Date": "2028-10-15",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "AG52",
+            "description": "R&D- ENERGY: NUCLEAR (APPLIED RESEARCH/EXPLORATORY DEVELOPMENT)"
+          },
+          "generated_internal_id": "CONT_AWD_89243218CNE000001_8900_-NONE-_-NONE-",
+          "Last Modified Date": "2026-09-23 09:40:13",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292027158,
+          "Award ID": "89233122CNA000255",
+          "Recipient Name": "NEVADA SYSTEM OF HIGHER EDUCATION",
+          "Recipient UEI": "MV1JFXA4S621",
+          "Description": "TECHNICAL RESEARCH, ENGINEERING, AND DEVELOPMENT SERVICES (TREDS) II SUPPORTING THE DEPARTMENT OF ENERGY (DOE) NATIONAL NUCLEAR SECURITY ADMINISTRATION (NNSA) - NEVADA FIELD OFFICE (NFO)",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 17790848.8,
+          "Total Outlays": 14780221.42,
+          "Contract Award Type": "DEFINITIVE CONTRACT",
+          "Start Date": "2022-05-03",
+          "End Date": "2027-04-30",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "AC21",
+            "description": "NATIONAL DEFENSE R&D SERVICES; ATOMIC ENERGY DEFENSE ACTIVITIES; BASIC RESEARCH"
+          },
+          "generated_internal_id": "CONT_AWD_89233122CNA000255_8900_-NONE-_-NONE-",
+          "Last Modified Date": "2026-08-26 11:18:19",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292027276,
+          "Award ID": "89233123CNA000311",
+          "Recipient Name": "MERRICK-SMSI JOINT VENTURE LLP",
+          "Recipient UEI": "GLTQW6JJ48T4",
+          "Description": "GLOVEBOX DEMONSTRATION PROGRAM",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 5790230.0,
+          "Total Outlays": 4971735.5,
+          "Contract Award Type": "DEFINITIVE CONTRACT",
+          "Start Date": "2023-10-01",
+          "End Date": "2027-09-30",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "R499",
+            "description": "SUPPORT- PROFESSIONAL: OTHER"
+          },
+          "generated_internal_id": "CONT_AWD_89233123CNA000311_8900_-NONE-_-NONE-",
+          "Last Modified Date": "2026-09-11 14:00:56",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292027138,
+          "Award ID": "89233121FNA400401",
+          "Recipient Name": "NATIONAL STRATEGIC RESEARCH INSTITUTE",
+          "Recipient UEI": "CZLHXAXKJYX1",
+          "Description": "TASK ORDER WITH UNIVERSITY OF NEBRASKA NATIONAL STRATEGIC RESEARCH INSTITUTE NSRI",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 3445614.22,
+          "Total Outlays": 3283575.86,
+          "Contract Award Type": "DELIVERY ORDER",
+          "Start Date": "2021-09-28",
+          "End Date": "2026-09-30",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "AG45",
+            "description": "ENERGY R&D SVCS; ENERGY INFORMATION, POLICY & REGULATION; R&D FACILITIES & MAJ EQUIP"
+          },
+          "generated_internal_id": "CONT_AWD_89233121FNA400401_8900_89233121DNA000037_8900",
+          "Last Modified Date": "2026-06-16 12:04:27",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292030250,
+          "Award ID": "89243324PFE000820",
+          "Recipient Name": "SINTEF AS",
+          "Recipient UEI": "MBCJWBFTQC56",
+          "Description": "SINTEF POST-COMBUSTION SOLVENT-BASED CO2 CAPTURE TECHNOLOGY FOR SOLVENT DEGRADATION STUDIES, EMISSION MEASUREMENT TECHNIQUES, AND DEVELOPMENT OF NEW ANALYTICAL METHODS FOR ASSOCIATED NEWLY IDENTIFIED COMPONENTS.",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 619572.0,
+          "Total Outlays": 495857.6,
+          "Contract Award Type": "PURCHASE ORDER",
+          "Start Date": "2024-10-01",
+          "End Date": "2026-10-30",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "H235",
+            "description": "EQUIPMENT AND MATERIALS TESTING- SERVICE AND TRADE EQUIPMENT"
+          },
+          "generated_internal_id": "CONT_AWD_89243324PFE000820_8900_-NONE-_-NONE-",
+          "Last Modified Date": "2026-09-10 10:00:33",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292030338,
+          "Award ID": "89243325PFE000832",
+          "Recipient Name": "THE JOHNS HOPKINS UNIVERSITY APPLIED PHYSICS LABORATORY LLC",
+          "Recipient UEI": "C1HBCJ9RMBV3",
+          "Description": "REDS (RARE EARTH DISILICATES) SUPPORT RELATED PROJECT ENABLE USE OF CMC MATERIALS IN HIGH EFFICIENCY HYDROGEN TURBINES AS PART OF THE ADVANCED MATERIALS MULTIYEAR RESEARCH PROGRAM WITH JOHNS HOPKINS",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 126934.0,
+          "Total Outlays": 62488.0,
+          "Contract Award Type": "PURCHASE ORDER",
+          "Start Date": "2025-01-08",
+          "End Date": "2026-08-15",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "H235",
+            "description": "EQUIPMENT AND MATERIALS TESTING- SERVICE AND TRADE EQUIPMENT"
+          },
+          "generated_internal_id": "CONT_AWD_89243325PFE000832_8900_-NONE-_-NONE-",
+          "Last Modified Date": "2025-11-12 12:41:19",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        },
+        {
+          "internal_id": 292042190,
+          "Award ID": "89503125FWA400663",
+          "Recipient Name": "SYSCOM, INC",
+          "Recipient UEI": "SR9YMM6QE8B5",
+          "Description": "JANITORIAL SERVICES FOR MULTIPLE DSW SUBSTATIONS (PARKER, DAVIS AND MEAD) IN SUPPORT OF WESTERN AREA POWER ADMINISTRATION DESERT SOUTHWEST REGION",
+          "Awarding Agency": "Department of Energy",
+          "Awarding Sub Agency": "Department of Energy",
+          "Funding Agency": "Department of Energy",
+          "Award Amount": 0.0,
+          "Total Outlays": null,
+          "Contract Award Type": "DELIVERY ORDER",
+          "Start Date": "2025-08-27",
+          "End Date": "2027-09-01",
+          "NAICS": {
+            "code": "541715",
+            "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+          },
+          "PSC": {
+            "code": "S201",
+            "description": "HOUSEKEEPING- CUSTODIAL JANITORIAL"
+          },
+          "generated_internal_id": "CONT_AWD_89503125FWA400663_8900_47QRCA25DSF32_4732",
+          "Last Modified Date": "2026-07-24 09:52:13",
+          "awarding_agency_id": 930,
+          "agency_slug": "department-of-energy"
+        }
+      ],
+      "page_metadata": {
+        "page": 1,
+        "hasNext": false,
+        "last_record_unique_id": null,
+        "last_record_sort_value": "None"
+      },
+      "messages": [
+        "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+      ]
+    },
+    "canonical_response_sha256": "fe0d7b0cb40fc55b218736c0e40e194748c0295a730516883e669dce507bb612"
+  },
+  "count": {
+    "method": "POST",
+    "url": "https://api.usaspending.gov/api/v2/search/spending_by_award_count/",
+    "params": null,
+    "body": {
+      "filters": {
+        "agencies": [
+          {
+            "type": "awarding",
+            "tier": "toptier",
+            "name": "Department of Energy"
+          }
+        ],
+        "naics_codes": [
+          "541715"
+        ],
+        "time_period": [
+          {
+            "start_date": "2025-08-01",
+            "end_date": "2025-08-31"
+          }
+        ]
+      }
+    },
+    "raw": {
+      "results": {
+        "contracts": 15,
+        "direct_payments": 0,
+        "grants": 0,
+        "idvs": 2,
+        "loans": 0,
+        "other": 0
+      },
+      "spending_level": "awards",
+      "messages": [
+        "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+      ]
+    },
+    "canonical_response_sha256": "a3cbf2d345499f5df80c7f8b37242fc77ed90892d1f84c37fce9ec346999b14a"
+  },
+  "dated_transactions": {
+    "method": "POST",
+    "url": "https://api.usaspending.gov/api/v2/search/spending_by_transaction/",
+    "params": null,
+    "body": {
+      "filters": {
+        "award_type_codes": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "agencies": [
+          {
+            "type": "awarding",
+            "tier": "toptier",
+            "name": "Department of Energy"
+          }
+        ],
+        "naics_codes": [
+          "541715"
+        ],
+        "time_period": [
+          {
+            "start_date": "2025-08-01",
+            "end_date": "2025-08-31"
+          }
+        ]
+      },
+      "fields": [
+        "Action Date",
+        "Mod",
+        "Award ID",
+        "Action Type",
+        "Awarding Agency",
+        "Recipient Name",
+        "Transaction Amount",
+        "Transaction Description",
+        "internal_id",
+        "generated_internal_id"
+      ],
+      "sort": "Action Date",
+      "order": "desc",
+      "limit": 100,
+      "page": 1
+    },
+    "raw": {
+      "limit": 100,
+      "results": [
+        {
+          "Action Date": "2025-08-28",
+          "Mod": "P00127",
+          "Award ID": "89233018CNR000004",
+          "Action Type": "C",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "FLUOR MARINE PROPULSION, LLC",
+          "Transaction Amount": 13600000.0,
+          "Transaction Description": "THE PURPOSE OF THIS MODIFICATION IS TO INCREASE THE CONTRACT FUNDING FOR 89233018CNR000004 WITH FLUOR BY $13,600,000.00 FROM $3,786,373,037.53 TO $3,799,973,037.53 FOR THE OPTION TERM. THE TOTAL AMOUNT OF THE CONTRACT FUNDING WOULD BE AN INCREASE FRO",
+          "internal_id": 292026551,
+          "generated_internal_id": "CONT_AWD_89233018CNR000004_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-27",
+          "Mod": "0",
+          "Award ID": "89503125FWA400663",
+          "Action Type": null,
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "SYSCOM, INC",
+          "Transaction Amount": 0.0,
+          "Transaction Description": "JANITORIAL SERVICES FOR MULTIPLE DSW SUBSTATIONS (PARKER, DAVIS AND MEAD) IN SUPPORT OF WESTERN AREA POWER ADMINISTRATION DESERT SOUTHWEST REGION",
+          "internal_id": 292042190,
+          "generated_internal_id": "CONT_AWD_89503125FWA400663_8900_47QRCA25DSF32_4732"
+        },
+        {
+          "Action Date": "2025-08-27",
+          "Mod": "P00030",
+          "Award ID": "89243024CSC000002",
+          "Action Type": "C",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "FERMI FORWARD DISCOVERY GROUP, LLC",
+          "Transaction Amount": 88046898.41,
+          "Transaction Description": "MANAGEMENT AND OPERATION CONTRACT FOR FERMI NATIONAL ACCELERATOR LABORATORY  THE PURPOSE OF THIS MODIFICATION IS TO EXECUTE AUGUST 2025'S APPROPRIATED FINANCIAL MODIFICATION.  ALL OTHER TERMS AND CONDITIONS REMAIN THE SAME.",
+          "internal_id": 292027803,
+          "generated_internal_id": "CONT_AWD_89243024CSC000002_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-27",
+          "Mod": "P00031",
+          "Award ID": "89243024CSC000002",
+          "Action Type": "C",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "FERMI FORWARD DISCOVERY GROUP, LLC",
+          "Transaction Amount": 0.0,
+          "Transaction Description": "MANAGEMENT AND OPERATION CONTRACT FOR FERMI NATIONAL ACCELERATOR LABORATORY  THE PURPOSE OF THIS MODIFICATION IS TO EXECUTE AUGUST 2025'S NON-APPROPRIATED FINANCIAL MODIFICATION.  ALL OTHER TERMS AND CONDITIONS REMAIN THE SAME.",
+          "internal_id": 292027803,
+          "generated_internal_id": "CONT_AWD_89243024CSC000002_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-26",
+          "Mod": "P00126",
+          "Award ID": "89233018CNR000004",
+          "Action Type": "C",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "FLUOR MARINE PROPULSION, LLC",
+          "Transaction Amount": -13824000.0,
+          "Transaction Description": "THE PURPOSE OF THIS MODIFICATION IS TO DECREASE CONTRACT 89233018CNR000004 WITH FLUOR BY $13,824,000.00 FROM $3,800,197,037.53 TO $3,786,373,037.53 FOR THE OPTION TERM. THE TOTAL AMOUNT OF THE CONTRACT WOULD BE A DECREASE FROM $13,134,592,148.11 TO $",
+          "internal_id": 292026551,
+          "generated_internal_id": "CONT_AWD_89233018CNR000004_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-20",
+          "Mod": "P00194",
+          "Award ID": "89303321CEM000080",
+          "Action Type": "C",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "BATTELLE SAVANNAH RIVER ALLIANCE, LLC",
+          "Transaction Amount": 28207642.73,
+          "Transaction Description": "THE DESCRIPTION OF THIS MODIFICATION IS TO INCORPORATE FINPLAN NO. 68 FOR FISCAL YEAR 2025 OF THE BSRA M&O CONTRACT.",
+          "internal_id": 292036677,
+          "generated_internal_id": "CONT_AWD_89303321CEM000080_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-19",
+          "Mod": "P00002",
+          "Award ID": "89233125FNA400696",
+          "Action Type": "C",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "THE AEROSPACE CORPORATION",
+          "Transaction Amount": 81800.0,
+          "Transaction Description": "SYSTEM ENGINEERING AND INTEGRATION (SE&I) SUPPORT AND INDEPENDENT TECHNICAL AND PROGRAMMATIC ANALYSIS FOR THE OFFICES OF DEFENSE NUCLEAR NONPROLIFERATION (DNN - NA-20)",
+          "internal_id": 292027570,
+          "generated_internal_id": "CONT_AWD_89233125FNA400696_8900_89233125DNA000062_8900"
+        },
+        {
+          "Action Date": "2025-08-19",
+          "Mod": "P00029",
+          "Award ID": "89243024CSC000002",
+          "Action Type": "B",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "FERMI FORWARD DISCOVERY GROUP, LLC",
+          "Transaction Amount": 0.0,
+          "Transaction Description": "MANAGEMENT AND OPERATION CONTRACT FOR FERMI NATIONAL ACCELERATOR LABORATORY  THE PURPOSE OF THIS MODIFICATION IS TO EXECUTE A LANGUAGE MODIFICATION.  THE SECTION OF THE FERMILAB M&O CONTRACT THAT WILL BE REVISED AS A RESULT OF THIS MODIFICATI",
+          "internal_id": 292027803,
+          "generated_internal_id": "CONT_AWD_89243024CSC000002_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-18",
+          "Mod": "P00193",
+          "Award ID": "89303321CEM000080",
+          "Action Type": "M",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "BATTELLE SAVANNAH RIVER ALLIANCE, LLC",
+          "Transaction Amount": 0.0,
+          "Transaction Description": "THE PURPOSE OF THIS MODIFICATION IS TO INCORPORATE BSRA FY 2025 PEMP REVISION 1 FINAL, OCTOBER 1, 2024 THROUGH SEPTEMBER 30, 2025.",
+          "internal_id": 292036677,
+          "generated_internal_id": "CONT_AWD_89303321CEM000080_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-18",
+          "Mod": "P00213",
+          "Award ID": "89243318CFE000003",
+          "Action Type": "C",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "LEIDOS, INC.",
+          "Transaction Amount": 2455085.0,
+          "Transaction Description": "IIJA RESEARCH SUPPORT SERVICES (RSS), MODIFICATION P00213, INCREMENTAL FUNDING",
+          "internal_id": 292028975,
+          "generated_internal_id": "CONT_AWD_89243318CFE000003_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-13",
+          "Mod": "P00212",
+          "Award ID": "89243318CFE000003",
+          "Action Type": "B",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "LEIDOS, INC.",
+          "Transaction Amount": 5238406.0,
+          "Transaction Description": "RESEARCH SUPPORT SERVICES (RSS), MODIFICATION P00212, INCREMENTAL FUNDING AND UPDATE H.45 OVERTIME APPROVALS",
+          "internal_id": 292028975,
+          "generated_internal_id": "CONT_AWD_89243318CFE000003_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-11",
+          "Mod": "P00040",
+          "Award ID": "89233122CNA000255",
+          "Action Type": "C",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "NEVADA SYSTEM OF HIGHER EDUCATION",
+          "Transaction Amount": 50000.0,
+          "Transaction Description": "TECHNICAL RESEARCH, ENGINEERING, AND DEVELOPMENT SERVICES (TREDS) II SUPPORTING THE DOE/NNSA NEVADA FIELD OFFICE (NFO).",
+          "internal_id": 292027158,
+          "generated_internal_id": "CONT_AWD_89233122CNA000255_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-08",
+          "Mod": "P00007",
+          "Award ID": "89233124CNA000365",
+          "Action Type": "M",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "GENERAL ATOMICS",
+          "Transaction Amount": 0.0,
+          "Transaction Description": "RESEARCH & DEVELOPMENT AND FABRICATION OF INERTIAL CONFINEMENT FUSION (ICF) TARGETS FOR THE OFFICE OF RTD&E NA-11, EXPERIMENTAL SCIENCES NA-113",
+          "internal_id": 292027364,
+          "generated_internal_id": "CONT_AWD_89233124CNA000365_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-06",
+          "Mod": "P00211",
+          "Award ID": "89243318CFE000003",
+          "Action Type": "C",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "LEIDOS, INC.",
+          "Transaction Amount": 11900403.0,
+          "Transaction Description": "RESEARCH SUPPORT SERVICES (RSS), MODIFICATION P00211, INCREMENTAL FUNDING",
+          "internal_id": 292028975,
+          "generated_internal_id": "CONT_AWD_89243318CFE000003_8900_-NONE-_-NONE-"
+        },
+        {
+          "Action Date": "2025-08-01",
+          "Mod": "P00036",
+          "Award ID": "89233119CNA000063",
+          "Action Type": "C",
+          "Awarding Agency": "Department of Energy",
+          "Recipient Name": "GENERAL ATOMICS",
+          "Transaction Amount": 2065658.6,
+          "Transaction Description": "RESEARCH & DEVELOPMENT AND FABRICATION OF INERTIAL CONFINEMENT FUSION (ICF) TARGETS FOR THE OFFICE OF RTD&E NA-11, EXPERIMENTAL SCIENCES NA-113",
+          "internal_id": 292026799,
+          "generated_internal_id": "CONT_AWD_89233119CNA000063_8900_-NONE-_-NONE-"
+        }
+      ],
+      "page_metadata": {
+        "page": 1,
+        "next": null,
+        "previous": null,
+        "hasNext": false,
+        "hasPrevious": false
+      },
+      "messages": [
+        "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+      ]
+    },
+    "canonical_response_sha256": "f4996906de3e97c26cef350df8f09b00877e38be0507c649f966dfca5ebada8a"
+  },
+  "counterexample_transactions": {
+    "method": "POST",
+    "url": "https://api.usaspending.gov/api/v2/transactions/",
+    "params": null,
+    "body": {
+      "award_id": "CONT_AWD_89243218CNE000001_8900_-NONE-_-NONE-",
+      "limit": 100,
+      "page": 1,
+      "sort": "action_date",
+      "order": "asc"
+    },
+    "raw": {
+      "page_metadata": {
+        "page": 1,
+        "next": null,
+        "previous": null,
+        "hasNext": false,
+        "hasPrevious": false
+      },
+      "results": [
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_0_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2018-09-27",
+          "action_type": null,
+          "action_type_description": null,
+          "modification_number": "0",
+          "description": "MONITORING THE HIGH BURN-UP LONG TERM STORAGE CASK DEMONSTRATION PROJECT",
+          "federal_action_obligation": 2213679.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00001_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2018-10-31",
+          "action_type": "H",
+          "action_type_description": "DEFINITIZE LETTER CONTRACT",
+          "modification_number": "P00001",
+          "description": "MONITORING THE HIGH BURN-UP LONG TERM STORAGE CASK DEMONSTRATION PROJECT",
+          "federal_action_obligation": 0.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00002_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2019-01-24",
+          "action_type": "H",
+          "action_type_description": "DEFINITIZE LETTER CONTRACT",
+          "modification_number": "P00002",
+          "description": "MONITORING THE HIGH BURN-UP LONG TERM STORAGE CASK DEMONSTRATION PROJECT",
+          "federal_action_obligation": 0.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00003_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2019-06-18",
+          "action_type": "M",
+          "action_type_description": "OTHER ADMINISTRATIVE ACTION",
+          "modification_number": "P00003",
+          "description": "MONITORING THE HIGH BURN-UP LONG TERM STORAGE CASK DEMONSTRATION PROJECT",
+          "federal_action_obligation": 0.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00004_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2019-09-26",
+          "action_type": "G",
+          "action_type_description": "EXERCISE AN OPTION",
+          "modification_number": "P00004",
+          "description": "MONITORING THE HIGH BURN-UP LONG TERM STORAGE CASK DEMONSTRATION PROJECT",
+          "federal_action_obligation": 1911342.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00005_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2020-05-27",
+          "action_type": "L",
+          "action_type_description": "DEFINITIZE CHANGE ORDER",
+          "modification_number": "P00005",
+          "description": "MONITORING THE HIGH BURN-UP LONG TERM STORAGE CASK DEMONSTRATION PROJECT  ADD FAR CLAUSE, UPDATE GOVERNMENT FURNISHED EQUIPMENT LIST",
+          "federal_action_obligation": 0.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00006_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2020-09-24",
+          "action_type": "G",
+          "action_type_description": "EXERCISE AN OPTION",
+          "modification_number": "P00006",
+          "description": "MONITORING THE HIGH BURN-UP LONG TERM STORAGE CASK DEMONSTRATION PROJECT  EXERCISE OPTION, INCREMENTAL FUNDING.",
+          "federal_action_obligation": 923898.11,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00007_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2021-05-03",
+          "action_type": "M",
+          "action_type_description": "OTHER ADMINISTRATIVE ACTION",
+          "modification_number": "P00007",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS TO UPDATE ATTACHMENT E, EQUIPMENT LIST, OBLIGATE THE REMAINING FUNDS OF $778,393.89 TO CLIN 00003, UPDATE COR FROM BRAYTON FORD TO BRIAN MERKLE, CONTRACT SPECIALIST JOANNE HANNERS TO MARIE J. WILLIAMS, AND CONTRACT",
+          "federal_action_obligation": 778393.89,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00008_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2021-09-27",
+          "action_type": "G",
+          "action_type_description": "EXERCISE AN OPTION",
+          "modification_number": "P00008",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS ADD FUNDING TO CLIN 0003 AND EXERCISE OPTION YEAR 3",
+          "federal_action_obligation": 591752.11,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00009_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2022-05-11",
+          "action_type": "D",
+          "action_type_description": "CHANGE ORDER",
+          "modification_number": "P00009",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS TO PROVIDE FUNDING FOR CLIN 004 IN THE AMOUNT OF $1,124,297.",
+          "federal_action_obligation": 1124297.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00010_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2022-10-14",
+          "action_type": "G",
+          "action_type_description": "EXERCISE AN OPTION",
+          "modification_number": "P00010",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS TO EXERCISE OPTION YEAR 4 AND ADD FUNDING TO CLIN 005 IN THE AMOUNT OF $938,222.",
+          "federal_action_obligation": 938222.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00011_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2023-05-31",
+          "action_type": "M",
+          "action_type_description": "OTHER ADMINISTRATIVE ACTION",
+          "modification_number": "P00011",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS TO INCREASE THE CEILING OF CLIN 5, REDUCE THE CEILING OF CLIN 10 AND INCREMENTALLY FUND CLIN 5",
+          "federal_action_obligation": 761778.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00012_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2023-09-20",
+          "action_type": "G",
+          "action_type_description": "EXERCISE AN OPTION",
+          "modification_number": "P00012",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS TO EXERCISE AN OPTION AND TO PROVIDE FUNDING FOR CLIN 005 AND 006",
+          "federal_action_obligation": 900000.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00013_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2023-10-19",
+          "action_type": "M",
+          "action_type_description": "OTHER ADMINISTRATIVE ACTION",
+          "modification_number": "P00013",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS TO APPROVE THE DISPOSAL OF TWO (2) THERMOCOUPLES",
+          "federal_action_obligation": 0.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00014_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2024-02-05",
+          "action_type": "C",
+          "action_type_description": "FUNDING ONLY ACTION",
+          "modification_number": "P00014",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS TO INCREMENTALLY FUND CLIN 6 IN THE AMOUNT OF $334,409",
+          "federal_action_obligation": 334409.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00015_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2024-08-09",
+          "action_type": "M",
+          "action_type_description": "OTHER ADMINISTRATIVE ACTION",
+          "modification_number": "P00015",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS TO INCREMENTALLY FUND AND INCREASE THE CEILING OF CLIN 6 AND TO DECREASE THE CEILING OF CLIN 10",
+          "federal_action_obligation": 1282000.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00016_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2024-09-26",
+          "action_type": "C",
+          "action_type_description": "FUNDING ONLY ACTION",
+          "modification_number": "P00016",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS TO INCREMENTALLY FUND CLIN 6",
+          "federal_action_obligation": 122553.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00017_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2024-10-15",
+          "action_type": "M",
+          "action_type_description": "OTHER ADMINISTRATIVE ACTION",
+          "modification_number": "P00017",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS TO EXERCISE OPTION YEAR 6, CLIN 0007",
+          "federal_action_obligation": 0.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00018_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2024-11-20",
+          "action_type": "C",
+          "action_type_description": "FUNDING ONLY ACTION",
+          "modification_number": "P00018",
+          "description": "THE PURPOSE OF THIS MODIFICATION IS TO OBLIGATE FUNDING TO CLIN 6 AND CLIN 7",
+          "federal_action_obligation": 864067.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00019_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2025-07-17",
+          "action_type": "B",
+          "action_type_description": "SUPPLEMENTAL AGREEMENT FOR WORK WITHIN SCOPE",
+          "modification_number": "P00019",
+          "description": "THIS MODIFICATION INCREASES THE ESTIMATED COST VALUE. NO NEW SCOPE HAS BEEN ADDED.",
+          "federal_action_obligation": 1903583.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00020_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2025-09-29",
+          "action_type": "G",
+          "action_type_description": "EXERCISE AN OPTION",
+          "modification_number": "P00020",
+          "description": "THIS MODIFICATION INCREASES THE ESTIMATED COST VALUE. NO NEW SCOPE HAS BEEN ADDED.",
+          "federal_action_obligation": 2227000.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00021_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2026-05-26",
+          "action_type": "C",
+          "action_type_description": "FUNDING ONLY ACTION",
+          "modification_number": "P00021",
+          "description": "MOD 21: THIS MODIFICATION: 1. CHANGES EPRI POINTS OF CONTACTS, 2. ADDS INCREMENTAL FUNDING IN THE AMOUNT OF $1,620,831.00, ALL OTHER TERMS AND CONDITIONS REMAIN THE SAME.",
+          "federal_action_obligation": 1620831.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00022_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2026-08-13",
+          "action_type": "C",
+          "action_type_description": "FUNDING ONLY ACTION",
+          "modification_number": "P00022",
+          "description": "MOD 21: THIS MODIFICATION: 1. CHANGES EPRI POINTS OF CONTACTS, 2. ADDS INCREMENTAL FUNDING IN THE AMOUNT OF $1,620,831.00, ALL OTHER TERMS AND CONDITIONS REMAIN THE SAME.",
+          "federal_action_obligation": 40000.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        },
+        {
+          "id": "CONT_TX_8900_-NONE-_89243218CNE000001_P00023_-NONE-_0",
+          "type": "D",
+          "type_description": "DEFINITIVE CONTRACT",
+          "action_date": "2026-09-23",
+          "action_type": "G",
+          "action_type_description": "EXERCISE AN OPTION",
+          "modification_number": "P00023",
+          "description": "MOD 21: THIS MODIFICATION: 1. CHANGES EPRI POINTS OF CONTACTS, 2. ADDS INCREMENTAL FUNDING IN THE AMOUNT OF $1,620,831.00, ALL OTHER TERMS AND CONDITIONS REMAIN THE SAME.",
+          "federal_action_obligation": 360000.0,
+          "face_value_loan_guarantee": 0.0,
+          "original_loan_subsidy_cost": 0.0
+        }
+      ]
+    },
+    "canonical_response_sha256": "aaadafcb0cb466cdf41e4b56e663472d78e6ffdac37db29db95c4aa514ec5f9b"
+  }
+}
