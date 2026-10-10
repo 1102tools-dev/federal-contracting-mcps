@@ -25,13 +25,15 @@ for the same key. No federal API was called.
 
 ## What Was Tested
 
-The MCP exposes 8 tools covering the Regulations.gov API surface. Testing covered all of them end-to-end.
+The current MCP exposes nine tools. The 2026-10-10 content audit called all nine hosted tools through 33 live tool calls. The offline package suite passed 167 tests; all 119 direct-source live-gated tests were skipped. Hosted calls and saved-source regressions do not replace that skipped full source suite.
 
 **Core:** `search_documents`, `get_document_detail`, `search_comments`, `get_comment_detail`, `search_dockets`, `get_docket_detail`
 
 **Workflow:** `open_comment_periods`, `far_case_history`
 
-Each tool was exercised for argument validation, input sanitization (null bytes, script injection, path-traversal IDs), empty-string filter detection, date format checking, pagination edge cases (including the live 40-page boundary), response-shape guarantees, error translation, filter-name truth (every filter the code builds verified live to actually change results), and real-world data handling against the live production Regulations.gov API with a real `api.data.gov` key.
+**Local configuration:** `get_access_status`
+
+The earlier eight-tool hardening rounds exercised argument validation, input sanitization (null bytes, script injection, path-traversal IDs), empty-string filter detection, date format checking, pagination edge cases (including the live 40-page boundary), response-shape guarantees, error translation, filter-name truth (every filter the code builds verified live to actually change results), and real-world data handling against the live production Regulations.gov API with a real `api.data.gov` key.
 
 ## How It Was Tested
 
@@ -51,7 +53,7 @@ This MCP had never been hardened before 0.2.0. The hardening program invoked too
 
 ### Live audit status
 
-Rounds 1-4 and 7 ran against the production Regulations.gov API. The repository includes 115 live-gated regression tests executable via `REGULATIONS_LIVE_TESTS=1 REGULATIONS_GOV_API_KEY=... pytest`. Note the gate variable: earlier versions of this document said `REGULATIONS_GOV_LIVE_TESTS=1`, which was never the gate and silently skipped every live test. The key is free at `api.data.gov` (1,000 req/hr, live-verified via x-ratelimit headers); DEMO_KEY is 10 req/hr (live-measured; earlier docs said 40).
+Rounds 1-4 and 7 ran against the production Regulations.gov API. The current repository includes 119 live-gated regression tests, all skipped in the 2026-10-10 package run because the direct-source DEMO_KEY probe returned HTTP 429. They can be enabled via `REGULATIONS_LIVE_TESTS=1 REGULATIONS_GOV_API_KEY=... pytest`. Note the gate variable: earlier versions of this document said `REGULATIONS_GOV_LIVE_TESTS=1`, which was never the gate and silently skipped every live test. The key is free at `api.data.gov` (1,000 req/hr, live-verified via x-ratelimit headers); DEMO_KEY is 10 req/hr (live-measured; earlier docs said 40).
 
 ## Round 7 wave (1.0.1): Independent re-audit
 
