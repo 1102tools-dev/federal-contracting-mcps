@@ -190,3 +190,12 @@ Record frozen release tests and fresh published-package tests as separate
 lanes, including their actual Python/SDK versions, failures and optional skips.
 Collected case counts establish inventory, not passing coverage. Keep source
 limitations and caller exclusions separate from confirmed content defects.
+
+
+## October 10 Round6 verification checkpoint
+
+The four reviewed scoped releases completed serially: USAspending1.0.22 at `d7154fd26f985cee55ff0db3617d4ce587844446`, then CALC1.0.17, Federal Register1.0.15 and eCFR1.1.8 at `881bad8f1e46f67dbd6bfe4fab95636b7cccb8dd`. Each completed13 successful jobs; actual current remote tag targets match the workflow SHAs. The workflow retains global `mcp-production-release` concurrency with `cancel-in-progress: false`; subsequent tags were pushed only after prior completion. Documentation commits do not replace immutable runtime identities.
+
+Actual current public contracts passed all eight services/112 tools; all five Dell services passed45 checks. Dell evidence comprises public HTTPS GET health/POST initialize with backend headers, direct-origin HTTPS GET health, and authenticated SSH container-local HTTP health/initialize. Direct-origin HTTPS POST is not claimed. All16 official wheel/sdist artifacts passed downloaded SHA256/size/non-yanked checks. Full owner content acceptance and actual website publication passed; served shared documentation and final closure remain separate gates. Website source7c910eaf and snapshot81ed741f published through Pages04a6fab9, with49public assets/two configuration/four copy checks plus actual browser verification passed.
+
+The next authorized phase resolves the retained fresh SDK2.3 USAspending855, Federal Register60 and Per Diem16 failures after Round6 closes. Then exactly one final federal-contracting content round fixes/releases P0–P2 findings and stops. Acquisition.gov remains excluded; no additional audit loop is required by the current goal. See the [dated release record](releases/2026-10-10-content-audit.md) for current acceptance and source qualifications.
