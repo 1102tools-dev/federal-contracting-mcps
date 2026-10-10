@@ -2,18 +2,18 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the Regulations.gov API as 8 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The MCP ships with 204 regression tests (85 offline plus 119 live-gated).
+This Model Context Protocol server exposes the Regulations.gov API as 9 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The 2.0.3 package collects 279 regression tests (160 offline plus 119 live-gated). The 2026-10-10 offline gate passed 160 tests; all 119 live-gated tests were skipped because DEMO_KEY returned HTTP 429. See the content-fix section and [test suite map](tests/README.md) for current coverage.
 
 | Metric | Value |
 |---|---|
-| MCP tools exposed | 8 |
-| Total regression tests | 204 (85 offline, 119 live-gated) |
+| MCP tools exposed | 9 |
+| Total regression tests | 279 (160 offline, 119 live-gated) |
 | Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 1 (`extra='ignore'` silent typo drop) |
 | P1 silent-wrong-data bugs found and fixed | 10 |
 | P2 validation gaps found and fixed | 7 |
 | Round-7 wave findings | 12 |
-| Current release | 1.0.3 |
+| Current release | 2.0.3 |
 | PyPI status | Published as `regulationsgov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -121,14 +121,19 @@ Four items: missing publish workflow, missing test_validation.py, missing dev de
 
 ## Test Coverage
 
-The repo ships 200 regression tests (85 offline, 115 live-gated). All pass on every release cycle; live tests require `REGULATIONS_LIVE_TESTS=1` plus a key.
+The current suite collects 279 tests (160 offline, 119 live-gated). The 2026-10-10 offline run passed 160 and skipped 119; collection is not a live-pass claim. The per-file counts and live gates are maintained in [tests/README.md](tests/README.md).
 
 | File | Purpose | Test count |
 |---|---|---|
-| `tests/test_validation.py` | Main regression suite covering rounds 1-3 findings, incl. 5 live-gated integration tests | 66 |
-| `tests/test_round_4.py` | Property-based (hypothesis) validator suite plus the round-4 live sweep | 110 |
-| `tests/test_audit_r7.py` | Round-7 wave regressions: ascending open-comment-periods with truncation metadata, far_case_history pagination, multi-agency and multi-sort commas, withinCommentPeriod=False local rejection, empty-string guards, commentOnId objectId shape guard, 40-page cap; 4 live confirmations | 24 (20 offline, 4 live-gated) |
-| `tests/stress_test.py` | Round 1 live-probe scenarios (scenario script, not pytest) | N/A |
+| `tests/test_access_status.py` | Credential presence, setup guidance, tool-only output | 9 (0 live-gated) |
+| `tests/test_audit_r7.py` | Round 7: ascending deadlines, pagination, API limits, and validation | 27 (4 live-gated) |
+| `tests/test_audit_r8.py` | Round 8: one-call source contract anchors | 4 (4 live-gated; live_smoke) |
+| `tests/test_content_fixes.py` | 2.0.3 R1–R11: Eastern deadlines, posted counts, organizations, subtypes, page ceiling, facets, type filter, comment text, and hints | 35 (0 live-gated) |
+| `tests/test_credential_redaction.py` | Credential and error-payload redaction | 6 (0 live-gated) |
+| `tests/test_hosted_directory.py` | Compact output, hosted publisher configuration, and tool contracts | 14 (0 live-gated) |
+| `tests/test_hosted_throughput.py` | Hosted pacing, budget, and throughput contract | 8 (0 live-gated) |
+| `tests/test_round_4.py` | Round 4 property validation and live source audit | 125 (106 live-gated) |
+| `tests/test_validation.py` | Foundational input validation and source checks | 51 (5 live-gated) |
 
 Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`). An autouse fixture resets `srv._client` between tests.
 
@@ -169,7 +174,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round-7 wave methodology: re-read the entire server source with no reliance on this document's claims; verify every filter parameter name live against result deltas; probe documented limits (page cap, DEMO_KEY rate) against live headers and boundary requests; end-to-end test both workflow tools through the real server against known corpora (FDA open comment periods, a 553-document EPA docket); check every prior claim in this document against the code and live behavior.
 
-Test count: 204 regression tests (85 offline + 119 live-gated). Total findings across all rounds: 34. Current version: 1.0.4. PyPI: `regulationsgov-mcp`.
+At the 1.0.4 snapshot: 204 regression tests (85 offline + 119 live-gated). Total findings across those rounds: 34. Version: 1.0.4. PyPI: `regulationsgov-mcp`.
 
 Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/regulations-gov-mcp. License: MIT.
 
@@ -187,3 +192,42 @@ live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
 ## RC5 pacing remediation (2026-08-22)
 
 Version 1.0.4 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (85 tests; 119 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 8 tools.
+
+## Content test fixes (2.0.3, 2026-10-10)
+
+A content test asked 40 real-user questions of the hosted server and checked
+each answer against api.regulations.gov and the Federal Register (22 pass, 16
+pass with friction, 2 fail; five P2s). 2.0.3 fixes the five P2s and most P3s.
+`tests/test_content_fixes.py` holds one or more tests per bug (35 cases),
+using `tests/fixtures/content_test_2026_10.json`, slimmed from the API
+responses the test saved. Every test was run against the code before its fix
+and failed there.
+
+| Bug | Fix | Tests (failed before the fix) |
+|---|---|---|
+| R1 deadlines read one day late (raw UTC) | `commentDeadlineEastern` / `comment_deadline` in Eastern time, raw kept as `commentEndDateUtc` / `comment_end_date_utc`; zoneinfo with a US-rules fallback | 15 |
+| R3 comment counts unlabeled | `posted_comments` + `count_note` (posted, not received); `far_case_history` page 1 count | 4 |
+| R10 withdrawal read as a new proposed rule | `subtype` and `fr_doc_num` on workflow rows | 3 |
+| R2 no organization on comment search rows | `search_comments(include_organization=True)`, `organization_note` otherwise | 3 |
+| R8 `lastPage: true` at the 40-page ceiling | `truncated`, `records_beyond_page_limit`, `page_limit_note` on all three searches | 3 |
+| P3: R4, R5, R7, R9, R11, docket sorts | `document_type` on `open_comment_periods`; self-filtered facets dropped; plain-text comments and snippets; description and `no_data_reason` guidance | 5 |
+
+Repro gate: the findings repros were rerun against the saved API responses
+(the DEMO_KEY quota was spent, so no live Regulations.gov calls) and checked
+against Federal Register records: 15 of 15 passed, including 21 documents
+whose Eastern deadline matches the Federal Register closing date with no
+mismatch. Offline suite: 160 passed, 119 live-gated skipped. Release guards
+64 passed; `validate_versions.py` and `check_hosted_contract.py
+regulations-gov` (Python 3.12) pass. No change to pacing, the hourly budget,
+cache times or logging.
+
+### 2.0.3 verification limits
+
+For this release, all live Regulations.gov source checks use DEMO_KEY only.
+HTTP 429 exhausted that quota; live repros are skipped explicitly. Hosted
+health, initialize, tools/list and get_access_status verify deployment and
+local configuration without source API calls. The 35 new offline content
+tests cover R1–R11; Pay Equity withdrawal and page-40 source responses were
+not saved, so those cases use labeled synthetic rows. R9 changes descriptions
+only because relevance ordering could not be verified live. Attachment 403
+behavior and effective dates absent from source records remain skipped P3s.

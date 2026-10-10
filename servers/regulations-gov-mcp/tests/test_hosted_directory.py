@@ -117,7 +117,7 @@ def test_waf_403_is_not_reported_as_key_problem(monkeypatch):
 def test_listing_is_compacted_without_losing_rows(monkeypatch):
     _mode(monkeypatch, key="k", hosted="1")
     _fake_get(monkeypatch, _listing(n=3))
-    r = asyncio.run(srv.search_documents(agency_id="FAR"))
+    r = asyncio.run(srv.search_documents(search_term="audit"))
     assert len(r["data"]) == 3
     assert "aggregations" not in r["meta"] and "links" not in r
     assert r["meta"]["totalElements"] == 3

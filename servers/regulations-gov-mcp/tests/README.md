@@ -1,16 +1,24 @@
 # Test suite map
 
-204 collected tests. Files are named by the audit round or fix-wave that
+279 collected tests: 160 offline and 119 live-gated (Python 3.12, 2026-10-10).
+The offline release gate passed all 160; the 119 live tests were skipped.
+Files are named by the audit round or fix-wave that
 produced them and are append-only history: each maps to a section of
 [../testing.md](../testing.md), which narrates what every round found and
 fixed. That traceability is deliberate; do not consolidate or rename rounds.
 
 | File | Origin and purpose | Tests | Live |
 |---|---|---|---|
-| `test_validation.py` | Foundational input validation: docket ids, document types, date shapes | 51 | 5 live |
-| `test_round_4.py` | Round 4 live audit: search semantics, docket/document/comment chains against production | 32 | 16 live |
-| `test_audit_r7.py` | Round 7 fix-wave regressions: open_comment_periods sorted DESCENDING and dropped the soonest-closing documents (deadline-critical), live page cap is 40 not the documented 20 | 24 | 4 live |
-| `test_audit_r8.py` | Round 8 super-cycle: one-call-per-test live anchors (close dates ascending, docket search, comment search) | 4 | 4 live_smoke |
+| `test_access_status.py` | Credential presence, setup guidance, tool-only output | 9 | 0 |
+| `test_audit_r7.py` | Round 7: ascending deadlines, pagination, API limits, and validation | 27 | 4 |
+| `test_audit_r8.py` | Round 8: one-call source contract anchors | 4 | 4 live_smoke |
+| `test_content_fixes.py` | 2.0.3 R1–R11: Eastern deadlines, posted counts, organizations, subtypes, page ceiling, facets, type filter, comment text, and hints | 35 | 0 |
+| `test_credential_redaction.py` | Credential and error-payload redaction | 6 | 0 |
+| `test_hosted_directory.py` | Compact output, hosted publisher configuration, and tool contracts | 14 | 0 |
+| `test_hosted_throughput.py` | Hosted pacing, budget, and throughput contract | 8 | 0 |
+| `test_round_4.py` | Round 4 property validation and live source audit | 125 | 106 |
+| `test_validation.py` | Foundational input validation and source checks | 51 | 5 |
+| **Total** | | **279** | **119** |
 
 Live tests need `REGULATIONS_LIVE_TESTS=1 + REGULATIONS_GOV_API_KEY`, are paced automatically by `conftest.py` (which
 also resets the cached async client per test so batched live runs cannot hit
@@ -19,3 +27,9 @@ runs via `pytest -m live_smoke`.
 
 - `scenarios/` holds standalone scenario scripts (not pytest; retained for
   reproducibility of early rounds).
+
+For this 2026-10-10 release verification, source checks use DEMO_KEY only.
+DEMO_KEY returned HTTP 429, so live source checks are explicitly skipped;
+do not substitute the hosted publisher key. The content tests use saved
+source fixtures, with synthetic Pay Equity withdrawal/page-40 cases labeled
+in `test_content_fixes.py`. Saved-source coverage is distinct from a live pass.

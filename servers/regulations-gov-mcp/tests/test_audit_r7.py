@@ -226,10 +226,10 @@ def test_open_comment_periods_ascending_single_call_truncation(monkeypatch):
     assert data["total_open"] == 71
     assert data["returned"] == 4
     assert "truncated" not in data, "a short page is the last page"
-    dates = [d["comment_end_date"] for d in data["documents"] if d["comment_end_date"]]
+    dates = [d["comment_end_date_utc"] for d in data["documents"] if d["comment_end_date_utc"]]
     assert dates == sorted(dates), "documents must be sorted soonest-closing first"
-    assert data["documents"][0]["comment_end_date"] == "2026-08-18"
-    assert data["documents"][-1]["comment_end_date"] is None, "undated kept, listed last"
+    assert data["documents"][0]["comment_end_date_utc"] == "2026-08-18"
+    assert data["documents"][-1]["comment_end_date_utc"] is None, "undated kept, listed last"
     assert "undated_note" in data
 
 
@@ -374,8 +374,8 @@ def test_live_multi_field_sort_accepted_by_api():
 @live
 def test_live_open_comment_periods_soonest_first():
     data = _payload(asyncio.run(_call("open_comment_periods", agency_ids=["FDA"])))
-    dates = [d["comment_end_date"] for d in data["documents"] if d["comment_end_date"]]
+    dates = [d["comment_end_date_utc"] for d in data["documents"] if d["comment_end_date_utc"]]
     assert dates == sorted(dates)
     assert data["total_open"] >= data["returned"] - len(
-        [d for d in data["documents"] if not d["comment_end_date"]]
+        [d for d in data["documents"] if not d["comment_end_date_utc"]]
     )

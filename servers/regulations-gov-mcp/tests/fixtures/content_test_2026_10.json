@@ -1,0 +1,1735 @@
+{
+ "_source": "Slimmed from api.regulations.gov/v4 responses saved 2026-10-10 by the content test (work/regulations-gov/dl/).",
+ "comment_DARS-2020-0034-0276": {
+  "data": {
+   "attributes": {
+    "agencyId": "DARS",
+    "comment": "On behalf of the Professional Services Council (PSC), I am pleased to submit comments on the Department of Defense (DoD) proposed rule entitled &ldquo;Defense Federal Acquisition Regulation Supplement: Assessing Contractor Implementation of Cybersecurity Requirements (DFARS Case 2019-D041),&rdquo; as published in the Federal Register on August 15, 2024. <br/><br/>Please see the attached file for these comments.",
+    "commentOnDocumentId": "DARS-2020-0034-0194",
+    "docketId": "DARS-2020-0034",
+    "documentType": "Public Submission",
+    "duplicateComments": 0,
+    "organization": "Professional Services Council",
+    "postedDate": "2024-10-16T04:00:00Z",
+    "receiveDate": "2024-10-15T04:00:00Z",
+    "title": "Comment on FR Doc # 2024-18110",
+    "trackingNbr": "m2a-yt3s-a8wf",
+    "withdrawn": false
+   },
+   "id": "DARS-2020-0034-0276",
+   "type": "comments"
+  }
+ },
+ "comments_on_0194": {
+  "data": [
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "documentType": "Public Submission",
+     "objectId": "0900006486781aab",
+     "postedDate": "2024-09-30T04:00:00Z",
+     "title": "Comment on FR Doc # 2024-18110",
+     "withdrawn": false
+    },
+    "id": "DARS-2020-0034-0230",
+    "type": "comments"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "documentType": "Public Submission",
+     "objectId": "0900006486781ad0",
+     "postedDate": "2024-09-30T04:00:00Z",
+     "title": "Comment on FR Doc # 2024-18110",
+     "withdrawn": false
+    },
+    "id": "DARS-2020-0034-0231",
+    "type": "comments"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "documentType": "Public Submission",
+     "objectId": "090000648679a955",
+     "postedDate": "2024-09-30T04:00:00Z",
+     "title": "Comment on FR Doc # 2024-18110",
+     "withdrawn": false
+    },
+    "id": "DARS-2020-0034-0235",
+    "type": "comments"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "documentType": "Public Submission",
+     "objectId": "09000064867cf4b4",
+     "postedDate": "2024-10-16T04:00:00Z",
+     "title": "Comment on FR Doc # 2024-18110",
+     "withdrawn": false
+    },
+    "id": "DARS-2020-0034-0267",
+    "type": "comments"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "documentType": "Public Submission",
+     "objectId": "09000064867cf4ca",
+     "postedDate": "2024-10-16T04:00:00Z",
+     "title": "Comment on FR Doc # 2024-18110",
+     "withdrawn": false
+    },
+    "id": "DARS-2020-0034-0268",
+    "type": "comments"
+   }
+  ],
+  "meta": {
+   "firstPage": true,
+   "hasNextPage": false,
+   "hasPreviousPage": false,
+   "lastPage": true,
+   "numberOfElements": 97,
+   "pageNumber": 1,
+   "pageSize": 250,
+   "totalElements": 97,
+   "totalPages": 1
+  }
+ },
+ "docs_DARS-2020-0034": {
+  "data": [
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": null,
+     "commentStartDate": "2025-09-10T04:00:00Z",
+     "docketId": "DARS-2020-0034",
+     "documentType": "Rule",
+     "frDocNum": "2025-17359",
+     "objectId": "09000064b8f61404",
+     "openForComment": false,
+     "postedDate": "2025-09-10T04:00:00Z",
+     "subtype": null,
+     "title": "Defense Federal Acquisition Regulation: Assessing Contractor Implementation of Cybersecurity Requirements",
+     "withdrawn": false,
+     "withinCommentPeriod": false
+    },
+    "id": "DARS-2020-0034-0293",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": null,
+     "commentStartDate": null,
+     "docketId": "DARS-2020-0034",
+     "documentType": "Supporting & Related Material",
+     "frDocNum": null,
+     "objectId": "090000648664be62",
+     "openForComment": false,
+     "postedDate": "2024-08-15T04:00:00Z",
+     "subtype": null,
+     "title": "2019-D041 (p) RIA",
+     "withdrawn": false,
+     "withinCommentPeriod": false
+    },
+    "id": "DARS-2020-0034-0195",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": "2024-10-16T03:59:59Z",
+     "commentStartDate": "2024-08-15T04:00:00Z",
+     "docketId": "DARS-2020-0034",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2024-18110",
+     "objectId": "090000648664a1fa",
+     "openForComment": false,
+     "postedDate": "2024-08-15T04:00:00Z",
+     "subtype": null,
+     "title": "Defense Federal Acquisition Regulation Supplement: Assessing Contractor Implementation of Cybersecurity Requirements",
+     "withdrawn": false,
+     "withinCommentPeriod": false
+    },
+    "id": "DARS-2020-0034-0194",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": null,
+     "commentStartDate": "2021-11-17T05:00:00Z",
+     "docketId": "DARS-2020-0034",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2021-24880",
+     "objectId": "0900006484e56f33",
+     "openForComment": false,
+     "postedDate": "2021-11-17T05:00:00Z",
+     "subtype": null,
+     "title": "Cybersecurity Maturity Model Certification 2.0 Updates and Way Forward",
+     "withdrawn": false,
+     "withinCommentPeriod": false
+    },
+    "id": "DARS-2020-0034-0193",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": "2020-12-01T04:59:59Z",
+     "commentStartDate": "2020-10-16T04:00:00Z",
+     "docketId": "DARS-2020-0034",
+     "documentType": "Rule",
+     "frDocNum": "2020-22753",
+     "objectId": "0900006484912f71",
+     "openForComment": false,
+     "postedDate": "2020-10-16T04:00:00Z",
+     "subtype": null,
+     "title": "Defense Federal Acquisition Regulation Supplement: Assessing Contractor Implementation of Cybersecurity Requirements; Correction",
+     "withdrawn": false,
+     "withinCommentPeriod": false
+    },
+    "id": "DARS-2020-0034-0027",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": null,
+     "commentStartDate": null,
+     "docketId": "DARS-2020-0034",
+     "documentType": "Supporting & Related Material",
+     "frDocNum": null,
+     "objectId": "09000064848988da",
+     "openForComment": false,
+     "postedDate": "2020-09-29T04:00:00Z",
+     "subtype": null,
+     "title": "2019-D041 (i) RIA",
+     "withdrawn": false,
+     "withinCommentPeriod": false
+    },
+    "id": "DARS-2020-0034-0002",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": "2020-12-01T04:59:59Z",
+     "commentStartDate": "2020-09-29T04:00:00Z",
+     "docketId": "DARS-2020-0034",
+     "documentType": "Rule",
+     "frDocNum": "2020-21123",
+     "objectId": "0900006484898945",
+     "openForComment": false,
+     "postedDate": "2020-09-29T04:00:00Z",
+     "subtype": null,
+     "title": "Defense Federal Acquisition Regulation Supplement: Assessing Contractor Implementation of Cybersecurity Requirements",
+     "withdrawn": false,
+     "withinCommentPeriod": false
+    },
+    "id": "DARS-2020-0034-0001",
+    "type": "documents"
+   }
+  ],
+  "meta": {
+   "firstPage": true,
+   "hasNextPage": false,
+   "hasPreviousPage": false,
+   "lastPage": true,
+   "numberOfElements": 7,
+   "pageNumber": 1,
+   "pageSize": 250,
+   "totalElements": 7,
+   "totalPages": 1
+  }
+ },
+ "docs_FAR-2021-0017": {
+  "data": [
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": null,
+     "commentStartDate": null,
+     "docketId": "FAR-2021-0017",
+     "documentType": "Supporting & Related Material",
+     "frDocNum": null,
+     "objectId": "09000064860ebb6b",
+     "openForComment": false,
+     "postedDate": "2023-10-16T04:00:00Z",
+     "subtype": "Analysis",
+     "title": "FAR Case 2021-017 Incident Reporting (p) RIA 8.19.2023",
+     "withdrawn": false,
+     "withinCommentPeriod": false
+    },
+    "id": "FAR-2021-0017-0006",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": null,
+     "commentStartDate": "2023-11-01T04:00:00Z",
+     "docketId": "FAR-2021-0017",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2023-24025",
+     "objectId": "09000064861bdf20",
+     "openForComment": false,
+     "postedDate": "2023-11-01T04:00:00Z",
+     "subtype": "Extension of Comment Period",
+     "title": "Federal Acquisition Regulation: Cyber Threat and Incident Reporting and Information Sharing",
+     "withdrawn": false,
+     "withinCommentPeriod": false
+    },
+    "id": "FAR-2021-0017-0012",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2024-02-03T04:59:59Z",
+     "commentStartDate": "2023-10-03T04:00:00Z",
+     "docketId": "FAR-2021-0017",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2023-21328",
+     "objectId": "0900006486024988",
+     "openForComment": false,
+     "postedDate": "2023-10-03T04:00:00Z",
+     "subtype": "Notice of Proposed Rulemaking (NPRM)",
+     "title": "Federal Acquisition Regulation: Cyber Threat and Incident Reporting and Information Sharing",
+     "withdrawn": false,
+     "withinCommentPeriod": false
+    },
+    "id": "FAR-2021-0017-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": null,
+     "commentStartDate": null,
+     "docketId": "FAR-2021-0017",
+     "documentType": "Supporting & Related Material",
+     "frDocNum": null,
+     "objectId": "09000064860c4843",
+     "openForComment": false,
+     "postedDate": "2023-10-12T00:00:00Z",
+     "subtype": null,
+     "title": "FAR Case 2021-017 Incident Reporting (p) RIA 8.14.2023",
+     "withdrawn": true,
+     "withinCommentPeriod": false
+    },
+    "id": "FAR-2021-0017-0005",
+    "type": "documents"
+   }
+  ],
+  "meta": {
+   "firstPage": true,
+   "hasNextPage": false,
+   "hasPreviousPage": false,
+   "lastPage": true,
+   "numberOfElements": 4,
+   "pageNumber": 1,
+   "pageSize": 250,
+   "totalElements": 4,
+   "totalPages": 1
+  }
+ },
+ "docs_SBA-2026-0199": {
+  "data": [
+   {
+    "attributes": {
+     "agencyId": "SBA",
+     "commentEndDate": "2026-09-22T03:59:59Z",
+     "commentStartDate": "2026-08-20T04:00:00Z",
+     "docketId": "SBA-2026-0199",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2026-17042",
+     "objectId": "09000064b946c8fc",
+     "openForComment": false,
+     "postedDate": "2026-08-20T04:00:00Z",
+     "subtype": null,
+     "title": "Small Business Size Standards",
+     "withdrawn": false,
+     "withinCommentPeriod": false
+    },
+    "id": "SBA-2026-0199-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "SBA",
+     "commentEndDate": "2026-11-21T04:59:59Z",
+     "commentStartDate": "2026-09-24T04:00:00Z",
+     "docketId": "SBA-2026-0199",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2026-19546",
+     "objectId": "09000064b95b6b08",
+     "openForComment": true,
+     "postedDate": "2026-09-24T04:00:00Z",
+     "subtype": null,
+     "title": "Small Business Size Standards",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "SBA-2026-0199-2726",
+    "type": "documents"
+   }
+  ],
+  "meta": {
+   "firstPage": true,
+   "hasNextPage": false,
+   "hasPreviousPage": false,
+   "lastPage": true,
+   "numberOfElements": 2,
+   "pageNumber": 1,
+   "pageSize": 250,
+   "totalElements": 2,
+   "totalPages": 1
+  }
+ },
+ "open_documents": {
+  "data": [
+   {
+    "attributes": {
+     "agencyId": "NASA",
+     "commentEndDate": "2026-10-14T03:59:59Z",
+     "commentStartDate": "2026-09-11T04:00:00Z",
+     "docketId": "NASA_FRDOC_0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-18515",
+     "objectId": "09000064b951debe",
+     "openForComment": true,
+     "postedDate": "2026-09-11T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Proposal Submissions and Awards Management System for the NASA Small Business Innovation Research/Small Business Technology Transfer Program Solicitations",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "NASA_FRDOC_0001-1152",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-10-14T03:59:59Z",
+     "commentStartDate": "2026-08-13T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-16500",
+     "objectId": "09000064b9436b88",
+     "openForComment": true,
+     "postedDate": "2026-08-13T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Mandatory Verification of Dependents [FR Doc No: 2026-16500; OMB Control No. 2900-0500]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0329",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "NASA",
+     "commentEndDate": "2026-10-14T03:59:59Z",
+     "commentStartDate": "2026-08-12T04:00:00Z",
+     "docketId": "NASA-2026-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-16402",
+     "objectId": "09000064b9436b4d",
+     "openForComment": true,
+     "postedDate": "2026-08-12T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Generic Clearance for NASA Citizen Science and Crowdsourcing Projects",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "NASA-2026-0001-0003",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-10-14T03:59:59Z",
+     "commentStartDate": "2026-09-10T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-18447",
+     "objectId": "09000064b9511863",
+     "openForComment": true,
+     "postedDate": "2026-09-10T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Copayment Exemption for Indian Veterans\u2014Documentation of Indian or Urban Indian Status [FR Doc No: 2026-18447; OMB Control No. 2900-0920]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0387",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "GSA",
+     "commentEndDate": "2026-10-14T03:59:59Z",
+     "commentStartDate": "2026-09-11T04:00:00Z",
+     "docketId": "GSA-GSA-2026-0265",
+     "documentType": "Notice",
+     "frDocNum": "2026-18609",
+     "objectId": "09000064b951df15",
+     "openForComment": true,
+     "postedDate": "2026-09-11T04:00:00Z",
+     "subtype": "Information Collection Request (ICR)",
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: System for Award Management Annual Certification of Compliance with Executive Order 14400, Urgent National Action to Save College Sports",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "GSA-GSA-2026-0265-0004",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-10-14T03:59:59Z",
+     "commentStartDate": "2026-08-13T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-16501",
+     "objectId": "09000064b943bb78",
+     "openForComment": true,
+     "postedDate": "2026-08-13T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Application for Assumption Approval and/or Release from Personal Liability to the Government on a Home Loan [FR Doc No: 2026-16501; OMB Control No. 2900-0110]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0328",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-10-14T03:59:59Z",
+     "commentStartDate": "2026-09-10T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-18444",
+     "objectId": "09000064b9511940",
+     "openForComment": true,
+     "postedDate": "2026-09-10T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Title 38 Health Care Positions\u2014Trainee Application and Appraisal [FR Doc No: 2026-18444; OMB Control No. 2900-0205]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0389",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-10-16T03:59:59Z",
+     "commentStartDate": "2026-09-15T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-18857",
+     "objectId": "09000064b955afef",
+     "openForComment": true,
+     "postedDate": "2026-09-15T04:00:00Z",
+     "subtype": null,
+     "title": "Privacy Act; Systems of Records - [FR Doc No: 2026-18857",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0394",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-10-16T03:59:59Z",
+     "commentStartDate": "2026-09-15T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-18904",
+     "objectId": "09000064b955b0d0",
+     "openForComment": true,
+     "postedDate": "2026-09-15T04:00:00Z",
+     "subtype": null,
+     "title": "Recognition of Organizations and Individuals to Assist Veterans, Family Members, and Caregivers Navigating Programs and Services of Veterans Health Administration - FR Doc No: 2026-18904",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0395",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-10-16T03:59:59Z",
+     "commentStartDate": "2026-09-15T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-18831",
+     "objectId": "09000064b955aee1",
+     "openForComment": true,
+     "postedDate": "2026-09-15T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Request for Nursing Home Information in Connection with Claim for Aid and Attendance [FR Doc No: 2026-18831; OMB Control No. 2900-0652]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0392",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": "2026-10-17T03:59:59Z",
+     "commentStartDate": "2026-08-17T04:00:00Z",
+     "docketId": "DARS-2026-0364",
+     "documentType": "Notice",
+     "frDocNum": "2026-16682",
+     "objectId": "09000064b9462d14",
+     "openForComment": true,
+     "postedDate": "2026-08-17T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Defense Federal Acquisition Regulation Supplement, DoD Mentor-Protege Program",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DARS-2026-0364-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-10-20T03:59:59Z",
+     "commentStartDate": "2026-09-18T04:00:00Z",
+     "docketId": "FAR-2026-0006",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2026-19160",
+     "objectId": "09000064b958f7a0",
+     "openForComment": true,
+     "postedDate": "2026-09-18T04:00:00Z",
+     "subtype": "Notice of Proposed Rulemaking (NPRM)",
+     "title": "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Overhaul Parts 16, 17, and 35 (FAR Case 2026-006)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR-2026-0006-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-10-20T03:59:59Z",
+     "commentStartDate": "2026-09-18T04:00:00Z",
+     "docketId": "FAR-2026-0011",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2026-19159",
+     "objectId": "09000064b9582595",
+     "openForComment": true,
+     "postedDate": "2026-09-18T04:00:00Z",
+     "subtype": "Notice of Proposed Rulemaking (NPRM)",
+     "title": "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Overhaul Parts 9, 27, and 47 (FAR Case 2026-011)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR-2026-0011-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-10-20T03:59:59Z",
+     "commentStartDate": "2026-08-19T04:00:00Z",
+     "docketId": "DOD-2026-OS-1684",
+     "documentType": "Notice",
+     "frDocNum": "2026-16920",
+     "objectId": "09000064b946a9d7",
+     "openForComment": true,
+     "postedDate": "2026-08-19T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-1684-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-10-20T03:59:59Z",
+     "commentStartDate": "2026-09-18T04:00:00Z",
+     "docketId": "FAR-2026-0010",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2026-19158",
+     "objectId": "09000064b958f654",
+     "openForComment": true,
+     "postedDate": "2026-09-18T04:00:00Z",
+     "subtype": "Notice of Proposed Rulemaking (NPRM)",
+     "title": "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Overhaul Parts 14, 28, 36, and 52 (FAR Case 2026-010)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR-2026-0010-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-10-20T03:59:59Z",
+     "commentStartDate": "2026-09-18T04:00:00Z",
+     "docketId": "FAR-2026-0003",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2026-19162",
+     "objectId": "09000064b958f6fd",
+     "openForComment": true,
+     "postedDate": "2026-09-18T04:00:00Z",
+     "subtype": "Notice of Proposed Rulemaking (NPRM)",
+     "title": "Federal Acquisition Regulation: Revolutionary FAR Overhaul Parts \n8, 12, 13, 15, 38, 44, and 51 (FAR Case 2026-003)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR-2026-0003-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "GSA",
+     "commentEndDate": "2026-10-23T03:59:59Z",
+     "commentStartDate": "2026-09-22T04:00:00Z",
+     "docketId": "GSA-GSAR-2026-0563",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2026-19331",
+     "objectId": "09000064b95ae5db",
+     "openForComment": true,
+     "postedDate": "2026-09-22T04:00:00Z",
+     "subtype": "Notice of Proposed Rulemaking (NPRM)",
+     "title": "General Services Administration Acquisition Regulation; GSAR Implementation of Executive Order 14275, FSS Ordering Procedures (GSAR Case 2026-G501)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "GSA-GSAR-2026-0563-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-10-24T03:59:59Z",
+     "commentStartDate": "2026-08-24T04:00:00Z",
+     "docketId": "DOD-2026-OS-1783",
+     "documentType": "Notice",
+     "frDocNum": "2026-17236",
+     "objectId": "09000064b948c158",
+     "openForComment": true,
+     "postedDate": "2026-08-24T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-1783-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-10-24T03:59:59Z",
+     "commentStartDate": "2026-09-23T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-19412",
+     "objectId": "09000064b95b6ab8",
+     "openForComment": true,
+     "postedDate": "2026-09-23T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Veterans Employment Through High Technology Education Courses Employment or Further Educational Pursuit Certification [FR Doc No: 2026-19412; OMB Control No. 2900-NEW]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0403",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-10-27T03:59:59Z",
+     "commentStartDate": "2026-09-25T04:00:00Z",
+     "docketId": "DOD-2026-OS-1622",
+     "documentType": "Notice",
+     "frDocNum": "2026-19608",
+     "objectId": "09000064b95c53bb",
+     "openForComment": true,
+     "postedDate": "2026-09-25T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-1622-0002",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-10-27T03:59:59Z",
+     "commentStartDate": "2026-09-24T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-19553",
+     "objectId": "09000064b95bf724",
+     "openForComment": true,
+     "postedDate": "2026-09-24T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: IBM SkillsBuild Training Program Intake Application [FR Doc No: 2026-19553; OMB Control No. 2900-0922]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0405",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "GSA",
+     "commentEndDate": "2026-10-27T03:59:59Z",
+     "commentStartDate": "2026-08-27T04:00:00Z",
+     "docketId": "GSA-GSA-2026-0364",
+     "documentType": "Notice",
+     "frDocNum": "2026-17433",
+     "objectId": "09000064b949e85e",
+     "openForComment": true,
+     "postedDate": "2026-08-27T04:00:00Z",
+     "subtype": "Information Collection Request (ICR)",
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Nondiscrimination in Federal Financial Assistance Programs (OMB Control No. 3090-0310)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "GSA-GSA-2026-0364-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-10-27T03:59:59Z",
+     "commentStartDate": "2026-09-25T04:00:00Z",
+     "docketId": "DOD-2026-HA-0960",
+     "documentType": "Notice",
+     "frDocNum": "2026-19610",
+     "objectId": "09000064b95c5408",
+     "openForComment": true,
+     "postedDate": "2026-09-25T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-HA-0960-0002",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-10-29T03:59:59Z",
+     "commentStartDate": "2026-09-28T04:00:00Z",
+     "docketId": "DOD-2026-OS-2113",
+     "documentType": "Notice",
+     "frDocNum": "2026-19773",
+     "objectId": "09000064b95d7121",
+     "openForComment": true,
+     "postedDate": "2026-09-28T04:00:00Z",
+     "subtype": null,
+     "title": "Privacy Act; Systems of Records",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-2113-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-10-29T03:59:59Z",
+     "commentStartDate": "2026-09-28T04:00:00Z",
+     "docketId": "DOD-2026-OS-1618",
+     "documentType": "Notice",
+     "frDocNum": "2026-19738",
+     "objectId": "09000064b95c660d",
+     "openForComment": true,
+     "postedDate": "2026-09-28T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-1618-0002",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-10-29T03:59:59Z",
+     "commentStartDate": "2026-09-28T04:00:00Z",
+     "docketId": "DOD-2026-OS-1620",
+     "documentType": "Notice",
+     "frDocNum": "2026-19737",
+     "objectId": "09000064b95d7127",
+     "openForComment": true,
+     "postedDate": "2026-09-28T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-1620-0002",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-10-29T03:59:59Z",
+     "commentStartDate": "2026-09-28T04:00:00Z",
+     "docketId": "DOD-2026-OS-1621",
+     "documentType": "Notice",
+     "frDocNum": "2026-19736",
+     "objectId": "09000064b95d3017",
+     "openForComment": true,
+     "postedDate": "2026-09-28T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-1621-0003",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-10-29T03:59:59Z",
+     "commentStartDate": "2026-09-28T04:00:00Z",
+     "docketId": "DOD-2026-OS-1619",
+     "documentType": "Notice",
+     "frDocNum": "2026-19739",
+     "objectId": "09000064b95d30ab",
+     "openForComment": true,
+     "postedDate": "2026-09-28T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-1619-0003",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "NASA",
+     "commentEndDate": "2026-10-30T03:59:59Z",
+     "commentStartDate": "2026-09-29T04:00:00Z",
+     "docketId": "NASA_FRDOC_0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-19905",
+     "objectId": "09000064b95e92b1",
+     "openForComment": true,
+     "postedDate": "2026-09-29T04:00:00Z",
+     "subtype": null,
+     "title": "Name of Information Collection: Financial Assistance Awards/Grants and Cooperative Agreements (NSPIRES)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "NASA_FRDOC_0001-1158",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "NASA",
+     "commentEndDate": "2026-10-30T03:59:59Z",
+     "commentStartDate": "2026-09-29T04:00:00Z",
+     "docketId": "NASA_FRDOC_0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-19885",
+     "objectId": "09000064b95e911e",
+     "openForComment": true,
+     "postedDate": "2026-09-29T04:00:00Z",
+     "subtype": null,
+     "title": "Name of Information Collection: NASA Small Business Supplier Development Program (Formerly Known as the NASA Mentor-Prot\u00e9g\u00e9 Program)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "NASA_FRDOC_0001-1157",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-10-31T03:59:59Z",
+     "commentStartDate": "2026-09-30T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-20025",
+     "objectId": "09000064b95e92fd",
+     "openForComment": true,
+     "postedDate": "2026-09-30T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Request for Retroactive Induction for a Period Previously Completed under Chapter 33 [FR Doc No: 2026-20025; OMB Control No. 2900-0933]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0411",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-11-03T04:59:59Z",
+     "commentStartDate": "2026-09-02T04:00:00Z",
+     "docketId": "DOD-2026-OS-1915",
+     "documentType": "Notice",
+     "frDocNum": "2026-17942",
+     "objectId": "09000064b94bf50d",
+     "openForComment": true,
+     "postedDate": "2026-09-02T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-1915-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": "2026-11-03T04:59:59Z",
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "docketId": "DARS-2026-0331",
+     "documentType": "Notice",
+     "frDocNum": "2026-20176",
+     "objectId": "09000064b95fa7ab",
+     "openForComment": true,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Defense Federal Acquisition Regulation Supplement; Covered Defense Telecommunications Equipment or Services",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DARS-2026-0331-0004",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-11-03T04:59:59Z",
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "docketId": "FAR-2026-0133",
+     "documentType": "Notice",
+     "frDocNum": "2026-20127",
+     "objectId": "09000064b95fa836",
+     "openForComment": true,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "subtype": "Notice of Intent",
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Acquisition 360 Voluntary Survey",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR-2026-0133-0002",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-11-03T04:59:59Z",
+     "commentStartDate": "2026-09-03T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-18028",
+     "objectId": "09000064b94c3448",
+     "openForComment": true,
+     "postedDate": "2026-09-03T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Department of Veterans Affairs Acquisition Regulation Provision [FR Doc No: 2026-18028; OMB Control No. 2900-0418]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0373",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-11-03T04:59:59Z",
+     "commentStartDate": "2026-09-02T04:00:00Z",
+     "docketId": "DOD-2026-OS-1916",
+     "documentType": "Notice",
+     "frDocNum": "2026-17941",
+     "objectId": "09000064b94bf50a",
+     "openForComment": true,
+     "postedDate": "2026-09-02T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-1916-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-11-03T04:59:59Z",
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "docketId": "FAR-2026-0101",
+     "documentType": "Notice",
+     "frDocNum": "2026-20128",
+     "objectId": "09000064b95fa7f2",
+     "openForComment": true,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "subtype": "Notice of Intent",
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Preaward Survey Forms (Standard Forms 1403, 1404, 1405, 1406, 1407, and 1408) (OMB Control No. 9000-0011)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR-2026-0101-0003",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-11-03T04:59:59Z",
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "docketId": "FAR-2026-0166",
+     "documentType": "Notice",
+     "frDocNum": "2026-20126",
+     "objectId": "09000064b95fa6cb",
+     "openForComment": true,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "subtype": "Notice of Intent",
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Certain Federal Acquisition Regulation Part 28 Requirements (OMB Control No. 9000-0001)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR-2026-0166-0002",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "GSA",
+     "commentEndDate": "2026-11-05T04:59:59Z",
+     "commentStartDate": "2026-10-05T04:00:00Z",
+     "docketId": "GSA-GSAR-2026-0595",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2026-20317",
+     "objectId": "09000064b961d1d2",
+     "openForComment": true,
+     "postedDate": "2026-10-05T04:00:00Z",
+     "subtype": "Notice of Proposed Rulemaking (NPRM)",
+     "title": "General Services Administration Acquisition Regulation: Implementation of Executive Order 14275, Acquisition of Utility Services (GSAR Case 2026-G502)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "GSA-GSAR-2026-0595-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-11-06T04:59:59Z",
+     "commentStartDate": "2026-10-06T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-20414",
+     "objectId": "09000064b962e737",
+     "openForComment": true,
+     "postedDate": "2026-10-06T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Financial Status Report [FR Doc No: 2026-20414; OMB Control No. 2900-0165]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0421",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-11-06T04:59:59Z",
+     "commentStartDate": "2026-10-06T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-20415",
+     "objectId": "09000064b962e6a9",
+     "openForComment": true,
+     "postedDate": "2026-10-06T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: PayVA (Pay Now Enter Info Page) [FR Doc No: 2026-20415; OMB Control No. 2900-0663]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0422",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-11-10T04:59:59Z",
+     "commentStartDate": "2026-09-10T04:00:00Z",
+     "docketId": "DOD-2026-OS-1981",
+     "documentType": "Notice",
+     "frDocNum": "2026-18473",
+     "objectId": "09000064b951197b",
+     "openForComment": true,
+     "postedDate": "2026-09-10T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-1981-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-11-10T04:59:59Z",
+     "commentStartDate": "2026-09-09T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-18348",
+     "objectId": "09000064b9506f2c",
+     "openForComment": true,
+     "postedDate": "2026-09-09T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: All Employee Survey [FR Doc No: 2026-18348; OMB Control No. 2900-NEW]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0384",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-11-10T04:59:59Z",
+     "commentStartDate": "2026-09-10T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-18446",
+     "objectId": "09000064b95118b1",
+     "openForComment": true,
+     "postedDate": "2026-09-10T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Foreign Medical Program Veteran and Provider Forms [FR Doc No: 2026-18446; OMB Control No. 2900-0648]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0388",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-11-10T04:59:59Z",
+     "commentStartDate": "2026-09-10T04:00:00Z",
+     "docketId": "DOD-2026-OS-1982",
+     "documentType": "Notice",
+     "frDocNum": "2026-18479",
+     "objectId": "09000064b9511867",
+     "openForComment": true,
+     "postedDate": "2026-09-10T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-1982-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "NASA",
+     "commentEndDate": "2026-11-17T04:59:59Z",
+     "commentStartDate": "2026-09-17T04:00:00Z",
+     "docketId": "NASA-2026-0430",
+     "documentType": "Notice",
+     "frDocNum": "2026-19049",
+     "objectId": "09000064b957e48e",
+     "openForComment": true,
+     "postedDate": "2026-09-17T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Generic Clearance for Improving Customer Experience",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "NASA-2026-0430-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "GSA",
+     "commentEndDate": "2026-11-21T04:59:59Z",
+     "commentStartDate": "2026-09-21T04:00:00Z",
+     "docketId": "GSA-GSAR-2026-0497",
+     "documentType": "Notice",
+     "frDocNum": "2026-19210",
+     "objectId": "09000064b959dae8",
+     "openForComment": true,
+     "postedDate": "2026-09-21T04:00:00Z",
+     "subtype": "60 Day Proposed Information Collection",
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Acquisition Regulation; GSA Voluntary FSS Domestic End Product Certification on GSA Federal Supply Schedule, etc.",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "GSA-GSAR-2026-0497-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "SBA",
+     "commentEndDate": "2026-11-21T04:59:59Z",
+     "commentStartDate": "2026-08-20T04:00:00Z",
+     "docketId": "SBA-2026-0265",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2026-17039",
+     "objectId": "09000064b946e139",
+     "openForComment": true,
+     "postedDate": "2026-08-20T04:00:00Z",
+     "subtype": null,
+     "title": "Small Business Size Standards: Revised Size Standards Methodology",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "SBA-2026-0265-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "SBA",
+     "commentEndDate": "2026-11-21T04:59:59Z",
+     "commentStartDate": "2026-09-24T04:00:00Z",
+     "docketId": "SBA-2026-0199",
+     "documentType": "Proposed Rule",
+     "frDocNum": "2026-19546",
+     "objectId": "09000064b95b6b08",
+     "openForComment": true,
+     "postedDate": "2026-09-24T04:00:00Z",
+     "subtype": null,
+     "title": "Small Business Size Standards",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "SBA-2026-0199-2726",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-11-24T04:59:59Z",
+     "commentStartDate": "2026-09-23T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-19410",
+     "objectId": "09000064b95b6a04",
+     "openForComment": true,
+     "postedDate": "2026-09-23T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Reimbursement Claim Forms [FR Doc No: 2026-19410; OMB Control No. 2900-0940]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0404",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-11-24T04:59:59Z",
+     "commentStartDate": "2026-09-23T04:00:00Z",
+     "docketId": "FAR-2026-0298",
+     "documentType": "Notice",
+     "frDocNum": "2026-19442",
+     "objectId": "09000064b95ae76f",
+     "openForComment": true,
+     "postedDate": "2026-09-23T04:00:00Z",
+     "subtype": "Request for Comments",
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Paperwork Reduction Act Changes in FAR Case 2026-010, Revolutionary Federal Acquisition Regulation Overhaul Parts 14, 28, 36, and 52 (OMB Control No. 9000-0064)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR-2026-0298-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-11-24T04:59:59Z",
+     "commentStartDate": "2026-09-23T04:00:00Z",
+     "docketId": "FAR-2026-0301",
+     "documentType": "Notice",
+     "frDocNum": "2026-19444",
+     "objectId": "09000064b95b6b02",
+     "openForComment": true,
+     "postedDate": "2026-09-23T04:00:00Z",
+     "subtype": "Request for Comments",
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Paperwork Reduction Act Changes in FAR Case 2026-011, Revolutionary Federal Acquisition Regulation Overhaul (OMB Control No. 9000-0061)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR-2026-0301-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-11-24T04:59:59Z",
+     "commentStartDate": "2026-09-23T04:00:00Z",
+     "docketId": "FAR_FRDOC_0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-19443",
+     "objectId": "09000064b95b6a06",
+     "openForComment": true,
+     "postedDate": "2026-09-23T04:00:00Z",
+     "subtype": "Request for Comments",
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Paperwork Reduction Act Changes in FAR Case 2026-006, Revolutionary Federal Acquisition Regulation Overhaul Parts 16, 17, and 35 (OMB Control No. 9000-0069)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR_FRDOC_0001-1916",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-11-25T04:59:59Z",
+     "commentStartDate": "2026-09-25T04:00:00Z",
+     "docketId": "DOD-2026-OS-2048",
+     "documentType": "Notice",
+     "frDocNum": "2026-19607",
+     "objectId": "09000064b95c54e7",
+     "openForComment": true,
+     "postedDate": "2026-09-25T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-2048-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-11-25T04:59:59Z",
+     "commentStartDate": "2026-09-25T04:00:00Z",
+     "docketId": "DOD-2026-HA-2049",
+     "documentType": "Notice",
+     "frDocNum": "2026-19611",
+     "objectId": "09000064b95c65bb",
+     "openForComment": true,
+     "postedDate": "2026-09-25T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-HA-2049-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-11-28T04:59:59Z",
+     "commentStartDate": "2026-09-28T04:00:00Z",
+     "docketId": "DOD-2026-OS-2047",
+     "documentType": "Notice",
+     "frDocNum": "2026-19714",
+     "objectId": "09000064b95d30ad",
+     "openForComment": true,
+     "postedDate": "2026-09-28T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-2047-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-11-28T04:59:59Z",
+     "commentStartDate": "2026-09-28T04:00:00Z",
+     "docketId": "DOD-2026-OS-2081",
+     "documentType": "Notice",
+     "frDocNum": "2026-19735",
+     "objectId": "09000064b95d30dd",
+     "openForComment": true,
+     "postedDate": "2026-09-28T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-2081-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "NASA",
+     "commentEndDate": "2026-11-28T04:59:59Z",
+     "commentStartDate": "2026-09-28T04:00:00Z",
+     "docketId": "NASA-2026-0463",
+     "documentType": "Notice",
+     "frDocNum": "2026-19790",
+     "objectId": "09000064b95d2fd7",
+     "openForComment": true,
+     "postedDate": "2026-09-28T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Generic Clearance for Conferences, Meetings, Workshops, Registrations and Challenges",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "NASA-2026-0463-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-11-28T04:59:59Z",
+     "commentStartDate": "2026-09-28T04:00:00Z",
+     "docketId": "DOD-2026-OS-2080",
+     "documentType": "Notice",
+     "frDocNum": "2026-19734",
+     "objectId": "09000064b95d2fdd",
+     "openForComment": true,
+     "postedDate": "2026-09-28T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-2080-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": "2026-12-01T04:59:59Z",
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "docketId": "DARS-2026-0463",
+     "documentType": "Notice",
+     "frDocNum": "2026-20172",
+     "objectId": "09000064b95fa694",
+     "openForComment": true,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Defense Federal Acquisition Regulation Supplement Part 247, Transportation and Related Clauses",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DARS-2026-0463-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": "2026-12-01T04:59:59Z",
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "docketId": "DARS-2026-0496",
+     "documentType": "Notice",
+     "frDocNum": "2026-20173",
+     "objectId": "09000064b95fa711",
+     "openForComment": true,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Defense Federal Acquisition Regulation Supplement Part 245, Government Property, Related Clauses and Forms",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DARS-2026-0496-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-12-01T04:59:59Z",
+     "commentStartDate": "2026-09-30T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-20029",
+     "objectId": "09000064b95f221b",
+     "openForComment": true,
+     "postedDate": "2026-09-30T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Servicemembers' Group Life Insurance\u2014Spouse Coverage Election and Certificate Form [FR Doc No: 2026-20029; OMB Control No. 2900-0938]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0410",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": "2026-12-01T04:59:59Z",
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "docketId": "DARS-2026-0398",
+     "documentType": "Notice",
+     "frDocNum": "2026-20175",
+     "objectId": "09000064b95fa7ee",
+     "openForComment": true,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Defense Federal Acquisition Regulation Supplement Part 219, Small Business Programs",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DARS-2026-0398-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DARS",
+     "commentEndDate": "2026-12-01T04:59:59Z",
+     "commentStartDate": "2026-10-01T04:00:00Z",
+     "docketId": "DARS-2026-0397",
+     "documentType": "Notice",
+     "frDocNum": "2026-20174",
+     "objectId": "09000064b95fa87f",
+     "openForComment": true,
+     "postedDate": "2026-10-01T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Defense Federal Acquisition Regulation Supplement Part 237, Service Contracting, and Related Clauses and Forms",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DARS-2026-0397-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-12-02T04:59:59Z",
+     "commentStartDate": "2026-10-02T04:00:00Z",
+     "docketId": "FAR-2026-0332",
+     "documentType": "Notice",
+     "frDocNum": "2026-20271",
+     "objectId": "09000064b96047ad",
+     "openForComment": true,
+     "postedDate": "2026-10-02T04:00:00Z",
+     "subtype": "Information Collection Request (ICR)",
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Federal Acquisition Regulation Part 11 Requirements (OMB Control No. 9000-0153)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR-2026-0332-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-12-02T04:59:59Z",
+     "commentStartDate": "2026-10-02T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-20218",
+     "objectId": "09000064b9604625",
+     "openForComment": true,
+     "postedDate": "2026-10-02T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Residency Verification Report-Veterans and Survivors [FR Doc No: 2026-20218; OMB Control No. 2900-0655]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0418",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "FAR",
+     "commentEndDate": "2026-12-02T04:59:59Z",
+     "commentStartDate": "2026-10-02T04:00:00Z",
+     "docketId": "FAR-2026-0331",
+     "documentType": "Notice",
+     "frDocNum": "2026-20270",
+     "objectId": "09000064b96047b3",
+     "openForComment": true,
+     "postedDate": "2026-10-02T04:00:00Z",
+     "subtype": "Information Collection Request (ICR)",
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Presolicitation Notice and Response (OMB Control No. 9000-0037)",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "FAR-2026-0331-0001",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-12-08T04:59:59Z",
+     "commentStartDate": "2026-10-06T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-20412",
+     "objectId": "09000064b962e649",
+     "openForComment": true,
+     "postedDate": "2026-10-06T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Work Study Work Site Application [FR Doc No: 2026-20412; OMB Control No. 2900-NEW]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0423",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "VA",
+     "commentEndDate": "2026-12-08T04:59:59Z",
+     "commentStartDate": "2026-10-06T04:00:00Z",
+     "docketId": "VA-2026-VACO-0001",
+     "documentType": "Notice",
+     "frDocNum": "2026-20413",
+     "objectId": "09000064b962e86d",
+     "openForComment": true,
+     "postedDate": "2026-10-06T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals: Designation of Work Study Site Supervisors [FR Doc No: 2026-20413; OMB Control No. 2900-NEW]",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "VA-2026-VACO-0001-0420",
+    "type": "documents"
+   },
+   {
+    "attributes": {
+     "agencyId": "DOD",
+     "commentEndDate": "2026-12-08T04:59:59Z",
+     "commentStartDate": "2026-10-07T04:00:00Z",
+     "docketId": "DOD-2026-OS-2179",
+     "documentType": "Notice",
+     "frDocNum": "2026-20508",
+     "objectId": "09000064b96482a2",
+     "openForComment": true,
+     "postedDate": "2026-10-07T04:00:00Z",
+     "subtype": null,
+     "title": "Agency Information Collection Activities; Proposals, Submissions, and Approvals",
+     "withdrawn": false,
+     "withinCommentPeriod": true
+    },
+    "id": "DOD-2026-OS-2179-0001",
+    "type": "documents"
+   }
+  ],
+  "meta": {
+   "firstPage": true,
+   "hasNextPage": false,
+   "hasPreviousPage": false,
+   "lastPage": true,
+   "numberOfElements": 70,
+   "pageNumber": 1,
+   "pageSize": 250,
+   "totalElements": 70,
+   "totalPages": 1
+  }
+ }
+}

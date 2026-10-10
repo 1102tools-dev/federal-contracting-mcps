@@ -14,13 +14,21 @@ rulemaking docket structure, public comments, and comment period status.
 from __future__ import annotations
 
 import collections
+import html as _html
 import json as _json
 import os
 import time
 import re
 import urllib.parse
-from datetime import date as _date, datetime as _datetime
+from datetime import date as _date, datetime as _datetime, timedelta as _timedelta, timezone as _timezone
 from typing import Any, Literal
+
+try:
+    from zoneinfo import ZoneInfo as _ZoneInfo
+
+    _EASTERN: Any = _ZoneInfo("America/New_York")
+except Exception:  # no tz database in the image: fall back to the US rules below
+    _EASTERN = None
 
 import httpx
 from mcp.server import MCPServer
@@ -658,24 +666,117 @@ def _agency_codes_from_aggregations(meta: dict[str, Any], limit: int = 25) -> li
     return codes[:limit]
 
 
+def _nth_sunday_utc(year: int, month: int, n: int, hour_utc: int) -> _datetime:
+    """The nth Sunday of a month (n=-1: the last one) at hour_utc, in UTC."""
+    if n > 0:
+        first = _datetime(year, month, 1, hour_utc, tzinfo=_timezone.utc)
+        return first + _timedelta(days=(6 - first.weekday()) % 7 + 7 * (n - 1))
+    nxt = _datetime(year + (month == 12), month % 12 + 1, 1, hour_utc, tzinfo=_timezone.utc)
+    last = nxt - _timedelta(days=1)
+    return last - _timedelta(days=(last.weekday() - 6) % 7)
+
+
+def _eastern_fallback(moment: _datetime) -> tuple[_datetime, str]:
+    """US Eastern time without a tz database (2:00 AM local switch rules)."""
+    year = moment.year
+    if year >= 2007:
+        start, end = _nth_sunday_utc(year, 3, 2, 7), _nth_sunday_utc(year, 11, 1, 6)
+    else:
+        start, end = _nth_sunday_utc(year, 4, 1, 7), _nth_sunday_utc(year, 10, -1, 6)
+    if start <= moment < end:
+        return moment - _timedelta(hours=4), "EDT"
+    return moment - _timedelta(hours=5), "EST"
+
+
+def _eastern_deadline(value: Any) -> str | None:
+    """Regulations.gov stores deadlines as UTC instants: 11:59:59 PM Eastern on
+    the closing day is written as 03:59:59Z or 04:59:59Z on the NEXT day.
+    Return the instant as Eastern wall time, e.g. 'Oct 22, 2026 11:59 PM ET'."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip()
+    if _YYYYMMDD_RE.match(text):  # a bare calendar date has no zone to convert
+        try:
+            day = _date.fromisoformat(text)
+        except ValueError:
+            return None
+        return f"{day.strftime('%b')} {day.day}, {day.year}"
+    try:
+        moment = _datetime.fromisoformat(text[:-1] + "+00:00" if text.endswith("Z") else text)
+    except ValueError:
+        return None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=_timezone.utc)
+    moment = moment.astimezone(_timezone.utc)
+    if _EASTERN is not None:
+        local = moment.astimezone(_EASTERN)
+    else:
+        local, _ = _eastern_fallback(moment)
+    hour = local.hour % 12 or 12
+    return (
+        f"{local.strftime('%b')} {local.day}, {local.year} "
+        f"{hour}:{local.minute:02d} {'AM' if local.hour < 12 else 'PM'} ET"
+    )
+
+
+_BREAK_RE = re.compile(r"<\s*(?:br\s*/?|/p|/div|/li)\s*>", re.IGNORECASE)
+_TAG_RE = re.compile(r"</?[A-Za-z][^<>]*>")
+_BLANK_LINES_RE = re.compile(r"\n{3,}")
+_TRAILING_SPACE_RE = re.compile(r"[ \t]+\n")
+
+
+def _html_to_text(value: Any) -> Any:
+    """Regulations.gov returns comment text and search snippets as HTML
+    (&ldquo;, <br/>, <span style=...>, <mark><em>). Return plain text:
+    breaks become newlines, tags go, entities are decoded."""
+    if not isinstance(value, str) or ("<" not in value and "&" not in value):
+        return value
+    text = _BREAK_RE.sub("\n", value)
+    text = _TAG_RE.sub("", text)
+    text = _html.unescape(text).replace("\xa0", " ")
+    text = _TRAILING_SPACE_RE.sub("\n", text)
+    return _BLANK_LINES_RE.sub("\n\n", text).strip()
+
+
 def _compact_record(value: Any) -> Any:
-    """Drop JSON:API self-links and empty attributes from one record."""
+    """Drop JSON:API self-links and empty attributes from one record.
+
+    A raw commentEndDate is a UTC instant that reads one day late, so it is
+    renamed commentEndDateUtc and commentDeadlineEastern gives the deadline
+    as Eastern wall time."""
     if not isinstance(value, dict):
         return value
     out = {k: v for k, v in value.items() if k != "links"}
     attrs = out.get("attributes")
     if isinstance(attrs, dict):
-        out["attributes"] = {k: v for k, v in attrs.items() if v not in (None, "", [], {})}
+        attrs = {k: v for k, v in attrs.items() if v not in (None, "", [], {})}
+        for field in ("comment", "highlightedContent"):
+            if field in attrs:
+                attrs[field] = _html_to_text(attrs[field])
+        if "commentEndDate" in attrs:
+            raw = attrs.pop("commentEndDate")
+            eastern = _eastern_deadline(raw)
+            if eastern:
+                attrs["commentDeadlineEastern"] = eastern
+            attrs["commentEndDateUtc"] = raw
+        out["attributes"] = attrs
     return out
 
 
-def _compact_listing(response: dict[str, Any]) -> dict[str, Any]:
+def _compact_listing(
+    response: dict[str, Any], skip_facets: tuple[str, ...] = (),
+) -> dict[str, Any]:
     """Shrink a Regulations.gov search response without losing data rows.
 
     The API attaches meta.aggregations to every search: facet counts for
     every agency (about 300 entries), subtype, and dates, often larger than
     the rows themselves. They become meta.facets: the top counts per facet,
     as {value: count}. Rows lose JSON:API self-links and empty attributes.
+
+    The API computes each facet without that facet's own filter, so with
+    agency_id=DARS the agencyId facet counts every agency site-wide. Facets
+    named in skip_facets (the ones the query filtered on) are dropped
+    instead of passed through as if they described the results.
     """
     response = dict(response)
     response.pop("links", None)
@@ -684,6 +785,8 @@ def _compact_listing(response: dict[str, Any]) -> dict[str, Any]:
     aggregations = _safe_dict(meta.pop("aggregations", None))
     facets: dict[str, Any] = {}
     for name, entries in aggregations.items():
+        if name in skip_facets:
+            continue
         counts = {}
         for entry in _as_list(entries):
             entry = _safe_dict(entry)
@@ -712,6 +815,16 @@ def _compact_detail(response: dict[str, Any]) -> dict[str, Any]:
     if isinstance(response.get("included"), list):
         response["included"] = [_compact_record(r) for r in response["included"]]
     return response
+
+
+def _search_term_hint(search_term: str | None) -> tuple[str, ...]:
+    if not search_term:
+        return ()
+    return (
+        f"search_term {search_term!r} is spelled as intended; "
+        "quoted phrases joined with OR (\"A\" OR \"B\") can return zero, so "
+        "search one quoted phrase per call or use unquoted words",
+    )
 
 
 def _flag_no_data(
@@ -752,6 +865,61 @@ def _flag_no_data(
     return response
 
 
+_MAX_PAGE_NUMBER = 40
+
+
+def _flag_page_ceiling(
+    response: dict[str, Any], *, page_size: int, page_number: int, split_by: str,
+) -> dict[str, Any]:
+    """The API serves 40 pages, then reports lastPage=true even when more
+    records match. Say how many are out of reach and how to get them."""
+    meta = _safe_dict(response.get("meta"))
+    total = meta.get("totalElements")
+    reachable = _MAX_PAGE_NUMBER * page_size
+    if not isinstance(total, int) or total <= reachable:
+        return response
+    beyond = total - reachable
+    split = (
+        f"split the query into {split_by} windows (or raise page_size up to "
+        f"{MAX_TOOL_PAGE_SIZE})" if page_size < MAX_TOOL_PAGE_SIZE
+        else f"split the query into {split_by} windows"
+    )
+    if page_number >= _MAX_PAGE_NUMBER and response.get("data"):
+        response["truncated"] = True
+        response["records_beyond_page_limit"] = beyond
+        response["truncated_note"] = (
+            f"Page {_MAX_PAGE_NUMBER} is the last page the API serves, but {total} records "
+            f"match: {beyond} are beyond it. This is not the end of the results; "
+            f"{split} to reach them."
+        )
+        if meta.get("lastPage") is True:
+            response["meta"] = {**meta, "lastPage": False}
+    else:
+        response["page_limit_note"] = (
+            f"{total} records match, but the API serves only {_MAX_PAGE_NUMBER} pages "
+            f"({reachable} records at page_size={page_size}); {beyond} cannot be "
+            f"reached by paging. To cover them all, {split}."
+        )
+    return response
+
+
+_POSTED_COUNT_NOTE = (
+    "This counts comments posted publicly on Regulations.gov, not comments "
+    "received. The agency's received count can be far higher: identical "
+    "mass-mail comments are often posted once (get_comment_detail shows "
+    "duplicateComments) and some received comments are never posted. Report "
+    "it as posted comments."
+)
+
+
+def _label_posted_count(response: dict[str, Any]) -> dict[str, Any]:
+    total = _safe_dict(response.get("meta")).get("totalElements")
+    if isinstance(total, int):
+        response["posted_comments"] = total
+        response["count_note"] = _POSTED_COUNT_NOTE
+    return response
+
+
 # ---------------------------------------------------------------------------
 # Core tools
 # ---------------------------------------------------------------------------
@@ -778,6 +946,10 @@ async def search_documents(
     - Lowercase values silently return 0 results (no error)
 
     Key parameters:
+    - search_term: full-text match, including attachment text. Results
+      follow sort (newest first by default), not relevance, so an unquoted
+      multi-word term puts loosely matching recent documents first; quote
+      a phrase ('"Pay Equity and Transparency"') to match it exactly.
     - agency_id: FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA, etc.
       Comma-separate for multiple agencies ('FAR,GSA'). Empty string is rejected.
     - docket_id: e.g., 'FAR-2023-0008' for a specific FAR case
@@ -788,10 +960,17 @@ async def search_documents(
     - comment_end_date_ge/le: YYYY-MM-DD format
 
     Response meta.facets gives the top counts by document type, agency,
-    and comment period status; meta.totalElements is the full match count.
+    and comment period status; a facet the query filtered on is left out,
+    because the API counts it site-wide. meta.totalElements is the full
+    match count.
 
-    Page size: 5-100. page_number: 1-40. For larger result sets, split the
-    query into posted_date_ge/le windows.
+    Comment deadlines: attributes.commentDeadlineEastern is the closing time
+    in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw
+    commentEndDateUtc is a UTC instant whose date reads one day late.
+
+    Page size: 5-100. page_number: 1-40. The API serves 40 pages; when more
+    records match, page_limit_note (and truncated=true on page 40) says how
+    many are out of reach. Split the query into posted_date_ge/le windows.
 
     sort: '-postedDate' (newest first, default), 'postedDate', '-commentEndDate',
     'lastModifiedDate', 'title', 'documentId'. Comma-separate for
@@ -871,10 +1050,17 @@ async def _search_documents(
 
     result = await _get("documents", params)
     ctx = f"agency_id={agency_id!r}, document_type={document_type!r}"
-    return _compact_listing(_flag_no_data(
+    skip = tuple(name for name, used in (
+        ("agencyId", agency_id), ("documentType", document_type),
+        ("withinCommentPeriod", within_comment_period),
+        ("postedDate", posted_date_ge or posted_date_le),
+        ("commentEndDate", comment_end_date_ge or comment_end_date_le),
+    ) if used)
+    return _flag_page_ceiling(_compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
-        hints=("document_type uses exact casing ('Proposed Rule', not 'proposed rule')",),
-    ))
+        hints=(*_search_term_hint(search_term),
+               "document_type uses exact casing ('Proposed Rule', not 'proposed rule')"),
+    ), skip), page_size=page_size, page_number=page_number, split_by="posted_date_ge/le")
 
 
 @mcp.tool(annotations={"title": "Get Document Detail", **_OPEN_WORLD})
@@ -888,6 +1074,10 @@ async def get_document_detail(
     other detail fields not available in search results.
 
     Set include_attachments=True to get attachment objects with download URLs.
+
+    Comment deadlines: attributes.commentDeadlineEastern is the closing time
+    in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw
+    commentEndDateUtc is a UTC instant whose date reads one day late.
 
     document_id format: FAR-2023-0008-0023
     """
@@ -909,6 +1099,7 @@ async def search_comments(
     sort: str = "-postedDate",
     page_size: int = DEFAULT_PAGE_SIZE,
     page_number: int = 1,
+    include_organization: bool = False,
 ) -> dict[str, Any]:
     """Search public comments on Regulations.gov.
 
@@ -919,13 +1110,36 @@ async def search_comments(
 
     docket_id filters comments to all documents in a docket.
 
+    search_term is a full-text match, including attachment text; results
+    follow sort, not relevance. Quote a phrase ('"Professional Services
+    Council"') to match it exactly.
+
+    posted_comments (= meta.totalElements) counts comments posted publicly,
+    not comments received; mass-mail duplicates and unposted comments are
+    not in it, so the agency's received count can be much higher.
+
+    Search rows carry no organization (the API leaves it out), and many
+    titles are only "Comment on FR Doc # ...". For "who commented" questions
+    set include_organization=True (page_size up to 25): each row gets the
+    submitter's organization from its comment detail. Rows without one were
+    filed by individuals or the agency hid the field.
+
     Page size: 5-100; page_number 1-40. Comments sorted by '-postedDate' by
-    default. For larger result sets, split the query into posted_date_ge/le
-    windows. Most comment text is in attachments; get_comment_detail with
+    default. The API serves 40 pages; when more comments match,
+    page_limit_note (and truncated=true on page 40) says how many are out of
+    reach. Split the query into posted_date_ge/le windows. Most comment text is in attachments; get_comment_detail with
     include_attachments=True returns their download URLs.
     """
     page_size = _validate_page_size(page_size)
     page_number = _validate_page_number(page_number)
+    if not isinstance(include_organization, bool):
+        raise ValueError("include_organization must be true or false.")
+    if include_organization and page_size > _ORG_LOOKUP_MAX_ROWS:
+        raise ValueError(
+            f"include_organization=True reads one comment detail per row, so "
+            f"page_size is capped at {_ORG_LOOKUP_MAX_ROWS} (got {page_size}). "
+            f"Lower page_size and page through."
+        )
     search_term = _validate_search_term(search_term, field="search_term")
     agency_id = _validate_agency_id(agency_id, field="agency_id")
     comment_on_id = _validate_comment_on_id(comment_on_id, field="comment_on_id")
@@ -960,10 +1174,56 @@ async def search_comments(
         f"agency_id={agency_id!r}, docket_id={docket_id!r}, "
         f"comment_on_id={comment_on_id!r}"
     )
-    return _compact_listing(_flag_no_data(
+    skip = tuple(name for name, used in (
+        ("agencyId", agency_id), ("postedDate", posted_date_ge or posted_date_le),
+    ) if used)
+    response = _flag_page_ceiling(_label_posted_count(_compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
-        hints=("comment_on_id is the document's hex objectId, not its documentId",),
-    ))
+        hints=(*_search_term_hint(search_term),
+               "comment_on_id is the document's hex objectId, not its documentId"),
+    ), skip)), page_size=page_size, page_number=page_number, split_by="posted_date_ge/le")
+    if response.get("data"):
+        if include_organization:
+            await _add_organizations(response)
+        else:
+            response["organization_note"] = (
+                "Search rows carry no organization. Repeat with "
+                "include_organization=True (page_size up to 25) or call "
+                "get_comment_detail before saying which groups commented."
+            )
+    return response
+
+
+_ORG_LOOKUP_MAX_ROWS = 25
+
+
+async def _add_organizations(response: dict[str, Any]) -> None:
+    """Fill attributes.organization on each row from its comment detail.
+
+    Details go through the same cache, pacing, and hourly budget as any
+    other call; a failed lookup is marked on the row instead of failing
+    the search."""
+    found = failed = 0
+    for row in _as_list(response.get("data")):
+        if not isinstance(row, dict) or not isinstance(row.get("id"), str):
+            continue
+        attrs = row.setdefault("attributes", {})
+        try:
+            comment_id = _validate_id(row["id"], field="comment_id")
+            detail = await _get(f"comments/{comment_id}", {})
+        except (ToolError, ValueError):
+            attrs["organizationLookupFailed"] = True
+            failed += 1
+            continue
+        org = _safe_dict(_safe_dict(detail.get("data")).get("attributes")).get("organization")
+        if isinstance(org, str) and org.strip():
+            attrs["organization"] = org.strip()
+            found += 1
+    response["organization_lookup"] = {
+        "rows_with_organization": found,
+        "lookups_failed": failed,
+        "note": "Rows without organization were filed by individuals or the agency hid the field.",
+    }
 
 
 @mcp.tool(annotations={"title": "Get Comment Detail", **_OPEN_WORLD})
@@ -979,7 +1239,8 @@ async def get_comment_detail(
     include_attachments=True returns the attachment download URLs.
 
     Some fields (firstName, lastName, organization) are agency-configurable
-    and may be hidden.
+    and may be hidden. The comment text comes back as plain text (HTML
+    breaks become newlines; tags and entities are decoded).
     """
     comment_id = _validate_id(comment_id, field="comment_id")
     params: dict[str, Any] = {}
@@ -1012,8 +1273,15 @@ async def search_dockets(
 
     Limited filters: only searchTerm, agencyId, docketType, lastModifiedDate.
 
-    Page size: 5-100; page_number 1-40. For larger result sets, split the
-    query into last_modified_date_ge/le windows.
+    sort: 'title', 'docketId', 'lastModifiedDate'; prefix '-' for descending
+    ('-lastModifiedDate' lists the most recently active dockets first).
+    Catch-all dockets such as DARS_FRDOC_0001 and SBA_FRDOC_0001 hold
+    miscellaneous Federal Register documents and often top that list.
+
+    Page size: 5-100; page_number 1-40. The API serves 40 pages; when more
+    dockets match, page_limit_note (and truncated=true on page 40) says how
+    many are out of reach. Split the query into last_modified_date_ge/le
+    windows.
     """
     page_size = _validate_page_size(page_size)
     page_number = _validate_page_number(page_number)
@@ -1050,10 +1318,15 @@ async def search_dockets(
 
     result = await _get("dockets", params)
     ctx = f"agency_id={agency_id!r}, docket_type={docket_type!r}"
-    return _compact_listing(_flag_no_data(
+    skip = tuple(name for name, used in (
+        ("agencyId", agency_id), ("docketType", docket_type),
+        ("lastModifiedDate", last_modified_date_ge or last_modified_date_le),
+    ) if used)
+    return _flag_page_ceiling(_compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
-        hints=("docket_type uses exact casing ('Rulemaking', not 'rulemaking')",),
-    ))
+        hints=(*_search_term_hint(search_term),
+               "docket_type uses exact casing ('Rulemaking', not 'rulemaking')"),
+    ), skip), page_size=page_size, page_number=page_number, split_by="last_modified_date_ge/le")
 
 
 @mcp.tool(annotations={"title": "Get Docket Detail", **_OPEN_WORLD})
@@ -1093,6 +1366,7 @@ def _continue_hint(fields: dict[str, Any], later: str) -> str:
 @mcp.tool(annotations={"title": "Open Comment Periods", **_OPEN_WORLD})
 async def open_comment_periods(
     agency_ids: list[str] | None = None,
+    document_type: Literal["Proposed Rule", "Rule", "Notice", "Supporting & Related Material", "Other"] | None = None,
     page_size: int = DEFAULT_PAGE_SIZE,
     page_number: int = 1,
 ) -> dict[str, Any]:
@@ -1101,7 +1375,11 @@ async def open_comment_periods(
     Searches for documents where withinCommentPeriod=true, sorted by
     soonest closing deadline (ascending commentEndDate), so page 1 holds
     the deadlines you can still act on. Returns document IDs, titles,
-    agencies, comment end dates, docket IDs, and the API-true total_open.
+    agencies, document types and subtypes, Federal Register document
+    numbers, comment deadlines, docket IDs, and the API-true total_open.
+    comment_deadline is the closing time in Eastern time (e.g. 'Oct 22,
+    2026 11:59 PM ET'); comment_end_date_utc is the raw UTC instant, whose
+    date reads one day late.
     When more documents exist, truncated=true and next_page_number gives
     the page that continues the list (later pages close later).
 
@@ -1109,7 +1387,9 @@ async def open_comment_periods(
 
     Default searches FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA in a single
     comma-joined query. Pass agency_ids to narrow or expand the scope. An
-    empty list is rejected; pass None to use the defaults.
+    empty list is rejected; pass None to use the defaults. Most open DOD and
+    VA documents are Paperwork Reduction Act and Privacy Act notices; for
+    rules only, pass document_type='Proposed Rule' (exact casing).
     """
     if agency_ids is not None:
         if not isinstance(agency_ids, list):
@@ -1140,6 +1420,7 @@ async def open_comment_periods(
     # documents, the exact ones this tool exists to surface.
     result = await _search_documents(
         agency_id=",".join(agencies),
+        document_type=document_type,
         within_comment_period=True,
         sort="commentEndDate",
         page_size=page_size,
@@ -1155,20 +1436,24 @@ async def open_comment_periods(
             "agency": attrs.get("agencyId"),
             "title": attrs.get("title"),
             "document_type": attrs.get("documentType"),
-            "comment_end_date": attrs.get("commentEndDate"),
+            "subtype": attrs.get("subtype"),
+            "fr_doc_num": attrs.get("frDocNum"),
+            "comment_deadline": attrs.get("commentDeadlineEastern"),
+            "comment_end_date_utc": attrs.get("commentEndDateUtc"),
             "docket_id": attrs.get("docketId"),
             "url": f"https://www.regulations.gov/document/{item.get('id')}",
         })
 
-    dated = [d for d in all_docs if d.get("comment_end_date")]
-    dated.sort(key=lambda x: x["comment_end_date"] or "")
-    undated = [d for d in all_docs if not d.get("comment_end_date")]
+    dated = [d for d in all_docs if d.get("comment_end_date_utc")]
+    dated.sort(key=lambda x: x["comment_end_date_utc"] or "")
+    undated = [d for d in all_docs if not d.get("comment_end_date_utc")]
 
     api_total = _safe_dict(result.get("meta")).get("totalElements")
     total_open = api_total if isinstance(api_total, int) else len(all_docs)
 
     response: dict[str, Any] = {
         "agencies_searched": agencies,
+        **({"document_type": document_type} if document_type else {}),
         "total_open": total_open,
         **_page_fields(api_total, page_size, page_number, len(all_docs)),
         "documents": dated + undated,
@@ -1199,7 +1484,15 @@ async def far_case_history(
     Returns the docket metadata (title, abstract, RIN linking to the
     Unified Agenda), the docket's total document count, counts by document
     type and of documents open for comment across the whole docket, and one
-    page of its documents, most recent first, with types, dates, and URLs.
+    page of its documents, most recent first, with types, subtypes, Federal
+    Register document numbers, dates, and URLs. subtype tells a withdrawal,
+    extension, or correction apart from a new proposed rule (a withdrawal
+    keeps document_type 'Proposed Rule').
+    comment_deadline is the closing time in Eastern time; comment_end_date_utc
+    is the raw UTC instant, whose date reads one day late. Page 1 also gives
+    posted_comments for the whole docket: comments posted publicly, not
+    comments received (mass-mail duplicates and unposted comments are not
+    in it).
     When the docket has more documents, truncated=true and next_page_number
     gives the page that continues the list.
 
@@ -1227,9 +1520,12 @@ async def far_case_history(
         documents.append({
             "document_id": item.get("id"),
             "document_type": attrs.get("documentType"),
+            "subtype": attrs.get("subtype"),
             "title": attrs.get("title"),
+            "fr_doc_num": attrs.get("frDocNum"),
             "posted_date": attrs.get("postedDate"),
-            "comment_end_date": attrs.get("commentEndDate"),
+            "comment_deadline": attrs.get("commentDeadlineEastern"),
+            "comment_end_date_utc": attrs.get("commentEndDateUtc"),
             "within_comment_period": attrs.get("withinCommentPeriod"),
             "url": f"https://www.regulations.gov/document/{item.get('id')}",
         })
@@ -1250,6 +1546,18 @@ async def far_case_history(
         out["documents_by_type"] = facets["documentType"]
     if "withinCommentPeriod" in facets:
         out["open_for_comment"] = _safe_dict(facets["withinCommentPeriod"]).get("true", 0)
+    if page_number == 1:
+        try:
+            comments = await _get("comments", {
+                "page[size]": MIN_PAGE_SIZE, "page[number]": 1, "filter[docketId]": docket_id,
+            })
+        except ToolError as e:
+            out["posted_comments_error"] = f"Comment count unavailable: {e}"
+        else:
+            posted = _safe_dict(comments.get("meta")).get("totalElements")
+            if isinstance(posted, int):
+                out["posted_comments"] = posted
+                out["count_note"] = _POSTED_COUNT_NOTE
     out.update(_page_fields(api_total, page_size, page_number, len(documents)))
     out["documents"] = documents
     if out.get("truncated"):
