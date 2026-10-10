@@ -1,6 +1,6 @@
 # Acquisition.gov MCP
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests: 240](https://img.shields.io/badge/regression%20tests-240-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests: 246](https://img.shields.io/badge/regression%20tests-246-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/acquisition-gov-mcp -->
 
@@ -22,7 +22,7 @@ This server reports source content and metadata. It does **not** decide which ru
 ## Install
 
 ```bash
-uvx acquisition-gov-mcp==1.0.8
+uvx acquisition-gov-mcp==1.0.10
 ```
 
 The server uses stdio and requires no credentials.
@@ -37,7 +37,7 @@ The server uses stdio and requires no credentials.
 | `get_rfo_agency_deviation(source_id, page_start?, page_end?)` | Resolve only an indexed source ID and return page-numbered PDF text and document-found applicability language. |
 | `get_rfo_guidance(resource, heading?, cursor?)` | Retrieve the FAQ, policy-and-guidance page, or FAR Council deviation-guidance PDF. |
 
-Every retrieved source includes a canonical URL, UTC retrieval time, SHA-256 content hash, extraction status, and warnings. Agency PDF dates and applicability are returned only when labeled language is found inside the document; filenames are never used to infer them.
+Every retrieved source includes a canonical URL, UTC retrieval time, SHA-256 content hash, extraction status, and warnings. Agency PDF dates and applicability are returned only when explicit labeled language or a standalone letterhead date is found inside the document; filenames are never used to infer them.
 
 ## Safety boundary
 

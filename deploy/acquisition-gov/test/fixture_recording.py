@@ -82,6 +82,10 @@ def long_deviation() -> bytes:
             lines[0] = "June 1, 2025 for new solicitations"
         if number == 6:
             lines[2] = "Date: 07/04/2025"
+        if number == 7:
+            lines[0] = "2/20/2026 | 11:48:46 GMT"
+        if number == 8:
+            lines[0] = "9/26/2025"
         if number == 20:
             lines[5] = "This class deviation Expires on December 31, 2026."
         if number == 33:

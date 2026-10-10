@@ -235,3 +235,13 @@ test("casefold, whitespace, splitlines, code points and sorting match Python", (
   assert.equal(cpSlice("a\u{1f600}bc", 1, 3), "\u{1f600}b");
   assert.deepEqual(pySorted(["b", "\u{1f600}", "\uffff", "B"]), ["B", "b", "\uffff", "\u{1f600}"]);
 });
+
+test("timestamp letterhead precedes the attached original's standalone date", async () => {
+  const source_id = "agency-deviation-20da883fc4477be46f14";
+  for (const page_end of [7, 8]) {
+    const result = await data("get_rfo_agency_deviation", {source_id, page_start: 7, page_end});
+    assert.equal(result.issuance_date, "2026-02-20");
+  }
+  const original = await data("get_rfo_agency_deviation", {source_id, page_start: 8, page_end: 8});
+  assert.equal(original.issuance_date, "2025-09-26");
+});
