@@ -766,12 +766,19 @@ def _population_scope(data: Any, keyword: str) -> dict[str, Any]:
         and agg.get("sum_other_doc_count") == 0
         and agg.get("doc_count_error_upper_bound", 0) == 0
     )
+    titles = [p for p in (_safe_bucket_key(b) for b in _as_list(buckets))
+              if p is not None and isinstance(p[0], str)]
+    exact = [p for p in titles if p[0].casefold() == keyword.casefold()]
+    variants = [p for p in titles if p[0].casefold() != keyword.casefold()]
     return {
         "search_fields": ["labor_category", "vendor_name", "idv_piid"],
         "off_title_matches_detected": bool(off_title),
         "title_list_complete": complete,
         "title_only_population_verified": complete and not off_title,
         "off_title_examples": [{"title": k, "count": c} for k, c in off_title[:5]],
+        "exact_title_population_verified": complete and not variants,
+        "exact_title_rate_count": sum(c for _, c in exact) if complete else None,
+        "non_exact_title_examples": [{"title": k, "count": c} for k, c in variants[:5]],
     }
 
 
@@ -1080,6 +1087,10 @@ async def igce_benchmark(
     off_title_matches_detected flags observed titles that do not match the
     requested phrase; title_only_population_verified is false when the title
     aggregation is missing, empty, truncated or approximate.
+    A title containing the phrase is not necessarily the exact grade:
+    'Registered Nurse I' also matches Nurse II, III and IV. Check
+    exact_title_population_verified, exact_title_rate_count and
+    non_exact_title_examples before treating a pool as that specific title.
 
     For title-only rates, call suggest_contains on labor_category to discover
     an exact title, then exact_search on labor_category. Different spellings
@@ -1128,7 +1139,9 @@ async def igce_benchmark(
             "vendor names and contract numbers. A literal phrase can match "
             "any of these fields. Statistics pool all those "
             "matches, including off-title rows when a vendor or contract "
-            "matches (see population_scope and matched_titles). For title-only "
+            "matches (see population_scope and matched_titles). Phrase-matching "
+            "titles can still combine grades or specialties; title-only does "
+            "not mean an exact-title or comparable population. For exact-title "
             "rates, discover a title with suggest_contains and use exact_search "
             "on labor_category. Different spellings remain separate searches "
             "('Cyber Security' vs 'Cybersecurity'). Statistics are on "
@@ -1160,12 +1173,20 @@ async def price_reasonableness_check(
     suggest_contains, then use exact_search on labor_category for title-only
     rates. Filters match igce_benchmark, including sin and security_clearance.
 
-    A verified title population with at least 20 rates returns z-score,
+    Returns MIXED_LABOR_TITLES with no verdict when the phrase matches
+    different grades, specialties or title variants; pooled statistics remain
+    visible, with the exact-title count when verified. For example, Nurse I
+    must not be compared as if Nurse II/III/IV rates were the same grade.
+    Use exact_search with its supported education, experience and business-size
+    filters to inspect that title. It does not accept SIN or clearance filters;
+    check those requirements in the returned records and retain paging limits.
+
+    A verified exact-title population with at least 20 rates returns z-score,
     median comparison, IQR position and delta from average. The z-score is
     null when the mean or standard deviation is unavailable or variance is
     zero. Missing means produce null average deltas.
 
-    A verified population with fewer than 20 rates returns LOW_SAMPLE
+    A verified exact-title population with fewer than 20 rates returns LOW_SAMPLE
     without a high/low verdict;
     zero rates return NO_DATA. Statistics compare not-to-exceed ceiling
     rates, not prices paid, and do not by themselves establish price
@@ -1219,6 +1240,37 @@ async def price_reasonableness_check(
             },
         }
 
+    if not scope.get("exact_title_population_verified"):
+        exact_count = scope.get("exact_title_rate_count")
+        title_note = (f"No exact '{labor_category}' rates match these filters. "
+                      if exact_count == 0 else
+                      f"{exact_count} exact '{labor_category}' rates match these filters. "
+                      if exact_count is not None else
+                      "The exact-title rate count is not verified. ")
+        sample_note = (f"That exact-title sample is below the {LOW_SAMPLE_MIN_RATES}-rate "
+                       "minimum for this comparison. "
+                       if exact_count is not None and 0 < exact_count < LOW_SAMPLE_MIN_RATES else "")
+        return {
+            **benchmark,
+            "status": "MIXED_LABOR_TITLES",
+            "proposed_rate": proposed_rate,
+            "message": (
+                "The keyword phrase matches different labor titles, which can "
+                "include other grades or specialties. These pooled statistics "
+                "do not establish comparability for the requested exact title, "
+                "so no high/low verdict is given. " + title_note + sample_note +
+                "Use exact_search on labor_category with the supported education, "
+                "experience and business-size filters to inspect that title; "
+                "it does not accept SIN or clearance filters, so check those "
+                "requirements in the records and retain paging limits. "
+                "select comparable requirements before analyzing a proposal."
+            ),
+            "analysis": {
+                "z_score": None, "vs_median": None, "iqr_position": None,
+                "delta_from_avg": None, "delta_from_avg_pct": None,
+            },
+        }
+
     avg = benchmark.get("avg_rate")
     delta = round(proposed_rate - avg, 2) if avg is not None else None
     delta_pct = round(((proposed_rate - avg) / avg) * 100, 1) if avg is not None and avg > 0 else None
@@ -1234,10 +1286,10 @@ async def price_reasonableness_check(
                 f"Only {n} comparable rate{'s' if n != 1 else ''} found for "
                 f"'{labor_category}'. That sample is too small for a high/low "
                 f"verdict (this check needs at least {LOW_SAMPLE_MIN_RATES}). "
-                f"The statistics are shown for reference only. Try a shorter "
-                f"labor category phrase (the keyword is matched as a literal "
-                f"phrase), drop a filter, or run suggest_contains to see the "
-                f"exact titles."
+                "The statistics are shown for reference only. Use exact_search "
+                "with its supported eligibility filters to inspect the exact title. "
+                "Do not combine different grades or specialties merely to "
+                "reach the sample minimum; select comparable requirements."
             ),
             "analysis": {
                 "z_score": None,

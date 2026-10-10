@@ -8,6 +8,12 @@
 
 # Changelog
 
+## 1.0.16
+
+- Disclose exact-title counts separately from pooled phrase matches, so a specific grade such as Registered Nurse I is not treated as comparable to Nurse II/III/IV or specialties. Preserve source statistics and withhold high/low verdicts for mixed labor titles.
+- Provide exact-title recovery and sample-limit guidance, including unsupported SIN/clearance filtering limits in exact_search.
+- Add source-derived mixed-grade, absent-exact-grade and small-sample control regressions; updated discovery descriptions preserve existing tool identities and schemas.
+
 ## 1.0.14
 
 - Correct IGCE and price-check discovery descriptions: GSA keyword searches match titles, vendor names and contract numbers; document mixed/unverified-population safeguards and title-only exact-search followups.

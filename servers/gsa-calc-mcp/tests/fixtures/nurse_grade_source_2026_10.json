@@ -1,0 +1,1718 @@
+{
+  "mixed_grade": {
+    "question": "I discovered the exact Registered Nurse I title. For BA and at least1year, compare a $60/hour quote for that grade using comparable rates; distinguish it from NurseII/III/IV.",
+    "tool": "price_reasonableness_check",
+    "arguments": {
+      "labor_category": "Registered Nurse I",
+      "education_level": "BA",
+      "experience_min": 1,
+      "proposed_rate": 60
+    },
+    "source_url": "https://api.gsa.gov/acquisition/calc/v3/api/ceilingrates/?keyword=Registered+Nurse+I&filter=education_level:BA&filter=experience_range:1%2C999&page=1&page_size=10&ordering=current_price&sort=asc",
+    "raw": {
+      "took": 11,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+      },
+      "hits": {
+        "total": {
+          "value": 24,
+          "relation": "eq"
+        },
+        "max_score": null,
+        "hits": [
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1710487800",
+            "_score": null,
+            "_source": {
+              "contract_end": "2027-01-17",
+              "security_clearance": false,
+              "next_year_price": 29.57,
+              "second_year_price": 30.25,
+              "vendor_name": "T47 INTERNATIONAL, INC.",
+              "idv_piid": "47QRAA22D004N",
+              "business_size": "S",
+              "contract_start": "2022-01-18",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse I",
+              "schedule": "MAS",
+              "cont_end_dtg": "20270117",
+              "min_years_experience": 1,
+              "sin": "541620,541611",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1710487800,
+              "current_price": 28.9,
+              "dt_termg": "",
+              "category": "Security and Protection; Facilities; Miscellaneous; Professional Services",
+              "subcategory": "Facilities Maintenance and Repair; Business Administrative Services; Environmental Services; Security Services; Facilities Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20220118"
+            },
+            "sort": [
+              28.9
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1710487799",
+            "_score": null,
+            "_source": {
+              "contract_end": "2027-01-17",
+              "security_clearance": false,
+              "next_year_price": 48.67,
+              "second_year_price": 49.79,
+              "vendor_name": "T47 INTERNATIONAL, INC.",
+              "idv_piid": "47QRAA22D004N",
+              "business_size": "S",
+              "contract_start": "2022-01-18",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse II",
+              "schedule": "MAS",
+              "cont_end_dtg": "20270117",
+              "min_years_experience": 3,
+              "sin": "541620,541611",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1710487799,
+              "current_price": 47.57,
+              "dt_termg": "",
+              "category": "Security and Protection; Facilities; Miscellaneous; Professional Services",
+              "subcategory": "Facilities Maintenance and Repair; Business Administrative Services; Environmental Services; Security Services; Facilities Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20220118"
+            },
+            "sort": [
+              47.57
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1703111483",
+            "_score": null,
+            "_source": {
+              "contract_end": "2031-09-08",
+              "security_clearance": false,
+              "next_year_price": 51.4904,
+              "second_year_price": 52.2628,
+              "vendor_name": "PROXY PERSONNEL LLC",
+              "idv_piid": "47QREA21D001B",
+              "business_size": "S",
+              "contract_start": "2021-09-09",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse I",
+              "schedule": "MAS",
+              "cont_end_dtg": "20310908",
+              "min_years_experience": 1,
+              "sin": "561110",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1703111483,
+              "current_price": 50.7295,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20210909"
+            },
+            "sort": [
+              50.7295
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1703111485",
+            "_score": null,
+            "_source": {
+              "contract_end": "2031-09-08",
+              "security_clearance": false,
+              "next_year_price": 60.9795,
+              "second_year_price": 61.8942,
+              "vendor_name": "PROXY PERSONNEL LLC",
+              "idv_piid": "47QREA21D001B",
+              "business_size": "S",
+              "contract_start": "2021-09-09",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse II, Specialty",
+              "schedule": "MAS",
+              "cont_end_dtg": "20310908",
+              "min_years_experience": 3,
+              "sin": "561110",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1703111485,
+              "current_price": 60.0783,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20210909"
+            },
+            "sort": [
+              60.0783
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1703111484",
+            "_score": null,
+            "_source": {
+              "contract_end": "2031-09-08",
+              "security_clearance": false,
+              "next_year_price": 60.9795,
+              "second_year_price": 61.8942,
+              "vendor_name": "PROXY PERSONNEL LLC",
+              "idv_piid": "47QREA21D001B",
+              "business_size": "S",
+              "contract_start": "2021-09-09",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse II",
+              "schedule": "MAS",
+              "cont_end_dtg": "20310908",
+              "min_years_experience": 3,
+              "sin": "561110",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1703111484,
+              "current_price": 60.0783,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20210909"
+            },
+            "sort": [
+              60.0783
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1487282740",
+            "_score": null,
+            "_source": {
+              "contract_end": "2029-03-04",
+              "security_clearance": false,
+              "next_year_price": 63.92,
+              "second_year_price": 63.92,
+              "vendor_name": "1ST CHOICE, LLC",
+              "idv_piid": "47QRAA24D004L",
+              "business_size": "S",
+              "contract_start": "2024-03-05",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse II Specialist **",
+              "schedule": "MAS",
+              "cont_end_dtg": "20290304",
+              "min_years_experience": 2,
+              "sin": "561110,541611,541611LIT",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1487282740,
+              "current_price": 63.92,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous; Professional Services",
+              "subcategory": "Document Services; Business Administrative Services; Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20240305"
+            },
+            "sort": [
+              63.92
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1487282739",
+            "_score": null,
+            "_source": {
+              "contract_end": "2029-03-04",
+              "security_clearance": false,
+              "next_year_price": 63.92,
+              "second_year_price": 63.92,
+              "vendor_name": "1ST CHOICE, LLC",
+              "idv_piid": "47QRAA24D004L",
+              "business_size": "S",
+              "contract_start": "2024-03-05",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse II **",
+              "schedule": "MAS",
+              "cont_end_dtg": "20290304",
+              "min_years_experience": 2,
+              "sin": "561110,541611,541611LIT",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1487282739,
+              "current_price": 63.92,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous; Professional Services",
+              "subcategory": "Document Services; Business Administrative Services; Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20240305"
+            },
+            "sort": [
+              63.92
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1359474529",
+            "_score": null,
+            "_source": {
+              "contract_end": "2027-09-10",
+              "security_clearance": false,
+              "next_year_price": null,
+              "second_year_price": null,
+              "vendor_name": "MINDFINDERS, INC.",
+              "idv_piid": "GS35F0611Y",
+              "business_size": "S",
+              "contract_start": "2012-09-11",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse II**",
+              "schedule": "MAS",
+              "cont_end_dtg": "20270910",
+              "min_years_experience": 2,
+              "sin": "561320",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1359474529,
+              "current_price": 70.76,
+              "dt_termg": "",
+              "category": "Information Technology; Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs; IT Services",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20120911"
+            },
+            "sort": [
+              70.76
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1703111486",
+            "_score": null,
+            "_source": {
+              "contract_end": "2031-09-08",
+              "security_clearance": false,
+              "next_year_price": 71.9259,
+              "second_year_price": 73.0048,
+              "vendor_name": "PROXY PERSONNEL LLC",
+              "idv_piid": "47QREA21D001B",
+              "business_size": "S",
+              "contract_start": "2021-09-09",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse III",
+              "schedule": "MAS",
+              "cont_end_dtg": "20310908",
+              "min_years_experience": 5,
+              "sin": "561110",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1703111486,
+              "current_price": 70.863,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20210909"
+            },
+            "sort": [
+              70.863
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1703111487",
+            "_score": null,
+            "_source": {
+              "contract_end": "2031-09-08",
+              "security_clearance": false,
+              "next_year_price": 71.9259,
+              "second_year_price": 73.0048,
+              "vendor_name": "PROXY PERSONNEL LLC",
+              "idv_piid": "47QREA21D001B",
+              "business_size": "S",
+              "contract_start": "2021-09-09",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse III, Anesthetist",
+              "schedule": "MAS",
+              "cont_end_dtg": "20310908",
+              "min_years_experience": 7,
+              "sin": "561110",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1703111487,
+              "current_price": 70.863,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20210909"
+            },
+            "sort": [
+              70.863
+            ]
+          }
+        ]
+      },
+      "aggregations": {
+        "labor_category": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Registered Nurse I",
+              "doc_count": 3
+            },
+            {
+              "key": "Registered Nurse II",
+              "doc_count": 3
+            },
+            {
+              "key": "Registered Nurse II**",
+              "doc_count": 3
+            },
+            {
+              "key": "Registered Nurse III",
+              "doc_count": 3
+            },
+            {
+              "key": "Registered Nurse IV",
+              "doc_count": 2
+            },
+            {
+              "key": "Registered Nurse IV**",
+              "doc_count": 2
+            },
+            {
+              "key": "Registered Nurse II **",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse II Specialist **",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse II, Specialty",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse III **",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse III Anesthetist **",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse III**",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse III, Anesthetist",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse II_MaximusFedSvs",
+              "doc_count": 1
+            }
+          ]
+        },
+        "security_clearance": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "false",
+              "doc_count": 24
+            }
+          ]
+        },
+        "histogram_percentiles": {
+          "values": {
+            "10.0": 50.72949981689453,
+            "25.0": 63.91999816894531,
+            "30.0": 70.76000213623047,
+            "35.0": 70.86299896240234,
+            "50.0": 75.69000244140625,
+            "65.0": 87.78150177001953,
+            "70.0": 89.69999694824219,
+            "75.0": 105.17549896240234,
+            "90.0": 112.70999908447266
+          }
+        },
+        "min_years_experience": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "3",
+              "doc_count": 7
+            },
+            {
+              "key": "1",
+              "doc_count": 6
+            },
+            {
+              "key": "2",
+              "doc_count": 4
+            },
+            {
+              "key": "5",
+              "doc_count": 3
+            },
+            {
+              "key": "4",
+              "doc_count": 2
+            },
+            {
+              "key": "7",
+              "doc_count": 1
+            },
+            {
+              "key": "9",
+              "doc_count": 1
+            }
+          ]
+        },
+        "worksite": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Customer_Facility",
+              "doc_count": 22
+            },
+            {
+              "key": "Contractor_Facility",
+              "doc_count": 2
+            }
+          ]
+        },
+        "wage_histogram": {
+          "buckets": [
+            {
+              "min": 28.899999618530273,
+              "key": 28.899999618530273,
+              "max": 28.899999618530273,
+              "doc_count": 1
+            },
+            {
+              "min": 47.56999969482422,
+              "key": 49.149749755859375,
+              "max": 50.72949981689453,
+              "doc_count": 2
+            },
+            {
+              "min": 60.07830047607422,
+              "key": 61.999149322509766,
+              "max": 63.91999816894531,
+              "doc_count": 4
+            },
+            {
+              "min": 70.76000213623047,
+              "key": 71.2731990814209,
+              "max": 72.60679626464844,
+              "doc_count": 4
+            },
+            {
+              "min": 75.69000244140625,
+              "key": 75.69000244140625,
+              "max": 75.69000244140625,
+              "doc_count": 2
+            },
+            {
+              "min": 83.71869659423828,
+              "key": 83.75934982299805,
+              "max": 83.80000305175781,
+              "doc_count": 2
+            },
+            {
+              "min": 87.78150177001953,
+              "key": 88.74074935913086,
+              "max": 89.69999694824219,
+              "doc_count": 2
+            },
+            {
+              "min": 98.75,
+              "key": 98.75,
+              "max": 98.75,
+              "doc_count": 1
+            },
+            {
+              "min": 105.17549896240234,
+              "key": 105.20740127563477,
+              "max": 105.23930358886719,
+              "doc_count": 2
+            },
+            {
+              "min": 111.29000091552734,
+              "key": 112.0,
+              "max": 112.70999908447266,
+              "doc_count": 2
+            },
+            {
+              "min": 117.62220001220703,
+              "key": 117.62220001220703,
+              "max": 117.62220001220703,
+              "doc_count": 1
+            },
+            {
+              "min": 125.1072006225586,
+              "key": 125.1072006225586,
+              "max": 125.1072006225586,
+              "doc_count": 1
+            }
+          ]
+        },
+        "education_level": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Bachelors",
+              "doc_count": 24
+            }
+          ]
+        },
+        "current_price": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "60.0783",
+              "doc_count": 2
+            },
+            {
+              "key": "63.92",
+              "doc_count": 2
+            },
+            {
+              "key": "70.863",
+              "doc_count": 2
+            },
+            {
+              "key": "75.69",
+              "doc_count": 2
+            },
+            {
+              "key": "105.1755",
+              "doc_count": 1
+            },
+            {
+              "key": "105.2393",
+              "doc_count": 1
+            },
+            {
+              "key": "111.29",
+              "doc_count": 1
+            },
+            {
+              "key": "112.71",
+              "doc_count": 1
+            },
+            {
+              "key": "117.6222",
+              "doc_count": 1
+            },
+            {
+              "key": "125.1072",
+              "doc_count": 1
+            },
+            {
+              "key": "28.9",
+              "doc_count": 1
+            },
+            {
+              "key": "47.57",
+              "doc_count": 1
+            },
+            {
+              "key": "50.7295",
+              "doc_count": 1
+            },
+            {
+              "key": "70.76",
+              "doc_count": 1
+            },
+            {
+              "key": "72.6068",
+              "doc_count": 1
+            },
+            {
+              "key": "83.7187",
+              "doc_count": 1
+            },
+            {
+              "key": "83.8",
+              "doc_count": 1
+            },
+            {
+              "key": "87.7815",
+              "doc_count": 1
+            },
+            {
+              "key": "89.7",
+              "doc_count": 1
+            },
+            {
+              "key": "98.75",
+              "doc_count": 1
+            }
+          ]
+        },
+        "business_size": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "S",
+              "doc_count": 22
+            },
+            {
+              "key": "O",
+              "doc_count": 2
+            }
+          ]
+        },
+        "wage_stats": {
+          "count": 24,
+          "min": 28.899999618530273,
+          "max": 125.1072006225586,
+          "avg": 80.52347079912822,
+          "sum": 1932.5632991790771,
+          "sum_of_squares": 169089.2437168104,
+          "variance": 561.3558053290448,
+          "variance_population": 561.3558053290448,
+          "variance_sampling": 585.7625794737858,
+          "std_deviation": 23.692948430472825,
+          "std_deviation_population": 23.692948430472825,
+          "std_deviation_sampling": 24.20253250124428,
+          "std_deviation_bounds": {
+            "upper": 127.90936766007387,
+            "lower": 33.13757393818257,
+            "upper_population": 127.90936766007387,
+            "lower_population": 33.13757393818257,
+            "upper_sampling": 128.9285358016168,
+            "lower_sampling": 32.11840579663966
+          }
+        },
+        "median_price": {
+          "values": {
+            "50.0": 75.69000244140625
+          }
+        },
+        "education_level_counts": {
+          "buckets": [
+            {
+              "key": "AA",
+              "doc_count": 0
+            },
+            {
+              "key": "BA",
+              "doc_count": 24
+            },
+            {
+              "key": "HS",
+              "doc_count": 0
+            },
+            {
+              "key": "MA",
+              "doc_count": 0
+            },
+            {
+              "key": "PHD",
+              "doc_count": 0
+            },
+            {
+              "key": "TEC",
+              "doc_count": 0
+            }
+          ]
+        }
+      }
+    }
+  },
+  "no_exact_grade": {
+    "question": "Compare the $135/hour BA/MA3+ proposal for Registered Nurse I, preserving any thin/mixed/empty limitation.",
+    "tool": "price_reasonableness_check",
+    "arguments": {
+      "labor_category": "Registered Nurse I",
+      "proposed_rate": 135,
+      "education_level": "BA|MA",
+      "experience_min": 3
+    },
+    "source_url": "https://api.gsa.gov/acquisition/calc/v3/api/ceilingrates/?keyword=Registered+Nurse+I&filter=education_level:BA%7CMA&filter=experience_range:3%2C999&page=1&page_size=10&ordering=current_price&sort=asc",
+    "raw": {
+      "took": 9,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+      },
+      "hits": {
+        "total": {
+          "value": 15,
+          "relation": "eq"
+        },
+        "max_score": null,
+        "hits": [
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1710487799",
+            "_score": null,
+            "_source": {
+              "contract_end": "2027-01-17",
+              "security_clearance": false,
+              "next_year_price": 48.67,
+              "second_year_price": 49.79,
+              "vendor_name": "T47 INTERNATIONAL, INC.",
+              "idv_piid": "47QRAA22D004N",
+              "business_size": "S",
+              "contract_start": "2022-01-18",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse II",
+              "schedule": "MAS",
+              "cont_end_dtg": "20270117",
+              "min_years_experience": 3,
+              "sin": "541620,541611",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1710487799,
+              "current_price": 47.57,
+              "dt_termg": "",
+              "category": "Security and Protection; Facilities; Miscellaneous; Professional Services",
+              "subcategory": "Facilities Maintenance and Repair; Business Administrative Services; Environmental Services; Security Services; Facilities Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20220118"
+            },
+            "sort": [
+              47.57
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1703111485",
+            "_score": null,
+            "_source": {
+              "contract_end": "2031-09-08",
+              "security_clearance": false,
+              "next_year_price": 60.9795,
+              "second_year_price": 61.8942,
+              "vendor_name": "PROXY PERSONNEL LLC",
+              "idv_piid": "47QREA21D001B",
+              "business_size": "S",
+              "contract_start": "2021-09-09",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse II, Specialty",
+              "schedule": "MAS",
+              "cont_end_dtg": "20310908",
+              "min_years_experience": 3,
+              "sin": "561110",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1703111485,
+              "current_price": 60.0783,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20210909"
+            },
+            "sort": [
+              60.0783
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1703111484",
+            "_score": null,
+            "_source": {
+              "contract_end": "2031-09-08",
+              "security_clearance": false,
+              "next_year_price": 60.9795,
+              "second_year_price": 61.8942,
+              "vendor_name": "PROXY PERSONNEL LLC",
+              "idv_piid": "47QREA21D001B",
+              "business_size": "S",
+              "contract_start": "2021-09-09",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse II",
+              "schedule": "MAS",
+              "cont_end_dtg": "20310908",
+              "min_years_experience": 3,
+              "sin": "561110",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1703111484,
+              "current_price": 60.0783,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20210909"
+            },
+            "sort": [
+              60.0783
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1703111486",
+            "_score": null,
+            "_source": {
+              "contract_end": "2031-09-08",
+              "security_clearance": false,
+              "next_year_price": 71.9259,
+              "second_year_price": 73.0048,
+              "vendor_name": "PROXY PERSONNEL LLC",
+              "idv_piid": "47QREA21D001B",
+              "business_size": "S",
+              "contract_start": "2021-09-09",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse III",
+              "schedule": "MAS",
+              "cont_end_dtg": "20310908",
+              "min_years_experience": 5,
+              "sin": "561110",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1703111486,
+              "current_price": 70.863,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20210909"
+            },
+            "sort": [
+              70.863
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1703111487",
+            "_score": null,
+            "_source": {
+              "contract_end": "2031-09-08",
+              "security_clearance": false,
+              "next_year_price": 71.9259,
+              "second_year_price": 73.0048,
+              "vendor_name": "PROXY PERSONNEL LLC",
+              "idv_piid": "47QREA21D001B",
+              "business_size": "S",
+              "contract_start": "2021-09-09",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse III, Anesthetist",
+              "schedule": "MAS",
+              "cont_end_dtg": "20310908",
+              "min_years_experience": 7,
+              "sin": "561110",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1703111487,
+              "current_price": 70.863,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20210909"
+            },
+            "sort": [
+              70.863
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1487282741",
+            "_score": null,
+            "_source": {
+              "contract_end": "2029-03-04",
+              "security_clearance": false,
+              "next_year_price": 75.69,
+              "second_year_price": 75.69,
+              "vendor_name": "1ST CHOICE, LLC",
+              "idv_piid": "47QRAA24D004L",
+              "business_size": "S",
+              "contract_start": "2024-03-05",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse III **",
+              "schedule": "MAS",
+              "cont_end_dtg": "20290304",
+              "min_years_experience": 3,
+              "sin": "561110,541611,541611LIT",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1487282741,
+              "current_price": 75.69,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous; Professional Services",
+              "subcategory": "Document Services; Business Administrative Services; Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20240305"
+            },
+            "sort": [
+              75.69
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1487282742",
+            "_score": null,
+            "_source": {
+              "contract_end": "2029-03-04",
+              "security_clearance": false,
+              "next_year_price": 75.69,
+              "second_year_price": 75.69,
+              "vendor_name": "1ST CHOICE, LLC",
+              "idv_piid": "47QRAA24D004L",
+              "business_size": "S",
+              "contract_start": "2024-03-05",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse III Anesthetist **",
+              "schedule": "MAS",
+              "cont_end_dtg": "20290304",
+              "min_years_experience": 3,
+              "sin": "561110,541611,541611LIT",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1487282742,
+              "current_price": 75.69,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous; Professional Services",
+              "subcategory": "Document Services; Business Administrative Services; Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20240305"
+            },
+            "sort": [
+              75.69
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1703111488",
+            "_score": null,
+            "_source": {
+              "contract_end": "2031-09-08",
+              "security_clearance": false,
+              "next_year_price": 84.9745,
+              "second_year_price": 86.2491,
+              "vendor_name": "PROXY PERSONNEL LLC",
+              "idv_piid": "47QREA21D001B",
+              "business_size": "S",
+              "contract_start": "2021-09-09",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse IV",
+              "schedule": "MAS",
+              "cont_end_dtg": "20310908",
+              "min_years_experience": 9,
+              "sin": "561110",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1703111488,
+              "current_price": 83.7187,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20210909"
+            },
+            "sort": [
+              83.7187
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1359474530",
+            "_score": null,
+            "_source": {
+              "contract_end": "2027-09-10",
+              "security_clearance": false,
+              "next_year_price": null,
+              "second_year_price": null,
+              "vendor_name": "MINDFINDERS, INC.",
+              "idv_piid": "GS35F0611Y",
+              "business_size": "S",
+              "contract_start": "2012-09-11",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse III**",
+              "schedule": "MAS",
+              "cont_end_dtg": "20270910",
+              "min_years_experience": 3,
+              "sin": "561320",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1359474530,
+              "current_price": 83.8,
+              "dt_termg": "",
+              "category": "Information Technology; Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs; IT Services",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20120911"
+            },
+            "sort": [
+              83.8
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1487282743",
+            "_score": null,
+            "_source": {
+              "contract_end": "2029-03-04",
+              "security_clearance": false,
+              "next_year_price": 89.7,
+              "second_year_price": 89.7,
+              "vendor_name": "1ST CHOICE, LLC",
+              "idv_piid": "47QRAA24D004L",
+              "business_size": "S",
+              "contract_start": "2024-03-05",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse IV**",
+              "schedule": "MAS",
+              "cont_end_dtg": "20290304",
+              "min_years_experience": 4,
+              "sin": "561110,541611,541611LIT",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1487282743,
+              "current_price": 89.7,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous; Professional Services",
+              "subcategory": "Document Services; Business Administrative Services; Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20240305"
+            },
+            "sort": [
+              89.7
+            ]
+          }
+        ]
+      },
+      "aggregations": {
+        "labor_category": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Registered Nurse III",
+              "doc_count": 3
+            },
+            {
+              "key": "Registered Nurse II",
+              "doc_count": 2
+            },
+            {
+              "key": "Registered Nurse IV",
+              "doc_count": 2
+            },
+            {
+              "key": "Registered Nurse IV**",
+              "doc_count": 2
+            },
+            {
+              "key": "Registered Nurse II, Specialty",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse III **",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse III Anesthetist **",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse III**",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse III, Anesthetist",
+              "doc_count": 1
+            },
+            {
+              "key": "Registered Nurse IV (Practioner)",
+              "doc_count": 1
+            }
+          ]
+        },
+        "security_clearance": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "false",
+              "doc_count": 15
+            }
+          ]
+        },
+        "histogram_percentiles": {
+          "values": {
+            "10.0": 60.07830047607422,
+            "25.0": 70.86299896240234,
+            "30.0": 70.86299896240234,
+            "35.0": 75.69000244140625,
+            "50.0": 83.71869659423828,
+            "65.0": 89.69999694824219,
+            "70.0": 98.75,
+            "75.0": 105.17549896240234,
+            "90.0": 125.1072006225586
+          }
+        },
+        "min_years_experience": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "3",
+              "doc_count": 7
+            },
+            {
+              "key": "5",
+              "doc_count": 3
+            },
+            {
+              "key": "4",
+              "doc_count": 2
+            },
+            {
+              "key": "10",
+              "doc_count": 1
+            },
+            {
+              "key": "7",
+              "doc_count": 1
+            },
+            {
+              "key": "9",
+              "doc_count": 1
+            }
+          ]
+        },
+        "worksite": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Customer_Facility",
+              "doc_count": 15
+            }
+          ]
+        },
+        "wage_histogram": {
+          "buckets": [
+            {
+              "min": 47.56999969482422,
+              "key": 47.56999969482422,
+              "max": 47.56999969482422,
+              "doc_count": 1
+            },
+            {
+              "min": 60.07830047607422,
+              "key": 60.07830047607422,
+              "max": 60.07830047607422,
+              "doc_count": 2
+            },
+            {
+              "min": 70.86299896240234,
+              "key": 70.86299896240234,
+              "max": 70.86299896240234,
+              "doc_count": 2
+            },
+            {
+              "min": 75.69000244140625,
+              "key": 75.69000244140625,
+              "max": 75.69000244140625,
+              "doc_count": 2
+            },
+            {
+              "min": 83.71869659423828,
+              "key": 83.71869659423828,
+              "max": 83.71869659423828,
+              "doc_count": 1
+            },
+            {
+              "min": 83.80000305175781,
+              "key": 83.80000305175781,
+              "max": 83.80000305175781,
+              "doc_count": 1
+            },
+            {
+              "min": 89.69999694824219,
+              "key": 89.69999694824219,
+              "max": 89.69999694824219,
+              "doc_count": 1
+            },
+            {
+              "min": 98.75,
+              "key": 98.75,
+              "max": 98.75,
+              "doc_count": 1
+            },
+            {
+              "min": 105.17549896240234,
+              "key": 105.17549896240234,
+              "max": 105.17549896240234,
+              "doc_count": 1
+            },
+            {
+              "min": 112.70999908447266,
+              "key": 112.70999908447266,
+              "max": 112.70999908447266,
+              "doc_count": 1
+            },
+            {
+              "min": 125.1072006225586,
+              "key": 125.1072006225586,
+              "max": 125.1072006225586,
+              "doc_count": 1
+            },
+            {
+              "min": 133.66000366210938,
+              "key": 133.66000366210938,
+              "max": 133.66000366210938,
+              "doc_count": 1
+            }
+          ]
+        },
+        "education_level": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Bachelors",
+              "doc_count": 14
+            },
+            {
+              "key": "Masters",
+              "doc_count": 1
+            }
+          ]
+        },
+        "current_price": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "60.0783",
+              "doc_count": 2
+            },
+            {
+              "key": "70.863",
+              "doc_count": 2
+            },
+            {
+              "key": "75.69",
+              "doc_count": 2
+            },
+            {
+              "key": "105.1755",
+              "doc_count": 1
+            },
+            {
+              "key": "112.71",
+              "doc_count": 1
+            },
+            {
+              "key": "125.1072",
+              "doc_count": 1
+            },
+            {
+              "key": "133.66",
+              "doc_count": 1
+            },
+            {
+              "key": "47.57",
+              "doc_count": 1
+            },
+            {
+              "key": "83.7187",
+              "doc_count": 1
+            },
+            {
+              "key": "83.8",
+              "doc_count": 1
+            },
+            {
+              "key": "89.7",
+              "doc_count": 1
+            },
+            {
+              "key": "98.75",
+              "doc_count": 1
+            }
+          ]
+        },
+        "business_size": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "S",
+              "doc_count": 15
+            }
+          ]
+        },
+        "wage_stats": {
+          "count": 15,
+          "min": 47.56999969482422,
+          "max": 133.66000366210938,
+          "avg": 86.23026682535807,
+          "sum": 1293.454002380371,
+          "sum_of_squares": 120093.94175581128,
+          "variance": 570.6038669483028,
+          "variance_population": 570.6038669483028,
+          "variance_sampling": 611.3612860160387,
+          "std_deviation": 23.88731602646691,
+          "std_deviation_population": 23.88731602646691,
+          "std_deviation_sampling": 24.725721142487203,
+          "std_deviation_bounds": {
+            "upper": 134.0048988782919,
+            "lower": 38.455634772424254,
+            "upper_population": 134.0048988782919,
+            "lower_population": 38.455634772424254,
+            "upper_sampling": 135.68170911033246,
+            "lower_sampling": 36.77882454038367
+          }
+        },
+        "median_price": {
+          "values": {
+            "50.0": 83.71869659423828
+          }
+        },
+        "education_level_counts": {
+          "buckets": [
+            {
+              "key": "AA",
+              "doc_count": 0
+            },
+            {
+              "key": "BA",
+              "doc_count": 14
+            },
+            {
+              "key": "HS",
+              "doc_count": 0
+            },
+            {
+              "key": "MA",
+              "doc_count": 1
+            },
+            {
+              "key": "PHD",
+              "doc_count": 0
+            },
+            {
+              "key": "TEC",
+              "doc_count": 0
+            }
+          ]
+        }
+      }
+    }
+  },
+  "exact_grade": {
+    "question": "Registered Nurse I had no BA/MA3+ records. Its primary rows show1\u20132years; inspect BA1+ exact-title rates instead of treating the market as absent.",
+    "tool": "exact_search",
+    "arguments": {
+      "field": "labor_category",
+      "value": "Registered Nurse I",
+      "education_level": "BA",
+      "experience_min": 1,
+      "page_size": 6
+    },
+    "source_url": "https://api.gsa.gov/acquisition/calc/v3/api/ceilingrates/?search=labor_category:Registered+Nurse+I&filter=education_level:BA&filter=experience_range:1%2C999&page=1&page_size=6&ordering=current_price&sort=asc",
+    "raw": {
+      "took": 7,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+      },
+      "hits": {
+        "total": {
+          "value": 3,
+          "relation": "eq"
+        },
+        "max_score": null,
+        "hits": [
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1710487800",
+            "_score": null,
+            "_source": {
+              "contract_end": "2027-01-17",
+              "security_clearance": false,
+              "next_year_price": 29.57,
+              "second_year_price": 30.25,
+              "vendor_name": "T47 INTERNATIONAL, INC.",
+              "idv_piid": "47QRAA22D004N",
+              "business_size": "S",
+              "contract_start": "2022-01-18",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse I",
+              "schedule": "MAS",
+              "cont_end_dtg": "20270117",
+              "min_years_experience": 1,
+              "sin": "541620,541611",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1710487800,
+              "current_price": 28.9,
+              "dt_termg": "",
+              "category": "Security and Protection; Facilities; Miscellaneous; Professional Services",
+              "subcategory": "Facilities Maintenance and Repair; Business Administrative Services; Environmental Services; Security Services; Facilities Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20220118"
+            },
+            "sort": [
+              28.9
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1703111483",
+            "_score": null,
+            "_source": {
+              "contract_end": "2031-09-08",
+              "security_clearance": false,
+              "next_year_price": 51.4904,
+              "second_year_price": 52.2628,
+              "vendor_name": "PROXY PERSONNEL LLC",
+              "idv_piid": "47QREA21D001B",
+              "business_size": "S",
+              "contract_start": "2021-09-09",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse I",
+              "schedule": "MAS",
+              "cont_end_dtg": "20310908",
+              "min_years_experience": 1,
+              "sin": "561110",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1703111483,
+              "current_price": 50.7295,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20210909"
+            },
+            "sort": [
+              50.7295
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1761260883",
+            "_score": null,
+            "_source": {
+              "contract_end": "2027-09-04",
+              "security_clearance": false,
+              "next_year_price": 74.785,
+              "second_year_price": 77.0286,
+              "vendor_name": "ON TIME STAFFING GROUP LLC",
+              "idv_piid": "47QRAA17D0007",
+              "business_size": "S",
+              "contract_start": "2017-09-05",
+              "data_source": "ACR",
+              "labor_category": "Registered Nurse I",
+              "schedule": "MAS",
+              "cont_end_dtg": "20270904",
+              "min_years_experience": 1,
+              "sin": "561320",
+              "worksite": "Customer_Facility",
+              "education_level": "Bachelors",
+              "id": 1761260883,
+              "current_price": 72.6068,
+              "dt_termg": "",
+              "category": "Office Management; Miscellaneous",
+              "subcategory": "Office Services; Complementary SINs",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20170905"
+            },
+            "sort": [
+              72.6068
+            ]
+          }
+        ]
+      },
+      "aggregations": {
+        "labor_category": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Registered Nurse I",
+              "doc_count": 3
+            }
+          ]
+        },
+        "security_clearance": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "false",
+              "doc_count": 3
+            }
+          ]
+        },
+        "histogram_percentiles": {
+          "values": {
+            "10.0": 28.899999618530273,
+            "25.0": 28.899999618530273,
+            "30.0": 28.899999618530273,
+            "35.0": 50.72949981689453,
+            "50.0": 50.72949981689453,
+            "65.0": 50.72949981689453,
+            "70.0": 72.60679626464844,
+            "75.0": 72.60679626464844,
+            "90.0": 72.60679626464844
+          }
+        },
+        "min_years_experience": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "1",
+              "doc_count": 3
+            }
+          ]
+        },
+        "worksite": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Customer_Facility",
+              "doc_count": 3
+            }
+          ]
+        },
+        "wage_histogram": {
+          "buckets": [
+            {
+              "min": 28.899999618530273,
+              "key": 28.899999618530273,
+              "max": 28.899999618530273,
+              "doc_count": 1
+            },
+            {
+              "min": 50.72949981689453,
+              "key": 50.72949981689453,
+              "max": 50.72949981689453,
+              "doc_count": 1
+            },
+            {
+              "min": 72.60679626464844,
+              "key": 72.60679626464844,
+              "max": 72.60679626464844,
+              "doc_count": 1
+            }
+          ]
+        },
+        "education_level": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Bachelors",
+              "doc_count": 3
+            }
+          ]
+        },
+        "current_price": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "28.9",
+              "doc_count": 1
+            },
+            {
+              "key": "50.7295",
+              "doc_count": 1
+            },
+            {
+              "key": "72.6068",
+              "doc_count": 1
+            }
+          ]
+        },
+        "business_size": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "S",
+              "doc_count": 3
+            }
+          ]
+        },
+        "wage_stats": {
+          "count": 3,
+          "min": 28.899999618530273,
+          "max": 72.60679626464844,
+          "avg": 50.745431900024414,
+          "sum": 152.23629570007324,
+          "sum_of_squares": 8680.438993439519,
+          "variance": 318.3808057598241,
+          "variance_population": 318.3808057598241,
+          "variance_sampling": 477.57120863973614,
+          "std_deviation": 17.84322856883877,
+          "std_deviation_population": 17.84322856883877,
+          "std_deviation_sampling": 21.853402678753167,
+          "std_deviation_bounds": {
+            "upper": 86.43188903770195,
+            "lower": 15.058974762346871,
+            "upper_population": 86.43188903770195,
+            "lower_population": 15.058974762346871,
+            "upper_sampling": 94.45223725753075,
+            "lower_sampling": 7.038626542518081
+          }
+        },
+        "median_price": {
+          "values": {
+            "50.0": 50.72949981689453
+          }
+        },
+        "education_level_counts": {
+          "buckets": [
+            {
+              "key": "AA",
+              "doc_count": 0
+            },
+            {
+              "key": "BA",
+              "doc_count": 3
+            },
+            {
+              "key": "HS",
+              "doc_count": 0
+            },
+            {
+              "key": "MA",
+              "doc_count": 0
+            },
+            {
+              "key": "PHD",
+              "doc_count": 0
+            },
+            {
+              "key": "TEC",
+              "doc_count": 0
+            }
+          ]
+        }
+      }
+    }
+  }
+}

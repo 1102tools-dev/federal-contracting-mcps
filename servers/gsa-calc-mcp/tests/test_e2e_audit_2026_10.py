@@ -93,14 +93,15 @@ def test_price_check_refuses_noncomparable_cross_field_verdict(monkeypatch):
     assert 'exact_search' in result['message']
 
 
-def test_title_only_price_population_still_produces_analysis(monkeypatch):
+def test_exact_title_price_population_still_produces_analysis(monkeypatch):
     body = mixed_population()
     body['aggregations']['labor_category']['buckets'] = [
         {'key': 'Senior Systems Engineer I', 'doc_count': 535}]
     async def upstream(qs): return body
     monkeypatch.setattr(srv, '_get', upstream)
-    result = call('price_reasonableness_check', labor_category='Systems Engineer', proposed_rate=180)
+    result = call('price_reasonableness_check', labor_category='Senior Systems Engineer I', proposed_rate=180)
     assert result['population_scope']['off_title_matches_detected'] is False
+    assert result['population_scope']['exact_title_population_verified'] is True
     assert result['analysis']['z_score'] == 2.0
 
 
