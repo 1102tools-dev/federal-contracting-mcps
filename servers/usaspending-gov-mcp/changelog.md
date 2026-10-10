@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.14
+
+- Extend 90-day procurement lag guidance to geographic/transaction searches, state summaries, recipient new-award timelines and USACE scopes.
+- Clarify File C coverage on award/IDV funding rollups and IDV amount summaries; preserve reported dollars.
+- Explain that submission periods are a reporting calendar, not evidence of agency completion, and label fiscal timeline buckets.
+- Add 36 regressions; 29 fail on 1.0.13 and all pass after correction. All 55 published tool definitions remain unchanged.
+
 ## 1.0.13
 
 - Agency and state queries default to the last completed fiscal year and echo it.

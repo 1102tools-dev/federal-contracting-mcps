@@ -301,3 +301,38 @@ Peer review caught a mixed-role DoD caveat gap: a non-DoD funding filter
 could suppress the warning for DoD-awarded contracts (and vice versa).
 Either agency role naming DoD now retains the caveat. Eight focused
 regressions fail on the previous implementation and pass with the fix.
+
+
+## Round 13: full end-to-end audit (1.0.14, 2026-10-10)
+
+The source MCP ran 73 realistic question/argument scenarios covering every
+one of the 55 tools against the public USAspending API. Coverage includes
+all six award categories; exact, ambiguous, fuzzy and nonexistent PIIDs;
+award-to-transaction/File C/subaward drilldowns; all three IDV child modes;
+agency/program/account structure; time, category and geography aggregation;
+recipient parent/child chains; references and all autocomplete tools. Raw
+API responses and MCP results were retained separately and compared: every
+original upstream field survived unchanged in single-request tools.
+
+The current release still omitted procurement-delay guidance on geography,
+transaction, state and new-award timeline results. The official About the
+Data disclosure also covers USACE; the previous helper covered only DoD.
+File C rollups and IDV amount/funding summaries now explain partial coverage,
+and the submission-period answer clarifies that calendar deadlines do not
+prove agencies submitted complete data. New-award timelines label fiscal
+months/quarters and partial windows. Tool metadata remains unchanged.
+
+The new 36-case offline suite gives 29 failures and seven unaffected passes
+against 1.0.13, and 36 passes against the correction. The complete Python
+lane passes **1,916 cases, with 379 live-gated skips (2,295 collected)**.
+Those skipped cases were not executed by the offline lane; the separately
+recorded live campaign is the end-to-end evidence. The source contract check
+confirms all 55 tool definitions still match the published baseline. Nine
+package version surfaces pass validation, and the 1.0.14 wheel and source
+distribution build successfully.
+
+A DoD subagency request with limit=3 returns about 113 KB because the three
+subagencies contain all contracting-office children. This is a response-size
+enhancement opportunity rather than an incorrect total; no children were
+silently discarded. Parent-IDV transaction-window filtering remains an
+upstream capability limitation described in Round 12.
