@@ -7,15 +7,31 @@ This Model Context Protocol server exposes BLS Occupational Employment and Wage 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 295 (294 offline, 1 optional live parity check) |
+| Total regression tests | 298 (297 offline, 1 optional live parity check) |
 | Audit rounds completed | 9 |
 | P0 usability-breaking bugs found and fixed | 1 |
 | P1 silent-wrong-data bugs found and fixed | 14 |
 | P1 response-shape crash paths found and fixed | 12 |
 | P2 validation gaps found and fixed | 12 |
 | P3 cleanup items found and fixed | 8 |
-| Content correction version | 1.1.3 (bundled May 2025 OEWS release; release gates recorded below) |
+| Content correction version | 1.1.4 (bundled May 2025 OEWS release; release gates recorded below) |
 | PyPI status | Published as `bls-oews-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## 1.1.4 realistic content audit, round 2 (2026-10-10)
+
+46 ordinary and power-user questions/followups covered all eight tools through
+published 1.1.3 CLI, public HTTP service, and connector. Wage cells, percentiles,
+employment, ratios, source labels and IGCE burden arithmetic matched the bundled
+May 2025 BLS source. One P2 explained real unpublished teacher/performer measures
+as possibly retired or unsurveyed occupations, and described a published physician
+wage floor as no estimate. The correction preserves actual BLS footnotes and
+suggests alternate wage measures for footnote 4; no wages or metadata changed.
+Teacher annual and performer hourly followups complete the research task.
+
+Candidate 1.1.4: 298 Python tests collected, 297 passed and one optional live
+parity test skipped; native Worker 31 passed; 227 parity cases, 216 identical,
+11 documented differences and zero unexpected differences. Published release
+verification is pending until the coordinator completes the release.
 
 ## 1.1.3 installed CLI compatibility correction (2026-10-10)
 

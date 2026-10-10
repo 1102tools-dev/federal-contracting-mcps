@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.4
+
+- Explain unpublished wage measures using actual BLS footnotes in wage and
+  comparison results, preserving published topcoded wage floors.
+- Direct teacher hourly and performer annual comparisons to alternate published
+  measures without implying the occupations are absent or retired.
+- Add source-backed regressions and followups; Python and Worker agree.
+
 ## 1.1.3
 
 - Preserve actionable user-input guidance in installed CLI clients using MCP

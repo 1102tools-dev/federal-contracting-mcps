@@ -428,6 +428,26 @@ def _extract_first_data_entry(series_item: Any) -> dict[str, Any] | None:
     return None
 
 
+def _unpublished_reason(values: list[dict[str, Any]], datatypes: list[str]) -> str | None:
+    """Explain existing unpublished cells using their BLS notes, not guesses."""
+    cells = [value for value in values if value.get("raw") is not None]
+    if not cells:
+        return None
+    notes = list(dict.fromkeys(
+        value["formatted"] for value in cells
+        if value.get("formatted", "").startswith("[Not published]")
+    ))
+    reason = "BLS includes requested cells but does not publish numeric values for these measures."
+    if notes:
+        reason += " " + " ".join(notes)
+    if any("do not generally work year-round" in note for note in notes):
+        if all(dt in HOURLY_DATATYPES for dt in datatypes):
+            reason += " Try an annual wage measure, such as datatype '04'."
+        elif all(dt in {"04", "11", "12", "13", "14", "15"} for dt in datatypes):
+            reason += " Try an hourly wage measure, such as datatype '03'."
+    return reason
+
+
 def _safe_footnotes(entry: dict[str, Any]) -> list[str]:
     """Extract footnote text strings, tolerating dict/str/None footnotes fields."""
     raw = entry.get("footnotes")
@@ -614,7 +634,7 @@ async def get_wage_data(
         elif snapshot.area_name(area) is None:
             cause = f"area_code={area_code!r} is not an OEWS area in the {OEWS_RELEASE_NAME} release."
         else:
-            cause = (
+            cause = _unpublished_reason(list(results.values()), validated_datatypes) or (
                 f"BLS publishes no estimate for this occupation at this "
                 f"area/industry level (or every requested cell is unreleased)."
             )
@@ -718,7 +738,7 @@ async def compare_metros(
     ]
     if metros and not metros_with_values:
         response["no_data"] = True
-        response["no_data_reason"] = (
+        response["no_data_reason"] = _unpublished_reason(list(metros.values()), [datatype]) or (
             f"No BLS data for occ_code={occ_code} across any of the requested "
             f"metros. Likely cause: the SOC code does not exist, is retired, "
             f"or is not surveyed at MSA level. Verify the SOC at bls.gov/soc."
@@ -831,7 +851,7 @@ async def compare_occupations(
     ]
     if not occ_with_values:
         response["no_data"] = True
-        response["no_data_reason"] = (
+        response["no_data_reason"] = _unpublished_reason(list(occupations.values()), [datatype]) or (
             f"No BLS data for any requested occupation at scope={scope} "
             f"area_code={area_code!r}. Likely causes: nonexistent or retired "
             f"SOC codes, or SOCs not surveyed at this geographic level. "
