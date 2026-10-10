@@ -89,7 +89,7 @@ See the official
 ## Verification and recovery
 
 Each image is built once and passed as an artifact to deployment. Its health
-response reports the release commit. After rollout, the pipeline verifies that
+response reports the release commit. During rollout, the verifier waits within its bounded deadline until both the health commit and initialize package version match the expected release; health alone does not establish readiness. After rollout, the pipeline verifies that
 commit, package version, full tool list, and a representative tool call repeated
 three times (plus service-specific checks: the publisher-key mode for the two
 operator-keyed services, a live city lookup for GSA Per Diem, and compacted
