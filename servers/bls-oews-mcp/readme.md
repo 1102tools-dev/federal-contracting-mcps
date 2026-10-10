@@ -16,6 +16,8 @@ The next content audit, round 3, found **zero new defects** across 58 new ordina
 
 The fourth content round found **zero new P0, P1, P2 or P3 defects** in 66 new practical questions across all eight tools. A fresh official PyPI 1.1.4 CLI and the public service each completed the separate 66-call corpus with identical answers. All 418 wage/benchmark objects matched the bundled source; 31 selected fresh BLS API cells and footnotes matched independently. The audit covered environmental/civil work, social services, EMS/therapy, transportation, maintenance, communications and education, including successful annual-only/hourly-only followups. Flat-file footnote access remained unavailable (HTTP 403); no new package release was needed.
 
+The fifth content round found **zero new P0–P3 defects** in 65 new practical questions across all eight tools. Actual fresh official PyPI 1.1.4 CLI and public answers matched for all 65 questions; 450 wage/benchmark objects and 33 fresh official API cells/footnotes reconciled. New veterinary, utility, manufacturing, trades, science and language-service tasks include local benchmarks and four caller-composed staffing budgets. Flight attendant annual-only and dancer hourly-only alternatives remain explicit. Both full dependency lanes measured 297 passed / one optional skip / 298 collected; direct BLS HTML/flat-footnote 403s are retained source limitations. See the Round 5 record in [testing.md](testing.md).
+
 ## Local or hosted
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
