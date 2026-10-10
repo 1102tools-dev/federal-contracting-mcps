@@ -1,6 +1,6 @@
 # bls-oews-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 291](https://img.shields.io/badge/regression%20tests-291-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 294](https://img.shields.io/badge/regression%20tests-294-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/bls-oews-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for BLS Occupational Employment and Wage Statistics
 
 No API key and no daily limit. The package bundles the current OEWS release (May 2025 estimates, published by BLS on May 15, 2026) as a read-only database built from BLS's published flat files, so every answer is local and each result cites the BLS release, publication date, retrieval date, and source file. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through a 5-round retroactive live audit with a real BLS API key after the initial smoke test reported zero bugs, then round 7's full-source re-audit and round 9's source-backed content corrections. 291 collected regression tests (290 offline, 1 live parity check against the BLS API), covering the 1 P0 usability-breaking bug (SOC format), 10 P1 silent-wrong-data bugs, 12 P1 response-shape crash paths, and 7 P2 validation gaps fixed in that audit. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through a 5-round retroactive live audit with a real BLS API key after the initial smoke test reported zero bugs, then round 7's full-source re-audit and round 9's source-backed content corrections. 294 collected regression tests (293 offline, 1 live parity check against the BLS API), covering the 1 P0 usability-breaking bug (SOC format), 10 P1 silent-wrong-data bugs, 12 P1 response-shape crash paths, and 7 P2 validation gaps fixed in that audit. See [testing.md](testing.md) for the full testing record.*
 
 ## Local or hosted
 

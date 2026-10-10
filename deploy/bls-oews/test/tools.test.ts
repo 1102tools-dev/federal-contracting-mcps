@@ -24,6 +24,8 @@ const FOOTNOTES = {
 };
 // [key, v01..v17, {fNN: footnote code}] as loaded from the bundled release.
 const CELLS: [string, (string | null)[], Record<string, string>][] = [
+  ["OEUN0000000000000272042", ["36180", "3.1", "60.46", "-", "2.6", "20.35", "27.57", "47.80", "75.33", "132.56", "-", "-", "-", "-", "-", null, null],
+    {f04: "4", f11: "4", f12: "4", f13: "4", f14: "4", f15: "4"}],
   ["OEUN0000000000000151252", ["1687890", "0.6", "71.20", "148100", "0.4", "39.64", "50.58", "65.38", "82.68", "103.21", "82460", "105210", "135980", "171980", "214670", null, null], {}],
   ["OEUM0047900000000151252", ["69060", "3.2", "73.61", "153100", "1.0", "46.37", "59.48", "74.49", "84.73", "102.72", "96450", "123720", "154930", "176230", "213660", "22.020", "2.03"], {}],
   ["OEUS5100000000000151252", ["88280", "3.0", "70.36", "146340", "1.0", "40.07", "51.25", "65.61", "82.26", "101.89", "83350", "106600", "136460", "171090", "211930", "21.484", "1.98"], {}],
@@ -41,6 +43,7 @@ const CELLS: [string, (string | null)[], Record<string, string>][] = [
   ["OEUS2400000000000151212", ["8650", "9.9", "72.09", "149940", "3.7", "38.04", "51.34", "67.14", "88.10", "104.12", "79130", "106790", "139640", "183260", "216570", "3.131", "2.55"], {}],
 ];
 const OCCUPATIONS = [["151252", "Software Developers"], ["252021", "Elementary School Teachers, Except Special Education"], ["291215", "Family Medicine Physicians"],
+  ["272042", "Musicians and Singers"],
   ["151232", "Computer User Support Specialists"], ["151242", "Database Administrators"], ["291214", "Emergency Medicine Physicians"], ["151212", "Information Security Analysts"]];
 const AREAS = [["0000000", "National"], ["0047900", "Washington-Arlington-Alexandria, DC-VA-MD-WV"], ["5100000", "Virginia"], ["0010540", "Albany, OR"], ["7800000", "Virgin Islands"],
   ["0047260", "Virginia Beach-Chesapeake-Norfolk, VA-NC"], ["0017820", "Colorado Springs, CO"], ["0014740", "Bremerton-Silverdale-Port Orchard, WA"], ["2400000", "Maryland"]];
@@ -77,6 +80,21 @@ const errorText = async (name: string, args: Record<string, unknown>) => {
   assert.equal(result.structuredContent, undefined);
   return result.content[0].text as string;
 };
+
+test("hourly-only IGCE preserves BLS wages without inventing annual salary", async () => {
+  const result = await data("igce_wage_benchmark", {occ_code: "27-2042"});
+  assert.equal(result.no_data, undefined);
+  assert.equal(result.hourly_only, true);
+  assert.equal(result.benchmarks["Annual Mean Wage"].numeric_hourly, 60.46);
+  assert.equal(result.benchmarks["Annual Mean Wage"].numeric_annual, undefined);
+  assert.equal(result.benchmarks["Annual Mean Wage"].hourly_burdened_low, "$108.83");
+  assert.equal(result.benchmarks["Annual Median"].numeric_hourly, 47.80);
+});
+
+test("national ratios report unsupported measure rather than missing occupation", async () => {
+  assert.match(await errorText("get_wage_data", {occ_code: "151252", datatypes: ["16", "17"]}), /state\/metro/);
+  assert.match(await errorText("compare_occupations", {occ_codes: ["151252", "151212"], datatype: "17"}), /state\/metro/);
+});
 const post = (body: unknown, headers: Record<string, string> = {}) =>
   new Request("https://bls-oews.1102tools.com/mcp", {method: "POST", headers: {"Content-Type": "application/json", Accept: "application/json, text/event-stream", ...headers}, body: typeof body === "string" ? body : JSON.stringify(body)});
 

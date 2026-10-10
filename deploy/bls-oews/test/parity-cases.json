@@ -216,5 +216,9 @@
   {"name": "content r9: igce management analysts lean burden", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "13-1111", "burden_low": 1.5, "burden_high": 1.7}},
   {"name": "content r9: compare_metros help desk order", "tool": "compare_metros", "arguments": {"occ_code": "15-1232", "metro_codes": ["47900", "12580", "42660"], "datatype": "03"}},
   {"name": "content r9: Maryland infosec per 1,000", "tool": "get_wage_data", "arguments": {"occ_code": "15-1212", "scope": "state", "area_code": "24", "datatypes": ["01", "02", "05", "16", "17"]}},
-  {"name": "content r9: federal software developers", "tool": "get_wage_data", "arguments": {"occ_code": "15-1252", "industry": "999100"}}
+  {"name": "content r9: federal software developers", "tool": "get_wage_data", "arguments": {"occ_code": "15-1252", "industry": "999100"}},
+  {"name": "hourly-only IGCE musicians", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "27-2042"}},
+  {"name": "hourly-only IGCE actors followup", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "27-2011"}},
+  {"name": "national ratios unsupported", "tool": "get_wage_data", "arguments": {"occ_code": "151252", "datatypes": ["16", "17"]}},
+  {"name": "national occupation comparison ratios unsupported", "tool": "compare_occupations", "arguments": {"occ_codes": ["151252", "151212"], "datatype": "17"}}
 ]

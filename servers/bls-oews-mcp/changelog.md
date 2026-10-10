@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.2
+
+- Preserve published hourly wages and burdened hourly benchmarks for hourly-only
+  occupations such as actors and musicians. Annual salaries remain unpublished;
+  the response flags `hourly_only` and explains that no annualization was done.
+- Reject national datatypes 16/17 with an actionable state/metro message instead
+  of implying the occupation has no published estimate.
+- Python and native Worker remain identical; reviewed tool metadata is unchanged.
+
 ## 1.1.1
 
 Fixes from the 2026-10-10 content test (BLS-1 to BLS-9). Data is unchanged
