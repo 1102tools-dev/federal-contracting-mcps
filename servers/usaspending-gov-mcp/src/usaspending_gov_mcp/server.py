@@ -532,10 +532,11 @@ def _validate_strings_no_control_chars(values: list[str] | None, *, field: str) 
 # Filter construction helpers
 # ---------------------------------------------------------------------------
 
-# How a time window is applied (time_period[].date_type). Omitted, USAspending
-# counts every award with activity in the window. Verified live 2026-10-10 on
-# VA SDVOSB set-asides FY2026: default 11,797 contracts, new_awards_only
-# 5,125 (awards first signed in the window).
+# How a time window is applied (time_period[].date_type). Omitted, award
+# search/count uses latest-action >= start and first-signing <= end overlap;
+# this does not establish an action inside the window. The retained VA SDVOSB
+# FY2026 default count 11,797 is overlap-matched, versus 5,125 first-signed
+# awards with new_awards_only. Transaction queries default to action dates.
 DateType = Literal["action_date", "date_signed", "last_modified_date", "new_awards_only"]
 
 
