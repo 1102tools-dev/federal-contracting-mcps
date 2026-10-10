@@ -1,6 +1,6 @@
 # ecfr-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 13](https://img.shields.io/badge/tools-13-007a59)](#what-it-does) [![regression tests: 428](https://img.shields.io/badge/regression%20tests-428-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 13](https://img.shields.io/badge/tools-13-007a59)](#what-it-does) [![regression tests: 441](https://img.shields.io/badge/regression%20tests-441-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/ecfr-mcp -->
 
