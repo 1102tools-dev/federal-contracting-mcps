@@ -1,5 +1,21 @@
 # GSA Per Diem Rates MCP: Testing Record
 
+## Round 2 (2026-10-10): published 1.2.3 content audit
+
+This is round 2 of the October 10 suite-wide content audit; the earlier server audit rounds remain below. Current release: **1.2.3**, verified through the actual published PyPI CLI and public MCP endpoint at source commit `7754923b8c77e51022e2c561856fd6ccf4eab874`. The publication-pending statements in the historical 1.2.3 candidate record below are superseded by this verification.
+
+**59 realistic questions and useful follow-ups exercised all seven tools**, with zero new confirmed P0, P1, P2 or P3 findings. Coverage included multi-site IGCE state inventories; city/county and ZIP work-site resolution; seasonal lodging; installation rates; meal components; historical comparisons; conservative undated estimates; fiscal-year split lodging; and the explicit OCONUS handoff. The corpus contains one data-status call, three M&IE breakdowns, seven state inventories, 25 city lookups, ten ZIP lookups, twelve estimates and one location comparison.
+
+The actual installed published CLI replayed all 59 cases: **55 bundled task answers matched the public answers**, while **four API-dependent cases returned the expected missing-key response** in the keyless local environment. Those four were city-only Denver, Norfolk and Austin queries and an unbundled FY2020 Charleston query; they are not counted as completed keyless rate lookups. County-resolved cities in bundled fiscal years were exercised without an API key.
+
+Independent parsers compared **54 question results** with official GSA workbooks and M&IE documents for **FY2021, FY2024, FY2026 and FY2027**, finding zero mismatches. Checks included seasonal monthly rates, state inventories, meal-table cells and all **twelve estimates independently recomputed** from official lodging and M&IE rates, applying the first/last-day rule once per actual trip. Fresh downloads matched **all 17 saved official source hashes**. These counts describe the checked corpus, not universal source coverage. Source documents are available through [GSA's per diem files](https://www.gsa.gov/travel/plan-a-trip/per-diem-rates/per-diem-files); trip-day treatment follows [41 CFR 301-11.20](https://www.ecfr.gov/current/title-41/subtitle-F/chapter-301/subchapter-B/part-301-11/subpart-A/section-301-11.20).
+
+Source limitations remain explicit. The public FY2020 Charleston fallback reported no rates found, but direct authenticated upstream access could not be independently checked without operator credentials. This is **source-access uncertainty, not authoritative evidence that no historical rate exists**; the official historical workbook is an alternative and expanding the bundle is an enhancement. Date-aware itineraries and multiple-traveler totals remain outside the schema. For a monthly split, add only monthly lodging totals and calculate M&IE once over actual travel days.
+
+Separate regression validation recorded **576 Python tests collected: 309 passed and 267 optional live-gated tests skipped**, **28 Worker tests passed**, and a passing type check. All seven reviewed tool contracts were unchanged. **1,368 parity calls** yielded 1,361 identical answers, seven documented parser-message differences and zero unexpected differences. No new runtime patch or regression test was needed because the content audit found no confirmed defect.
+
+Evidence is retained in Workspace/Artifacts/mcp-e2e-20261010/round2/gsa-perdiem: `checkpoint.json`, `live-corpus.json`, `installed-cli.json`, `source-comparisons.json` and `source-hashes.txt`. An independent BLS peer review checked the corpus distinctions and recomputed all twelve saved estimates without finding a blocker.
+
 ## 1.2.3 follow-up: correct published split-trip guidance
 
 The [current official OpenAI maintenance rules](https://developers.openai.com/plugins/deploy/app-review#how-published-mcp-metadata-versions-work) use continuous review for tool-definition updates within an existing plugin. Updated definitions replace previous definitions automatically after checks; a new plugin version or directory resubmission is not required for these description corrections. The `estimate_travel_cost` description now tells callers to add only monthly `lodging_total` and calculate M&IE once over actual travel days. This resolves the description limitation recorded in the 1.2.2 audit below; the runtime arithmetic and guidance are unchanged from that patch.
@@ -57,7 +73,7 @@ This Model Context Protocol server exposes the GSA Per Diem Rates API as 7 calla
 | P2 validation gaps found and fixed | 21 |
 | P3 cleanup items found and fixed | 10 |
 | Round 7 (independent re-audit) findings | 14 |
-| Current candidate | 1.2.3 (publication verification pending) |
+| Current release | 1.2.3 (published CLI and public endpoint verified) |
 | PyPI status | Published as `gsa-perdiem-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.4 Safety Release Verification
@@ -234,7 +250,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round 7 methodology: re-read the entire server source with no reliance on this document's claims; verify match behavior against live API resolution for a dozen city shapes; recompute FTR 301-11.101 estimate math by hand; probe dead fiscal years and OCONUS states live; check every prior claim in this document against the code and live behavior.
 
-Current test count: 576 Python regressions (309 offline + 267 live-gated), with 28 separate Worker tests. The original rounds reported 69 findings; later fixes are recorded above. Current candidate: 1.2.3 (publication verification pending). PyPI: `gsa-perdiem-mcp`.
+Current test count: 576 Python regressions (309 offline + 267 live-gated), with 28 separate Worker tests. The original rounds reported 69 findings; later fixes are recorded above. Current release: 1.2.3 (published CLI and public endpoint verified). PyPI: `gsa-perdiem-mcp`.
 
 Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp. License: MIT.
 
