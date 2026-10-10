@@ -7,15 +7,41 @@ This Model Context Protocol server exposes BLS Occupational Employment and Wage 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 291 (290 offline, 1 optional live parity check) |
+| Total regression tests | 294 (293 offline, 1 optional live parity check) |
 | Audit rounds completed | 9 |
 | P0 usability-breaking bugs found and fixed | 1 |
 | P1 silent-wrong-data bugs found and fixed | 14 |
 | P1 response-shape crash paths found and fixed | 12 |
 | P2 validation gaps found and fixed | 12 |
 | P3 cleanup items found and fixed | 8 |
-| Content correction version | 1.1.1 (bundled May 2025 OEWS release; release gates recorded below) |
+| Content correction version | 1.1.2 (bundled May 2025 OEWS release; release gates recorded below) |
 | PyPI status | Published as `bls-oews-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## 1.1.2 end-to-end content audit (2026-10-10)
+
+Current-source and live-connector checks covered all eight tools, national/state/
+metro wages, industry 999100, all-occupation aggregates, published and suppressed
+cells, annual-only and hourly-only jobs, reliability, duplicate normalization,
+unsupported years and geographic/industry combinations. Historical round 9
+corrections were verified against the current live service.
+
+Two new P2 defects were fixed in Python and the native Worker: hourly-only IGCEs
+discarded published hourly wages and falsely claimed no wage estimate; requesting
+national ratios 16/17 falsely implied missing occupation data. Hourly-only
+benchmarks retain the published rates without fabricating annual salaries;
+national ratio requests return an actionable state/metro validation error.
+
+Measured checks: **293 offline passed, 1 live test skipped** in the ordinary run;
+the separately enabled **live BLS API parity test passed** for its 25 series.
+The Worker suite passed **29 tests** and typechecking passed. The full-release
+Python/Worker harness checked **221 cases: 210 identical, 11 pre-existing
+documented transport/format differences, 0 unexpected differences**. All eight
+reviewed tool definitions remain unchanged. Version consistency and wheel/sdist
+build succeeded for 1.1.2. New regressions failed against the original hourly-only
+behavior before the fix; musicians and actors were rerun after the fix.
+
+These are pre-release checks. Published-wheel and deployed-live verification
+belongs to the coordinated release and is not claimed here.
 
 ## 1.1.0 Bundled release (2026-09-26)
 

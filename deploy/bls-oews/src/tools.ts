@@ -495,6 +495,9 @@ async function wageData(db: Database, a: Record<string, any>, extraOccupations: 
   const requested: string[] = a.datatypes === null ? [...IGCE_DATATYPES] : a.datatypes;
   if (!requested.length) throw new ToolError("datatypes cannot be empty. Pass None for defaults or specify at least one code.");
   const datatypes = [...new Set(requested.map(dt => validateDatatype(dt, "datatypes[i]")))];
+  if (scope === "national" && datatypes.some(dt => dt === "16" || dt === "17")) {
+    throw new ToolError("Datatypes 16 and 17 are available only at state/metro scope; BLS does not publish national ratios.");
+  }
   let area = "0000000";
   if (scope !== "national") {
     if (blank(area_code)) throw new ToolError(`area_code is required for scope='${scope}'.`);
@@ -677,7 +680,18 @@ export async function igceWageBenchmark(db: Database, args: Args) {
         numeric_hourly: new PyFloat(hourly),
       });
     } else {
-      benchmarks.set(label, {annual: item.get("formatted") ?? "No data", suppressed: true});
+      const benchmark: Record<string, Py> = {annual: item.get("formatted") ?? "No data", suppressed: true};
+      const published = numeric(hourlyLabel);
+      if (published instanceof PyFloat) {
+        const hourly = published.value;
+        Object.assign(benchmark, {
+          hourly_base: `$${fixed(hourly, 2)}`,
+          hourly_burdened_low: `$${fixed(round(hourly * low.value, 2), 2)}`,
+          hourly_burdened_high: `$${fixed(round(hourly * high.value, 2), 2)}`,
+          numeric_hourly: published,
+        });
+      }
+      benchmarks.set(label, benchmark);
     }
   }
   const occTitle = title(data, normalized);
@@ -708,7 +722,7 @@ export async function igceWageBenchmark(db: Database, args: Args) {
   response.set("_note", "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates.");
   // Employment and RSEs can be published for a cell with no wage estimate,
   // so the IGCE judges "no data" by its wage benchmarks alone.
-  const hasBenchmark = [...benchmarks.values()].some(b => Object.hasOwn(b as object, "numeric_annual"));
+  const hasBenchmark = [...benchmarks.values()].some(b => Object.hasOwn(b as object, "numeric_annual") || Object.hasOwn(b as object, "numeric_hourly"));
   if (wage.get("no_data")) {
     response.set("no_data", true);
     response.set("no_data_reason", wage.get("no_data_reason")!);
@@ -724,6 +738,10 @@ export async function igceWageBenchmark(db: Database, args: Args) {
   if (annualOnly) {
     response.set("annual_only", true);
     response.set("_hourly_warning", "BLS publishes no hourly wage for this occupation because it does not generally work a 2080-hour year (think pilots or teachers). The hourly figures above are derived as annual/2080 and may materially misstate the true hourly rate. Benchmark against the annual figures instead.");
+  }
+  if (numeric("Hourly Mean Wage") !== null && numeric("Annual Mean Wage") === null) {
+    response.set("hourly_only", true);
+    response.set("_annual_warning", "BLS publishes hourly wages but no annual salary for this occupation. The published hourly figures are not annualized; price the actual hours required instead of assuming a 2080-hour year.");
   }
   if (occTitle === null) {
     response.set("_title_warning", `occ_code=${repr(a.occ_code)} is not an occupation in the ${data.rel.name} OEWS release. Verify the code at bls.gov/soc before relying on the benchmark -- typos or retired SOCs produce all-zero benchmarks.`);

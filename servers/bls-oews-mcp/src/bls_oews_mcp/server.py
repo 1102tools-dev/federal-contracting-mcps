@@ -522,6 +522,8 @@ async def get_wage_data(
     # Dedup while preserving order
     seen: set[str] = set()
     validated_datatypes = [x for x in validated_datatypes if not (x in seen or seen.add(x))]
+    if scope == "national" and any(dt in RATIO_DATATYPES for dt in validated_datatypes):
+        raise ValueError("Datatypes 16 and 17 are available only at state/metro scope; BLS does not publish national ratios.")
 
     prefix_map = {"national": "OEUN", "state": "OEUS", "metro": "OEUM"}
     prefix = prefix_map[scope]
@@ -940,6 +942,17 @@ async def igce_wage_benchmark(
             }
         else:
             benchmarks[label] = {"annual": entry.get("formatted", "No data"), "suppressed": True}
+            # Hourly-only occupations (actors, musicians) have real published
+            # wages despite footnote 4 on every annual cell. Preserve them
+            # without fabricating a 2080-hour annual salary.
+            published = wages.get(hourly_label, {}).get("numeric")
+            if published is not None:
+                benchmarks[label].update({
+                    "hourly_base": f"${published:.2f}",
+                    "hourly_burdened_low": f"${round(published * burden_low, 2):.2f}",
+                    "hourly_burdened_high": f"${round(published * burden_high, 2):.2f}",
+                    "numeric_hourly": published,
+                })
 
     # Title from the release's occupation list (un-dashed 6-digit form).
     normalized_soc = str(occ_code).replace("-", "").strip()
@@ -987,7 +1000,7 @@ async def igce_wage_benchmark(
     # caller knows the benchmarks are all zero-value, not real suppressions.
     # Employment and RSEs can be published for a cell with no wage estimate,
     # so the IGCE judges "no data" by its wage benchmarks alone.
-    has_benchmark = any("numeric_annual" in b for b in benchmarks.values())
+    has_benchmark = any("numeric_annual" in b or "numeric_hourly" in b for b in benchmarks.values())
     if wage_data.get("no_data"):
         response["no_data"] = True
         response["no_data_reason"] = wage_data.get("no_data_reason")
@@ -1015,6 +1028,13 @@ async def igce_wage_benchmark(
             "teachers). The hourly figures above are derived as annual/2080 "
             "and may materially misstate the true hourly rate. Benchmark "
             "against the annual figures instead."
+        )
+    if hourly_mean.get("numeric") is not None and annual_mean.get("numeric") is None:
+        response["hourly_only"] = True
+        response["_annual_warning"] = (
+            "BLS publishes hourly wages but no annual salary for this occupation. "
+            "The published hourly figures are not annualized; price the actual "
+            "hours required instead of assuming a 2080-hour year."
         )
     if title_is_lookup_miss:
         response["_title_warning"] = (
