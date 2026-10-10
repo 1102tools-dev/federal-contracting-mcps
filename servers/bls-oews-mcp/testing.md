@@ -17,6 +17,51 @@ This Model Context Protocol server exposes BLS Occupational Employment and Wage 
 | Content correction version | 1.1.4 (bundled May 2025 OEWS release; release gates recorded below) |
 | PyPI status | Published as `bls-oews-mcp`, auto-publishes via Trusted Publisher on tag push |
 
+## 1.1.4 realistic content audit, round 4 (2026-10-10)
+
+No new P0, P1, P2 or P3 findings; no runtime, data, version or tool definition
+change. A fresh official PyPI by-name installation with cache disabled resolved
+1.1.4 and MCP 2.3.0. Its actual stdio CLI and the public HTTP service each
+completed a separate 66-question corpus with identical content answers. The
+public version and release SHA remained 1.1.4 and
+`5ba4a4bac4ecd098da1c48dcd09594d9e38fcf1f`.
+
+New tasks cover civil/environmental engineering, landscape design, environmental
+science, planning, social services, paramedics and therapy, office support,
+maintenance and transportation, communications and education. They use all
+17 source measures across national, state, metro and national industry contexts;
+Portland, Raleigh, Reno and Boise comparisons; employment/reliability and local
+concentration; explicit supported-year/source discovery; and caller-selected
+burdened IGCE anchors. Preschool special education teacher hourly publication
+limits lead to successful annual followups and a disclosed hourly conversion.
+Musician annual publication limits lead to successful hourly followups and IGCEs
+without an invented annual salary. Career/technical postsecondary teachers have
+published hourly data; the audit follows actual cells rather than inferring
+publication behavior from an occupation title.
+
+All **418 wage/benchmark objects** matched the bundled source, published
+footnotes and arithmetic; reference metro mappings are counted separately.
+**31 selected fresh official BLS API cells and footnotes** independently matched,
+including annual-only/hourly-only publication followups. This does not assert
+fresh external verification of every cell. The flat-file footnote refresh
+returned **HTTP 403**, recorded as unavailable. General BLS technical-note and
+FAQ concepts were reviewed separately; the web retrieval served May 2024 notes,
+so those concepts do not establish May 2025 release values or area names.
+
+Separate checks: frozen and fresh MCP 2.3 Python lanes each **297 passed,
+1 optional live skipped, 298 collected**; native Worker **31 passed**; typecheck and package build passed;
+all **8 reviewed tool definitions unchanged**; Python/Worker parity **227 cases,
+216 identical, 11 documented differences, zero unexpected differences**. The
+optional live parity test was not run; the 31 fresh API checks are a separate
+audit source sample. Existing parity regressions are verification, not new
+content questions. No package publication or deployment is required for these
+documentation changes. Evidence is in Workspace
+`Artifacts/mcp-e2e-20261010/round4/bls-oews/`, including `corpus.json`,
+`actual-pypi-cli.json`, `public.json`, `per-question-semantic-review.json`,
+`official-current-api.json`, `official-publication-followups.json` and
+`official-flat-footnotes.json`. The initial 60-call captures and the question
+wording clarification are retained in `initial-60-*` and `harness-notes.json`.
+
 ## 1.1.4 realistic content audit, round 3 (2026-10-10)
 
 No new P0, P1, P2 or P3 findings; no package, code or tool metadata change.

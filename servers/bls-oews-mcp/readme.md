@@ -14,6 +14,8 @@ The current suite has **298 collected tests: 297 passed and one optional live BL
 
 The next content audit, round 3, found **zero new defects** across 58 new ordinary and power-user questions. The actual published CLI and public service each completed all 58 questions and followups; 431 measure/benchmark objects matched the bundled source and IGCE arithmetic, and 28 fresh official BLS API cells and footnotes matched. The flat-file footnote refresh returned HTTP 403 and is recorded as unavailable, separate from those successful API checks.
 
+The fourth content round found **zero new P0, P1, P2 or P3 defects** in 66 new practical questions across all eight tools. A fresh official PyPI 1.1.4 CLI and the public service each completed the separate 66-call corpus with identical answers. All 418 wage/benchmark objects matched the bundled source; 31 selected fresh BLS API cells and footnotes matched independently. The audit covered environmental/civil work, social services, EMS/therapy, transportation, maintenance, communications and education, including successful annual-only/hourly-only followups. Flat-file footnote access remained unavailable (HTTP 403); no new package release was needed.
+
 ## Local or hosted
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
