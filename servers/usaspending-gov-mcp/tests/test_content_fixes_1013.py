@@ -542,3 +542,18 @@ def test_u5_u7_u9_u10_descriptions_explain_scope(tool, phrases):
     description = next(t.description for t in tools if t.name == tool)
     for phrase in phrases:
         assert phrase.lower() in description.lower()
+
+
+@pytest.mark.parametrize("tool,extra", [
+    ("search_awards", {}), ("get_award_count", {}),
+    ("spending_over_time", {}), ("spending_by_category", {"category": "recipient"}),
+])
+@pytest.mark.parametrize("awarding,funding", [
+    ("Department of Defense", "National Aeronautics and Space Administration"),
+    ("General Services Administration", "Department of Defense"),
+])
+def test_u1_mixed_agency_roles_keep_dod_lag(monkeypatch, oct10, tool, extra, awarding, funding):
+    monkeypatch.setattr(srv, "_post", _MockPost({"results": []}))
+    out = _payload(asyncio.run(_call(tool, awarding_agency=awarding,
+        funding_agency=funding, award_type="contracts", **FY26, **extra)))
+    assert "90 days" in out["data_note"]

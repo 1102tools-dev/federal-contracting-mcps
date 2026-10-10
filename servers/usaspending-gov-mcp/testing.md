@@ -276,7 +276,7 @@ lookup masquerading as an exact lookup, missing date modes, missing DoD lag
 caveats and incorrect grouped-subaward pagination. Release 1.0.13 corrects
 these paths and adds recipient/File C caveats and aggregate filters.
 
-The full Python suite passes; the focused content suite passes 63 offline
+The full Python suite passes; the focused content suite passes 71 offline
 cases with four live tests gated. Running the focused tests against the
 pre-fix c5293fc source demonstrates failures for changed behavior. Worker
 TypeScript checks, all 55 hosted tool contracts, nine package version
@@ -296,3 +296,8 @@ Filtering paginated IDV children by award start dates would not establish
 transaction obligations in a fiscal window and would risk silently incomplete
 totals. The existing child/activity tools remain available, with reporting-gap
 and keyword-completeness guidance. All other U1-U13 items are addressed.
+
+Peer review caught a mixed-role DoD caveat gap: a non-DoD funding filter
+could suppress the warning for DoD-awarded contracts (and vice versa).
+Either agency role naming DoD now retains the caveat. Eight focused
+regressions fail on the previous implementation and pass with the fix.

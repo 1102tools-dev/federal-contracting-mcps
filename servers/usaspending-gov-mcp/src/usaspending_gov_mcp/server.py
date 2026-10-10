@@ -372,14 +372,14 @@ def _dod_lag_note(window_end: date | str | None, *, agencies: tuple[str | None, 
     for DoD (FY2026 Jul-Sep: $8.8B / $0.02B / $0.16B vs $27-72B a month
     earlier, seen 2026-10-10). Applies when the window reaches into those
     90 days, contracts or IDVs are in scope (or no award type was given),
-    and no non-DoD agency filter excludes DoD.
+    and DoD is named in either agency role, or no agency filter was given.
     """
     if window_end is None:
         return None
     if award_types not in (None, "contracts", "idvs", "all"):
         return None
     given = [a.strip().lower() for a in agencies if a and a.strip()]
-    if any(a not in _DOD_NAMES and a != "097" for a in given):
+    if given and not any(a in _DOD_NAMES or a == "097" for a in given):
         return None
     end = date.fromisoformat(window_end) if isinstance(window_end, str) else window_end
     cutoff = _today() - timedelta(days=_DOD_LAG_DAYS)
