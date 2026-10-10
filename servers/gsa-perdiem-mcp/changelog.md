@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.2
+
+- Split-month trip results explain that only monthly lodging totals should be added; M&IE must be computed once using actual departure and return days. Adding independent monthly trip totals overstated M&IE. The README carries the corrected example. The frozen published tool description remains pending directory review.
+- City-limit rate carve-outs reject a supplied county that conflicts with the known Census place/county record instead of silently ignoring it. Valid county/city carve-outs and multi-county installations remain supported.
+- ZIP lookups validate the complete five-digit or ZIP+4 format before extracting a prefix, rejecting malformed suffixes and non-ASCII digits.
+- Nine failing-before Python regressions, three Worker tests, and eighteen additional parity calls cover these findings and follow-ups. No published tool metadata changes.
+
 ## 1.2.1
 
 - City lookups: a composite rate-area name matches only when the city is one whole slash-separated part of it ("Woburn" in "Burlington / Woburn"), and a GSA answer that lists every rate area in the state is reported as `unresolved` before any name match. Previously "Milton, OH", which GSA does not recognize, got Hamilton's rate because "milton" is inside "Hamilton"; it is now `unresolved` with the Census suggestion (Standard Rate, $113/$68).

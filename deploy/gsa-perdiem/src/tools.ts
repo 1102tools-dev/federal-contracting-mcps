@@ -232,17 +232,16 @@ function validateState(value: unknown, field = "state"): string {
   return s;
 }
 
-const ZIP5 = /^\p{Nd}{5}$/u;
+const ZIP5 = /^[0-9]{5}(?:-[0-9]{4})?$/;
 
 function validateZip(value: string, field = "zip_code"): string {
   let s = strip(value);
-  if (s.includes("-")) s = strip(s.split("-")[0]);
   if (!ZIP5.test(s)) {
     throw new ValueError(
       `${field} must be a 5-digit US ZIP (ZIP+4 also accepted, e.g., '02101' or '02101-1234'). Got ${repr(value)}.`,
     );
   }
-  return s;
+  return s.slice(0, 5);
 }
 
 const CITY_INVALID = /[\x00-\x1f\\]/;
@@ -554,7 +553,9 @@ function unresolvedPayload(res: Resolution, city: string, state: string): Dict {
       "lookup_zip_perdiem, determines the rate.";
     if (res.suggestion) out.census_suggestion = res.suggestion;
   } else if (res.status === "invalid_county") {
-    out.note = `No ${state} county or county-equivalent matches the supplied county.`;
+    out.note = `The supplied county is not a recognized ${state} county or county-equivalent, ` +
+      "or does not match the supplied city or locality's county for a special rate area. " +
+      "Check the work location's city and county.";
   }
   return out;
 }
@@ -950,8 +951,10 @@ async function estimateTravelCost(ctx: Context, args: Dict): Promise<Dict> {
   if (monthFallbackNote) out.month_fallback_note = monthFallbackNote;
   if (rateMonth !== "MAX" && numNights > 1) {
     out.rate_month_note = `All ${numNights} nights are priced at the FY${year} ${rateMonth} rate. ` +
-      "If the trip crosses into another month or fiscal year, estimate each " +
-      "month's nights separately and add them.";
+      "If the trip crosses into another month or fiscal year, add only each month's " +
+      "lodging_total using the applicable fiscal year. Calculate M&IE once for the entire trip, " +
+      "using the applicable daily rate and 75% only on the actual departure and return days. " +
+      "Do not add the separate estimates' mie_total or grand_total: each assumes a new trip.";
   }
   if (travelDays >= 31) {
     out.long_term_note = "Long stay (31 or more travel days): an agency may prescribe a reduced " +

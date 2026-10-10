@@ -8,7 +8,7 @@ Free, open-source MCP server for the GSA Per Diem Rates API. Federal travel lodg
 
 ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network call: they are answered from GSA's published rate, ZIP, and M&IE files bundled in the package. City lookups use the GSA Per Diem API, which resolves city names to rate areas; they need a free api.data.gov key in `PERDIEM_API_KEY`. The hosted version needs no key for any lookup. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through nine rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 564 collected Python regression tests (297 offline, 267 live-gated) covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, 14 round-7 findings, the 1.1.0 rate-area ambiguity fixes, and the 1.2.1 content-test corrections. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through nine rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 573 collected Python regression tests (306 offline, 267 live-gated) covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, 14 round-7 findings, the 1.1.0 rate-area ambiguity fixes, and the 1.2.1 and 1.2.2 content-test corrections. See [testing.md](testing.md) for the full testing record.*
 
 ## Local or hosted
 
@@ -125,3 +125,5 @@ Use alongside `bls-oews-mcp` (wage data) and `gsa-calc-mcp` (ceiling rates) for 
 ## License
 
 MIT
+
+**Trips crossing months or fiscal years.** Add each month's `lodging_total` at the applicable fiscal year rate. Calculate M&IE once across the actual travel days: 75% on the departure and return days, 100% on intervening days. Do not add separate monthly `mie_total` or `grand_total` values because each estimate assumes its own departure and return. For example, four nights at a $92 daily M&IE rate cost $414 M&IE over five travel days; two independent two-night estimates sum to $460 M&IE.

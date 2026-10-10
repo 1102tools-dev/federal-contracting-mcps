@@ -185,7 +185,7 @@ def _validate_state(value: Any, *, field: str = "state") -> str:
     return s
 
 
-_ZIP5_RE = re.compile(r"^\d{5}$")
+_ZIP5_RE = re.compile(r"^[0-9]{5}(?:-[0-9]{4})?$")
 
 
 def _validate_zip(value: Any, *, field: str = "zip_code") -> str:
@@ -194,15 +194,13 @@ def _validate_zip(value: Any, *, field: str = "zip_code") -> str:
     if not isinstance(value, str):
         value = str(value)
     s = value.strip()
-    # Accept ZIP+4 and strip to 5-digit prefix
-    if "-" in s:
-        s = s.split("-", 1)[0].strip()
-    if not _ZIP5_RE.match(s):
+    # Validate the entire ZIP+4 before taking its five-digit prefix.
+    if not _ZIP5_RE.fullmatch(s):
         raise ValueError(
             f"{field} must be a 5-digit US ZIP (ZIP+4 also accepted, e.g., '02101' "
             f"or '02101-1234'). Got {value!r}."
         )
-    return s
+    return s[:5]
 
 
 _CITY_INVALID_CHARS_RE = re.compile(r"[\x00-\x1f\\]")
@@ -935,7 +933,11 @@ def _unresolved_payload(res: dict[str, Any], city: str, state: str) -> dict[str,
         if res.get("suggestion"):
             out["census_suggestion"] = res["suggestion"]
     elif status == "invalid_county":
-        out["note"] = f"No {state} county or county-equivalent matches the supplied county."
+        out["note"] = (
+            f"The supplied county is not a recognized {state} county or county-equivalent, "
+            f"or does not match the supplied city or locality's county for a special rate area. "
+            f"Check the work location's city and county."
+        )
     return out
 
 
@@ -1486,8 +1488,10 @@ async def estimate_travel_cost(
     if rate_month != "MAX" and num_nights > 1:
         out["rate_month_note"] = (
             f"All {num_nights} nights are priced at the FY{year} {rate_month} rate. "
-            f"If the trip crosses into another month or fiscal year, estimate each "
-            f"month's nights separately and add them."
+            f"If the trip crosses into another month or fiscal year, add only each month's "
+            f"lodging_total using the applicable fiscal year. Calculate M&IE once for the entire trip, "
+            f"using the applicable daily rate and 75% only on the actual departure and return days. "
+            f"Do not add the separate estimates' mie_total or grand_total: each assumes a new trip."
         )
     if travel_days >= 31:
         out["long_term_note"] = (

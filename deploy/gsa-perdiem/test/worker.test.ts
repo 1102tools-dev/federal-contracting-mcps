@@ -66,6 +66,39 @@ const rate = (city: string, county: string, meals: number, value: number) => ({
   city, county, meals, months: {month: ["Jan", "Feb", "Mar"].map((short, i) => ({short, value, number: i + 1}))},
 });
 
+test("malformed ZIP+4 is rejected instead of looking up its valid prefix", async () => {
+  const {call} = setup();
+  for (const zip_code of ["12345-garbage", "12345-1234-extra", "12345-", "12345-123", "１２３４５"]) {
+    const r = await call("lookup_zip_perdiem", {zip_code, fiscal_year: 2027});
+    assert.equal(r.isError, true);
+    assert.match(r.content[0].text, /5-digit US ZIP/);
+  }
+  assert.equal((await call("lookup_zip_perdiem", {zip_code: "20120-1234", fiscal_year: 2027})).isError, false);
+});
+
+test("city-limit rates do not silently ignore a conflicting county", async () => {
+  const {call} = setup();
+  for (const [city, state, county] of [["Cambridge", "MA", "Essex"], ["Santa Monica", "CA", "San Diego"], ["Sedona", "AZ", "Maricopa"]]) {
+    const args = {city, state, county, fiscal_year: 2027};
+    const r = (await call("lookup_city_perdiem", args)).structuredContent;
+    assert.equal(r.status, "invalid_county");
+    assert.equal(r.mie_daily, undefined);
+    assert.match(r.note, /city or locality/);
+    assert.equal((await call("estimate_travel_cost", {...args, num_nights: 2, travel_month: "Oct"})).structuredContent.grand_total, undefined);
+  }
+});
+
+test("split-month guidance adds lodging and computes M&IE once per trip", async () => {
+  const {call} = setup();
+  const estimate = async (num_nights: number, travel_month: string) =>
+    JSON.parse((await call("estimate_travel_cost", {city: "Washington", state: "DC", county: "District of Columbia", fiscal_year: 2027, num_nights, travel_month})).content[0].text);
+  const a = await estimate(2, "Oct"), b = await estimate(2, "Nov"), all = await estimate(4, "Oct");
+  assert.equal(a.status, "resolved", JSON.stringify(a));
+  assert.equal(a.mie_total + b.mie_total - all.mie_total, 46);
+  assert.equal(all.mie_total, 414);
+  assert.match(a.rate_month_note, /lodging_total.*once for the entire trip.*Do not add.*grand_total/);
+});
+
 test("tools/list serves exactly the reviewed contract, in the Python server's order", () => {
   const contract = JSON.parse(readFileSync(new URL("../tools-contract.json", import.meta.url), "utf8"));
   const byName = (list: {name: string}[]) => [...list].sort((a, b) => (a.name < b.name ? -1 : 1));

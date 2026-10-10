@@ -1,0 +1,41 @@
+"""Content audit: reject misleading location input and split-trip totals."""
+import asyncio
+
+import pytest
+
+from gsa_perdiem_mcp import server as srv
+
+
+@pytest.mark.parametrize("zip_code", ["12345-garbage", "12345-1234-extra", "12345-", "12345-123", "１２３４５"])
+def test_malformed_zip_is_rejected_before_lookup(zip_code):
+    with pytest.raises(ValueError, match="5-digit US ZIP"):
+        asyncio.run(srv.lookup_zip_perdiem(zip_code, 2027))
+
+
+@pytest.mark.parametrize("city,state,county", [
+    ("Cambridge", "MA", "Essex"),
+    ("Santa Monica", "CA", "San Diego"),
+    ("Sedona", "AZ", "Maricopa"),
+])
+def test_carveout_does_not_ignore_conflicting_county(city, state, county):
+    r = asyncio.run(srv.lookup_city_perdiem(city, state, 2027, county))
+    assert r["status"] == "invalid_county"
+    assert "mie_daily" not in r
+    assert "city or locality" in r["note"]
+    estimate = asyncio.run(srv.estimate_travel_cost(city, state, 2, "Oct", 2027, county))
+    assert "grand_total" not in estimate
+
+
+def test_split_month_guidance_separates_lodging_from_trip_mie():
+    def estimate(nights, month):
+        return asyncio.run(srv.estimate_travel_cost(
+            "Washington", "DC", nights, month, 2027, "District of Columbia"))
+    first, second, whole = estimate(2, "Oct"), estimate(2, "Nov"), estimate(4, "Oct")
+    # Each independent segment adds a calendar day; adding grand totals
+    # overstates M&IE by half a daily allowance at each join.
+    assert first["mie_total"] + second["mie_total"] - whole["mie_total"] == 46
+    assert whole["mie_total"] == 414
+    note = first["rate_month_note"]
+    assert "lodging_total" in note and "once for the entire trip" in note
+    assert "Do not add" in note and "grand_total" in note
+    assert "each month's nights separately and add them" not in note

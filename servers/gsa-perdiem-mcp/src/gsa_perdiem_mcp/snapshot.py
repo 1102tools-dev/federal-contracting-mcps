@@ -106,6 +106,11 @@ class Year:
         if place:
             pk = place_key(state, place)
             if pk in self.place_map:
+                # A city-limit carve-out cannot silently override a conflicting
+                # supplied county. Keep installations without Census records.
+                hits = [h for h in places().get(pk, []) if h[1] != "county"]
+                if hits and ck not in {h[0] for h in hits}:
+                    return None
                 return self.place_map[pk]
         dest = self.county_map.get(ck)
         if dest is not None and place and place_key(state, place) in self.excluded.get(dest, set()):
