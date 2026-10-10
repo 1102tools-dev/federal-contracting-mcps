@@ -364,7 +364,19 @@ descriptions, identities and successful-query behavior are unchanged.
 
 The candidate suite has **435 collected tests: 314 passed and 121 optional live
 skipped** in both the frozen MCP 2.0 lane and a separately installed candidate
-wheel with fresh MCP 2.3. The live skips are not passes. Source percentile and
-bucket-count variations are recorded separately from exact comparisons; the
-Round 3 corpus and final release verification are detailed in the external audit
-record.
+wheel with fresh MCP 2.3. The live skips are not passes. The completed new corpus contains **132 unique
+ordinary/power-user questions and follow-ups across all eight tools**, with 142
+primary GSA response captures and 13 additional direct proofs. Both the actual
+fresh published-package/public comparison and the installed candidate replay
+pass 3,200 source/workflow conditions each. Ten exact-title cost scenarios retain
+eligible counts, thin populations, and the distinction between ceiling budgets
+and prices paid. An empty BA/MA armed-guard population leads to three successful
+high-school eligibility follow-ups.
+
+The published/public comparison records 209 approximate percentile scalar
+variations (maximum $2.7026/hour) and five distributed bucket-count/list variations
+supported by fresh official responses and the source error bound; the candidate
+replay documents three bucket variations separately. These are not identical
+parity claims. Suggestion caps, unavailable worksite-filtered statistics, and
+single-field sort ties remain source limitations. Final actual published 1.0.15
+and public deployment verification awaits the coordinator release.
