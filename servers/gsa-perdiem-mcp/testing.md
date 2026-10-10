@@ -24,7 +24,7 @@ All ten new Python regressions failed on the original code and pass after the fi
 
 - **P3:** comparison rows dropped source attribution available to single-location lookups. Resolved and unresolved rows now retain the GSA source link and bundled fiscal year; raw comparison rates and ranking are unchanged.
 
-**Explicitly partial:** the frozen `estimate_travel_cost` published description still says to estimate each month's nights separately and add them. Correcting that description requires the external directory review described in `docs/unified-release.md`. The runtime result and README are corrected; no contract baseline was regenerated. Publication and final hosted/PyPI checks are pending the coordinated release. Date-aware itinerary pricing and ZIP candidate state/county provenance remain enhancements, not fixed by this patch.
+**1.2.2 description limitation, resolved by the 1.2.3 follow-up above:** the frozen description in 1.2.2 retained the incorrect instruction to add separate monthly estimates. The user subsequently authorized correcting it within the existing MCP identity without directory resubmission. The description and baseline are corrected in 1.2.3; actual hosted/PyPI checks await the follow-up publication. Date-aware itinerary pricing and ZIP candidate state/county provenance remain enhancements.
 
 ## Round 9 (2026-10-10): content-test corrections and 1.2.1 release verification
 
@@ -50,14 +50,14 @@ This Model Context Protocol server exposes the GSA Per Diem Rates API as 7 calla
 |---|---|
 | MCP tools exposed | 7 |
 | Total regression tests | 575 (308 offline, 267 live-gated) |
-| Tests per tool | 81.9 (Python only) |
+| Tests per tool | 82.1 (Python only) |
 | Audit rounds completed | 10 |
 | P0 catastrophic bugs found and fixed | 1 (path traversal) |
 | P1 silent-wrong-data bugs found and fixed | 23 |
 | P2 validation gaps found and fixed | 21 |
 | P3 cleanup items found and fixed | 10 |
 | Round 7 (independent re-audit) findings | 14 |
-| Current release | 1.2.1 |
+| Current candidate | 1.2.3 (publication verification pending) |
 | PyPI status | Published as `gsa-perdiem-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.4 Safety Release Verification
@@ -234,7 +234,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round 7 methodology: re-read the entire server source with no reliance on this document's claims; verify match behavior against live API resolution for a dozen city shapes; recompute FTR 301-11.101 estimate math by hand; probe dead fiscal years and OCONUS states live; check every prior claim in this document against the code and live behavior.
 
-Current test count: 575 Python regressions (308 offline + 267 live-gated), with 28 separate Worker tests. The original rounds reported 69 findings; later fixes are recorded above. Current release: 1.2.1. PyPI: `gsa-perdiem-mcp`.
+Current test count: 575 Python regressions (308 offline + 267 live-gated), with 28 separate Worker tests. The original rounds reported 69 findings; later fixes are recorded above. Current candidate: 1.2.3 (publication verification pending). PyPI: `gsa-perdiem-mcp`.
 
 Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp. License: MIT.
 
