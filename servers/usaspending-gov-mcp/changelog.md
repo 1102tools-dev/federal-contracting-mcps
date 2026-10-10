@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.19
+
+- Carry the four reviewed 1.0.18 content corrections into a new release version after the immutable 1.0.18 release attempt stopped at an offline throughput timing test; publication and deployment were skipped.
+- Content runtime and all 55 tool definitions remain unchanged from reviewed 1.0.18. Release remains gated on a separately reviewed test-only repair of reservation timing versus later body entry; the exact failed-run timing cause remains unknown.
+
 ## 1.0.18
 
 - Disclose that federal-account program activities span all reported years, contain no dollar amounts and do not apply a requested fiscal year.
