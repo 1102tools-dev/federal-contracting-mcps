@@ -31,6 +31,10 @@ from collections.abc import Awaitable, Callable, Mapping
 from typing import Any, TypeVar
 
 ENABLE_ENV = "MCP_RESPONSE_CACHE"
+# Optional size overrides for the machine running the hosted service: the Dell
+# gives each cache more room than the small Cloudflare backup containers.
+SIZE_ENV = "MCP_RESPONSE_CACHE_MB"
+ENTRIES_ENV = "MCP_RESPONSE_CACHE_ENTRIES"
 
 MINUTE = 60.0
 HOUR = 3600.0
@@ -42,6 +46,16 @@ T = TypeVar("T")
 def enabled_from_env(environment: Mapping[str, str] | None = None) -> bool:
     env = os.environ if environment is None else environment
     return env.get(ENABLE_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def positive_int_from_env(name: str, environment: Mapping[str, str] | None = None) -> int | None:
+    """A positive whole number from the environment, or None if unset or invalid."""
+    env = os.environ if environment is None else environment
+    try:
+        value = int(env.get(name, "").strip())
+    except ValueError:
+        return None
+    return value if value > 0 else None
 
 
 def cache_key(method: str, url: str, params: Any = None, body: Any = None) -> str:
@@ -73,8 +87,18 @@ class ResponseCache:
         max_entries: int = 4096,
         enabled: bool | None = None,
         clock: Callable[[], float] = time.monotonic,
+        environment: Mapping[str, str] | None = None,
     ) -> None:
-        self.enabled = enabled_from_env() if enabled is None else enabled
+        self.enabled = enabled_from_env(environment) if enabled is None else enabled
+        if enabled is None:
+            # Configured from the environment like ``enabled``: the hosting machine
+            # may give the cache more room (MiB) or more entries than the defaults.
+            size_mb = positive_int_from_env(SIZE_ENV, environment)
+            if size_mb:
+                max_bytes = size_mb * 1024 * 1024
+            entries = positive_int_from_env(ENTRIES_ENV, environment)
+            if entries:
+                max_entries = entries
         self.max_bytes = max_bytes
         self.max_entry_bytes = max_entry_bytes
         self.max_entries = max_entries

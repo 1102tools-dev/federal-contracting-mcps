@@ -27,7 +27,7 @@ from mcp.server import MCPServer
 
 from . import __version__
 from ._throughput import EcfrPacer, EcfrXmlPacer
-from ._response_cache import DAY, HOUR, MINUTE, ResponseCache, cache_key
+from ._response_cache import DAY, HOUR, MINUTE, ResponseCache, cache_key, positive_int_from_env
 from ._xml_cache import XmlCache
 from .constants import (
     BASE_URL,
@@ -311,11 +311,15 @@ _client: httpx.AsyncClient | None = None
 _pacer = EcfrPacer()
 _xml_pacer = EcfrXmlPacer()
 # Hosted only (MCP_RESPONSE_CACHE=1): JSON answers in _cache, and the XML cache
-# keeps answers longer and holds more (see _cache_seconds). Together they stay
-# within 64 MiB. Locally the XML cache keeps its 5-minute default.
+# keeps answers longer and holds more (see _cache_seconds). By default they stay
+# within 64 MiB together; the hosting machine can give them more room with
+# MCP_RESPONSE_CACHE_MB, MCP_XML_CACHE_MB and MCP_RESPONSE_CACHE_ENTRIES.
+# Locally the XML cache keeps its 5-minute default.
 _cache = ResponseCache(max_bytes=24 * 1024 * 1024, max_entry_bytes=4 * 1024 * 1024)
 _xml_cache = XmlCache(
-    max_entries=4096, max_bytes=40 * 1024 * 1024, max_entry_bytes=4 * 1024 * 1024,
+    max_entries=positive_int_from_env("MCP_RESPONSE_CACHE_ENTRIES") or 4096,
+    max_bytes=(positive_int_from_env("MCP_XML_CACHE_MB") or 40) * 1024 * 1024,
+    max_entry_bytes=4 * 1024 * 1024,
 ) if _cache.enabled else XmlCache()
 _DATED_PATH = re.compile(r"^/api/versioner/v1/(?:full|structure|ancestry)/(\d{4}-\d{2}-\d{2})/")
 _TITLES = "/api/versioner/v1/titles.json"

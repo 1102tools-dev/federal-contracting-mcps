@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.12
+
+- Hosted service only: the machine running the service can give the answer cache
+  more room with `MCP_RESPONSE_CACHE_MB` (size in MiB) and
+  `MCP_RESPONSE_CACHE_ENTRIES`. Unset, the sizes are unchanged, so the small
+  Cloudflare backup containers keep the defaults.
+- Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package behaves exactly as
+  before. Tools, schemas, pacing, budgets and cache times are unchanged.
+
 ## 1.0.11
 
 - Hosted service only: answers are filed under USAspending's last load date,

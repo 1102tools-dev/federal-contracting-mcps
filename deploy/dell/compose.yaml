@@ -10,7 +10,11 @@ x-server: &server
   dns: [1.1.1.1, 9.9.9.9]
   security_opt: [no-new-privileges:true]
   cap_drop: [ALL]
-  mem_limit: 384m
+  # Room for a 256 MiB answer cache (MCP_RESPONSE_CACHE_MB) on top of the server.
+  mem_limit: 768m
+  environment: &cache_room
+    MCP_RESPONSE_CACHE_MB: "256"
+    MCP_RESPONSE_CACHE_ENTRIES: "32768"
   cpus: 0.75
   # Frigate keeps priority under contention (default weight is 1024).
   cpu_shares: 256
@@ -26,6 +30,11 @@ services:
   ecfr:
     <<: *server
     image: mcp-origin/ecfr:live
+    # Two caches: JSON answers and full regulation text (384 MiB together).
+    environment:
+      <<: *cache_room
+      MCP_RESPONSE_CACHE_MB: "128"
+      MCP_XML_CACHE_MB: "256"
   federal-register:
     <<: *server
     image: mcp-origin/federal-register:live
