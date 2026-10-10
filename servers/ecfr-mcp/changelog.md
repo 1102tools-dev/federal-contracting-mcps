@@ -2,6 +2,8 @@
 
 ## 1.1.1
 
+- Hosted deployment development tooling upgrades Wrangler to 4.149.0; npm audit drops from four high-severity development-chain findings to zero. No tool metadata change.
+
 - `compare_versions` rejects dates beyond the title's latest available snapshot before reading text. Previously comparing an existing section to today, while eCFR lagged a few days, falsely reported the section removed.
 - Structure, section-list, recent-change and ancestry subpart inputs reject explicit CFR title conflicts before stripping citation prefixes. `2 CFR 200` with the default Title 48 now explains how to select Title 2 instead of returning the wrong title.
 - `changes_only=True` also omits full texts when a section was added or removed.
