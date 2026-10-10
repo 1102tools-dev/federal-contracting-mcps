@@ -1,13 +1,13 @@
 # Test suite map
 
-Frozen Python 3.14.3 collection on 2026-10-10 for candidate source package 1.0.21 found
+Frozen Python 3.14.3 collection on 2026-10-10 for source package 1.0.21 found
 2,315 cases: 1,936 offline and 379 live-gated. The measured offline release
 lane with frozen MCP SDK 2.0.0 passed 1,936 and skipped 379. Collection itself executes no tests or
 source requests; the separately recorded 143-new-question Round 5 audit is not
 added to these pytest counts.
 
-The separate fresh published1.0.20 lane with latest MCP SDK2.3 measured
-1,078 passed, 855 failed and 379 skipped; its retained error expectations
+The separate fresh published 1.0.21 lane with latest MCP SDK 2.3 measured
+1,081 passed, 855 failed and 379 skipped; its retained error expectations
 are not credited as passing. See the explicit reconciliation in testing.md.
 
 Files retain their audit-round and fix-wave history; see [../testing.md](../testing.md).
