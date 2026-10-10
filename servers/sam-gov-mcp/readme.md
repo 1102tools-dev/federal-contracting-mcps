@@ -54,6 +54,8 @@ Use the full edition when you need to look up a company: registrations, UEI and 
 
 The full edition is local only. Give your AI this page's link and ask it to set it up, or start at [Installation](#installation). It needs your own free SAM.gov key, and that key's daily limit applies; see [Authentication](#authentication).
 
+Round 5 checked 127 new hosted content questions and followups plus status: 127 official snapshot comparisons and 347 returned-row checks passed. Fresh official HTTP 304 validated the retained CSV bytes. Native candidate 1.0.4 clarifies that active awards and justifications remain included despite past response deadlines; publication is pending. Python 1.0.14 is unchanged, with actual fresh console readiness and 784 passing / 374 optional skipped tests; 19 keyed workflows remain unexecuted. See [the round-5 record](testing.md#october-10-2026-round-5--native-discovery-candidate-104).
+
 ## What it does
 
 Exposes seven SAM.gov REST APIs plus a credential-readiness check as 20 MCP tools:
