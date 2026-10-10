@@ -2,14 +2,14 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across eleven audit rounds, the eleventh a ~95-call paced live campaign that found ZERO new defects. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The MCP ships with 2,160 regression tests covering every surface twice (offline shape + live).
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across twelve audit rounds: the eleventh was a ~95-call paced live campaign, and the twelfth was the October 2026 content campaign. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. Release 1.0.13 collects 2,259 regression cases (1,880 offline and 379 live-gated).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 55 |
-| Total regression tests | 2,160 (1,785 offline, 375 live-gated) |
+| Total regression tests | 2,259 (1,880 offline, 379 live-gated) |
 | Tests per tool | 39+ |
-| Audit rounds completed | 11 (rounds 1-8, v0.3 expansion, two-family semantic audit, paced live campaign) |
+| Audit rounds completed | 12 (eleven historical rounds plus October 2026 content campaign) |
 | Initial integration issues (round 1) | 28+ |
 | P1 silent-wrong-data bugs found and fixed | 11 (rounds 1-9) |
 | P2 validation gaps found and fixed | 7 (rounds 1-9) |
@@ -18,7 +18,7 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Round 9 (v0.3) live audit findings | 1 (list_states JSON-array response shape) |
 | Round 10 (1.0.1) semantic audit findings | 22 (12 search family, 10 entity family), all fixed |
 | Release cycles | 15 (v0.1.2 through v1.0.3) |
-| Current release | 1.0.3 |
+| Current release | 1.0.13 |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -269,14 +269,14 @@ Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/usas
 Version 1.0.4 carries the suite-wide asynchronous pacing-lock correction and the `acquisition-agent` tool profile. The full offline lane passed (1,788 tests; 375 live-gated tests skipped). Isolated published-wheel verification confirmed the standalone default still exposes all 55 tools and the acquisition profile exposes the documented 20-tool allowlist.
 
 
-## 1.0.13 content correction verification (2026-10-10)
+## Round 12: 1.0.13 content correction verification (2026-10-10)
 
 The October content campaign found wrong default fiscal years, PIID keyword
 lookup masquerading as an exact lookup, missing date modes, missing DoD lag
 caveats and incorrect grouped-subaward pagination. Release 1.0.13 corrects
 these paths and adds recipient/File C caveats and aggregate filters.
 
-The full Python suite passes; the focused content suite passes 71 offline
+The full Python suite passes 1,880 cases with 379 live-gated skips; the focused content suite passes 71 offline
 cases with four live tests gated. Running the focused tests against the
 pre-fix c5293fc source demonstrates failures for changed behavior. Worker
 TypeScript checks, all 55 hosted tool contracts, nine package version
