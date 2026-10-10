@@ -17,7 +17,7 @@ import json as _json
 import os
 import re
 import time
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Literal
 
 import httpx
@@ -349,10 +349,71 @@ def _validate_date(value: str, field_name: str) -> str:
     return value
 
 
+def _today() -> date:
+    return date.today()
+
+
 def _current_fiscal_year() -> int:
     """Federal fiscal year (Oct-Sep). FY2026 runs 2025-10-01 to 2026-09-30."""
-    today = date.today()
+    today = _today()
     return today.year + 1 if today.month >= 10 else today.year
+
+
+_DOD_NAMES = {"department of defense", "dod"}
+_DOD_LAG_DAYS = 90
+
+
+def _dod_lag_note(window_end: date | str | None, *, agencies: tuple[str | None, ...] = (),
+                  award_types: Any = "contracts") -> str | None:
+    """A caveat when an answer covers DoD contract actions too recent to be published.
+
+    DoD contract and IDV actions appear in USAspending 90 days after their
+    action date, so the last three months of any window look nearly empty
+    for DoD (FY2026 Jul-Sep: $8.8B / $0.02B / $0.16B vs $27-72B a month
+    earlier, seen 2026-10-10). Applies when the window reaches into those
+    90 days, contracts or IDVs are in scope (or no award type was given),
+    and no non-DoD agency filter excludes DoD.
+    """
+    if window_end is None:
+        return None
+    if award_types not in (None, "contracts", "idvs", "all"):
+        return None
+    given = [a.strip().lower() for a in agencies if a and a.strip()]
+    if any(a not in _DOD_NAMES and a != "097" for a in given):
+        return None
+    end = date.fromisoformat(window_end) if isinstance(window_end, str) else window_end
+    cutoff = _today() - timedelta(days=_DOD_LAG_DAYS)
+    if end <= cutoff:
+        return None
+    available = (min(end, _today()) + timedelta(days=_DOD_LAG_DAYS)).isoformat()
+    return (
+        f"DoD contract and IDV actions are published {_DOD_LAG_DAYS} days after the "
+        f"action date, so DoD actions after {cutoff.isoformat()} are mostly missing "
+        f"here and any DoD (or government-wide) total for this period is understated "
+        f"until about {available}. Don't compare it with earlier full years yet."
+    )
+
+
+def _add_note(result: Any, note: str | None) -> Any:
+    if note and isinstance(result, dict):
+        result["data_note"] = note
+    return result
+
+
+def _agency_dod_lag_note(toptier_code: str, fy: int | str) -> str | None:
+    """DoD (097) fiscal years whose last 90 days are not yet published."""
+    if toptier_code != "097":
+        return None
+    return _dod_lag_note(date(int(fy), 9, 30), award_types=None)
+
+
+def _window_end(start: str | None, end: str | None) -> str | None:
+    """The end of a search window (already validated); open-ended means today."""
+    if end:
+        return end
+    if start:
+        return _today().isoformat()
+    return None
 
 
 def _last_completed_fiscal_year() -> int:
@@ -810,7 +871,11 @@ async def search_awards(
         "filters": filters,
         "fields": fields,
     }
-    return await _post("/api/v2/search/spending_by_award/", payload)
+    result = await _post("/api/v2/search/spending_by_award/", payload)
+    return _add_note(result, _dod_lag_note(
+        _window_end(time_period_start, time_period_end),
+        agencies=(awarding_agency, funding_agency), award_types=award_type,
+    ))
 
 
 @mcp.tool(annotations={"title": "Get Award Count", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -891,7 +956,11 @@ async def get_award_count(
             "get_award_count requires at least one filter. "
             "Typical: time_period_start + time_period_end, or keywords, or awarding_agency."
         )
-    return await _post("/api/v2/search/spending_by_award_count/", {"filters": filters})
+    result = await _post("/api/v2/search/spending_by_award_count/", {"filters": filters})
+    return _add_note(result, _dod_lag_note(
+        _window_end(time_period_start, time_period_end),
+        agencies=(awarding_agency, funding_agency), award_types=None,
+    ))
 
 
 @mcp.tool(annotations={"title": "Spending Over Time", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -915,7 +984,15 @@ async def spending_over_time(
     or compare spending patterns across years.
 
     Note: The API returns fiscal_year as a STRING. Cast to int for numeric
-    comparisons.
+    comparisons. quarter and month are FISCAL periods (month 1 = October,
+    quarter 1 = October-December). Buckets are clipped to the window, so a
+    calendar-2025 window returns a partial fiscal_year '2025' (January-
+    September only) and a partial '2026' (October-December); neither is
+    that whole fiscal year.
+
+    DoD contract actions are published 90 days late, so when the window
+    reaches into the last 90 days and DoD is in scope the answer carries a
+    data_note: those months are understated, so don't read them as a drop.
 
     awarding_agency must be a TOPTIER agency name ('Department of Defense').
     Military departments are subtiers: pass
@@ -960,10 +1037,14 @@ async def spending_over_time(
             "spending_over_time requires at least one filter beyond award_type. "
             "Typical: time_period_start + time_period_end, or keywords, or awarding_agency."
         )
-    return await _post(
+    result = await _post(
         "/api/v2/search/spending_over_time/",
         {"group": group, "filters": filters},
     )
+    return _add_note(result, _dod_lag_note(
+        _window_end(time_period_start, time_period_end),
+        agencies=(awarding_agency,), award_types=award_type,
+    ))
 
 
 @mcp.tool(annotations={"title": "Spending by Category", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1042,10 +1123,14 @@ async def spending_by_category(
             "spending_by_category requires at least one filter beyond award_type. "
             "Typical: time_period_start + time_period_end, or keywords, or awarding_agency."
         )
-    return await _post(
+    result = await _post(
         f"/api/v2/search/spending_by_category/{category}/",
         {"filters": filters, "limit": limit, "page": page},
     )
+    return _add_note(result, _dod_lag_note(
+        _window_end(time_period_start, time_period_end),
+        agencies=(awarding_agency,), award_types=award_type,
+    ))
 
 
 # ---------------------------------------------------------------------------
@@ -1563,6 +1648,7 @@ async def get_agency_awards(
     defaulted = fiscal_year is None
     fy = _last_completed_fiscal_year() if defaulted else _validate_fiscal_year(fiscal_year)
     result = await _get(f"/api/v2/agency/{code}/awards/", params={"fiscal_year": str(fy)})
+    result = _add_note(result, _agency_dod_lag_note(code, fy))
     return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
@@ -2052,6 +2138,7 @@ async def get_agency_sub_agencies(
         "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
     }
     result = await _get(f"/api/v2/agency/{toptier_code}/sub_agency/", params=params)
+    result = _add_note(result, _agency_dod_lag_note(toptier_code, fy))
     return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
@@ -2161,6 +2248,8 @@ async def get_agency_obligations_by_award_category(
     Returns total obligated dollars split by category: contracts, IDVs, grants,
     loans, direct payments, other. Quick way to see what mix of award types
     an agency uses (heavy contractor agency vs grant-issuing agency vs mixed).
+    For DoD ('097') a fiscal year whose last 90 days are not yet published
+    (DoD's 90-day delay) carries a data_note saying the total is understated.
 
     fiscal_year defaults to the last completed fiscal year, not the current
     one (USAspending's own default, which right after October 1 holds only a
@@ -2173,6 +2262,7 @@ async def get_agency_obligations_by_award_category(
         f"/api/v2/agency/{toptier_code}/obligations_by_award_category/",
         params={"fiscal_year": fy},
     )
+    result = _add_note(result, _agency_dod_lag_note(toptier_code, fy))
     return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 

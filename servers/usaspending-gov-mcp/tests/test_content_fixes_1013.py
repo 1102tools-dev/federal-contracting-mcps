@@ -436,3 +436,62 @@ def test_live_u4_dhs_grouped_has_next():
     out = _payload(asyncio.run(_call("spending_by_subaward_grouped", limit=5,
                                      sort="subaward_obligation", **DHS_GROUPED)))
     assert len(out["results"]) == 5 and out["page_metadata"]["hasNext"] is True
+
+
+# ===========================================================================
+# U1 (P2): DoD 90-day publication delay is flagged on recent DoD answers
+# ===========================================================================
+
+@pytest.fixture
+def oct10(monkeypatch):
+    import datetime as _dt
+    monkeypatch.setattr(srv, "_today", lambda: _dt.date(2026, 10, 10))
+    monkeypatch.setattr(srv, "_current_fiscal_year", lambda: 2027)
+
+
+FY26 = dict(time_period_start="2025-10-01", time_period_end="2026-09-30")
+
+
+def test_u1_spending_over_time_dod_recent_window_has_note(monkeypatch, oct10):
+    mock = _MockPost({"results": []})
+    monkeypatch.setattr(srv, "_post", mock)
+    out = _payload(asyncio.run(_call("spending_over_time", group="month", award_type="contracts",
+                                     awarding_agency="Department of Defense", **FY26)))
+    assert "90 days" in out["data_note"] and "2026-07-12" in out["data_note"]
+
+
+def test_u1_agency_obligations_dod_fy2026_has_note(monkeypatch, oct10):
+    mock = _MockGet(DOD_OBLIGATIONS_FY2026)
+    monkeypatch.setattr(srv, "_get", mock)
+    out = _payload(asyncio.run(_call("get_agency_obligations_by_award_category", toptier_code="097")))
+    assert "90 days" in out["data_note"]
+
+
+@pytest.mark.parametrize("tool,kwargs", [
+    ("get_agency_awards", {"toptier_code": "097", "fiscal_year": 2026}),
+    ("get_agency_sub_agencies", {"toptier_code": "097"}),
+    ("spending_by_category", {"category": "awarding_subagency", "awarding_agency": "Department of Defense", **FY26}),
+    ("get_award_count", {"awarding_agency": "Department of Defense", **FY26}),
+    ("search_awards", {"awarding_agency": "Department of Defense", **FY26}),
+    ("spending_over_time", {"award_type": "contracts", **FY26}),  # government-wide includes DoD
+])
+def test_u1_note_on_other_dod_answers(monkeypatch, oct10, tool, kwargs):
+    monkeypatch.setattr(srv, "_get", _MockGet({"results": []}))
+    monkeypatch.setattr(srv, "_post", _MockPost({"results": []}))
+    out = _payload(asyncio.run(_call(tool, **kwargs)))
+    assert "data_note" in out, tool
+
+
+@pytest.mark.parametrize("tool,kwargs", [
+    ("get_agency_obligations_by_award_category", {"toptier_code": "097", "fiscal_year": 2025}),
+    ("get_agency_obligations_by_award_category", {"toptier_code": "036"}),
+    ("spending_over_time", {"award_type": "contracts", "awarding_agency": "Department of Defense",
+                            "time_period_start": "2024-10-01", "time_period_end": "2025-09-30"}),
+    ("spending_over_time", {"award_type": "contracts", "awarding_agency": "Department of Veterans Affairs", **FY26}),
+    ("spending_over_time", {"award_type": "grants", "awarding_agency": "Department of Defense", **FY26}),
+])
+def test_u1_no_note_when_dod_lag_does_not_apply(monkeypatch, oct10, tool, kwargs):
+    monkeypatch.setattr(srv, "_get", _MockGet({"results": []}))
+    monkeypatch.setattr(srv, "_post", _MockPost({"results": []}))
+    out = _payload(asyncio.run(_call(tool, **kwargs)))
+    assert "data_note" not in out, tool
