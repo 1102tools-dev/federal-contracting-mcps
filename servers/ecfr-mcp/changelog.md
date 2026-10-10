@@ -6,7 +6,11 @@
   including individual surety, corporate surety and cosurety. These lookups
   return complete defining text without claiming the term is absent. A Surety
   lookup continues to return the entire parent definition and all three types.
-- Round 5 content coverage and final publication verification are in progress.
+- Round 5 completed new research coverage across all 13 tools and twelve titles.
+  The actual installed candidate passed 95 research calls and source comparisons;
+  twelve additional source checks pass. Both SDK lanes pass 343 tests with
+  118 explicit live skips (461 collected). Actual publication acceptance remains
+  release-owner controlled.
 
 ## 1.1.6
 
