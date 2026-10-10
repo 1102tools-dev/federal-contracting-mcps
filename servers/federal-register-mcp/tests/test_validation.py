@@ -278,18 +278,16 @@ def test_search_whitespace_term_normalized_to_none():
     """Whitespace-only term becomes None (no filter applied), not 'All Documents' match."""
     # Without filter, we need SOMETHING that won't hit the network. Use a bad page to raise.
     # Goal: confirm the whitespace term doesn't raise on its own (it gets stripped to None).
-    try:
-        asyncio.run(_call("search_documents", term="   ", per_page=0))
-    except Exception as e:
-        # Should be the per_page=0 error, NOT a term-related error
-        assert "per_page" in str(e).lower(), f"expected per_page error, got: {e}"
+    asyncio.run(_call_expect_error(
+        "search_documents", "per_page", term="   ", per_page=0
+    ))
 
 
 def test_search_whitespace_docket_normalized_to_none():
-    try:
-        asyncio.run(_call("search_documents", docket_id="   ", per_page=0))
-    except Exception as e:
-        assert "per_page" in str(e).lower(), f"expected per_page error, got: {e}"
+    asyncio.run(_call_expect_error(
+        "search_documents", "per_page", docket_id="   ", per_page=0
+    ))
+
 
 
 # ---------------------------------------------------------------------------

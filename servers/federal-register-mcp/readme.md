@@ -1,6 +1,6 @@
 # federal-register-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 289](https://img.shields.io/badge/regression%20tests-289-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 295](https://img.shields.io/badge/regression%20tests-295-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/federal-register-mcp -->
 
@@ -8,7 +8,9 @@ Free, open-source MCP server for the Federal Register API. Proposed rules, final
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through nine audit rounds and integration testing against the live Federal Register API. 289 collected regression tests (184 offline, 105 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines, FAR Council agency mapping, presidential filters, parent-agency public inspection, and page limits. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through nine audit rounds and integration testing against the live Federal Register API. 295 collected regression tests (190 offline, 105 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines, FAR Council agency mapping, presidential filters, parent-agency public inspection, and page limits. See [testing.md](testing.md) for the full testing record.*
+
+The targeted SDK 2.3 correction in candidate 1.0.16 restores actionable input-validation messages for ordinary CFR and paging recovery. All 60 previously failing guidance assertions now pass without weakening their messages; unexpected faults remain masked under SDK 2.3. Both frozen SDK 2.0 and installed candidate SDK 2.3 suites measured 190 passed / 105 optional live skips / 295 collected. Actual candidate console originals and valid followups passed; publication and live 1.0.16 acceptance remain pending. See [the SDK correction record](testing.md#targeted-sdk-23-guidance-correction-2026-10-10-candidate-1016).
 
 The October 10, 2026 content research round 3 found zero new defects in 54 ordinary and power-user calls across all eight tools. All 54 public answers matched primary-source comparisons, and all 54 answers from a fresh official PyPI 1.0.14 CLI installation matched the public service. The current offline suite passed 181 tests with 105 live-gated skips; no new full live-suite run is claimed. See [the round 3 record](testing.md#content-research-round-3-2026-10-10-published-1014) for coverage and source limits.
 

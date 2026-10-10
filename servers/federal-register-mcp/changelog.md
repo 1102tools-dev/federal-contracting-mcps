@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.16
+
+- Restore deliberate input-correction guidance under MCP SDK 2.3 using an explicit validation exception compatible with both `ValueError` and `ToolError`. Preserve validator behavior, successful answers, signatures and tool metadata; unrelated parser, transport and programming exceptions retain SDK handling.
+- Keep all 60 specific guidance assertions and tighten two whitespace controls to fail on unexpected success. Add six ordinary-recovery, direct-helper and unexpected-fault regressions.
+
 ## 1.0.15
 
 - Qualify open-comment counts and completeness as source-indexed metadata. Always explain deadline verification and docket/publication recovery, including zero results, because reopening notices can report a later DATES deadline than their indexed close date. Preserve raw counts, dates, sorting and scan limits.
