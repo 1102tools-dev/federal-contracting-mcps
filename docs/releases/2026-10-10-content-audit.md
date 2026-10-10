@@ -1,6 +1,6 @@
 # October 10, 2026 MCP content audit and release record
 
-**Round 1 complete: all 36 findings fully fixed; actual PyPI, Cloudflare, all-five Dell, applicable data and published website checks passed.** This record distinguishes executed checks, collected tests and source limitations. The subsequent zero-new-P0/P1/P2 audit has not started. Evidence paths are relative to `Artifacts/mcp-e2e-20261010/`.
+**Rounds 1 and 2: all43 cumulative findings fully fixed; actual PyPI, Cloudflare, all-five Dell, applicable data and published website checks passed.** This record distinguishes executed checks, collected tests and source limitations. Round2 found five newP2 issues, so the zero-new-P0/P1/P2 stopping condition remains unmet. Round3 starts only after this record's final GitHub publication is verified. Evidence paths are relative to `Artifacts/mcp-e2e-20261010/`.
 
 ## Scope and findings ledger
 
