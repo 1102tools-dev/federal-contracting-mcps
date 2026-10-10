@@ -1,6 +1,6 @@
 # gsa-calc-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 414](https://img.shields.io/badge/regression%20tests-414-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 433](https://img.shields.io/badge/regression%20tests-433-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/gsa-calc-mcp -->
 

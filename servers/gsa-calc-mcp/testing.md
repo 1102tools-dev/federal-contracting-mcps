@@ -146,14 +146,23 @@ Rounds 1-5 asserted response shape on live calls: `isinstance(data, dict)`. A fi
 
 ## Test Coverage
 
-The repo ships 343 regression tests across the test folder (240 offline, 103 live-gated). All pass on every release cycle.
+The current suite collects 433 regression tests: 312 offline and 121 live-gated. The offline suite passed with all 121 optional live tests skipped; selected live checks are recorded below. Collection counts do not imply every optional live test was run.
 
 | File | Purpose | Test count |
 |---|---|---|
-| `tests/test_validation.py` | Main regression suite covering every round-1 through round-4 finding, plus live-gated integration tests | 117 |
-| `tests/test_round_5.py` | Hypothesis property suite plus the round-5 live matrix | 202 |
-| `tests/test_round_6.py` | Round-6 regressions: worksite rejection, experience_range wire format, dead-SIN guards, differential live tests | 24 |
-| `tests/stress_test.py` | Retro Round 1 live-probe scenarios (historical archive, not collected by pytest; predates the 1.0.1 worksite rejection) | N/A (scenario script) |
+| `tests/test_validation.py` | Foundational validation and round-1 through round-4 regressions | 117 |
+| `tests/test_round_5.py` | Hypothesis property suite and round-5 live matrix | 202 |
+| `tests/test_round_6.py` | Worksite rejection, experience range, dead-SIN and paging regressions | 33 |
+| `tests/test_audit_r7.py` | Round-7 live anchors | 4 |
+| `tests/test_content_fixes_2026_10.py` | Content regressions and direct GSA comparisons | 30 |
+| `tests/test_e2e_audit_2026_10.py` | Cross-field populations, suggestion totals and undefined statistics | 19 |
+| `tests/test_http.py` | HTTP response and upstream error handling | 2 |
+| `tests/test_throughput.py` | Request pacing, concurrency and budgets | 12 |
+| `tests/test_response_cache_hosted.py` | Hosted cache safeguards | 5 |
+| `tests/test_hosted_budget_contract.py` | Hosted budget contract | 9 |
+| `tests/stress_test.py` | Historical live scenarios, not collected by pytest | N/A |
+
+Python 3.12 collection was repeated on October 10, 2026; the per-file counts match the [test suite map](tests/README.md). Historical release counts below remain the counts recorded for those releases.
 
 Regression tests invoke tools through the FastMCP registry (`mcp.call_tool`) rather than awaiting decorated coroutines directly. This catches bugs in the tool pipeline that raw-coroutine tests miss. An autouse fixture resets `srv._client` between tests so the shared httpx client does not leak across event loops.
 
