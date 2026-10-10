@@ -18,6 +18,8 @@ The fourth content round found **zero new P0, P1, P2 or P3 defects** in 66 new p
 
 The fifth content round found **zero new P0–P3 defects** in 65 new practical questions across all eight tools. Actual fresh official PyPI 1.1.4 CLI and public answers matched for all 65 questions; 450 wage/benchmark objects and 33 fresh official API cells/footnotes reconciled. New veterinary, utility, manufacturing, trades, science and language-service tasks include local benchmarks and four caller-composed staffing budgets. Flight attendant annual-only and dancer hourly-only alternatives remain explicit. Both full dependency lanes measured 297 passed / one optional skip / 298 collected; direct BLS HTML/flat-footnote 403s are retained source limitations. See the Round 5 record in [testing.md](testing.md).
 
+The sixth content round found **zero new P0–P3 defects** in 71 new questions across all eight tools. Fresh official PyPI 1.1.4 CLI and public answers match; 503 wage/benchmark objects and 40 selected fresh BLS API cells/footnotes reconcile. New trades, aircraft maintenance, metalworking, science technicians, childcare and performing-arts tasks include local benchmarks and four caller-composed budgets. One initial BLS API 503 was recovered by a bounded retry; direct HTML/flat-footnote 403s remain explicit. Both full Python lanes measured 297 passed / one optional skip / 298 collected. See the Round 6 record in [testing.md](testing.md).
+
 ## Local or hosted
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
