@@ -1,6 +1,6 @@
 # Test suite map
 
-448 collected tests (330 offline, 118 live-gated). Files are named by the audit round or fix-wave that
+449 collected tests (331 offline, 118 live-gated). Files are named by the audit round or fix-wave that
 produced them and are append-only history: each maps to a section of
 [../testing.md](../testing.md), which narrates what every round found and
 fixed. That traceability is deliberate; do not consolidate or rename rounds.
@@ -18,7 +18,7 @@ fixed. That traceability is deliberate; do not consolidate or rename rounds.
 | `test_sdk_error_recovery.py` | 1.1.2 delivery correction: real stdio errors retain actionable guidance, then corrected questions complete | 1 | offline |
 | `test_http.py` | HTTP transport checks | 2 | offline |
 | `test_response_cache_hosted.py` | Hosted response-cache checks | 9 | offline |
-| `test_throughput.py` | Throughput policy checks | 9 | offline |
+| `test_throughput.py` | Durable reservation policy, delayed persistence and concurrency checks | 10 | offline |
 | `test_xml_cache.py` | XML cache checks | 9 | offline |
 
 Counts above are actual collected pytest cases under Python 3.12, including parameterized cases. The 1.1.2 offline lane passed 323 with 118 skipped under both frozen MCP 2.0.0 and fresh installed-wheel MCP 2.3.0. The preserved 1.1.1 full live run passed all 118 live-gated tests; the new stdio recovery test uses mocked upstream data and makes no government API call.
@@ -32,3 +32,5 @@ runs via `pytest -m live_smoke`.
 
 - `scenarios/` holds standalone scenario scripts (not pytest; retained for
   reproducibility of early rounds).
+
+The 1.1.4 reservation-contract correction collected 449 tests: both frozen SDK 2.0.0 and fresh candidate-wheel SDK 2.3.0 passed 331 offline cases with 118 live skips. Its new deterministic delay regression preserves permit accounting and the rolling budget; real concurrency and process-crash checks remain. Published 1.1.4 verification is pending the release gate.
