@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.5
+
+- Preserve anticipated input-validation guidance with MCP SDK 2.3 while retaining ValueError helper compatibility and masking unexpected faults. Ordinary state/month corrections now expose the required hint through the actual console.
+- Add focused no-provider, bundled-recovery and unknown-fault controls; both SDK lanes pass 321 tests with 267 optional skips (588 collected). Published-package and live-service acceptance remain pending.
+
 ## 1.2.4
 
 - Corrected the registry environment-variable description: an API key is needed for city-only/API requests or unbundled years, while bundled city-plus-county workflows are keyless. The variable remains optional; existing tool schemas and MCP identity are unchanged.

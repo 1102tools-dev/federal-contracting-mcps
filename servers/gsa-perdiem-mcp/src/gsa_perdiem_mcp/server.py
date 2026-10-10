@@ -39,6 +39,11 @@ from . import __version__, snapshot
 from ._pacing import FederalApiPacer
 from .constants import BASE_URL, DEFAULT_TIMEOUT, USER_AGENT
 
+
+class UserInputError(ValueError, ToolError):
+    """An anticipated caller validation error, also compatible with helper callers."""
+
+
 mcp = MCPServer(
     "gsa-perdiem",
     version=__version__,
@@ -102,9 +107,9 @@ def _safe_number(value: Any, default: float = 0.0) -> float:
 
 def _clamp(value: int, *, field: str, lo: int, hi: int) -> int:
     if value < lo:
-        raise ValueError(f"{field} must be >= {lo}. Got {value}.")
+        raise UserInputError(f"{field} must be >= {lo}. Got {value}.")
     if value > hi:
-        raise ValueError(f"{field} exceeds maximum of {hi}. Got {value}.")
+        raise UserInputError(f"{field} exceeds maximum of {hi}. Got {value}.")
     return value
 
 
@@ -124,16 +129,16 @@ def _validate_fiscal_year(value: Any, *, field: str = "fiscal_year") -> int:
     if value is None:
         return _current_fiscal_year()
     if isinstance(value, bool):
-        raise ValueError(f"{field} must be an int year like 2026, not bool.")
+        raise UserInputError(f"{field} must be an int year like 2026, not bool.")
     try:
         fy = int(value)
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"{field} must be an int year like 2026. Got {value!r}.") from exc
+        raise UserInputError(f"{field} must be an int year like 2026. Got {value!r}.") from exc
     current = _current_fiscal_year()
     lo = 2020
     hi = current + 1
     if fy < lo or fy > hi:
-        raise ValueError(
+        raise UserInputError(
             f"{field}={fy} is out of range. GSA Per Diem data covers "
             f"FY{lo} through FY{hi} (current FY is {current})."
         )
@@ -170,16 +175,16 @@ _OCONUS_NOTE = (
 
 def _validate_state(value: Any, *, field: str = "state") -> str:
     if value is None:
-        raise ValueError(f"{field} is required.")
+        raise UserInputError(f"{field} is required.")
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a 2-letter USPS code. Got {type(value).__name__}.")
+        raise UserInputError(f"{field} must be a 2-letter USPS code. Got {type(value).__name__}.")
     s = value.strip().upper()
     if len(s) != 2 or not s.isalpha():
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be a 2-letter USPS code (e.g., 'DC', 'VA'). Got {value!r}."
         )
     if s not in _USPS_STATES:
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} is not a valid USPS state/territory code. "
             f"Common codes: AL, AK, AZ, AR, CA, CO, CT, DC, ..."
         )
@@ -191,13 +196,13 @@ _ZIP5_RE = re.compile(r"^[0-9]{5}(?:-[0-9]{4})?$")
 
 def _validate_zip(value: Any, *, field: str = "zip_code") -> str:
     if value is None:
-        raise ValueError(f"{field} is required.")
+        raise UserInputError(f"{field} is required.")
     if not isinstance(value, str):
         value = str(value)
     s = value.strip()
     # Validate the entire ZIP+4 before taking its five-digit prefix.
     if not _ZIP5_RE.fullmatch(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be a 5-digit US ZIP (ZIP+4 also accepted, e.g., '02101' "
             f"or '02101-1234'). Got {value!r}."
         )
@@ -209,12 +214,12 @@ _CITY_INVALID_CHARS_RE = re.compile(r"[\x00-\x1f\\]")
 
 def _validate_city(value: Any, *, field: str = "city") -> str:
     if value is None:
-        raise ValueError(f"{field} is required.")
+        raise UserInputError(f"{field} is required.")
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a string. Got {type(value).__name__}.")
+        raise UserInputError(f"{field} must be a string. Got {type(value).__name__}.")
     # Check raw value for control chars before stripping (strip() eats \n, \r, \t)
     if _CITY_INVALID_CHARS_RE.search(value):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} contains control characters or backslashes. "
             f"Use plain city names like 'Boston' or 'Saint Louis'."
         )
@@ -223,14 +228,14 @@ def _validate_city(value: Any, *, field: str = "city") -> str:
     value = value.replace("/", " ")
     s = re.sub(r"\s+", " ", value).strip()
     if not s:
-        raise ValueError(f"{field} cannot be empty or whitespace.")
+        raise UserInputError(f"{field} cannot be empty or whitespace.")
     if len(s) > 100:
-        raise ValueError(f"{field} exceeds 100 chars. Got {len(s)}.")
+        raise UserInputError(f"{field} exceeds 100 chars. Got {len(s)}.")
     # Reject path-traversal sequences. Slashes were replaced with spaces
     # above and the URL encoder never emits raw slashes, but '..' alone is
     # still worth blocking.
     if ".." in s:
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} contains '..' which is not a valid city name."
         )
     return s
@@ -248,7 +253,7 @@ def _validate_travel_month(value: Any, *, field: str = "travel_month") -> str | 
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a month name like 'Jan' or 'January'.")
+        raise UserInputError(f"{field} must be a month name like 'Jan' or 'January'.")
     s = value.strip()
     if not s:
         return None
@@ -257,7 +262,7 @@ def _validate_travel_month(value: Any, *, field: str = "travel_month") -> str | 
     # word whose first three letters spelled a month ("Mayhem" -> May).
     month = _MONTH_LOOKUP.get(s.lower())
     if month is None:
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} must be an exact month: 'Jan'-'Dec' or "
             f"'January'-'December' (case-insensitive)."
         )
@@ -1079,12 +1084,12 @@ def _validate_county(value: Any, *, field: str = "county") -> str | None:
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a string county name like 'Fairfax'.")
+        raise UserInputError(f"{field} must be a string county name like 'Fairfax'.")
     s = re.sub(r"\s+", " ", value).strip()
     if not s:
         return None
     if len(s) > 80 or _CITY_INVALID_CHARS_RE.search(s):
-        raise ValueError(f"{field}={value!r} is not a valid county name.")
+        raise UserInputError(f"{field}={value!r} is not a valid county name.")
     return s
 
 
@@ -1531,9 +1536,9 @@ async def compare_locations(
     Useful for travel IGCE development when comparing destination costs.
     """
     if not isinstance(locations, list) or not locations:
-        raise ValueError("locations must be a non-empty list of {city, state} dicts.")
+        raise UserInputError("locations must be a non-empty list of {city, state} dicts.")
     if len(locations) > _MAX_COMPARE_LOCATIONS:
-        raise ValueError(
+        raise UserInputError(
             f"compare_locations accepts up to {_MAX_COMPARE_LOCATIONS} locations. "
             f"Got {len(locations)}. Batch your comparisons."
         )
@@ -1546,7 +1551,7 @@ async def compare_locations(
     prepared: list[tuple[str, str, str | None]] = []
     for i, loc in enumerate(locations):
         if not isinstance(loc, dict):
-            raise ValueError(
+            raise UserInputError(
                 f"locations[{i}] must be a dict with 'city' and 'state'. Got {type(loc).__name__}."
             )
         try:

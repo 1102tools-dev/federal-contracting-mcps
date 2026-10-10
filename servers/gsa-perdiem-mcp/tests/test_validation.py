@@ -11,6 +11,9 @@ import json
 import os
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp.server.mcpserver import exceptions as mcp_errors
+
+_UNEXPECTED_TOOL_ERROR = getattr(mcp_errors, "UnexpectedToolError", ())
 
 import gsa_perdiem_mcp.server as srv
 from gsa_perdiem_mcp.server import mcp
@@ -36,7 +39,8 @@ async def _call(name: str, **kwargs):
 async def _call_expect_error(name: str, match: str, **kwargs):
     try:
         await mcp.call_tool(name, kwargs)
-    except Exception as e:
+    except ToolError as e:
+        assert not isinstance(e, _UNEXPECTED_TOOL_ERROR), f"unexpected crash: {e}"
         assert match.lower() in str(e).lower(), f"expected {match!r}, got: {e}"
         return
     raise AssertionError(f"expected error matching {match!r}, call succeeded")
@@ -1362,9 +1366,10 @@ def test_estimate_travel_cost_200_night_trip():
 
 
 def test_estimate_travel_cost_clamps_num_nights_366():
-    with pytest.raises(Exception, match="exceeds maximum"):
+    with pytest.raises(ToolError, match="exceeds maximum") as exc:
         asyncio.run(_call("estimate_travel_cost",
                           city="Boston", state="MA", num_nights=366))
+    assert not isinstance(exc.value, _UNEXPECTED_TOOL_ERROR)
 
 
 def test_compare_locations_preserves_fiscal_year_in_output():
