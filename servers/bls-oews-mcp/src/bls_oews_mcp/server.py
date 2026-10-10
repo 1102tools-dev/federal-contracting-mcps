@@ -747,6 +747,8 @@ async def compare_occupations(
 
     datatype = _validate_datatype(datatype)
     year = _validate_year(year)
+    if scope == "national" and datatype in RATIO_DATATYPES:
+        raise ValueError("Datatypes 16 and 17 are available only at state/metro scope; BLS does not publish national ratios.")
 
     prefix_map = {"national": "OEUN", "state": "OEUS", "metro": "OEUM"}
     prefix = prefix_map[scope]
@@ -947,7 +949,9 @@ async def igce_wage_benchmark(
             # without fabricating a 2080-hour annual salary.
             published = wages.get(hourly_label, {}).get("numeric")
             if published is not None:
+                benchmarks[label].pop("suppressed")
                 benchmarks[label].update({
+                    "annual_suppressed": True,
                     "hourly_base": f"${published:.2f}",
                     "hourly_burdened_low": f"${round(published * burden_low, 2):.2f}",
                     "hourly_burdened_high": f"${round(published * burden_high, 2):.2f}",

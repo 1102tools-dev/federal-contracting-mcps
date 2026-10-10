@@ -34,7 +34,7 @@ national ratio requests return an actionable state/metro validation error.
 Measured checks: **293 offline passed, 1 live test skipped** in the ordinary run;
 the separately enabled **live BLS API parity test passed** for its 25 series.
 The Worker suite passed **29 tests** and typechecking passed. The full-release
-Python/Worker harness checked **221 cases: 210 identical, 11 pre-existing
+Python/Worker harness checked **222 cases: 211 identical, 11 pre-existing
 documented transport/format differences, 0 unexpected differences**. All eight
 reviewed tool definitions remain unchanged. Version consistency and wheel/sdist
 build succeeded for 1.1.2. New regressions failed against the original hourly-only

@@ -601,6 +601,9 @@ export async function compareOccupations(db: Database, args: Args) {
   const datatype = validateDatatype(a.datatype);
   const year: Year = {value: a.year};
   await validateYear(year, db);
+  if (scope === "national" && (datatype === "16" || datatype === "17")) {
+    throw new ToolError("Datatypes 16 and 17 are available only at state/metro scope; BLS does not publish national ratios.");
+  }
   let area = "0000000";
   if (scope !== "national") {
     if (blank(area_code)) throw new ToolError(`area_code required for scope='${scope}'.`);
@@ -684,7 +687,9 @@ export async function igceWageBenchmark(db: Database, args: Args) {
       const published = numeric(hourlyLabel);
       if (published instanceof PyFloat) {
         const hourly = published.value;
+        delete benchmark.suppressed;
         Object.assign(benchmark, {
+          annual_suppressed: true,
           hourly_base: `$${fixed(hourly, 2)}`,
           hourly_burdened_low: `$${fixed(round(hourly * low.value, 2), 2)}`,
           hourly_burdened_high: `$${fixed(round(hourly * high.value, 2), 2)}`,

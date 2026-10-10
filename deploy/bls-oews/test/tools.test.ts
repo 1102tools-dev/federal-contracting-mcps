@@ -93,6 +93,7 @@ test("hourly-only IGCE preserves BLS wages without inventing annual salary", asy
 
 test("national ratios report unsupported measure rather than missing occupation", async () => {
   assert.match(await errorText("get_wage_data", {occ_code: "151252", datatypes: ["16", "17"]}), /state\/metro/);
+  assert.match(await errorText("compare_occupations", {occ_codes: ["151252", "151212"], datatype: "17"}), /state\/metro/);
 });
 const post = (body: unknown, headers: Record<string, string> = {}) =>
   new Request("https://bls-oews.1102tools.com/mcp", {method: "POST", headers: {"Content-Type": "application/json", Accept: "application/json, text/event-stream", ...headers}, body: typeof body === "string" ? body : JSON.stringify(body)});
