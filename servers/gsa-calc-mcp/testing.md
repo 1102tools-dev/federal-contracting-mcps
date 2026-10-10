@@ -253,8 +253,11 @@ contract passed. Live published 1.0.13 verification is a release-stage check.
 
 ## 1.0.14 discovery-description correction
 
-User authorization superseded the earlier requirement to leave the incorrect
-reviewed description frozen. Both `igce_benchmark` and
+OpenAI's current [published MCP metadata rules](https://developers.openai.com/plugins/deploy/app-review#how-published-mcp-metadata-versions-work)
+use continuous review for changed tool definitions: after deployment, updated
+descriptions become available when automated checks pass, without a new plugin
+version or manual directory republishing. The earlier frozen-description
+assumption was outdated. Both `igce_benchmark` and
 `price_reasonableness_check` now describe the cross-field GSA keyword population
 and conservative no-verdict statuses at discovery time. The existing Worker
 proxies tools/list from this Python server; its reviewed tools-contract baseline
