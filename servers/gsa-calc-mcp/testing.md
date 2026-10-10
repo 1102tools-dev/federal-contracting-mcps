@@ -14,9 +14,9 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 435 (314 offline, 121 live-gated) |
-| Tests per tool | 54.4 |
-| Audit rounds completed | 9 |
+| Total regression tests | 438 (317 offline, 121 live-gated) |
+| Tests per tool | 54.8 |
+| Audit rounds completed | 10 |
 | P1 crashes (shape-shift) found and fixed | 19 |
 | P1 silent-wrong-data bugs found and fixed | 33 (30 in 0.2.x, 3 in round 6) |
 | P2 validation gaps found and fixed | 20 (19 in 0.2.x, 1 in round 6) |
@@ -408,3 +408,73 @@ suggestions at 100 even when a larger page size is requested. This is qualified
 source equivalence, not a claim of identical responses. No further product
 finding was observed in the final verification. Detailed evidence is retained
 under `Artifacts/mcp-e2e-20261010/round3/gsa-calc/final-published`.
+
+## Round 4: specific-grade comparison and new market workflows (1.0.16 candidate)
+
+A fresh uncached official by-name PyPI 1.0.15 installation using Python 3.12
+and MCP 2.3.0 completed **152 new ordinary/power-user cases across all eight
+tools**, each through the registered installed-package pipeline and a separate
+actual public HTTPS call. These are not 152 stdio calls. The questions cover
+nursing, interpreting, finance, environmental services, logistics, systems
+administration, DevOps, technical writing, statistics and user experience;
+source-discovered exact and qualified titles, pooled benchmarks and proposals;
+six vendor families with legal-name recovery, current/next-year cards and
+continuations; eight source-discovered SINs, five contracts, and education,
+clearance and business-size segments. Ten title-specific ceiling-budget
+scenarios use 2.5 FTE at 1,920 hours and retain ceiling-versus-paid-price limits.
+An empty Nurse I qualification leads to source-supported experience recovery;
+an unmatched SAIC acronym recovers through its actual legal name.
+
+The baseline corpus retains 170 parsed GSA response captures. Authoritative
+`hits` and `aggregations` fields are checked directly; these tool-tracking
+captures can include application output augmentation and are not claimed raw
+transport bytes. Separate direct GSA captures support the grade regressions.
+3,746 source/data comparison checks passed. Another 496 semantic/workflow
+checks passed 495 and confirmed one product defect; this failed semantic check
+is not represented as a pass. Seventeen actual installed console stdio calls
+are separate (16 covering all eight tools plus the specific-grade quote).
+
+**One new P2, CALC-R4-01:** the discovered exact Registered Nurse I title with
+BA/one-plus-year eligibility has three primary rates, median $50.7295/hour.
+A $60/hour quote should retain that small-sample limitation. Instead, the price
+checker pooled 24 rates across Nurse I/II/III/IV and specialties, median
+$75.69/hour, marked the title-only phrase population verified and called the
+quote “below P25 (low).” Another ordinary BA/MA/three-plus-year request has
+zero exact Nurse I rates, while 15 pooled senior-grade rates were described as
+comparable. Source substring matching is valid; the defect is the application's
+specific-grade comparability/verdict overclaim.
+
+Candidate **1.0.16** preserves the source queries and pooled statistics,
+exposes exact-title verification/counts and non-exact-title examples, and
+returns `MIXED_LABOR_TITLES` without a categorical verdict when grades or
+specialties differ. Recovery uses `exact_search` with supported eligibility
+filters and retains its SIN/clearance and paging limitations. Exact populations
+still need at least 20 rates for a comparison; distinct grades are not combined
+just to meet that minimum. IGCE/price-check descriptions explain this behavior;
+all eight identities, schemas and annotations are unchanged.
+
+Two source-derived ordinary regression cases failed before and passed after;
+the exact three-rate small-sample control passes in both. Both frozen MCP 2.0
+and fresh installed candidate-wheel MCP 2.3 suites pass **317**, skip **121
+optional live**, and collect **438**. An existing descriptive-comparison control
+now uses its fixture's exact title to verify that supported analysis remains.
+Actual installed candidate stdio withholds both mixed-grade and absent-grade
+verdicts and returns three rates for the corrected exact-title follow-up.
+A complete fresh-source registered candidate replay of all **152** questions
+passes **1,742** source/behavior checks; it is not a public candidate deployment
+or a PyPI 1.0.16 installation.
+
+The baseline/public comparison records 231 approximate percentile scalar
+variations (maximum $3.0117/hour) and one distributed suggestion-tail variation.
+Two fresh repeats and an exact-title request confirm the Systems Administrator
+tail category: source four rates versus public approximate count three, within
+the published five-record error bound; shared counts differ by at most two.
+This is qualified source equivalence, not identical responses. Suggestion/title
+caps, unavailable worksite-filtered statistics, exact-search SIN/clearance
+filter gaps, thin populations, vendor legal names, and single-field sort ties
+remain explicit source/capability limitations.
+
+Evidence: `Artifacts/mcp-e2e-20261010/round4/gsa-calc/`. P0/P1/P3 counts are zero;
+one P2 is fixed in the candidate. Six separate Worker tests, TypeScript checks, the eight-tool contract check,
+package version consistency and a Wrangler dry run also pass. Publication and
+final public/official-PyPI 1.0.16 acceptance remain coordinator-owned and pending.
