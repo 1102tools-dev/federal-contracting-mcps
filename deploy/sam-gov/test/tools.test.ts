@@ -311,16 +311,23 @@ test("get_data_status reports freshness", async () => {
 });
 
 test("prior-year market research remains available without claiming a complete archive", async () => {
-  // The Oct 10 official file includes active notices posted in FY2024.
+  // Actual active Award Notice from the Oct 10 official public CSV:
+  // 6c7ac11adf6844e0bfc05a3283067fab, posted FY2024, archived in 2030.
   const older = database(true, [notice(9, {
-    title: "FY2024 active award notice", notice_type: "Award Notice",
-    posted_at: "2024-09-26 10:00:00", posted_date: "2024-09-26",
-    response_deadline: null, response_deadline_utc: null, archive_date: "2029-05-01",
+    notice_id: "6c7ac11adf6844e0bfc05a3283067fab",
+    title: "F--EA Environmental Services and Operations (ESO): P0",
+    solicitation_number: "68HE09R240030", notice_type: "Award Notice",
+    department: "ENVIRONMENTAL PROTECTION AGENCY", sub_tier: "ENVIRONMENTAL PROTECTION AGENCY",
+    office: "REGION 9 CONTRACTING OFFICE", naics_code: "562910", psc_code: "F108",
+    posted_at: "2024-09-30 23:55:26", posted_date: "2024-09-30",
+    response_deadline: null, response_deadline_utc: null, archive_date: "2030-10-27",
+    award_number: "68HE0118D0004", award_date: "2024-09-30", award_amount: 302219.48,
   })]);
   const research = await searchOpportunities(older, {
     notice_types: ["Award Notice"], posted_from: "2023-10-01", posted_to: "2024-09-30",
   }, NOW);
   assert.equal(research.total_matches, 1);
+  assert.equal(research.results[0].notice_id, "6c7ac11adf6844e0bfc05a3283067fab");
   const current = await getDataStatus(older, {}, NOW) as any;
   assert.match(current.coverage, /including notices posted in earlier fiscal years that remain active/);
   assert.match(current.coverage, /not a complete historical archive/);
