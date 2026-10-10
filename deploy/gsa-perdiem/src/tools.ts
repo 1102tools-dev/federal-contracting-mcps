@@ -797,7 +797,7 @@ async function getMieBreakdown(ctx: Context, args: Dict): Promise<Dict> {
   const year = validateFiscalYear(ctx, args.fiscal_year, "fiscal_year");
   const snap = await ctx.snapshot.year(year);
   if (snap !== null) {
-    return {
+    const out: Dict = {
       fiscal_year: year,
       tiers: snap.mie_tiers.map(t => ({
         total: t.total,
@@ -809,6 +809,13 @@ async function getMieBreakdown(ctx: Context, args: Dict): Promise<Dict> {
       })),
       source: snap.source,
     };
+    const covers = typeof snap.source.mie_file_covers === "string" ? snap.source.mie_file_covers : "";
+    const first = /^FY(\d{4})\b/.exec(covers);
+    if (first && Number(first[1]) !== year) {
+      out.mie_note = `GSA names its M&IE breakdown file for FY${first[1]}, the first fiscal ` +
+        `year it applies to; GSA lists it for ${covers}, which includes FY${year}.`;
+    }
+    return out;
   }
 
   const path = `conus/mie/${year}`;

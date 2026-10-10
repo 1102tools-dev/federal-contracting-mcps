@@ -1275,7 +1275,7 @@ async def get_mie_breakdown(fiscal_year: int | None = None) -> dict[str, Any]:
     year = _validate_fiscal_year(fiscal_year, field="fiscal_year")
     snap = snapshot.load_year(year)
     if snap is not None:
-        return {
+        out = {
             "fiscal_year": year,
             "tiers": [
                 {
@@ -1290,6 +1290,14 @@ async def get_mie_breakdown(fiscal_year: int | None = None) -> dict[str, Any]:
             ],
             "source": snap.source,
         }
+        covers = snap.source.get("mie_file_covers") or ""
+        first = re.match(r"FY(\d{4})\b", covers)
+        if first and int(first.group(1)) != year:
+            out["mie_note"] = (
+                f"GSA names its M&IE breakdown file for FY{first.group(1)}, the first fiscal "
+                f"year it applies to; GSA lists it for {covers}, which includes FY{year}."
+            )
+        return out
 
     path = f"conus/mie/{year}"
     data = await _get(path)

@@ -363,3 +363,11 @@ test("trip estimates say every night uses one month, flag long stays, and cite t
   assert.match(description, /301-11\.20\b/);
   assert.doesNotMatch(description, /301-11\.101/);
 });
+
+test("the M&IE table explains why its file is named FY 2025 (P3-5)", async () => {
+  const {call} = setup();
+  const fy2027 = (await call("get_mie_breakdown", {fiscal_year: 2027})).structuredContent;
+  assert.equal(fy2027.source.mie_file_covers, "FY2025-present");
+  assert.match(fy2027.mie_note, /FY2025.*FY2027/);
+  assert.equal((await call("get_mie_breakdown", {fiscal_year: 2025})).structuredContent.mie_note, undefined);
+});

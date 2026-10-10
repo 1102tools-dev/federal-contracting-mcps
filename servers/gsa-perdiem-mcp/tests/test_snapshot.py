@@ -134,6 +134,15 @@ def test_mie_breakdown_from_snapshot():
         16, 19, 28, 5, 51.0)
 
 
+def test_mie_breakdown_explains_the_fy2025_file_name():
+    # P3-5 (content test 2026-10-10): GSA's "FY 2025 MIE Breakdown.docx" is
+    # the current table; GSA's API conus/mie/2027 returns the same tiers.
+    r = _run(srv.get_mie_breakdown(2027))
+    assert r["source"]["mie_file_covers"] == "FY2025-present"
+    assert "FY2025" in r["mie_note"] and "FY2027" in r["mie_note"]
+    assert "mie_note" not in _run(srv.get_mie_breakdown(2025))
+
+
 @pytest.mark.parametrize("state,city,county,expected", [
     ("AZ", "Sedona", "Yavapai", "Sedona"),
     ("AZ", "Cottonwood", "Yavapai", "Grand Canyon / Flagstaff"),
