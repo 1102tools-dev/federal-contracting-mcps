@@ -17,6 +17,41 @@ This Model Context Protocol server exposes BLS Occupational Employment and Wage 
 | Content correction version | 1.1.4 (bundled May 2025 OEWS release; release gates recorded below) |
 | PyPI status | Published as `bls-oews-mcp`, auto-publishes via Trusted Publisher on tag push |
 
+## 1.1.4 realistic content audit, round 3 (2026-10-10)
+
+No new P0, P1, P2 or P3 findings; no package, code or tool metadata change.
+58 new ordinary and power-user questions covered all eight tools through the
+actual published 1.1.4 CLI (MCP 2.3.0) and public service at release
+`5ba4a4bac4ecd098da1c48dcd09594d9e38fcf1f`. Each surface completed a separate
+58-call corpus; their content answers were identical. This is new audit coverage,
+not merely replay of round 2's 46 questions.
+
+The corpus includes nursing, finance, logistics, law, electrical trades and
+engineering, chemistry, operations management, purchasing, security, libraries,
+recreation and coaching. It covers diverse state/metro comparisons, rural Alaska,
+Puerto Rico, national industry filters, wage distributions, employment/RSE,
+location quotients and coherent IGCE/source followups. Coaching's annual-only
+salary retains the warning about an illustrative 2080-hour conversion; surgeon
+percentile bounds retain official publication footnotes.
+
+431 measure/benchmark objects matched the bundled May 2025 source, including
+raw values, wage labels, footnotes and caller-selected burden arithmetic. Fresh
+primary-source requests independently confirmed 28 current BLS API cells and their
+original footnotes. The flat-file footnote URL returned HTTP 403; that check is
+unavailable, not passed. Two draft SOC selection mistakes were corrected from the
+source occupation table, retained as harness corrections and excluded from product
+findings and final corpus counts.
+
+Separate regression checks: **297 passed, 1 optional live skipped, 298 collected**
+in the frozen Python lane; native Worker **31 passed**; all eight reviewed tool
+definitions unchanged; typecheck passed; Python/Worker parity **227 cases,
+216 identical, 11 documented differences, zero unexpected differences**. These
+regression counts are separate from the two 58-call content replays and 28 fresh
+API source checks. Evidence: Workspace's
+`Artifacts/mcp-e2e-20261010/round3/bls-oews/`, including `checkpoint.json`,
+`per-question-source-review.json`, `actual-pypi-cli.json`, `public.json`,
+`official-current-api.json` and `official-coaching-followups.json`.
+
 ## 1.1.4 realistic content audit, round 2 (2026-10-10)
 
 46 ordinary and power-user questions/followups covered all eight tools through
