@@ -2,14 +2,14 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across eighteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit; the sixteenth was the new Round 4 content audit; the seventeenth was the new Round 5 content audit; the eighteenth is the new Round 6 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current candidate 1.0.22 source collects 2,318 regression cases (1,939 offline and 379 live-gated). Its measured frozen Python 3.12 / MCP SDK 2.0.0 full lane passed 1,939 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records. Published 1.0.21 completed 143 new Round 5 questions plus ten excluded prior vehicle checks on actual installed CLI/public services, with all 55 tool definitions matched and the NAICS original/recovery/control workflow passed. Its separate fresh/latest SDK 2.3 full regression execution measured 1,081 passed, 855 failed and 379 skipped; these failures are retained exception/message expectations and are not credited as passing.
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across eighteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit; the sixteenth was the new Round 4 content audit; the seventeenth was the new Round 5 content audit; the eighteenth is the new Round 6 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current published 1.0.22 source collects 2,318 regression cases (1,939 offline and 379 live-gated). Its measured frozen Python 3.12 / MCP SDK 2.0.0 full lane passed 1,939 and skipped 379; collection does not execute those live tests. Actual published 1.0.22 console/public acceptance passed 153 questions across all 55 tools (138 new Round 6 questions and 15 retained reference/control reads). Its fresh official package with latest MCP 2.3.0 measured 1,084 passed, 855 failed and 379 skipped, with exactly the same 855 failed IDs as candidate22/published21. Actual published-package and hosted acceptance are separate records. Prior published 1.0.21 completed 143 new Round 5 questions plus ten excluded prior vehicle checks on actual installed CLI/public services, with all 55 tool definitions matched and the NAICS original/recovery/control workflow passed. Its separate fresh/latest SDK 2.3 full regression execution measured 1,081 passed, 855 failed and 379 skipped; these failures are retained exception/message expectations and are not credited as passing.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 55 |
-| Total regression tests | 2,318 candidate source cases (1,939 offline, 379 live-gated) |
+| Total regression tests | 2,318 source cases (1,939 offline, 379 live-gated) |
 | Collected cases per tool | 42.15 (not a coverage percentage) |
-| Server content audits completed | 18 source audits; Round 6 candidate publication pending |
+| Server content audits completed | 18 source/content audits; actual Round 6 published acceptance complete |
 | Initial integration issues (round 1) | 28+ |
 | P1 silent-wrong-data bugs found and fixed | 11 (rounds 1-9) |
 | P2 validation gaps found and fixed | 7 (rounds 1-9) |
@@ -18,7 +18,7 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Round 9 (v0.3) live audit findings | 1 (list_states JSON-array response shape) |
 | Round 10 (1.0.1) semantic audit findings | 22 (12 search family, 10 entity family), all fixed |
 | Historical release cycles through 1.0.3 | 15 (v0.1.2 through v1.0.3) |
-| Current source package | 1.0.22 candidate; last verified publication 1.0.21 |
+| Current source package | 1.0.22 published and verified |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -1093,3 +1093,60 @@ Evidence: `Artifacts/mcp-e2e-20261010/round6/usaspending`, including
 `date-overlap-before-published21.log`, candidate console/runtime proofs,
 `full-frozen22-py312.log`, `full-candidate22-latest.xml`,
 `candidate22-failure-inventory.json`, and `peer-sam-date-scope.json`.
+
+
+## Round 18 published 1.0.22 acceptance (2026-10-10)
+
+The preceding candidate section records the prepublication state. The scoped
+release workflow **38090651324** completed successfully at immutable source
+`d7154fd26f985cee55ff0db3617d4ce587844446`. After that receipt, an uncached,
+by-name official PyPI installation of `usaspending-gov-mcp==1.0.22` with Python
+3.12.13 and MCP 2.3.0 completed **153 actual console questions and 153 public
+questions**, all with substantive retained-source parity across **all 55 tools**.
+These are the 138 new entity/filter questions and 15 retained reference/control
+reads from the Round 6 audit. The nine original harness exclusions remain
+excluded. An initial index lookup that did not yet list 1.0.22 and a test-bootstrap
+missing Hypothesis dependency are preserved separately; neither is a content
+result and no candidate substituted for the official installation.
+
+Seven guided steps are included in the 153, not additional questions: the monthly
+list/count and dated transaction recovery, EPRI detail/complete action history,
+and two explicit latest-action controls. Actual published console and public
+responses expose the interval-overlap explanation and transaction recovery while
+preserving source rows, counts, amounts and the separate DoD note. Four fresh
+raw primary captures independently confirm **15 overlapping contracts versus
+15 August actions on nine distinct contracts**, and EPRI's complete **24 actions
+with none in August 2025**. All **165 retained campaign raw response hashes**
+were recomputed separately; they are not labeled newly fetched at publication.
+
+Actual console/public initialize reports version 1.0.22 at the released source.
+Their 55 tool definitions exactly match the reviewed candidate catalog: names,
+input schemas, annotations and identities remain unchanged; the four reviewed
+scope descriptions are exposed. Both official wheel and source archive hashes
+match PyPI metadata, and all eight runtime modules in each artifact and the
+installed package exactly match the released source bytes. The corrected README
+badge and both current test tables report the measured **2,318 collected cases**,
+resolving USA-R6-002 without a string-mirroring test.
+
+The fresh **actual published** latest-SDK full suite measured **1,084 passed /
+855 failed / 379 skipped / 2,318 collected**, with no collection errors. Every
+failed node ID matches the retained candidate22 and published21 inventories.
+This is not an all-tests-pass result. The separate frozen Python 3.12.13 / MCP
+2.0.0 source lane remains **1,939 passed / 379 skipped**; it is not substituted
+for the latest SDK execution. Source collection and content question counts
+remain separate.
+
+Round 6 USA findings remain **P0=0 / P1=0 / P2=1 / P3=1**, both corrected and
+verified on published 1.0.22; there are no partial or unresolved confirmed content
+findings. Scoped runtime, full content/source and prepublication documentation
+peers passed. Exact final publication-documentation peer/CI and coordinator
+closure remain pending; no Round 7 audit has started.
+
+Evidence: `Artifacts/mcp-e2e-20261010/round6/usaspending`, especially
+`final-verification-1.0.22.json`, `published22-campaign.json`,
+`published22-guided-workflow.json`, `published22-provenance.json`,
+`published22-targeted-primary.json` and its four raw files,
+`published22-official-artifact-payloads.json`,
+`published22-installed-eight-modules.json`, `published22-full-suite.xml`,
+`published22-failure-inventory.json` and `published22-bootstrap-notes.json`.
+Earlier candidate, baseline and failed bootstrap records remain intact.
