@@ -39,23 +39,42 @@ const COUNT = new Set(["01"]);
 const RATIO = new Set(["16", "17"]);
 const RSE = new Set(["02", "05"]);
 const IGCE_DATATYPES = ["04", "11", "13", "15"];
+// igce_wage_benchmark: each annual figure with BLS's matching hourly figure,
+// and the datatypes it requests for them.
+const IGCE_BENCHMARKS = [
+  ["Annual Mean Wage", "Hourly Mean Wage"], ["Annual 10th Percentile", "Hourly 10th Percentile"],
+  ["Annual 25th Percentile", "Hourly 25th Percentile"], ["Annual Median", "Hourly Median"],
+  ["Annual 75th Percentile", "Hourly 75th Percentile"], ["Annual 90th Percentile", "Hourly 90th Percentile"],
+];
+const IGCE_REQUEST = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"];
+// Relative standard error (percent) above which the IGCE flags a thin estimate.
+const RSE_WARNING = 10;
 // Maps keep insertion order; plain objects would sort numeric-looking keys.
+// BLS's own occupation titles and area names (oe.occupation, oe.area).
 const COMMON_SOC_CODES = new Map<string, Py>([
   ["111021", "General and Operations Managers"], ["113021", "Computer and Information Systems Managers"],
-  ["131082", "Project Management Specialists"], ["131111", "Management Analysts"],
+  ["131081", "Logisticians"], ["131082", "Project Management Specialists"], ["131111", "Management Analysts"],
+  ["131161", "Market Research Analysts and Marketing Specialists"],
   ["132011", "Accountants and Auditors"], ["151211", "Computer Systems Analysts"],
-  ["151212", "Information Security Analysts"], ["151232", "Computer User Support Specialists (Help Desk)"],
-  ["151241", "Computer Network Architects"], ["151242", "Database Administrators"],
+  ["151212", "Information Security Analysts"], ["151232", "Computer User Support Specialists"],
+  ["151241", "Computer Network Architects"], ["151242", "Database Administrators"], ["151243", "Database Architects"],
   ["151244", "Network and Computer Systems Administrators"], ["151251", "Computer Programmers"],
-  ["151252", "Software Developers"], ["151253", "Software Quality Assurance Analysts"],
-  ["151254", "Web Developers"], ["152051", "Data Scientists"], ["273042", "Technical Writers"],
-  ["436014", "Secretaries and Administrative Assistants"],
+  ["151252", "Software Developers"], ["151253", "Software Quality Assurance Analysts and Testers"],
+  ["151254", "Web Developers"], ["151299", "Computer Occupations, All Other"], ["152051", "Data Scientists"],
+  ["172141", "Mechanical Engineers"], ["273042", "Technical Writers"],
+  ["436014", "Secretaries and Administrative Assistants, Except Legal, Medical, and Executive"],
 ]);
 const COMMON_METROS = new Map<string, Py>([
-  ["0047900", "Washington DC"], ["0042660", "Seattle"], ["0012580", "Baltimore"], ["0037980", "Philadelphia"],
-  ["0035620", "New York City"], ["0031080", "Los Angeles"], ["0041860", "San Francisco"], ["0038060", "Phoenix"],
-  ["0016980", "Chicago"], ["0012420", "Austin"], ["0014460", "Boston"], ["0019100", "Dallas"],
-  ["0026420", "Houston"], ["0041740", "San Diego"], ["0019820", "Detroit"],
+  ["0047900", "Washington-Arlington-Alexandria, DC-VA-MD-WV"], ["0042660", "Seattle-Tacoma-Bellevue, WA"],
+  ["0012580", "Baltimore-Columbia-Towson, MD"], ["0037980", "Philadelphia-Camden-Wilmington, PA-NJ-DE-MD"],
+  ["0035620", "New York-Newark-Jersey City, NY-NJ"], ["0031080", "Los Angeles-Long Beach-Anaheim, CA"],
+  ["0041860", "San Francisco-Oakland-Fremont, CA"], ["0038060", "Phoenix-Mesa-Chandler, AZ"],
+  ["0016980", "Chicago-Naperville-Elgin, IL-IN"], ["0012420", "Austin-Round Rock-San Marcos, TX"],
+  ["0014460", "Boston-Cambridge-Newton, MA-NH"], ["0019100", "Dallas-Fort Worth-Arlington, TX"],
+  ["0026420", "Houston-Pasadena-The Woodlands, TX"], ["0041740", "San Diego-Chula Vista-Carlsbad, CA"],
+  ["0019820", "Detroit-Warren-Dearborn, MI"], ["0026620", "Huntsville, AL"],
+  ["0047260", "Virginia Beach-Chesapeake-Norfolk, VA-NC"], ["0041700", "San Antonio-New Braunfels, TX"],
+  ["0017820", "Colorado Springs, CO"], ["0019430", "Dayton-Kettering-Beavercreek, OH"],
 ]);
 const STATE_FIPS = [
   "01", "02", "04", "05", "06", "08", "09", "10", "11", "12", "13", "15", "16", "17", "18", "19", "20", "21", "22",
@@ -447,7 +466,8 @@ function parseValue(raw: string, dt: string, notes: string[]): Map<string, Py> {
   if (n === undefined) return out(`[Unparseable: ${stripped}]`, null, false);
   if (COUNT.has(dt)) return out(group(intStr(Math.trunc(n))), Math.trunc(n), false);
   if (RSE.has(dt)) return out(`${group(fixed(n, 1))}%`, new PyFloat(n), false);
-  if (RATIO.has(dt)) return out(group(fixed(n, 2)), new PyFloat(n), false);
+  // BLS publishes employment per 1,000 jobs (16) to 3 decimals, the location quotient (17) to 2.
+  if (RATIO.has(dt)) return out(group(fixed(n, dt === "16" ? 3 : 2)), new PyFloat(n), false);
   if (HOURLY.has(dt)) return out(`$${group(fixed(n, 2))}/hr`, new PyFloat(n), false);
   return out(`$${group(intStr(Math.trunc(n)))}`, Math.trunc(n), false);
 }
@@ -558,6 +578,7 @@ export async function compareMetros(db: Database, args: Args) {
     ["occ_code", occ],
     ["occ_title", title(data, occ)],
     ["datatype", DATATYPE_LABELS[datatype]],
+    ["data_year", data.rel.year],
     ["metros", metros],
     ["metro_names", new Map(ids.map(id => [labels.get(id)!, data.areas.get(id.slice(4, 11)) ?? null]))],
   ]);
@@ -607,6 +628,7 @@ export async function compareOccupations(db: Database, args: Args) {
     ["area_code", scope !== "national" ? area_code : null],
     ["area_name", data.areas.get(area) ?? null],
     ["datatype", DATATYPE_LABELS[datatype]],
+    ["data_year", data.rel.year],
     ["occupations", occupations],
   ]);
   if (!hasNumeric(occupations.values())) {
@@ -629,19 +651,23 @@ export async function igceWageBenchmark(db: Database, args: Args) {
   if (high.value > 10) {
     throw new ToolError(`burden_high=${floatRepr(high)} is implausibly large. Reasonable max ~4.0x for high-overhead (SCIF/deployed) work.`);
   }
-  // "03" rides along to detect annual-only occupations (BLS publishes no
-  // hourly mean for jobs off a 2080-hour year, such as pilots and teachers).
+  // Each annual benchmark rides with BLS's published hourly wage (BLS computes
+  // annual as hourly x 2080). "03" also detects annual-only occupations (BLS
+  // publishes no hourly mean for jobs off a 2080-hour year, such as pilots
+  // and teachers).
   const normalized = strip(str(a.occ_code).replaceAll("-", ""));
-  const {response: wage, data} = await wageData(db, {...a, industry: "000000", datatypes: ["03", "04", "11", "13", "15"]}, [normalized]);
+  const {response: wage, data} = await wageData(db, {...a, industry: "000000", datatypes: IGCE_REQUEST}, [normalized]);
   const wages = wage.get("wages") as Map<string, Map<string, Py>>;
   const numeric = (label: string) => wages.get(label)?.get("numeric") ?? null;
+  const formatted = (label: string) => wages.get(label)?.get("formatted") ?? "No data";
   const annualOnly = numeric("Hourly Mean Wage") === null && numeric("Annual Mean Wage") !== null;
   const benchmarks = new Map<string, Py>();
-  for (const label of ["Annual Mean Wage", "Annual 10th Percentile", "Annual Median", "Annual 90th Percentile"]) {
+  for (const [label, hourlyLabel] of IGCE_BENCHMARKS) {
     const item = wages.get(label) ?? new Map<string, Py>();
     const annual = item.get("numeric");
     if (typeof annual === "number" && annual !== 0 && !item.get("suppressed")) {
-      const hourly = round(annual / 2080, 2);
+      const published = numeric(hourlyLabel);
+      const hourly = published instanceof PyFloat ? published.value : round(annual / 2080, 2);
       benchmarks.set(label, {
         annual: `$${group(intStr(annual))}`,
         hourly_base: `$${fixed(hourly, 2)}`,
@@ -662,13 +688,38 @@ export async function igceWageBenchmark(db: Database, args: Args) {
     ["area_code", a.area_code],
     ["area_name", wage.get("area_name")!],
     ["data_year", wage.get("data_year") || data.rel.year],
+    ["wage_period", data.rel.name],
     ["burden_range", `${floatRepr(low)}x - ${floatRepr(high)}x`],
     ["benchmarks", benchmarks],
-    ["_note", "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates."],
+    ["_escalation_note", `${data.rel.name} wages; escalate to the period of performance. OEWS wages are estimates for ${data.rel.name}, so these base and burdened rates are ${data.rel.name} rates, not current ones.`],
+    // The sample behind the benchmark.
+    ["reliability", new Map<string, Py>([
+      ["employment", formatted("Employment")], ["employment_rse", formatted("Employment RSE (%)")], ["mean_wage_rse", formatted("Mean Wage RSE (%)")],
+    ])],
   ]);
+  const imprecise: string[] = [];
+  for (const [name, label] of [["employment RSE", "Employment RSE (%)"], ["mean wage RSE", "Mean Wage RSE (%)"]]) {
+    const rse = numeric(label);
+    if (rse instanceof PyFloat && rse.value > RSE_WARNING) imprecise.push(`${name} ${formatted(label)}`);
+  }
+  if (imprecise.length) {
+    response.set("_reliability_warning", `Thin estimate: ${imprecise.join(", ")} (relative standard error; the larger it is, the less precise the estimate). Employment here is ${formatted("Employment")}. Cross-check against the state or national figure before relying on it.`);
+  }
+  response.set("_note", "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates.");
+  // Employment and RSEs can be published for a cell with no wage estimate,
+  // so the IGCE judges "no data" by its wage benchmarks alone.
+  const hasBenchmark = [...benchmarks.values()].some(b => Object.hasOwn(b as object, "numeric_annual"));
   if (wage.get("no_data")) {
     response.set("no_data", true);
     response.set("no_data_reason", wage.get("no_data_reason")!);
+  } else if (!hasBenchmark) {
+    // Say what BLS did publish: employment, and the footnote on the wage
+    // cells (top-coded at a stated floor, or not released).
+    const published = numeric("Employment") !== null
+      ? `BLS publishes employment (${formatted("Employment")}) for this cell but no wage estimate`
+      : "BLS publishes no wage estimate for this cell";
+    response.set("no_data", true);
+    response.set("no_data_reason", `No wage values for occ_code=${wage.get("occ_code")} scope=${a.scope} area_code=${repr(a.area_code)} industry=000000. ${published}; Annual Mean Wage reads: ${formatted("Annual Mean Wage")} A wider area (scope='state' or scope='national') may publish one.`);
   }
   if (annualOnly) {
     response.set("annual_only", true);

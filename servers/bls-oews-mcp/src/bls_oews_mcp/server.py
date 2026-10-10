@@ -394,8 +394,11 @@ def _parse_value(value: Any, datatype: str, footnotes: list[str] | None = None) 
             n = float(stripped)
             return {"raw": raw, "formatted": f"{n:,.1f}%", "numeric": n, "suppressed": False}
         elif datatype in RATIO_DATATYPES:
+            # BLS publishes employment per 1,000 jobs (16) to 3 decimals and
+            # the location quotient (17) to 2.
             n = float(stripped)
-            return {"raw": raw, "formatted": f"{n:,.2f}", "numeric": n, "suppressed": False}
+            places = 3 if datatype == "16" else 2
+            return {"raw": raw, "formatted": f"{n:,.{places}f}", "numeric": n, "suppressed": False}
         elif datatype in HOURLY_DATATYPES:
             n = float(stripped)
             return {"raw": raw, "formatted": f"${n:,.2f}/hr", "numeric": n, "suppressed": False}
@@ -477,9 +480,12 @@ async def get_wage_data(
       '42660' for Seattle). See list_common_metros() for codes.
 
     industry: 6-digit industry code for national-only breakdowns.
-    '000000' = all industries (default). Common: '541000' (Professional Services),
-    '541500' (Computer Systems), '999100' (Federal Government). Industry
-    breakdowns only work with scope='national'.
+    '000000' = all industries (default). Common:
+    '541000' (Professional, Scientific, and Technical Services),
+    '541500' (Computer Systems Design and Related Services),
+    '999100' (Federal Executive Branch (OEWS Designation)).
+    Industry breakdowns only work with scope='national'. Federal IT staff mostly fall under 15-1299 (Computer Occupations, All
+    Other), so 999100 with 15-1252 rests on few employees.
 
     datatypes: list of 2-digit codes. Default uses IGCE set:
     - '04' = Annual Mean Wage
@@ -692,6 +698,7 @@ async def compare_metros(
         "occ_code": occ_code,
         "occ_title": _occupation_title(occ_code),
         "datatype": DATATYPE_LABELS.get(datatype, datatype),
+        "data_year": OEWS_CURRENT_YEAR,
         "metros": metros,
         "metro_names": {
             label: snapshot.area_name(sid[4:11]) for sid, label in metro_labels.items()
@@ -804,6 +811,7 @@ async def compare_occupations(
         "area_code": area_code if scope != "national" else None,
         "area_name": snapshot.area_name(area),
         "datatype": DATATYPE_LABELS.get(datatype, datatype),
+        "data_year": OEWS_CURRENT_YEAR,
         "occupations": occupations,
     }
     # Flag the all-no-data case, mirroring compare_metros: without this,
@@ -829,6 +837,21 @@ async def compare_occupations(
     return response
 
 
+# IGCE benchmarks: each annual figure with BLS's matching hourly figure, and
+# the datatypes the IGCE requests for them.
+_IGCE_BENCHMARKS = [
+    ("Annual Mean Wage", "Hourly Mean Wage"),
+    ("Annual 10th Percentile", "Hourly 10th Percentile"),
+    ("Annual 25th Percentile", "Hourly 25th Percentile"),
+    ("Annual Median", "Hourly Median"),
+    ("Annual 75th Percentile", "Hourly 75th Percentile"),
+    ("Annual 90th Percentile", "Hourly 90th Percentile"),
+]
+_IGCE_REQUEST = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]
+# Relative standard error (percent) above which the IGCE flags a thin estimate.
+_RSE_WARNING = 10.0
+
+
 @mcp.tool(annotations={"title": "IGCE Wage Benchmark", **_LOCAL_ONLY})
 async def igce_wage_benchmark(
     occ_code: Union[str, int],
@@ -840,9 +863,17 @@ async def igce_wage_benchmark(
 ) -> dict[str, Any]:
     """Get wage benchmarks formatted for IGCE development.
 
-    Returns annual and hourly wages at mean, median, 10th, and 90th
-    percentiles, plus estimated burdened hourly rates using the specified
-    burden multiplier range.
+    Returns annual and hourly wages at the mean and the 10th, 25th, median,
+    75th, and 90th percentiles (25th/75th are the usual junior/senior
+    anchors), plus estimated burdened hourly rates using the specified
+    burden multiplier range. Hourly figures are BLS's published hourly
+    wages (annual / 2080 only where BLS publishes no hourly wage). Also
+    returns the cell's employment and relative standard errors
+    (reliability) and flags thin estimates.
+
+    Wages are point-in-time estimates for the OEWS reference month
+    (wage_period in the response), not current rates: escalate them to the
+    period of performance before pricing.
 
     BLS wages are BASE wages (no fringe, overhead, G&A, or profit).
     Multiply by a burden factor to estimate fully-loaded rates:
@@ -874,12 +905,14 @@ async def igce_wage_benchmark(
             f"Reasonable max ~4.0x for high-overhead (SCIF/deployed) work."
         )
 
-    # "03" rides along to detect annual-only occupations: BLS suppresses the
-    # hourly mean for jobs that do not work a standard year-round schedule
-    # (pilots, teachers), and a 2080-hour derived rate misstates their cost.
+    # Each annual benchmark rides with BLS's published hourly wage (BLS
+    # computes annual as hourly x 2080, so hourly is the primary figure).
+    # "03" also detects annual-only occupations: BLS suppresses the hourly
+    # mean for jobs that do not work a standard year-round schedule (pilots,
+    # teachers), and a 2080-hour derived rate misstates their cost.
     wage_data = await get_wage_data(
         occ_code=occ_code, scope=scope, area_code=area_code,
-        datatypes=["03", "04", "11", "13", "15"], year=year,
+        datatypes=_IGCE_REQUEST, year=year,
     )
 
     wages = wage_data.get("wages", {})
@@ -891,11 +924,12 @@ async def igce_wage_benchmark(
     )
     benchmarks: dict[str, Any] = {}
 
-    for label in ["Annual Mean Wage", "Annual 10th Percentile", "Annual Median", "Annual 90th Percentile"]:
+    for label, hourly_label in _IGCE_BENCHMARKS:
         entry = wages.get(label, {})
         annual = entry.get("numeric")
         if annual and not entry.get("suppressed"):
-            hourly = round(annual / 2080, 2)
+            published = wages.get(hourly_label, {}).get("numeric")
+            hourly = published if published is not None else round(annual / 2080, 2)
             benchmarks[label] = {
                 "annual": f"${annual:,}",
                 "hourly_base": f"${hourly:.2f}",
@@ -919,16 +953,60 @@ async def igce_wage_benchmark(
         "area_code": area_code,
         "area_name": wage_data.get("area_name"),
         "data_year": wage_data.get("data_year") or OEWS_CURRENT_YEAR,
+        "wage_period": OEWS_RELEASE_NAME,
         "burden_range": f"{burden_low}x - {burden_high}x",
         "benchmarks": benchmarks,
-        "_note": "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates.",
+        "_escalation_note": (
+            f"{OEWS_RELEASE_NAME} wages; escalate to the period of performance. "
+            f"OEWS wages are estimates for {OEWS_RELEASE_NAME}, so these base "
+            f"and burdened rates are {OEWS_RELEASE_NAME} rates, not current ones."
+        ),
+        # The sample behind the benchmark: a 110-person cell with a 19.5%
+        # employment RSE should not read like a 69,060-person one.
+        "reliability": {
+            "employment": wages.get("Employment", _NO_DATA).get("formatted"),
+            "employment_rse": wages.get("Employment RSE (%)", _NO_DATA).get("formatted"),
+            "mean_wage_rse": wages.get("Mean Wage RSE (%)", _NO_DATA).get("formatted"),
+        },
     }
+    imprecise = []
+    for name, label in (("employment RSE", "Employment RSE (%)"), ("mean wage RSE", "Mean Wage RSE (%)")):
+        rse = wages.get(label, _NO_DATA)
+        if rse.get("numeric") is not None and rse["numeric"] > _RSE_WARNING:
+            imprecise.append(f"{name} {rse['formatted']}")
+    if imprecise:
+        response["_reliability_warning"] = (
+            f"Thin estimate: {', '.join(imprecise)} (relative standard error; "
+            f"the larger it is, the less precise the estimate). Employment "
+            f"here is {response['reliability']['employment']}. Cross-check "
+            f"against the state or national figure before relying on it."
+        )
+    response["_note"] = "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates."
 
     # Propagate the no_data flag from the underlying wage_data call so the
     # caller knows the benchmarks are all zero-value, not real suppressions.
+    # Employment and RSEs can be published for a cell with no wage estimate,
+    # so the IGCE judges "no data" by its wage benchmarks alone.
+    has_benchmark = any("numeric_annual" in b for b in benchmarks.values())
     if wage_data.get("no_data"):
         response["no_data"] = True
         response["no_data_reason"] = wage_data.get("no_data_reason")
+    elif not has_benchmark:
+        # Say what BLS did publish: employment, and the footnote on the wage
+        # cells (top-coded at a stated floor, or not released).
+        employment = wages.get("Employment", _NO_DATA)
+        published = (
+            f"BLS publishes employment ({employment['formatted']}) for this cell but no wage estimate"
+            if employment.get("numeric") is not None
+            else "BLS publishes no wage estimate for this cell"
+        )
+        response["no_data"] = True
+        response["no_data_reason"] = (
+            f"No wage values for occ_code={wage_data['occ_code']} scope={scope} "
+            f"area_code={area_code!r} industry=000000. {published}; Annual Mean "
+            f"Wage reads: {annual_mean.get('formatted', 'No data')} A wider area "
+            f"(scope='state' or scope='national') may publish one."
+        )
     if annual_only:
         response["annual_only"] = True
         response["_hourly_warning"] = (

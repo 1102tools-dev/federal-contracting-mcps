@@ -7,14 +7,14 @@ This Model Context Protocol server exposes BLS Occupational Employment and Wage 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 276 (275 offline, 1 live parity check) |
-| Audit rounds completed | 8 |
+| Total regression tests | 291 (290 offline, 1 optional live parity check) |
+| Audit rounds completed | 9 |
 | P0 usability-breaking bugs found and fixed | 1 |
 | P1 silent-wrong-data bugs found and fixed | 14 |
 | P1 response-shape crash paths found and fixed | 12 |
 | P2 validation gaps found and fixed | 12 |
 | P3 cleanup items found and fixed | 8 |
-| Current release | 1.1.0 (bundled May 2025 OEWS release) |
+| Content correction version | 1.1.1 (bundled May 2025 OEWS release; release gates recorded below) |
 | PyPI status | Published as `bls-oews-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.1.0 Bundled release (2026-09-26)
@@ -206,7 +206,7 @@ Helpers wrapping every BLS response parsing path: `_as_list`, `_coerce_str_digit
 
 ## Test Coverage
 
-The repo ships 276 regression tests (275 offline, 1 live parity check). The offline suite runs on every release with the network blocked; the parity check runs with `BLS_LIVE_TESTS=1` and needs no key. See [tests/README.md](tests/README.md) for the per-file map.
+The repo ships 291 regression tests (290 offline, 1 optional live parity check). The offline suite runs on every release with the network blocked; the parity check runs with `BLS_LIVE_TESTS=1` and needs no key. See [tests/README.md](tests/README.md) for the per-file map.
 
 | File | Purpose | Test count |
 |---|---|---|
@@ -215,6 +215,7 @@ The repo ships 276 regression tests (275 offline, 1 live parity check). The offl
 | `tests/test_audit_r7.py` | Round 7 regressions: datatype semantics, annual-only detection, normalized dedup, seeded gaps, FIPS validation, plus the cross-foot canary | 19 |
 | `tests/test_audit_r8.py` | Round 8 anchors | 3 |
 | `tests/test_snapshot.py`, `test_builder.py`, `test_directory_contract.py`, `test_http.py` | 1.1.0 bundled release, builder, directory rules, hosted HTTP app | 41 |
+| `tests/test_content_r9.py` | Round 9 content corrections BLS-1 to BLS-9, checked against BLS source values and labels | 15 |
 | `tests/test_live_parity.py` | Bundled values vs the live BLS API | 1 |
 | `tests/scenarios/stress_test.py` | Scenario script (not pytest) retained for reproducibility | N/A |
 
@@ -231,6 +232,7 @@ Regression tests invoke tools through the MCPServer registry (`mcp.call_tool`).
 | 1.0.0 | mcp 2.x SDK rebase, version sync, packaging | Stable baseline |
 | 1.0.1 | Round 7 independent re-audit with live verification | 13 findings resolved, incl. the datatype label shift money bug; live cross-foot canary added |
 | 1.0.3 | Opt-in production pacing for real-key traffic | Concurrent upstream calls serialize and wait after completion; offline concurrency regressions added |
+| 1.1.1 | Round 9 content corrections; paired Python/Worker regressions and source-backed repro gates | 291 collected: 290 offline, 1 optional live parity |
 | 1.1.0 | Bundled May 2025 OEWS release; no API key or network calls; hosted HTTP entry point | 25/25 live parity; rounds 6 and 8 run offline; 276 tests |
 
 ## Cross-MCP Context
@@ -278,3 +280,36 @@ live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
 ## RC5 pacing remediation (2026-08-22)
 
 Version 1.0.5 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (85 tests; 164 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 7 tools.
+
+
+## 1.1.1 source-backed content corrections (2026-10-10)
+
+Round 9 adds 15 Python regressions in `tests/test_content_r9.py`, paired
+with Worker tests. The complete Python 3.12 suite recorded 290 passed and
+1 optional live parity check skipped. Worker tests recorded 27 passed and
+TypeScript checks passed. Cross-runtime parity recorded 218 cases: 207
+identical, 11 documented differences and zero unexpected differences.
+The hosted tool contract and package-version validation passed.
+
+| Finding | Regression coverage |
+|---|---|
+| BLS-1 | IGCE states the release month and escalation guidance; a changed release label changes both fields |
+| BLS-7 | Norfolk help desk uses published hourly $19.01, Colorado Springs architects use $64.14; annual-only occupations retain derived-hourly warning |
+| BLS-3 | Colorado Springs DBA 25th/75th annual and hourly percentiles match BLS |
+| BLS-2 | Employment and both RSEs, high-RSE warning, no warning for a solid estimate, and no numeric benchmark for wageless cells |
+| BLS-4 | Top-coded and unreleased wages retain employment and BLS footnotes, with wider-area guidance |
+| BLS-5 | Govcon metro/SOC additions and every starter label match the bundled BLS lookup tables |
+| BLS-6 | Industry labels match BLS and the description points federal IT searches to 15-1299 |
+| BLS-8 | Comparison data year and requested order are retained; ordering already worked before this release |
+| BLS-9 | Employment per 1,000 retains BLS's three decimals; location quotient retains two |
+
+The 12 finding repro gates use BLS's May 2025 flat-file values, names and
+footnotes, rather than treating our own output as the source of truth.
+Python and Worker tests were seen failing before the corresponding fixes.
+The data, schema and loader are unchanged, so these corrections require
+no D1 reload. No logging, IP-retention or cache-policy changes were made.
+
+Deferred scope: comparison tools remain single-datatype queries (request
+01/02/05 separately for reliability); top-coded wage floors do not become
+burdened benchmarks; escalation index/rate selection remains with the
+analyst; the pre-existing binary-float half-cent rounding remains unchanged.

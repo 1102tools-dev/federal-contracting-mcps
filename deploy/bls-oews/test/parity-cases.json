@@ -206,5 +206,15 @@
   {"name": "accept without application/json", "method": "ping", "headers": {"accept": "text/event-stream"}},
   {"name": "accept empty", "method": "ping", "headers": {"accept": ""}},
   {"name": "accept application/*", "method": "ping", "headers": {"accept": "application/*"}},
-  {"name": "modern: content-type text/plain", "modern": true, "method": "server/discover", "headers": {"content-type": "text/plain"}}
+  {"name": "modern: content-type text/plain", "modern": true, "method": "server/discover", "headers": {"content-type": "text/plain"}},
+  {"name": "content r9: igce Norfolk help desk", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "15-1232", "scope": "metro", "area_code": "47260"}},
+  {"name": "content r9: igce Colorado Springs DBA", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "15-1242", "scope": "metro", "area_code": "17820"}},
+  {"name": "content r9: igce Colorado Springs database architects", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "15-1243", "scope": "metro", "area_code": "17820"}},
+  {"name": "content r9: igce DC emergency medicine (top-coded)", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "29-1214", "scope": "metro", "area_code": "47900"}},
+  {"name": "content r9: igce Bremerton infosec (not released)", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "15-1212", "scope": "metro", "area_code": "14740"}},
+  {"name": "content r9: igce DC infosec clearance burden", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "15-1212", "scope": "metro", "area_code": "47900", "burden_low": 2.5, "burden_high": 3.0}},
+  {"name": "content r9: igce management analysts lean burden", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "13-1111", "burden_low": 1.5, "burden_high": 1.7}},
+  {"name": "content r9: compare_metros help desk order", "tool": "compare_metros", "arguments": {"occ_code": "15-1232", "metro_codes": ["47900", "12580", "42660"], "datatype": "03"}},
+  {"name": "content r9: Maryland infosec per 1,000", "tool": "get_wage_data", "arguments": {"occ_code": "15-1212", "scope": "state", "area_code": "24", "datatypes": ["01", "02", "05", "16", "17"]}},
+  {"name": "content r9: federal software developers", "tool": "get_wage_data", "arguments": {"occ_code": "15-1252", "industry": "999100"}}
 ]

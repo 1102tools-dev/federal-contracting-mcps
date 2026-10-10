@@ -31,9 +31,19 @@ const CELLS: [string, (string | null)[], Record<string, string>][] = [
     {f03: "4", f06: "4", f07: "4", f08: "4", f09: "4", f10: "4"}],
   ["OEUM0010540000000291215", ["50", "12.9", "-", "-", "5.6", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "1.003", "1.45"],
     {f03: "5", f04: "5", f06: "5", f07: "5", f08: "5", f09: "5", f10: "5", f11: "5", f12: "5", f13: "5", f14: "5", f15: "5"}],
+  // 2026-10-10 content test repros, as BLS publishes them in oe.data.0.Current.
+  ["OEUM0047260000000151232", ["2430", "6.3", "29.96", "62310", "1.7", "19.01", "23.33", "28.68", "36.05", "44.55", "39530", "48520", "59650", "74980", "92660", "3.185", "0.69"], {}],
+  ["OEUM0017820000000151242", ["110", "19.5", "56.78", "118110", "9.4", "27.29", "40.80", "56.81", "77.08", "80.56", "56770", "84850", "118170", "160330", "167570", "0.357", "0.79"], {}],
+  ["OEUM0047900000000291214", ["770", "27.9", "-", "-", "4.5", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "0.247", "1.17"],
+    {f03: "5", f04: "5", f06: "5", f07: "5", f08: "5", f09: "5", f10: "5", f11: "5", f12: "5", f13: "5", f14: "5", f15: "5"}],
+  ["OEUM0014740000000151212", ["70", "14.1", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "0.712", "0.58"],
+    {f03: "8", f04: "8", f05: "8", f06: "8", f07: "8", f08: "8", f09: "8", f10: "8", f11: "8", f12: "8", f13: "8", f14: "8", f15: "8"}],
+  ["OEUS2400000000000151212", ["8650", "9.9", "72.09", "149940", "3.7", "38.04", "51.34", "67.14", "88.10", "104.12", "79130", "106790", "139640", "183260", "216570", "3.131", "2.55"], {}],
 ];
-const OCCUPATIONS = [["151252", "Software Developers"], ["252021", "Elementary School Teachers, Except Special Education"], ["291215", "Family Medicine Physicians"]];
-const AREAS = [["0000000", "National"], ["0047900", "Washington-Arlington-Alexandria, DC-VA-MD-WV"], ["5100000", "Virginia"], ["0010540", "Albany, OR"], ["7800000", "Virgin Islands"]];
+const OCCUPATIONS = [["151252", "Software Developers"], ["252021", "Elementary School Teachers, Except Special Education"], ["291215", "Family Medicine Physicians"],
+  ["151232", "Computer User Support Specialists"], ["151242", "Database Administrators"], ["291214", "Emergency Medicine Physicians"], ["151212", "Information Security Analysts"]];
+const AREAS = [["0000000", "National"], ["0047900", "Washington-Arlington-Alexandria, DC-VA-MD-WV"], ["5100000", "Virginia"], ["0010540", "Albany, OR"], ["7800000", "Virgin Islands"],
+  ["0047260", "Virginia Beach-Chesapeake-Norfolk, VA-NC"], ["0017820", "Colorado Springs, CO"], ["0014740", "Bremerton-Silverdale-Port Orchard, WA"], ["2400000", "Maryland"]];
 
 function addVersion(sqlite: DatabaseSync, version: number, adjust = (value: string | null) => value) {
   sqlite.prepare("INSERT INTO release (version, database_sha256, manifest, footnotes, loaded_at) VALUES (?, ?, ?, ?, ?)")
@@ -113,7 +123,7 @@ test("get_wage_data formats every datatype like the Python server", async () => 
     "Mean Wage RSE (%)": "1.0%", "Hourly 10th Percentile": "$46.37/hr", "Hourly 25th Percentile": "$59.48/hr", "Hourly Median": "$74.49/hr",
     "Hourly 75th Percentile": "$84.73/hr", "Hourly 90th Percentile": "$102.72/hr", "Annual 10th Percentile": "$96,450",
     "Annual 25th Percentile": "$123,720", "Annual Median": "$154,930", "Annual 75th Percentile": "$176,230", "Annual 90th Percentile": "$213,660",
-    "Employment per 1,000 Jobs": "22.02", "Location Quotient": "2.03",
+    "Employment per 1,000 Jobs": "22.020", "Location Quotient": "2.03",
   });
   // The text is pydantic_core.to_json(indent=2): floats keep ".0", ints do not.
   const text: string = result.content[0].text;
@@ -154,7 +164,7 @@ test("compare tools keep the caller's labels, in order, and collapse duplicates"
 
 test("list_common_metros keeps Python's key order for numeric-looking codes", async () => {
   const result = await call("list_common_metros", {});
-  assert.ok(result.content[0].text.startsWith('{\n  "metros": {\n    "0047900": "Washington DC",\n    "0042660": "Seattle",'));
+  assert.ok(result.content[0].text.startsWith('{\n  "metros": {\n    "0047900": "Washington-Arlington-Alexandria, DC-VA-MD-WV",\n    "0042660": "Seattle-Tacoma-Bellevue, WA",'));
 });
 
 test("igce_wage_benchmark: Python float formatting and annual-only warning", async () => {
@@ -279,7 +289,7 @@ test("HTTP edge: health, docs, origin, rate limit, methods, body limits, message
   assert.equal((await worker.fetch(new Request("https://bls-oews.1102tools.com/nope"), env())).status, 404);
   const response = await worker.fetch(post({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "list_common_metros", arguments: {}}}), env());
   const body = await response.text();
-  assert.ok(body.includes('"structuredContent":{"metros":{"0047900":"Washington DC","0042660":"Seattle"'), "numeric-looking keys keep their order");
+  assert.ok(body.includes('"structuredContent":{"metros":{"0047900":"Washington-Arlington-Alexandria, DC-VA-MD-WV","0042660":"Seattle-Tacoma-Bellevue, WA"'), "numeric-looking keys keep their order");
   assert.equal((await worker.fetch(post({jsonrpc: "2.0", method: "notifications/initialized"}), env())).status, 202);
   assert.equal((await worker.fetch(post({jsonrpc: "2.0", id: 1.5, method: "ping"}), env())).status, 202);
   assert.equal((await worker.fetch(post({jsonrpc: "2.0", id: 1, result: {}}), env())).status, 202);
@@ -354,6 +364,94 @@ test("2026-07-28 listen streams open at the edge with the SDK's acknowledgement"
   }
   const jsonOnly = await worker.fetch(modern("subscriptions/listen", {notifications: {}}, {Accept: "application/json"}), env());
   assert.equal(jsonOnly.status, 406);
+});
+
+// ---------- 2026-10-10 content test (BLS-1 to BLS-9) ----------
+
+test("BLS-1: the IGCE names the wage month beside the burdened rates", async () => {
+  const igce = await data("igce_wage_benchmark", {occ_code: "15-1232", scope: "metro", area_code: "47260"});
+  assert.equal(igce.wage_period, "May 2025");
+  assert.match(igce._escalation_note, /^May 2025 wages; escalate to the period of performance/);
+  const keys = Object.keys(igce);
+  assert.ok(keys.indexOf("wage_period") < keys.indexOf("benchmarks") && keys.indexOf("benchmarks") < keys.indexOf("_escalation_note"));
+  // The month comes from the release in D1, not from the code.
+  const {sqlite, db: later} = database();
+  sqlite.prepare("UPDATE release SET manifest = ?").run(JSON.stringify({...manifest, release: {...manifest.release, description: "May 2031"}}));
+  const next = JSON.parse((await call("igce_wage_benchmark", {occ_code: "151252"}, later)).content[0].text);
+  assert.equal(next.wage_period, "May 2031");
+  assert.match(next._escalation_note, /^May 2031 wages; escalate/);
+});
+
+test("BLS-7: IGCE hourly figures are BLS's published hourly wages", async () => {
+  // BLS dt06 = 19.01; annual 39,530 / 2080 gave 19.00.
+  const tenth = (await data("igce_wage_benchmark", {occ_code: "15-1232", scope: "metro", area_code: "47260"})).benchmarks["Annual 10th Percentile"];
+  assert.deepEqual([tenth.annual, tenth.hourly_base, tenth.numeric_hourly, tenth.hourly_burdened_low], ["$39,530", "$19.01", 19.01, "$34.22"]);
+  // Annual-only occupations still fall back to annual / 2080 (63,970 / 2080 = 30.75).
+  const teachers = await data("igce_wage_benchmark", {occ_code: "25-2021"});
+  assert.equal(teachers.benchmarks["Annual Median"].hourly_base, "$30.75");
+});
+
+test("BLS-3: the IGCE carries the 25th and 75th percentiles", async () => {
+  const bench = (await data("igce_wage_benchmark", {occ_code: "15-1242", scope: "metro", area_code: "17820"})).benchmarks;
+  assert.deepEqual(Object.keys(bench), ["Annual Mean Wage", "Annual 10th Percentile", "Annual 25th Percentile", "Annual Median", "Annual 75th Percentile", "Annual 90th Percentile"]);
+  assert.deepEqual([bench["Annual 25th Percentile"].annual, bench["Annual 25th Percentile"].hourly_base], ["$84,850", "$40.80"]);
+  assert.deepEqual([bench["Annual 75th Percentile"].annual, bench["Annual 75th Percentile"].hourly_base], ["$160,330", "$77.08"]);
+});
+
+test("BLS-2: the IGCE shows the sample behind the benchmark", async () => {
+  const thin = await data("igce_wage_benchmark", {occ_code: "15-1242", scope: "metro", area_code: "17820"});
+  assert.deepEqual(thin.reliability, {employment: "110", employment_rse: "19.5%", mean_wage_rse: "9.4%"});
+  assert.match(thin._reliability_warning, /employment RSE 19\.5%/);
+  assert.doesNotMatch(thin._reliability_warning, /mean wage RSE/);
+  const solid = await data("igce_wage_benchmark", {occ_code: "15-1252", scope: "metro", area_code: "47900"});
+  assert.deepEqual(solid.reliability, {employment: "69,060", employment_rse: "3.2%", mean_wage_rse: "1.0%"});
+  assert.equal(solid._reliability_warning, undefined);
+  // Employment alone does not make a wageless cell look benchmarked.
+  const topCoded = await data("igce_wage_benchmark", {occ_code: "29-1214", scope: "metro", area_code: "47900"});
+  assert.equal(topCoded.no_data, true);
+  assert.equal(topCoded.reliability.employment, "770");
+});
+
+test("BLS-4: a wageless IGCE says what BLS did publish", async () => {
+  const topCoded = (await data("igce_wage_benchmark", {occ_code: "29-1214", scope: "metro", area_code: "47900"})).no_data_reason;
+  assert.doesNotMatch(topCoded, /BLS publishes no estimate/);
+  assert.match(topCoded, /employment \(770\)/);
+  assert.match(topCoded, /equal to or greater than \$115\.00 per hour or \$239,200 per year/);
+  const unreleased = (await data("igce_wage_benchmark", {occ_code: "15-1212", scope: "metro", area_code: "14740"})).no_data_reason;
+  assert.match(unreleased, /employment \(70\)/);
+  assert.match(unreleased, /Estimate not released\./);
+  assert.match(unreleased, /scope='state'/);
+});
+
+test("BLS-5: starter lists use BLS's names and carry the govcon basics", async () => {
+  const metros = (await data("list_common_metros", {})).metros;
+  assert.deepEqual([metros["0026620"], metros["0047260"], metros["0041700"], metros["0017820"], metros["0019430"]],
+    ["Huntsville, AL", "Virginia Beach-Chesapeake-Norfolk, VA-NC", "San Antonio-New Braunfels, TX", "Colorado Springs, CO", "Dayton-Kettering-Beavercreek, OH"]);
+  assert.equal(metros["0047900"], "Washington-Arlington-Alexandria, DC-VA-MD-WV");
+  const socs = (await data("list_common_soc_codes", {})).soc_codes;
+  assert.equal(socs["151299"], "Computer Occupations, All Other");
+  assert.equal(socs["436014"], "Secretaries and Administrative Assistants, Except Legal, Medical, and Executive");
+});
+
+test("BLS-6: get_wage_data names industry 999100 as BLS does", () => {
+  const description = TOOLS.find(t => t.name === "get_wage_data")!.description;
+  assert.ok(description.includes("'999100' (Federal Executive Branch (OEWS Designation))"));
+  assert.ok(!description.includes("(Federal Government)"));
+  assert.ok(description.includes("15-1299"));
+});
+
+test("BLS-8: compare tools carry data_year at the top", async () => {
+  const metros = await data("compare_metros", {occ_code: "151252", metro_codes: ["47900", "17820"]});
+  assert.equal(metros.data_year, "2025");
+  assert.deepEqual(Object.keys(metros).slice(0, 4), ["occ_code", "occ_title", "datatype", "data_year"]);
+  const occupations = await data("compare_occupations", {occ_codes: ["151252"]});
+  assert.equal(occupations.data_year, "2025");
+});
+
+test("BLS-9: employment per 1,000 jobs keeps BLS's three decimals", async () => {
+  const wages = (await data("get_wage_data", {occ_code: "15-1212", scope: "state", area_code: "24", datatypes: ["16", "17"]})).wages;
+  assert.equal(wages["Employment per 1,000 Jobs"].formatted, "3.131");
+  assert.equal(wages["Location Quotient"].formatted, "2.55");
 });
 
 // ---------- Python formatting helpers ----------
