@@ -2,14 +2,14 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across sixteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit; the sixteenth is the new Round 4 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.20 source collects 2,312 regression cases (1,933 offline and 379 live-gated). Its measured frozen MCP SDK 2.0.0 offline lane passed 1,933 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records. Published 1.0.20 completed all 150 available Round 4 questions on actual installed CLI and public requests, with all55 tool definitions matched and six guided followups passed. Its separate fresh/latestSDK2.3 full regression execution measured 1,078 passed, 855 failed and 379 skipped; these failures are retained exception/message expectations and are not credited as passing.
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across seventeen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit; the sixteenth was the new Round 4 content audit; the seventeenth is the new Round 5 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.21 candidate source collects 2,315 regression cases (1,936 offline and 379 live-gated). Its measured frozen MCP SDK 2.0.0 offline lane passed 1,936 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records. Published 1.0.20 completed all 150 available Round 4 questions on actual installed CLI and public requests, with all55 tool definitions matched and six guided followups passed. Its separate fresh/latestSDK2.3 full regression execution measured 1,078 passed, 855 failed and 379 skipped; these failures are retained exception/message expectations and are not credited as passing.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 55 |
-| Total regression tests | 2,312 (1,933 offline, 379 live-gated) |
-| Collected cases per tool | 42.04 (not a coverage percentage) |
-| Audit rounds completed | 16 (including the new Round 4 content audit) |
+| Total regression tests | 2,315 (1,936 offline, 379 live-gated) |
+| Collected cases per tool | 42.09 (not a coverage percentage) |
+| Server content audits completed | 17 (Round 5 candidate publication pending) |
 | Initial integration issues (round 1) | 28+ |
 | P1 silent-wrong-data bugs found and fixed | 11 (rounds 1-9) |
 | P2 validation gaps found and fixed | 7 (rounds 1-9) |
@@ -18,7 +18,7 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Round 9 (v0.3) live audit findings | 1 (list_states JSON-array response shape) |
 | Round 10 (1.0.1) semantic audit findings | 22 (12 search family, 10 entity family), all fixed |
 | Historical release cycles through 1.0.3 | 15 (v0.1.2 through v1.0.3) |
-| Current source package | 1.0.20 published |
+| Current source package | 1.0.21 candidate; 1.0.20 published |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -819,3 +819,92 @@ Evidence: `Artifacts/mcp-e2e-20261010/round4/usaspending`, especially
 `final20-official-artifact-payloads.json`, actual install/test/collection logs,
 `final20-published-failure-inventory.json`, `evidence-hashes.json` and
 `post-release/peer-sam-final20.json`. No later-round work is claimed.
+
+
+## Round 17 new Round 5 content audit (1.0.21 candidate, 2026-10-10)
+
+A fresh official by-name, uncached PyPI 1.0.20 installation (Python 3.12.13,
+MCP SDK 2.3.0) and the public service at source
+`2a93b7b706d818da647f9d56cacbf543f867fa79` completed **143 new ordinary and
+power-user questions across all 55 tools**. Ten prior Interior vehicle
+checks are retained separately and excluded from the new-question count.
+The total is 153 actual console calls, 153 public HTTPS tool calls and 153
+registered installed-package primary pipelines, with no invocation errors
+or substantive source-parity differences. Those matching transports still
+exposed the one misleading note below; parity is not a claim that every
+before answer was correct.
+
+New tasks covered DOT engineering/highway supplier research, date modes,
+competition/pricing/amount/location filters and continuation; Commerce/NOAA
+grants, agency financial dimensions and dated FFATA reports; HUD loans and
+direct payments; a NASA IT vehicle hierarchy; EPA account/program/resources
+comparisons; University of Washington recipient identities and fiscal
+trends; Washington/New York geography and code/glossary/reporting-calendar
+followups. Broad Environmental account discovery returned Interior account
+014-5425 first. Four legacy harness-caption rows called it a science account;
+the inventory explicitly evaluates the actual Environmental account instead.
+Raw captions, arguments and responses remain unchanged; no Science answer
+is credited.
+
+Meaningful financial/source completion includes:
+
+- DOT FY2025 contract obligations crossfoot at **$9,022,534,685.22** across
+  annual, quarter and month buckets.
+- Main UW child `HD1WMN6945W6` has **425 FY2025 new awards** across all three
+  bucket modes; its profile is kept distinct from the Board of Regents
+  parent and that parent's separate source rollup.
+- EPA Environmental Programs and Management account `068-0108`/numeric ID
+  4872 has FY2024/FY2025/FY2026 snapshots whose obligated plus unobligated
+  amounts equal resources. Program codes remain all-year lists without
+  dollar amounts; snapshots supply the actual fiscal-year comparison.
+- Michigan Commerce prime `ASST_NON_2620B109_013` has **92 unique reports**
+  totaling **$777,518,213.12** after complete one-page retrieval. Every date
+  is July 17–September 18, 2026: the actual dated FY2025 subset is zero.
+  Existing cumulative-prime scope guidance correctly prevents a FY2025
+  subaward-total claim. These reports are not net new spending.
+- The discovered HUD guaranteed loan reports **$72.4 million face value**,
+  **−$1,940,320 subsidy cost** and **zero obligations**; those measures are
+  not substituted for each other. FY2027 empty agency-resource rows and
+  partial FY2026 source reporting remain source limitations.
+
+**USA-R5-001, P3:** “Find five current construction NAICS codes and explain
+how many retired codes were excluded.” Published 1.0.20 CLI/public guidance
+said “Filtered 10 retired codes” and suggested including retired entries.
+The exact fresh official autocomplete response has 15 rows, all with
+`year_retired=null`; ten current rows, including Highway/Street/Bridge
+Construction `237310`, were omitted only by `limit=5`. Candidate 1.0.21
+counts actual retired rows separately, explains current-result truncation
+and guides increasing the limit. Source code/name/order, current-code
+filtering, include-retired behavior, errors and all 55 tool definitions
+remain unchanged. No directory republication is required.
+
+The captured-source registered-tool regression on actual published 1.0.20
+failed the ordinary truncation explanation while two controls passed.
+All three pass on frozen MCP 2.0.0 and a fresh candidate wheel with MCP
+2.3.0. A genuine `5417` source pool contains three retired and four current
+research codes; their retirement filtering is preserved. Actual candidate
+console originals and larger-limit recovery expose the highway code.
+Candidate evidence is not actual published 1.0.21 acceptance.
+
+The candidate frozen full suite measured **1,936 passed / 379 skipped**;
+a separate collection measured **2,315 collected**. The latest-SDK focused
+lane passed three tests; no latest-SDK full-suite pass is claimed. The
+historical actual published 1.0.20 latest-SDK full record remains **1,078
+passed / 855 failed / 379 skipped / 2,312 collected**. Legacy negative/error
+expectations were not mined or repaired by this content audit. The approved
+55-definition contract passes on SDK 2.3; the separately retained SDK 2.0
+serialization comparison differs, and no contract baseline was rewritten.
+Build, scoped version surfaces and CI passed. PR153 merged at
+`15a9a034c99ccad2750e39fcfb9aae46d540945d`; root owns publication after the
+complete-content peer and integration gates.
+
+New findings: **P0=0 / P1=0 / P2=0 / P3=1**, fixed in candidate, with no
+partial or unresolved product defects in this corpus. Publication and
+actual published 1.0.21 originals/recoveries remain pending. Round 6 has not
+started. Evidence is `Artifacts/mcp-e2e-20261010/round5/usaspending`:
+`question-inventory.json`, `coverage-map.json`, `audit-summary.json`,
+`primary-capture-index.json`, `financial-task-completion.json`, caption/
+replay classifications, captured NAICS discovery/control, before/after
+logs, three runtime/SDK provenance files and the preserved candidate
+console evidence. The 160 fresh primary captures are parsed canonical JSON,
+not retained raw HTTP bytes; source and content counts remain distinct.
