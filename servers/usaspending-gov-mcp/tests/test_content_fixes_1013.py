@@ -382,3 +382,57 @@ def test_live_u3_new_awards_only_is_smaller():
 
     any_action, new_only = asyncio.run(both())
     assert 0 < new_only["results"]["contracts"] < any_action["results"]["contracts"]
+
+
+# ===========================================================================
+# U4 (P2): spending_by_subaward_grouped works out hasNext itself
+# ===========================================================================
+
+def _grouped_api(total_rows: int):
+    """Fake grouped endpoint holding total_rows primes; like the real one, it
+    always reports hasNext false."""
+    def respond(path, body):
+        start = (body["page"] - 1) * body["limit"]
+        n = max(0, min(body["limit"], total_rows - start))
+        rows = [{"award_id": f"P{start + i}", "subaward_count": 1} for i in range(n)]
+        return {"limit": body["limit"], "results": rows,
+                "page_metadata": {"page": body["page"], "hasNext": False}}
+    return respond
+
+
+DHS_GROUPED = dict(awarding_agency="Department of Homeland Security",
+                   award_type_codes=["A", "B", "C", "D"],
+                   time_period_start="2025-10-01", time_period_end="2026-09-30")
+
+
+def test_u4_full_page_with_more_rows_says_hasnext(monkeypatch):
+    mock = _MockPost(_grouped_api(12))
+    monkeypatch.setattr(srv, "_post", mock)
+    out = _payload(asyncio.run(_call("spending_by_subaward_grouped", limit=5, **DHS_GROUPED)))
+    assert len(out["results"]) == 5
+    assert out["page_metadata"]["hasNext"] is True
+    # the probe asked for exactly the next row
+    assert mock.calls[-1][1]["limit"] == 1 and mock.calls[-1][1]["page"] == 6
+
+
+def test_u4_last_full_page_says_no_more(monkeypatch):
+    mock = _MockPost(_grouped_api(10))
+    monkeypatch.setattr(srv, "_post", mock)
+    out = _payload(asyncio.run(_call("spending_by_subaward_grouped", limit=5, page=2, **DHS_GROUPED)))
+    assert len(out["results"]) == 5
+    assert out["page_metadata"] == {"page": 2, "hasNext": False}
+
+
+def test_u4_short_page_needs_no_probe(monkeypatch):
+    mock = _MockPost(_grouped_api(3))
+    monkeypatch.setattr(srv, "_post", mock)
+    out = _payload(asyncio.run(_call("spending_by_subaward_grouped", limit=5, **DHS_GROUPED)))
+    assert out["page_metadata"]["hasNext"] is False
+    assert len(mock.calls) == 1
+
+
+@live
+def test_live_u4_dhs_grouped_has_next():
+    out = _payload(asyncio.run(_call("spending_by_subaward_grouped", limit=5,
+                                     sort="subaward_obligation", **DHS_GROUPED)))
+    assert len(out["results"]) == 5 and out["page_metadata"]["hasNext"] is True

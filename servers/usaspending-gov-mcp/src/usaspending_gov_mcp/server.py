@@ -1724,6 +1724,12 @@ async def spending_by_subaward_grouped(
     sort accepts: award_id, subaward_count, award_generated_internal_id,
     subaward_obligation. (These differ from search_subawards, which sorts by
     amount/action_date/etc.) Anything else returns HTTP 400 from the API.
+
+    page_metadata.hasNext is worked out here: the endpoint itself always
+    says false, even with more pages. Rows include primes with no
+    subawards (subaward_count 0). subaward_obligation sums FFATA reports,
+    which can repeat cumulative amounts, so a subaward_to_award_ratio
+    above 1 is a reporting artefact, not more subcontracting than the prime.
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
@@ -1747,7 +1753,19 @@ async def spending_by_subaward_grouped(
     }
     if sort:
         payload["sort"] = sort
-    return await _post("/api/v2/search/spending_by_subaward_grouped/", payload)
+    path = "/api/v2/search/spending_by_subaward_grouped/"
+    result = await _post(path, payload)
+    # Upstream hasNext is always false (verified live 2026-10-10: DHS
+    # FY2026 page 2 at limit 5 returns 5 more primes, still hasNext false).
+    # A full page means there may be more: ask for the single next row.
+    rows = result.get("results") or []
+    has_next = False
+    if len(rows) >= limit:
+        probe = await _post(path, {**payload, "limit": 1, "page": page * limit + 1})
+        has_next = bool(probe.get("results"))
+    meta = result.get("page_metadata") if isinstance(result.get("page_metadata"), dict) else {}
+    result["page_metadata"] = {**meta, "page": page, "hasNext": has_next}
+    return result
 
 
 # ---------------------------------------------------------------------------
