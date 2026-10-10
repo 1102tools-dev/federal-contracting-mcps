@@ -1825,12 +1825,14 @@ async def spending_by_subaward_grouped(
     limit: int = 25,
     page: int = 1,
 ) -> dict[str, Any]:
-    """Search subawards using the standard filters object (grouped result set).
+    """Find matching prime awards and their cumulative FFATA report totals.
 
-    Unlike search_subawards which is scoped to a single prime, this returns
-    subawards grouped under their primes given a filter set similar to
-    search_awards. Useful for FFATA-wide analysis ("show me all DoD
-    subcontracts on cyber awards in FY2026").
+    Filters select prime records, but subaward_count and subaward_obligation
+    cover all reported subawards under each prime, not just subaward actions
+    within time_period_start/end. This ranking is not a fiscal-period
+    subaward ranking. For dated reports, pass a returned
+    award_generated_internal_id to search_subawards(award_id=...), read every
+    page, and retain action_date values inside the desired period.
 
     sort accepts: award_id, subaward_count, award_generated_internal_id,
     subaward_obligation. (These differ from search_subawards, which sorts by
@@ -1876,7 +1878,18 @@ async def spending_by_subaward_grouped(
         has_next = bool(probe.get("results"))
     meta = result.get("page_metadata") if isinstance(result.get("page_metadata"), dict) else {}
     result["page_metadata"] = {**meta, "page": page, "hasNext": has_next}
-    return result
+    periods = filters.get("time_period") or []
+    window = "; ".join(f"{period['start_date']} through {period['end_date']}" for period in periods)
+    scope = f" The requested filter window is {window}." if window else ""
+    return _add_note(result, (
+        "Filters select matching prime records. subaward_count and subaward_obligation "
+        "are cumulative reported totals for those primes, not subaward actions limited "
+        "to the requested date window; this is not a fiscal-period subaward ranking."
+        + scope + " For dated results, pass award_generated_internal_id to "
+        "search_subawards(award_id=...), read every page, and retain action_date values "
+        "inside the desired period. FFATA reports may repeat cumulative amounts, so "
+        "summing their reported amounts does not establish net new subcontract spending."
+    ))
 
 
 # ---------------------------------------------------------------------------

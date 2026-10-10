@@ -1,0 +1,540 @@
+{
+  "question": "Find largest FY2025 Transportation grant primes with reported subaward obligations.",
+  "args": {
+    "award_type_codes": [
+      "02",
+      "03",
+      "04",
+      "05"
+    ],
+    "awarding_agency": "Department of Transportation",
+    "sort": "subaward_obligation",
+    "limit": 5,
+    "time_period_start": "2024-10-01",
+    "time_period_end": "2025-09-30"
+  },
+  "wire": [
+    {
+      "method": "POST",
+      "url": "https://api.usaspending.gov/api/v2/search/spending_by_subaward_grouped/",
+      "params": null,
+      "body": {
+        "filters": {
+          "award_type_codes": [
+            "02",
+            "03",
+            "04",
+            "05"
+          ],
+          "agencies": [
+            {
+              "type": "awarding",
+              "tier": "toptier",
+              "name": "Department of Transportation"
+            }
+          ],
+          "time_period": [
+            {
+              "start_date": "2024-10-01",
+              "end_date": "2025-09-30"
+            }
+          ]
+        },
+        "limit": 5,
+        "page": 1,
+        "order": "desc",
+        "sort": "subaward_obligation"
+      },
+      "raw": {
+        "limit": 5,
+        "results": [
+          {
+            "award_id": "FL-2021-064",
+            "subaward_count": 18,
+            "subaward_obligation": 327719366.0,
+            "award_obligation": 3449808.0,
+            "subaward_to_award_ratio": 94.99640734,
+            "award_generated_internal_id": "ASST_NON_FL-2021-064_069"
+          },
+          {
+            "award_id": "693JJ22230000Y001CA6507003",
+            "subaward_count": 4,
+            "subaward_obligation": 319838468.0,
+            "award_obligation": 119380822.0,
+            "subaward_to_award_ratio": 2.67914446,
+            "award_generated_internal_id": "ASST_NON_693JJ22230000Y001CA6507003_069"
+          },
+          {
+            "award_id": "KY-2020-011",
+            "subaward_count": 299,
+            "subaward_obligation": 250924925.0,
+            "award_obligation": 46974828.0,
+            "subaward_to_award_ratio": 5.34168906,
+            "award_generated_internal_id": "ASST_NON_KY-2020-011_069"
+          },
+          {
+            "award_id": "NC-2025-004",
+            "subaward_count": 2,
+            "subaward_obligation": 224314334.0,
+            "award_obligation": 4143680.0,
+            "subaward_to_award_ratio": 54.13408709,
+            "award_generated_internal_id": "ASST_NON_NC-2025-004_069"
+          },
+          {
+            "award_id": "KY-2017-003",
+            "subaward_count": 246,
+            "subaward_obligation": 190313391.0,
+            "award_obligation": 19489045.0,
+            "subaward_to_award_ratio": 9.76514709,
+            "award_generated_internal_id": "ASST_NON_KY-2017-003_069"
+          }
+        ],
+        "page_metadata": {
+          "page": 1,
+          "hasNext": false
+        },
+        "messages": [
+          "This endpoint is under active development and subject to change",
+          "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.usaspending.gov/api/v2/search/spending_by_subaward_grouped/",
+      "params": null,
+      "body": {
+        "filters": {
+          "award_type_codes": [
+            "02",
+            "03",
+            "04",
+            "05"
+          ],
+          "agencies": [
+            {
+              "type": "awarding",
+              "tier": "toptier",
+              "name": "Department of Transportation"
+            }
+          ],
+          "time_period": [
+            {
+              "start_date": "2024-10-01",
+              "end_date": "2025-09-30"
+            }
+          ]
+        },
+        "limit": 1,
+        "page": 6,
+        "order": "desc",
+        "sort": "subaward_obligation"
+      },
+      "raw": {
+        "limit": 1,
+        "results": [
+          {
+            "award_id": "AZ-2021-056",
+            "subaward_count": 2,
+            "subaward_obligation": 158121969.0,
+            "award_obligation": 158121969.0,
+            "subaward_to_award_ratio": 1.0,
+            "award_generated_internal_id": "ASST_NON_AZ-2021-056_069"
+          }
+        ],
+        "page_metadata": {
+          "page": 6,
+          "hasNext": false
+        },
+        "messages": [
+          "This endpoint is under active development and subject to change",
+          "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+        ]
+      }
+    }
+  ],
+  "original_output": {
+    "limit": 5,
+    "results": [
+      {
+        "award_id": "FL-2021-064",
+        "subaward_count": 18,
+        "subaward_obligation": 327719366.0,
+        "award_obligation": 3449808.0,
+        "subaward_to_award_ratio": 94.99640734,
+        "award_generated_internal_id": "ASST_NON_FL-2021-064_069"
+      },
+      {
+        "award_id": "693JJ22230000Y001CA6507003",
+        "subaward_count": 4,
+        "subaward_obligation": 319838468.0,
+        "award_obligation": 119380822.0,
+        "subaward_to_award_ratio": 2.67914446,
+        "award_generated_internal_id": "ASST_NON_693JJ22230000Y001CA6507003_069"
+      },
+      {
+        "award_id": "KY-2020-011",
+        "subaward_count": 299,
+        "subaward_obligation": 250924925.0,
+        "award_obligation": 46974828.0,
+        "subaward_to_award_ratio": 5.34168906,
+        "award_generated_internal_id": "ASST_NON_KY-2020-011_069"
+      },
+      {
+        "award_id": "NC-2025-004",
+        "subaward_count": 2,
+        "subaward_obligation": 224314334.0,
+        "award_obligation": 4143680.0,
+        "subaward_to_award_ratio": 54.13408709,
+        "award_generated_internal_id": "ASST_NON_NC-2025-004_069"
+      },
+      {
+        "award_id": "KY-2017-003",
+        "subaward_count": 246,
+        "subaward_obligation": 190313391.0,
+        "award_obligation": 19489045.0,
+        "subaward_to_award_ratio": 9.76514709,
+        "award_generated_internal_id": "ASST_NON_KY-2017-003_069"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": true
+    },
+    "messages": [
+      "This endpoint is under active development and subject to change",
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "followup_question": "Check actual dates of every reported subaward under the FY2025-ranked Transportation prime.",
+  "followup_args": {
+    "award_id": "ASST_NON_FL-2021-064_069",
+    "limit": 100,
+    "sort": "action_date"
+  },
+  "followup_wire": [
+    {
+      "method": "POST",
+      "url": "https://api.usaspending.gov/api/v2/subawards/",
+      "params": null,
+      "body": {
+        "sort": "action_date",
+        "order": "desc",
+        "limit": 100,
+        "page": 1,
+        "award_id": "ASST_NON_FL-2021-064_069"
+      },
+      "raw": {
+        "page_metadata": {
+          "page": 1,
+          "next": null,
+          "previous": null,
+          "hasNext": false,
+          "hasPrevious": false
+        },
+        "results": [
+          {
+            "id": 7449337,
+            "subaward_number": "FL-2021-064",
+            "description": "BUS SHELTERS",
+            "action_date": "2021-09-02",
+            "amount": 53128.0,
+            "recipient_name": "LAKELAND AREA MASS TRANSIT DISTRICT"
+          },
+          {
+            "id": 7441009,
+            "subaward_number": "FL-2021-064",
+            "description": "TWO CUTAWAY BUS",
+            "action_date": "2021-09-02",
+            "amount": 156298.0,
+            "recipient_name": "LEVY, COUNTY OF"
+          },
+          {
+            "id": 7436702,
+            "subaward_number": "FL-2021-064",
+            "description": "ONE 30' BUS",
+            "action_date": "2021-09-02",
+            "amount": 277843.0,
+            "recipient_name": "COUNTY OF HERNANDO"
+          },
+          {
+            "id": 7436701,
+            "subaward_number": "FL-2021-064",
+            "description": "TWO CUTAWAY BUSES",
+            "action_date": "2021-09-02",
+            "amount": 244666.0,
+            "recipient_name": "COUNTY OF VOLUSIA"
+          },
+          {
+            "id": 7436700,
+            "subaward_number": "FL-2021-064",
+            "description": "1 CUTAWAY BUS AND 2 MINI BUS",
+            "action_date": "2021-09-02",
+            "amount": 221786.0,
+            "recipient_name": "COUNTY OF OKALOOSA"
+          },
+          {
+            "id": 7432658,
+            "subaward_number": "FL-2021-064",
+            "description": "ONE 40' BUS (PARTIAL)",
+            "action_date": "2021-09-02",
+            "amount": 208010.0,
+            "recipient_name": "CENTRAL FLORIDA REGIONAL TRANSPORTATION AUTHORITY"
+          },
+          {
+            "id": 7428426,
+            "subaward_number": "FL-2021-064",
+            "description": "TWO CUTAWAY BUSES",
+            "action_date": "2021-09-02",
+            "amount": 182040.0,
+            "recipient_name": "NASSAU COUNTY COUNCIL ON AGING INC"
+          },
+          {
+            "id": 7428425,
+            "subaward_number": "FL-2021-064",
+            "description": "THREE MINIVANS, FIVE LOW FLOOR MINIVANS, THREE 23' BUSES, ONE 30' BUS",
+            "action_date": "2021-09-02",
+            "amount": 626316.0,
+            "recipient_name": "CENTRAL FLORIDA REGIONAL PLANNING COUNCI"
+          },
+          {
+            "id": 7423916,
+            "subaward_number": "FL-2021-064",
+            "description": "SECURITY EQUIPMENT, SHOP EQUIPMENT (PORTABLE BUS WASH SYSTEM)",
+            "action_date": "2021-09-02",
+            "amount": 197182.0,
+            "recipient_name": "MARION SENIOR SERVICES, INC."
+          },
+          {
+            "id": 7419763,
+            "subaward_number": "FL-2021-064",
+            "description": "TWELVE CAMERA SYSTEMS FOR BUSES",
+            "action_date": "2021-09-02",
+            "amount": 121929.0,
+            "recipient_name": "CITY OF KEY WEST"
+          },
+          {
+            "id": 7415618,
+            "subaward_number": "FL-2021-064",
+            "description": "TWO CUTAWAY BUS, TWO FORD TRANSITS",
+            "action_date": "2021-09-02",
+            "amount": 324483612.0,
+            "recipient_name": "JACKSON COUNTY TRANSPORTATION, INC."
+          },
+          {
+            "id": 7411460,
+            "subaward_number": "FL-2021-064",
+            "description": "TWO MINI BUSES",
+            "action_date": "2021-09-02",
+            "amount": 104662.0,
+            "recipient_name": "GOOD WHEELS INC."
+          },
+          {
+            "id": 7393390,
+            "subaward_number": "FL-2021-064",
+            "description": "ONE CUTAWAY BUS",
+            "action_date": "2021-09-02",
+            "amount": 69220.0,
+            "recipient_name": "SUWANNEE RIVER ECONOMIC COUNCIL, INC."
+          },
+          {
+            "id": 7384819,
+            "subaward_number": "FL-2021-064",
+            "description": "TWO CUTAWAY BUSES",
+            "action_date": "2021-09-02",
+            "amount": 175954.0,
+            "recipient_name": "BIG BEND TRANSIT, INC."
+          },
+          {
+            "id": 7376823,
+            "subaward_number": "FL-2021-064",
+            "description": "TWO MOBILE COLUMN LIFTS SYSTEM, SEVEN SURVEILLANCE CAMERA SYSTEM",
+            "action_date": "2021-09-02",
+            "amount": 82875.0,
+            "recipient_name": "COUNTY OF COLLIER"
+          },
+          {
+            "id": 7376822,
+            "subaward_number": "FL-2021-064",
+            "description": "ONE CUTAWAY BUS",
+            "action_date": "2021-09-02",
+            "amount": 80725.0,
+            "recipient_name": "BAKER COUNTY COUNCIL ON AGING, INC."
+          },
+          {
+            "id": 7376821,
+            "subaward_number": "FL-2021-064",
+            "description": "TWO CUTAWAY BUS",
+            "action_date": "2021-09-02",
+            "amount": 187368.0,
+            "recipient_name": "RIDE SOLUTION, INC."
+          },
+          {
+            "id": 7376820,
+            "subaward_number": "FL-2021-064",
+            "description": "THREE CUTAWAY BUSES",
+            "action_date": "2021-09-02",
+            "amount": 245752.0,
+            "recipient_name": "SUWANNEE VALLEY TRANSIT AUTHORITY"
+          }
+        ]
+      }
+    }
+  ],
+  "followup_output": {
+    "page_metadata": {
+      "page": 1,
+      "next": null,
+      "previous": null,
+      "hasNext": false,
+      "hasPrevious": false
+    },
+    "results": [
+      {
+        "id": 7449337,
+        "subaward_number": "FL-2021-064",
+        "description": "BUS SHELTERS",
+        "action_date": "2021-09-02",
+        "amount": 53128.0,
+        "recipient_name": "LAKELAND AREA MASS TRANSIT DISTRICT"
+      },
+      {
+        "id": 7441009,
+        "subaward_number": "FL-2021-064",
+        "description": "TWO CUTAWAY BUS",
+        "action_date": "2021-09-02",
+        "amount": 156298.0,
+        "recipient_name": "LEVY, COUNTY OF"
+      },
+      {
+        "id": 7436702,
+        "subaward_number": "FL-2021-064",
+        "description": "ONE 30' BUS",
+        "action_date": "2021-09-02",
+        "amount": 277843.0,
+        "recipient_name": "COUNTY OF HERNANDO"
+      },
+      {
+        "id": 7436701,
+        "subaward_number": "FL-2021-064",
+        "description": "TWO CUTAWAY BUSES",
+        "action_date": "2021-09-02",
+        "amount": 244666.0,
+        "recipient_name": "COUNTY OF VOLUSIA"
+      },
+      {
+        "id": 7436700,
+        "subaward_number": "FL-2021-064",
+        "description": "1 CUTAWAY BUS AND 2 MINI BUS",
+        "action_date": "2021-09-02",
+        "amount": 221786.0,
+        "recipient_name": "COUNTY OF OKALOOSA"
+      },
+      {
+        "id": 7432658,
+        "subaward_number": "FL-2021-064",
+        "description": "ONE 40' BUS (PARTIAL)",
+        "action_date": "2021-09-02",
+        "amount": 208010.0,
+        "recipient_name": "CENTRAL FLORIDA REGIONAL TRANSPORTATION AUTHORITY"
+      },
+      {
+        "id": 7428426,
+        "subaward_number": "FL-2021-064",
+        "description": "TWO CUTAWAY BUSES",
+        "action_date": "2021-09-02",
+        "amount": 182040.0,
+        "recipient_name": "NASSAU COUNTY COUNCIL ON AGING INC"
+      },
+      {
+        "id": 7428425,
+        "subaward_number": "FL-2021-064",
+        "description": "THREE MINIVANS, FIVE LOW FLOOR MINIVANS, THREE 23' BUSES, ONE 30' BUS",
+        "action_date": "2021-09-02",
+        "amount": 626316.0,
+        "recipient_name": "CENTRAL FLORIDA REGIONAL PLANNING COUNCI"
+      },
+      {
+        "id": 7423916,
+        "subaward_number": "FL-2021-064",
+        "description": "SECURITY EQUIPMENT, SHOP EQUIPMENT (PORTABLE BUS WASH SYSTEM)",
+        "action_date": "2021-09-02",
+        "amount": 197182.0,
+        "recipient_name": "MARION SENIOR SERVICES, INC."
+      },
+      {
+        "id": 7419763,
+        "subaward_number": "FL-2021-064",
+        "description": "TWELVE CAMERA SYSTEMS FOR BUSES",
+        "action_date": "2021-09-02",
+        "amount": 121929.0,
+        "recipient_name": "CITY OF KEY WEST"
+      },
+      {
+        "id": 7415618,
+        "subaward_number": "FL-2021-064",
+        "description": "TWO CUTAWAY BUS, TWO FORD TRANSITS",
+        "action_date": "2021-09-02",
+        "amount": 324483612.0,
+        "recipient_name": "JACKSON COUNTY TRANSPORTATION, INC."
+      },
+      {
+        "id": 7411460,
+        "subaward_number": "FL-2021-064",
+        "description": "TWO MINI BUSES",
+        "action_date": "2021-09-02",
+        "amount": 104662.0,
+        "recipient_name": "GOOD WHEELS INC."
+      },
+      {
+        "id": 7393390,
+        "subaward_number": "FL-2021-064",
+        "description": "ONE CUTAWAY BUS",
+        "action_date": "2021-09-02",
+        "amount": 69220.0,
+        "recipient_name": "SUWANNEE RIVER ECONOMIC COUNCIL, INC."
+      },
+      {
+        "id": 7384819,
+        "subaward_number": "FL-2021-064",
+        "description": "TWO CUTAWAY BUSES",
+        "action_date": "2021-09-02",
+        "amount": 175954.0,
+        "recipient_name": "BIG BEND TRANSIT, INC."
+      },
+      {
+        "id": 7376823,
+        "subaward_number": "FL-2021-064",
+        "description": "TWO MOBILE COLUMN LIFTS SYSTEM, SEVEN SURVEILLANCE CAMERA SYSTEM",
+        "action_date": "2021-09-02",
+        "amount": 82875.0,
+        "recipient_name": "COUNTY OF COLLIER"
+      },
+      {
+        "id": 7376822,
+        "subaward_number": "FL-2021-064",
+        "description": "ONE CUTAWAY BUS",
+        "action_date": "2021-09-02",
+        "amount": 80725.0,
+        "recipient_name": "BAKER COUNTY COUNCIL ON AGING, INC."
+      },
+      {
+        "id": 7376821,
+        "subaward_number": "FL-2021-064",
+        "description": "TWO CUTAWAY BUS",
+        "action_date": "2021-09-02",
+        "amount": 187368.0,
+        "recipient_name": "RIDE SOLUTION, INC."
+      },
+      {
+        "id": 7376820,
+        "subaward_number": "FL-2021-064",
+        "description": "THREE CUTAWAY BUSES",
+        "action_date": "2021-09-02",
+        "amount": 245752.0,
+        "recipient_name": "SUWANNEE VALLEY TRANSIT AUTHORITY"
+      }
+    ]
+  },
+  "source_commit": "03b9e2554837998c4c261c65e2947dc79f23855a"
+}

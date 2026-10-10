@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.17
+
+- Clarify grouped FFATA totals as cumulative reported subawards for matching primes, not fiscal-period subaward rankings; add a requested-window scope note and dated-report recovery guidance.
+- Preserve all source counts, amounts, ratios, prime IDs and pagination. Keep existing tool names, schemas and hosted identity.
+- Add three captured-API regressions: one scope-warning failure before correction, two unaffected source/recovery passes, all three pass corrected. Full suite: 1,927 passed, 379 skipped (2,306 collected).
+
 ## 1.0.16
 
 - Correct annual recipient new-award counts to federal fiscal years by summing disjoint, correctly labeled upstream fiscal quarters; preserve quarter/month source results and messages.

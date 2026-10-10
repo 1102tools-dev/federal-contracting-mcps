@@ -2,14 +2,14 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across fourteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.16 source collects 2,303 regression cases (1,924 offline and 379 live-gated). Its measured offline lane passed 1,924 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records.
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across fifteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.17 source collects 2,306 regression cases (1,927 offline and 379 live-gated). Its measured offline lane passed 1,927 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 55 |
-| Total regression tests | 2,303 (1,924 offline, 379 live-gated) |
-| Collected cases per tool | 41.87 (not a coverage percentage) |
-| Audit rounds completed | 14 (including the fresh Round 2 content audit) |
+| Total regression tests | 2,306 (1,927 offline, 379 live-gated) |
+| Collected cases per tool | 41.93 (not a coverage percentage) |
+| Audit rounds completed | 15 (including the new Round 3 content audit) |
 | Initial integration issues (round 1) | 28+ |
 | P1 silent-wrong-data bugs found and fixed | 11 (rounds 1-9) |
 | P2 validation gaps found and fixed | 7 (rounds 1-9) |
@@ -18,7 +18,7 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Round 9 (v0.3) live audit findings | 1 (list_states JSON-array response shape) |
 | Round 10 (1.0.1) semantic audit findings | 22 (12 search family, 10 entity family), all fixed |
 | Historical release cycles through 1.0.3 | 15 (v0.1.2 through v1.0.3) |
-| Current source package | 1.0.16 |
+| Current source package | 1.0.17 |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -459,3 +459,65 @@ Evidence: `Artifacts/mcp-e2e-20261010/round2/usaspending`, especially
 `published-installed-cli-followups.json`, `published-hosted-followups.json`
 and `published-source-semantic-checks.json`. No Round 3 content audit is
 claimed by this publication verification.
+
+
+## Round 15: new realistic content audit (1.0.17 source, 2026-10-10)
+
+A new campaign exercised **130 questions across all 55 tools** on actual
+published PyPI/public 1.0.16, with fresh official API captures. Workflows
+covered NASA aerospace R&D and engineering markets, new versus modified
+awards and continuation; all six award types; a different discovered GSA
+vehicle; Transportation grants and agency accountability; VA year/resource
+comparison; all category/time/geography dimensions; Northrop parent and child
+identity with fiscal timelines; IIJA reference-to-grant funding; Highway and
+Federal-Aid Highways accounts; and recent completed-year DoD/USACE activity.
+All 130 successful source/public outputs matched. Source parity did not
+establish correct period interpretation for the finding below.
+
+Independent checks passed for 15 actual award detail records (new signature
+dates, Alabama performance and amount bounds, FFP/full-open engineering),
+nonoverlapping award and FFATA pages, and NASA fiscal obligation totals of
+$15,784,830,135.01 across annual/quarter/month groups. Northrop new-award
+counts crossfoot to FY2025=1,728 and, for July–December 2024, FY2024=504 and
+FY2025=418. Agency defaults identify the last completed FY2026, and recent
+DoD/USACE results carry the applicable 90-day publication caveat. State
+profiles disclose their older population/income source years; these source
+limitations are not treated as product defects.
+
+**One new P2 scope-guidance defect**: the FY2025 Transportation grouped
+subaward ranking returned FL-2021-064 with 18 reports totaling $327,719,366.
+The complete official dated-report response places all 18 on 2021-09-02:
+FY2025 has zero reports and $0 reported amounts for this prime. The
+[official contract](https://github.com/fedspendingtransparency/usaspending-api/blob/03b9e2554837998c4c261c65e2947dc79f23855a/usaspending_api/api_contracts/contracts/v2/search/spending_by_subaward_grouped.md)
+and implementation return cumulative totals for selected prime records,
+rather than date-trimming their subaward totals. The arithmetic is an honest
+source result; advertising fiscal-period subcontracts without scope guidance
+was the product defect.
+
+The candidate description and output note now distinguish matching-prime
+filters from cumulative subaward totals, include the requested date window,
+and direct users to `search_subawards` with the returned prime ID, complete
+pagination and actual `action_date` filtering. Counts, dollar values, IDs,
+ratios, source messages and corrected pagination remain intact. A real
+installed candidate-wheel catalog-guided workflow retrieves the complete 18
+reports and corrects the fiscal interpretation. It also retrieves all 299
+reports for KY-2020-011 over three pages: cumulative reported amounts are
+$250,924,925, while its seven FY2025 reports sum to $2,374,440. These are
+reported amounts, not a claim of net new spending or a global FY2025 ranking.
+
+Three captured-API regressions execute through the MCP pipeline: the scope
+warning fails before correction, two unchanged source/recovery checks pass
+before, and all three pass after. The full source lane measured **1,927
+passed / 379 live-gated skipped / 2,306 collected**. No skipped case is
+credited as executed. The installed candidate CLI also passes the complete 130-question replay
+across all 55 tools. Version consistency, the approved 55-tool contract,
+wheel/sdist build and diff checks pass. Exactly one tool description changes;
+all names, input schemas, annotations and identities are preserved. Compatible
+metadata updates use OpenAI continuous review and require no manual directory
+republication. Actual 1.0.17 PyPI/public acceptance remains pending root's
+serial publication, and candidate-wheel checks do not claim a PyPI release.
+
+Evidence: `Artifacts/mcp-e2e-20261010/round3/usaspending`, including the 130-case
+`campaign.json`, primary source captures/hash index, `semantic-checks.json`,
+`ffata-prime-primary-followup.json`, before/fixed regressions and measured
+suite/collection logs. Publication followups will be recorded separately.
