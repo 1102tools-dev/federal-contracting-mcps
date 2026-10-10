@@ -1,13 +1,13 @@
 # Unified MCP releases
 
 A versioned GitHub release builds the Python packages and the eight hosted MCP
-services from the same canonical checkout. Ordinary commits and documentation
+services selected by its release scope from the same canonical checkout. Ordinary commits and documentation
 edits do not deploy production.
 
 ```text
 release tag -> shared tests + package tests + hosted image/contract checks
                  -> published-version guard for all nine packages
-                 -> Cloudflare hosted services -> live verification
+                 -> Cloudflare hosted services -> live verification (hosted scopes)
                  -> PyPI packages -> verify published wheels
                  -> MCP registry
                  -> final release and destination summary
@@ -38,7 +38,9 @@ does not publish website content or submit directory listings.
   supports retries. Never overlap a legacy release with the first unified release.
 - The workflow serializes unified production releases. Cloudflare deployment and
   live verification must succeed for every service in the release (all eight for
-  a `v*` tag, one for a scoped tag) before PyPI starts.
+  a `v*` tag, one for a hosted scoped tag) before PyPI starts. The package-only
+  SAM scope deliberately skips hosted jobs and Cloudflare credentials; package
+  and shared safety checks must still succeed before publication.
   A partial failure is reported as a failed release.
   It is not a transaction, and PyPI versions cannot be overwritten or rolled back.
 
@@ -50,8 +52,9 @@ Use a dedicated Cloudflare account token with Account Settings Read, Workers
 Scripts Write, and Workers Containers Write for account
 `846d3e41e48446abcd3570c0959f9fb5`, plus Zone Read and Workers Routes Write scoped
 to the `1102tools.com` zone. The read-only preflight verifies container-list
-access, not every deployment permission. Successful deployment and live
-verification are the enforced gate before any PyPI upload.
+access, not every deployment permission. For releases with a hosted scope, successful deployment and live
+verification are enforced gates before PyPI upload. The SAM Python-only scope
+requires the documented successful package checks and legitimate hosted-job skips.
 Do not copy the broader interactive Keychain token into CI, log credentials, or
 commit them. PyPI continues using OIDC Trusted Publishing, without a PyPI API key.
 The existing `mcp-registry-publish` environment retains its own registry secret.
@@ -93,8 +96,9 @@ response reports the release commit. During rollout, the verifier waits within i
 commit, package version, full tool list, and a representative tool call repeated
 three times (plus service-specific checks: the publisher-key mode for the two
 operator-keyed services, a live city lookup for GSA Per Diem, and compacted
-search results for Regulations.gov). The overall release succeeds only if PyPI,
-Cloudflare, and registry jobs succeed.
+search results for Regulations.gov). The overall release requires successful PyPI and registry jobs and, for hosted
+scopes, successful Cloudflare jobs. The SAM Python-only scope permits only the
+expected hosted-job skips; failures or cancellations do not qualify.
 
 Between releases, `.github/workflows/hosted-health.yml` runs
 `scripts/check_hosted_health.py` every 30 minutes against every hosted service
@@ -155,3 +159,12 @@ From 1.1.0, GSA Per Diem answers ZIP, state, and M&IE lookups for bundled fiscal
 ## Releasing one service
 
 A `v*` tag push (for example `v1.0.33`) releases every package and hosted service. A scoped tag `<slug>/v<version>` (for example `gsa-perdiem/v1.1.0`, slugs from `deploy/services.json`) releases only that service and its package. A manual dispatch on a release tag can also set `services` to comma-separated slugs. `scripts/release_plan.py` scopes the build, deploy, PyPI, and registry jobs; unrelated services are not rebuilt or redeployed.
+
+`sam-gov/v<version>` selects only `sam-gov-mcp` and its Python registry manifest.
+Use the Python package version, not the separately versioned native opportunities
+mirror. This scope preserves the existing Trusted Publisher workflow and does
+not deploy the native SAM mirror or any other service. An empty hosted matrix
+must produce skipped hosted build, Cloudflare access and deployment jobs;
+failed, canceled or unexpectedly skipped safety/package jobs prevent publication.
+The production concurrency group retains `cancel-in-progress: false`. Wait for
+each release to finish before pushing the next scoped tag.

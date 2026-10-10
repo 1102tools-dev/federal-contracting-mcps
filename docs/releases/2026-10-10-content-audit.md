@@ -1,6 +1,6 @@
 # October 10, 2026 MCP content audit and release record
 
-**Rounds 1 and 2: all43 cumulative findings fully fixed; actual PyPI, Cloudflare, all-five Dell, applicable data and published website checks passed.** This record distinguishes executed checks, collected tests and source limitations. Round2 found five newP2 issues, so the zero-new-P0/P1/P2 stopping condition remains unmet. Round3 starts only after this record's final GitHub publication is verified. Evidence paths are relative to `Artifacts/mcp-e2e-20261010/`.
+**Rounds 1–3 are closed: 53 cumulative findings fully fixed and live verified. Round 4 content coverage is complete across all eight servers, with nine new findings (0 P0, 0 P1, 5 P2, 4 P3); all nine fixes are merged and all scoped releases have succeeded.** Final eight-service production identity/112-tool contract checks, all16 official PyPI artifacts and all-five Dell/45 backend checks passed. SAM Python1.0.14, CALC1.0.16 and eCFR1.1.6 completed actual published content acceptance; USAspending1.0.20 completed150CLI/150public questions plus six guided workflows; independent original/recovery checks also passed. Actual website publication passed; this final coordinator merge and served-file check complete documentation closure. Round5 starts only after Round4 closes. This record distinguishes executed checks, collected tests and source limitations. Evidence paths are relative to `Artifacts/mcp-e2e-20261010/`.
 
 ## Scope and findings ledger
 
@@ -292,3 +292,132 @@ Final Regulations source seal confirms all110 semantic comparisons, 70 retained 
 Website source [PR3](https://github.com/1102tools-dev/federal-contracting-prompts/pull/3) merged at `3c034775695fa071fb98fc77109fc8c4b1da95a5`; deployment snapshot [PR5](https://github.com/1102tools-dev/1102tools-deploy/pull/5) merged at `a07c606ed35198b2713d2bc8843fd512b88bbd0d`. Independent source and snapshot review passed exact source stamping/byte identity, counts, versions, scope exclusion and the51-file allowlist; both CI workflows passed. Actual Cloudflare Pages deployment `28a5c883` published to [1102tools.com](https://1102tools.com/). Final public acceptance passed49 served assets plus two configurations, four copy checks and an actual browser reload/expanded-card review. HTML source comparisons remove only Cloudflare-injected analytics scripts; no raw HTML-byte identity is claimed. The browser shows6,067 collected product tests,5,812 goal tests, Regulations2.0.6/298, current package cards, ten corrected round-3 findings and the unmet future zero-new-P0/P1/P2 stopping condition.
 
 Evidence: `coordinator/website-round3-public-assets.json`, `website-round3-copy-proof.json`, `website-round3-browser-proof.json`. Server documentation PRs122–130 are merged; the additional final Regulations documentation merge is `c7b5a204b18e981194e7fbd73428c919c289d367`. This coordinator change publishes the root README, measured inventory, native Per Diem deployment guidance and the cumulative release record. Actual GitHub served-file verification follows merge and is retained in the coordinator closure evidence; it does not require republishing compatible MCP directory listings. All53 confirmed findings are fully fixed, none partially fixed and none unresolved. Source credential/quota/unavailable-document limits remain explicit. Round4 must still find no new P0/P1/P2 issues before the overall goal can complete.
+
+
+## Round 4 — published content and website accepted; final record publication
+
+All eight owners finished realistic ordinary-user and power-user content coverage before release integration. Nine new confirmed findings comprise five P2 and four P3 issues. No P0 or P1 was found. Acquisition.gov remains excluded from this goal and every subsequent round. The cumulative confirmed inventory is 62 (0 P0, 2 P1, 38 P2, 22 P3), with all62 source fixes merged. All62confirmed findings have actual published content acceptance and the updated website is deployed and verified. This final coordinator publication completes the GitHub record; actual served-file verification follows merge. The zero-new-P0/P1/P2 stopping condition remains unmet because this round found five P2 issues.
+
+| MCP | New P0 | New P1 | New P2 | New P3 | Correction / current acceptance |
+|---|---:|---:|---:|---:|---|
+| SAM.gov | 0 | 0 | 1 | 0 | Reusing returned ISO award dates or CGAC codes preserves actionable format guidance in the fresh SDK. Python 1.0.14 is published and independently accepted; the separate native mirror remains 1.0.3. |
+| USAspending | 0 | 0 | 2 | 3 | Program inventories disclose that fiscal-year filtering is not applied, return complete bounded lists, preserve source types, and distinguish inventory from fiscal-year spending. Catalog guidance no longer promises an unsupported mandatory/discretionary split or a current-fiscal-year default when the source uses its latest available certified year. Published1.0.19 verified the original four corrections in150CLI/public questions. Published1.0.20 additionally preserves explicit-current-FY availability guidance; independent final original/recovery checks passed, with the full150CLI/public owner replay and six guided workflows passed. |
+| GSA CALC+ | 0 | 0 | 1 | 0 | Mixed Registered Nurse grades and specialties no longer support a verified comparable-price verdict; matched-title recovery and unsupported-filter limitations remain explicit. Published1.0.16 passed152registered/152public workflows plus18actual stdio calls; final fresh-package acceptance passed. |
+| eCFR | 0 | 0 | 1 | 0 | Missing current legacy 41 CFR 102-75.45 returns useful removal/history/dated-text recovery in a fresh installed console. Actual published1.1.6 passed80CLI/76public calls,192retained-source comparisons and the fresh338passed/118skipped suite. |
+| Regulations.gov | 0 | 0 | 0 | 1 | Public README badge now reports the actual 298 collected cases. Docs-only change is served and verified; package 2.0.6 remains unchanged. |
+| BLS OEWS | 0 | 0 | 0 | 0 | Full assigned coverage completed; source limitations retained separately. |
+| Federal Register | 0 | 0 | 0 | 0 | Full assigned coverage completed; scan and source-date qualifications retained. |
+| GSA Per Diem | 0 | 0 | 0 | 0 | Full assigned ordinary-content coverage completed; fresh SDK test-message compatibility failures are disclosed separately. |
+| **Total** | **0** | **0** | **5** | **4** | **All nine corrections and website publication accepted; final coordinator record completes closure.** |
+
+### Reviewed release integration and immutable failed attempt
+
+SAM package-only workflow PR135 preserved the hosted mirror and established fail-closed publication gates for legitimate empty hosted matrices. Actual tag `sam-gov/v1.0.14`, source `d6ea8fea87732e5d28945be9cbd2917c87c844c8`, workflow38080882021 succeeded through official PyPI publication, payload verification, registry metadata and GitHub release. Hosted build/access/deployment jobs were genuinely skipped. Owner and independent fresh official installed console acceptance, unchanged 20-tool contract and 784 passed / 374 skipped / 1,158 collected acceptance passed. Credentialed SAM source calls remain unavailable without a key; those are not counted as live source passes.
+
+The immutable first hosted attempt `usaspending/v1.0.18` at `dcb2192ac215f3ea78b144b60ac2155a16305dfd`, workflow38081445249, stopped on an existing body-entry spacing assertion: 1,929 passed / 379 skipped / one failed. Production deployment, PyPI publication, registry publication and GitHub release were skipped; CALC and eCFR tags were not pushed. No tag was moved and no queued release was canceled or replaced.
+
+Controlled delayed-persistence experiments reproduced compressed request-body entry gaps while durable request reservations remained correctly spaced. This proves an invalid timing assertion; the precise cause on the original CI runner remains unknown. Narrow test-only PR144 for USAspending and PR145 for CALC retain meaningful attempt-budget, concurrency, cancellation, error-consumption, cooldown, crash and cross-process checks. CALC's actual policy is 500 attempts/hour with two concurrent attempts; USAspending retains its own 500/300-second budget and cap four. Runtime helpers, tool contracts and content fixes are unchanged. USAspending metadata PR143 reserves a new immutable 1.0.19 release; failed 1.0.18 history is retained. These release-test integration repairs are not additional content findings.
+
+### Coverage inventory and limitations
+
+The original candidate-source collection independently measured 6,081 package cases across nine product servers, of which 5,826 belong to the eight-server goal. That original proof remains immutable. A separate independent corrective-source collection at `4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b` also measures **6,081 product / 5,826 goal cases**, with all nine collection commands exiting successfully and unchanged source/environment provenance verified. These are collected cases, not passing-test totals. Evidence: `coordinator/round4-corrective-final-collection/collection.json`. The 255 Acquisition cases are passive product inventory, not an Acquisition audit.
+
+GSA Per Diem's frozen suite passed316 with267 skips, whereas the actually installed fresh SDK suite passed300 with267 skips and16 pre-existing expected-message failures. The ordinary content corpus did not reproduce an affected workflow. Those16 failures remain explicit, outside this content campaign; no full fresh-suite pass is claimed. BLS flat-footnote403, SAM credentials, Regulations source credentials/quota and source-date/availability limitations are retained in per-server records. Registered-tool calls, actual stdio calls, exact parity, source variation and historical retained captures are reported separately.
+
+
+### Additional published availability guidance and actual fresh SDK results
+
+Actual USAspending1.0.19 publication succeeded in workflow38082477859 at `4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`, with Cloudflare version `cbc8da27-84ce-4c95-ac2f-7aa10bc7c99c`. Owner acceptance completed150 actual CLI/public questions and150 retained-source comparisons; independent fresh official installed console/public acceptance passed six original/followup workflows, all55 tool definitions and reviewed payload identity. An evidence lookup that omitted tool names was corrected by reconciling saved outputs with the original tool-qualified source captures; no product data changed and no unnecessary corpus replay was performed.
+
+The actual fresh installed SDK2.3 suite measured **1,075 passed / 855 failed / 379 skipped / 2,309 collected**. The full1930/379 candidate/source test execution was frozen SDK2.0, not a full fresh-SDK pass. Candidate SDK2.3 had executed150 content calls and six guided followups only. Historical logs are retained, and the corrected provenance is recorded in `round4/usaspending/source-suite-provenance.json`. Ordinary supported-content successes and exception/message regression failures are reported separately; a blanket generic-SDK repair is outside this content campaign.
+
+A normal explicit-current-FY2027 account question exposed one additional P3: the official source returns HTTP400 explaining its available2001–2026 range, the public origin preserves that explanation, but the fresh CLI hides it. The unavailable source data is a limitation; suppression of its actionable guidance is the confirmed product defect. The catalog and omitted-year FY2026 default are already accurate, and no wrong FY2027 data is returned, supporting P3 severity. The owner implemented a narrowly scoped dynamic source-range correction for version1.0.20 with the original question and supported omitted-year recovery, preserving unexpected failures and the55-tool contract. Independent exact-head SAM review and CI passed before merge; the separate serialized1.0.20 release subsequently completed successfully.
+
+
+### Final source inventory and publication preparation
+
+USAspending PR147 merged at `2a93b7b706d818da647f9d56cacbf543f867fa79` after exact-head independent SAM review and CI38083611051 passed. Three source-captured regressions preserve the provider explanation, supported default-year recovery and unexpected503 behavior. The frozen full suite passed1,933 with379 skips; latestSDK focused three cases passed. Actual1.0.20 publication completed successfully; fresh installed full execution measured1,078passed/855failed/379skipped and the150CLI/public owner replay passed.
+
+Independent final collection measured **6,084 product package cases / 5,829 eight-goal cases**, including USAspending2,312 and the passive255 Acquisition inventory. All nine collection commands exited successfully. Actual integration HEAD `9e7717d969a4469aac56de75943cdcc4c958db34` differs from canonical release source2a93 only in the three coordinator documentation files; every tracked package file was independently byte-verified against canonical source. Proof: `coordinator/round4-corrective20-final-collection/collection.json`. Earlier dcb/4ef collections remain immutable. These are collected cases, not a claim of6,084 passing fresh-SDK tests.
+
+CALC1.0.16 actual final acceptance completed152 registered-tool workflows plus152 public workflows,1,742 behavioral checks and3,738 qualified source/data comparisons. Separate actual stdio acceptance passed18 calls across all8 tools, including the affected grade originals and exact-title recovery. Full freshSDK2.3 execution passed317 with121 skips (438collected). The local500/hour budget blocked51 calls plus six retries;152 unique successful registered workflows span209 attempts after honoring expiry. Dynamic source comparison includes244 percentile scalars varying by at most$2.551834/hour and one bounded TechnicalWriter suggestion-tail variation verified by two fresh source repeats and an exact unseen-title check. These are qualified source comparisons, not byte-exact current numeric parity.
+
+Interim1.0.19 destination verification passed eight public services/112 exact definitions, all16 official downloaded artifact hashes/sizes and allfive Dell origins/45 checks. Independent Federal Register review recomputed90 assertions. Actual Dell evidence checks publicGET/POST origin headers, HTTPSoriginGET health, and SSH container-local initialization/physical health. It does not claim HTTPSoriginPOST initialization. These interim19 records remain immutable; final20 requires a separate matrix and actual repeated destination checks before closure.
+
+
+### Final20 production and package destination checks
+
+USAspending immutable tag `usaspending/v1.0.20` completed workflow[38083846513](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38083846513) at source `2a93b7b706d818da647f9d56cacbf543f867fa79`; Cloudflare deployment is `571c0cb3-0551-4f1a-b32f-cde5c15e6fc8`. Every scoped job succeeded, including official PyPI payload verification, automated registry metadata and GitHub release. No queued release was canceled or replaced.
+
+The separate final20 mixed-SHA matrix passed all eight public health/source/version identities and112 exact tool definitions. All eight official package versions and16 downloaded wheel/sdist artifacts passed official byte-count/hash/non-yanked checks. Allfive configured Dell origins passed45 actual checks: publicGET/POST origin routing headers, HTTPSoriginGET health and SSH-authenticated container-local health/initialization identities. No HTTPSoriginPOST initialization claim is made. Proofs: `coordinator/eight-server-round4-final20-contracts.json`, `round4-final20-pypi-artifacts.json`, `dell-round4-final20-verified.json` and its hash manifest. Interim19 records remain unchanged.
+
+Independent actual official installed USA20 acceptance passed six original/followup CLI and public cases, including the unavailableFY2027 explanation, supported omitted-yearFY2026 recovery, complete25-program Science inventory and separately qualified FY2024 account obligations. The actual55-tool contract and8runtime modules matched released source; three focused published regressions passed. The owner full-corpus replay subsequently passed150CLI and150public calls plus six guided workflows. These content passes do not establish a full fresh-suite pass. Evidence: `round4/usaspending/post-release/peer-sam-final20.json`.
+
+eCFR actual official1.1.6 acceptance passed80CLI calls (four dedicated originals/recoveries plus76corpus calls),76public calls and all76exact shared answers. All192 comparisons passed against61retained primary captures; a separate fresh official title check confirmed nine snapshot metadata values unchanged. Fresh SDK2.3 measured338passed/118skipped/456collected. Missing-section404 answers remain expected source absence, with actionable recovery, not current-text retrieval. Independent GPD finaldocs review and CI38084244699 passed before docsPR149 merged; CALC finaldocsPR148 likewise passed independent GPD review and CI38083971643 before merge.
+
+Fresh actual production data verification passed with no Round4 reload required: GPD complete release `ba0994b637ca8ae7`, places `2dee3470caca1a82`,43,665rows and unchanged seven fiscal-year parts; SAM native mirror1.0.3 and BLSMay2025 bundle identities remain unchanged. The independent remote D1 check wrote zero rows. Source304 reuse is explicitly distinguished from a new completeCSV fetch. Evidence: `round4/final-data-verification-gpd.json`.
+
+
+### Round4 final version and execution inventory
+
+These counts report completed lanes separately from collection. Acquisition's255cases remain passive inventory, excluded from goal findings and future audits.
+
+| MCP | Actual published package | Public runtime source | Collected | Executed content and suite boundaries |
+|---|---|---|---:|---|
+| SAM.gov |1.0.14|Native1.0.3 at `0d87bdcf9d0c645428a57271736e4c35891bca53`|1,158|114native content questions/all4tools plus status,348raw-field and18semantic checks; freshPython784passed/374skipped. Nineteen keyedPython workflows unexecuted. Python release source `d6ea8fea87732e5d28945be9cbd2917c87c844c8`.|
+| USAspending |1.0.20|`2a93b7b706d818da647f9d56cacbf543f867fa79`|2,312|Published20 completed150CLI/150public/150retained-source comparisons and six guided workflows; independent sixCLI/sixpublic plus threefocused regressions passed. Actual20fresh full suite measured1,078passed/855failed/379skipped; final150-question CLI/public owner replay and six guided workflows passed. Frozen source1,933passed/379skipped is distinct from latestSDK execution.|
+| eCFR |1.1.6|`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`|456|80CLI/76public,192retained-source comparisons; fresh338passed/118skipped. Nine fresh title metadata checks separate from retained61sourcecaptures.|
+| Federal Register |1.0.14|`b379d69b3ac505d5f1f1ae255896acb2b5f0d866`|286|63validCLI/public questions across8tools,63primary rows and178DOTdeadline records. One caller-document mistake excluded; one page-view timestamp variation qualified.181passed/105skipped.|
+| Regulations.gov |2.0.6|`c0553538fca43e13a8c7db5a6ecd77a887303c32`|298|141public attempts/139successful plus two retained caller-ID404s recovered;107semantic checks,40sourcecomparison rows/35freshcaptures. Fresh179passed/119skipped; keyedCLI live source unavailable.|
+| GSA CALC+ |1.0.16|`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`|438|152registered/152public/18actualstdio;1,742behavior and3,738qualifiedsource checks. Fresh317passed/121skipped;209registeredattempts retain budget waits and dynamic-source variation.|
+| GSA Per Diem |1.2.4|`7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336`|583|121public/121CLI calls across7tools (119substantive keyless replays plus two expected credential replies);119officialnumeric checks,36estimates and26ZIPmemberships. Frozen316passed/267skipped; fresh300passed/16failed/267skipped, ordinary workflows unaffected.|
+| BLS OEWS |1.1.4|`5ba4a4bac4ecd098da1c48dcd09594d9e38fcf1f`|298|66CLI/66public across8tools,418wageobjects and31freshofficial numeric cells.297passed/one skip; flat-footnote403 unavailable.|
+| **Eight-server goal** | | |**5,829**|**Collected cases, not an all-passed fresh-suite total.**|
+| Passive Acquisition inventory |Excluded|Separate completed track|255|No Round4 audit or future dispatch.|
+| **Nine-package product inventory** | | |**6,084**|Independent canonical-source collection only.|
+
+
+### Round4 completed release workflows
+
+| Scoped tag | Frozen source | Successful workflow | Cloudflare deployment / scope |
+|---|---|---|---|
+|sam-gov/v1.0.14|`d6ea8fea87732e5d28945be9cbd2917c87c844c8`|[38080882021](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38080882021)|Package-only; hosted jobs genuinely skipped, native mirror unchanged.|
+|usaspending/v1.0.19|`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`|[38082477859](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38082477859)|`cbc8da27-84ce-4c95-ac2f-7aa10bc7c99c`; preserved intermediate release.|
+|gsa-calc/v1.0.16|`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`|[38082856566](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38082856566)|`ab04ec42-39e2-4b28-9b37-8cb5b1d795f8`.|
+|ecfr/v1.1.6|`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`|[38083173160](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38083173160)|`4b4313cb-77f2-4e54-8998-fe136013b875`.|
+|usaspending/v1.0.20|`2a93b7b706d818da647f9d56cacbf543f867fa79`|[38083846513](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38083846513)|`571c0cb3-0551-4f1a-b32f-cde5c15e6fc8`; finalUSAversion.|
+
+Source/content/documentation PRs132–145 and147–149 are merged; final USA documentationPR150 is also merged; root coordinatorPR146 publishes the final record after actual website/content gates passed. Runtime/content corrections are PR136(eCFR),137(SAM),139(CALC),141(USAprograms/catalog) and147(USAavailability); PR138 fixes the actual Regulations badge. PR135 is release infrastructure and PR144/145 are meaningful timing-test repairs, not new content findings. Automated registry updates succeeded without requiring manual directory republication. Actual directory/client propagation remains unobserved.
+
+
+### Cumulative ledger through published Round4 corrections
+
+Each confirmed finding is counted once; historical first-round toolchain/shared findings remain included, while Acquisition's separate findings remain excluded. Independent Regulations review recomputed all62counts and verified the nine new finding evidence records. Source limitations are separate from product findings.
+
+| MCP / shared owner | P0 | P1 | P2 | P3 | Confirmed | Fully fixed | Partially fixed | Unresolved |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+|SAM.gov|0|0|3|4|7|7|0|0|
+|USAspending|0|0|8|6|14|14|0|0|
+|eCFR|0|1|8|3|12|12|0|0|
+|Federal Register|0|0|2|1|3|3|0|0|
+|Regulations.gov|0|0|5|1|6|6|0|0|
+|GSA CALC+|0|1|4|1|6|6|0|0|
+|GSA Per Diem|0|0|3|5|8|8|0|0|
+|BLS OEWS|0|0|4|1|5|5|0|0|
+|Shared documentation|0|0|1|0|1|1|0|0|
+|**Total**|**0**|**2**|**38**|**22**|**62**|**62**|**0**|**0**|
+
+The latest fresh USA20suite failures855and GPD16legacy expected-message failures remain explicitly unresolved in their test lanes; they are not silently marked passing or added as855/16content findings. This campaign audits real ordinary and power-user content. Source credentials/quota/unavailable dates/documents remain bounded evidence limitations. Any new ordinary workflow that exposes a real product defect in the next audit must be recorded and corrected normally.
+
+
+### Round4 website and final documentation publication
+
+Website source[PR4](https://github.com/1102tools-dev/federal-contracting-prompts/pull/4) merged at `faa8cb7383057756bcb050b436548fa269238a49` after exact-head root/GPD review and bothCI workflows passed. The deployment snapshot[PR6](https://github.com/1102tools-dev/1102tools-deploy/pull/6) merged at `f43f0ce05fec9e785620b26d9c8c8ac2c1408ad6`, stamped to that exact source; independent FR review passed116assertions and bothCI checks passed. Exactlyfive snapshot files changed; all57prompt objects,25protected source files, Acquisition entry, directory links, printablePDF and demo/brand assets remain unchanged.
+
+Cloudflare Pages deployment `0f19af06` published to[1102tools.com](https://1102tools.com/). Actual final public verification passed49servedassets plus two configurations, four copy checks and a real browser reload/expanded-card check. Initial post-deployment verification found the comparison page different while the other three copy checks passed; that attempt is preserved. A targeted subsequent fetch matched exactly after removing only the injected Cloudflare analytics script; the complete followup asset/copy gates passed. The initial difference's precise cause is unconfirmed. HTML comparisons remove only injected analytics; no rawHTMLbyte-parity claim is made.
+
+The actual browser shows6,084product/5,829goal collected cases, current package versions, nine corrected Round4findings and62cumulative fixes;855USA/16GPDfresh-suite failures and the unmet future zero-new-P0/P1/P2 condition remain explicit. Evidence: `coordinator/website-round4-pages-deploy.log`, `website-round4-public-assets.json`, `website-round4-copy-proof.json`, `website-round4-browser-proof.json`; initial attempt files remain unchanged.
+
+Final USA documentation[PR150](https://github.com/1102tools-dev/federal-contracting-mcps/pull/150) merged at `44d3bec` after root review, independent SAM review and exactCI38084829120 passed. All Round4 server documentation is merged; rootPR146 publishes the measured README inventory, reviewed release guide and this cumulative record. It touches documentation only, so no path-filteredCI result is expected or falsely claimed. Independent final record review is preserved; the coordinator verifies19actual servedGitHub files after merge and seals the Round4closure manifest before dispatching Round5. No manual MCP directory republication is required.
+
+Round4 found five newP2issues, so the overall goal is still active. Only a subsequent complete eight-server content round with no newP0/P1/P2findings, followed by required fixes/publication/evidence closure, satisfies the stopping condition. Acquisition remains excluded.
