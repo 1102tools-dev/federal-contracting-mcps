@@ -27,7 +27,7 @@ def test_visible_guidance_then_valid_recovery(monkeypatch, bad, hint, recovery_i
     with pytest.raises(ToolError) as failure:
         asyncio.run(_call("search_documents", **bad))
     assert hint in str(failure.value)
-    assert type(failure.value).__name__ != "UnexpectedToolError"
+    assert type(failure.value) is ToolError
     assert seen == []
     data = _payload(asyncio.run(_call("search_documents", **recovery["arguments"])))
     assert data["count"] == recovery["response"]["count"] > 0
