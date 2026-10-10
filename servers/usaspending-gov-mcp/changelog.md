@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.21
+
+- Correct NAICS discovery guidance: count actual retired source rows separately from current matches omitted by the requested result limit. Explain larger-limit recovery without misclassifying current codes as retired.
+- Preserve source code/name/order, existing retirement filtering, unexpected errors and all 55 tool definitions. Captured construction taxonomy reproduces ten omitted current codes and zero retired codes; a genuine retired research-code control preserves three excluded historical codes.
+- Publication remains pending the full Round 5 content audit, independent review and root serial release.
+
 ## 1.0.20
 
 - Preserve the official available-year explanation for a normal explicit fiscal-year federal-account request rejected by the source, and guide omission of the unavailable year plus checking returned `fy`. Use a purposeful tool error so supported MCP SDK2.3 clients receive this explanation.

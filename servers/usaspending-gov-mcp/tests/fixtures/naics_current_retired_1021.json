@@ -1,0 +1,140 @@
+{
+  "construction": {
+    "method": "POST",
+    "url": "https://api.usaspending.gov/api/v2/autocomplete/naics/",
+    "params": null,
+    "body": {
+      "search_text": "construction",
+      "limit": 15
+    },
+    "raw": {
+      "results": [
+        {
+          "naics": "212321",
+          "naics_description": "Construction Sand and Gravel Mining",
+          "year_retired": null
+        },
+        {
+          "naics": "236115",
+          "naics_description": "New Single-Family Housing Construction (except For-Sale Builders)",
+          "year_retired": null
+        },
+        {
+          "naics": "236116",
+          "naics_description": "New Multifamily Housing Construction (except For-Sale Builders)",
+          "year_retired": null
+        },
+        {
+          "naics": "236210",
+          "naics_description": "Industrial Building Construction",
+          "year_retired": null
+        },
+        {
+          "naics": "236220",
+          "naics_description": "Commercial and Institutional Building Construction",
+          "year_retired": null
+        },
+        {
+          "naics": "237110",
+          "naics_description": "Water and Sewer Line and Related Structures Construction",
+          "year_retired": null
+        },
+        {
+          "naics": "237120",
+          "naics_description": "Oil and Gas Pipeline and Related Structures Construction",
+          "year_retired": null
+        },
+        {
+          "naics": "237130",
+          "naics_description": "Power and Communication Line and Related Structures Construction",
+          "year_retired": null
+        },
+        {
+          "naics": "237310",
+          "naics_description": "Highway, Street, and Bridge Construction",
+          "year_retired": null
+        },
+        {
+          "naics": "237990",
+          "naics_description": "Other Heavy and Civil Engineering Construction",
+          "year_retired": null
+        },
+        {
+          "naics": "333120",
+          "naics_description": "Construction Machinery Manufacturing",
+          "year_retired": null
+        },
+        {
+          "naics": "423320",
+          "naics_description": "Brick, Stone, and Related Construction Material Merchant Wholesalers",
+          "year_retired": null
+        },
+        {
+          "naics": "423390",
+          "naics_description": "Other Construction Material Merchant Wholesalers",
+          "year_retired": null
+        },
+        {
+          "naics": "423810",
+          "naics_description": "Construction and Mining (except Oil Well) Machinery and Equipment Merchant Wholesalers",
+          "year_retired": null
+        },
+        {
+          "naics": "532412",
+          "naics_description": "Construction, Mining, and Forestry Machinery and Equipment Rental and Leasing",
+          "year_retired": null
+        }
+      ]
+    },
+    "canonical_response_sha256": "f489ea29854bcb62ecd7a31bdd29424ae961ccd49f2187b0398b7141daa5dcc8"
+  },
+  "research": {
+    "method": "POST",
+    "url": "https://api.usaspending.gov/api/v2/autocomplete/naics/",
+    "params": null,
+    "body": {
+      "search_text": "5417",
+      "limit": 15
+    },
+    "raw": {
+      "results": [
+        {
+          "naics": "541710",
+          "naics_description": "Research and Development in the Physical, Engineering, and Life Sciences",
+          "year_retired": 2007
+        },
+        {
+          "naics": "541711",
+          "naics_description": "Research and Development in Biotechnology",
+          "year_retired": 2017
+        },
+        {
+          "naics": "541712",
+          "naics_description": "Research and Development in the Physical, Engineering, and Life Sciences (except Biotechnology)",
+          "year_retired": 2017
+        },
+        {
+          "naics": "541713",
+          "naics_description": "Research and Development in Nanotechnology",
+          "year_retired": null
+        },
+        {
+          "naics": "541714",
+          "naics_description": "Research and Development in Biotechnology (except Nanobiotechnology)",
+          "year_retired": null
+        },
+        {
+          "naics": "541715",
+          "naics_description": "Research and Development in the Physical, Engineering, and Life Sciences (except Nanotechnology and Biotechnology)",
+          "year_retired": null
+        },
+        {
+          "naics": "541720",
+          "naics_description": "Research and Development in the Social Sciences and Humanities",
+          "year_retired": null
+        }
+      ]
+    },
+    "canonical_response_sha256": "27bb334e39a0925ae4952670076b0ae7c308cc740cd8b49adbcc5c7c0bf13b68"
+  }
+}
