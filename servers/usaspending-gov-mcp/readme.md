@@ -1,6 +1,6 @@
 # usaspending-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,297](https://img.shields.io/badge/regression%20tests-2%2C297-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,303](https://img.shields.io/badge/regression%20tests-2%2C303-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Release 1.0.15 collects 2,297 regression cases: 1,918 offline and 379 live-gated. The full offline lane passes; the focused content suite covers fiscal defaults, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats and aggregation filters. See [testing.md](testing.md) for the testing record.*
+*Release 1.0.16 collects 2,303 regression cases: 1,924 offline and 379 live-gated. The full offline lane passes; the focused content suite covers fiscal defaults, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats and aggregation filters. See [testing.md](testing.md) for the testing record.*
 
 ## Local or hosted
 
@@ -51,8 +51,13 @@ Exposes the USAspending.gov REST API as 55 MCP tools covering:
 - `search_recipients` - Search recipients by keyword
 - `get_recipient_profile` - Full recipient record
 - `get_recipient_children` - Subsidiaries of a parent recipient
-- `autocomplete_recipient` - Find recipient hashes by partial name
+- `autocomplete_recipient` - Find recipient names by partial name
 - `list_states` - All states with FIPS codes
+
+For a recipient workflow, take a name from `autocomplete_recipient` to
+`search_recipients`. Use the returned `id` hash for profiles and new-award
+trends. To retrieve subsidiaries, pass the parent (`-P`) row’s `uei` (or
+legacy `duns`) to `get_recipient_children`; that tool accepts UEI/DUNS.
 
 **Agency depth**
 - `list_toptier_agencies`, `get_agency_overview`, `get_agency_awards`
@@ -192,9 +197,9 @@ MIT
 ## Regression tests
 
 Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
-package directory. The default lane passes 1,918 cases and skips 379 live
+package directory. The default lane passes 1,924 cases and skips 379 live
 cases. Set `USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts
-below include parametrized and live-gated cases collected for 1.0.15.
+below include parametrized and live-gated cases collected for 1.0.16.
 
 | Test file | Cases | Coverage |
 |---|---:|---|
@@ -214,4 +219,5 @@ below include parametrized and live-gated cases collected for 1.0.15.
 | [test_http.py](tests/test_http.py) | 2 | HTTP handling |
 | [test_content_e2e_1014.py](tests/test_content_e2e_1014.py) | 36 | Full end-to-end audit guidance regressions |
 | [test_published_scope_1015.py](tests/test_published_scope_1015.py) | 2 | Published tool-selection scope guidance |
-| **Total** | **2,297** | **1,918 offline; 379 live-gated** |
+| [test_new_awards_fiscal_year_1016.py](tests/test_new_awards_fiscal_year_1016.py) | 6 | Captured annual fiscal-year correction and unchanged quarter/month samples |
+| **Total** | **2,303** | **1,924 offline; 379 live-gated** |

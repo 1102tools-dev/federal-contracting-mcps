@@ -1,0 +1,433 @@
+{
+  "full_fy": {
+    "args": {
+      "recipient_id": "b97d19b0-833c-8d8f-3a2c-157d04ea55ef-P",
+      "time_period_start": "2024-10-01",
+      "time_period_end": "2025-09-30"
+    },
+    "raw": {
+      "fiscal_year": {
+        "group": "fiscal_year",
+        "results": [
+          {
+            "new_award_count_in_period": 5911,
+            "time_period": {
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 18081,
+            "time_period": {
+              "fiscal_year": "2025"
+            }
+          }
+        ],
+        "messages": [
+          "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+        ]
+      },
+      "quarter": {
+        "group": "quarter",
+        "results": [
+          {
+            "new_award_count_in_period": 5911,
+            "time_period": {
+              "fiscal_year": "2025",
+              "quarter": "1"
+            }
+          },
+          {
+            "new_award_count_in_period": 6304,
+            "time_period": {
+              "fiscal_year": "2025",
+              "quarter": "2"
+            }
+          },
+          {
+            "new_award_count_in_period": 7197,
+            "time_period": {
+              "fiscal_year": "2025",
+              "quarter": "3"
+            }
+          },
+          {
+            "new_award_count_in_period": 4580,
+            "time_period": {
+              "fiscal_year": "2025",
+              "quarter": "4"
+            }
+          }
+        ],
+        "messages": [
+          "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+        ]
+      },
+      "month": {
+        "group": "month",
+        "results": [
+          {
+            "new_award_count_in_period": 2190,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "1"
+            }
+          },
+          {
+            "new_award_count_in_period": 1887,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "2"
+            }
+          },
+          {
+            "new_award_count_in_period": 1834,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "3"
+            }
+          },
+          {
+            "new_award_count_in_period": 1827,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "4"
+            }
+          },
+          {
+            "new_award_count_in_period": 1920,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "5"
+            }
+          },
+          {
+            "new_award_count_in_period": 2557,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "6"
+            }
+          },
+          {
+            "new_award_count_in_period": 2471,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "7"
+            }
+          },
+          {
+            "new_award_count_in_period": 2378,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "8"
+            }
+          },
+          {
+            "new_award_count_in_period": 2348,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "9"
+            }
+          },
+          {
+            "new_award_count_in_period": 1606,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "10"
+            }
+          },
+          {
+            "new_award_count_in_period": 1294,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "11"
+            }
+          },
+          {
+            "new_award_count_in_period": 1680,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "12"
+            }
+          }
+        ],
+        "messages": [
+          "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+        ]
+      }
+    }
+  },
+  "partial_cross_fy": {
+    "args": {
+      "recipient_id": "b97d19b0-833c-8d8f-3a2c-157d04ea55ef-P",
+      "time_period_start": "2024-09-01",
+      "time_period_end": "2024-10-31"
+    },
+    "raw": {
+      "fiscal_year": {
+        "group": "fiscal_year",
+        "results": [
+          {
+            "new_award_count_in_period": 4764,
+            "time_period": {
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "fiscal_year": "2025"
+            }
+          }
+        ],
+        "messages": [
+          "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+        ]
+      },
+      "quarter": {
+        "group": "quarter",
+        "results": [
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "quarter": "1",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "quarter": "2",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "quarter": "3",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 2574,
+            "time_period": {
+              "fiscal_year": "2024",
+              "quarter": "4"
+            }
+          },
+          {
+            "new_award_count_in_period": 2190,
+            "time_period": {
+              "fiscal_year": "2025",
+              "quarter": "1"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "quarter": "2",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "quarter": "3",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "quarter": "4",
+              "fiscal_year": "2025"
+            }
+          }
+        ],
+        "messages": [
+          "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+        ]
+      },
+      "month": {
+        "group": "month",
+        "results": [
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "1",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "2",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "3",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "4",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "5",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "6",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "7",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "8",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "9",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "10",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "11",
+              "fiscal_year": "2024"
+            }
+          },
+          {
+            "new_award_count_in_period": 2574,
+            "time_period": {
+              "fiscal_year": "2024",
+              "month": "12"
+            }
+          },
+          {
+            "new_award_count_in_period": 2190,
+            "time_period": {
+              "fiscal_year": "2025",
+              "month": "1"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "2",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "3",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "4",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "5",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "6",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "7",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "8",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "9",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "10",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "11",
+              "fiscal_year": "2025"
+            }
+          },
+          {
+            "new_award_count_in_period": 0,
+            "time_period": {
+              "month": "12",
+              "fiscal_year": "2025"
+            }
+          }
+        ],
+        "messages": [
+          "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+        ]
+      }
+    }
+  },
+  "source": {
+    "endpoint": "https://api.usaspending.gov/api/v2/search/new_awards_over_time/",
+    "captured": "2026-10-10",
+    "recipient": "Lockheed Martin parent, discovered from search_recipients"
+  }
+}
