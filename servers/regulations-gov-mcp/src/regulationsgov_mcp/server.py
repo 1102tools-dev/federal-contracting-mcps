@@ -19,8 +19,15 @@ import os
 import time
 import re
 import urllib.parse
-from datetime import date as _date, datetime as _datetime
+from datetime import date as _date, datetime as _datetime, timedelta as _timedelta, timezone as _timezone
 from typing import Any, Literal
+
+try:
+    from zoneinfo import ZoneInfo as _ZoneInfo
+
+    _EASTERN: Any = _ZoneInfo("America/New_York")
+except Exception:  # no tz database in the image: fall back to the US rules below
+    _EASTERN = None
 
 import httpx
 from mcp.server import MCPServer
@@ -658,14 +665,78 @@ def _agency_codes_from_aggregations(meta: dict[str, Any], limit: int = 25) -> li
     return codes[:limit]
 
 
+def _nth_sunday_utc(year: int, month: int, n: int, hour_utc: int) -> _datetime:
+    """The nth Sunday of a month (n=-1: the last one) at hour_utc, in UTC."""
+    if n > 0:
+        first = _datetime(year, month, 1, hour_utc, tzinfo=_timezone.utc)
+        return first + _timedelta(days=(6 - first.weekday()) % 7 + 7 * (n - 1))
+    nxt = _datetime(year + (month == 12), month % 12 + 1, 1, hour_utc, tzinfo=_timezone.utc)
+    last = nxt - _timedelta(days=1)
+    return last - _timedelta(days=(last.weekday() - 6) % 7)
+
+
+def _eastern_fallback(moment: _datetime) -> tuple[_datetime, str]:
+    """US Eastern time without a tz database (2:00 AM local switch rules)."""
+    year = moment.year
+    if year >= 2007:
+        start, end = _nth_sunday_utc(year, 3, 2, 7), _nth_sunday_utc(year, 11, 1, 6)
+    else:
+        start, end = _nth_sunday_utc(year, 4, 1, 7), _nth_sunday_utc(year, 10, -1, 6)
+    if start <= moment < end:
+        return moment - _timedelta(hours=4), "EDT"
+    return moment - _timedelta(hours=5), "EST"
+
+
+def _eastern_deadline(value: Any) -> str | None:
+    """Regulations.gov stores deadlines as UTC instants: 11:59:59 PM Eastern on
+    the closing day is written as 03:59:59Z or 04:59:59Z on the NEXT day.
+    Return the instant as Eastern wall time, e.g. 'Oct 22, 2026 11:59 PM ET'."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip()
+    if _YYYYMMDD_RE.match(text):  # a bare calendar date has no zone to convert
+        try:
+            day = _date.fromisoformat(text)
+        except ValueError:
+            return None
+        return f"{day.strftime('%b')} {day.day}, {day.year}"
+    try:
+        moment = _datetime.fromisoformat(text[:-1] + "+00:00" if text.endswith("Z") else text)
+    except ValueError:
+        return None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=_timezone.utc)
+    moment = moment.astimezone(_timezone.utc)
+    if _EASTERN is not None:
+        local = moment.astimezone(_EASTERN)
+    else:
+        local, _ = _eastern_fallback(moment)
+    hour = local.hour % 12 or 12
+    return (
+        f"{local.strftime('%b')} {local.day}, {local.year} "
+        f"{hour}:{local.minute:02d} {'AM' if local.hour < 12 else 'PM'} ET"
+    )
+
+
 def _compact_record(value: Any) -> Any:
-    """Drop JSON:API self-links and empty attributes from one record."""
+    """Drop JSON:API self-links and empty attributes from one record.
+
+    A raw commentEndDate is a UTC instant that reads one day late, so it is
+    renamed commentEndDateUtc and commentDeadlineEastern gives the deadline
+    as Eastern wall time."""
     if not isinstance(value, dict):
         return value
     out = {k: v for k, v in value.items() if k != "links"}
     attrs = out.get("attributes")
     if isinstance(attrs, dict):
-        out["attributes"] = {k: v for k, v in attrs.items() if v not in (None, "", [], {})}
+        attrs = {k: v for k, v in attrs.items() if v not in (None, "", [], {})}
+        if "commentEndDate" in attrs:
+            raw = attrs.pop("commentEndDate")
+            eastern = _eastern_deadline(raw)
+            if eastern:
+                attrs["commentDeadlineEastern"] = eastern
+            attrs["commentEndDateUtc"] = raw
+        out["attributes"] = attrs
     return out
 
 
@@ -790,6 +861,10 @@ async def search_documents(
     Response meta.facets gives the top counts by document type, agency,
     and comment period status; meta.totalElements is the full match count.
 
+    Comment deadlines: attributes.commentDeadlineEastern is the closing time
+    in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw
+    commentEndDateUtc is a UTC instant whose date reads one day late.
+
     Page size: 5-100. page_number: 1-40. For larger result sets, split the
     query into posted_date_ge/le windows.
 
@@ -888,6 +963,10 @@ async def get_document_detail(
     other detail fields not available in search results.
 
     Set include_attachments=True to get attachment objects with download URLs.
+
+    Comment deadlines: attributes.commentDeadlineEastern is the closing time
+    in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw
+    commentEndDateUtc is a UTC instant whose date reads one day late.
 
     document_id format: FAR-2023-0008-0023
     """
@@ -1101,7 +1180,10 @@ async def open_comment_periods(
     Searches for documents where withinCommentPeriod=true, sorted by
     soonest closing deadline (ascending commentEndDate), so page 1 holds
     the deadlines you can still act on. Returns document IDs, titles,
-    agencies, comment end dates, docket IDs, and the API-true total_open.
+    agencies, comment deadlines, docket IDs, and the API-true total_open.
+    comment_deadline is the closing time in Eastern time (e.g. 'Oct 22,
+    2026 11:59 PM ET'); comment_end_date_utc is the raw UTC instant, whose
+    date reads one day late.
     When more documents exist, truncated=true and next_page_number gives
     the page that continues the list (later pages close later).
 
@@ -1155,14 +1237,15 @@ async def open_comment_periods(
             "agency": attrs.get("agencyId"),
             "title": attrs.get("title"),
             "document_type": attrs.get("documentType"),
-            "comment_end_date": attrs.get("commentEndDate"),
+            "comment_deadline": attrs.get("commentDeadlineEastern"),
+            "comment_end_date_utc": attrs.get("commentEndDateUtc"),
             "docket_id": attrs.get("docketId"),
             "url": f"https://www.regulations.gov/document/{item.get('id')}",
         })
 
-    dated = [d for d in all_docs if d.get("comment_end_date")]
-    dated.sort(key=lambda x: x["comment_end_date"] or "")
-    undated = [d for d in all_docs if not d.get("comment_end_date")]
+    dated = [d for d in all_docs if d.get("comment_end_date_utc")]
+    dated.sort(key=lambda x: x["comment_end_date_utc"] or "")
+    undated = [d for d in all_docs if not d.get("comment_end_date_utc")]
 
     api_total = _safe_dict(result.get("meta")).get("totalElements")
     total_open = api_total if isinstance(api_total, int) else len(all_docs)
@@ -1200,6 +1283,8 @@ async def far_case_history(
     Unified Agenda), the docket's total document count, counts by document
     type and of documents open for comment across the whole docket, and one
     page of its documents, most recent first, with types, dates, and URLs.
+    comment_deadline is the closing time in Eastern time; comment_end_date_utc
+    is the raw UTC instant, whose date reads one day late.
     When the docket has more documents, truncated=true and next_page_number
     gives the page that continues the list.
 
@@ -1229,7 +1314,8 @@ async def far_case_history(
             "document_type": attrs.get("documentType"),
             "title": attrs.get("title"),
             "posted_date": attrs.get("postedDate"),
-            "comment_end_date": attrs.get("commentEndDate"),
+            "comment_deadline": attrs.get("commentDeadlineEastern"),
+            "comment_end_date_utc": attrs.get("commentEndDateUtc"),
             "within_comment_period": attrs.get("withinCommentPeriod"),
             "url": f"https://www.regulations.gov/document/{item.get('id')}",
         })
