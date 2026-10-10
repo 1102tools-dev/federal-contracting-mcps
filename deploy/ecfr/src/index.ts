@@ -49,7 +49,7 @@ export default {
       const started = Date.now();
       const response = await originFirst(env, url.pathname, {method: request.method, headers, body},
         () => fetchWithRetry(() => backend.fetch(forwarded())));
-      logToolCall("ecfr", body, response, started);
+      logToolCall("ecfr", body, response, started, request.headers.get("User-Agent"));
       return response;
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));

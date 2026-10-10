@@ -1,5 +1,5 @@
 import {publicDocs} from "./public-docs.ts";
-import {withinLimit} from "../../shared/edge.ts";
+import {withToolCallLog, withinLimit} from "../../shared/edge.ts";
 import {HANDLERS, TOOLS, ToolError, type Database} from "./tools.ts";
 
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
@@ -92,36 +92,36 @@ export async function handleMessage(message: Message, env: Env): Promise<object 
   }
 }
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-    if (publicDocs[url.pathname] && request.method === "GET") return new Response(publicDocs[url.pathname], {headers: {"Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff"}});
-    if (url.pathname !== "/mcp" && url.pathname !== "/health") {
-      return new Response("SAM.gov MCP by 1102tools. Connect at /mcp.", {status: url.pathname === "/" ? 200 : 404});
-    }
-    const origin = request.headers.get("Origin");
-    if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-    if (!await withinLimit(request, env)) {
-      return new Response("Request limit reached; retry later.", {status: 429, headers: {"Retry-After": "60"}});
-    }
-    if (url.pathname === "/health") {
-      if (request.method !== "GET") return new Response(null, {status: 405});
-      return json({status: "ok", tools: TOOLS.length, release_sha: env.RELEASE_SHA ?? null});
-    }
-    if (request.method !== "POST") return new Response("Use POST for stateless MCP requests.", {status: 405, headers: {Allow: "POST"}});
-    if (Number(request.headers.get("Content-Length") ?? "0") > MAX_BODY_BYTES) return new Response("Request body too large.", {status: 413});
-    const body = await readBounded(request);
-    if (body === null) return new Response("Request body too large.", {status: 413});
-    let message: unknown;
-    try {
-      message = JSON.parse(body);
-    } catch {
-      return json(rpcError(null, -32700, "Parse error."), 400);
-    }
-    if (Array.isArray(message) || typeof message !== "object" || message === null) {
-      return json(rpcError(null, -32600, "Send one JSON-RPC message per request."), 400);
-    }
-    const response = await handleMessage(message as Message, env);
-    return response ? json(response) : new Response(null, {status: 202});
-  },
-} satisfies ExportedHandler<Env>;
+async function serve(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  if (publicDocs[url.pathname] && request.method === "GET") return new Response(publicDocs[url.pathname], {headers: {"Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff"}});
+  if (url.pathname !== "/mcp" && url.pathname !== "/health") {
+    return new Response("SAM.gov MCP by 1102tools. Connect at /mcp.", {status: url.pathname === "/" ? 200 : 404});
+  }
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
+  if (!await withinLimit(request, env)) {
+    return new Response("Request limit reached; retry later.", {status: 429, headers: {"Retry-After": "60"}});
+  }
+  if (url.pathname === "/health") {
+    if (request.method !== "GET") return new Response(null, {status: 405});
+    return json({status: "ok", tools: TOOLS.length, release_sha: env.RELEASE_SHA ?? null});
+  }
+  if (request.method !== "POST") return new Response("Use POST for stateless MCP requests.", {status: 405, headers: {Allow: "POST"}});
+  if (Number(request.headers.get("Content-Length") ?? "0") > MAX_BODY_BYTES) return new Response("Request body too large.", {status: 413});
+  const body = await readBounded(request);
+  if (body === null) return new Response("Request body too large.", {status: 413});
+  let message: unknown;
+  try {
+    message = JSON.parse(body);
+  } catch {
+    return json(rpcError(null, -32700, "Parse error."), 400);
+  }
+  if (Array.isArray(message) || typeof message !== "object" || message === null) {
+    return json(rpcError(null, -32600, "Send one JSON-RPC message per request."), 400);
+  }
+  const response = await handleMessage(message as Message, env);
+  return response ? json(response) : new Response(null, {status: 202});
+}
+
+export default {fetch: withToolCallLog("sam-gov", serve)} satisfies ExportedHandler<Env>;

@@ -1,4 +1,5 @@
 import {Container} from "@cloudflare/containers";
+import {withToolCallLog} from "../../shared/edge.ts";
 import {serve} from "./mcp.ts";
 
 // The container that served this service before the D1 port. Kept exported
@@ -11,9 +12,5 @@ export class GSAPerDiem extends Container<Env> {
   envVars = {PERDIEM_API_KEY: this.env.PERDIEM_API_KEY ?? ""};
 }
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    return serve(request, env);
-  },
-} satisfies ExportedHandler<Env>;
+export default {fetch: withToolCallLog("gsa-perdiem", (request: Request, env: Env) => serve(request, env))} satisfies ExportedHandler<Env>;
 
