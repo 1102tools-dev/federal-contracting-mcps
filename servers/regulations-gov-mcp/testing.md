@@ -2,18 +2,18 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the Regulations.gov API as 9 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The 2.0.5 package collects 295 regression tests (176 offline plus 119 live-gated). The 2026-10-10 offline gate passed 176 tests; all 119 live-gated tests were skipped because DEMO_KEY returned HTTP 429. See the content-fix section and [test suite map](tests/README.md) for current coverage.
+This Model Context Protocol server exposes the Regulations.gov API as 9 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The 2.0.6 candidate collects 298 regression tests (179 offline plus 119 live-gated). The 2026-10-10 offline gate passed 179 tests; all 119 live-gated tests were skipped because DEMO_KEY returned HTTP 429. See the content-fix section and [test suite map](tests/README.md) for current coverage.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 9 |
-| Total regression tests | 295 (176 offline, 119 live-gated) |
+| Total regression tests | 298 (179 offline, 119 live-gated) |
 | Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 1 (`extra='ignore'` silent typo drop) |
 | P1 silent-wrong-data bugs found and fixed | 10 |
 | P2 validation gaps found and fixed | 7 |
 | Round-7 wave findings | 12 |
-| Current package | 2.0.5 |
+| Current candidate | 2.0.6 |
 | PyPI status | Published as `regulationsgov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -25,7 +25,7 @@ for the same key. No federal API was called.
 
 ## What Was Tested
 
-The current MCP exposes nine tools. The first 2026-10-10 content audit called all nine hosted tools through 33 live tool calls; Round 3 adds 115 new calls. The candidate offline package suite passed 176 tests; all 119 direct-source live-gated tests were skipped. Hosted calls and saved-source regressions do not replace that skipped full source suite.
+The current MCP exposes nine tools. The first 2026-10-10 content audit called all nine hosted tools through 33 live tool calls; Round 3 adds 115 new calls. The candidate offline package suite passed 179 tests; all 119 direct-source live-gated tests were skipped. Hosted calls and saved-source regressions do not replace that skipped full source suite.
 
 **Core:** `search_documents`, `get_document_detail`, `search_comments`, `get_comment_detail`, `search_dockets`, `get_docket_detail`
 
@@ -123,13 +123,14 @@ Four items: missing publish workflow, missing test_validation.py, missing dev de
 
 ## Test Coverage
 
-The current suite collects 295 tests (176 offline, 119 live-gated). The 2026-10-10 offline run passed 176 and skipped 119; collection is not a live-pass claim. The per-file counts and live gates are maintained in [tests/README.md](tests/README.md).
+The current suite collects 298 tests (179 offline, 119 live-gated). The 2026-10-10 offline run passed 179 and skipped 119; collection is not a live-pass claim. The per-file counts and live gates are maintained in [tests/README.md](tests/README.md).
 
 | File | Purpose | Test count |
 |---|---|---|
 | `tests/test_access_status.py` | Credential presence, setup guidance, tool-only output | 9 (0 live-gated) |
 | `tests/test_audit_r7.py` | Round 7: ascending deadlines, pagination, API limits, and validation | 27 (4 live-gated) |
 | `tests/test_audit_r8.py` | Round 8: one-call source contract anchors | 4 (4 live-gated; live_smoke) |
+| `tests/test_ordinary_recovery_guidance.py` | 2.0.6 ordinary filter/date recovery across SDK versions | 3 (0 live-gated) |
 | `tests/test_deadline_source_guidance.py` | 2.0.5 provider deadline provenance and controlling-date followup | 9 (0 live-gated) |
 | `tests/test_workflow_content_audit.py` | 2.0.4 workflow recovery and partial enrichment | 7 (0 live-gated) |
 | `tests/test_content_fixes.py` | 2.0.3 R1–R11: Eastern deadlines, posted counts, organizations, subtypes, page ceiling, facets, type filter, comment text, and hints | 35 (0 live-gated) |
@@ -346,3 +347,79 @@ agenda dates lack primary corroboration. The historical OSHA provider date
 conflict remains a source-data limitation: users must verify the controlling
 conditional date using the linked notice. Published/live 2.0.5 verification
 will be recorded after the coordinator releases it.
+
+## Published 2.0.5 final verification (round 3, 2026-10-10)
+
+The release workflow completed successfully. Public health reports source
+`7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336`; initialize reports 2.0.5 without
+instructions, and the exact nine-tool catalog matches the reviewed contract.
+The original 115-question corpus was replayed against the released service:
+115 successful calls across all nine tools, including 91 dated records with
+explicit provider provenance and an unestablished controlling-date status.
+Following the actual returned Federal Register link recovered October 30,
+2025 for timely NOITA filers. The preserved October 2 provider timestamp is
+not claimed corrected or controlling.
+
+70 official primary records were recaptured (68 JSON plus two XML). All 110
+comparison rows were rechecked: 76 machine-date matches, 22 needing no date
+comparison, six primary-text/extension reconciliations, four occurrences of
+the historical OSHA provider conflict with corrected app representation,
+and two unverified EPA agenda dates. Document types agree. This is not a
+blanket deadline-correctness or independently keyed Regulations.gov claim.
+DEMO_KEY HTTP429, two attachment HTTP403 responses, and public-count source
+limitations remain explicit unavailable checks.
+
+A fresh uncached official PyPI installation by package name launched the
+actual `regulationsgov-mcp` console over stdio: initialize, nine-tool catalog,
+and no-key access status passed. A separate explicitly captured-provider
+adapter exercised the four date-bearing tools over installed-package stdio;
+it is not keyed live CLI parity. Its linked authoritative notice followup
+was fetched afresh and returned the conditional October 30 date. Official
+wheel SHA256 is `b3d0c47077f71475949c1592bccf0dbc8e31759cce84037a82bf3321da887f2c`;
+runtime Python bytes match released source.
+
+The actual published package with release-locked MCP SDK 2.0.0 passed **176
+and skipped 119**, **295 collected**. A separate fresh default dependency
+resolution selected MCP SDK 2.3.0 and produced **138 passed, 38 failed, 119
+skipped**: existing validation-guidance tests receive an SDK
+`UnexpectedToolError` that hides `ValueError` messages. Startup, ordinary
+content, and the nine new deadline regressions pass. This compatibility
+regression is addressed by the 2.0.6 candidate below; the original fresh
+2.0.5 resolved suite is not reported as a pass.
+An initial test harness missing the development-only Hypothesis dependency
+was corrected before these results; its log is retained separately.
+
+Evidence: `Artifacts/mcp-e2e-20261010/round3/regulations/final-published-2.0.5/`
+contains actual console/captured-provider records, the complete public replay,
+fresh primary records/comparisons, wheel parity, and both dependency-specific
+regression logs. The coordinator owns subsequent release decisions.
+
+
+## Ordinary recovery guidance (2.0.6 candidate, round 3 continuation)
+
+A second P2 was confirmed with actual published 2.0.5 console calls on freshly
+resolved MCP SDK 2.3.0: an ordinary request to include closed periods uses the
+schema-permitted boolean false, and navigating from a document calendar-date
+filter to docket modification uses the same date. Instead of repair guidance,
+both return generic execution errors. The expected recovery is to omit the
+unsupported false filter and use the documented docket timestamp format.
+
+Intentional input errors now raise `UserInputError(ValueError, ToolError)`,
+matching the GSA/BLS pattern. This preserves direct helper compatibility and
+anticipated guidance at the MCP boundary without catching or reclassifying
+unexpected provider/programming errors. No schemas, descriptions, annotations,
+source fields, or catalog names change.
+
+Three meaningful regressions cover both original→corrected captured-provider
+workflows and unchanged unexpected-error classification. On published 2.0.5
+SDK 2.3.0, two fail and one passes; all three pass on the candidate. Actual
+installed candidate console calls return actionable guidance for both original
+questions. Separate captured-provider stdio followups return the actual saved
+OSHA documents/docket after applying that guidance; these are explicitly not
+keyed live CLI checks. Full installed-wheel suites on SDK 2.0.0 and 2.3.0 each
+pass **179**, skip **119**, and collect **298**. The intermediate direct-ToolError
+candidate failed 12 helper compatibility tests and was replaced by the dual
+base-class implementation; original/intermediate/final logs are preserved.
+
+Evidence is in `Artifacts/mcp-e2e-20261010/round3/regulations/sdk-guidance/`.
+Publication/live 2.0.6 verification remains coordinator-owned and pending.
