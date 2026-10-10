@@ -310,6 +310,23 @@ test("get_data_status reports freshness", async () => {
   await assert.rejects(getDataStatus(db, {x: 1}, NOW), /Unknown argument/);
 });
 
+test("prior-year market research remains available without claiming a complete archive", async () => {
+  // The Oct 10 official file includes active notices posted in FY2024.
+  const older = database(true, [notice(9, {
+    title: "FY2024 active award notice", notice_type: "Award Notice",
+    posted_at: "2024-09-26 10:00:00", posted_date: "2024-09-26",
+    response_deadline: null, response_deadline_utc: null, archive_date: "2029-05-01",
+  })]);
+  const research = await searchOpportunities(older, {
+    notice_types: ["Award Notice"], posted_from: "2023-10-01", posted_to: "2024-09-30",
+  }, NOW);
+  assert.equal(research.total_matches, 1);
+  const current = await getDataStatus(older, {}, NOW) as any;
+  assert.match(current.coverage, /including notices posted in earlier fiscal years that remain active/);
+  assert.match(current.coverage, /not a complete historical archive/);
+  assert.match(current.coverage, /archived notices and attachments are not included/);
+});
+
 // ---------- MCP transport ----------
 
 const env = (allow = true) => ({DB: db, REQUEST_LIMITER: {limit: async () => ({success: allow})}, RELEASE_SHA: "abc123"});

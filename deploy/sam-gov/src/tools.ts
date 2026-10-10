@@ -537,7 +537,7 @@ export async function getDataStatus(db: Database, _args: Args, now = new Date())
     by_notice_type: s.by_notice_type,
     last_load: {added: s.added, updated: s.updated, removed: s.removed, skipped_past_archive_date: s.skipped_past_archive_date},
     refresh: "Nightly. SAM.gov publishes the file once a day; notices posted since then appear after the next load.",
-    coverage: "Active notices only. Archived notices, past fiscal years, and attachments are not included. active_notices counts every listed version of amended notices; latest_versions and by_notice_type count only the latest version of each.",
+    coverage: "Active notices only, including notices posted in earlier fiscal years that remain active. This is not a complete historical archive; archived notices and attachments are not included. active_notices counts every listed version of amended notices; latest_versions and by_notice_type count only the latest version of each.",
     source: SOURCE,
     source_url: s.source_url,
   };
