@@ -1,6 +1,6 @@
 # usaspending-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,174](https://img.shields.io/badge/regression%20tests-2%2C174-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,259](https://img.shields.io/badge/regression%20tests-2%2C259-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through ten rounds of integration testing against the live USAspending.gov API. 2,174 collected regression tests (1,799 offline, 375 live-gated); round 10 fixed 25 verified findings across both tool families, including filters that could never match and a tool that had never once succeeded. See [testing.md](testing.md) for the full testing record.*
+*Release 1.0.13 collects 2,259 regression cases: 1,880 offline and 379 live-gated. The full offline lane passes; the focused content suite covers fiscal defaults, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats and aggregation filters. See [testing.md](testing.md) for the testing record.*
 
 ## Local or hosted
 
@@ -187,3 +187,29 @@ All data is sourced from [USAspending.gov](https://www.usaspending.gov), which a
 ## License
 
 MIT
+
+
+## Regression tests
+
+Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
+package directory. The default lane passes 1,880 cases and skips 379 live
+cases. Set `USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts
+below include parametrized and live-gated cases collected for 1.0.13.
+
+| Test file | Cases | Coverage |
+|---|---:|---|
+| [test_v0_3_features.py](tests/test_v0_3_features.py) | 1,244 | Tool shapes, filters and expanded API surface |
+| [test_density_r5.py](tests/test_density_r5.py) | 415 | Boundary and semantic regression density |
+| [test_live_audit_r6.py](tests/test_live_audit_r6.py) | 157 | Live endpoint audit |
+| [test_live_audit_r7.py](tests/test_live_audit_r7.py) | 104 | Live parameter and pagination audit |
+| [test_content_fixes_1013.py](tests/test_content_fixes_1013.py) | 75 | October content fixes; 71 offline, 4 live |
+| [test_round_8.py](tests/test_round_8.py) | 69 | Property and validation checks |
+| [test_entity_family_fixes.py](tests/test_entity_family_fixes.py) | 63 | Agency, recipient and award semantics |
+| [test_validation.py](tests/test_validation.py) | 62 | Input validation |
+| [test_search_family_fixes.py](tests/test_search_family_fixes.py) | 37 | Search and aggregation semantics |
+| [test_response_cache_hosted.py](tests/test_response_cache_hosted.py) | 10 | Hosted cache behavior |
+| [test_audit_r11.py](tests/test_audit_r11.py) | 9 | Paced audit anchors |
+| [test_throughput.py](tests/test_throughput.py) | 9 | Request throughput and pacing |
+| [test_tool_profiles.py](tests/test_tool_profiles.py) | 3 | Tool profile selection |
+| [test_http.py](tests/test_http.py) | 2 | HTTP handling |
+| **Total** | **2,259** | **1,880 offline; 379 live-gated** |

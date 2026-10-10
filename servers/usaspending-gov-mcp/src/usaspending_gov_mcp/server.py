@@ -17,7 +17,7 @@ import json as _json
 import os
 import re
 import time
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Literal
 
 import httpx
@@ -349,10 +349,106 @@ def _validate_date(value: str, field_name: str) -> str:
     return value
 
 
+def _today() -> date:
+    return date.today()
+
+
 def _current_fiscal_year() -> int:
     """Federal fiscal year (Oct-Sep). FY2026 runs 2025-10-01 to 2026-09-30."""
-    today = date.today()
+    today = _today()
     return today.year + 1 if today.month >= 10 else today.year
+
+
+_DOD_NAMES = {"department of defense", "dod"}
+_DOD_LAG_DAYS = 90
+
+
+def _dod_lag_note(window_end: date | str | None, *, agencies: tuple[str | None, ...] = (),
+                  award_types: Any = "contracts") -> str | None:
+    """A caveat when an answer covers DoD contract actions too recent to be published.
+
+    DoD contract and IDV actions appear in USAspending 90 days after their
+    action date, so the last three months of any window look nearly empty
+    for DoD (FY2026 Jul-Sep: $8.8B / $0.02B / $0.16B vs $27-72B a month
+    earlier, seen 2026-10-10). Applies when the window reaches into those
+    90 days, contracts or IDVs are in scope (or no award type was given),
+    and DoD is named in either agency role, or no agency filter was given.
+    """
+    if window_end is None:
+        return None
+    if award_types not in (None, "contracts", "idvs", "all"):
+        return None
+    given = [a.strip().lower() for a in agencies if a and a.strip()]
+    if given and not any(a in _DOD_NAMES or a == "097" for a in given):
+        return None
+    end = date.fromisoformat(window_end) if isinstance(window_end, str) else window_end
+    cutoff = _today() - timedelta(days=_DOD_LAG_DAYS)
+    if end <= cutoff:
+        return None
+    available = (min(end, _today()) + timedelta(days=_DOD_LAG_DAYS)).isoformat()
+    return (
+        f"DoD contract and IDV actions are published {_DOD_LAG_DAYS} days after the "
+        f"action date, so DoD actions after {cutoff.isoformat()} are mostly missing "
+        f"here and any DoD (or government-wide) total for this period is understated "
+        f"until about {available}. Don't compare it with earlier full years yet."
+    )
+
+
+def _add_note(result: Any, note: str | None) -> Any:
+    if note and isinstance(result, dict):
+        result["data_note"] = note
+    return result
+
+
+def _agency_dod_lag_note(toptier_code: str, fy: int | str) -> str | None:
+    """DoD (097) fiscal years whose last 90 days are not yet published."""
+    if toptier_code != "097":
+        return None
+    return _dod_lag_note(date(int(fy), 9, 30), award_types=None)
+
+
+def _window_end(start: str | None, end: str | None) -> str | None:
+    """The end of a search window (already validated); open-ended means today."""
+    if end:
+        return end
+    if start:
+        return _today().isoformat()
+    return None
+
+
+def _last_completed_fiscal_year() -> int:
+    """The most recent fiscal year that has ended (FY2026 from 2026-10-01 on).
+
+    Agency and state tools default to it. USAspending's own default is the
+    current fiscal year, which for the first weeks after October 1 holds a
+    few days of data (DoD showed $1,000,000 of contracts on 2026-10-10).
+    """
+    return _current_fiscal_year() - 1
+
+
+def _echo_fiscal_year(
+    result: Any, fy: int | str, *, defaulted: bool, key: str = "fiscal_year",
+    param: str = "fiscal_year",
+) -> Any:
+    """Make every agency/state answer say which fiscal year it covers.
+
+    Some endpoints echo the year, some (obligations_by_award_category,
+    recipient/state) do not. When the caller gave no year, also say that the
+    last completed fiscal year was used and how to ask for the current one.
+    """
+    if not isinstance(result, dict):
+        return result
+    if key not in result or result.get(key) in (None, ""):
+        result[key] = int(fy) if str(fy).isdigit() else fy
+    if defaulted:
+        current = _current_fiscal_year()
+        result["fiscal_year_note"] = (
+            f"No {param} given, so this covers FY{fy}, the last completed federal "
+            f"fiscal year (October {int(fy) - 1} through September {fy}). FY{current} "
+            f"began October 1 and is only partly reported; pass {param}={current} "
+            f"for it to date."
+        )
+    return result
 
 
 def _clamp_limit(limit: int, *, cap: int, field: str = "limit") -> int:
@@ -418,6 +514,13 @@ def _validate_strings_no_control_chars(values: list[str] | None, *, field: str) 
 # Filter construction helpers
 # ---------------------------------------------------------------------------
 
+# How a time window is applied (time_period[].date_type). Omitted, USAspending
+# counts every award with activity in the window. Verified live 2026-10-10 on
+# VA SDVOSB set-asides FY2026: default 11,797 contracts, new_awards_only
+# 5,125 (awards first signed in the window).
+DateType = Literal["action_date", "date_signed", "last_modified_date", "new_awards_only"]
+
+
 def _build_filters(
     *,
     keywords: list[str] | None = None,
@@ -435,6 +538,7 @@ def _build_filters(
     contract_pricing_type_codes: list[str | int] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    date_type: str | None = None,
     award_amount_min: float | None = None,
     award_amount_max: float | None = None,
     place_of_performance_state: str | None = None,
@@ -528,7 +632,15 @@ def _build_filters(
                 f"time_period_start ({start}) is after time_period_end ({end}). "
                 f"Reverse the values or omit one."
             )
-        filters["time_period"] = [{"start_date": start, "end_date": end}]
+        period: dict[str, str] = {"start_date": start, "end_date": end}
+        if date_type:
+            period["date_type"] = date_type
+        filters["time_period"] = [period]
+    elif date_type:
+        raise ValueError(
+            f"date_type={date_type!r} needs a time window: pass time_period_start "
+            f"and/or time_period_end (e.g. a fiscal year, 2025-10-01 to 2026-09-30)."
+        )
     if award_amount_min is not None or award_amount_max is not None:
         if (
             award_amount_min is not None
@@ -594,6 +706,7 @@ async def search_awards(
     contract_pricing_type_codes: list[str | int] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    date_type: DateType | None = None,
     award_amount_min: float | None = None,
     award_amount_max: float | None = None,
     place_of_performance_state: str | None = None,
@@ -654,6 +767,21 @@ async def search_awards(
     verify names before presenting a definitive list. Large pulls can
     exceed MCP client payload budgets (limit=100 has measured ~90K
     characters); page in batches of 25-30 for big result sets.
+
+    "Award Amount" is the award's lifetime obligation, not the amount in
+    the time window. There is no period-of-performance end-date filter, so
+    expiring-contract (recompete) questions can't be filtered here: sorting
+    by 'End Date' over an action-date window returns long-ended awards that
+    had a closeout mod; filter the End Date column yourself.
+
+    date_type controls what the time window means. Omitted (the default),
+    an award counts if it had any action in the window, so totals and
+    counts include old awards that were only modified (a closeout mod in
+    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
+    'new_awards_only' keeps only awards first signed in the window: use it
+    for "how many new awards / contracts awarded in FY2026". 'date_signed',
+    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type needs time_period_start and/or time_period_end.
     """
     codes = _resolve_award_type(award_type)
     limit = _clamp_limit(limit, cap=100)
@@ -715,6 +843,7 @@ async def search_awards(
         contract_pricing_type_codes=contract_pricing_type_codes,
         time_period_start=time_period_start,
         time_period_end=time_period_end,
+        date_type=date_type,
         award_amount_min=award_amount_min,
         award_amount_max=award_amount_max,
         place_of_performance_state=place_of_performance_state,
@@ -742,7 +871,11 @@ async def search_awards(
         "filters": filters,
         "fields": fields,
     }
-    return await _post("/api/v2/search/spending_by_award/", payload)
+    result = await _post("/api/v2/search/spending_by_award/", payload)
+    return _add_note(result, _dod_lag_note(
+        _window_end(time_period_start, time_period_end),
+        agencies=(awarding_agency, funding_agency), award_types=award_type,
+    ))
 
 
 @mcp.tool(annotations={"title": "Get Award Count", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -760,6 +893,7 @@ async def get_award_count(
     contract_pricing_type_codes: list[str | int] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    date_type: DateType | None = None,
     award_amount_min: float | None = None,
     award_amount_max: float | None = None,
     place_of_performance_state: str | None = None,
@@ -780,6 +914,15 @@ async def get_award_count(
 
     At least one filter is required (the API rejects empty filter sets with HTTP 400).
     Typical usage: pass time_period_start + time_period_end, or a keywords/agency filter.
+
+    date_type controls what the time window means. Omitted (the default),
+    an award counts if it had any action in the window, so totals and
+    counts include old awards that were only modified (a closeout mod in
+    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
+    'new_awards_only' keeps only awards first signed in the window: use it
+    for "how many new awards / contracts awarded in FY2026". 'date_signed',
+    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type needs time_period_start and/or time_period_end.
     """
     _validate_strings_no_control_chars(keywords, field="keywords")
     _validate_no_control_chars(awarding_agency, field="awarding_agency")
@@ -802,6 +945,7 @@ async def get_award_count(
         contract_pricing_type_codes=contract_pricing_type_codes,
         time_period_start=time_period_start,
         time_period_end=time_period_end,
+        date_type=date_type,
         award_amount_min=award_amount_min,
         award_amount_max=award_amount_max,
         place_of_performance_state=place_of_performance_state,
@@ -812,7 +956,11 @@ async def get_award_count(
             "get_award_count requires at least one filter. "
             "Typical: time_period_start + time_period_end, or keywords, or awarding_agency."
         )
-    return await _post("/api/v2/search/spending_by_award_count/", {"filters": filters})
+    result = await _post("/api/v2/search/spending_by_award_count/", {"filters": filters})
+    return _add_note(result, _dod_lag_note(
+        _window_end(time_period_start, time_period_end),
+        agencies=(awarding_agency, funding_agency), award_types=None,
+    ))
 
 
 @mcp.tool(annotations={"title": "Spending Over Time", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -821,12 +969,16 @@ async def spending_over_time(
     keywords: list[str] | None = None,
     awarding_agency: str | None = None,
     awarding_subagency: str | None = None,
+    funding_agency: str | None = None,
+    extent_competed_type_codes: list[str | int] | None = None,
+    contract_pricing_type_codes: list[str | int] | None = None,
     recipient_name: str | None = None,
     naics_codes: list[str | int] | None = None,
     psc_codes: list[str | int] | None = None,
     award_type: Literal["contracts", "idvs", "grants", "loans", "direct_payments", "other"] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    date_type: DateType | None = None,
     def_codes: list[str | int] | None = None,
 ) -> dict[str, Any]:
     """Aggregate spending amounts over time, grouped by fiscal year, quarter, or month.
@@ -835,7 +987,15 @@ async def spending_over_time(
     or compare spending patterns across years.
 
     Note: The API returns fiscal_year as a STRING. Cast to int for numeric
-    comparisons.
+    comparisons. quarter and month are FISCAL periods (month 1 = October,
+    quarter 1 = October-December). Buckets are clipped to the window, so a
+    calendar-2025 window returns a partial fiscal_year '2025' (January-
+    September only) and a partial '2026' (October-December); neither is
+    that whole fiscal year.
+
+    DoD contract actions are published 90 days late, so when the window
+    reaches into the last 90 days and DoD is in scope the answer carries a
+    data_note: those months are understated, so don't read them as a drop.
 
     awarding_agency must be a TOPTIER agency name ('Department of Defense').
     Military departments are subtiers: pass
@@ -845,6 +1005,15 @@ async def spending_over_time(
 
     At least one filter is required (the API rejects empty filter sets with HTTP 400).
     Typical usage: pass time_period_start + time_period_end.
+
+    date_type controls what the time window means. Omitted (the default),
+    an award counts if it had any action in the window, so totals and
+    counts include old awards that were only modified (a closeout mod in
+    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
+    'new_awards_only' keeps only awards first signed in the window: use it
+    for "how many new awards / contracts awarded in FY2026". 'date_signed',
+    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type needs time_period_start and/or time_period_end.
     """
     _validate_strings_no_control_chars(keywords, field="keywords")
     _validate_no_control_chars(awarding_agency, field="awarding_agency")
@@ -855,11 +1024,15 @@ async def spending_over_time(
         award_type_codes=award_type_codes,
         awarding_agency=awarding_agency,
         awarding_subagency=awarding_subagency,
+        funding_agency=funding_agency,
+        extent_competed_type_codes=extent_competed_type_codes,
+        contract_pricing_type_codes=contract_pricing_type_codes,
         recipient_name=recipient_name,
         naics_codes=naics_codes,
         psc_codes=psc_codes,
         time_period_start=time_period_start,
         time_period_end=time_period_end,
+        date_type=date_type,
         def_codes=def_codes,
     )
     # award_type_codes alone (without other filters) is not enough: the API
@@ -870,10 +1043,14 @@ async def spending_over_time(
             "spending_over_time requires at least one filter beyond award_type. "
             "Typical: time_period_start + time_period_end, or keywords, or awarding_agency."
         )
-    return await _post(
+    result = await _post(
         "/api/v2/search/spending_over_time/",
         {"group": group, "filters": filters},
     )
+    return _add_note(result, _dod_lag_note(
+        _window_end(time_period_start, time_period_end),
+        agencies=(awarding_agency, funding_agency), award_types=award_type,
+    ))
 
 
 @mcp.tool(annotations={"title": "Spending by Category", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -886,12 +1063,17 @@ async def spending_by_category(
     keywords: list[str] | None = None,
     awarding_agency: str | None = None,
     awarding_subagency: str | None = None,
+    funding_agency: str | None = None,
+    recipient_name: str | None = None,
+    extent_competed_type_codes: list[str | int] | None = None,
+    contract_pricing_type_codes: list[str | int] | None = None,
     naics_codes: list[str | int] | None = None,
     psc_codes: list[str | int] | None = None,
     award_type: Literal["contracts", "idvs", "grants", "loans", "direct_payments", "other"] | None = None,
     set_aside_type_codes: list[str | int] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    date_type: DateType | None = None,
     def_codes: list[str | int] | None = None,
     limit: int = 10,
     page: int = 1,
@@ -913,6 +1095,15 @@ async def spending_by_category(
     At least one filter is required. An unfiltered call would silently
     aggregate the entire USASpending database (all years, all agencies),
     which is never what a caller wants.
+
+    date_type controls what the time window means. Omitted (the default),
+    an award counts if it had any action in the window, so totals and
+    counts include old awards that were only modified (a closeout mod in
+    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
+    'new_awards_only' keeps only awards first signed in the window: use it
+    for "how many new awards / contracts awarded in FY2026". 'date_signed',
+    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type needs time_period_start and/or time_period_end.
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
@@ -925,11 +1116,16 @@ async def spending_by_category(
         award_type_codes=award_type_codes,
         awarding_agency=awarding_agency,
         awarding_subagency=awarding_subagency,
+        funding_agency=funding_agency,
+        recipient_name=recipient_name,
+        extent_competed_type_codes=extent_competed_type_codes,
+        contract_pricing_type_codes=contract_pricing_type_codes,
         naics_codes=naics_codes,
         psc_codes=psc_codes,
         set_aside_type_codes=set_aside_type_codes,
         time_period_start=time_period_start,
         time_period_end=time_period_end,
+        date_type=date_type,
         def_codes=def_codes,
     )
     # Same guard as search_awards: award_type_codes is a scope, not a filter.
@@ -941,10 +1137,14 @@ async def spending_by_category(
             "spending_by_category requires at least one filter beyond award_type. "
             "Typical: time_period_start + time_period_end, or keywords, or awarding_agency."
         )
-    return await _post(
+    result = await _post(
         f"/api/v2/search/spending_by_category/{category}/",
         {"filters": filters, "limit": limit, "page": page},
     )
+    return _add_note(result, _dod_lag_note(
+        _window_end(time_period_start, time_period_end),
+        agencies=(awarding_agency, funding_agency), award_types=award_type,
+    ))
 
 
 # ---------------------------------------------------------------------------
@@ -960,7 +1160,9 @@ async def get_award_detail(generated_award_id: str) -> dict[str, Any]:
     obligation, recipient details, parent award info, latest transaction
     contract data (competition, set-aside, pricing type), period of
     performance, place of performance, NAICS hierarchy, PSC hierarchy,
-    base and all options value, and sub-award totals.
+    base and all options value, and sub-award totals. Award-level outlays and
+    total_account_obligation are partial or lagged File C measures, not a
+    reliable amount paid; compare with total_obligation for coverage.
 
     Accepts either a generated award id (CONT_AWD_*, CONT_IDV_*, ASST_NON_*,
     ASST_AGG_*) or the numeric internal database id from a prior response.
@@ -981,7 +1183,10 @@ async def get_award_detail(generated_award_id: str) -> dict[str, Any]:
     # returned the agency list dressed up as award detail).
     if not award_id.isdigit():
         award_id = _validate_generated_award_id(award_id, field="generated_award_id")
-    return await _get(f"/api/v2/awards/{award_id}/")
+    result = await _get(f"/api/v2/awards/{award_id}/")
+    return _add_note(result, "Award-level outlays and total_account_obligation come from File C. "
+                     "They can be partial or lagged and do not establish the amount paid to the contractor. "
+                     "Compare total_account_obligation with total_obligation for File C coverage.")
 
 
 @mcp.tool(annotations={"title": "Get Transactions", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1031,8 +1236,8 @@ async def get_award_funding(
     """Fetch File C funding data for an award: federal account, object class, program activity.
 
     Shows which Treasury accounts, object classes, and program activities
-    funded an award. Useful for appropriations analysis and understanding
-    what colors of money paid for what.
+    funded an award. File C can be partial or lagged; these rows do not
+    establish the full award obligation or amount paid to the contractor.
 
     Sort fields: reporting_fiscal_date, account_title,
     transaction_obligated_amount, object_class.
@@ -1043,7 +1248,7 @@ async def get_award_funding(
     _validate_no_control_chars(generated_award_id, field="generated_award_id")
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
-    return await _post(
+    result = await _post(
         "/api/v2/awards/funding/",
         {
             "award_id": generated_award_id.strip(),
@@ -1054,6 +1259,9 @@ async def get_award_funding(
         },
     )
 
+    return _add_note(result, "File C funding can be partial or lagged; these rows are not the full "
+                     "award obligation or amount paid. Compare with get_award_detail total_obligation "
+                     "and total_account_obligation for coverage.")
 
 @mcp.tool(annotations={"title": "Get IDV Children", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_idv_children(
@@ -1076,9 +1284,10 @@ async def get_idv_children(
 
     An active vehicle can legitimately return zero children here:
     USASpending's award cross-linking has gaps. Treat an empty result as a
-    reporting gap, not proof that no orders exist. A search_awards call
-    with keywords=['<IDV PIID>'] sometimes recovers the orders, but it can
-    also be empty on the same vehicle.
+    reporting gap, not proof that no orders exist. Try get_idv_activity()
+    on the same id. A search_awards call with keywords=['<IDV PIID>'] only
+    finds orders whose description happens to cite the IDV, so it misses
+    orders (often the largest) and is no proof of completeness.
     """
     if not isinstance(generated_idv_id, str) or not generated_idv_id.strip():
         raise ValueError("generated_idv_id cannot be empty.")
@@ -1103,21 +1312,85 @@ async def get_idv_children(
 # Workflow / convenience tools
 # ---------------------------------------------------------------------------
 
+_PIID_FIELDS = {
+    "contract": [
+        "Award ID", "Recipient Name", "Description",
+        "Award Amount", "Start Date", "End Date",
+        "Awarding Agency", "Awarding Sub Agency",
+        "generated_internal_id",
+    ],
+    "idv": [
+        "Award ID", "Recipient Name", "Description",
+        "Award Amount", "Start Date", "Last Date to Order",
+        "Awarding Agency", "Awarding Sub Agency",
+        "generated_internal_id",
+    ],
+}
+
+
+def _parent_idv_piid(generated_id: Any) -> str | None:
+    """Parent IDV PIID from a contract's generated id.
+
+    CONT_AWD_<piid>_<agency>_<parent piid>_<parent agency>; '-NONE-' means
+    a standalone contract. IDV ids (CONT_IDV_<piid>_<agency>) have none.
+    """
+    if not isinstance(generated_id, str) or not generated_id.startswith("CONT_AWD_"):
+        return None
+    parts = generated_id.split("_")
+    if len(parts) != 6 or parts[4] == "-NONE-":
+        return None
+    return parts[4]
+
+
+async def _piid_search(filters: dict[str, Any], kind: str, limit: int) -> dict[str, Any]:
+    group = "contracts" if kind == "contract" else "idvs"
+    result = await _post(
+        "/api/v2/search/spending_by_award/",
+        {
+            "subawards": False,
+            "limit": limit,
+            "page": 1,
+            "sort": "Award Amount",
+            "order": "desc",
+            "filters": {**filters, "award_type_codes": AWARD_TYPE_GROUPS[group]},
+            "fields": _PIID_FIELDS[kind],
+        },
+    )
+    rows = result.get("results") or []
+    for row in rows:
+        if isinstance(row, dict):
+            row["award_type"] = kind
+            if kind == "contract":
+                row["parent_idv_piid"] = _parent_idv_piid(row.get("generated_internal_id"))
+    return {"rows": rows, "hasNext": bool((result.get("page_metadata") or {}).get("hasNext"))}
+
+
 @mcp.tool(annotations={"title": "Lookup PIID", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def lookup_piid(piid: str, limit: int = 5) -> dict[str, Any]:
-    """Look up awards by PIID or PIID prefix with automatic award-type detection.
+    """Look up awards by their exact PIID, across contracts AND IDVs.
 
-    Convenience tool: tries contracts first, then IDVs if no match. Uses
-    keyword search under the hood, which behaves as a substring match on
-    the PIID field, so you can pass a full PIID or a contracting-office
-    prefix (e.g. 'N00024' for NAVSEA, 'W91CRB' for Army Contracting Command,
-    'FA8650' for AFRL).
+    Looks for awards whose own PIID is exactly this value (the award_ids
+    filter), in both contracts and IDVs, and says how many share it.
+    match='exact' rows are the awards themselves: an IDV PIID returns the
+    IDV (award_type='idv'; its Award Amount is what was obligated on the IDV
+    record itself, usually 0, so use get_idv_amounts() for the order total).
+    PIIDs are not unique: task and delivery order numbers like '0001' repeat
+    under different parent IDVs, so check 'ambiguous' and tell matches apart
+    by parent_idv_piid and Awarding Agency.
 
-    Returns the matching awards with basic fields. Use get_award_detail()
-    with the returned generated_internal_id for the full record.
+    Only when nothing has that exact PIID does it fall back to keyword
+    search, and those rows come back as match='fuzzy': keyword search
+    matches the award's own PIID and its description text, NOT its parent
+    IDV, so a vehicle PIID or prefix returns only orders whose description
+    happens to cite it. For the orders under a vehicle use get_idv_activity()
+    or get_idv_children() with the IDV's generated_internal_id; for a
+    contracting-office prefix (N00024, W91CRB, FA8650) use search_awards
+    keywords with a time window.
 
-    Handy for enriching PRISM, Contract Court, or FPDS exports where you
-    have a PIID but don't know whether it's a contract or IDV.
+    limit applies to contracts and to IDVs separately. Use
+    get_award_detail() with a returned generated_internal_id for the full
+    record. Handy for enriching PRISM, Contract Court, or FPDS exports where
+    you have a PIID but don't know whether it's a contract or IDV.
     """
     piid = (piid or "").strip()
     if len(piid) < 3:
@@ -1125,57 +1398,77 @@ async def lookup_piid(piid: str, limit: int = 5) -> dict[str, Any]:
             f"piid must be at least 3 characters (USASpending keyword search minimum). "
             f"Got {piid!r}."
         )
+    _validate_no_control_chars(piid, field="piid")
     limit = _clamp_limit(limit, cap=100)
-    # Try contracts first via keyword search (more reliable than award_ids filter)
-    contracts_result = await _post(
-        "/api/v2/search/spending_by_award/",
-        {
-            "subawards": False,
-            "limit": limit,
-            "page": 1,
-            "sort": "Award Amount",
-            "order": "desc",
-            "filters": {
-                "keywords": [piid],
-                "award_type_codes": AWARD_TYPE_GROUPS["contracts"],
-            },
-            "fields": [
-                "Award ID", "Recipient Name", "Description",
-                "Award Amount", "Start Date", "End Date",
-                "Awarding Agency", "Awarding Sub Agency",
-                "generated_internal_id",
-            ],
-        },
-    )
-    if contracts_result.get("results"):
-        return {"award_type": "contract", **contracts_result}
 
-    # Fall back to IDVs
-    idvs_result = await _post(
-        "/api/v2/search/spending_by_award/",
-        {
-            "subawards": False,
-            "limit": limit,
-            "page": 1,
-            "sort": "Award Amount",
-            "order": "desc",
-            "filters": {
-                "keywords": [piid],
-                "award_type_codes": AWARD_TYPE_GROUPS["idvs"],
-            },
-            "fields": [
-                "Award ID", "Recipient Name", "Description",
-                "Award Amount", "Start Date", "Last Date to Order",
-                "Awarding Agency", "Awarding Sub Agency",
-                "generated_internal_id",
-            ],
-        },
-    )
-    if idvs_result.get("results"):
-        return {"award_type": "idv", **idvs_result}
+    # Exact pass. award_ids is an exact, case-sensitive match on the award's
+    # own PIID (verified live 2026-10-10: 'gs00q14oadu108' finds nothing,
+    # 'GS00Q14OADU108' finds the OASIS IDV), and PIIDs are stored uppercase.
+    ids = list(dict.fromkeys([piid.upper(), piid]))
+    counts = await _post("/api/v2/search/spending_by_award_count/", {"filters": {"award_ids": ids}})
+    counted = counts.get("results") or {}
+    n_contracts = int(counted.get("contracts") or 0)
+    n_idvs = int(counted.get("idvs") or 0)
+    if n_contracts or n_idvs:
+        rows: list[dict[str, Any]] = []
+        has_next = False
+        for kind, n in (("contract", n_contracts), ("idv", n_idvs)):
+            if n:
+                found = await _piid_search({"award_ids": ids}, kind, limit)
+                rows.extend(found["rows"])
+                has_next = has_next or found["hasNext"]
+        total = n_contracts + n_idvs
+        kinds = [k for k, n in (("contract", n_contracts), ("idv", n_idvs)) if n]
+        out: dict[str, Any] = {
+            "match": "exact",
+            "piid": piid.upper(),
+            "award_type": kinds[0] if len(kinds) == 1 else "contract_and_idv",
+            "exact_match_count": {"contracts": n_contracts, "idvs": n_idvs},
+            "ambiguous": total > 1,
+            "results": rows,
+            "page_metadata": {"page": 1, "hasNext": has_next},
+        }
+        if total > 1:
+            out["note"] = (
+                f"Ambiguous: {total:,} awards have PIID {piid.upper()} exactly "
+                f"({n_contracts:,} contracts, {n_idvs:,} IDVs); the largest are shown. "
+                "Order numbers repeat under different parent IDVs, so identify the "
+                "award by parent_idv_piid and Awarding Agency, or narrow with "
+                "search_awards(award_ids=[...], awarding_agency=..., time window)."
+            )
+        return out
+
+    # No exact PIID: fall back to full-text keyword search, labeled fuzzy.
+    rows = []
+    has_next = False
+    for kind in ("contract", "idv"):
+        found = await _piid_search({"keywords": [piid]}, kind, limit)
+        rows.extend(found["rows"])
+        has_next = has_next or found["hasNext"]
+    if rows:
+        return {
+            "match": "fuzzy",
+            "piid": piid.upper(),
+            "award_type": None,
+            "exact_match_count": {"contracts": 0, "idvs": 0},
+            "ambiguous": False,
+            "results": rows,
+            "page_metadata": {"page": 1, "hasNext": has_next},
+            "note": (
+                f"No award has PIID {piid.upper()} exactly. These are keyword "
+                "matches (the term appears in the award's own PIID or description "
+                "text), not lookups: an award's parent IDV is not searched, so "
+                "orders under a vehicle are missing unless their description cites "
+                "it. For a vehicle's orders use get_idv_activity() on the IDV."
+            ),
+        }
 
     return {
+        "match": "none",
+        "piid": piid.upper(),
         "award_type": None,
+        "exact_match_count": {"contracts": 0, "idvs": 0},
+        "ambiguous": False,
         "results": [],
         "message": (
             f"No contracts or IDVs found matching '{piid}'. "
@@ -1335,17 +1628,23 @@ async def get_agency_overview(
     toptier_code: str,
     fiscal_year: int | None = None,
 ) -> dict[str, Any]:
-    """Get summary information for a specific agency in a given fiscal year.
+    """Get descriptive information for an agency: name, mission, website,
+    data notes and DEF codes. It has no dollar figures; for spending use
+    get_agency_obligations_by_award_category() (split by award type) or
+    get_agency_budgetary_resources() (obligations and outlays by year).
 
     toptier_code is the 3- or 4-digit agency code (e.g. '097' for DoD,
     '075' for HHS, '080' for NASA). Shorter inputs like '97' are left-padded
     to '097' automatically. Get valid codes via list_toptier_agencies().
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default). The answer always carries fiscal_year.
     """
     code = _normalize_toptier(toptier_code)
-    params = {}
-    if fiscal_year is not None:
-        params["fiscal_year"] = str(_validate_fiscal_year(fiscal_year))
-    return await _get(f"/api/v2/agency/{code}/", params=params)
+    defaulted = fiscal_year is None
+    fy = _last_completed_fiscal_year() if defaulted else _validate_fiscal_year(fiscal_year)
+    result = await _get(f"/api/v2/agency/{code}/", params={"fiscal_year": str(fy)})
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get Agency Awards", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1353,16 +1652,26 @@ async def get_agency_awards(
     toptier_code: str,
     fiscal_year: int | None = None,
 ) -> dict[str, Any]:
-    """Get award summary totals for an agency in a given fiscal year.
+    """Get one obligation total and transaction count for an agency's awards
+    in a fiscal year.
 
-    Returns obligation totals by award category. toptier_code is auto-padded
-    to 3 digits if a shorter numeric value is supplied.
+    The total covers ALL award types together (contracts, IDVs, grants,
+    loans, direct payments, other), so for most civilian agencies it is far
+    larger than contract spending (VA FY2026: $313B here vs $84B contracts).
+    For the split by award type use get_agency_obligations_by_award_category().
+    toptier_code is auto-padded to 3 digits if a shorter numeric value is
+    supplied.
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     code = _normalize_toptier(toptier_code)
-    params = {}
-    if fiscal_year is not None:
-        params["fiscal_year"] = str(_validate_fiscal_year(fiscal_year))
-    return await _get(f"/api/v2/agency/{code}/awards/", params=params)
+    defaulted = fiscal_year is None
+    fy = _last_completed_fiscal_year() if defaulted else _validate_fiscal_year(fiscal_year)
+    result = await _get(f"/api/v2/agency/{code}/awards/", params={"fiscal_year": str(fy)})
+    result = _add_note(result, _agency_dod_lag_note(code, fy))
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get NAICS Details", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1408,18 +1717,45 @@ async def get_psc_filter_tree(
 
 
 @mcp.tool(annotations={"title": "Get State Profile", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
-async def get_state_profile(state_fips: str) -> dict[str, Any]:
-    """Get spending profile for a US state by its 2-digit FIPS code.
+async def get_state_profile(state_fips: str, year: str | int | None = None) -> dict[str, Any]:
+    """Get the federal award totals for recipients located in a US state.
 
     Examples: '06' = California, '48' = Texas, '24' = Maryland, '51' = Virginia.
-    Returns award totals, top agencies, top recipients, and district data.
+    Returns one summary: state name and code, total_prime_amount and
+    total_prime_awards (all award types together), loan face value,
+    award_amount_per_capita, total_outlays, and population / median household
+    income (older Census vintages: see pop_year and mhi_year). It has no
+    breakdown by agency, recipient or district; for those use
+    spending_by_geography() or spending_by_category() with a time window.
+
+    year: a fiscal year like 2026, 'all' (every year on file) or 'latest'
+    (USAspending's own default: the current fiscal year to date, which right
+    after October 1 holds only a few days of data). Defaults to the last
+    completed fiscal year. The answer always carries fiscal_year.
     """
     if not state_fips or not state_fips.strip().isdigit() or len(state_fips.strip()) != 2:
         raise ValueError(
             f"state_fips must be a 2-digit numeric FIPS code (e.g., '06' for CA, '51' for VA). "
             f"Got {state_fips!r}."
         )
-    return await _get(f"/api/v2/recipient/state/{state_fips.strip()}/")
+    defaulted = year is None or not str(year).strip()
+    if defaulted:
+        year_str = str(_last_completed_fiscal_year())
+    else:
+        year_str = str(year).strip().lower()
+        if year_str not in ("all", "latest"):
+            year_str = str(_validate_fiscal_year(_parse_year_int(year_str, field="year")))
+    result = await _get(f"/api/v2/recipient/state/{state_fips.strip()}/", params={"year": year_str})
+    return _echo_fiscal_year(result, year_str, defaulted=defaulted, param="year")
+
+
+def _parse_year_int(value: str, *, field: str) -> int:
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise ValueError(
+            f"{field} must be a fiscal year like 2026, 'all', or 'latest'. Got {value!r}."
+        ) from exc
 
 
 # ===========================================================================
@@ -1496,6 +1832,12 @@ async def spending_by_subaward_grouped(
     sort accepts: award_id, subaward_count, award_generated_internal_id,
     subaward_obligation. (These differ from search_subawards, which sorts by
     amount/action_date/etc.) Anything else returns HTTP 400 from the API.
+
+    page_metadata.hasNext is worked out here: the endpoint itself always
+    says false, even with more pages. Rows include primes with no
+    subawards (subaward_count 0). subaward_obligation sums FFATA reports,
+    which can repeat cumulative amounts, so a subaward_to_award_ratio
+    above 1 is a reporting artefact, not more subcontracting than the prime.
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
@@ -1519,7 +1861,19 @@ async def spending_by_subaward_grouped(
     }
     if sort:
         payload["sort"] = sort
-    return await _post("/api/v2/search/spending_by_subaward_grouped/", payload)
+    path = "/api/v2/search/spending_by_subaward_grouped/"
+    result = await _post(path, payload)
+    # Upstream hasNext is always false (verified live 2026-10-10: DHS
+    # FY2026 page 2 at limit 5 returns 5 more primes, still hasNext false).
+    # A full page means there may be more: ask for the single next row.
+    rows = result.get("results") or []
+    has_next = False
+    if len(rows) >= limit:
+        probe = await _post(path, {**payload, "limit": 1, "page": page * limit + 1})
+        has_next = bool(probe.get("results"))
+    meta = result.get("page_metadata") if isinstance(result.get("page_metadata"), dict) else {}
+    result["page_metadata"] = {**meta, "page": page, "hasNext": has_next}
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -1557,7 +1911,10 @@ async def search_recipients(
     }
     if keyword and keyword.strip():
         payload["keyword"] = keyword.strip()
-    return await _post("/api/v2/recipient/", payload)
+    result = await _post("/api/v2/recipient/", payload)
+    return _add_note(result, "Recipient search amounts cover the trailing 12 months. Parent (-P) rows "
+                     "include child (-C) rows; do not sum both levels. Recipient profiles use a separate "
+                     "rollup and may differ from transaction-search totals or name matches.")
 
 
 # Case-insensitive: the API accepts uppercase hex (verified live), and the
@@ -1609,7 +1966,9 @@ async def get_recipient_profile(
     hashes; it is a name lookup only.)
 
     year: optional 'all' or a fiscal year like 2026 (int or str both
-    accepted). Default is 'latest' (trailing 12 months).
+    accepted). Default is 'latest' (trailing 12 months). Parent (-P) totals
+    include their children. Profiles use a separate recipient rollup and can
+    differ from transaction searches by recipient_name and award-type scope.
     """
     recipient_hash = _validate_recipient_hash(recipient_hash)
     params = {}
@@ -1791,16 +2150,23 @@ async def get_agency_sub_agencies(
     sort accepts name, total_obligations, transaction_count, or
     new_award_count (this endpoint has no outlay column; a former
     'total_outlays' option was rejected by the API with HTTP 400).
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     toptier_code = _normalize_toptier(toptier_code)
-    fy = _validate_fy(fiscal_year)
+    defaulted = fiscal_year is None
+    fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
-    params: dict[str, Any] = {"page": str(page), "limit": str(limit), "order": order, "sort": sort}
-    if fy:
-        params["fiscal_year"] = fy
-    return await _get(f"/api/v2/agency/{toptier_code}/sub_agency/", params=params)
+    params: dict[str, Any] = {
+        "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
+    }
+    result = await _get(f"/api/v2/agency/{toptier_code}/sub_agency/", params=params)
+    result = _add_note(result, _agency_dod_lag_note(toptier_code, fy))
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get Agency Federal Accounts", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1817,16 +2183,22 @@ async def get_agency_federal_accounts(
     Returns each federal account with its obligated amount and gross outlay
     for the given fiscal year. Useful for understanding how an agency's
     money flows through Treasury.
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     toptier_code = _normalize_toptier(toptier_code)
-    fy = _validate_fy(fiscal_year)
+    defaulted = fiscal_year is None
+    fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
-    params: dict[str, Any] = {"page": str(page), "limit": str(limit), "order": order, "sort": sort}
-    if fy:
-        params["fiscal_year"] = fy
-    return await _get(f"/api/v2/agency/{toptier_code}/federal_account/", params=params)
+    params: dict[str, Any] = {
+        "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
+    }
+    result = await _get(f"/api/v2/agency/{toptier_code}/federal_account/", params=params)
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get Agency Object Classes", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1843,16 +2215,22 @@ async def get_agency_object_classes(
     Object classes are OMB categories: Personnel Compensation, Travel,
     Contractual Services, Equipment, Grants, etc. Useful for understanding
     what types of expenditures an agency makes.
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     toptier_code = _normalize_toptier(toptier_code)
-    fy = _validate_fy(fiscal_year)
+    defaulted = fiscal_year is None
+    fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
-    params: dict[str, Any] = {"page": str(page), "limit": str(limit), "order": order, "sort": sort}
-    if fy:
-        params["fiscal_year"] = fy
-    return await _get(f"/api/v2/agency/{toptier_code}/object_class/", params=params)
+    params: dict[str, Any] = {
+        "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
+    }
+    result = await _get(f"/api/v2/agency/{toptier_code}/object_class/", params=params)
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get Agency Program Activities", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1869,16 +2247,22 @@ async def get_agency_program_activities(
     Program activities are the specific named programs that obligate funds
     (e.g., 'Cybersecurity and Infrastructure Security Agency'). Useful for
     pinpointing which program funds a specific activity.
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     toptier_code = _normalize_toptier(toptier_code)
-    fy = _validate_fy(fiscal_year)
+    defaulted = fiscal_year is None
+    fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
-    params: dict[str, Any] = {"page": str(page), "limit": str(limit), "order": order, "sort": sort}
-    if fy:
-        params["fiscal_year"] = fy
-    return await _get(f"/api/v2/agency/{toptier_code}/program_activity/", params=params)
+    params: dict[str, Any] = {
+        "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
+    }
+    result = await _get(f"/api/v2/agency/{toptier_code}/program_activity/", params=params)
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get Agency Obligations by Award Category", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1891,15 +2275,22 @@ async def get_agency_obligations_by_award_category(
     Returns total obligated dollars split by category: contracts, IDVs, grants,
     loans, direct payments, other. Quick way to see what mix of award types
     an agency uses (heavy contractor agency vs grant-issuing agency vs mixed).
+    For DoD ('097') a fiscal year whose last 90 days are not yet published
+    (DoD's 90-day delay) carries a data_note saying the total is understated.
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     toptier_code = _normalize_toptier(toptier_code)
-    fy = _validate_fy(fiscal_year)
-    params: dict[str, Any] = {}
-    if fy:
-        params["fiscal_year"] = fy
-    return await _get(
-        f"/api/v2/agency/{toptier_code}/obligations_by_award_category/", params=params,
+    defaulted = fiscal_year is None
+    fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
+    result = await _get(
+        f"/api/v2/agency/{toptier_code}/obligations_by_award_category/",
+        params={"fiscal_year": fy},
     )
+    result = _add_note(result, _agency_dod_lag_note(toptier_code, fy))
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 # ---------------------------------------------------------------------------
