@@ -1111,9 +1111,10 @@ async def get_idv_children(
 
     An active vehicle can legitimately return zero children here:
     USASpending's award cross-linking has gaps. Treat an empty result as a
-    reporting gap, not proof that no orders exist. A search_awards call
-    with keywords=['<IDV PIID>'] sometimes recovers the orders, but it can
-    also be empty on the same vehicle.
+    reporting gap, not proof that no orders exist. Try get_idv_activity()
+    on the same id. A search_awards call with keywords=['<IDV PIID>'] only
+    finds orders whose description happens to cite the IDV, so it misses
+    orders (often the largest) and is no proof of completeness.
     """
     if not isinstance(generated_idv_id, str) or not generated_idv_id.strip():
         raise ValueError("generated_idv_id cannot be empty.")
@@ -1138,21 +1139,85 @@ async def get_idv_children(
 # Workflow / convenience tools
 # ---------------------------------------------------------------------------
 
+_PIID_FIELDS = {
+    "contract": [
+        "Award ID", "Recipient Name", "Description",
+        "Award Amount", "Start Date", "End Date",
+        "Awarding Agency", "Awarding Sub Agency",
+        "generated_internal_id",
+    ],
+    "idv": [
+        "Award ID", "Recipient Name", "Description",
+        "Award Amount", "Start Date", "Last Date to Order",
+        "Awarding Agency", "Awarding Sub Agency",
+        "generated_internal_id",
+    ],
+}
+
+
+def _parent_idv_piid(generated_id: Any) -> str | None:
+    """Parent IDV PIID from a contract's generated id.
+
+    CONT_AWD_<piid>_<agency>_<parent piid>_<parent agency>; '-NONE-' means
+    a standalone contract. IDV ids (CONT_IDV_<piid>_<agency>) have none.
+    """
+    if not isinstance(generated_id, str) or not generated_id.startswith("CONT_AWD_"):
+        return None
+    parts = generated_id.split("_")
+    if len(parts) != 6 or parts[4] == "-NONE-":
+        return None
+    return parts[4]
+
+
+async def _piid_search(filters: dict[str, Any], kind: str, limit: int) -> dict[str, Any]:
+    group = "contracts" if kind == "contract" else "idvs"
+    result = await _post(
+        "/api/v2/search/spending_by_award/",
+        {
+            "subawards": False,
+            "limit": limit,
+            "page": 1,
+            "sort": "Award Amount",
+            "order": "desc",
+            "filters": {**filters, "award_type_codes": AWARD_TYPE_GROUPS[group]},
+            "fields": _PIID_FIELDS[kind],
+        },
+    )
+    rows = result.get("results") or []
+    for row in rows:
+        if isinstance(row, dict):
+            row["award_type"] = kind
+            if kind == "contract":
+                row["parent_idv_piid"] = _parent_idv_piid(row.get("generated_internal_id"))
+    return {"rows": rows, "hasNext": bool((result.get("page_metadata") or {}).get("hasNext"))}
+
+
 @mcp.tool(annotations={"title": "Lookup PIID", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def lookup_piid(piid: str, limit: int = 5) -> dict[str, Any]:
-    """Look up awards by PIID or PIID prefix with automatic award-type detection.
+    """Look up awards by their exact PIID, across contracts AND IDVs.
 
-    Convenience tool: tries contracts first, then IDVs if no match. Uses
-    keyword search under the hood, which behaves as a substring match on
-    the PIID field, so you can pass a full PIID or a contracting-office
-    prefix (e.g. 'N00024' for NAVSEA, 'W91CRB' for Army Contracting Command,
-    'FA8650' for AFRL).
+    Looks for awards whose own PIID is exactly this value (the award_ids
+    filter), in both contracts and IDVs, and says how many share it.
+    match='exact' rows are the awards themselves: an IDV PIID returns the
+    IDV (award_type='idv'; its Award Amount is what was obligated on the IDV
+    record itself, usually 0, so use get_idv_amounts() for the order total).
+    PIIDs are not unique: task and delivery order numbers like '0001' repeat
+    under different parent IDVs, so check 'ambiguous' and tell matches apart
+    by parent_idv_piid and Awarding Agency.
 
-    Returns the matching awards with basic fields. Use get_award_detail()
-    with the returned generated_internal_id for the full record.
+    Only when nothing has that exact PIID does it fall back to keyword
+    search, and those rows come back as match='fuzzy': keyword search
+    matches the award's own PIID and its description text, NOT its parent
+    IDV, so a vehicle PIID or prefix returns only orders whose description
+    happens to cite it. For the orders under a vehicle use get_idv_activity()
+    or get_idv_children() with the IDV's generated_internal_id; for a
+    contracting-office prefix (N00024, W91CRB, FA8650) use search_awards
+    keywords with a time window.
 
-    Handy for enriching PRISM, Contract Court, or FPDS exports where you
-    have a PIID but don't know whether it's a contract or IDV.
+    limit applies to contracts and to IDVs separately. Use
+    get_award_detail() with a returned generated_internal_id for the full
+    record. Handy for enriching PRISM, Contract Court, or FPDS exports where
+    you have a PIID but don't know whether it's a contract or IDV.
     """
     piid = (piid or "").strip()
     if len(piid) < 3:
@@ -1160,57 +1225,77 @@ async def lookup_piid(piid: str, limit: int = 5) -> dict[str, Any]:
             f"piid must be at least 3 characters (USASpending keyword search minimum). "
             f"Got {piid!r}."
         )
+    _validate_no_control_chars(piid, field="piid")
     limit = _clamp_limit(limit, cap=100)
-    # Try contracts first via keyword search (more reliable than award_ids filter)
-    contracts_result = await _post(
-        "/api/v2/search/spending_by_award/",
-        {
-            "subawards": False,
-            "limit": limit,
-            "page": 1,
-            "sort": "Award Amount",
-            "order": "desc",
-            "filters": {
-                "keywords": [piid],
-                "award_type_codes": AWARD_TYPE_GROUPS["contracts"],
-            },
-            "fields": [
-                "Award ID", "Recipient Name", "Description",
-                "Award Amount", "Start Date", "End Date",
-                "Awarding Agency", "Awarding Sub Agency",
-                "generated_internal_id",
-            ],
-        },
-    )
-    if contracts_result.get("results"):
-        return {"award_type": "contract", **contracts_result}
 
-    # Fall back to IDVs
-    idvs_result = await _post(
-        "/api/v2/search/spending_by_award/",
-        {
-            "subawards": False,
-            "limit": limit,
-            "page": 1,
-            "sort": "Award Amount",
-            "order": "desc",
-            "filters": {
-                "keywords": [piid],
-                "award_type_codes": AWARD_TYPE_GROUPS["idvs"],
-            },
-            "fields": [
-                "Award ID", "Recipient Name", "Description",
-                "Award Amount", "Start Date", "Last Date to Order",
-                "Awarding Agency", "Awarding Sub Agency",
-                "generated_internal_id",
-            ],
-        },
-    )
-    if idvs_result.get("results"):
-        return {"award_type": "idv", **idvs_result}
+    # Exact pass. award_ids is an exact, case-sensitive match on the award's
+    # own PIID (verified live 2026-10-10: 'gs00q14oadu108' finds nothing,
+    # 'GS00Q14OADU108' finds the OASIS IDV), and PIIDs are stored uppercase.
+    ids = list(dict.fromkeys([piid.upper(), piid]))
+    counts = await _post("/api/v2/search/spending_by_award_count/", {"filters": {"award_ids": ids}})
+    counted = counts.get("results") or {}
+    n_contracts = int(counted.get("contracts") or 0)
+    n_idvs = int(counted.get("idvs") or 0)
+    if n_contracts or n_idvs:
+        rows: list[dict[str, Any]] = []
+        has_next = False
+        for kind, n in (("contract", n_contracts), ("idv", n_idvs)):
+            if n:
+                found = await _piid_search({"award_ids": ids}, kind, limit)
+                rows.extend(found["rows"])
+                has_next = has_next or found["hasNext"]
+        total = n_contracts + n_idvs
+        kinds = [k for k, n in (("contract", n_contracts), ("idv", n_idvs)) if n]
+        out: dict[str, Any] = {
+            "match": "exact",
+            "piid": piid.upper(),
+            "award_type": kinds[0] if len(kinds) == 1 else "contract_and_idv",
+            "exact_match_count": {"contracts": n_contracts, "idvs": n_idvs},
+            "ambiguous": total > 1,
+            "results": rows,
+            "page_metadata": {"page": 1, "hasNext": has_next},
+        }
+        if total > 1:
+            out["note"] = (
+                f"Ambiguous: {total:,} awards have PIID {piid.upper()} exactly "
+                f"({n_contracts:,} contracts, {n_idvs:,} IDVs); the largest are shown. "
+                "Order numbers repeat under different parent IDVs, so identify the "
+                "award by parent_idv_piid and Awarding Agency, or narrow with "
+                "search_awards(award_ids=[...], awarding_agency=..., time window)."
+            )
+        return out
+
+    # No exact PIID: fall back to full-text keyword search, labeled fuzzy.
+    rows = []
+    has_next = False
+    for kind in ("contract", "idv"):
+        found = await _piid_search({"keywords": [piid]}, kind, limit)
+        rows.extend(found["rows"])
+        has_next = has_next or found["hasNext"]
+    if rows:
+        return {
+            "match": "fuzzy",
+            "piid": piid.upper(),
+            "award_type": None,
+            "exact_match_count": {"contracts": 0, "idvs": 0},
+            "ambiguous": False,
+            "results": rows,
+            "page_metadata": {"page": 1, "hasNext": has_next},
+            "note": (
+                f"No award has PIID {piid.upper()} exactly. These are keyword "
+                "matches (the term appears in the award's own PIID or description "
+                "text), not lookups: an award's parent IDV is not searched, so "
+                "orders under a vehicle are missing unless their description cites "
+                "it. For a vehicle's orders use get_idv_activity() on the IDV."
+            ),
+        }
 
     return {
+        "match": "none",
+        "piid": piid.upper(),
         "award_type": None,
+        "exact_match_count": {"contracts": 0, "idvs": 0},
+        "ambiguous": False,
         "results": [],
         "message": (
             f"No contracts or IDVs found matching '{piid}'. "

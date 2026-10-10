@@ -197,3 +197,124 @@ def test_live_u11_u12_defaults_return_full_year():
     assert out["total_aggregated_amount"] > 100e9
     assert st["fiscal_year"] == fy
     assert st["total_prime_amount"] > 10e9
+
+
+# ===========================================================================
+# U2 (P2): lookup_piid is an exact PIID lookup across contracts and IDVs
+# ===========================================================================
+
+def _piid_api(exact: dict[str, dict], keyword_rows: dict[str, list]):
+    """Fake USAspending: exact[PIID] = {'contracts': [...], 'idvs': [...]} rows
+    for the award_ids filter; keyword_rows[group] = rows for keyword search."""
+    def respond(path, body):
+        f = body.get("filters", {})
+        if path.endswith("spending_by_award_count/"):
+            hits = {"contracts": 0, "idvs": 0}
+            for pid in f.get("award_ids", []):
+                for g in hits:
+                    hits[g] += len(exact.get(pid, {}).get(g, []))
+            return {"results": {**hits, "grants": 0, "loans": 0, "direct_payments": 0, "other": 0}}
+        group = "idvs" if f["award_type_codes"][0].startswith("IDV") else "contracts"
+        if "award_ids" in f:
+            rows = [r for pid in f["award_ids"] for r in exact.get(pid, {}).get(group, [])]
+        else:
+            rows = keyword_rows.get(group, [])
+        lim = body["limit"]
+        return {"results": rows[:lim], "page_metadata": {"page": 1, "hasNext": len(rows) > lim}}
+    return respond
+
+
+OASIS_IDV = {"Award ID": "GS00Q14OADU108", "Recipient Name": "BOOZ ALLEN HAMILTON INC",
+             "Award Amount": 0.0, "generated_internal_id": "CONT_IDV_GS00Q14OADU108_4732"}
+CG_ORDER = {"Award ID": "70Z02319FADW01000", "Award Amount": 5.6e6,
+            "generated_internal_id": "CONT_AWD_70Z02319FADW01000_7008_GS00Q14OADU108_4732"}
+
+
+def test_u2_idv_piid_returns_the_idv_not_keyword_hits(monkeypatch):
+    mock = _MockPost(_piid_api({"GS00Q14OADU108": {"idvs": [OASIS_IDV]}}, {"contracts": [CG_ORDER]}))
+    monkeypatch.setattr(srv, "_post", mock)
+    out = _payload(asyncio.run(_call("lookup_piid", piid="GS00Q14OADU108")))
+    assert out["match"] == "exact"
+    assert out["award_type"] == "idv"
+    assert [r["generated_internal_id"] for r in out["results"]] == ["CONT_IDV_GS00Q14OADU108_4732"]
+    assert out["ambiguous"] is False
+    # keyword search never ran
+    assert not any("keywords" in b.get("filters", {}) for _, b in mock.calls)
+
+
+def test_u2_lowercase_piid_is_matched_exactly(monkeypatch):
+    mock = _MockPost(_piid_api({"GS00Q14OADU108": {"idvs": [OASIS_IDV]}}, {}))
+    monkeypatch.setattr(srv, "_post", mock)
+    out = _payload(asyncio.run(_call("lookup_piid", piid="gs00q14oadu108")))
+    assert out["match"] == "exact" and out["results"][0]["Award ID"] == "GS00Q14OADU108"
+
+
+def test_u2_repeated_piid_is_flagged_ambiguous(monkeypatch):
+    rows = [
+        {"Award ID": "0001", "Recipient Name": "THE BOEING COMPANY", "Award Amount": 3.68e9,
+         "Awarding Agency": "Department of Defense",
+         "generated_internal_id": "CONT_AWD_0001_9700_FA852612D0001_9700"},
+        {"Award ID": "0001", "Recipient Name": "V2X SYSTEMS LLC", "Award Amount": 1.22e9,
+         "Awarding Agency": "Department of Defense",
+         "generated_internal_id": "CONT_AWD_0001_9700_W52P1J05D0003_9700"},
+    ] * 4
+    mock = _MockPost(_piid_api({"0001": {"contracts": rows}}, {"contracts": [CG_ORDER]}))
+    monkeypatch.setattr(srv, "_post", mock)
+    out = _payload(asyncio.run(_call("lookup_piid", piid="0001")))
+    assert out["match"] == "exact"
+    assert out["ambiguous"] is True
+    assert out["exact_match_count"]["contracts"] == 8
+    assert "Ambiguous" in out["note"]
+    assert out["results"][0]["parent_idv_piid"] == "FA852612D0001"
+    assert all(r["Award ID"] == "0001" for r in out["results"])
+    assert out["page_metadata"]["hasNext"] is True
+
+
+def test_u2_contract_and_idv_both_checked(monkeypatch):
+    order = {"Award ID": "X1234", "generated_internal_id":
+             "CONT_AWD_X1234_4732_GS00Q14OADU108_4732"}
+    idv = {**OASIS_IDV, "Award ID": "X1234", "generated_internal_id": "CONT_IDV_X1234_4732"}
+    mock = _MockPost(_piid_api({"X1234": {"contracts": [order], "idvs": [idv]}}, {}))
+    monkeypatch.setattr(srv, "_post", mock)
+    out = _payload(asyncio.run(_call("lookup_piid", piid="X1234")))
+    assert out["award_type"] == "contract_and_idv"
+    assert {r["award_type"] for r in out["results"]} == {"contract", "idv"}
+    assert out["ambiguous"] is True
+
+
+def test_u2_keyword_fallback_is_labeled_fuzzy(monkeypatch):
+    mock = _MockPost(_piid_api({}, {"contracts": [CG_ORDER]}))
+    monkeypatch.setattr(srv, "_post", mock)
+    out = _payload(asyncio.run(_call("lookup_piid", piid="47QTCK18D00")))
+    assert out["match"] == "fuzzy"
+    assert "keyword" in out["note"].lower()
+    assert out["results"][0]["award_type"] == "contract"
+    assert out["results"][0]["parent_idv_piid"] == "GS00Q14OADU108"
+
+
+def test_u2_no_match(monkeypatch):
+    mock = _MockPost(_piid_api({}, {}))
+    monkeypatch.setattr(srv, "_post", mock)
+    out = _payload(asyncio.run(_call("lookup_piid", piid="ZZZ999")))
+    assert out["match"] == "none" and out["results"] == []
+
+
+def test_u2_parent_idv_parser():
+    assert srv._parent_idv_piid("CONT_AWD_0001_9700_W52P1J05D0003_9700") == "W52P1J05D0003"
+    assert srv._parent_idv_piid("CONT_AWD_N0002417C2100_9700_-NONE-_-NONE-") is None
+    assert srv._parent_idv_piid("CONT_IDV_GS00Q14OADU108_4732") is None
+    assert srv._parent_idv_piid(None) is None
+
+
+@live
+def test_live_u2_oasis_idv_and_0001():
+    async def both():
+        a = await _call("lookup_piid", piid="GS00Q14OADU108")
+        b = await _call("lookup_piid", piid="0001")
+        return _payload(a), _payload(b)
+
+    oasis, dup = asyncio.run(both())
+    assert oasis["match"] == "exact" and oasis["award_type"] == "idv"
+    assert oasis["results"][0]["generated_internal_id"] == "CONT_IDV_GS00Q14OADU108_4732"
+    assert dup["ambiguous"] is True and dup["exact_match_count"]["contracts"] > 1000
+    assert all(r["Award ID"] == "0001" for r in dup["results"])
