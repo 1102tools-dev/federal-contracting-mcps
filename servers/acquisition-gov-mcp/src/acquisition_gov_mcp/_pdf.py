@@ -33,10 +33,13 @@ def _normalize_date(raw: str | None) -> str | None:
 _LINE_START_LABELS = {"date", "issued"}
 _DATE_TEXT = (r"([A-Z][a-z]+\s+\d{1,2},\s+\d{4}|\d{1,2}\s+[A-Z][a-z]+\s+\d{4}"
               r"|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})")
-# A date alone on its line, as in a memo's letterhead ("PCD 25-48A / February 20, 2026").
+# A letterhead date, optionally followed by an explicit signing timestamp.
+# GSA supplements use "2/20/2026 | 11:48:46 GMT" before the older attached memo.
+# Keep this anchored: narrative references and arbitrary suffixes are not dates.
 _STANDALONE_DATE = re.compile(
     r"^[ \t]*([A-Za-z]{3,9}\.?\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4}"
-    r"|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})[ \t]*$",
+    r"|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})"
+    r"(?:[ \t]*\|[ \t]*(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d[ \t]+(?:GMT|UTC))?[ \t]*$",
     re.M,
 )
 

@@ -163,5 +163,8 @@
 {"name": "GSA PDF pages 40-40 only", "tool": "get_rfo_agency_deviation", "arguments": {"source_id": "agency-deviation-20da883fc4477be46f14", "page_start": 40, "page_end": 40}},
 {"name": "GSA PDF pages 20-20 only", "tool": "get_rfo_agency_deviation", "arguments": {"source_id": "agency-deviation-20da883fc4477be46f14", "page_start": 20, "page_end": 20}},
 {"name": "GSA PDF pages 1-2 only", "tool": "get_rfo_agency_deviation", "arguments": {"source_id": "agency-deviation-20da883fc4477be46f14", "page_start": 1, "page_end": 2}},
-{"name": "GSA PDF past the end", "tool": "get_rfo_agency_deviation", "arguments": {"source_id": "agency-deviation-20da883fc4477be46f14", "page_start": 46}}
+{"name": "GSA PDF past the end", "tool": "get_rfo_agency_deviation", "arguments": {"source_id": "agency-deviation-20da883fc4477be46f14", "page_start": 46}},
+{"name": "GSA timestamp letterhead pages 7-7", "tool": "get_rfo_agency_deviation", "arguments": {"source_id": "agency-deviation-20da883fc4477be46f14", "page_start": 7, "page_end": 7}},
+{"name": "GSA timestamp letterhead pages 7-8", "tool": "get_rfo_agency_deviation", "arguments": {"source_id": "agency-deviation-20da883fc4477be46f14", "page_start": 7, "page_end": 8}},
+{"name": "GSA original letterhead only page 8", "tool": "get_rfo_agency_deviation", "arguments": {"source_id": "agency-deviation-20da883fc4477be46f14", "page_start": 8, "page_end": 8}}
 ]
