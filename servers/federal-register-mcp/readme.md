@@ -25,6 +25,8 @@ The October 10, 2026 content research round 4 found zero new defects in 63 valid
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#federal-register)
 
+The October 10, 2026 content research round 5 found zero new content defects in 71 ordinary questions across all eight tools. A fresh official PyPI 1.0.14 stdio CLI matched all 71 public answers in substance (69 exactly; two dynamic page-view differences). Complete EPA/NRC/FCC/VA comment scans and deadline-to-document followups passed. Frozen tests passed 181 with 105 skips; the separate MCP 2.3 published-package lane retained 60 legacy validation/error-expectation failures (121 passed, 105 skipped). See [the round 5 record](testing.md#content-research-round-5-2026-10-10-published-1014) for primary evidence, source bounds and execution distinctions.
+
 ## What it does
 
 Exposes the Federal Register API as 8 MCP tools:
