@@ -318,3 +318,67 @@ def test_live_u2_oasis_idv_and_0001():
     assert oasis["results"][0]["generated_internal_id"] == "CONT_IDV_GS00Q14OADU108_4732"
     assert dup["ambiguous"] is True and dup["exact_match_count"]["contracts"] > 1000
     assert all(r["Award ID"] == "0001" for r in dup["results"])
+
+
+# ===========================================================================
+# U3 (P2): date_type (new_awards_only) on the search and aggregation tools
+# ===========================================================================
+
+VA_SDVOSB = dict(
+    awarding_agency="Department of Veterans Affairs",
+    set_aside_type_codes=["SDVOSBC", "SDVOSBS"],
+    time_period_start="2025-10-01", time_period_end="2026-09-30",
+)
+
+U3_TOOLS = [
+    ("get_award_count", {}),
+    ("search_awards", {}),
+    ("spending_by_category", {"category": "awarding_agency", "award_type": "contracts"}),
+    ("spending_over_time", {"award_type": "contracts"}),
+]
+
+
+@pytest.mark.parametrize("tool,extra", U3_TOOLS)
+def test_u3_new_awards_only_reaches_the_time_period(monkeypatch, tool, extra):
+    mock = _MockPost({"results": []})
+    monkeypatch.setattr(srv, "_post", mock)
+    kwargs = {**VA_SDVOSB, **extra}
+    if tool == "spending_over_time":
+        kwargs.pop("set_aside_type_codes")
+    asyncio.run(_call(tool, date_type="new_awards_only", **kwargs))
+    period = mock.calls[-1][1]["filters"]["time_period"]
+    assert period == [{"start_date": "2025-10-01", "end_date": "2026-09-30", "date_type": "new_awards_only"}]
+
+
+@pytest.mark.parametrize("tool,extra", U3_TOOLS)
+def test_u3_default_window_unchanged(monkeypatch, tool, extra):
+    mock = _MockPost({"results": []})
+    monkeypatch.setattr(srv, "_post", mock)
+    kwargs = {**VA_SDVOSB, **extra}
+    if tool == "spending_over_time":
+        kwargs.pop("set_aside_type_codes")
+    asyncio.run(_call(tool, **kwargs))
+    assert mock.calls[-1][1]["filters"]["time_period"] == [
+        {"start_date": "2025-10-01", "end_date": "2026-09-30"}]
+
+
+def test_u3_date_type_needs_a_window():
+    with pytest.raises(Exception, match="time window"):
+        asyncio.run(_call("get_award_count", awarding_agency="Department of Veterans Affairs",
+                          date_type="new_awards_only"))
+
+
+def test_u3_bad_date_type_rejected():
+    with pytest.raises(Exception):
+        asyncio.run(_call("get_award_count", date_type="signed", **VA_SDVOSB))
+
+
+@live
+def test_live_u3_new_awards_only_is_smaller():
+    async def both():
+        a = await _call("get_award_count", **VA_SDVOSB)
+        b = await _call("get_award_count", date_type="new_awards_only", **VA_SDVOSB)
+        return _payload(a), _payload(b)
+
+    any_action, new_only = asyncio.run(both())
+    assert 0 < new_only["results"]["contracts"] < any_action["results"]["contracts"]

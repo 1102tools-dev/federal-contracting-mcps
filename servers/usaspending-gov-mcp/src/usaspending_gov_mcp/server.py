@@ -453,6 +453,13 @@ def _validate_strings_no_control_chars(values: list[str] | None, *, field: str) 
 # Filter construction helpers
 # ---------------------------------------------------------------------------
 
+# How a time window is applied (time_period[].date_type). Omitted, USAspending
+# counts every award with activity in the window. Verified live 2026-10-10 on
+# VA SDVOSB set-asides FY2026: default 11,797 contracts, new_awards_only
+# 5,125 (awards first signed in the window).
+DateType = Literal["action_date", "date_signed", "last_modified_date", "new_awards_only"]
+
+
 def _build_filters(
     *,
     keywords: list[str] | None = None,
@@ -470,6 +477,7 @@ def _build_filters(
     contract_pricing_type_codes: list[str | int] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    date_type: str | None = None,
     award_amount_min: float | None = None,
     award_amount_max: float | None = None,
     place_of_performance_state: str | None = None,
@@ -563,7 +571,15 @@ def _build_filters(
                 f"time_period_start ({start}) is after time_period_end ({end}). "
                 f"Reverse the values or omit one."
             )
-        filters["time_period"] = [{"start_date": start, "end_date": end}]
+        period: dict[str, str] = {"start_date": start, "end_date": end}
+        if date_type:
+            period["date_type"] = date_type
+        filters["time_period"] = [period]
+    elif date_type:
+        raise ValueError(
+            f"date_type={date_type!r} needs a time window: pass time_period_start "
+            f"and/or time_period_end (e.g. a fiscal year, 2025-10-01 to 2026-09-30)."
+        )
     if award_amount_min is not None or award_amount_max is not None:
         if (
             award_amount_min is not None
@@ -629,6 +645,7 @@ async def search_awards(
     contract_pricing_type_codes: list[str | int] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    date_type: DateType | None = None,
     award_amount_min: float | None = None,
     award_amount_max: float | None = None,
     place_of_performance_state: str | None = None,
@@ -689,6 +706,21 @@ async def search_awards(
     verify names before presenting a definitive list. Large pulls can
     exceed MCP client payload budgets (limit=100 has measured ~90K
     characters); page in batches of 25-30 for big result sets.
+
+    "Award Amount" is the award's lifetime obligation, not the amount in
+    the time window. There is no period-of-performance end-date filter, so
+    expiring-contract (recompete) questions can't be filtered here: sorting
+    by 'End Date' over an action-date window returns long-ended awards that
+    had a closeout mod; filter the End Date column yourself.
+
+    date_type controls what the time window means. Omitted (the default),
+    an award counts if it had any action in the window, so totals and
+    counts include old awards that were only modified (a closeout mod in
+    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
+    'new_awards_only' keeps only awards first signed in the window: use it
+    for "how many new awards / contracts awarded in FY2026". 'date_signed',
+    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type needs time_period_start and/or time_period_end.
     """
     codes = _resolve_award_type(award_type)
     limit = _clamp_limit(limit, cap=100)
@@ -750,6 +782,7 @@ async def search_awards(
         contract_pricing_type_codes=contract_pricing_type_codes,
         time_period_start=time_period_start,
         time_period_end=time_period_end,
+        date_type=date_type,
         award_amount_min=award_amount_min,
         award_amount_max=award_amount_max,
         place_of_performance_state=place_of_performance_state,
@@ -795,6 +828,7 @@ async def get_award_count(
     contract_pricing_type_codes: list[str | int] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    date_type: DateType | None = None,
     award_amount_min: float | None = None,
     award_amount_max: float | None = None,
     place_of_performance_state: str | None = None,
@@ -815,6 +849,15 @@ async def get_award_count(
 
     At least one filter is required (the API rejects empty filter sets with HTTP 400).
     Typical usage: pass time_period_start + time_period_end, or a keywords/agency filter.
+
+    date_type controls what the time window means. Omitted (the default),
+    an award counts if it had any action in the window, so totals and
+    counts include old awards that were only modified (a closeout mod in
+    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
+    'new_awards_only' keeps only awards first signed in the window: use it
+    for "how many new awards / contracts awarded in FY2026". 'date_signed',
+    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type needs time_period_start and/or time_period_end.
     """
     _validate_strings_no_control_chars(keywords, field="keywords")
     _validate_no_control_chars(awarding_agency, field="awarding_agency")
@@ -837,6 +880,7 @@ async def get_award_count(
         contract_pricing_type_codes=contract_pricing_type_codes,
         time_period_start=time_period_start,
         time_period_end=time_period_end,
+        date_type=date_type,
         award_amount_min=award_amount_min,
         award_amount_max=award_amount_max,
         place_of_performance_state=place_of_performance_state,
@@ -862,6 +906,7 @@ async def spending_over_time(
     award_type: Literal["contracts", "idvs", "grants", "loans", "direct_payments", "other"] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    date_type: DateType | None = None,
     def_codes: list[str | int] | None = None,
 ) -> dict[str, Any]:
     """Aggregate spending amounts over time, grouped by fiscal year, quarter, or month.
@@ -880,6 +925,15 @@ async def spending_over_time(
 
     At least one filter is required (the API rejects empty filter sets with HTTP 400).
     Typical usage: pass time_period_start + time_period_end.
+
+    date_type controls what the time window means. Omitted (the default),
+    an award counts if it had any action in the window, so totals and
+    counts include old awards that were only modified (a closeout mod in
+    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
+    'new_awards_only' keeps only awards first signed in the window: use it
+    for "how many new awards / contracts awarded in FY2026". 'date_signed',
+    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type needs time_period_start and/or time_period_end.
     """
     _validate_strings_no_control_chars(keywords, field="keywords")
     _validate_no_control_chars(awarding_agency, field="awarding_agency")
@@ -895,6 +949,7 @@ async def spending_over_time(
         psc_codes=psc_codes,
         time_period_start=time_period_start,
         time_period_end=time_period_end,
+        date_type=date_type,
         def_codes=def_codes,
     )
     # award_type_codes alone (without other filters) is not enough: the API
@@ -927,6 +982,7 @@ async def spending_by_category(
     set_aside_type_codes: list[str | int] | None = None,
     time_period_start: str | None = None,
     time_period_end: str | None = None,
+    date_type: DateType | None = None,
     def_codes: list[str | int] | None = None,
     limit: int = 10,
     page: int = 1,
@@ -948,6 +1004,15 @@ async def spending_by_category(
     At least one filter is required. An unfiltered call would silently
     aggregate the entire USASpending database (all years, all agencies),
     which is never what a caller wants.
+
+    date_type controls what the time window means. Omitted (the default),
+    an award counts if it had any action in the window, so totals and
+    counts include old awards that were only modified (a closeout mod in
+    2026 puts a 2010 contract in an FY2026 list) and are NOT new awards.
+    'new_awards_only' keeps only awards first signed in the window: use it
+    for "how many new awards / contracts awarded in FY2026". 'date_signed',
+    'action_date' and 'last_modified_date' are the other upstream options.
+    date_type needs time_period_start and/or time_period_end.
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
@@ -965,6 +1030,7 @@ async def spending_by_category(
         set_aside_type_codes=set_aside_type_codes,
         time_period_start=time_period_start,
         time_period_end=time_period_end,
+        date_type=date_type,
         def_codes=def_codes,
     )
     # Same guard as search_awards: award_type_codes is a scope, not a filter.
