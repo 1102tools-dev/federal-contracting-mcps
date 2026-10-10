@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the Regulations.gov API as 9 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The 2.0.6 candidate collects 298 regression tests (179 offline plus 119 live-gated). The 2026-10-10 offline gate passed 179 tests; all 119 live-gated tests were skipped because DEMO_KEY returned HTTP 429. See the content-fix section and [test suite map](tests/README.md) for current coverage.
+This Model Context Protocol server exposes the Regulations.gov API as 9 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The 2.0.6 package collects 298 regression tests (179 offline plus 119 live-gated). The 2026-10-10 offline gate passed 179 tests; all 119 live-gated tests were skipped because DEMO_KEY returned HTTP 429. See the content-fix section and [test suite map](tests/README.md) for current coverage.
 
 | Metric | Value |
 |---|---|
@@ -13,7 +13,7 @@ This Model Context Protocol server exposes the Regulations.gov API as 9 callable
 | P1 silent-wrong-data bugs found and fixed | 10 |
 | P2 validation gaps found and fixed | 7 |
 | Round-7 wave findings | 12 |
-| Current candidate | 2.0.6 |
+| Current package | 2.0.6 |
 | PyPI status | Published as `regulationsgov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -422,4 +422,43 @@ candidate failed 12 helper compatibility tests and was replaced by the dual
 base-class implementation; original/intermediate/final logs are preserved.
 
 Evidence is in `Artifacts/mcp-e2e-20261010/round3/regulations/sdk-guidance/`.
-Publication/live 2.0.6 verification remains coordinator-owned and pending.
+Final published 2.0.6 verification is recorded below.
+
+
+## Published 2.0.6 final verification (round 3, 2026-10-10)
+
+The corrective release workflow completed successfully. Public health reports
+source `c0553538fca43e13a8c7db5a6ecd77a887303c32`; initialize reports 2.0.6
+without instructions. Actual installed, public, and reviewed frozen catalogs
+agree exactly on all nine tools; the official MCP Registry records 2.0.6.
+
+A fresh uncached official PyPI installation by package name resolved MCP SDK
+2.3.0. The actual console entrypoint passed initialize, catalog, no-key access
+status, and both ordinary filter/date recovery originals. A separately labeled
+captured-provider stdio adapter passed the corrected followups using the actual
+matching OSHA heat document and docket. These adapter followups are not keyed
+live CLI parity. The full fresh installed-package SDK 2.3.0 suite passed
+**179**, skipped **119**, and collected **298**. The previous 2.0.5 failures,
+intermediate candidate failures, and both successful candidate SDK lanes
+remain preserved separately.
+
+The released public service replayed all 115 corpus calls successfully across
+all nine tools, with 91 dated records carrying provider-only provenance and
+an explicitly unestablished controlling date. The returned original OSHA
+notice link was requested afresh and recovered October 30, 2025 for timely
+NOITA filers. The raw October 2 metadata remains preserved, not endorsed.
+
+The 110 semantic source comparisons reuse the already fresh 68 JSON and two
+XML primary captures from the 2.0.5 verification; each retained hash was checked.
+They are not claimed as 70 newly requested 2.0.6 sources. The comparison ledger
+retains 76 machine-date matches, 22 needing no deadline comparison, six primary
+text/extension reconciliations, four occurrences of the OSHA source conflict
+with corrected app representation, and two unverified agenda dates. Direct
+Regulations.gov quota429, two attachment403 results, and public-count source
+limitations remain explicit unavailable checks, not passes.
+
+Round 3 confirmed two P2 findings, both corrected and replayed, with no P0,
+P1, or P3 findings. Final evidence is under
+`Artifacts/mcp-e2e-20261010/round3/regulations/final-published-2.0.6/`; prior
+attempts remain in their original directories. This documentation update
+changes no package version or runtime behavior.
