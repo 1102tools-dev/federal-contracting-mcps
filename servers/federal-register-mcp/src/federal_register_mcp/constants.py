@@ -27,4 +27,10 @@ DEFAULT_FIELDS = [
     "agencies", "docket_ids", "regulation_id_numbers", "comment_url",
     "comments_close_on", "cfr_references", "html_url", "pdf_url",
     "citation", "dates", "effective_on", "action", "significant",
+    # Presidential documents only; search results drop these keys when null.
+    "executive_order_number", "subtype", "signing_date", "presidential_document_number",
 ]
+
+PRESIDENTIAL_FIELDS = (
+    "executive_order_number", "subtype", "signing_date", "presidential_document_number",
+)

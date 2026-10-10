@@ -30,6 +30,7 @@ from .constants import (
     DEFAULT_FIELDS,
     DEFAULT_TIMEOUT,
     FACET_NAMES,
+    PRESIDENTIAL_FIELDS,
     USER_AGENT,
 )
 
@@ -433,6 +434,8 @@ def _build_search_params(
     significant: bool | None = None,
     cfr_title: str | None = None,
     cfr_part: str | None = None,
+    presidential_document_type: list[str] | None = None,
+    executive_order_number: int | None = None,
     fields: list[str] | None = None,
     per_page: int = 20,
     page: int = 1,
@@ -472,6 +475,11 @@ def _build_search_params(
         params.append(("conditions[cfr][title]", cfr_title))
     if cfr_part:
         params.append(("conditions[cfr][part]", cfr_part))
+    if presidential_document_type:
+        for t in presidential_document_type:
+            params.append(("conditions[presidential_document_type][]", t))
+    if executive_order_number is not None:
+        params.append(("conditions[executive_order_numbers][]", str(executive_order_number)))
 
     for f in (fields or DEFAULT_FIELDS):
         params.append(("fields[]", f))
@@ -481,6 +489,19 @@ def _build_search_params(
     params.append(("order", order))
 
     return urllib.parse.urlencode(params)
+
+
+def _drop_null_presidential_fields(data: Any) -> None:
+    """Search results ask for the presidential fields (EO number, subtype,
+    signing date, document number) on every document; keep them only where
+    they have a value so other documents don't grow by four null keys."""
+    if not isinstance(data, dict):
+        return
+    for doc in data.get("results") or []:
+        if isinstance(doc, dict):
+            for key in PRESIDENTIAL_FIELDS:
+                if key in doc and doc[key] is None:
+                    del doc[key]
 
 
 # ---------------------------------------------------------------------------
@@ -582,6 +603,8 @@ async def search_documents(
     significant: bool | None = None,
     cfr_title: int | None = None,
     cfr_part: str | int | None = None,
+    presidential_document_type: list[Literal["executive_order", "proclamation", "memorandum", "determination", "notice", "presidential_order", "other"]] | None = None,
+    executive_order_number: int | None = None,
     per_page: int = 20,
     page: int = 1,
     order: Literal["newest", "oldest", "relevance", "executive_order_number"] = "newest",
@@ -620,6 +643,17 @@ async def search_documents(
     - cfr_title + cfr_part: documents affecting a CFR location, e.g.
       cfr_title=48, cfr_part='52' for FAR part 52 (part accepts ranges
       like '1-99'; cfr_part requires cfr_title)
+    - presidential_document_type: executive_order, proclamation, memorandum,
+      determination, notice, presidential_order, other. Use
+      ['executive_order'] to count or list executive orders: doc_types=
+      ['PRESDOCU'] alone also returns proclamations, memoranda and notices.
+    - executive_order_number: one EO by number (e.g. 14275)
+    - order: 'executive_order_number' sorts EOs by number (pair it with
+      presidential_document_type=['executive_order'])
+
+    Presidential documents carry executive_order_number, subtype (Executive
+    Order, Proclamation, Memorandum, ...), signing_date and
+    presidential_document_number; other documents omit those keys.
 
     Count caps at 10,000 for broad queries. Use date ranges for accurate counts.
     per_page capped at 100 to stay within MCP response size limits.
@@ -647,6 +681,13 @@ async def search_documents(
     _check_date_range(comment_date_gte, comment_date_lte, "comment_date")
     _check_date_range(effective_date_gte, effective_date_lte, "effective_date")
     cfr_title_str, cfr_part_str = _validate_cfr(cfr_title, cfr_part)
+    presidential_document_type = _reject_empty_list(
+        presidential_document_type, "presidential_document_type"
+    )
+    if executive_order_number is not None and executive_order_number < 1:
+        raise ValueError(
+            f"executive_order_number must be a positive EO number (e.g. 14275). Got {executive_order_number}."
+        )
     if far_council and agencies:
         raise ValueError(
             "far_council=True cannot be combined with agencies: it already "
@@ -663,7 +704,7 @@ async def search_documents(
         comment_date_gte, comment_date_lte,
         effective_date_gte, effective_date_lte,
         correction is not None, significant is not None,
-        cfr_title_str,
+        cfr_title_str, presidential_document_type, executive_order_number,
     ]):
         raise ValueError(
             "search_documents requires at least one filter. Typical: "
@@ -680,9 +721,13 @@ async def search_documents(
         effective_date_gte=effective_date_gte, effective_date_lte=effective_date_lte,
         correction=correction, significant=significant,
         cfr_title=cfr_title_str, cfr_part=cfr_part_str,
+        presidential_document_type=presidential_document_type,
+        executive_order_number=executive_order_number,
     )
     if far_council:
-        return await _far_council_search(filters, per_page=per_page, page=page, order=order)
+        data = await _far_council_search(filters, per_page=per_page, page=page, order=order)
+        _drop_null_presidential_fields(data)
+        return data
 
     qs = _build_search_params(
         agencies=agencies, **filters,
@@ -691,6 +736,7 @@ async def search_documents(
     data = await _get(f"{BASE_URL}/documents.json?{qs}")
     if agencies and _EMPTY_FAR_SLUG in agencies and isinstance(data, dict):
         data["note"] = _EMPTY_FAR_SLUG_NOTE
+    _drop_null_presidential_fields(data)
     return data
 
 
@@ -751,6 +797,7 @@ async def get_facet_counts(
     pub_date_lte: str | None = None,
     cfr_title: int | None = None,
     cfr_part: str | int | None = None,
+    presidential_document_type: list[Literal["executive_order", "proclamation", "memorandum", "determination", "notice", "presidential_order", "other"]] | None = None,
 ) -> dict[str, Any]:
     """Get document counts grouped by type, agency, topic, or time period.
 
@@ -762,6 +809,10 @@ async def get_facet_counts(
 
     Useful for understanding the volume of rulemaking by agency, type, or
     over time within a date range before drilling into specific documents.
+
+    presidential_document_type (executive_order, proclamation, memorandum,
+    determination, notice, presidential_order, other) narrows to one kind
+    of presidential document, e.g. executive orders per month.
 
     At least one filter (agencies, doc_types, term, pub_date_gte/lte, or
     cfr_title) is required. An unfiltered facet query returns the entire
@@ -786,8 +837,14 @@ async def get_facet_counts(
     )
     _check_date_range(pub_date_gte, pub_date_lte, "publication_date")
     cfr_title_str, cfr_part_str = _validate_cfr(cfr_title, cfr_part)
+    presidential_document_type = _reject_empty_list(
+        presidential_document_type, "presidential_document_type"
+    )
 
-    if not any([agencies, doc_types, term, pub_date_gte, pub_date_lte, cfr_title_str]):
+    if not any([
+        agencies, doc_types, term, pub_date_gte, pub_date_lte, cfr_title_str,
+        presidential_document_type,
+    ]):
         raise ValueError(
             "get_facet_counts requires at least one filter "
             "(agencies, doc_types, term, pub_date_gte/lte, or cfr_title). "
@@ -811,6 +868,8 @@ async def get_facet_counts(
         params.append(("conditions[cfr][title]", cfr_title_str))
     if cfr_part_str:
         params.append(("conditions[cfr][part]", cfr_part_str))
+    for t in presidential_document_type or []:
+        params.append(("conditions[presidential_document_type][]", t))
 
     qs = urllib.parse.urlencode(params) if params else ""
     url = f"{BASE_URL}/documents/facets/{facet}"

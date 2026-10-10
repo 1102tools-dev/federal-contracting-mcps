@@ -170,3 +170,83 @@ def test_live_fr2_far_council_2025_final_rules_is_16():
     assert data["far_council"]["complete"] is True
     nums = {d["document_number"] for d in data["results"]}
     assert {"2024-31403", "2024-31404", "2024-31407"} <= nums
+
+
+# ===========================================================================
+# FR-3: presidential documents
+# ===========================================================================
+
+PRES_FIELDS = {"executive_order_number", "subtype", "signing_date", "presidential_document_number"}
+
+
+def test_fr3_search_requests_eo_number_and_subtype(monkeypatch):
+    seen: list[str] = []
+
+    async def fake(url):
+        seen.append(url)
+        return {"count": 0, "results": []}
+
+    monkeypatch.setattr(srv, "_get", fake)
+    _payload(asyncio.run(_call("search_documents", doc_types=["PRESDOCU"], term="procurement")))
+    assert PRES_FIELDS <= set(_qs(seen[0])["fields[]"])
+
+
+def test_fr3_presidential_fields_dropped_when_null(monkeypatch):
+    # Non-presidential documents must not grow by four null keys each.
+    async def fake(url):
+        return {"count": 2, "results": [
+            {"document_number": "2025-06839", "executive_order_number": "14275",
+             "subtype": "Executive Order", "signing_date": "2025-04-15",
+             "presidential_document_number": "14275"},
+            {"document_number": "2025-16412", "executive_order_number": None,
+             "subtype": None, "signing_date": None, "presidential_document_number": None},
+        ]}
+
+    monkeypatch.setattr(srv, "_get", fake)
+    data = _payload(asyncio.run(_call("search_documents", term="procurement")))
+    eo, rule = data["results"]
+    assert eo["executive_order_number"] == "14275" and eo["subtype"] == "Executive Order"
+    assert not PRES_FIELDS & set(rule)
+
+
+def test_fr3_presidential_document_type_and_eo_number_filters(monkeypatch):
+    seen: list[str] = []
+
+    async def fake(url):
+        seen.append(url)
+        return {"count": 0, "results": []}
+
+    monkeypatch.setattr(srv, "_get", fake)
+    _payload(asyncio.run(_call(
+        "search_documents", presidential_document_type=["executive_order"], pub_date_gte="2026-01-01",
+    )))
+    _payload(asyncio.run(_call("search_documents", executive_order_number=14275)))
+    _payload(asyncio.run(_call(
+        "get_facet_counts", facet="monthly", presidential_document_type=["executive_order"],
+        pub_date_gte="2026-01-01",
+    )))
+    assert _qs(seen[0])["conditions[presidential_document_type][]"] == ["executive_order"]
+    assert _qs(seen[1])["conditions[executive_order_numbers][]"] == ["14275"]
+    assert _qs(seen[2])["conditions[presidential_document_type][]"] == ["executive_order"]
+
+
+@live
+def test_live_fr3_2026_executive_orders_is_65_not_128():
+    data = _payload(asyncio.run(_call(
+        "search_documents", presidential_document_type=["executive_order"],
+        pub_date_gte="2026-01-01", pub_date_lte="2026-10-10",
+        order="executive_order_number", per_page=5, page=1,
+    )))
+    # 65 on 2026-10-10 (content test Q41, live re-check); fixed date range.
+    assert data["count"] == 65
+    first = data["results"][0]
+    assert first["executive_order_number"] == "14372"
+    assert first["subtype"] == "Executive Order"
+    assert first["signing_date"] == "2026-01-07"
+
+
+@live
+def test_live_fr3_eo_number_lookup():
+    data = _payload(asyncio.run(_call("search_documents", executive_order_number=14275)))
+    assert data["count"] == 1
+    assert data["results"][0]["document_number"] == "2025-06839"
