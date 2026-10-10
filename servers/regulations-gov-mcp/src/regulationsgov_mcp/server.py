@@ -1222,7 +1222,11 @@ async def _add_organizations(response: dict[str, Any]) -> None:
     response["organization_lookup"] = {
         "rows_with_organization": found,
         "lookups_failed": failed,
-        "note": "Rows without organization were filed by individuals or the agency hid the field.",
+        "note": (
+            "Rows whose lookup failed have unknown organization; do not infer "
+            "they were filed by individuals. A successful lookup without an "
+            "organization means the source did not provide a public organization field."
+        ),
     }
 
 
@@ -1357,6 +1361,16 @@ def _page_fields(total: Any, page_size: int, page_number: int, returned: int) ->
     return fields
 
 
+def _workflow_diagnostics(result: dict[str, Any]) -> dict[str, Any]:
+    """Keep search recovery guidance when presenting workflow summaries."""
+    return {
+        key: result[key] for key in (
+            "no_data", "no_data_reason", "paged_past_end", "paged_past_end_reason",
+            "page_limit_note", "records_beyond_page_limit",
+        ) if key in result
+    }
+
+
 def _continue_hint(fields: dict[str, Any], later: str) -> str:
     if "next_page_number" in fields:
         return f"Request page_number={fields['next_page_number']} for {later}."
@@ -1453,6 +1467,7 @@ async def open_comment_periods(
 
     response: dict[str, Any] = {
         "agencies_searched": agencies,
+        **_workflow_diagnostics(result),
         **({"document_type": document_type} if document_type else {}),
         "total_open": total_open,
         **_page_fields(api_total, page_size, page_number, len(all_docs)),
@@ -1558,6 +1573,7 @@ async def far_case_history(
             if isinstance(posted, int):
                 out["posted_comments"] = posted
                 out["count_note"] = _POSTED_COUNT_NOTE
+    out.update(_workflow_diagnostics(docs_result))
     out.update(_page_fields(api_total, page_size, page_number, len(documents)))
     out["documents"] = documents
     if out.get("truncated"):

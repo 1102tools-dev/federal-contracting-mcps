@@ -2,18 +2,18 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the Regulations.gov API as 9 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The 2.0.3 package collects 279 regression tests (160 offline plus 119 live-gated). The 2026-10-10 offline gate passed 160 tests; all 119 live-gated tests were skipped because DEMO_KEY returned HTTP 429. See the content-fix section and [test suite map](tests/README.md) for current coverage.
+This Model Context Protocol server exposes the Regulations.gov API as 9 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The 2.0.4 package collects 286 regression tests (167 offline plus 119 live-gated). The 2026-10-10 offline gate passed 167 tests; all 119 live-gated tests were skipped because DEMO_KEY returned HTTP 429. See the content-fix section and [test suite map](tests/README.md) for current coverage.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 9 |
-| Total regression tests | 279 (160 offline, 119 live-gated) |
+| Total regression tests | 286 (167 offline, 119 live-gated) |
 | Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 1 (`extra='ignore'` silent typo drop) |
 | P1 silent-wrong-data bugs found and fixed | 10 |
 | P2 validation gaps found and fixed | 7 |
 | Round-7 wave findings | 12 |
-| Current release | 2.0.3 |
+| Current package | 2.0.4 |
 | PyPI status | Published as `regulationsgov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -121,13 +121,14 @@ Four items: missing publish workflow, missing test_validation.py, missing dev de
 
 ## Test Coverage
 
-The current suite collects 279 tests (160 offline, 119 live-gated). The 2026-10-10 offline run passed 160 and skipped 119; collection is not a live-pass claim. The per-file counts and live gates are maintained in [tests/README.md](tests/README.md).
+The current suite collects 286 tests (167 offline, 119 live-gated). The 2026-10-10 offline run passed 167 and skipped 119; collection is not a live-pass claim. The per-file counts and live gates are maintained in [tests/README.md](tests/README.md).
 
 | File | Purpose | Test count |
 |---|---|---|
 | `tests/test_access_status.py` | Credential presence, setup guidance, tool-only output | 9 (0 live-gated) |
 | `tests/test_audit_r7.py` | Round 7: ascending deadlines, pagination, API limits, and validation | 27 (4 live-gated) |
 | `tests/test_audit_r8.py` | Round 8: one-call source contract anchors | 4 (4 live-gated; live_smoke) |
+| `tests/test_workflow_content_audit.py` | 2.0.4 workflow recovery and partial enrichment | 7 (0 live-gated) |
 | `tests/test_content_fixes.py` | 2.0.3 R1–R11: Eastern deadlines, posted counts, organizations, subtypes, page ceiling, facets, type filter, comment text, and hints | 35 (0 live-gated) |
 | `tests/test_credential_redaction.py` | Credential and error-payload redaction | 6 (0 live-gated) |
 | `tests/test_hosted_directory.py` | Compact output, hosted publisher configuration, and tool contracts | 14 (0 live-gated) |
@@ -231,3 +232,23 @@ tests cover R1–R11; Pay Equity withdrawal and page-40 source responses were
 not saved, so those cases use labeled synthetic rows. R9 changes descriptions
 only because relevance ordering could not be verified live. Attachment 403
 behavior and effective dates absent from source records remain skipped P3s.
+
+## Workflow content audit (2.0.4, 2026-10-10)
+
+Current hosted 2.0.3 answered 20 calls across all nine tools, including
+semiconductor lifecycle/detail/comments, CMMC docket discovery and history,
+Pay Equity withdrawal, open proposed rules, default mixed open documents,
+page-40 ceiling and past-end queries, organization enrichment, and validation
+errors. Two P2 defects were confirmed: workflow summaries discarded search
+recovery guidance, and failed organization lookups gave an unsupported
+individual/hidden-field explanation. Three initial reproductions failed before
+the fix; seven final regression cases pass. The complete gate is 167 passed
+and 119 live-gated skipped, 286 collected. Hosted calls are separate from those
+pytest results; this does not claim the skipped direct-source suite passed.
+
+Fresh Federal Register API records confirm semiconductor April 20, 2026,
+GSAR October 22, 2026, and SBA November 20, 2026 comment dates and the Pay
+Equity withdrawal action. Direct Regulations.gov DEMO_KEY returned HTTP 429;
+source parity otherwise uses dated historical raw records. Published/live
+verification of 2.0.4 occurs after release. The reviewed nine-tool metadata
+contract is unchanged.

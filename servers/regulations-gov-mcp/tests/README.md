@@ -1,7 +1,7 @@
 # Test suite map
 
-279 collected tests: 160 offline and 119 live-gated (Python 3.12, 2026-10-10).
-The offline release gate passed all 160; the 119 live tests were skipped.
+286 collected tests: 167 offline and 119 live-gated (Python 3.12, 2026-10-10).
+The offline release gate passed all 167; the 119 live tests were skipped.
 Files are named by the audit round or fix-wave that
 produced them and are append-only history: each maps to a section of
 [../testing.md](../testing.md), which narrates what every round found and
@@ -18,7 +18,8 @@ fixed. That traceability is deliberate; do not consolidate or rename rounds.
 | `test_hosted_throughput.py` | Hosted pacing, budget, and throughput contract | 8 | 0 |
 | `test_round_4.py` | Round 4 property validation and live source audit | 125 | 106 |
 | `test_validation.py` | Foundational input validation and source checks | 51 | 5 |
-| **Total** | | **279** | **119** |
+| `test_workflow_content_audit.py` | 2.0.4 workflow recovery and unavailable organizations | 7 | 0 |
+| **Total** | | **286** | **119** |
 
 Live tests need `REGULATIONS_LIVE_TESTS=1 + REGULATIONS_GOV_API_KEY`, are paced automatically by `conftest.py` (which
 also resets the cached async client per test so batched live runs cannot hit
@@ -33,3 +34,6 @@ DEMO_KEY returned HTTP 429, so live source checks are explicitly skipped;
 do not substitute the hosted publisher key. The content tests use saved
 source fixtures, with synthetic Pay Equity withdrawal/page-40 cases labeled
 in `test_content_fixes.py`. Saved-source coverage is distinct from a live pass.
+
+The 2.0.4 content audit also exercised all nine hosted tools separately (20 calls).
+That hosted coverage does not replace the 119 skipped direct-source tests.
