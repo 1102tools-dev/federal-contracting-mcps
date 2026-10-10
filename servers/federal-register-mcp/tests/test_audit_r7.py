@@ -42,11 +42,9 @@ def test_live_smoke_open_comment_periods_soonest_first():
     # 1.0.1 wave: this tool sorted descending and DROPPED the soonest-closing
     # documents. Closing dates must now come back ascending.
     data = _payload(asyncio.run(_call("open_comment_periods", term="acquisition")))
-    txt = _text(data)
-    import re
-    dates = re.findall(r"20\d\d-\d\d-\d\d", txt)
-    close_like = [d for d in dates if d >= "2026-08-18"][:5]
-    assert close_like == sorted(close_like), "comment close dates not ascending"
+    close_dates = [d["comments_close_on"] for d in data["documents"]]
+    assert close_dates == sorted(close_dates), "comment close dates not ascending"
+    assert all(d >= data["as_of"] for d in close_dates)
 
 
 @live

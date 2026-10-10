@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.14
+
+- Open-comment answers explicitly report scan completeness and truncation, warn when an unscanned document can close earlier, and preserve FAR Council scan metadata and lower-bound counts. The bounded 500-document scan is unchanged.
+- Correct the live smoke assertion to inspect comment deadlines rather than every date in the serialized answer. Add four completeness regressions and a reproducible 12-question content workflow.
+
 ## 1.0.13
 
 - Add FAR Council co-filing searches, presidential document fields and filters,

@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the Federal Register API as 8 callable tools for rulemaking tracking, FAR case history, comment-period monitoring, and regulatory research since 1994. It was hardened across eight audit rounds, including the round 7 live anchors and round 8 content-test fixes: an initial hardening pass that fixed 17 findings, a retroactive deep audit that surfaced 12 more hidden bugs, a Hypothesis property-testing round, and a round 6 correctness audit against the live archive and the API's own OpenAPI spec that surfaced 12 further verified findings. Two signature findings, one per methodology era: a pydantic validation crash on every `list_agencies` call that was invisible to unit tests awaiting raw coroutines instead of invoking through the FastMCP pipeline, and a document-number validator that rejected the entire pre-2011 archive because prior rounds only ever tested junk inputs, never legacy-real ones. The MCP ships with 282 regression tests (177 offline plus 105 live-gated).
+This Model Context Protocol server exposes the Federal Register API as 8 callable tools for rulemaking tracking, FAR case history, comment-period monitoring, and regulatory research since 1994. It was hardened across eight audit rounds, including the round 7 live anchors and round 8 content-test fixes: an initial hardening pass that fixed 17 findings, a retroactive deep audit that surfaced 12 more hidden bugs, a Hypothesis property-testing round, and a round 6 correctness audit against the live archive and the API's own OpenAPI spec that surfaced 12 further verified findings. Two signature findings, one per methodology era: a pydantic validation crash on every `list_agencies` call that was invisible to unit tests awaiting raw coroutines instead of invoking through the FastMCP pipeline, and a document-number validator that rejected the entire pre-2011 archive because prior rounds only ever tested junk inputs, never legacy-real ones. The MCP ships with 286 regression tests (181 offline plus 105 live-gated).
 
 | Metric | Value |
 |---|---|
@@ -10,7 +10,7 @@ This Model Context Protocol server exposes the Federal Register API as 8 callabl
 | Total regression tests | 282 (177 offline, 105 live-gated) |
 | Audit rounds completed | 8 |
 | Historical items addressed through round 6 | 44 (17 initial, 1 cross-fix, 12 deep audit, 2 round 5, 12 round 6) |
-| Current release | 1.0.13 |
+| Current release | 1.0.14 |
 | PyPI status | Published as `federal-register-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -141,7 +141,7 @@ A fresh audit with a different question: not "does the server reject bad input" 
 
 ## Test Coverage
 
-The repo ships 282 collected regression tests (177 offline, 105 live-gated). The 1.0.13 offline lane passed; all 30 round 8 tests also passed with the live gate enabled.
+The repo ships 286 collected regression tests (181 offline, 105 live-gated). The 1.0.13 offline lane passed; all 30 round 8 tests also passed with the live gate enabled.
 
 | File | Purpose | Test count |
 |---|---|---|
@@ -197,7 +197,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, ma
 
 Testing spanned six rounds from initial hardening (17 findings including the pydantic crash and payload bombs) through cross-MCP `extra='forbid'` application, a retroactive deep audit (12 additional findings), Hypothesis property punishment (round 5), and a round 6 correctness audit against the live archive and the API's own OpenAPI spec (12 verified findings). The live regression suite runs against the production Federal Register API when enabled with `FR_LIVE_TESTS=1`.
 
-Test count: 282 collected regression tests (177 offline, 105 live-gated). Historical items addressed through round 6: 44. Current version: 1.0.13. PyPI: `federal-register-mcp`.
+Test count: 286 collected regression tests (181 offline, 105 live-gated). Historical items addressed through round 6: 44. Current version: 1.0.14. PyPI: `federal-register-mcp`.
 
 Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/federal-register-mcp. License: MIT.
 
@@ -228,3 +228,11 @@ enabled, including 5 comparisons against the government API. All 19 findings
 repro gates passed against the live government API. Hosted tool
 contract checks, version validation for all nine packages, and all 64 release
 guard tests passed. The Worker type check passed; this Worker has no npm test script.
+
+## 1.0.14 content audit (2026-10-10)
+
+The broad government-wide open-comment call reported 1,040 matching documents and scanned 500. Its first 100 results reached October 15 but omitted document 2026-19904 closing October 13, confirmed by a deadline-window search against the official Federal Register API. The existing docstring disclosed the scan limit, but the returned answer lacked an explicit completeness indicator and warning; it also dropped FAR Council lower-bound metadata. Answers now carry `complete`, `truncated`, an incomplete-scan note, and the underlying FAR metadata when applicable. The scan limit remains a documented source-coverage limitation; deadline-window searches provide the follow-up route.
+
+Four new MCP-pipeline regressions all failed against 1.0.13 and passed after the fix. Python 3.12 offline validation: **181 passed, 105 live-gated skipped; 286 collected**. The source hosted contract check confirmed all eight published tool definitions are unchanged. Source distribution and wheel builds succeeded. A reproducible 12-question scenario in `tests/scenarios/content_audit_20261010.py` exercises every tool and retains full answers for comparison.
+
+The full live suite identified an old smoke-test assertion that parsed every date in JSON, mixing publication and closing dates. It now checks `comments_close_on` and `as_of` directly. This is a test defect, not a server deadline-sort defect. The evidence directory records the original run and corrected reruns.

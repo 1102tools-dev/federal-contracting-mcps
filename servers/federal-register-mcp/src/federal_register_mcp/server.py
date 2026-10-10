@@ -1190,6 +1190,8 @@ async def open_comment_periods(
 
     results: list[dict[str, Any]] = []
     total_open = 0
+    count_is_lower_bound = False
+    far_scan: dict[str, Any] | None = None
     max_pages = _OPEN_COMMENT_SCAN_CAP // _OPEN_COMMENT_PAGE_SIZE
     for page_num in range(1, max_pages + 1):
         data = await search_documents(
@@ -1203,6 +1205,11 @@ async def open_comment_periods(
             far_council=far_council,
         )
         total_open = data.get("count", 0)
+        count_is_lower_bound = count_is_lower_bound or bool(
+            data.get("count_is_lower_bound") or data.get("count_capped")
+        )
+        if far_council and isinstance(data.get("far_council"), dict):
+            far_scan = data["far_council"]
         page_results = data.get("results", [])
         results.extend(page_results)
         if len(page_results) < _OPEN_COMMENT_PAGE_SIZE or len(results) >= total_open:
@@ -1211,7 +1218,8 @@ async def open_comment_periods(
     results.sort(key=lambda x: x.get("comments_close_on") or "9999-99-99")
     returned = results[:limit]
 
-    return {
+    complete = not count_is_lower_bound and len(results) >= total_open
+    answer: dict[str, Any] = {
         "as_of": today,
         "total_open": total_open,
         "scanned": len(results),
@@ -1219,7 +1227,22 @@ async def open_comment_periods(
         "returned": len(returned),
         "limit": limit,
         "documents": returned,
+        "complete": complete,
+        "truncated": not complete or len(returned) < total_open,
     }
+    if count_is_lower_bound:
+        answer["total_open_is_lower_bound"] = True
+    if far_scan is not None:
+        answer["far_council"] = far_scan
+    if not complete:
+        answer["note"] = (
+            "This is an incomplete scan. Documents outside the scan can close "
+            "earlier than the returned deadlines; these are the soonest deadlines "
+            "among scanned documents only. Narrow with agencies or term for "
+            "exhaustive coverage. Use search_documents with comment_date_gte/lte "
+            "to check a specific deadline window."
+        )
+    return answer
 
 
 @mcp.tool(annotations={"title": "FAR Case History", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
