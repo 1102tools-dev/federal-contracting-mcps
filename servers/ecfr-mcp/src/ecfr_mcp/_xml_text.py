@@ -112,10 +112,36 @@ class _Unit:
     def _inline_children(self, e: ET.Element, parts: list[str]) -> None:
         if e.text:
             parts.append(e.text)
-        for child in e:
+        children = list(e)
+        index = 0
+        while index < len(children):
+            child = children[index]
+            # Scientific notation can split the sign and digits into two
+            # superscripts. Keep that exponent numeric rather than treating
+            # its digits as a footnote (40 CFR 141.61's dioxin MCL).
+            if (
+                _tag(child) in ("SUP", "SU")
+                and (child.text or "").strip() in ("−", "-", "+")
+                and not list(child)
+                and not (child.tail or "").strip()
+                and re.search(r"[×x*]\s*10\s*$", "".join(parts))
+                and index + 1 < len(children)
+            ):
+                digits = children[index + 1]
+                if (
+                    _tag(digits) in ("SUP", "SU")
+                    and not list(digits)
+                    and re.fullmatch(r"\d+", (digits.text or "").strip())
+                ):
+                    parts.append("^" + (child.text or "").strip() + (digits.text or "").strip())
+                    if digits.tail:
+                        parts.append(digits.tail)
+                    index += 2
+                    continue
             self._inline_element(child, parts)
             if child.tail:
                 parts.append(child.tail)
+            index += 1
 
     def _inline_element(self, e: ET.Element, parts: list[str]) -> None:
         tag = _tag(e)

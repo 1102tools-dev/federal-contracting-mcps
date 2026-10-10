@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.8
+
+- Preserve signed scientific exponents split across adjacent superscript nodes in regulatory tables. The 40 CFR 141.61 dioxin MCL now reads `3 × 10^−8 mg/l` rather than an undefined footnote. Genuine numeric footnotes and ordinal text remain intact.
+- Add the exact primary-source MCL fixture, an independent Decimal magnitude regression and genuine-footnote controls. Both SDK lanes pass 346 tests with 118 explicit live skips (464 collected); the installed candidate completes all 85 Round 6 research calls plus a dated followup. All 85 primary comparisons and 17 supplemental checks pass; actual publication acceptance remains coordinator-controlled.
+
 ## 1.1.7
 
 - Recognize explicitly introduced numbered subtype definitions in FAR 2.101,

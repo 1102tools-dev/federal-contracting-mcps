@@ -1,5 +1,19 @@
 # eCFR MCP: Testing Record
 
+## Content research round 6 (1.1.8 candidate, October 10, 2026)
+
+The new-context corpus contains 85 calls per surface across all 13 tools and fourteen titles. Seventy-seven tool/argument signatures are strictly new relative to Rounds 2–5; eight repeat supporting inputs (five title freshness requests, agency discovery, COTS definition and FAR 52.222-41) within new composed workflows. This is not a replay of an earlier research corpus. Both actual official by-name PyPI 1.1.7 installed console and public service completed 85 calls without tool errors; 83 shared answers matched exactly and two differed only in search scores. Its fresh SDK 2.3.0 suite passed 343 tests with 118 live skips (461 collected).
+
+Coverage includes complete flight-duty Table B and rest conditions, export technology, financial safeguards, small-power production, firearm eligibility, mine dust, drawbridge operation, hospital medical records, floodplain administration, mariner terminology, DFARS cybersecurity, and acquisition definitions. Complete tables, parts/subparts, history chronology and page continuations, scoped corrections, paged change/search results, and source-backed historical comparisons receive primary checks. Textile comparisons disclose bounded text omission and guide complete dated-read recovery; returned editorial notes preserve the unincorporated-amendment caveat rather than reconstructing unavailable text.
+
+Fifty-three fresh Round 6 primary XML/JSON captures all returned HTTP 200, with retained bytes, hashes and retrieval times. Title snapshots are October 7 or 8 rather than the audit date. Historical availability remains title/section/date-specific; linked graphics and bounded fallback remain disclosed. Those retained captures are reused for correction verification, not described as newly fetched after the fix.
+
+One P2 was confirmed in the ordinary 40 CFR 141.61 organic-contaminant MCL question. Published 1.1.7 returned dioxin as `3 × 10− [fn 8]`; the primary TD contains adjacent minus/digit superscripts specifying `3 × 10^−8 mg/l`, or `0.00000003 mg/l`. Candidate 1.1.8 recognizes this narrow signed scientific-notation pair while preserving true footnotes and ordinal text. The exact primary fixture failed the exponent regression before the correction while both controls passed; all three pass after. Direct Decimal arithmetic from raw primary nodes independently verifies the magnitude without using the product renderer or prior source normalizer.
+
+The original provisional zero-finding record and its 169-file seal are preserved. Its shared numeric-superscript normalizer mistakenly repeated the product’s error. Corrected baseline reconciliation passes 168 of 170 broad checks, failing precisely this call on both surfaces; 31 of 33 supplemental checks pass, with the two complete-water-table comparisons exposing the same issue. The independent raw numeric oracle fails both published answers and passes the installed candidate’s original query. These are one content finding, not multiple defects. Evidence and the corrigendum: `Artifacts/mcp-e2e-20261010/round6/ecfr/dioxin-finding`.
+
+Frozen SDK 2.0.0 and fresh installed candidate-wheel SDK 2.3.0 each pass 346 tests with 118 explicit live skips; separate collection measures 464. The wheel/sdist build, version and new-version PyPI guards pass. All 12 installed/wheel/source Python modules match, and all 13 tool contracts remain unchanged. No new full live suite or published 1.1.8 verification is claimed. The production Python 3.12 frozen contract command passes all 13 definitions. An initial Python 3.14 contract check differed only in compiled-docstring indentation; the unchanged before/after metadata in that environment is retained separately. Local preparation, missing-test-dependency and guard-environment attempts are preserved as harness exclusions rather than passed gates. The actual installed candidate console completed all 85 research calls without errors plus one dedicated dated MCL/PFAS followup. All 85 primary comparisons and 17 supplemental checks pass (16 content checks plus one shared capture-integrity check), as does the independent numeric oracle. Eighty-three baseline answers are exactly unchanged; after excluding one tiny search result-score drift, 84 are substantively unchanged and the sole content change is the dioxin cell. The dated followup returns the same complete corrected rule, with all six tables, 134 rows and genuine notes intact. Release, registry, website/data and physical Dell gates remain coordinator-owned.
+
 ## Published round 5 verification (1.1.7, October 10, 2026)
 
 Scoped release workflow `38087180501` completed successfully at source `916d6efb07b0a87c2c5fec1fff4a81d5f9f01999`. A new Python 3.12 environment installed 1.1.7 uncached by name from official PyPI and selected current MCP SDK 2.3.0. Actual imports came from that environment's site-packages. Both initialize responses reported 1.1.7; public health matched the exact release SHA; both 13-tool contracts matched reviewed source; and all 12 installed/official-wheel Python modules matched that source. The official wheel SHA-256 matched PyPI metadata.
@@ -141,12 +155,12 @@ All 13 tools kept their names. No privacy promise or cache time changed.
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across eight audit rounds. Rounds 1-7 surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. Round 8 (1.1.0, 2026-10-10) was a six-agent bug hunt against eCFR's own data plus a 47-question everyday-use pass; it found the text parser, the definition finder and eCFR's search index were the sources of 18 P2 and about 20 P3 problems, all fixed. The current source collects 461 regression tests (343 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
+This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across eight audit rounds. Rounds 1-7 surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. Round 8 (1.1.0, 2026-10-10) was a six-agent bug hunt against eCFR's own data plus a 47-question everyday-use pass; it found the text parser, the definition finder and eCFR's search index were the sources of 18 P2 and about 20 P3 problems, all fixed. The current source collects 464 regression tests (346 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 13 |
-| Total regression tests | 461 (343 offline, 118 live-gated) |
+| Total regression tests | 464 (346 offline, 118 live-gated) |
 | Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 2 |
 | P1 silent-wrong-data bugs found and fixed | 26 |
@@ -154,8 +168,8 @@ This Model Context Protocol server exposes the eCFR (Electronic Code of Federal 
 | P3 cleanup items found and fixed | 12 |
 | Round 6 external re-audit findings, fixed in 1.0.2 | 12 (2 high, 5 medium, 5 low) |
 | Round 8 bug hunt findings, fixed in 1.1.0 | 18 P2, about 20 P3, plus 6 everyday-use fixes |
-| Source package version | 1.1.7 |
-| PyPI status | Published 1.1.7 verified by uncached official by-name install, actual 95-call console/public replays and full offline SDK 2.3.0 suite |
+| Source package version | 1.1.8 candidate |
+| PyPI status | 1.1.8 pending publication; actual published 1.1.7 baseline verified separately |
 
 ## 1.0.4 Safety Release Verification
 
