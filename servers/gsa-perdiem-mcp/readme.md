@@ -12,7 +12,7 @@ ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network c
 
 The October 10 round-3 content audit checked 101 new travel questions across all seven tools against fresh official sources. Published 1.2.4 fixes valid Doña Ana County worksite lookups and clarifies when a local API key is needed. The actual installed CLI and public Worker replays passed; the keyless CLI explicitly returns missing-key guidance for two city-only API paths. Separate regression validation recorded 316 Python tests passed and 267 optional live tests skipped, plus 29 Worker tests passed. See [testing.md](testing.md) for source comparisons and scope limits.
 
-Candidate 1.2.5 preserves actionable input guidance with MCP SDK 2.3. Natural state/month corrections complete the same bundled travel tasks without a key. Both SDK 2.0 and 2.3 candidate suites pass 321 tests with 267 optional skips (588 collected); publication remains pending. See [testing.md](testing.md).
+Published 1.2.5 preserves actionable input guidance with MCP SDK 2.3. Actual fresh official installation and public-service verification pass both ordinary state/month corrections and their bundled followups without a key. The actual published SDK 2.3 suite passes 321 tests with 267 optional skips (588 collected); all seven tool definitions and 17 package/data files match the release source. See [testing.md](testing.md).
 
 ## Local or hosted
 
