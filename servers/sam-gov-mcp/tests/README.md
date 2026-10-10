@@ -1,6 +1,6 @@
 # Test suite map
 
-1,155 collected tests (781 offline, 374 live-gated), measured with the frozen
+1,158 collected tests (784 offline, 374 live-gated), measured with the frozen
 Python 3.12 environment on 2026-10-10. Files are named by the
 audit round or purpose that produced them and are append-only history: each
 maps to a section of [../testing.md](../testing.md), which narrates what every
@@ -12,6 +12,7 @@ round found. That traceability is deliberate; do not consolidate rounds.
 | `test_density_r5.py` | Round 5 density sweep (every tool, every param) | 367 | offline |
 | `test_live_audit_r6.py` | Round 6 live audit (WAF, casings, live semantics) | 235 | live |
 | `test_round_7.py` | Round 7 Hypothesis property suite | 133 | offline |
+| `test_round4_recovery.py` | Ordinary date/code recovery and unexpected-source control | 3 | offline |
 | `test_v0_4_features.py` | v0.4 expansion (subawards, FH, deleted awards) | 278 | 123 live defs |
 | `test_sba_business_type.py` | SBA certification code fix (A6/XX/JT/A4/A9/A0) | 15 | 6 live |
 | `test_audit_r9.py` | Round 9 documented-shape replays (reps-and-certs casing) | 17 | offline |

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.14
+
+Preserves anticipated input repair messages under MCP SDK 2.3, including
+award dates copied from the opportunity mirror and hierarchy agency codes
+reused for assistance subawards. Expected validation errors remain compatible
+with SDK 2.0 and existing ValueError handlers; unexpected source failures are
+not reclassified. Tool names, schemas, source results and the native hosted
+opportunities mirror are unchanged.
+
 ## 1.0.13
 
 Fixes shared request pacing locks that could remain held when background

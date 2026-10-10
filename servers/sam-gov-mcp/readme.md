@@ -1,6 +1,6 @@
 # sam-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 20](https://img.shields.io/badge/tools-20-007a59)](#what-it-does) [![regression tests: 1,155](https://img.shields.io/badge/regression%20tests-1%2C155-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 20](https://img.shields.io/badge/tools-20-007a59)](#what-it-does) [![regression tests: 1,158](https://img.shields.io/badge/regression%20tests-1%2C158-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/sam-gov-mcp -->
 
@@ -8,9 +8,11 @@ Free, open-source MCP server for SAM.gov entity registration, exclusion/debarmen
 
 Two editions: **hosted**, with 4 keyless tools for contract opportunities, and **local**, the full 20 tools with a free SAM.gov key. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,155 collected regression tests (781 offline, 374 live-gated). v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied across the suite. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,158 collected regression tests (784 offline, 374 live-gated). v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied across the suite. See [testing.md](testing.md) for the full testing record.*
 
 The October 10, 2026 round-3 content audit verified published hosted mirror 1.0.3 with 110 realistic questions and followups plus data status. All 110 fresh official CSV comparisons and 345 returned-row checks passed. A fresh PyPI installation of the unchanged local 1.0.13 completed actual CLI initialization, its 20-tool catalog and access guidance; 19 keyed data workflows remained unexecuted without `SAM_API_KEY`. Optional live-test skips are not source passes. See [the round-3 record](testing.md#october-10-2026-round-3--published-opportunities-mirror-103) for scope and evidence.
+
+Round 4 checked another 114 realistic hosted questions and followups plus status, with 114 source comparisons and 348 returned-row checks. A fresh official conditional HTTP 304 confirmed the retained CSV bytes. Local 1.0.14 restores anticipated date/code repair guidance hidden by MCP SDK 2.3; candidate suites pass 784 and skip 374 under both SDK 2.0 and 2.3. The mirror remains 1.0.3. Local keyed data workflows remain unexecuted without `SAM_API_KEY`; [the round-4 record](testing.md#october-10-2026-round-4--content-audit-and-local-1014-candidate) distinguishes candidate from final publication.
 
 <a id="two-editions-hosted-or-full"></a>
 
