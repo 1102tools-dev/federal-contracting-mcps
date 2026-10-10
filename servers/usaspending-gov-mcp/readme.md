@@ -8,7 +8,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Candidate 1.0.23 source collects 2,322 regression cases. Both the frozen MCP SDK 2.0.0 lane and actually installed candidate-wheel MCP 2.3.0 lane measure 1,943 passed and 379 skipped. All 855 retained SDK 2.3 failures are resolved with specific visible expected-input guidance or strict unexpected-fault causal/masking assertions. Publication remains pending; the actual published 1.0.22 record below is preserved.*
+*Published 1.0.23 collects 2,322 regression cases. Its fresh official PyPI installation with MCP SDK 2.3.0 measures 1,943 passed and 379 skipped, with all 855 prior failed IDs executed and passing. The frozen MCP SDK 2.0.0 source lane separately measures the same counts. Eight actual console and eight public original/recovery calls pass with unchanged 55-tool metadata; the three specific input hints are visible and five successful answers match the baseline. Earlier 1.0.22 evidence below is preserved.*
 
 *Published 1.0.22 has 2,318 collected regression cases. The measured frozen Python 3.12 / MCP SDK 2.0.0 source lane passed 1,939 and skipped 379 live-gated cases. Its separately installed official PyPI package with MCP 2.3.0 measured 1,084 passed, 855 retained legacy negative-expectation failures and 379 skipped. Actual published console/public acceptance passed 153 questions across all 55 tools, including 138 new Round 6 questions and 15 reference/control reads. See [testing.md](testing.md) for separate lane provenance.*
 
@@ -235,12 +235,13 @@ MIT
 ## Regression tests
 
 Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
-package directory. For candidate 1.0.23, both measured Python 3.12.13 / frozen
-SDK 2.0.0 and installed candidate-wheel SDK 2.3.0 lanes pass 1,943 cases and skip
-379 live cases. Actual published 1.0.22 measured 1,084 passed / 855 failed / 379
+package directory. For published 1.0.23, measured Python 3.12.13 / frozen
+SDK 2.0.0 source and fresh official PyPI SDK 2.3.0 lanes each pass 1,943 cases
+and skip 379 live-gated cases. The full run includes existing unmocked source
+controls; it is separate from the eight-question console/public acceptance. Actual published 1.0.22 measured 1,084 passed / 855 failed / 379
 skipped; that prior execution remains separate. Set
 `USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts below include
-parametrized and live-gated cases collected for candidate 1.0.23 (publication pending).
+parametrized and live-gated cases collected for published 1.0.23.
 
 | Test file | Cases | Coverage |
 |---|---:|---|

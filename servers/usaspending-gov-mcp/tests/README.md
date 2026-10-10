@@ -1,11 +1,14 @@
 # Test suite map
 
-Frozen Python 3.12.13 and actually installed candidate-wheel Python 3.12.13
-full executions for candidate 1.0.23 each collect 2,322 cases and measure
+Frozen source Python 3.12.13 and fresh official PyPI Python 3.12.13
+full executions for published 1.0.23 each collect 2,322 cases and measure
 1,943 passed / 379 skipped on MCP SDK 2.0.0 and 2.3.0 respectively. All 855
 retained failed node IDs are rerun and pass. Four new source-derived workflow
 and unexpected-fault controls are included; content questions are not pytest
-cases. Candidate publication remains pending.
+cases. The measured full suite includes existing unmocked source controls;
+379 explicitly live-gated cases remain skipped. Eight actual console/public
+questions are counted separately, with three error originals and five successful
+discovery/recovery calls in each lane.
 
 The actual published 1.0.22 latest-SDK execution remains 1,084 passed /
 855 failed / 379 skipped / 2,318 collected. Its successful 153-question
