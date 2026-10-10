@@ -311,13 +311,19 @@ export function toolName(body: ArrayBuffer | null): string | null {
   return typeof name === "string" && TOOL_NAME.test(name) ? name : "other";
 }
 
-/** Which app sent a request, as a platform label; the User-Agent itself is never logged. */
+// Directory and availability scanners that probe every listed server.
+const SCANNERS = ["tedix", "catalog-health", "directory-admin", "mcplane", "looper", "agent-evidence", "discoverability", "runside"];
+
+/** Which app sent a request, as a platform label; the User-Agent itself is never logged.
+ * "1102tools" is our own checks and tests (our scripts and curl). */
 export function clientApp(userAgent: string | null): string {
   const ua = (userAgent ?? "").toLowerCase();
   if (ua.includes("claude-user")) return "claude";
-  if (ua.startsWith("openai-mcp")) return "chatgpt";
+  if (ua.startsWith("openai-mcp")) return ua.includes("codex") ? "codex" : "chatgpt";
   if (ua.includes("perplexity")) return "perplexity";
   if (ua.includes("claude-code")) return "claude-code";
+  if (ua.includes("1102tools") || ua.startsWith("curl/")) return "1102tools";
+  if (SCANNERS.some(name => ua.includes(name))) return "scanner";
   return "other";
 }
 
