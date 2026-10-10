@@ -1,7 +1,10 @@
 """eCFR-only, cross-process rolling budget and concurrent request pacing.
 
 All clients sharing a pacing directory share the budget. State counts attempts,
-not successful responses. File locks are held across I/O only for the two
+not successful responses. Spacing and the rolling budget apply to durable permit
+reservations; persistence latency and process scheduling can delay body entry,
+so the pacer does not guarantee exact spacing of subsequent network dispatch.
+File locks are held across I/O only for the two
 concurrency slots; the state lock is released before sleeping or network I/O.
 """
 from __future__ import annotations

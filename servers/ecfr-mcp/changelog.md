@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.4
+
+- Pacing tests measure durable shared reservations rather than scheduler-dependent request-body timestamps. The two-in-flight limit, cross-process/crash checks and 500-attempt rolling 300-second budget remain strict.
+- A deterministic persistence-delay regression verifies permit accounting and documents that subsequent network dispatch does not have an exact spacing guarantee. The failed 1.1.3 release stopped before publication; no content behavior changed.
+
 ## 1.1.3
 
 - Natural definition names such as “contracting officer representative” now find the complete FAR 2.101 definition even when its formal name uses a possessive.
