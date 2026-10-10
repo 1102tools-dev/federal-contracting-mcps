@@ -51,7 +51,7 @@ no editable or local-wheel origin. Its full fresh SDK 2.3 suite executed
 The release records below are historical evidence with their original
 versions, counts and dates. Their counts are not the current inventory.
 
-## October 10, 2026 round 5 — native discovery candidate 1.0.4
+## October 10, 2026 round 5 — published native discovery 1.0.4
 
 The published native mirror 1.0.3 at source
 `0d87bdcf9d0c645428a57271736e4c35891bca53` answered **127** new content
@@ -89,8 +89,8 @@ clarifies the exception and the supported include-past behavior. An actual local
 Wrangler Worker `tools/list` verifies exactly one changed description with all
 four names, schemas and annotations unchanged. No brittle prose test was added.
 Worker tests pass **28**, with zero skips; typecheck passes. Python, loader,
-schema, data and deployment configuration are unchanged. Root owns publication;
-actual native 1.0.4 verification remains pending.
+schema, data and deployment configuration are unchanged. Root deployed the reviewed source through the established native production
+procedure; no loader or Python release was required.
 
 A new uncached official by-name PyPI **1.0.14** installation completes actual
 console initialization, its 20-tool catalog and `get_access_status` without a
@@ -119,7 +119,25 @@ Evidence is in `Artifacts/mcp-e2e-20261010/round5/sam-gov/`, including
 `metadata-compatibility.json`, `python-readiness.json` and
 `python-suite-provenance.json`. One P3 is source-fixed; no new P0/P1/P2,
 partial source fixes or unresolved confirmed source defects remain in this
-completed corpus. Candidate checks are not published 1.0.4 acceptance.
+completed corpus. Final actual published native **1.0.4** acceptance passed at source
+`e81411afed154e04f79c74865acedaeb45b7f40f`. Public health and initialization
+match that release, and actual `tools/list` matches the approved description
+with four names, schemas and annotations preserved. All **127** originals and
+followups were replayed on production; every full answer is exactly unchanged.
+Another fresh official conditional HTTP **304** confirms the retained CSV
+identity, and all **127** final SQL comparisons and **347** raw-row checks pass.
+The original default and include-past award questions still return **45/45**.
+Data status is exactly unchanged: loaded `2026-10-10T15:52:32Z`, **64,417**
+active notices and **46,083** latest versions. No reload occurred.
+
+The one P3 is now fixed and verified in publication, with zero partial or
+unresolved confirmed SAM findings in this corpus. Python **1.0.14** remains
+unchanged; its 19 missing-key workflows remain unexecuted. Earlier candidate
+and source evidence is retained separately. Final records include
+`final-published-corpus.json`, `final-published-source-comparison.json`,
+`final-source-capture.json`, `final-published-completion.json` and
+`checkpoint.json`. Directory-client propagation was not independently observed;
+no manual directory republication was required. No subsequent audit was started.
 
 ## October 10, 2026 round 4 — content audit and published local 1.0.14
 
