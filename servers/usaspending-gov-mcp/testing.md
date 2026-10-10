@@ -2,13 +2,13 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across eighteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit; the sixteenth was the new Round 4 content audit; the seventeenth was the new Round 5 content audit; the eighteenth is the new Round 6 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current published 1.0.22 source collects 2,318 regression cases (1,939 offline and 379 live-gated). Its measured frozen Python 3.12 / MCP SDK 2.0.0 full lane passed 1,939 and skipped 379; collection does not execute those live tests. Actual published 1.0.22 console/public acceptance passed 153 questions across all 55 tools (138 new Round 6 questions and 15 retained reference/control reads). Its fresh official package with latest MCP 2.3.0 measured 1,084 passed, 855 failed and 379 skipped, with exactly the same 855 failed IDs as candidate22/published21. Actual published-package and hosted acceptance are separate records. Prior published 1.0.21 completed 143 new Round 5 questions plus ten excluded prior vehicle checks on actual installed CLI/public services, with all 55 tool definitions matched and the NAICS original/recovery/control workflow passed. Its separate fresh/latest SDK 2.3 full regression execution measured 1,081 passed, 855 failed and 379 skipped; these failures are retained exception/message expectations and are not credited as passing.
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across eighteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit; the sixteenth was the new Round 4 content audit; the seventeenth was the new Round 5 content audit; the eighteenth is the new Round 6 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current candidate 1.0.23 source collects 2,322 regression cases (1,943 offline and 379 live-gated). Both measured frozen MCP 2.0.0 and actually installed candidate-wheel MCP 2.3.0 full lanes pass 1,943 and skip 379. Publication 1.0.23 remains pending; actual published 1.0.22 and its retained latest-SDK failures are reported separately. The earlier 1.0.22 frozen Python 3.12 / MCP SDK 2.0.0 full lane passed 1,939 and skipped 379; collection does not execute those live tests. Actual published 1.0.22 console/public acceptance passed 153 questions across all 55 tools (138 new Round 6 questions and 15 retained reference/control reads). Its fresh official package with latest MCP 2.3.0 measured 1,084 passed, 855 failed and 379 skipped, with exactly the same 855 failed IDs as candidate22/published21. Actual published-package and hosted acceptance are separate records. Prior published 1.0.21 completed 143 new Round 5 questions plus ten excluded prior vehicle checks on actual installed CLI/public services, with all 55 tool definitions matched and the NAICS original/recovery/control workflow passed. Its separate fresh/latest SDK 2.3 full regression execution measured 1,081 passed, 855 failed and 379 skipped; these failures are retained exception/message expectations and are not credited as passing.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 55 |
-| Total regression tests | 2,318 source cases (1,939 offline, 379 live-gated) |
-| Collected cases per tool | 42.15 (not a coverage percentage) |
+| Total regression tests | 2,322 candidate source cases (1,943 offline, 379 live-gated) |
+| Collected cases per tool | 42.22 (not a coverage percentage) |
 | Server content audits completed | 18 source/content audits; actual Round 6 published acceptance complete |
 | Initial integration issues (round 1) | 28+ |
 | P1 silent-wrong-data bugs found and fixed | 11 (rounds 1-9) |
@@ -18,7 +18,7 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Round 9 (v0.3) live audit findings | 1 (list_states JSON-array response shape) |
 | Round 10 (1.0.1) semantic audit findings | 22 (12 search family, 10 entity family), all fixed |
 | Historical release cycles through 1.0.3 | 15 (v0.1.2 through v1.0.3) |
-| Current source package | 1.0.22 published and verified |
+| Current source package | 1.0.23 candidate; latest actual published acceptance 1.0.22 |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -1150,3 +1150,74 @@ Evidence: `Artifacts/mcp-e2e-20261010/round6/usaspending`, especially
 `published22-installed-eight-modules.json`, `published22-full-suite.xml`,
 `published22-failure-inventory.json` and `published22-bootstrap-notes.json`.
 Earlier candidate, baseline and failed bootstrap records remain intact.
+
+
+## Targeted MCP SDK 2.3 correction, candidate 1.0.23
+
+This is a targeted correction campaign after Round 6 closure, not another broad
+content audit. Actual published 1.0.22 with Python 3.12.13 / MCP 2.3.0 had
+**1,084 passed / 855 failed / 379 skipped / 2,318 collected**. Those exact failure
+IDs and full logs/XML are preserved. The new source starts at merged main
+`b5b7dd60ded71c3a4b967c743e614bf57e398ccb`; all 35 existing runtime/test Python
+files match the actual 1.0.22 release bytes before edits.
+
+The 855 failures divide into **419 deliberate input/domain message assertions**
+and **436 operational fixtures** (290 HTTP status/context, 73 network/timeout,
+36 HTML cleanup, 37 response-shape). Installed SDK 2.3 deliberately exposes
+`ToolError` messages but masks other body exceptions as `UnexpectedToolError`,
+retaining the original in `__cause__` only on the server. Every retained failure
+had asserted body/provider text directly in the wrapper message.
+
+One grouped **P3** finding, **USA-SDK23-001**, concerns immediate recovery context
+in the fresh local installation: actual ordinary parent-ID-to-children,
+200-result supplier-review and latest-action-without-period originals return
+only `Error executing tool NAME`. Their existing UEI, paging and time-window
+hints are lost. Actual discovery plus supported followups succeed, and the
+catalog already explains the UEI and required-window recovery; public 1.0.22
+already exposes the specific hints. No false financial success or blocked valid
+request is shown, so the observed impact is minor guidance loss. The supplier
+recovery returns the actual **20 available records**, then an empty second page;
+it never claims 200 records exist. An initial harness assumption requiring two
+full 100-row pages is retained and excluded.
+
+Candidate 1.0.23 explicitly marks **75 reviewed intentional input/domain raise
+sites** as `UserInputError(ValueError, ToolError)`. Direct `ValueError` callers
+remain compatible, while registered tools expose the same specific expected
+messages on both SDKs. No blanket exception catch/conversion is introduced.
+All source HTTP/network translation, parsers, unknown `ValueError`/`RuntimeError`
+faults and the narrow official available-FY HTTP400 classifier remain unchanged.
+All 55 names, schemas, annotations, descriptions and identities are exact.
+
+The 436 operational fixtures are test-harness corrections, not content findings.
+Their original status/detail/cleaning/shape assertions remain strict, augmented
+with SDK wrapper and exact original `RuntimeError` cause checks. SDK 2.3's client
+text must be exactly the generic unexpected-fault message; cause assertions do
+not substitute for visible repair guidance. Unexpected source, shape and
+programming exceptions remain masked. Three controlled stdio fault adapters
+verify unknown input-shaped faults, source shape and HTTP503 without exposing
+sentinel credentials or issuing provider requests; ordinary workflow evidence
+uses the actual installed candidate console separately.
+
+Four source-derived regressions give **three failures / one unchanged masking
+control pass** on actual published 1.0.22, then **four passes** on each candidate
+SDK. They preserve exact valid source outputs, request parameters and pre-network
+rejection. Actual installed candidate 1.0.23 completes **eight console calls**:
+three specific visible rejection hints plus five discovery/recovery calls whose
+successful outputs exactly match the before capture. No arbitrary malformed or
+quota campaign was added.
+
+Measured full executions on frozen **MCP 2.0.0** and fresh installed candidate
+wheel **MCP 2.3.0**, both Python 3.12.13, each give **1,943 passed / 379 skipped /
+2,322 collected / zero failures or errors**. Every one of the exact 855 prior
+failed IDs is included and passes. Skipped live cases are not executed. Version,
+wheel identity/build, all eight installed module bytes and both SDK hosted
+55-tool contract gates pass. No SDK downgrade or directory resubmission is used.
+
+Candidate publication, exact independent source/contract peer, CI and root
+integration remain pending. Actual published 1.0.23 verification will be a
+separate record after successful coordinator release. Earlier Round 6 evidence
+remains immutable. Evidence is `Artifacts/mcp-e2e-20261010/sdk23/usaspending`,
+especially the retained before logs/XML, `anticipated-validation-site-map.json`,
+`before22-ordinary-console.json`, `before22-ordinary-public.json`,
+`candidate23-ordinary-console.json`, `candidate23-controlled-stdio-masking.json`,
+`full-suite-reconciliation23.json` and `candidate23-provenance-parity.json`.

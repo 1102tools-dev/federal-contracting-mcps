@@ -1,18 +1,18 @@
 # Test suite map
 
-Frozen Python 3.12.13 collection on 2026-10-10 for source package
-1.0.22 found 2,318 cases: 1,939 offline and 379 live-gated. The separately
-executed frozen MCP SDK 2.0.0 full lane passed 1,939 and skipped 379.
-Collection itself executes no tests or source requests; the 138-new-question
-Round 6 content audit is not added to pytest counts. Actual published 1.0.22
-console/public acceptance passes 153 questions across all 55 tools.
+Frozen Python 3.12.13 and actually installed candidate-wheel Python 3.12.13
+full executions for candidate 1.0.23 each collect 2,322 cases and measure
+1,943 passed / 379 skipped on MCP SDK 2.0.0 and 2.3.0 respectively. All 855
+retained failed node IDs are rerun and pass. Four new source-derived workflow
+and unexpected-fault controls are included; content questions are not pytest
+cases. Candidate publication remains pending.
 
-Both the installed candidate and separately installed official published 1.0.22
-Python 3.12 / MCP 2.3 full lanes measured 1,084 passed,
-855 failed and 379 skipped; all 855 failed node IDs match retained actual
-published 1.0.21 negative/error expectations. The prior actual published 1.0.21 lane
-measured 1,081 passed/855 failed/379 skipped. None is an all-tests-PASS
-claim. See testing.md for source, frozen, candidate and publication provenance.
+The actual published 1.0.22 latest-SDK execution remains 1,084 passed /
+855 failed / 379 skipped / 2,318 collected. Its successful 153-question
+console/public content campaign is separate. Expected-input assertions retain
+visible, specific recovery hints. Unexpected provider/internal fixtures retain
+strict wrapper, causal type/status/detail/cleaning and SDK masking assertions;
+causes are not credited as client-visible guidance.
 
 Files retain their audit-round and fix-wave history; see [../testing.md](../testing.md).
 
@@ -40,7 +40,8 @@ Files retain their audit-round and fix-wave history; see [../testing.md](../test
 | `test_federal_account_available_fy_1020.py` | Round 16 actual source availability, supported recovery and unexpected503 control | 3 | 0 |
 | `test_naics_current_retired_1021.py` | Round 17 captured current-versus-retired taxonomy, larger-limit recovery and source-row control | 3 | 0 |
 | `test_award_date_overlap_r6.py` | Round 18 source interval overlap, actual dated recovery and unchanged explicit/no-window controls | 3 | 0 |
-| **Total** | | **2,318** | **379** |
+| `test_sdk23_expected_guidance.py` | SDK 2.3 expected guidance | 4 | 0 |
+| **Total** | | **2,322** | **379** |
 
 Live tests need `USASPENDING_LIVE_TESTS=1` (the API is keyless), are paced
 1-2 s apart by `conftest.py`, and the minimal anchor set runs via

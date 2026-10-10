@@ -39,6 +39,10 @@ from .constants import (
     USER_AGENT,
 )
 
+class UserInputError(ValueError, ToolError):
+    """Deliberate input/domain rejection, visible to clients on supported SDKs."""
+
+
 mcp = MCPServer("usaspending", version=__version__)
 
 USASPENDING_TOOL_PROFILE_ENV = "USASPENDING_TOOL_PROFILE"
@@ -339,14 +343,14 @@ _EARLIEST_SEARCH_DATE = "2007-10-01"
 def _validate_date(value: str, field_name: str) -> str:
     """Validate YYYY-MM-DD format and parseability."""
     if not _DATE_RE.match(value):
-        raise ValueError(
+        raise UserInputError(
             f"{field_name} must be in YYYY-MM-DD format (e.g. '2026-01-15'). "
             f"Got {value!r}. ISO 8601 datetimes with timezones or 'YYYY/MM/DD' are rejected."
         )
     try:
         date.fromisoformat(value)
     except ValueError as exc:
-        raise ValueError(f"{field_name}={value!r} is not a valid calendar date: {exc}") from exc
+        raise UserInputError(f"{field_name}={value!r} is not a valid calendar date: {exc}") from exc
     return value
 
 
@@ -472,9 +476,9 @@ def _echo_fiscal_year(
 def _clamp_limit(limit: int, *, cap: int, field: str = "limit") -> int:
     """Clamp a limit to valid bounds, raising on nonsense values."""
     if limit < 1:
-        raise ValueError(f"{field} must be >= 1. Got {limit}.")
+        raise UserInputError(f"{field} must be >= 1. Got {limit}.")
     if limit > cap:
-        raise ValueError(
+        raise UserInputError(
             f"{field} exceeds maximum of {cap}. Got {limit}. "
             f"Paginate with the 'page' parameter instead."
         )
@@ -487,12 +491,12 @@ def _coerce_code_list(codes: list[Any] | None, field: str) -> list[str] | None:
     if codes is None:
         return None
     if len(codes) == 0:
-        raise ValueError(
+        raise UserInputError(
             f"{field} was passed as an empty array. Omit the parameter instead of passing []."
         )
     cleaned = [str(c).strip() for c in codes if str(c).strip()]
     if not cleaned:
-        raise ValueError(
+        raise UserInputError(
             f"{field}={codes!r} contains only empty / whitespace strings. "
             f"Pass non-empty codes or omit the parameter."
         )
@@ -513,7 +517,7 @@ def _validate_no_control_chars(value: str | None, *, field: str) -> str | None:
     if not isinstance(value, str):
         return value
     if _CONTROL_CHARS_RE.search(value):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} contains control characters (null byte, newline, "
             f"tab, etc). Remove them and retry."
         )
@@ -568,14 +572,14 @@ def _build_filters(
 
     if keywords is not None:
         if len(keywords) == 0:
-            raise ValueError(
+            raise UserInputError(
                 "keywords was passed as an empty array. "
                 "Omit the parameter instead of passing []."
             )
         # USASpending API requires each keyword to be at least 3 characters
         short = [k for k in keywords if len(k) < 3]
         if short:
-            raise ValueError(
+            raise UserInputError(
                 f"USASpending requires keywords of at least 3 characters. "
                 f"Too short: {short}. Use more specific terms."
             )
@@ -647,7 +651,7 @@ def _build_filters(
         start = _validate_date(time_period_start, "time_period_start") if time_period_start else _EARLIEST_SEARCH_DATE
         end = _validate_date(time_period_end, "time_period_end") if time_period_end else "2099-09-30"
         if start > end:
-            raise ValueError(
+            raise UserInputError(
                 f"time_period_start ({start}) is after time_period_end ({end}). "
                 f"Reverse the values or omit one."
             )
@@ -656,7 +660,7 @@ def _build_filters(
             period["date_type"] = date_type
         filters["time_period"] = [period]
     elif date_type:
-        raise ValueError(
+        raise UserInputError(
             f"date_type={date_type!r} needs a time window: pass time_period_start "
             f"and/or time_period_end (e.g. a fiscal year, 2025-10-01 to 2026-09-30)."
         )
@@ -666,7 +670,7 @@ def _build_filters(
             and award_amount_max is not None
             and award_amount_min > award_amount_max
         ):
-            raise ValueError(
+            raise UserInputError(
                 f"award_amount_min ({award_amount_min}) is greater than "
                 f"award_amount_max ({award_amount_max}). Reverse the values."
             )
@@ -679,7 +683,7 @@ def _build_filters(
     if place_of_performance_state:
         state = place_of_performance_state.strip().upper()
         if not re.match(r"^[A-Z]{2}$", state):
-            raise ValueError(
+            raise UserInputError(
                 f"place_of_performance_state must be a 2-letter USPS code (e.g. 'MD'). "
                 f"Got {place_of_performance_state!r}."
             )
@@ -699,7 +703,7 @@ def _resolve_award_type(
 ) -> list[str]:
     """Resolve an award type group name to its list of codes."""
     if award_type not in AWARD_TYPE_GROUPS:
-        raise ValueError(
+        raise UserInputError(
             f"Unknown award_type '{award_type}'. "
             f"Valid: {list(AWARD_TYPE_GROUPS.keys())}"
         )
@@ -807,7 +811,7 @@ async def search_awards(
     codes = _resolve_award_type(award_type)
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
 
     # Reject control characters in free-text inputs. USASpending either
     # 500s on these or silently treats them as whitespace, both bad UX.
@@ -818,13 +822,13 @@ async def search_awards(
     _validate_no_control_chars(recipient_name, field="recipient_name")
     # Negative amounts silently return default results as if no filter.
     if award_amount_min is not None and award_amount_min < 0:
-        raise ValueError(
+        raise UserInputError(
             f"award_amount_min must be >= 0. Got {award_amount_min}. "
             f"Negative minimums are silently ignored by USASpending and "
             f"return unfiltered results."
         )
     if award_amount_max is not None and award_amount_max < 0:
-        raise ValueError(
+        raise UserInputError(
             f"award_amount_max must be >= 0. Got {award_amount_max}."
         )
 
@@ -875,7 +879,7 @@ async def search_awards(
     # calls don't silently return unfiltered recent awards.
     real_filter_keys = [k for k in filters if k != "award_type_codes"]
     if not real_filter_keys:
-        raise ValueError(
+        raise UserInputError(
             "search_awards requires at least one filter beyond award_type. "
             "Typical: keywords + time_period_start/end, or recipient_name, "
             "or awarding_agency, or naics_codes, or psc_codes. Calling "
@@ -954,9 +958,9 @@ async def get_award_count(
     _validate_no_control_chars(awarding_agency, field="awarding_agency")
     _validate_no_control_chars(recipient_name, field="recipient_name")
     if award_amount_min is not None and award_amount_min < 0:
-        raise ValueError(f"award_amount_min must be >= 0. Got {award_amount_min}.")
+        raise UserInputError(f"award_amount_min must be >= 0. Got {award_amount_min}.")
     if award_amount_max is not None and award_amount_max < 0:
-        raise ValueError(f"award_amount_max must be >= 0. Got {award_amount_max}.")
+        raise UserInputError(f"award_amount_max must be >= 0. Got {award_amount_max}.")
 
     filters = _build_filters(
         keywords=keywords,
@@ -978,7 +982,7 @@ async def get_award_count(
         def_codes=def_codes,
     )
     if not filters:
-        raise ValueError(
+        raise UserInputError(
             "get_award_count requires at least one filter. "
             "Typical: time_period_start + time_period_end, or keywords, or awarding_agency."
         )
@@ -1069,7 +1073,7 @@ async def spending_over_time(
     # treats award_type_codes as a scope, not a filter, and still 400s.
     has_real_filter = any(k for k in filters if k != "award_type_codes")
     if not has_real_filter:
-        raise ValueError(
+        raise UserInputError(
             "spending_over_time requires at least one filter beyond award_type. "
             "Typical: time_period_start + time_period_end, or keywords, or awarding_agency."
         )
@@ -1138,7 +1142,7 @@ async def spending_by_category(
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     _validate_strings_no_control_chars(keywords, field="keywords")
     _validate_no_control_chars(awarding_agency, field="awarding_agency")
     award_type_codes = _resolve_award_type(award_type) if award_type else None
@@ -1164,7 +1168,7 @@ async def spending_by_category(
     # (a $40T "MULTIPLE RECIPIENTS" row) with no hint it is unscoped.
     has_real_filter = any(k for k in filters if k != "award_type_codes")
     if not has_real_filter:
-        raise ValueError(
+        raise UserInputError(
             "spending_by_category requires at least one filter beyond award_type. "
             "Typical: time_period_start + time_period_end, or keywords, or awarding_agency."
         )
@@ -1201,7 +1205,7 @@ async def get_award_detail(generated_award_id: str) -> dict[str, Any]:
     Example generated_award_id format: CONT_AWD_N0002424C0085_9700_N0002421D0001_9700
     """
     if not isinstance(generated_award_id, str) or not generated_award_id.strip():
-        raise ValueError(
+        raise UserInputError(
             "generated_award_id cannot be empty. Pass the generated_internal_id "
             "field from search_awards results (e.g. CONT_AWD_...)."
         )
@@ -1239,11 +1243,11 @@ async def get_transactions(
     modification_number, description, federal_action_obligation.
     """
     if not isinstance(generated_award_id, str) or not generated_award_id.strip():
-        raise ValueError("generated_award_id cannot be empty.")
+        raise UserInputError("generated_award_id cannot be empty.")
     _validate_no_control_chars(generated_award_id, field="generated_award_id")
     limit = _clamp_limit(limit, cap=5000)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     return await _post(
         "/api/v2/transactions/",
         {
@@ -1275,10 +1279,10 @@ async def get_award_funding(
     """
     limit = _clamp_limit(limit, cap=100)
     if not isinstance(generated_award_id, str) or not generated_award_id.strip():
-        raise ValueError("generated_award_id cannot be empty.")
+        raise UserInputError("generated_award_id cannot be empty.")
     _validate_no_control_chars(generated_award_id, field="generated_award_id")
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     result = await _post(
         "/api/v2/awards/funding/",
         {
@@ -1321,11 +1325,11 @@ async def get_idv_children(
     orders (often the largest) and is no proof of completeness.
     """
     if not isinstance(generated_idv_id, str) or not generated_idv_id.strip():
-        raise ValueError("generated_idv_id cannot be empty.")
+        raise UserInputError("generated_idv_id cannot be empty.")
     _validate_no_control_chars(generated_idv_id, field="generated_idv_id")
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     return await _post(
         "/api/v2/idvs/awards/",
         {
@@ -1425,7 +1429,7 @@ async def lookup_piid(piid: str, limit: int = 5) -> dict[str, Any]:
     """
     piid = (piid or "").strip()
     if len(piid) < 3:
-        raise ValueError(
+        raise UserInputError(
             f"piid must be at least 3 characters (USASpending keyword search minimum). "
             f"Got {piid!r}."
         )
@@ -1533,7 +1537,7 @@ async def autocomplete_psc(search_text: str, limit: int = 10) -> dict[str, Any]:
             "_note": "autocomplete_psc requires at least 2 characters; upstream API returns arbitrary first-N results otherwise.",
         }
     if len(search_text) > 200:
-        raise ValueError(
+        raise UserInputError(
             f"search_text exceeds 200 chars (got {len(search_text)}). "
             f"Autocomplete is intended for prefix / keyword lookups."
         )
@@ -1571,7 +1575,7 @@ async def autocomplete_naics(
             "_note": "autocomplete_naics requires at least 2 characters; upstream substring-matches into parenthetical notes otherwise.",
         }
     if len(search_text) > 200:
-        raise ValueError(
+        raise UserInputError(
             f"search_text exceeds 200 chars (got {len(search_text)})."
         )
     limit = _clamp_limit(limit, cap=100)
@@ -1623,13 +1627,13 @@ def _normalize_toptier(toptier_code: str, *, field: str = "toptier_code") -> str
     behaved differently across the family.
     """
     if toptier_code is None or not str(toptier_code).strip():
-        raise ValueError(
+        raise UserInputError(
             f"{field} cannot be empty: pass a 3-4 digit numeric agency code "
             f"(e.g. '097' for DoD). Use list_toptier_agencies() to find valid codes."
         )
     code = str(toptier_code).strip()
     if not code.isdigit():
-        raise ValueError(
+        raise UserInputError(
             f"{field}={toptier_code!r} must be a 3-4 digit numeric agency code "
             f"(e.g. '097' for DoD, '075' for HHS); shorter all-digit inputs are "
             f"zero-padded automatically. Use list_toptier_agencies() to find "
@@ -1637,7 +1641,7 @@ def _normalize_toptier(toptier_code: str, *, field: str = "toptier_code") -> str
         )
     code = code.zfill(3)
     if len(code) > 4:
-        raise ValueError(
+        raise UserInputError(
             f"{field}={toptier_code!r} has too many digits: toptier codes are "
             f"a 3-4 digit numeric agency code (e.g. '097' for DoD, '075' for HHS)."
         )
@@ -1648,11 +1652,11 @@ def _validate_fiscal_year(fiscal_year: int) -> int:
     """Reject fiscal years outside the API's accepted window (2008 .. current FY)."""
     current = _current_fiscal_year()
     if fiscal_year < 2008:
-        raise ValueError(
+        raise UserInputError(
             f"fiscal_year must be >= 2008 (USASpending data starts FY2008). Got {fiscal_year}."
         )
     if fiscal_year > current:
-        raise ValueError(
+        raise UserInputError(
             f"fiscal_year must be <= {current} (current FY). Got {fiscal_year}."
         )
     return fiscal_year
@@ -1717,7 +1721,7 @@ async def get_naics_details(code: str) -> dict[str, Any]:
     if applicable.
     """
     if not code or not code.strip().isdigit():
-        raise ValueError(
+        raise UserInputError(
             f"NAICS code must be numeric (2, 4, or 6 digits). Got {code!r}."
         )
     return await _get(f"/api/v2/references/naics/{code.strip()}/")
@@ -1738,7 +1742,7 @@ async def get_psc_filter_tree(
     # API endpoints and '%' smuggles encoded forms. Round 10 audit hardening,
     # same class as the get_award_detail path escape.
     if path and any(tok in path for tok in ("..", "%", "\\")):
-        raise ValueError(
+        raise UserInputError(
             f"path={path!r} contains URL path characters ('..', '%', or '\\\\'). "
             f"PSC tree paths look like 'Service/R' or 'Product/5'."
         )
@@ -1769,7 +1773,7 @@ async def get_state_profile(state_fips: str, year: str | int | None = None) -> d
     completed fiscal year. The answer always carries fiscal_year.
     """
     if not state_fips or not state_fips.strip().isdigit() or len(state_fips.strip()) != 2:
-        raise ValueError(
+        raise UserInputError(
             f"state_fips must be a 2-digit numeric FIPS code (e.g., '06' for CA, '51' for VA). "
             f"Got {state_fips!r}."
         )
@@ -1790,7 +1794,7 @@ def _parse_year_int(value: str, *, field: str) -> int:
     try:
         return int(value)
     except ValueError as exc:
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be a fiscal year like 2026, 'all', or 'latest'. Got {value!r}."
         ) from exc
 
@@ -1828,7 +1832,7 @@ async def search_subawards(
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     payload: dict[str, Any] = {
         "sort": sort,
         "order": order,
@@ -1838,7 +1842,7 @@ async def search_subawards(
     if award_id is not None:
         award_id = _validate_no_control_chars(award_id, field="award_id")
         if not award_id.strip():
-            raise ValueError("award_id cannot be empty whitespace; omit instead.")
+            raise UserInputError("award_id cannot be empty whitespace; omit instead.")
         payload["award_id"] = award_id.strip()
     return await _post("/api/v2/subawards/", payload)
 
@@ -1880,7 +1884,7 @@ async def spending_by_subaward_grouped(
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     filters = _build_filters(
         award_type_codes=award_type_codes,
         awarding_agency=awarding_agency,
@@ -1951,7 +1955,7 @@ async def search_recipients(
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     keyword = _validate_no_control_chars(keyword, field="keyword")
     payload: dict[str, Any] = {
         "limit": limit,
@@ -1980,10 +1984,10 @@ _RECIPIENT_HASH_RE = re.compile(
 def _validate_recipient_hash(value: str, *, field: str = "recipient_hash") -> str:
     """USASpending recipient IDs look like '7fe0d08f-685f-...-R' (UUID + -C/-R/-P)."""
     if not value or not value.strip():
-        raise ValueError(f"{field} cannot be empty.")
+        raise UserInputError(f"{field} cannot be empty.")
     s = value.strip()
     if not _RECIPIENT_HASH_RE.match(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} is not a valid recipient hash. "
             f"Expected UUID format with -C/-R/-P suffix (e.g. "
             f"'7fe0d08f-685f-a9cc-f9f6-f9e6c6c20e22-R'). Use search_recipients() "
@@ -2056,11 +2060,11 @@ async def get_recipient_children(
     {"results": [...], "total": N} to keep the dict-only response invariant.
     """
     if not uei_or_duns or not str(uei_or_duns).strip():
-        raise ValueError("uei_or_duns cannot be empty.")
+        raise UserInputError("uei_or_duns cannot be empty.")
     ident = str(uei_or_duns).strip()
     _validate_no_control_chars(ident, field="uei_or_duns")
     if _RECIPIENT_HASH_RE.match(ident):
-        raise ValueError(
+        raise UserInputError(
             f"uei_or_duns={uei_or_duns!r} looks like a recipient hash. The "
             f"children endpoint takes a UEI or DUNS, not a hash (the API "
             f"rejects hashes with HTTP 400). Use search_recipients() and pass "
@@ -2071,7 +2075,7 @@ async def get_recipient_children(
     elif _UEI_RE.match(ident):
         ident = ident.upper()  # UEIs are canonically uppercase
     else:
-        raise ValueError(
+        raise UserInputError(
             f"uei_or_duns={uei_or_duns!r} is not a 12-character UEI or 9-digit "
             f"DUNS. Find the parent recipient's UEI via search_recipients()."
         )
@@ -2117,7 +2121,7 @@ async def autocomplete_recipient(
     limit = _clamp_limit(limit, cap=500)
     search_text = _validate_no_control_chars(search_text, field="search_text") or ""
     if not search_text.strip():
-        raise ValueError("search_text cannot be empty.")
+        raise UserInputError("search_text cannot be empty.")
     payload = {"search_text": search_text.strip(), "limit": limit}
     return await _post("/api/v2/autocomplete/recipient/", payload)
 
@@ -2158,13 +2162,13 @@ def _validate_fy(fy: int | str | None, *, field: str = "fiscal_year") -> str | N
     try:
         fy_int = int(str(fy).strip())
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"{field} must be an int year like 2026. Got {fy!r}.") from exc
+        raise UserInputError(f"{field} must be an int year like 2026. Got {fy!r}.") from exc
     current = _current_fiscal_year()
     # Cap at the CURRENT fiscal year. The old bound of current + 1 let a
     # guaranteed-to-fail year through: the API 422s anything above the
     # current FY ("Field 'fiscal_year' value '2027' is above max '2026'").
     if fy_int < 2017 or fy_int > current:
-        raise ValueError(
+        raise UserInputError(
             f"{field}={fy_int} out of range. USASpending agency and federal "
             f"account profile data covers FY2017 through FY{current} "
             f"(the current fiscal year)."
@@ -2212,7 +2216,7 @@ async def get_agency_sub_agencies(
     defaulted = fiscal_year is None
     fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
     params: dict[str, Any] = {
         "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
@@ -2245,7 +2249,7 @@ async def get_agency_federal_accounts(
     defaulted = fiscal_year is None
     fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
     params: dict[str, Any] = {
         "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
@@ -2277,7 +2281,7 @@ async def get_agency_object_classes(
     defaulted = fiscal_year is None
     fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
     params: dict[str, Any] = {
         "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
@@ -2309,7 +2313,7 @@ async def get_agency_program_activities(
     defaulted = fiscal_year is None
     fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
     params: dict[str, Any] = {
         "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
@@ -2355,7 +2359,7 @@ def _validate_generated_award_id(award_id: str, *, field: str = "award_id") -> s
     'CONT_IDV_GS00Q14OADU131_4732_...' or 'ASST_NON_FA86502125028_097'.
     """
     if not award_id or not award_id.strip():
-        raise ValueError(f"{field} cannot be empty.")
+        raise UserInputError(f"{field} cannot be empty.")
     award_id = _validate_no_control_chars(award_id.strip(), field=field) or ""
     # These ids are interpolated into URL paths. Reject URL path
     # metacharacters outright: '..' segments walk the request onto other
@@ -2364,13 +2368,13 @@ def _validate_generated_award_id(award_id: str, *, field: str = "award_id") -> s
     # finding ('../references/toptier_agencies' returned the agency list
     # through get_award_detail).
     if any(tok in award_id for tok in ("/", "\\", "..", "%")):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={award_id!r} contains URL path characters "
             f"('/', '\\\\', '..', or '%'). Generated award ids never contain "
             f"these; pass the id exactly as returned by search_awards()."
         )
     if not award_id.startswith(("CONT_AWD_", "CONT_IDV_", "ASST_NON_", "ASST_AGG_")):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={award_id!r} is not a valid generated award id. "
             f"Expected prefix: CONT_AWD_, CONT_IDV_, ASST_NON_, or ASST_AGG_. "
             f"Find the right id from search_awards() results."
@@ -2463,7 +2467,7 @@ async def spending_by_transaction(
     codes = _resolve_award_type(award_type)
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     filters = _build_filters(
         keywords=keywords,
         award_type_codes=codes,
@@ -2531,7 +2535,7 @@ async def spending_by_geography(
     # alone is a scope, not a filter.
     has_real_filter = any(k for k in filters if k != "award_type_codes")
     if not has_real_filter:
-        raise ValueError(
+        raise UserInputError(
             "spending_by_geography requires at least one filter beyond award_type. "
             "Typical: time_period_start + time_period_end, or awarding_agency, "
             "or naics_codes/psc_codes."
@@ -2570,7 +2574,7 @@ async def new_awards_over_time(
     start = _validate_date(time_period_start, "time_period_start") if time_period_start else _EARLIEST_SEARCH_DATE
     end = _validate_date(time_period_end, "time_period_end") if time_period_end else "2099-09-30"
     if start > end:
-        raise ValueError(
+        raise UserInputError(
             f"time_period_start ({start}) is after time_period_end ({end}). "
             f"Reverse the values or omit one."
         )
@@ -2615,7 +2619,7 @@ def _validate_idv_award_id(award_id: str, *, field: str = "award_id") -> str:
     """IDV-specific endpoints require CONT_IDV_ prefix."""
     award_id = _validate_generated_award_id(award_id, field=field)
     if not award_id.startswith("CONT_IDV_"):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={award_id!r} is not an IDV award id (CONT_IDV_*). "
             f"This endpoint is IDV-only. For non-IDV contracts use the awards "
             f"endpoints instead."
@@ -2658,7 +2662,7 @@ async def get_idv_funding(
     award_id = _validate_idv_award_id(award_id)
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     payload = {
         "award_id": award_id, "sort": sort, "order": order,
         "limit": limit, "page": page,
@@ -2701,7 +2705,7 @@ async def get_idv_activity(
     award_id = _validate_idv_award_id(award_id)
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     payload = {
         "award_id": award_id, "hide_edge_cases": hide_edge_cases,
         "limit": limit, "page": page,
@@ -2716,7 +2720,7 @@ async def get_idv_activity(
 def _autocomplete_payload(search_text: str, limit: int) -> dict[str, Any]:
     search_text = _validate_no_control_chars(search_text, field="search_text") or ""
     if not search_text.strip():
-        raise ValueError("search_text cannot be empty.")
+        raise UserInputError("search_text cannot be empty.")
     return {"search_text": search_text.strip(), "limit": _clamp_limit(limit, cap=500)}
 
 
@@ -2782,7 +2786,7 @@ async def get_glossary(
 ) -> dict[str, Any]:
     """Get the full USASpending glossary of acquisition + spending terms."""
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=500)
     return await _get("/api/v2/references/glossary/", params={"page": str(page), "limit": str(limit)})
 
@@ -2812,10 +2816,10 @@ _TAS_RE = re.compile(r"^[\w\-]+$")
 
 def _validate_tas(tas: str, *, field: str = "account_code") -> str:
     if not tas or not tas.strip():
-        raise ValueError(f"{field} cannot be empty.")
+        raise UserInputError(f"{field} cannot be empty.")
     s = tas.strip()
     if not _TAS_RE.match(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={tas!r} contains invalid characters. Treasury account "
             f"symbols look like '097-0100' or similar alphanumeric/hyphen."
         )
@@ -2839,7 +2843,7 @@ async def list_federal_accounts(
     sort is a dict like {'field':'budgetary_resources','direction':'desc'}.
     """
     if page < 1:
-        raise ValueError(f"page must be >= 1. Got {page}.")
+        raise UserInputError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
     keyword = _validate_no_control_chars(keyword, field="keyword")
     fy = _validate_fy(fiscal_year)
@@ -2987,9 +2991,9 @@ async def get_federal_account_fy_snapshot(
     """
     aid = str(account_id).strip()
     if not aid:
-        raise ValueError("account_id cannot be empty.")
+        raise UserInputError("account_id cannot be empty.")
     if not aid.lstrip("-").isdigit():
-        raise ValueError(
+        raise UserInputError(
             f"account_id={account_id!r} must be a numeric integer ID (e.g. 4595). "
             f"This endpoint differs from get_federal_account_detail which takes "
             f"the alphanumeric account_number. Pull both fields from "
