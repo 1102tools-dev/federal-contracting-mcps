@@ -17,6 +17,49 @@ This Model Context Protocol server exposes BLS Occupational Employment and Wage 
 | Content correction version | 1.1.4 (bundled May 2025 OEWS release; release gates recorded below) |
 | PyPI status | Published as `bls-oews-mcp`, auto-publishes via Trusted Publisher on tag push |
 
+## 1.1.4 realistic content audit, round 5 (2026-10-10)
+
+No new P0, P1, P2 or P3 findings in the completed new scope; no runtime,
+data, version or tool definition change. A fresh official PyPI by-name,
+uncached installation of 1.1.4 with MCP 2.3.0 completed **65 actual CLI
+stdio questions**; the public service completed the same **65 questions**
+with identical content at release SHA
+`5ba4a4bac4ecd098da1c48dcd09594d9e38fcf1f`.
+
+The new corpus covers veterinary care, water utilities, manufacturing,
+electrical trades and inspection, language services, libraries, food science,
+hydrology, marine engineering, dentistry, flight attendants and dancers.
+National, six-state, four-metro and five-industry populations are kept
+separate. All **450 wage/benchmark objects** match the bundled source and
+IGCE arithmetic; **33 fresh official BLS API cells and attached footnotes**
+match independently. Three local IGCE followups and four caller-composed
+staffing budgets finish the task; those four calculations are not extra
+calls. Annual-only flight attendant benchmarks disclose the annual/2080
+hourly equivalent warning, and hourly-only dancer benchmarks invent no
+annual salary. These are May 2025 wage bases and illustrative burdens,
+not current contractor quotes or forecasts.
+
+Both the frozen MCP 2.0 and fresh official-package MCP 2.3 full suites
+measured **297 passed / 1 optional live parity skipped / 298 collected**.
+Worker tests passed 31; TypeScript checks and wheel/sdist build passed.
+Production Python 3.12 metadata checks retain all eight definitions.
+Python/Worker parity measured 227 cases: 216 identical, 11 documented
+transport differences and zero unexpected differences. Installed published
+module bytes match current source. The initial Python 3.14 contract check
+retains its docstring-indentation mismatch; no tool definitions changed.
+
+Direct BLS flat-footnote and concept-HTML fetches returned HTTP 403 and are
+not counted as successful captures. Official concepts were read through the
+web reader; numeric evidence comes from the fresh API cells and their
+footnotes. The initial harness used `metros` instead of the observed
+`metro_codes` argument; failed attempts are preserved and excluded, and
+the same realistic questions were corrected and rerun. No malformed-input
+campaign was conducted. Evidence is in
+`Artifacts/mcp-e2e-20261010/round5/bls-oews`, including the inventory,
+full CLI/public answers, per-question semantic review, fresh primary checks,
+composed tasks, lane provenance and retained logs. Independent peer review
+is a separate gate; no new package release is needed for this record.
+
 ## 1.1.4 realistic content audit, round 4 (2026-10-10)
 
 No new P0, P1, P2 or P3 findings; no runtime, data, version or tool definition
