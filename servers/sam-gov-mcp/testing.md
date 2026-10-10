@@ -51,6 +51,85 @@ no editable or local-wheel origin. Its full fresh SDK 2.3 suite executed
 The release records below are historical evidence with their original
 versions, counts and dates. Their counts are not the current inventory.
 
+## October 10, 2026 round 6 — new content and source audit
+
+The Round 6 audit began from reviewed main
+`613f4e3daae84fc5ea67ddf9acd0dd1dbe31c814`. Actual public native **1.0.4**
+reports source `e81411afed154e04f79c74865acedaeb45b7f40f` and matches the
+four-tool catalog. Python **1.0.14** remains independently published at
+`d6ea8fea87732e5d28945be9cbd2917c87c844c8`. This round changes documentation
+only; it requires no version bump, release, deployment or data reload.
+
+**120 new public task steps** (114 unique requests) covered 64 searches,
+46 full-notice/solicitation reads and ten summaries, plus a separate data-status
+question. New domains included medical oxygen, prosthetics, mortuary services,
+elevators, fire safety, snow removal, embroidered uniforms, vending, vocational
+training, healthcare staffing, water testing and overseas stevedoring. Useful
+followups refined literal keyword matches, recovered zero-result searches,
+compared issuing-office versus worksite geography, inspected eligibility and
+prior amendments, and distinguished planning notices from actionable bids.
+All ten grouping dimensions were checked for the ambulance-services population.
+The initial attempt ledger retains 16 generic broad searches and three exact
+prior-round notice reads, excluded from the new coverage count. Actual content
+attempts total 139, separate from startup/catalog/status checks.
+
+A fresh official conditional **HTTP 304** confirmed retained CSV bytes
+`0a35bf09b261259ea385ddf183d28e6bc2fe594521b3df054e1daa737e83bfa9`
+(212,081,646 bytes); this is not a new HTTP 200 transfer. Independent SQL
+comparisons passed **120/120**, with **194/194** raw returned-row field checks.
+The oracle imports no production tool handler/query builder, but shares the
+recorded source normalization/version flags and UTC inference. Those shared
+assumptions are not independent proof of authoritative amendment parentage or
+missing timezones. Literal Porter-tokenized matching is not semantic business-fit
+verification.
+
+**39 task interpretations** checked 33 distinct full official rows for actual
+scope, eligibility, deadlines and useful next actions. Forty-four notice-amount
+checks preserved two numeric values and 42 unknown/null amounts. Notable source
+qualifications remain explicit:
+
+- Rodeo Beach food-truck bids are weekly rolling submissions, not one uniquely
+  established deadline derived from the machine closing-date field.
+- Bremerhaven stevedoring keeps the older solicitation number in metadata but
+  directs offers to use the new number in text; searching that new number
+  recovers the current notice. An earlier posted typo remains historical.
+- The leopard facility result is construction restricted to three prequalified
+  firms, with subcontracting goals; it is not animal-care staffing for any bidder.
+- Ambulance amendments extend the proposal date and permit an EMS licensing
+  application package. Questions, proposals and performance periods remain
+  distinct. Old-FY zero results do not establish complete archived award history.
+- The Danbury vocational notice contains conflicting institution text, and
+  several healthcare notices expose attachment-only technical scope. Missing
+  location fields, attachments and source contradictions are not invented away.
+
+An actual fresh **uncached official by-name PyPI** installation initialized
+`sam-gov-mcp` 1.0.14 using Python 3.12.13/MCP SDK 2.3.0, exposed all **20 tools**
+and executed `get_access_status`. It reported `missing_required`. Nineteen new
+entity, exclusion, award, hierarchy and subaward business questions remained
+**unexecuted without `SAM_API_KEY`**; they are not credited as live-source passes.
+Official wheel/sdist hashes and four installed runtime modules match reviewed
+Python source. The actual installed-package suite passed **784**, skipped **374**
+and collected **1,158**. Test dependencies are recorded separately. Native Worker
+checks passed **28**, with zero skips, and the established `npm run check` passed.
+The initially attempted nonexistent `typecheck` script and missing generated-type
+check are retained as harness attempts, not hidden or counted as content defects.
+
+The executed corpus confirmed **P0=0 / P1=0 / P2=0 / P3=0**, with no partial or
+unresolved application findings. This conclusion is bounded to available content
+and does not claim universal correctness or successful credentialed-source checks.
+Archive, attachment, literal-search, source-date/location and financial-scope
+limits remain recorded separately. Round 7 has not started.
+
+Evidence: `Artifacts/mcp-e2e-20261010/round6/sam-gov`, including
+`public-corpus.json`, `initial-attempt-corpus.json`, `prior-notice-replay.json`,
+`question-inventory.json`, `final-source-comparison.json`, `source-capture.json`,
+`semantic-workflow-review.json`, `selected-primary-semantic-evidence.json`,
+`award-amount-source-checks.json`, `python-readiness.json`,
+`python-suite-provenance.json`, `official-artifact-parity.json`,
+`metadata-contract-parity.json`, `summary.json` and the preserved execution logs.
+Independent review and repository documentation gates are tracked separately
+from these actual published-service/package results.
+
 ## October 10, 2026 round 5 — published native discovery 1.0.4
 
 The published native mirror 1.0.3 at source
