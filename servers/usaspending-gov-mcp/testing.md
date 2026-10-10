@@ -2,14 +2,14 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across thirteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, and the thirteenth was the full end-to-end audit and description follow-up. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.15 source collects 2,297 regression cases (1,918 offline and 379 live-gated). Its measured offline lane passed 1,918 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records.
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across fourteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.16 source collects 2,303 regression cases (1,924 offline and 379 live-gated). Its measured offline lane passed 1,924 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 55 |
-| Total regression tests | 2,297 (1,918 offline, 379 live-gated) |
-| Collected cases per tool | 41.76 (not a coverage percentage) |
-| Audit rounds completed | 13 (including the full end-to-end audit and description follow-up) |
+| Total regression tests | 2,303 (1,924 offline, 379 live-gated) |
+| Collected cases per tool | 41.87 (not a coverage percentage) |
+| Audit rounds completed | 14 (including the fresh Round 2 content audit) |
 | Initial integration issues (round 1) | 28+ |
 | P1 silent-wrong-data bugs found and fixed | 11 (rounds 1-9) |
 | P2 validation gaps found and fixed | 7 (rounds 1-9) |
@@ -18,7 +18,7 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Round 9 (v0.3) live audit findings | 1 (list_states JSON-array response shape) |
 | Round 10 (1.0.1) semantic audit findings | 22 (12 search family, 10 entity family), all fixed |
 | Historical release cycles through 1.0.3 | 15 (v0.1.2 through v1.0.3) |
-| Current source package | 1.0.15 |
+| Current source package | 1.0.16 |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -359,3 +359,59 @@ The full Python lane passes **1,918 cases with 379 live-gated skips (2,297
 collected)**. Source55-tool contract and nine-package version checks pass.
 Version 1.0.15 leaves the already in-flight 1.0.14 immutable; root coordinates
 the serial follow-up release and actual published verification.
+
+
+## Round 14: fresh ordinary and power-user content audit (1.0.16, 2026-10-10)
+
+A fresh published 1.0.15/public campaign exercised **127 questions across all
+55 tools**, with real follow-ups and official API response capture. The scope
+covered DHS software-market discovery and continuation; all six award types;
+assistance detail and modifications; discovered GSA vehicle hierarchies; HHS
+agency/resource/program/account analysis; every category dimension; time and
+geography comparisons; FFATA prime/recipient chains; Lockheed parent and child
+identifiers; references; and FEMA account drilldowns. All **126 successful
+answers matched the fresh official-API-backed installed package**. The one
+failed follow-up exposed the recipient-guidance finding below. Transport and
+source equality alone did not certify semantic correctness: the annual timeline
+still had the wrong fiscal-year interpretation.
+
+Two new findings were confirmed and corrected:
+
+- **P2 annual new-award grouping:** an FY2025 Lockheed request returned 5,911
+  under `2024` and 18,081 under `2025`, while the prior 1.0.14+ note asserted
+  federal fiscal buckets. The [official endpoint implementation](https://github.com/fedspendingtransparency/usaspending-api/blob/03b9e2554837998c4c261c65e2947dc79f23855a/usaspending_api/search/v2/views/new_awards_over_time.py)
+  uses a calendar-year histogram for annual grouping. Fiscal quarter/month
+  samples both total 23,992 under FY2025. Annual answers now sum the correctly
+  labeled fiscal quarters, keeping the source messages and annual result shape.
+  The official exact distinct-award aggregation and one signing date per award
+  establish that these quarters are disjoint, so their counts are safely
+  additive. A September–October 2024 partial window now returns FY2024=2,574
+  and FY2025=2,190, rather than calendar2024=4,764 and FY2025=0. Quarter/month
+  rows and counts are unchanged. **The prior monthly corpus passed but did not
+  validate annual grouping; this misleading annual guidance was introduced by
+  the broad fiscal-note fix.**
+- **P3 recipient guidance:** the exposed recipient-search description directed
+  its hash into the children tool, and autocomplete guidance made the same
+  claim; README copy also falsely advertised hashes from autocomplete. The
+  normal catalog-guided Lockheed hash follow-up failed. The parent UEI from
+  the same returned row succeeded with 217 children from the official API.
+  Two descriptions and README guidance now distinguish the name lookup,
+  profile/trend hash, and children UEI/DUNS workflow. Tool names, input schemas,
+  annotations and hosted identity remain unchanged. The actual installed CLI
+  catalog and discovered-identifier follow-up verify the guidance; no new
+  exact-description-string tests are used.
+
+Six captured-API data regressions execute through the MCP pipeline: two annual
+cases fail before correction; four unaffected month/quarter cases pass before;
+all six pass corrected. Full Python validation: **1,924 passed, 379 live-gated
+skipped (2,303 collected)**. Skips are not credited as executed live tests.
+Package/contract/version gates and a built-wheel real installed-CLI workflow
+are recorded separately in the shared `Artifacts/mcp-e2e-20261010/round2/usaspending`
+evidence. Actual 1.0.16 publication and final public acceptance await root’s
+serial release and are not claimed by this source record.
+
+One prior audit-corpus label is corrected explicitly: the Round 1 hardcoded
+children UEI `ZFN2JJXBLZT3` is Lockheed Martin’s, although its question said
+Leidos. That was an audit-harness labeling limitation, not a product finding
+or a passed Leidos child-mapping workflow. Round 2 derives the UEI from the
+actual Lockheed parent result and completes the correctly named chain.

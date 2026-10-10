@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.16
+
+- Correct annual recipient new-award counts to federal fiscal years by summing disjoint, correctly labeled upstream fiscal quarters; preserve quarter/month source results and messages.
+- Correct recipient search/autocomplete descriptions and README follow-up guidance: profiles/trends use recipient hashes, children use the parent UEI/DUNS.
+- Add six real captured-API regressions: two annual cases fail before, four unchanged quarter/month cases already pass, and all six pass corrected. Full suite: 1,924 passed, 379 skipped (2,303 collected).
+
 ## 1.0.15
 
 - Correct the published descriptions of IDV File C funding and submission-calendar periods to match actual upstream scope.

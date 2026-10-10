@@ -209,7 +209,7 @@
       "readOnlyHint": true,
       "title": "Autocomplete Recipient"
     },
-    "description": "Find recipient names by partial name or UEI/DUNS.\n\n    NOTE: this endpoint returns recipient NAMES only. It does NOT return the\n    recipient hash needed by get_recipient_profile() and\n    get_recipient_children() (and its uei/duns fields come back null).\n    To get a hash, take a name from here and pass it to search_recipients(),\n    whose results carry the hash in their 'id' field.\n    ",
+    "description": "Find recipient names by partial name or UEI/DUNS.\n\n    This is a recipient-name lookup; it does not supply the recipient hash\n    for get_recipient_profile() or new_awards_over_time(), and its UEI/DUNS\n    fields may be null. Pass a returned name to search_recipients(): use\n    its 'id' hash for profiles/trends, and the UEI (or legacy DUNS) from\n    the parent (-P) row for get_recipient_children().\n    ",
     "inputSchema": {
       "properties": {
         "limit": {
@@ -2462,7 +2462,7 @@
       "readOnlyHint": true,
       "title": "Search Recipients"
     },
-    "description": "Search USASpending recipients (vendors and grantees) by keyword.\n\n    Returns paginated recipients with their UEI, DUNS, name, and a recipient\n    'id' that downstream tools use as the hash for get_recipient_profile and\n    get_recipient_children.\n\n    keyword can match recipient name, UEI, or DUNS. If omitted, returns the\n    top recipients ranked by `sort`.\n    ",
+    "description": "Search USASpending recipients (vendors and grantees) by keyword.\n\n    Returns paginated recipients with their UEI, DUNS, name, and a recipient\n    'id' hash for get_recipient_profile() and new_awards_over_time().\n    For get_recipient_children(), use the UEI (or legacy DUNS) from the\n    parent (-P) row, not a recipient hash.\n\n    keyword can match recipient name, UEI, or DUNS. If omitted, returns the\n    top recipients ranked by `sort`.\n    ",
     "inputSchema": {
       "properties": {
         "award_type": {

@@ -1895,8 +1895,9 @@ async def search_recipients(
     """Search USASpending recipients (vendors and grantees) by keyword.
 
     Returns paginated recipients with their UEI, DUNS, name, and a recipient
-    'id' that downstream tools use as the hash for get_recipient_profile and
-    get_recipient_children.
+    'id' hash for get_recipient_profile() and new_awards_over_time().
+    For get_recipient_children(), use the UEI (or legacy DUNS) from the
+    parent (-P) row, not a recipient hash.
 
     keyword can match recipient name, UEI, or DUNS. If omitted, returns the
     top recipients ranked by `sort`.
@@ -2060,11 +2061,11 @@ async def autocomplete_recipient(
 ) -> dict[str, Any]:
     """Find recipient names by partial name or UEI/DUNS.
 
-    NOTE: this endpoint returns recipient NAMES only. It does NOT return the
-    recipient hash needed by get_recipient_profile() and
-    get_recipient_children() (and its uei/duns fields come back null).
-    To get a hash, take a name from here and pass it to search_recipients(),
-    whose results carry the hash in their 'id' field.
+    This is a recipient-name lookup; it does not supply the recipient hash
+    for get_recipient_profile() or new_awards_over_time(), and its UEI/DUNS
+    fields may be null. Pass a returned name to search_recipients(): use
+    its 'id' hash for profiles/trends, and the UEI (or legacy DUNS) from
+    the parent (-P) row for get_recipient_children().
     """
     limit = _clamp_limit(limit, cap=500)
     search_text = _validate_no_control_chars(search_text, field="search_text") or ""
@@ -2525,8 +2526,27 @@ async def new_awards_over_time(
             f"Reverse the values or omit one."
         )
     filters["time_period"] = [{"start_date": start, "end_date": end}]
-    payload = {"group": group, "filters": filters}
+    # The upstream annual histogram uses calendar years but labels them
+    # fiscal_year. Its quarter/month histograms correctly use federal FYs.
+    # Counts are exact distinct award_ids, each with one date_signed, so
+    # fiscal quarters partition these new awards without double counting.
+    source_group = "quarter" if group == "fiscal_year" else group
+    payload = {"group": source_group, "filters": filters}
     result = await _post("/api/v2/search/new_awards_over_time/", payload)
+    if group == "fiscal_year":
+        by_year: dict[str, int] = {}
+        for row in result["results"]:
+            year = row["time_period"]["fiscal_year"]
+            by_year[year] = by_year.get(year, 0) + row["new_award_count_in_period"]
+        result = {
+            **result,
+            "group": "fiscal_year",
+            "results": [
+                {"new_award_count_in_period": by_year[year],
+                 "time_period": {"fiscal_year": year}}
+                for year in sorted(by_year, key=int)
+            ],
+        }
     result = _add_note(result, _dod_lag_note(end, award_types=None))
     if isinstance(result, dict):
         result["time_period_note"] = (
