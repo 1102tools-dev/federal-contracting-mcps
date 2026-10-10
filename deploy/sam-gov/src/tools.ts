@@ -382,7 +382,10 @@ export async function searchOpportunities(db: Database, args: Args, now = new Da
   const typeNote = noResponseNote(noResponse, total);
   if (typeNote) notes.push(typeNote);
   if (hint) notes.push(hint);
-  if (total === 0) notes.push("No active notices matched. Try fewer filters, a NAICS prefix, include_past_deadlines, or a wider date range. Archived notices are not searchable here.");
+  if (total === 0) {
+    const past = bool(args, "include_past_deadlines") ? "" : " include_past_deadlines,";
+    notes.push(`No active notices matched. Try fewer filters, a NAICS prefix,${past} or a wider date range. Archived notices are not searchable here.`);
+  }
   return {
     total_matches: total,
     returned: results.length,
@@ -490,7 +493,7 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
   const byMonth = groupBy === "posted_month";
   const [groups, count, asOf, hint, noResponse] = await Promise.all([
     db.prepare(`SELECT ${column} AS value, COUNT(*) AS count FROM ${q.from}${where} GROUP BY value ORDER BY ${byMonth ? "value DESC" : "count DESC, value"} LIMIT ?`).bind(...q.params, top).all<{value: string | null; count: number}>(),
-    db.prepare(`SELECT COUNT(*) AS n, COUNT(DISTINCT ${column}) AS g FROM ${q.from}${where}`).bind(...q.params).all<{n: number; g: number}>(),
+    db.prepare(`SELECT COUNT(*) AS n, COUNT(DISTINCT ${column}) + MAX(${column} IS NULL) AS g FROM ${q.from}${where}`).bind(...q.params).all<{n: number; g: number}>(),
     dataAsOf(db),
     officeStateHint(db, args, now),
     groupBy === "notice_type" ? 0 : noResponseCount(db, args, q),

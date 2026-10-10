@@ -260,6 +260,15 @@ test("summarize_opportunities groups with the search filters", async () => {
   await assert.rejects(summarizeOpportunities(db, {group_by: "vendor"}, NOW), /group_by must be one of/);
 });
 
+test("distinct_values counts the blank group, and the no-match note fits the flags", async () => {
+  const bySetAside = await summarizeOpportunities(db, {group_by: "set_aside", naics_codes: ["5415"]}, NOW);
+  assert.equal(bySetAside.distinct_values, bySetAside.groups.length, "(blank) and SBA");
+  const none = await search({keywords: "submarine", include_past_deadlines: true});
+  const note = none.notes.find((n: string) => n.startsWith("No active notices matched"));
+  assert.ok(note && !note.includes("include_past_deadlines"), note);
+  assert.match((await search({keywords: "submarine"})).notes.at(-1), /include_past_deadlines/);
+});
+
 test("posted_month groups come back in month order with a note on archiving", async () => {
   const byMonth = await summarizeOpportunities(db, {group_by: "posted_month"}, NOW);
   assert.deepEqual(byMonth.groups, [{value: "2026-08", count: 1}, {value: "2026-09", count: 4}]);
