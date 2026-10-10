@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across fifteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.17 source collects 2,306 regression cases (1,927 offline and 379 live-gated). Its measured offline lane passed 1,927 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records.
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across fifteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.17 source collects 2,306 regression cases (1,927 offline and 379 live-gated). Its measured offline lane passed 1,927 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records. Published 1.0.17 completed all 130 questions on each surface after the two documented targeted timeout recoveries, with all 55 tool definitions matched and six guided dated-report followups passed.
 
 | Metric | Value |
 |---|---|
@@ -521,3 +521,64 @@ Evidence: `Artifacts/mcp-e2e-20261010/round3/usaspending`, including the 130-cas
 `campaign.json`, primary source captures/hash index, `semantic-checks.json`,
 `ffata-prime-primary-followup.json`, before/fixed regressions and measured
 suite/collection logs. Publication followups will be recorded separately.
+
+
+## Round 15 published verification (1.0.17, 2026-10-10)
+
+The scoped `usaspending/v1.0.17` workflow
+[38076343015](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38076343015)
+completed successfully at source `7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336`.
+An actual fresh by-name, uncached installation from official PyPI supplied
+1.0.17 and the latest MCP SDK 2.3.0. Its installed server source matched the
+frozen source byte for byte. The first install attempt encountered temporary
+simple-index unavailability; attempt 2 succeeded. That bootstrap failure is
+preserved and excluded from content checks. No candidate package substituted
+for the published installation.
+
+The full installed CLI and public campaigns each initially completed **129
+questions successfully and one with a timeout**. The CLI CFDA category request
+raised an official API `httpx.ReadTimeout`. The public Transportation
+program-activities request hit the verifier's 70-second timeout while the
+paired official source request succeeded. No public response or backend header
+was received for that failed attempt, so its cause remains unconfirmed. Both
+questions then passed a targeted same-question CLI/source/public replay; an
+additional public replay returned HTTP 200 from the origin backend (0.150
+seconds for CFDA and 0.076 seconds for program activities). Those observations
+do not establish which backend caused the original timeout. Initial failures
+remain unchanged in the evidence. **All 130 questions on each surface were
+completed successfully after the targeted retries**, covering all 55 tools.
+
+The actual public health SHA and MCP initialize version matched the release;
+both actual catalogs matched the approved 55-tool contract. The primary lane
+captured 134 official API responses, plus two targeted retry responses. The
+saved response hashes are over canonical JSON, not raw transport bytes. Final
+NASA annual/quarter/month obligations crossfoot to $15,784,830,135.01. Northrop
+FY2025 annual/quarter/month new awards crossfoot to 1,728; the partial
+July–December 2024 window crossfoots to FY2024=504 and FY2025=418.
+
+Six actual installed CLI/public catalog-guided calls verified the corrected
+FFATA workflow. FL-2021-064 returns all 18 reports dated 2021-09-02, totaling
+$327,719,366 cumulatively, with **zero FY2025 reports and $0**. KY-2020-011
+returns all 299 reports over three complete pages, totaling $250,924,925
+cumulatively, with **seven FY2025 reports totaling $2,374,440**. The actual
+output includes the requested filter dates, explains the cumulative scope and
+directs complete pagination followed by `action_date` filtering. Matching-prime
+totals are not a fiscal-period subaward ranking; reported amounts can repeat
+cumulative values and their sum does not establish net new subcontract spending.
+
+These content checks are separate from the saved source regression execution
+of **1,927 passed / 379 live-gated skipped**, reconciled with **2,306 collected**
+at the frozen integration source. No skipped case is credited as executed.
+Official MCP registry 1.0.17 returned HTTP 200. Public metadata is verified;
+propagation into every directory client was not independently observed. This
+documentation correction requires no manual directory republication.
+
+Evidence: `Artifacts/mcp-e2e-20261010/round3/usaspending`, especially
+`final-verification-1.0.17.json`, `final-install-provenance.json`,
+`final-installed-source-parity.json`, original and accepted final CLI/public
+campaigns, `final-timeout-recovery.json`,
+`final-public-responsiveness-check.json`, `final-cli-guided-workflow.json`,
+`final-semantic-crossfoot.json`, official registry/catalog/health responses and
+`final-evidence-hashes.json`. The final frozen collection is independently
+recorded under `coordinator/round3-final-collection/collection.json`. This is
+publication acceptance of Round 3, not a new content-audit round.
