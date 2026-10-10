@@ -1,6 +1,6 @@
 # October 10, 2026 MCP content audit and release record
 
-**Rounds 1–3 are closed: 53 cumulative findings fully fixed and live verified. Round 4 content coverage is complete across all eight servers, with nine new findings (0 P0, 0 P1, 5 P2, 4 P3); all nine fixes are merged and all scoped releases have succeeded.** Final eight-service production identity/112-tool contract checks, all16 official PyPI artifacts and all-five Dell/45 backend checks passed. SAM Python1.0.14, CALC1.0.16 and eCFR1.1.6 completed actual published content acceptance; USAspending1.0.20 completed150CLI/150public questions plus six guided workflows; independent original/recovery checks also passed. Website and final documentation publication remain pending. Round5 starts only after Round4 closes. This record distinguishes executed checks, collected tests and source limitations. Evidence paths are relative to `Artifacts/mcp-e2e-20261010/`.
+**Rounds 1–3 are closed: 53 cumulative findings fully fixed and live verified. Round 4 content coverage is complete across all eight servers, with nine new findings (0 P0, 0 P1, 5 P2, 4 P3); all nine fixes are merged and all scoped releases have succeeded.** Final eight-service production identity/112-tool contract checks, all16 official PyPI artifacts and all-five Dell/45 backend checks passed. SAM Python1.0.14, CALC1.0.16 and eCFR1.1.6 completed actual published content acceptance; USAspending1.0.20 completed150CLI/150public questions plus six guided workflows; independent original/recovery checks also passed. Actual website publication passed; this final coordinator merge and served-file check complete documentation closure. Round5 starts only after Round4 closes. This record distinguishes executed checks, collected tests and source limitations. Evidence paths are relative to `Artifacts/mcp-e2e-20261010/`.
 
 ## Scope and findings ledger
 
@@ -294,9 +294,9 @@ Website source [PR3](https://github.com/1102tools-dev/federal-contracting-prompt
 Evidence: `coordinator/website-round3-public-assets.json`, `website-round3-copy-proof.json`, `website-round3-browser-proof.json`. Server documentation PRs122–130 are merged; the additional final Regulations documentation merge is `c7b5a204b18e981194e7fbd73428c919c289d367`. This coordinator change publishes the root README, measured inventory, native Per Diem deployment guidance and the cumulative release record. Actual GitHub served-file verification follows merge and is retained in the coordinator closure evidence; it does not require republishing compatible MCP directory listings. All53 confirmed findings are fully fixed, none partially fixed and none unresolved. Source credential/quota/unavailable-document limits remain explicit. Round4 must still find no new P0/P1/P2 issues before the overall goal can complete.
 
 
-## Round 4 — published content accepted; website/documentation closure pending
+## Round 4 — published content and website accepted; final record publication
 
-All eight owners finished realistic ordinary-user and power-user content coverage before release integration. Nine new confirmed findings comprise five P2 and four P3 issues. No P0 or P1 was found. Acquisition.gov remains excluded from this goal and every subsequent round. The cumulative confirmed inventory is 62 (0 P0, 2 P1, 38 P2, 22 P3), with all62 source fixes merged. All62confirmed findings have actual published content acceptance; website and final documentation publication remain pending. The zero-new-P0/P1/P2 stopping condition remains unmet because this round found five P2 issues.
+All eight owners finished realistic ordinary-user and power-user content coverage before release integration. Nine new confirmed findings comprise five P2 and four P3 issues. No P0 or P1 was found. Acquisition.gov remains excluded from this goal and every subsequent round. The cumulative confirmed inventory is 62 (0 P0, 2 P1, 38 P2, 22 P3), with all62 source fixes merged. All62confirmed findings have actual published content acceptance and the updated website is deployed and verified. This final coordinator publication completes the GitHub record; actual served-file verification follows merge. The zero-new-P0/P1/P2 stopping condition remains unmet because this round found five P2 issues.
 
 | MCP | New P0 | New P1 | New P2 | New P3 | Correction / current acceptance |
 |---|---:|---:|---:|---:|---|
@@ -308,7 +308,7 @@ All eight owners finished realistic ordinary-user and power-user content coverag
 | BLS OEWS | 0 | 0 | 0 | 0 | Full assigned coverage completed; source limitations retained separately. |
 | Federal Register | 0 | 0 | 0 | 0 | Full assigned coverage completed; scan and source-date qualifications retained. |
 | GSA Per Diem | 0 | 0 | 0 | 0 | Full assigned ordinary-content coverage completed; fresh SDK test-message compatibility failures are disclosed separately. |
-| **Total** | **0** | **0** | **5** | **4** | **All nine corrections have published acceptance; final website/documentation closure pending.** |
+| **Total** | **0** | **0** | **5** | **4** | **All nine corrections and website publication accepted; final coordinator record completes closure.** |
 
 ### Reviewed release integration and immutable failed attempt
 
@@ -387,7 +387,7 @@ These counts report completed lanes separately from collection. Acquisition's255
 |ecfr/v1.1.6|`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`|[38083173160](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38083173160)|`4b4313cb-77f2-4e54-8998-fe136013b875`.|
 |usaspending/v1.0.20|`2a93b7b706d818da647f9d56cacbf543f867fa79`|[38083846513](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38083846513)|`571c0cb3-0551-4f1a-b32f-cde5c15e6fc8`; finalUSAversion.|
 
-Source/content/documentation PRs132–145 and147–149 are merged; root coordinatorPR146 remains a draft until final website/content/documentation gates close. Runtime/content corrections are PR136(eCFR),137(SAM),139(CALC),141(USAprograms/catalog) and147(USAavailability); PR138 fixes the actual Regulations badge. PR135 is release infrastructure and PR144/145 are meaningful timing-test repairs, not new content findings. Automated registry updates succeeded without requiring manual directory republication. Actual directory/client propagation remains unobserved.
+Source/content/documentation PRs132–145 and147–149 are merged; final USA documentationPR150 is also merged; root coordinatorPR146 publishes the final record after actual website/content gates passed. Runtime/content corrections are PR136(eCFR),137(SAM),139(CALC),141(USAprograms/catalog) and147(USAavailability); PR138 fixes the actual Regulations badge. PR135 is release infrastructure and PR144/145 are meaningful timing-test repairs, not new content findings. Automated registry updates succeeded without requiring manual directory republication. Actual directory/client propagation remains unobserved.
 
 
 ### Cumulative ledger through published Round4 corrections
@@ -408,3 +408,16 @@ Each confirmed finding is counted once; historical first-round toolchain/shared 
 |**Total**|**0**|**2**|**38**|**22**|**62**|**62**|**0**|**0**|
 
 The latest fresh USA20suite failures855and GPD16legacy expected-message failures remain explicitly unresolved in their test lanes; they are not silently marked passing or added as855/16content findings. This campaign audits real ordinary and power-user content. Source credentials/quota/unavailable dates/documents remain bounded evidence limitations. Any new ordinary workflow that exposes a real product defect in the next audit must be recorded and corrected normally.
+
+
+### Round4 website and final documentation publication
+
+Website source[PR4](https://github.com/1102tools-dev/federal-contracting-prompts/pull/4) merged at `faa8cb7383057756bcb050b436548fa269238a49` after exact-head root/GPD review and bothCI workflows passed. The deployment snapshot[PR6](https://github.com/1102tools-dev/1102tools-deploy/pull/6) merged at `f43f0ce05fec9e785620b26d9c8c8ac2c1408ad6`, stamped to that exact source; independent FR review passed116assertions and bothCI checks passed. Exactlyfive snapshot files changed; all57prompt objects,25protected source files, Acquisition entry, directory links, printablePDF and demo/brand assets remain unchanged.
+
+Cloudflare Pages deployment `0f19af06` published to[1102tools.com](https://1102tools.com/). Actual final public verification passed49servedassets plus two configurations, four copy checks and a real browser reload/expanded-card check. Initial post-deployment verification found the comparison page different while the other three copy checks passed; that attempt is preserved. A targeted subsequent fetch matched exactly after removing only the injected Cloudflare analytics script; the complete followup asset/copy gates passed. The initial difference's precise cause is unconfirmed. HTML comparisons remove only injected analytics; no rawHTMLbyte-parity claim is made.
+
+The actual browser shows6,084product/5,829goal collected cases, current package versions, nine corrected Round4findings and62cumulative fixes;855USA/16GPDfresh-suite failures and the unmet future zero-new-P0/P1/P2 condition remain explicit. Evidence: `coordinator/website-round4-pages-deploy.log`, `website-round4-public-assets.json`, `website-round4-copy-proof.json`, `website-round4-browser-proof.json`; initial attempt files remain unchanged.
+
+Final USA documentation[PR150](https://github.com/1102tools-dev/federal-contracting-mcps/pull/150) merged at `44d3bec` after root review, independent SAM review and exactCI38084829120 passed. All Round4 server documentation is merged; rootPR146 publishes the measured README inventory, reviewed release guide and this cumulative record. It touches documentation only, so no path-filteredCI result is expected or falsely claimed. Independent final record review is preserved; the coordinator verifies19actual servedGitHub files after merge and seals the Round4closure manifest before dispatching Round5. No manual MCP directory republication is required.
+
+Round4 found five newP2issues, so the overall goal is still active. Only a subsequent complete eight-server content round with no newP0/P1/P2findings, followed by required fixes/publication/evidence closure, satisfies the stopping condition. Acquisition remains excluded.
