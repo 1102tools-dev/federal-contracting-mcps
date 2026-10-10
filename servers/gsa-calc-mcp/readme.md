@@ -8,7 +8,7 @@ Free, open-source MCP server for the GSA CALC+ Labor Ceiling Rates API. Query aw
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through seven audit rounds and the 1.0.13 workflow audit against the GSA CALC+ API. 433 collected regression tests (312 offline, 121 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). The content fixes cover vendor worksites, low-sample price checks, comparison filters, title summaries and truncation. See [testing.md](testing.md) for the full testing record and the [test suite map](tests/README.md) for counts by file.*
+*Tested and hardened through seven audit rounds and the 1.0.14 workflow audit and discovery-description correction against the GSA CALC+ API. 433 collected regression tests (312 offline, 121 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). The content fixes cover vendor worksites, low-sample price checks, comparison filters, title summaries and truncation. See [testing.md](testing.md) for the full testing record and the [test suite map](tests/README.md) for counts by file.*
 
 ## Local or hosted
 

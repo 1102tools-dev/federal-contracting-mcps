@@ -1069,20 +1069,22 @@ async def igce_benchmark(
     Contractor_Facility / Virtual; counts only, prices are pooled across
     sites), and outlier bounds.
 
-    This is the primary tool for building Independent Government Cost
-    Estimates. The returned statistics represent the market distribution
-    of GSA MAS ceiling rates for comparable labor categories.
+    GSA's keyword search matches labor_category, vendor_name and idv_piid.
+    The returned statistics pool all matching rate rows, including unrelated
+    labor titles when a vendor name or contract number matches the phrase.
+    Check population_scope and matched_titles before using the statistics.
+    off_title_matches_detected flags observed titles that do not match the
+    requested phrase; title_only_population_verified is false when the title
+    aggregation is missing, empty, truncated or approximate.
 
-    Reminder: these are ceiling rates (max a contractor can charge), not
-    prices paid. Actual task order rates should be lower per FAR 8.405-2(d).
+    For title-only rates, call suggest_contains on labor_category to discover
+    an exact title, then exact_search on labor_category. Different spellings
+    remain separate searches ('Cyber Security Analyst' vs 'Cybersecurity
+    Analyst'). Statistics are on current-year ceiling rates (current_price),
+    not next-year or option-year prices.
 
-    labor_category is matched as a literal phrase anywhere in the title:
-    'Program Manager' pools Program Manager I-VI, Senior and Executive
-    Program Manager, and so on. matched_titles lists the top 10 pooled
-    titles with counts and the number of distinct titles. Different
-    spellings are separate populations ('Cyber Security Analyst' vs
-    'Cybersecurity Analyst'). Statistics are on current-year ceiling rates
-    (current_price), not next-year or option-year prices.
+    These are not-to-exceed ceiling rates, not prices paid. Ceiling-rate
+    comparisons alone do not establish a proposed price's reasonableness.
 
     Optional filters: education_level, experience_min/max, business_size
     ('S' or 'O'), sin (e.g. '541611'), security_clearance ('yes' or 'no').
@@ -1144,23 +1146,26 @@ async def price_reasonableness_check(
 ) -> dict[str, Any]:
     """Evaluate a proposed hourly rate against GSA ceiling rate distribution.
 
-    Returns the benchmark statistics plus a positioning analysis: z-score,
-    comparison to median, IQR position, and delta from average.
+    GSA's keyword search matches labor titles, vendor names and contract
+    numbers. Check population_scope: unrelated titles can enter the pooled
+    statistics through a matching vendor or contract.
 
-    Use this for FAR 15.404-1 price analysis: is the proposed rate within
-    the expected range for comparable labor categories on GSA MAS?
+    Returns MIXED_SEARCH_FIELDS with no verdict when off-title matches are
+    detected, or UNVERIFIED_POPULATION with no verdict when the title list
+    is missing, empty, truncated or approximate. Discover an exact title with
+    suggest_contains, then use exact_search on labor_category for title-only
+    rates. Filters match igce_benchmark, including sin and security_clearance.
 
-    A rate above P75 may be high; above P90 warrants scrutiny. A rate below
-    P25 may indicate an unrealistically low offer (potential performance risk).
+    A verified title population with at least 20 rates returns z-score,
+    median comparison, IQR position and delta from average. The z-score is
+    null when the mean or standard deviation is unavailable or variance is
+    zero. Missing means produce null average deltas.
 
-    Takes the same filters as igce_benchmark, including sin and
-    security_clearance; pass them so the comparison population matches the
-    requirement.
-
-    With fewer than 20 comparable rates the result has status LOW_SAMPLE:
-    the statistics are returned but there is no high/low verdict (z_score,
-    vs_median and iqr_position are null). Try a shorter phrase; the
-    labor_category keyword is matched as a literal phrase.
+    A verified population with fewer than 20 rates returns LOW_SAMPLE
+    without a high/low verdict;
+    zero rates return NO_DATA. Statistics compare not-to-exceed ceiling
+    rates, not prices paid, and do not by themselves establish price
+    reasonableness or performance risk.
     """
     if not isinstance(proposed_rate, (int, float)) or isinstance(proposed_rate, bool):
         raise ValueError("proposed_rate must be a positive number.")

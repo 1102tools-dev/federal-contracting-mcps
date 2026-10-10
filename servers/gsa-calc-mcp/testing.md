@@ -24,7 +24,7 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | Round 5 Hypothesis + live findings | 0 (shape-only assertions; see round 6 for what that missed) |
 | Round 6 differential-count findings | 3 high-severity (worksite ignored, experience_min exact-match, vendor_rate_card unpageable) + 4 dead hardcoded SINs + 1 validation gap |
 | Retroactive additional findings | 12 |
-| Current release | 1.0.13 |
+| Current release | 1.0.14 |
 | PyPI status | Published as `gsa-calc-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -249,3 +249,22 @@ source and expected-error checks; hosted baseline responses were preserved to
 show the actual pre-release behavior. Six Worker budget tests passed. Wheel
 build, all-nine version consistency and the eight-tool reviewed metadata
 contract passed. Live published 1.0.13 verification is a release-stage check.
+
+
+## 1.0.14 discovery-description correction
+
+User authorization superseded the earlier requirement to leave the incorrect
+reviewed description frozen. Both `igce_benchmark` and
+`price_reasonableness_check` now describe the cross-field GSA keyword population
+and conservative no-verdict statuses at discovery time. The existing Worker
+proxies tools/list from this Python server; its reviewed tools-contract baseline
+was regenerated with Python 3.12. Machine comparison of the actual tool list
+confirmed only these two descriptions changed; all eight tool names, input and
+output schemas, annotations, service identities and endpoints are unchanged.
+The existing full suite remains 433 collected (312 offline, 121 live-gated).
+The in-flight 1.0.13 release remains immutable; 1.0.14 ships this correction.
+
+Validation: full Python 3.12 suite **312 passed / 121 live-gated skipped**;
+wheel build, all-nine version consistency and the regenerated eight-tool
+contract check passed. Independent internal peer review approved the two
+new descriptions and confirmed identical identities, schemas and annotations.

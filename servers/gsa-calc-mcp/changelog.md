@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.14
+
+- Correct IGCE and price-check discovery descriptions: GSA keyword searches match titles, vendor names and contract numbers; document mixed/unverified-population safeguards and title-only exact-search followups.
+- Remove the unsupported inference that a low ceiling-rate percentile establishes performance risk or price reasonableness.
+- Regenerate the reviewed contract under Python 3.12. All eight names, schemas, annotations, MCP identity and endpoint remain unchanged.
+
 ## 1.0.13
 
 - Mark capped suggestion totals as lower bounds instead of presenting 10,000 as an exact count.
