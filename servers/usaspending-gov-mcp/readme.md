@@ -1,6 +1,6 @@
 # usaspending-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,295](https://img.shields.io/badge/regression%20tests-2%2C295-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,297](https://img.shields.io/badge/regression%20tests-2%2C297-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Release 1.0.14 collects 2,295 regression cases: 1,916 offline and 379 live-gated. The full offline lane passes; the focused content suite covers fiscal defaults, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats and aggregation filters. See [testing.md](testing.md) for the testing record.*
+*Release 1.0.15 collects 2,297 regression cases: 1,918 offline and 379 live-gated. The full offline lane passes; the focused content suite covers fiscal defaults, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats and aggregation filters. See [testing.md](testing.md) for the testing record.*
 
 ## Local or hosted
 
@@ -192,9 +192,9 @@ MIT
 ## Regression tests
 
 Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
-package directory. The default lane passes 1,916 cases and skips 379 live
+package directory. The default lane passes 1,918 cases and skips 379 live
 cases. Set `USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts
-below include parametrized and live-gated cases collected for 1.0.14.
+below include parametrized and live-gated cases collected for 1.0.15.
 
 | Test file | Cases | Coverage |
 |---|---:|---|
@@ -213,4 +213,5 @@ below include parametrized and live-gated cases collected for 1.0.14.
 | [test_tool_profiles.py](tests/test_tool_profiles.py) | 3 | Tool profile selection |
 | [test_http.py](tests/test_http.py) | 2 | HTTP handling |
 | [test_content_e2e_1014.py](tests/test_content_e2e_1014.py) | 36 | Full end-to-end audit guidance regressions |
-| **Total** | **2,295** | **1,916 offline; 379 live-gated** |
+| [test_published_scope_1015.py](tests/test_published_scope_1015.py) | 2 | Published tool-selection scope guidance |
+| **Total** | **2,297** | **1,918 offline; 379 live-gated** |

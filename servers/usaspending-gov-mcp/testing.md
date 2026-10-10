@@ -336,3 +336,26 @@ subagencies contain all contracting-office children. This is a response-size
 enhancement opportunity rather than an incorrect total; no children were
 silently discarded. Parent-IDV transaction-window filtering remains an
 upstream capability limitation described in Round 12.
+
+
+## Round 13 description follow-up (1.0.15, 2026-10-10)
+
+Explicit user direction authorized correcting the two remaining descriptions
+within the existing server identity. The `get_idv_funding` description now
+explains File C association/partial coverage and routes full child-order
+questions to the appropriate tools. `get_submission_periods` now describes
+global reporting-calendar deadlines and rejects their interpretation as
+agency-completion evidence. The established Python 3.12 baseline generator
+changes exactly those two description fields; all 55 names, schemas,
+annotations and other metadata remain identical. Current [official OpenAI documentation](https://developers.openai.com/plugins/deploy/app-review#how-published-mcp-metadata-versions-work)
+uses continuous review for published tool-definition updates: passing updates
+replace the previous definitions automatically, without a new plugin version
+or manual republication. Previous definitions remain live while automated
+checks are pending, so the unchanged names/schemas preserve compatibility.
+Internal peer review found no blocker.
+
+Two actual tools/list regressions fail against 1.0.14 and pass corrected.
+The full Python lane passes **1,918 cases with 379 live-gated skips (2,297
+collected)**. Source55-tool contract and nine-package version checks pass.
+Version 1.0.15 leaves the already in-flight 1.0.14 immutable; root coordinates
+the serial follow-up release and actual published verification.

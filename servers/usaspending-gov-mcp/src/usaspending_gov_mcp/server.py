@@ -2578,7 +2578,14 @@ async def get_idv_funding(
     limit: int = 25,
     page: int = 1,
 ) -> dict[str, Any]:
-    """List the funding records (File C) for an IDV's child orders."""
+    """List File C funding records associated with an IDV.
+
+    Rows can identify the IDV itself as well as associated awards; they are
+    not a complete list of child orders. File C coverage can be partial or
+    lagged and does not establish the full child-order obligation or amount
+    paid. Use get_idv_amounts() for reported child-order obligation totals
+    and get_idv_activity() or get_idv_children() for child-order records.
+    """
     award_id = _validate_idv_award_id(award_id)
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
@@ -2713,9 +2720,13 @@ async def get_glossary(
 
 @mcp.tool(annotations={"title": "Get Submission Periods", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_submission_periods() -> dict[str, Any]:
-    """Return the list of agency submission periods (when each agency last
-    submitted data for each fiscal period). Useful for understanding which
-    quarters of which fiscal years have full data coverage."""
+    """List the reporting calendar and submission/certification deadlines.
+
+    Returns available fiscal reporting periods and their scheduled start,
+    due, certification and reveal dates. These are global calendar periods,
+    not records of when individual agencies actually submitted or certified
+    data. A listed period does not establish complete agency data coverage.
+    """
     result = await _get("/api/v2/references/submission_periods/")
     return _add_note(result, "These are reporting-calendar periods and submission/certification "
                      "deadlines, not records of when individual agencies actually submitted "

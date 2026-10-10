@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.15
+
+- Correct the published descriptions of IDV File C funding and submission-calendar periods to match actual upstream scope.
+- Preserve all tool names, schemas, annotations and the existing hosted endpoint identity.
+
 ## 1.0.14
 
 - Extend 90-day procurement lag guidance to geographic/transaction searches, state summaries, recipient new-award timelines and USACE scopes.
