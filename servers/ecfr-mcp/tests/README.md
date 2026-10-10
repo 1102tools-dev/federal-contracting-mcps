@@ -33,4 +33,4 @@ runs via `pytest -m live_smoke`.
 - `scenarios/` holds standalone scenario scripts (not pytest; retained for
   reproducibility of early rounds).
 
-The 1.1.4 reservation-contract correction collected 449 tests: both frozen SDK 2.0.0 and fresh candidate-wheel SDK 2.3.0 passed 331 offline cases with 118 live skips. Its new deterministic delay regression preserves permit accounting and the rolling budget; real concurrency and process-crash checks remain. Published 1.1.4 verification is pending the release gate.
+The 1.1.4 reservation-contract correction collected 449 tests: both frozen SDK 2.0.0 and fresh candidate-wheel SDK 2.3.0 passed 331 offline cases with 118 live skips. Its new deterministic delay regression preserves permit accounting and the rolling budget; real concurrency and process-crash checks remain. The actual fresh PyPI 1.1.4 installation passed the same 331 offline cases with 118 live skips (15.47 seconds); its installed CLI completed 73 original/followup calls and the public service completed 70. Fifty rerun primary comparisons plus five corrected-original source checks passed. No new full 449-case live run is claimed.
