@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.0.3
+
+Fixes from the 2026-10-10 content test (40 real-user questions checked
+against Regulations.gov and the Federal Register).
+
+- **Comment deadlines in Eastern time.** Regulations.gov stores 11:59 PM
+  Eastern as a UTC instant that reads one day late (`2026-10-23T03:59:59Z`
+  is Oct 22). Search and detail records now carry `commentDeadlineEastern`
+  (`Oct 22, 2026 11:59 PM ET`) and `commentEndDateUtc` in place of
+  `commentEndDate`; `open_comment_periods` and `far_case_history` rows carry
+  `comment_deadline` and `comment_end_date_utc` in place of
+  `comment_end_date`.
+- **Comment counts say what they count.** `search_comments` adds
+  `posted_comments` and a `count_note`: the number is comments posted
+  publicly, not comments received (the FAR greenhouse gas rule shows 261
+  posted against about 38,100 received). `far_case_history` page 1 adds the
+  docket's `posted_comments` (one extra cached call).
+- **Withdrawals no longer read as new proposed rules.** `far_case_history`
+  and `open_comment_periods` rows keep `subtype` (Withdrawal, Extension of
+  Comment Period, NPRM) and `fr_doc_num`.
+- **Who commented.** Comment search rows have no organization at the source.
+  `search_comments(include_organization=True)` (page_size up to 25) adds
+  each row's organization from its comment detail; without it, listings
+  say the field is missing.
+- **40-page ceiling.** At page 40 the API reports `lastPage: true` even when
+  thousands of records remain. Searches now set `truncated`,
+  `records_beyond_page_limit` and a note on page 40 (`meta.lastPage` becomes
+  false) and a `page_limit_note` on earlier pages.
+- `open_comment_periods` takes `document_type` ('Proposed Rule' keeps rules
+  from being buried under DOD and VA notices).
+- Facets the query filtered on are left out; the API counts them site-wide.
+- Comment text and search snippets come back as plain text.
+- Descriptions: search results follow `sort`, not relevance, so quote
+  phrases; `search_dockets` lists its sort fields; `no_data_reason` names the
+  search term.
+- No change to pacing, budgets, cache times or logging.
+
 ## 2.0.2
 
 - Hosted service only: the machine running the service can give the answer cache

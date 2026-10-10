@@ -6,7 +6,7 @@
       "readOnlyHint": true,
       "title": "FAR Case History"
     },
-    "description": "Get the lifecycle of a FAR/DFARS rulemaking case, summary first.\n\n    Returns the docket metadata (title, abstract, RIN linking to the\n    Unified Agenda), the docket's total document count, counts by document\n    type and of documents open for comment across the whole docket, and one\n    page of its documents, most recent first, with types, dates, and URLs.\n    When the docket has more documents, truncated=true and next_page_number\n    gives the page that continues the list.\n\n    page_size: 5-100 documents per page (default 25). page_number: 1-40.\n\n    docket_id examples: FAR-2023-0008, DARS-2025-0071\n    ",
+    "description": "Get the lifecycle of a FAR/DFARS rulemaking case, summary first.\n\n    Returns the docket metadata (title, abstract, RIN linking to the\n    Unified Agenda), the docket's total document count, counts by document\n    type and of documents open for comment across the whole docket, and one\n    page of its documents, most recent first, with types, subtypes, Federal\n    Register document numbers, dates, and URLs. subtype tells a withdrawal,\n    extension, or correction apart from a new proposed rule (a withdrawal\n    keeps document_type 'Proposed Rule').\n    comment_deadline is the closing time in Eastern time; comment_end_date_utc\n    is the raw UTC instant, whose date reads one day late. Page 1 also gives\n    posted_comments for the whole docket: comments posted publicly, not\n    comments received (mass-mail duplicates and unposted comments are not\n    in it).\n    When the docket has more documents, truncated=true and next_page_number\n    gives the page that continues the list.\n\n    page_size: 5-100 documents per page (default 25). page_number: 1-40.\n\n    docket_id examples: FAR-2023-0008, DARS-2025-0071\n    ",
     "inputSchema": {
       "properties": {
         "docket_id": {
@@ -64,7 +64,7 @@
       "readOnlyHint": true,
       "title": "Get Comment Detail"
     },
-    "description": "Get full details for a single comment.\n\n    Returns the comment text field, organization, submitter info (if public),\n    tracking number, and duplicate comment count. Many comments put their\n    substance in attachments and the text field only says \"See attached\";\n    include_attachments=True returns the attachment download URLs.\n\n    Some fields (firstName, lastName, organization) are agency-configurable\n    and may be hidden.\n    ",
+    "description": "Get full details for a single comment.\n\n    Returns the comment text field, organization, submitter info (if public),\n    tracking number, and duplicate comment count. Many comments put their\n    substance in attachments and the text field only says \"See attached\";\n    include_attachments=True returns the attachment download URLs.\n\n    Some fields (firstName, lastName, organization) are agency-configurable\n    and may be hidden. The comment text comes back as plain text (HTML\n    breaks become newlines; tags and entities are decoded).\n    ",
     "inputSchema": {
       "properties": {
         "comment_id": {
@@ -125,7 +125,7 @@
       "readOnlyHint": true,
       "title": "Get Document Detail"
     },
-    "description": "Get full details for a single Regulations.gov document.\n\n    Returns fileFormats (download URLs), cfrPart, displayProperties, and\n    other detail fields not available in search results.\n\n    Set include_attachments=True to get attachment objects with download URLs.\n\n    document_id format: FAR-2023-0008-0023\n    ",
+    "description": "Get full details for a single Regulations.gov document.\n\n    Returns fileFormats (download URLs), cfrPart, displayProperties, and\n    other detail fields not available in search results.\n\n    Set include_attachments=True to get attachment objects with download URLs.\n\n    Comment deadlines: attributes.commentDeadlineEastern is the closing time\n    in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw\n    commentEndDateUtc is a UTC instant whose date reads one day late.\n\n    document_id format: FAR-2023-0008-0023\n    ",
     "inputSchema": {
       "properties": {
         "document_id": {
@@ -158,7 +158,7 @@
       "readOnlyHint": true,
       "title": "Open Comment Periods"
     },
-    "description": "Find documents with currently open comment periods.\n\n    Searches for documents where withinCommentPeriod=true, sorted by\n    soonest closing deadline (ascending commentEndDate), so page 1 holds\n    the deadlines you can still act on. Returns document IDs, titles,\n    agencies, comment end dates, docket IDs, and the API-true total_open.\n    When more documents exist, truncated=true and next_page_number gives\n    the page that continues the list (later pages close later).\n\n    page_size: 5-100 documents per page (default 25). page_number: 1-40.\n\n    Default searches FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA in a single\n    comma-joined query. Pass agency_ids to narrow or expand the scope. An\n    empty list is rejected; pass None to use the defaults.\n    ",
+    "description": "Find documents with currently open comment periods.\n\n    Searches for documents where withinCommentPeriod=true, sorted by\n    soonest closing deadline (ascending commentEndDate), so page 1 holds\n    the deadlines you can still act on. Returns document IDs, titles,\n    agencies, document types and subtypes, Federal Register document\n    numbers, comment deadlines, docket IDs, and the API-true total_open.\n    comment_deadline is the closing time in Eastern time (e.g. 'Oct 22,\n    2026 11:59 PM ET'); comment_end_date_utc is the raw UTC instant, whose\n    date reads one day late.\n    When more documents exist, truncated=true and next_page_number gives\n    the page that continues the list (later pages close later).\n\n    page_size: 5-100 documents per page (default 25). page_number: 1-40.\n\n    Default searches FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA in a single\n    comma-joined query. Pass agency_ids to narrow or expand the scope. An\n    empty list is rejected; pass None to use the defaults. Most open DOD and\n    VA documents are Paperwork Reduction Act and Privacy Act notices; for\n    rules only, pass document_type='Proposed Rule' (exact casing).\n    ",
     "inputSchema": {
       "properties": {
         "agency_ids": {
@@ -175,6 +175,25 @@
           ],
           "default": null,
           "title": "Agency Ids"
+        },
+        "document_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "Proposed Rule",
+                "Rule",
+                "Notice",
+                "Supporting & Related Material",
+                "Other"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Document Type"
         },
         "page_number": {
           "default": 1,
@@ -204,7 +223,7 @@
       "readOnlyHint": true,
       "title": "Search Comments"
     },
-    "description": "Search public comments on Regulations.gov.\n\n    To find comments on a specific document, use comment_on_id with the\n    hex objectId from document detail/search results (attributes.objectId,\n    e.g. '0900006486531e6b'). The human-readable documentId is REJECTED\n    here because the API silently returns 0 comments for it.\n\n    docket_id filters comments to all documents in a docket.\n\n    Page size: 5-100; page_number 1-40. Comments sorted by '-postedDate' by\n    default. For larger result sets, split the query into posted_date_ge/le\n    windows. Most comment text is in attachments; get_comment_detail with\n    include_attachments=True returns their download URLs.\n    ",
+    "description": "Search public comments on Regulations.gov.\n\n    To find comments on a specific document, use comment_on_id with the\n    hex objectId from document detail/search results (attributes.objectId,\n    e.g. '0900006486531e6b'). The human-readable documentId is REJECTED\n    here because the API silently returns 0 comments for it.\n\n    docket_id filters comments to all documents in a docket.\n\n    search_term is a full-text match, including attachment text; results\n    follow sort, not relevance. Quote a phrase ('\"Professional Services\n    Council\"') to match it exactly.\n\n    posted_comments (= meta.totalElements) counts comments posted publicly,\n    not comments received; mass-mail duplicates and unposted comments are\n    not in it, so the agency's received count can be much higher.\n\n    Search rows carry no organization (the API leaves it out), and many\n    titles are only \"Comment on FR Doc # ...\". For \"who commented\" questions\n    set include_organization=True (page_size up to 25): each row gets the\n    submitter's organization from its comment detail. Rows without one were\n    filed by individuals or the agency hid the field.\n\n    Page size: 5-100; page_number 1-40. Comments sorted by '-postedDate' by\n    default. The API serves 40 pages; when more comments match,\n    page_limit_note (and truncated=true on page 40) says how many are out of\n    reach. Split the query into posted_date_ge/le windows. Most comment text is in attachments; get_comment_detail with\n    include_attachments=True returns their download URLs.\n    ",
     "inputSchema": {
       "properties": {
         "agency_id": {
@@ -242,6 +261,11 @@
           ],
           "default": null,
           "title": "Docket Id"
+        },
+        "include_organization": {
+          "default": false,
+          "title": "Include Organization",
+          "type": "boolean"
         },
         "page_number": {
           "default": 1,
@@ -312,7 +336,7 @@
       "readOnlyHint": true,
       "title": "Search Dockets"
     },
-    "description": "Search Regulations.gov dockets.\n\n    Dockets are containers for related regulatory documents (proposed rules,\n    comments, supporting materials). FAR cases, DFARS cases, and agency\n    rulemaking actions each have a docket.\n\n    docket_type is CASE-SENSITIVE: 'Rulemaking' or 'Nonrulemaking'.\n\n    lastModifiedDate format: 'YYYY-MM-DD HH:MM:SS' (space-separated, NOT ISO).\n    This is a Regulations.gov quirk; ISO 8601 is rejected.\n\n    Limited filters: only searchTerm, agencyId, docketType, lastModifiedDate.\n\n    Page size: 5-100; page_number 1-40. For larger result sets, split the\n    query into last_modified_date_ge/le windows.\n    ",
+    "description": "Search Regulations.gov dockets.\n\n    Dockets are containers for related regulatory documents (proposed rules,\n    comments, supporting materials). FAR cases, DFARS cases, and agency\n    rulemaking actions each have a docket.\n\n    docket_type is CASE-SENSITIVE: 'Rulemaking' or 'Nonrulemaking'.\n\n    lastModifiedDate format: 'YYYY-MM-DD HH:MM:SS' (space-separated, NOT ISO).\n    This is a Regulations.gov quirk; ISO 8601 is rejected.\n\n    Limited filters: only searchTerm, agencyId, docketType, lastModifiedDate.\n\n    sort: 'title', 'docketId', 'lastModifiedDate'; prefix '-' for descending\n    ('-lastModifiedDate' lists the most recently active dockets first).\n    Catch-all dockets such as DARS_FRDOC_0001 and SBA_FRDOC_0001 hold\n    miscellaneous Federal Register documents and often top that list.\n\n    Page size: 5-100; page_number 1-40. The API serves 40 pages; when more\n    dockets match, page_limit_note (and truncated=true on page 40) says how\n    many are out of reach. Split the query into last_modified_date_ge/le\n    windows.\n    ",
     "inputSchema": {
       "properties": {
         "agency_id": {
@@ -419,7 +443,7 @@
       "readOnlyHint": true,
       "title": "Search Documents"
     },
-    "description": "Search Regulations.gov documents (proposed rules, final rules, notices).\n\n    Filter values are CASE-SENSITIVE. Use exact casing:\n    - document_type: 'Proposed Rule', 'Rule', 'Notice', 'Supporting & Related Material', 'Other'\n    - Lowercase values silently return 0 results (no error)\n\n    Key parameters:\n    - agency_id: FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA, etc.\n      Comma-separate for multiple agencies ('FAR,GSA'). Empty string is rejected.\n    - docket_id: e.g., 'FAR-2023-0008' for a specific FAR case\n    - within_comment_period: True to find documents currently accepting\n      comments. False is NOT supported by the API (it 400s); omit the\n      parameter instead to search regardless of comment status.\n    - posted_date_ge/le: YYYY-MM-DD format (calendar-checked)\n    - comment_end_date_ge/le: YYYY-MM-DD format\n\n    Response meta.facets gives the top counts by document type, agency,\n    and comment period status; meta.totalElements is the full match count.\n\n    Page size: 5-100. page_number: 1-40. For larger result sets, split the\n    query into posted_date_ge/le windows.\n\n    sort: '-postedDate' (newest first, default), 'postedDate', '-commentEndDate',\n    'lastModifiedDate', 'title', 'documentId'. Comma-separate for\n    multi-field sorts ('lastModifiedDate,documentId').\n    ",
+    "description": "Search Regulations.gov documents (proposed rules, final rules, notices).\n\n    Filter values are CASE-SENSITIVE. Use exact casing:\n    - document_type: 'Proposed Rule', 'Rule', 'Notice', 'Supporting & Related Material', 'Other'\n    - Lowercase values silently return 0 results (no error)\n\n    Key parameters:\n    - search_term: full-text match, including attachment text. Results\n      follow sort (newest first by default), not relevance, so an unquoted\n      multi-word term puts loosely matching recent documents first; quote\n      a phrase ('\"Pay Equity and Transparency\"') to match it exactly.\n    - agency_id: FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA, etc.\n      Comma-separate for multiple agencies ('FAR,GSA'). Empty string is rejected.\n    - docket_id: e.g., 'FAR-2023-0008' for a specific FAR case\n    - within_comment_period: True to find documents currently accepting\n      comments. False is NOT supported by the API (it 400s); omit the\n      parameter instead to search regardless of comment status.\n    - posted_date_ge/le: YYYY-MM-DD format (calendar-checked)\n    - comment_end_date_ge/le: YYYY-MM-DD format\n\n    Response meta.facets gives the top counts by document type, agency,\n    and comment period status; a facet the query filtered on is left out,\n    because the API counts it site-wide. meta.totalElements is the full\n    match count.\n\n    Comment deadlines: attributes.commentDeadlineEastern is the closing time\n    in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw\n    commentEndDateUtc is a UTC instant whose date reads one day late.\n\n    Page size: 5-100. page_number: 1-40. The API serves 40 pages; when more\n    records match, page_limit_note (and truncated=true on page 40) says how\n    many are out of reach. Split the query into posted_date_ge/le windows.\n\n    sort: '-postedDate' (newest first, default), 'postedDate', '-commentEndDate',\n    'lastModifiedDate', 'title', 'documentId'. Comma-separate for\n    multi-field sorts ('lastModifiedDate,documentId').\n    ",
     "inputSchema": {
       "properties": {
         "agency_id": {
