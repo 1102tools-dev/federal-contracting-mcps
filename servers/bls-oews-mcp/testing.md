@@ -30,8 +30,36 @@ Teacher annual and performer hourly followups complete the research task.
 
 Candidate 1.1.4: 298 Python tests collected, 297 passed and one optional live
 parity test skipped; native Worker 31 passed; 227 parity cases, 216 identical,
-11 documented differences and zero unexpected differences. Published release
-verification is pending until the coordinator completes the release.
+11 documented differences and zero unexpected differences. Both frozen MCP
+2.0.0 and fresh candidate MCP 2.3.0 suites had these measured results; the optional
+live parity test was skipped in those suites.
+
+Published verification completed after scoped release `bls-oews/v1.1.4`, workflow
+run [38069372010](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38069372010),
+from source `5ba4a4bac4ecd098da1c48dcd09594d9e38fcf1f`. A fresh official PyPI
+installation by package name with cache disabled resolved MCP 2.3.0. The installed
+CLI and public HTTP service each passed a separate replay of all 46 original
+questions and followups, including the corrected teacher/performer explanations,
+successful alternate wage measures, physician lower-bound explanation, and all
+numeric/source/IGCE arithmetic checks. The public service reported version 1.1.4
+and the exact release SHA; both surfaces preserved all eight reviewed tool definitions.
+
+The published wheel and sdist matched their official PyPI SHA-256 digests. All
+nine package payload files were identical across wheel, sdist and installed package:
+
+- Wheel `bls_oews_mcp-1.1.4-py3-none-any.whl`:
+  `1cb5182ff1d5486d83919646401aee67fccf04a7b1eb15696eeca6d3e9d46c74`.
+- Sdist `bls_oews_mcp-1.1.4.tar.gz`:
+  `e28046ec92d7b1ff977fc4410c17731a1d1c488aab7acf881ce73d03de57bb97`.
+
+Twenty current official BLS API cells and their original footnotes independently
+matched the bundled May 2025 source. The flat-file footnote refresh returned HTTP
+403; that source-access limitation is retained rather than claimed as a successful
+refresh. Published content replays are separate from the candidate regression
+suite counts above. Evidence is retained in Workspace's
+`Artifacts/mcp-e2e-20261010/round2/bls-oews`, including
+`published-final-completion.json`, `published-cli-final.json`, `public-final.json`,
+`published-payload-final.json` and `official-api-source-check.json`.
 
 ## 1.1.3 installed CLI compatibility correction (2026-10-10)
 
