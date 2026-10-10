@@ -12,6 +12,8 @@ No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
 The published 1.1.7 package recognizes explicitly defined numbered FAR subtypes such as individual surety, without falsely reporting the term absent. The new Round 5 corpus covers all 13 tools. Its actual official PyPI console and public service each completed 95 research calls; all 95 shared answers matched exactly. Ninety-five primary-source comparisons and twelve additional source checks passed per surface against 66 retained primary captures, with a separate fresh metadata check confirming unchanged snapshots for all 12 audited titles. The actual published SDK 2.3.0 suite passed 343 cases with 118 explicit live skips (461 collected).
 
+The completed Round 6 content audit used 85 new ordinary and power-user calls per surface across all 13 tools and 14 titles, with no new confirmed P0–P3 findings. All 85 console/public answers agreed substantively (83 exactly); 170 primary-source comparisons and 33 supplementary checks passed against 53 fresh official captures. Complete regulatory pages, numeric tables and source-discovered historical comparisons were verified, including dated recovery from a disclosed large-comparison limit. See [testing.md](testing.md) for scope and source limits.
+
 ## Local or hosted
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
