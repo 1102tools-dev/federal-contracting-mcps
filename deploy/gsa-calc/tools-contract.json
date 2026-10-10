@@ -6,7 +6,7 @@
       "readOnlyHint": true,
       "title": "Exact Search"
     },
-    "description": "Exact match search on a specific field.\n\n    Use suggest_contains() first to discover the exact field value, then\n    pass it here. The API requires exact string matching -- partial matches\n    return 0 results.\n\n    Fields: labor_category, vendor_name, idv_piid (GSA MAS contract number).\n    ",
+    "description": "Exact match search on a specific field.\n\n    Use suggest_contains() first to discover the exact field value, then\n    pass it here. The API requires exact string matching -- partial matches\n    return 0 results.\n\n    Fields: labor_category, vendor_name, idv_piid (GSA MAS contract number).\n\n    For a discovered value containing a colon, GSA's exact-field search can\n    return only the text before the colon. This tool uses literal keyword\n    search instead and accepts its statistics only when the complete,\n    non-approximate requested-field aggregation proves every rate row has\n    the exact value. If that cannot be verified, it withholds the misleading\n    population and gives keyword_search recovery guidance. Source statistics\n    remain unchanged; empty results and thin samples retain their limits.\n    ",
     "inputSchema": {
       "properties": {
         "business_size": {

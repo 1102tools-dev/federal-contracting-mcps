@@ -9,14 +9,14 @@ older live test or establish an official provider quota.
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The MCP ships with 438 regression tests (317 offline plus 121 live-gated).
+This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The 1.0.17 candidate ships with 443 regression tests (322 offline plus 121 live-gated).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 438 (317 offline, 121 live-gated) |
-| Tests per tool | 54.8 |
-| Audit rounds completed | 11 |
+| Total regression tests | 443 (322 offline, 121 live-gated) |
+| Tests per tool | 55.4 |
+| Audit rounds completed | 12 |
 | P1 crashes (shape-shift) found and fixed | 19 |
 | P1 silent-wrong-data bugs found and fixed | 33 (30 in 0.2.x, 3 in round 6) |
 | P2 validation gaps found and fixed | 20 (19 in 0.2.x, 1 in round 6) |
@@ -24,7 +24,7 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | Round 5 Hypothesis + live findings | 0 (shape-only assertions; see round 6 for what that missed) |
 | Round 6 differential-count findings | 3 high-severity (worksite ignored, experience_min exact-match, vendor_rate_card unpageable) + 4 dead hardcoded SINs + 1 validation gap |
 | Retroactive additional findings | 12 |
-| Current release | 1.0.16 |
+| Current candidate | 1.0.17 (published baseline: 1.0.16) |
 | PyPI status | Published as `gsa-calc-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -64,7 +64,7 @@ Prior unit tests in v0.1.x awaited raw coroutines and mocked the HTTP layer, whi
 
 ### Live audit status
 
-All retroactive rounds included live calls against the production CALC+ API. The repository includes 103 live-gated regression tests executable via `GSA_CALC_LIVE_TESTS=1 pytest` covering real wildcard search, exact-match lookup, IGCE benchmark stats, price reasonableness, vendor rate card, SIN analysis, filtered browse with real filters applied, and (round 6) differential count assertions. No API key is required; CALC+ is a free, public API behind a WAF. Note: earlier revisions of this document gave the env var as `CALC_LIVE_TESTS=1`, which matches nothing in the test code and silently runs zero live tests.
+All retroactive rounds included live calls against the production CALC+ API. The repository includes 121 live-gated regression tests executable via `GSA_CALC_LIVE_TESTS=1 pytest` covering real wildcard search, exact-match lookup, IGCE benchmark stats, price reasonableness, vendor rate card, SIN analysis, filtered browse with real filters applied, and (round 6) differential count assertions. No API key is required; CALC+ is a free, public API behind a WAF. Note: earlier revisions of this document gave the env var as `CALC_LIVE_TESTS=1`, which matches nothing in the test code and silently runs zero live tests.
 
 ## Issues Found and Fixed
 
@@ -146,7 +146,7 @@ Rounds 1-5 asserted response shape on live calls: `isinstance(data, dict)`. A fi
 
 ## Test Coverage
 
-The current suite collects 433 regression tests: 312 offline and 121 live-gated. The offline suite passed with all 121 optional live tests skipped; selected live checks are recorded below. Collection counts do not imply every optional live test was run.
+The current 1.0.17 candidate suite collects 443 regression tests: 322 offline and 121 live-gated. Both candidate SDK lanes passed 322 tests with all 121 optional live tests skipped; selected source checks are recorded below. Collection counts do not imply every optional live test was run.
 
 | File | Purpose | Test count |
 |---|---|---|
@@ -156,6 +156,9 @@ The current suite collects 433 regression tests: 312 offline and 121 live-gated.
 | `tests/test_audit_r7.py` | Round-7 live anchors | 4 |
 | `tests/test_content_fixes_2026_10.py` | Content regressions and direct GSA comparisons | 30 |
 | `tests/test_e2e_audit_2026_10.py` | Cross-field populations, suggestion totals and undefined statistics | 19 |
+| `tests/test_grade_specific_comparison.py` | Exact-grade/mixed-title population and small-sample controls | 3 |
+| `tests/test_sdk_worksite_recovery.py` | Actual stdio worksite-guidance recovery | 2 |
+| `tests/test_literal_colon_exact_title.py` | Literal colon-title/graduate eligibility and unverified-source controls | 5 |
 | `tests/test_http.py` | HTTP response and upstream error handling | 2 |
 | `tests/test_throughput.py` | Request pacing, concurrency and budgets | 12 |
 | `tests/test_response_cache_hosted.py` | Hosted cache safeguards | 5 |
@@ -598,3 +601,117 @@ before/after checks; historical sections remain intact. No runtime correction,
 package bump, partial fix or unresolved product defect is required. Evidence is
 retained under `Artifacts/mcp-e2e-20261010/round5/gsa-calc/`; independent review
 and round closure remain coordinator-owned.
+
+
+## Round 6: literal ocean-title recovery and new eligible market workflows
+
+The fresh uncached official by-name **1.0.16** installation used Python 3.12
+and actual MCP SDK **2.3.0** from site-packages. Public health/initialization
+confirmed source `4efbd9fb`; installed, official wheel and source modules
+matched. All eight installed/public/source tool definitions matched. The
+published baseline full suite measured **317 passed / 121 skipped / 438
+collected**. Optional live tests were not enabled.
+
+The new audit completed **154 installed registered-tool calls and 154 actual
+public HTTPS calls across all eight tools**, with **165 unaugmented parsed GSA
+responses** captured before application additions. These captures are not raw
+transport bytes. Separate actual installed console stdio runs completed **25
+calls on the published baseline and 25 on candidate 1.0.17**, including both
+originals and useful recoveries; the 154-case corpus is not 154 stdio calls.
+Ten new discovery families covered oceanography, chemistry, toxicology,
+microbiology, hydrology, linguistics, editing, nuclear engineering, cost
+estimating and actuarial services. Six vendor discovery families covered
+Guidehouse, Tetra Tech, Jacobs, Research Triangle, Cadmus and Mathematica.
+Source-derived exact titles, alternate duties, BA/MA lead eligibility,
+junior price/experience segments, actual hit-ID exclusions, vendor continuation,
+a complete Guidehouse Digital card, source SIN/clearance followups and credential
+segments completed the supported work. Nine caller-composed two-role ceiling
+scenarios use 480 and 960 hours; actual duty/grade/worksite suitability remains
+the caller's decision, and these calculations are not extra tool requests.
+
+### Confirmed P2 and source-derived correction
+
+Oceanographer discovery was empty. The supported broader Ocean discovery
+returned the actual title **Engineer 1: Sr. Naval Architect Sr. Marine Engineer
+Sr. Ocean Engineer**, with one rate. Asking exact_search for that literal title
+returned **91 generic Engineer 1 rates** on both installed/public surfaces and
+the actual console, with a pooled median of about $99.69. GSA's exact-field
+endpoint truncates the value at its internal colon. The supported full literal
+keyword query instead returns the one real title at **$176.10**, BA/15 years,
+contractor facility. This is a specific source-returned ceiling, not a paid
+price or a robust population benchmark.
+
+An ordinary MA-qualified followup exposed the same cause: the old exact query
+returned two generic Engineer 1 MA rates; the literal title has **zero**
+MA-qualified rows. A separately discovered **Ocean Engineer I** still has its
+own one-row **$72.54** ceiling, and is not silently substituted for the original
+title. Source floating-point fields remain unchanged; dollar display rounds
+176.10000610351562 and 72.54000091552734 to those amounts.
+
+Candidate **1.0.17** uses the supported literal keyword query for values
+containing a colon. It returns full source statistics only after the complete,
+non-approximate requested-field aggregation proves that every rate row has the
+exact value, including an explicitly verified empty eligible population.
+Nonexact, capped or approximate populations are withheld with actionable
+keyword/discovery recovery guidance. Ordinary non-colon exact queries retain
+the original query. No unsupported filters or reconstructed source statistics
+are introduced. Only exact_search's description changes; eight tool identities,
+schemas and annotations remain. Actual candidate console tools/list matches
+the generated contract.
+
+Source-derived tests reproduce both wrong ordinary answers and preserve the
+Ocean Engineer I control. Actual broad/nonexact and capped/approximate source
+captures test conservative withholding. The final focused file has **five
+cases**; the earlier four-case reviewed head is retained in the audit evidence.
+Final full candidate wheel lanes with frozen SDK **2.0.0** and fresh SDK
+**2.3.0** each measured **322 passed / 121 skipped / 443 collected**. SDK/package
+module paths and commands are recorded separately. Earlier editable-environment
+import/setup failures and corrective installs remain in the evidence; they are
+not passing test lanes or content findings. Package build and version guards
+passed. No new Worker checks were run for unchanged wrapper code.
+
+The **154-case candidate registered retained-source replay** preserves 152
+answers and corrects the two originals. It is an adapter lane, not a fresh
+public/source/stdio claim. All **1,428 candidate source checks**, **1,759
+baseline source/behavior checks** and **613 semantic/workflow checks** passed.
+Baseline data comparisons contain 13 expected exact-title row failures under
+the one confirmed P2; they are not 13 findings. Remaining checks pass with the
+source qualifications below.
+
+### Source variation, limits and honest exclusions
+
+There were **77 percentile scalar differences**, with a maximum **$1.977411/hour**.
+For the worst P90, two direct primary repeats retained count 656 and identical
+displayed min/max/mean/std but did **not** reproduce the public P90. The public
+raw percentile aggregation equals its reported value. The specific provider
+algorithm/cache/cause is unconfirmed; this is not an all-identical or latest
+exact-percentile parity claim. Editor discovery retains the same 100 title
+names and leading suggestion; shared counts differ by at most two within the
+source's published error bound of five, with corresponding ordering shifts.
+
+Ten initial harness attempts incorrectly passed price filters to benchmark and
+proposal tools that do not support them. Their errors are preserved and
+excluded from new valid-question coverage; the corrected workflows explicitly
+separate price-capped exact rows from the wider eligible benchmark population.
+An initial education assertion used the wrong raw aggregation, and initial
+regression display-price assertions ignored source float precision. These
+harness mistakes and corrected checks are retained separately. They are not
+product findings. Existing 500-attempt hourly safety policy was retained with
+no reset/override or observed budget block. Capped suggestions/title lists,
+10,000-row windows, sort ties, unsupported worksite filtering, exact-search
+SIN/clearance gaps, thin/empty samples, grade-specific comparability and
+ceiling-versus-paid-price limits remain.
+
+### Reopened documentation correction
+
+Round 5 corrected the executive summary/current-version claims, but its prior
+fully-fixed acceptance did not cover another current Test Coverage paragraph
+and table: those still claimed **433 collected / 312 offline** and omitted the
+three grade tests and two stdio tests. This is a reopened residual of the same
+previously counted CALC-R5-01 P3, not another distinct finding. The original
+Round 5 records remain unchanged. Round 6 evidence traces **433 stale claims →
+438 measured published-baseline tests → 443 measured candidate tests**. All
+current summary/coverage/map/readme claims now use 443/322/121, while dated
+historical counts retain their original context. Final publication, current
+GitHub-document verification and round closure remain coordinator-owned and
+pending; no tag, release, deployment or next audit is claimed here.
