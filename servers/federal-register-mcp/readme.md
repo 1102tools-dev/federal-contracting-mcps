@@ -1,6 +1,6 @@
 # federal-register-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 282](https://img.shields.io/badge/regression%20tests-282-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 286](https://img.shields.io/badge/regression%20tests-286-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/federal-register-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the Federal Register API. Proposed rules, final
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through eight audit rounds and integration testing against the live Federal Register API. 282 collected regression tests (177 offline, 105 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines, FAR Council agency mapping, presidential filters, parent-agency public inspection, and page limits. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through nine audit rounds and integration testing against the live Federal Register API. 286 collected regression tests (181 offline, 105 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines, FAR Council agency mapping, presidential filters, parent-agency public inspection, and page limits. See [testing.md](testing.md) for the full testing record.*
 
 ## Local or hosted
 
@@ -86,3 +86,7 @@ Together they cover the full regulatory pipeline. Use `far_case_history` to trac
 ## License
 
 MIT
+
+### Open-comment completeness
+
+`open_comment_periods` sorts the documents it scans by deadline. `complete` says whether every matching document was scanned; `truncated` also flags a result shortened by `limit`. An incomplete scan can omit a deadline earlier than one returned. Narrow with agencies or keywords, or use `search_documents` with `comment_date_gte`/`comment_date_lte` to verify a deadline window. FAR Council answers preserve the underlying scan metadata and flag lower-bound totals.
