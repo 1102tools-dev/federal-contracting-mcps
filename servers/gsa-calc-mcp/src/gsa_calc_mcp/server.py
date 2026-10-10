@@ -734,6 +734,7 @@ def _title_summary(data: Any, top_n: int) -> dict[str, Any]:
     }
     if not complete:
         out["distinct_min"] = len(pairs)
+        out["records_in_titles_not_listed"] = other
     return out
 
 
@@ -1368,7 +1369,13 @@ async def sin_analysis(
     """Get rate distribution and statistics for a specific SIN.
 
     Returns rate statistics, education breakdown, business size breakdown,
-    and sample records for a GSA MAS Special Item Number.
+    and labor_categories for a GSA MAS Special Item Number: the 25 titles
+    with the most rates on the SIN, with counts (exact, case-sensitive
+    titles). It does not return individual rate rows or per-title prices;
+    for what a title costs on the SIN, call igce_benchmark(title, sin=...).
+    When GSA's 500-title list is cut off, labor_categories.distinct is null
+    and records_in_titles_not_listed counts the rates under titles not
+    listed.
 
     Common SINs for professional services (live-verified to return records):
     - 54151S: IT Professional Services
@@ -1394,6 +1401,9 @@ async def sin_analysis(
     result: dict[str, Any] = {
         "sin": sin_code,
         **stats,
+        # The titles on the SIN, most rates first (the Q14 "what labor
+        # categories are on 54151S" question had no answer before).
+        "labor_categories": _title_summary(data, top_n=25),
     }
     if not stats.get("total_rates"):
         # A valid-looking SIN with zero records is usually a retired code,

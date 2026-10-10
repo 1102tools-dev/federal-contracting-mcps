@@ -398,3 +398,37 @@ def test_live_g3_pooled_titles_match_api():
     assert r["matched_titles"]["top"] == want
     if lc.get("sum_other_doc_count", 0) == 0:
         assert r["matched_titles"]["distinct"] == len(lc["buckets"])
+
+
+# ---------------------------------------------------------------------------
+# G-8: sin_analysis lists the labor categories on the SIN
+# ---------------------------------------------------------------------------
+
+def test_g8_sin_analysis_lists_top_categories(monkeypatch):
+    titles = [("Project Manager", 1070), ("Program Manager", 871), ("Technical Writer", 441)]
+    body = _pooled_body(titles, 89084)
+    monkeypatch.setattr(srv, "_get", _MockGet(body))
+    r = _payload(asyncio.run(_call("sin_analysis", sin_code="54151S")))
+    lc = r["labor_categories"]
+    assert lc["top"][0] == {"title": "Project Manager", "count": 1070}
+    assert lc["distinct"] is None and lc["distinct_min"] == 3
+    assert lc["records_in_titles_not_listed"] == 89084
+
+
+@live
+def test_live_g8_sin_54151S_categories_match_api():
+    api = _api("filter=sin:54151S&page=1&page_size=1&ordering=current_price&sort=asc")
+    agg = api["aggregations"]["labor_category"]
+    r = _payload(asyncio.run(_call("sin_analysis", sin_code="54151S", page_size=1)))
+    # On a SIN this large GSA's per-title counts wobble by a record or two
+    # between identical calls (sharded terms aggregation), so compare titles
+    # exactly and counts within 1%.
+    want = {b["key"]: b["doc_count"] for b in agg["buckets"][:25]}
+    got = {t["title"]: t["count"] for t in r["labor_categories"]["top"]}
+    assert len(got) == 25
+    shared = set(got) & set(want)
+    assert len(shared) >= 23, (got, want)
+    for k in shared:
+        assert abs(got[k] - want[k]) <= max(2, want[k] * 0.01), (k, got[k], want[k])
+    other = r["labor_categories"]["records_in_titles_not_listed"]
+    assert abs(other - agg["sum_other_doc_count"]) <= agg["sum_other_doc_count"] * 0.01

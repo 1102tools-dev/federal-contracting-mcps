@@ -808,7 +808,7 @@
       "readOnlyHint": true,
       "title": "SIN Analysis"
     },
-    "description": "Get rate distribution and statistics for a specific SIN.\n\n    Returns rate statistics, education breakdown, business size breakdown,\n    and sample records for a GSA MAS Special Item Number.\n\n    Common SINs for professional services (live-verified to return records):\n    - 54151S: IT Professional Services\n    - 541611: Management and Financial Consulting\n    - 541715: Engineering R&D\n    - 541330ENG: Engineering Services\n    - 561210FAC: Facilities Maintenance and Management\n    - 611430: Training\n    ",
+    "description": "Get rate distribution and statistics for a specific SIN.\n\n    Returns rate statistics, education breakdown, business size breakdown,\n    and labor_categories for a GSA MAS Special Item Number: the 25 titles\n    with the most rates on the SIN, with counts (exact, case-sensitive\n    titles). It does not return individual rate rows or per-title prices;\n    for what a title costs on the SIN, call igce_benchmark(title, sin=...).\n    When GSA's 500-title list is cut off, labor_categories.distinct is null\n    and records_in_titles_not_listed counts the rates under titles not\n    listed.\n\n    Common SINs for professional services (live-verified to return records):\n    - 54151S: IT Professional Services\n    - 541611: Management and Financial Consulting\n    - 541715: Engineering R&D\n    - 541330ENG: Engineering Services\n    - 561210FAC: Facilities Maintenance and Management\n    - 611430: Training\n    ",
     "inputSchema": {
       "properties": {
         "sin_code": {
