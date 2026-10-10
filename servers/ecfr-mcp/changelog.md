@@ -40,6 +40,24 @@ Fixes from the 2026-10-10 bug hunt. All 13 tools keep their names.
   `identical`. When both texts together are too long, it keeps the changes
   and leaves out the full texts, and says so.
 
+**Definitions** (`find_far_definition`)
+
+- Rewritten. 2.101 is indexed by defined term, and each matching definition
+  comes back whole (the defining paragraph and every paragraph under it),
+  first, as `kind: "definition"`. Before, a fixed window cut 45 of the 253
+  definitions while reporting `truncated: false`.
+- Names match the way people type them: case, hyphens, spacing, plurals, a
+  trailing "means", and the acronym 2.101 puts in a name ("service-disabled
+  veteran-owned small business concern", "SDVOSB concern", "COTS",
+  "commercial services", "contract means", "SAT").
+- Other paragraphs that use the term match on whole words only (so
+  "allowable cost" no longer returns "Unallowable cost") and come after the
+  definition as `kind: "mention"`, each naming the definition it sits in.
+- When 2.101 doesn't define a term, the rest of the FAR is searched for
+  `"<term>" means` and the definitions found are returned in
+  `defined_elsewhere` (for example 19.001 and 52.219-14 for "similarly
+  situated entity"), with `did_you_mean` suggestions from 2.101.
+
 ## 1.0.13
 
 - Hosted service only: the machine running the service can give the answer cache

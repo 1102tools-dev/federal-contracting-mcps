@@ -125,3 +125,115 @@ def test_compare_versions_drops_full_texts_when_too_long(mock_xml):
     assert "paragraphs" not in r["before"] and "paragraphs" not in r["after"]
     assert r["change_count"] == 1
     assert r["changes"][0]["after"][0].startswith("*Supplies* now means")
+
+
+# --- find_far_definition: whole definitions, found by the names people type -
+
+def _definition_terms(r):
+    return [m["term"] for m in r["matches"] if m["kind"] == "definition"]
+
+
+@pytest.mark.parametrize("term,expected", [
+    ("service-disabled veteran-owned small business concern",
+     "Service-disabled veteran-owned small business (SDVOSB) concern"),
+    ("SDVOSB concern", "Service-disabled veteran-owned small business (SDVOSB) concern"),
+    ("commercially available off-the-shelf item", "Commercially available off-the-shelf (COTS) item"),
+    ("COTS", "Commercially available off-the-shelf (COTS) item"),
+    ("commercial services", "Commercial service"),
+    ("contract means", "Contract"),
+    ("Micro-purchase threshold means", "Micro-purchase threshold"),
+    ("micropurchase threshold", "Micro-purchase threshold"),
+    ("non-developmental item", "Nondevelopmental item"),
+    ("sole-source acquisition", "Sole source acquisition"),
+    ("offerors", "Offeror"),
+    ("SAT", "Simplified acquisition threshold"),
+    ("G&A expense", "General and administrative (G&A) expense"),
+    ("head of the agency", "Head of the agency"),
+    ("database", "Computer database"),
+])
+def test_definition_found_by_natural_name(mock_xml, term, expected):
+    mock_xml(lambda path, params: _fixture("t48_2.101.xml"))
+    r = _run(srv.find_far_definition(term))
+    assert _definition_terms(r)[0] == expected
+    assert r["matches"][0]["kind"] == "definition"
+
+
+@pytest.mark.parametrize("term", ["supplies", "United States", "contract"])
+def test_definition_comes_before_mentions(mock_xml, term):
+    mock_xml(lambda path, params: _fixture("t48_2.101.xml"))
+    r = _run(srv.find_far_definition(term))
+    first = r["matches"][0]
+    assert first["kind"] == "definition"
+    assert first["term"].lower() == term.lower()
+    assert all(m["kind"] == "mention" and m.get("term") for m in r["matches"][1:])
+
+
+def test_whole_definition_block_is_returned(mock_xml):
+    mock_xml(lambda path, params: _fixture("t48_2.101.xml"))
+    r = _run(srv.find_far_definition("inherently governmental function"))
+    block = r["matches"][0]["context"]
+    text = " ".join(block)
+    # The hunt saw (1)(iii) and (iv) go missing from the middle.
+    assert "Significantly affect the life, liberty, or property of private persons" in text
+    assert "Commission, appoint, direct, or control officers or employees of the United States" in text
+    assert block[0].startswith("*Inherently governmental function* means")
+    r = _run(srv.find_far_definition("commercial product"))
+    assert len(r["matches"][0]["context"]) == 11
+    assert r["truncated"] is False
+
+
+def test_whole_words_only(mock_xml):
+    calls = mock_xml(lambda path, params: _fixture("t48_2.101.xml"))
+
+    async def nothing(path, params=None, timeout=None):
+        return {"results": []}
+
+    srv._get_json, saved = nothing, srv._get_json
+    try:
+        r = _run(srv.find_far_definition("allowable cost"))
+    finally:
+        srv._get_json = saved
+    assert r["definition_count"] == 0
+    assert all("Unallowable" not in " ".join(m["context"]) for m in r["matches"])
+    assert "Unallowable cost" in r["did_you_mean"]
+    assert "does not define" in r["note"]
+    assert len(calls.calls) == 1
+
+
+_DEFS_19 = """<DIV8 N="19.001" TYPE="SECTION"><HEAD>19.001 Definitions.</HEAD>
+<P>As used in this part—</P>
+<P><I>Concern</I> means any business entity.</P>
+<P><I>Similarly situated entity</I> means a first-tier subcontractor, including an independent contractor, that—</P>
+<P>(1) Has the same small business program status as that which qualified the prime contractor; and</P>
+<P>(2) Is small for the NAICS code that the prime contractor assigned to the subcontract.</P>
+<P><I>Subcontract</I> means something else.</P></DIV8>"""
+_CLAUSE = """<DIV8 N="19.307" TYPE="SECTION"><HEAD>19.307 Protesting.</HEAD>
+<P>(a) A subcontractor that is not a similarly situated entity, as defined in 13 CFR 125.1, means trouble.</P></DIV8>"""
+
+
+def test_term_defined_outside_2_101_is_found(mock_xml, monkeypatch):
+    def answers(path, params):
+        return {"2.101": _fixture("t48_2.101.xml"), "19.001": _DEFS_19, "19.307": _CLAUSE}[params["section"]]
+    mock_xml(answers)
+    searched = []
+
+    async def search(path, params=None, timeout=None):
+        searched.append(params)
+        return {"results": [
+            {"hierarchy": {"section": "19.307"}, "headings": {"section": "Protesting."}, "starts_on": "2024-08-29"},
+            {"hierarchy": {"section": "19.001"}, "headings": {"section": "Definitions."}, "starts_on": "2021-09-10"},
+            {"hierarchy": {"section": "19.001"}, "headings": {"section": "Definitions."}, "starts_on": "2017-01-01"},
+        ]}
+    monkeypatch.setattr(srv, "_get_json", search)
+    r = _run(srv.find_far_definition("similarly situated entities"))
+    assert searched[0]["query"] == '"similarly situated entities" means'
+    assert searched[0]["hierarchy[chapter]"] == "1" and searched[0]["date"] == DATE
+    first, second = r["defined_elsewhere"]
+    assert first["section"] == "19.001"
+    assert first["definition"] == [
+        "*Similarly situated entity* means a first-tier subcontractor, including an independent contractor, that—",
+        "(1) Has the same small business program status as that which qualified the prime contractor; and",
+        "(2) Is small for the NAICS code that the prime contractor assigned to the subcontract.",
+    ]
+    assert second["section"] == "19.307" and "definition" not in second
+    assert "defined elsewhere" in r["note"]

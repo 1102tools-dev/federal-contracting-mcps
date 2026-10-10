@@ -421,3 +421,18 @@ def test_part_pages_carry_only_their_own_subparts():
         assert page["authority"] == full["authority"]
         assert {r["subpart"] for r in page["subparts"]} >= {s["subpart"] for s in page["sections"]}
     assert "9.3" not in {r["subpart"] for r in pages[0]["subparts"]}
+
+
+def test_every_2_101_definition_is_found_first_by_its_own_name():
+    from ecfr_mcp import _definitions
+
+    paragraphs = _parse("t48_2.101.xml")["paragraphs"]
+    blocks = _definitions.index_definitions(paragraphs)
+    assert len(blocks) == 253
+    for block in blocks:
+        found = _definitions.find(paragraphs, block["term"])["definitions"]
+        same_name = [d for d in found if d["term"] == block["term"]]
+        # Only "F.o.b." is the name of two entries; each is returned.
+        assert found[0]["term"] == block["term"], block["term"]
+        match = next(d for d in same_name if d["paragraph_index"] == block["start"])
+        assert match["context"] == paragraphs[block["start"]:block["end"]]
