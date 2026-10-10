@@ -511,3 +511,81 @@ def test_agency_summary_keeps_subtitle_references(monkeypatch):
     r = _run(srv.list_agencies())
     assert r["agencies"][0]["cfr_references"] == [{"title": 41, "subtitle": "F", "chapter": None}]
     assert len(r["agencies"][1]["cfr_references"]) == 2
+
+
+# --- Group 6: everyday-questions pass ----------------------------------------
+
+def test_page_size_is_measured_as_sent():
+    import pydantic_core
+    r = srv._parse_xml_to_text(_fixture("t13_121.201.xml"), DATE)
+    from ecfr_mcp import _xml_text
+    assert _xml_text.size_of(r) == len(pydantic_core.to_json(r, fallback=str, indent=2).decode())
+    pages = _xml_text.all_pages(r)
+    assert len(pages) >= 3
+    for page in pages:
+        assert len(pydantic_core.to_json(page, fallback=str, indent=2).decode()) <= _xml_text.PAGE_CHARS
+
+
+def test_structure_depth_counts_from_the_part(monkeypatch):
+    tree = {"type": "title", "identifier": "48", "children": [
+        {"type": "chapter", "identifier": "1", "children": [
+            {"type": "part", "identifier": "19", "children": [
+                {"type": "subpart", "identifier": "19.1", "children": [
+                    {"type": "section", "identifier": "19.101"}]}]}]}]}
+
+    async def fake(path, params=None, timeout=None):
+        return tree
+    monkeypatch.setattr(srv, "_get_json", fake)
+    r = _run(srv.get_cfr_structure(part="19", depth=1, date=DATE))
+    part = r["children"][0]["children"][0]
+    assert part["identifier"] == "19"
+    assert part["children"][0]["identifier"] == "19.1" and part["children"][0]["children_omitted"] == 1
+
+
+def test_long_section_list_comes_in_pages(monkeypatch):
+    tree = {"type": "part", "identifier": "52", "children": [
+        {"type": "section", "identifier": f"52.2{n:02d}-{k}", "label_description": "A clause heading " * 8}
+        for n in range(60) for k in range(10)]}
+
+    async def fake(path, params=None, timeout=None):
+        return tree
+    monkeypatch.setattr(srv, "_get_json", fake)
+    from ecfr_mcp import _xml_text
+    first = _run(srv.list_sections_in_part(52, date=DATE))
+    assert first["total_pages"] >= 2 and _xml_text.size_of(first) <= _xml_text.PAGE_CHARS
+    rest = [_run(srv.list_sections_in_part(52, date=DATE, page=n)) for n in range(2, first["total_pages"] + 1)]
+    assert sum(len(p["sections"]) for p in [first] + rest) == 600
+
+
+def test_dfars_term_found_when_the_far_has_none(mock_xml, monkeypatch):
+    def answers(path, params):
+        if params["section"] == "2.101":
+            return _fixture("t48_2.101.xml")
+        return ('<DIV8 N="204.7301" TYPE="SECTION"><HEAD>204.7301 Definitions.</HEAD>'
+                '<P><I>Covered defense information</I> means unclassified controlled technical information.</P></DIV8>')
+    mock_xml(answers)
+    chapters = []
+
+    async def search(path, params=None, timeout=None):
+        chapters.append(params["hierarchy[chapter]"])
+        if params["hierarchy[chapter]"] == "2":
+            return {"results": [{"hierarchy": {"section": "204.7301"}, "headings": {"section": "Definitions."},
+                                 "starts_on": "2017-01-01"}]}
+        return {"results": []}
+    monkeypatch.setattr(srv, "_get_json", search)
+    r = _run(srv.find_far_definition("covered defense information"))
+    assert chapters == ["1", "2"]
+    assert r["defined_elsewhere"][0]["section"] == "204.7301" and r["defined_elsewhere"][0]["chapter"] == "2"
+    assert "DFARS" in r["note"]
+
+
+def test_compare_versions_changes_only(mock_xml):
+    mock_xml(lambda path, params: _BEFORE if "2026-09-01" in path else _AFTER)
+    r = _run(srv.compare_versions("1.1", "2026-09-01", "2026-10-07", changes_only=True))
+    assert r["texts_omitted"] is True and "paragraphs" not in r["after"] and r["change_count"] == 2
+
+
+def test_loose_appendix_name_gets_a_hint(mock_xml):
+    mock_xml(lambda path, params: RuntimeError("HTTP 404: Resource not found."))
+    with pytest.raises(RuntimeError, match="Appendix II to Part 200"):
+        _run(srv.get_cfr_content(title_number=2, part="200", appendix="II"))
