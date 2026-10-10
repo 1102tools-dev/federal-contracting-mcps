@@ -1,6 +1,6 @@
 # usaspending-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,312](https://img.shields.io/badge/regression%20tests-2%2C312-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,318](https://img.shields.io/badge/regression%20tests-2%2C318-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
@@ -8,7 +8,17 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*The 1.0.21 source validation with frozen MCP SDK 2.0.0 collected 2,315 regression cases: 1,936 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats, cumulative FFATA period scope and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
+*Candidate 1.0.22 source collected 2,318 regression cases. The measured frozen Python 3.12 / MCP SDK 2.0.0 full lane passed 1,939 and skipped 379 live-gated cases. Its separately installed MCP 2.3.0 candidate lane measured 1,084 passed, 855 retained legacy negative-expectation failures and 379 skipped. Actual publication of 1.0.22 is pending; the last published verification remains 1.0.21. See [testing.md](testing.md) for lane provenance and the new Round 6 content audit.*
+
+Candidate 1.0.22 clarifies award-date scope: an omitted date type matches the
+interval from first signing through latest action, so it does not prove an
+action occurred inside the requested window. For actual activity use
+`spending_by_transaction`, read every page and deduplicate award identifiers;
+`get_transactions` gives a discovered award's action dates. Explicit
+`date_type="action_date"` bounds the latest action. The new Round 6 audit covers
+all 55 tools with 138 new entity/filter questions and 15 separate prior controls.
+Originals and recovery pass on the installed candidate; actual published 1.0.22
+acceptance remains pending.
 
 Published 1.0.21 completed all 143 new Round 5 questions plus 10 separately
 counted prior vehicle checks on a fresh official PyPI installation and the
@@ -223,9 +233,13 @@ MIT
 ## Regression tests
 
 Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
-package directory. The frozen SDK 2.0.0 lane passes 1,933 cases and skips 379 live
-cases. Set `USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts
-below include parametrized and live-gated cases collected for 1.0.20.
+package directory. For candidate 1.0.22, the measured Python 3.12.13 / frozen
+SDK 2.0.0 lane passes 1,939 cases and skips 379 live cases. The actually installed
+candidate wheel with SDK 2.3.0 measures 1,084 passed, 855 failed and 379 skipped;
+those failures remain explicit and are not a passing latest-SDK suite. Set
+`USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts below include
+parametrized and live-gated cases collected for candidate 1.0.22 (publication
+pending); the latest published 1.0.21 has 2,315 collected cases.
 
 | Test file | Cases | Coverage |
 |---|---:|---|
@@ -249,4 +263,6 @@ below include parametrized and live-gated cases collected for 1.0.20.
 | [test_subaward_period_scope_1017.py](tests/test_subaward_period_scope_1017.py) | 3 | Cumulative FFATA scope and complete dated-report recovery |
 | [test_federal_account_program_scope_1018.py](tests/test_federal_account_program_scope_1018.py) | 3 | Captured all-year program scope, complete list and single-year financial recovery |
 | [test_federal_account_available_fy_1020.py](tests/test_federal_account_available_fy_1020.py) | 3 | Current-FY source availability, supported recovery and unchanged 503 control |
-| **Total** | **2,312** | **1,933 offline; 379 live-gated** |
+| [test_naics_current_retired_1021.py](tests/test_naics_current_retired_1021.py) | 3 | Actual retired rows versus active rows omitted by the requested limit |
+| [test_award_date_overlap_r6.py](tests/test_award_date_overlap_r6.py) | 3 | Award interval overlap versus complete dated-transaction recovery |
+| **Total** | **2,318** | **1,939 frozen offline passes; 379 live-gated skips** |

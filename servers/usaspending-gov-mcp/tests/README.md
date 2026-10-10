@@ -1,14 +1,16 @@
 # Test suite map
 
-Frozen Python 3.14.3 collection on 2026-10-10 for source package 1.0.21 found
-2,315 cases: 1,936 offline and 379 live-gated. The measured offline release
-lane with frozen MCP SDK 2.0.0 passed 1,936 and skipped 379. Collection itself executes no tests or
-source requests; the separately recorded 143-new-question Round 5 audit is not
-added to these pytest counts.
+Frozen Python 3.12.13 collection on 2026-10-10 for candidate source package
+1.0.22 found 2,318 cases: 1,939 offline and 379 live-gated. The separately
+executed frozen MCP SDK 2.0.0 full lane passed 1,939 and skipped 379.
+Collection itself executes no tests or source requests; the 138-new-question
+Round 6 content audit is not added to pytest counts. Publication 1.0.22 is pending.
 
-The separate fresh published 1.0.21 lane with latest MCP SDK 2.3 measured
-1,081 passed, 855 failed and 379 skipped; its retained error expectations
-are not credited as passing. See the explicit reconciliation in testing.md.
+The installed candidate 1.0.22 Python 3.12 / MCP 2.3 full lane measured 1,084 passed,
+855 failed and 379 skipped; all 855 failed node IDs match retained actual
+published 1.0.21 negative/error expectations. The prior actual published 1.0.21 lane
+measured 1,081 passed/855 failed/379 skipped. Neither is an all-tests-PASS
+claim. See testing.md for source, frozen, candidate and publication provenance.
 
 Files retain their audit-round and fix-wave history; see [../testing.md](../testing.md).
 
@@ -35,7 +37,8 @@ Files retain their audit-round and fix-wave history; see [../testing.md](../test
 | `test_federal_account_program_scope_1018.py` | Round 16 captured all-year scope, complete program list and financial followup | 3 | 0 |
 | `test_federal_account_available_fy_1020.py` | Round 16 actual source availability, supported recovery and unexpected503 control | 3 | 0 |
 | `test_naics_current_retired_1021.py` | Round 17 captured current-versus-retired taxonomy, larger-limit recovery and source-row control | 3 | 0 |
-| **Total** | | **2,315** | **379** |
+| `test_award_date_overlap_r6.py` | Round 18 source interval overlap, actual dated recovery and unchanged explicit/no-window controls | 3 | 0 |
+| **Total** | | **2,318** | **379** |
 
 Live tests need `USASPENDING_LIVE_TESTS=1` (the API is keyless), are paced
 1-2 s apart by `conftest.py`, and the minimal anchor set runs via
