@@ -1,6 +1,6 @@
 # gsa-perdiem-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 7](https://img.shields.io/badge/tools-7-007a59)](#what-it-does) [![regression tests: 583](https://img.shields.io/badge/regression%20tests-583-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 7](https://img.shields.io/badge/tools-7-007a59)](#what-it-does) [![regression tests: 588](https://img.shields.io/badge/regression%20tests-588-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/gsa-perdiem-mcp -->
 
@@ -8,9 +8,11 @@ Free, open-source MCP server for the GSA Per Diem Rates API. Federal travel lodg
 
 ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network call: they are answered from GSA's published rate, ZIP, and M&IE files bundled in the package. For bundled fiscal years, city lookups, trip estimates and comparisons with a supplied `county` also work without a key or network call. City-name lookups without a county and lookups for unbundled years use the GSA Per Diem API and need a free api.data.gov key in `PERDIEM_API_KEY`. The hosted version needs no key for any lookup. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through ten rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 583 collected Python regression tests (316 offline, 267 live-gated) covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, 14 round-7 findings, the 1.1.0 rate-area ambiguity fixes, and the 1.2.1 and 1.2.2 content-test corrections. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through ten rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 588 collected Python regression tests (321 offline, 267 live-gated) covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, 14 round-7 findings, the 1.1.0 rate-area ambiguity fixes, and the 1.2.1 and 1.2.2 content-test corrections. See [testing.md](testing.md) for the full testing record.*
 
 The October 10 round-3 content audit checked 101 new travel questions across all seven tools against fresh official sources. Published 1.2.4 fixes valid Doña Ana County worksite lookups and clarifies when a local API key is needed. The actual installed CLI and public Worker replays passed; the keyless CLI explicitly returns missing-key guidance for two city-only API paths. Separate regression validation recorded 316 Python tests passed and 267 optional live tests skipped, plus 29 Worker tests passed. See [testing.md](testing.md) for source comparisons and scope limits.
+
+Candidate 1.2.5 preserves actionable input guidance with MCP SDK 2.3. Natural state/month corrections complete the same bundled travel tasks without a key. Both SDK 2.0 and 2.3 candidate suites pass 321 tests with 267 optional skips (588 collected); publication remains pending. See [testing.md](testing.md).
 
 ## Local or hosted
 
