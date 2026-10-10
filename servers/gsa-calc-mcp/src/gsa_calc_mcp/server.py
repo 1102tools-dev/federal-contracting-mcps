@@ -716,6 +716,27 @@ def _extract_stats(data: Any) -> dict[str, Any]:
     }
 
 
+def _title_summary(data: Any, top_n: int) -> dict[str, Any]:
+    """Labor category titles behind a result, from the labor_category
+    aggregation (case-sensitive, most records first).
+
+    GSA caps that aggregation at 500 buckets. When titles were left off
+    (sum_other_doc_count > 0) the distinct count is unknown: distinct is
+    None and distinct_min gives the floor.
+    """
+    agg = _safe_dict(_safe_dict(_safe_dict(data).get("aggregations")).get("labor_category"))
+    pairs = [p for p in (_safe_bucket_key(b) for b in _as_list(agg.get("buckets"))) if p is not None]
+    other = agg.get("sum_other_doc_count")
+    complete = not (isinstance(other, int) and other > 0)
+    out: dict[str, Any] = {
+        "top": [{"title": k, "count": c} for k, c in pairs[:top_n]],
+        "distinct": len(pairs) if complete else None,
+    }
+    if not complete:
+        out["distinct_min"] = len(pairs)
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Core search tools
 # ---------------------------------------------------------------------------
@@ -1009,6 +1030,14 @@ async def igce_benchmark(
     Reminder: these are ceiling rates (max a contractor can charge), not
     prices paid. Actual task order rates should be lower per FAR 8.405-2(d).
 
+    labor_category is matched as a literal phrase anywhere in the title:
+    'Program Manager' pools Program Manager I-VI, Senior and Executive
+    Program Manager, and so on. matched_titles lists the top 10 pooled
+    titles with counts and the number of distinct titles. Different
+    spellings are separate populations ('Cyber Security Analyst' vs
+    'Cybersecurity Analyst'). Statistics are on current-year ceiling rates
+    (current_price), not next-year or option-year prices.
+
     Optional filters: education_level, experience_min/max, business_size
     ('S' or 'O'), sin (e.g. '541611'), security_clearance ('yes' or 'no').
     """
@@ -1037,7 +1066,17 @@ async def igce_benchmark(
         "labor_category": labor_category,
         "filters_applied": filters,
         **stats,
-        "_note": "Ceiling rates (NTE), not prices paid. Sample size matters for IGCE reliability.",
+        # Which titles were pooled: "Senior Software Engineer" matches 53
+        # titles (I-IV, Health IT ..., Principal ...), not one.
+        "matched_titles": _title_summary(data, top_n=10),
+        "_note": (
+            "Ceiling rates (NTE), not prices paid. Sample size matters for "
+            "IGCE reliability. labor_category is matched as a literal phrase "
+            "inside each title, so the population pools every title "
+            "containing it (see matched_titles) and misses other spellings "
+            "('Cyber Security' vs 'Cybersecurity'). Statistics are on "
+            "current-year ceiling rates."
+        ),
     }
 
 
@@ -1286,15 +1325,12 @@ async def vendor_rate_card(
     # total is a row count: one title can have several rows (worksite,
     # contract, SIN). Distinct titles come from the labor_category
     # aggregation, which GSA caps at 500 buckets; past that, give a floor.
-    lc_agg = _safe_dict(_safe_dict(data.get("aggregations")).get("labor_category"))
-    lc_buckets = [b for b in _as_list(lc_agg.get("buckets")) if _safe_bucket_key(b) is not None]
-    lc_other = lc_agg.get("sum_other_doc_count")
-    lc_complete = bool(lc_buckets) and lc_other in (0, None)
+    titles = _title_summary(data, top_n=0)
 
     response: dict[str, Any] = {
         "vendor": exact_name,
         "total_rates": total,
-        "distinct_labor_categories": len(lc_buckets) if lc_complete else None,
+        "distinct_labor_categories": titles["distinct"] or None,
         "page": page,
         "returned": returned,
         "returned_range": f"rows {start_row}-{end_row} of {total}" if returned else None,
@@ -1303,8 +1339,8 @@ async def vendor_rate_card(
         "rates": rates,
         "_stats": _extract_stats(data),
     }
-    if lc_buckets and not lc_complete:
-        response["distinct_labor_categories_min"] = len(lc_buckets)
+    if "distinct_min" in titles:
+        response["distinct_labor_categories_min"] = titles["distinct_min"]
     if has_more:
         response["_truncation_note"] = (
             f"Partial rate card: rows are ordered by {ordering} ({sort}), so "

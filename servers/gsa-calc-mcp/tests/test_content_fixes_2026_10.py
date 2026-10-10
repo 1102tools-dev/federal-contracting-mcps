@@ -355,3 +355,46 @@ def test_live_g4_igce_clearance_population_matches_api():
     r = _payload(asyncio.run(_call("igce_benchmark", labor_category="Systems Administrator", security_clearance="yes")))
     assert r["total_rates"] == api["aggregations"]["wage_stats"]["count"]
     assert r["avg_rate"] == round(api["aggregations"]["wage_stats"]["avg"], 2)
+
+
+# ---------------------------------------------------------------------------
+# G-3: igce_benchmark shows which titles were pooled
+# ---------------------------------------------------------------------------
+
+def _pooled_body(titles: list[tuple[str, int]], other: int) -> dict:
+    body = _stats_response(sum(c for _, c in titles) + other, price=167.08)
+    body["aggregations"]["labor_category"] = {
+        "buckets": [{"key": k, "doc_count": c} for k, c in titles],
+        "sum_other_doc_count": other,
+    }
+    return body
+
+
+def test_g3_igce_benchmark_lists_pooled_titles(monkeypatch):
+    titles = [("Senior Software Engineer", 175)] + [(f"Senior Software Engineer {r}", 5) for r in "I II III IV V VI VII VIII VIII IX X XI".split()]
+    monkeypatch.setattr(srv, "_get", _MockGet(_pooled_body(titles, 0)))
+    r = _payload(asyncio.run(_call("igce_benchmark", labor_category="Senior Software Engineer")))
+    top = r["matched_titles"]["top"]
+    assert top[0] == {"title": "Senior Software Engineer", "count": 175}
+    assert len(top) == 10
+    assert r["matched_titles"]["distinct"] == len(titles)
+    assert "literal phrase" in r["_note"]
+
+
+def test_g3_pooled_titles_distinct_unknown_when_truncated(monkeypatch):
+    titles = [(f"Program Manager {i}", 3) for i in range(500)]
+    monkeypatch.setattr(srv, "_get", _MockGet(_pooled_body(titles, 40)))
+    r = _payload(asyncio.run(_call("igce_benchmark", labor_category="Program Manager")))
+    assert r["matched_titles"]["distinct"] is None
+    assert r["matched_titles"]["distinct_min"] == 500
+
+
+@live
+def test_live_g3_pooled_titles_match_api():
+    api = _api("keyword=Senior+Software+Engineer&page=1&page_size=1&ordering=current_price&sort=asc")
+    lc = api["aggregations"]["labor_category"]
+    r = _payload(asyncio.run(_call("igce_benchmark", labor_category="Senior Software Engineer")))
+    want = [{"title": b["key"], "count": b["doc_count"]} for b in lc["buckets"][:10]]
+    assert r["matched_titles"]["top"] == want
+    if lc.get("sum_other_doc_count", 0) == 0:
+        assert r["matched_titles"]["distinct"] == len(lc["buckets"])
