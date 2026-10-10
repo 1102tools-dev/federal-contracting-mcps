@@ -1,5 +1,15 @@
 # Federal Register MCP: Testing Record
 
+## Actual published SDK 2.3 acceptance (2026-10-10; 1.0.16)
+
+Release workflow 38094950025 completed all 13 jobs successfully at source `cde5b0bc87c937b13483f26296fe0e944f24aff5`. An uncached official by-name PyPI installation succeeded on its first attempt with Python 3.12.13 and MCP 2.3.0; no local wheel or direct-URL substitute was used. Both official wheel/sdist downloads matched their published sizes and SHA256 and were not yanked. All eight installed modules and all 16 wheel/sdist module payloads matched that explicit release source.
+
+Three actual console originals—FAR part without title, a section supplied as a part, and page 51—now return the specific corrective guidance. Three actual valid recoveries succeed. All six answers exactly match six contemporaneous public calls. CLI/public catalogs match all eight reviewed definitions. Public HTTPS GET health and POST initialize/catalog show the current release SHA/version and `X-1102tools-Backend: origin`; the configured origin HTTPS GET health confirms the same SHA. This receipt does not claim origin HTTPS POST or a new SSH physical-container check.
+
+The actual installed official-package SDK 2.3 full suite passed **190 / 0 failed / 105 optional live skips / 295 collected**, in 13.02 seconds. The retained frozen SDK 2.0 source result **190 passed / 105 skipped / 295 collected** is separate, not a new published frozen run. The original 60 guidance failures are resolved; unknown-fault masking and specific-message assertions remain intact. No full live-gated suite or new broad content round is claimed.
+
+Two destination-check harness assumptions were corrected and their first logs preserved: the contract is a list rather than an object with a `tools` key, and the actual routing header is `X-1102tools-Backend`, not an assumed `x-backend-origin`. Neither is a product failure. Independent eCFR fresh official CLI/public sampling also passed. Evidence: `Artifacts/mcp-e2e-20261010/sdk23/federal-register/final-published16` and the separate immutable candidate/peer receipts. The candidate record below remains historical.
+
 ## Targeted SDK 2.3 guidance correction (2026-10-10; candidate 1.0.16)
 
 This separate, authorized correction follows completed content round 6; it is not another broad content audit. The retained actual published 1.0.15 SDK 2.3 suite had 124 passed, 60 failed and 105 live-gated skipped out of 289 collected. The 60 exact failed IDs comprise 52 validation-file, six historical round-6 and two historical round-8 assertions across seven tools. They represent one common guidance problem, not 60 independently discovered defects.
