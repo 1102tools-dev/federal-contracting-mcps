@@ -168,3 +168,24 @@ def test_bls5_common_soc_codes_are_bls_titles_and_include_15_1299():
         assert code in socs
     for code, title in socs.items():
         assert title == snapshot.occupation_name(code), (code, title)
+
+
+# ---------------------------------------------------------------------------
+# BLS-6: get_wage_data names industry 999100 as BLS does
+# ---------------------------------------------------------------------------
+
+def test_bls6_industry_labels_match_bls_and_point_federal_it_to_15_1299():
+    from bls_oews_mcp import snapshot
+
+    tools = {t.name: t for t in asyncio.run(mcp.list_tools())}
+    description = tools["get_wage_data"].description
+    con = snapshot._connection()
+    for code in ("541000", "541500", "999100"):
+        (name,) = con.execute(
+            "SELECT industry_name FROM industry WHERE industry_code = ?", (code,)
+        ).fetchone()
+        # oe.industry: 999100 = "Federal Executive Branch (OEWS Designation)".
+        assert f"'{code}' ({name})" in description, (code, name)
+    assert "(Federal Government)" not in description
+    # BLS 999100: 15-1299 employment 86,390 vs 15-1252 employment 140.
+    assert "15-1299" in description

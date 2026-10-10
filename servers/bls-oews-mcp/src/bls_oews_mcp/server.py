@@ -477,9 +477,12 @@ async def get_wage_data(
       '42660' for Seattle). See list_common_metros() for codes.
 
     industry: 6-digit industry code for national-only breakdowns.
-    '000000' = all industries (default). Common: '541000' (Professional Services),
-    '541500' (Computer Systems), '999100' (Federal Government). Industry
-    breakdowns only work with scope='national'.
+    '000000' = all industries (default). Common:
+    '541000' (Professional, Scientific, and Technical Services),
+    '541500' (Computer Systems Design and Related Services),
+    '999100' (Federal Executive Branch (OEWS Designation)).
+    Industry breakdowns only work with scope='national'. Federal IT staff mostly fall under 15-1299 (Computer Occupations, All
+    Other), so 999100 with 15-1252 rests on few employees.
 
     datatypes: list of 2-digit codes. Default uses IGCE set:
     - '04' = Annual Mean Wage

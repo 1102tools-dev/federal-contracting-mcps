@@ -433,6 +433,13 @@ test("BLS-5: starter lists use BLS's names and carry the govcon basics", async (
   assert.equal(socs["436014"], "Secretaries and Administrative Assistants, Except Legal, Medical, and Executive");
 });
 
+test("BLS-6: get_wage_data names industry 999100 as BLS does", () => {
+  const description = TOOLS.find(t => t.name === "get_wage_data")!.description;
+  assert.ok(description.includes("'999100' (Federal Executive Branch (OEWS Designation))"));
+  assert.ok(!description.includes("(Federal Government)"));
+  assert.ok(description.includes("15-1299"));
+});
+
 // ---------- Python formatting helpers ----------
 
 test("pyjson matches Python's repr, format, round, and strip", () => {
