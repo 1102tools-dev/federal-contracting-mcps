@@ -8,23 +8,21 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*The 1.0.21 candidate source validation with frozen MCP SDK 2.0.0 collected 2,315 regression cases: 1,936 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats, cumulative FFATA period scope and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
+*The 1.0.21 source validation with frozen MCP SDK 2.0.0 collected 2,315 regression cases: 1,936 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats, cumulative FFATA period scope and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
 
-Published 1.0.20 completed all 150 available Round 4 content questions on a
-fresh official PyPI installation and the public deployment, with six guided
-followups and all 55 tool definitions matched. The explicit FY2027 request
-honestly reports source availability and guides latest-year recovery.
-The separate full regression run on latest MCP SDK 2.3.0 measured 1,078 passed,
-855 failed and 379 skipped; retained exception/message expectations still fail
-under that SDK. See [the publication record](testing.md#round-16-final-published-verification-1020-2026-10-10)
-for exact source, content and regression provenance.
+Published 1.0.21 completed all 143 new Round 5 questions plus 10 separately
+counted prior vehicle checks on a fresh official PyPI installation and the
+public deployment. All 55 tool definitions matched. Its five-step NAICS
+workflow correctly separates actual retired codes from current matches
+omitted by the result limit and recovers the highway construction code.
+Four workflow steps are included in the 153-call replay; one genuine
+retired-inclusive control is additional.
 
-The new Round 5 audit completed 143 new questions across all 55 tools on
-actual published 1.0.20 CLI/public services, with 10 prior vehicle checks
-recorded separately. It found one P3 discovery-note defect: current NAICS
-matches omitted by the result limit were described as retired. Candidate
-1.0.21 counts actual retired rows separately and guides a larger-limit
-lookup; publication remains pending. See [the Round 5 record](testing.md#round-17-new-round-5-content-audit-1021-candidate-2026-10-10).
+The separate actual latest MCP SDK 2.3.0 full regression run measured
+1,081 passed, 855 failed and 379 skipped. The 855 retained exception/message
+expectations are the same failures as published 1.0.20 and are not credited
+as passing. See [the final publication record](testing.md#round-17-final-published-verification-1021-2026-10-10)
+for exact content, source and regression provenance.
 
 Federal-account program lists contain codes/names across all reported years,
 without dollar amounts or a fiscal-year filter. The tool retrieves source pages
@@ -33,7 +31,7 @@ that was not applied. Use the numeric account ID with the fiscal-year snapshot
 for single-year account resources. Agency program totals apply to the whole
 agency. Account listings default to the source’s latest available FY; check
 `fy`, especially after October rollover. Agency budgetary resources do not
-provide a mandatory/discretionary split. Published 1.0.20 preserves the source available-year explanation and guides
+provide a mandatory/discretionary split. Published 1.0.21 preserves the source available-year explanation and guides
 omission of an unavailable year plus checking the returned `fy`.
 
 ## Local or hosted
