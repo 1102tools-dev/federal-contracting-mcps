@@ -245,3 +245,11 @@ test("timestamp letterhead precedes the attached original's standalone date", as
   const original = await data("get_rfo_agency_deviation", {source_id, page_start: 8, page_end: 8});
   assert.equal(original.issuance_date, "2025-09-26");
 });
+
+test("explicit effective-date sentence is returned only in its selected range", async () => {
+  const source_id = "agency-deviation-20da883fc4477be46f14";
+  const result = await data("get_rfo_agency_deviation", {source_id, page_start: 2, page_end: 2});
+  assert.equal(result.effective_date, "2026-02-01");
+  const other = await data("get_rfo_agency_deviation", {source_id, page_start: 1, page_end: 1});
+  assert.equal(other.effective_date, null);
+});

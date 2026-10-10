@@ -76,6 +76,8 @@ def long_deviation() -> bytes:
         lines[rng.randrange(12)] = line(40, "Applicability. ")
         if number == 1:
             lines[0] = "Issued: May 2, 2025"
+        if number == 2:
+            lines[0] = "Effective February 1, 2026, contracting officers shall use the revised FAR."
         if number == 3:
             lines[-1] = "Effective date:"
         if number == 4:

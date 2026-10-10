@@ -1,6 +1,6 @@
 # Acquisition.gov MCP
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests: 246](https://img.shields.io/badge/regression%20tests-246-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests: 255](https://img.shields.io/badge/regression%20tests-255-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/acquisition-gov-mcp -->
 

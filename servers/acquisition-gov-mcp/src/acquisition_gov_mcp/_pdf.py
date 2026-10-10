@@ -50,10 +50,16 @@ def _standalone_date(text: str) -> str | None:
 
 
 def _labeled_date(text: str, label: str) -> str | None:
+    prefix = ((r"^\s*" if label.casefold() in _LINE_START_LABELS else r"\b")
+              + rf"{re.escape(label)}(?:\s+date)?(?:\s*[:\-]\s*|\s+on\s+)")
+    if label.casefold() == "effective":
+        # DoD states the document's operative date as a direct sentence,
+        # "Effective February 1, 2026, contracting officers shall use...".
+        # A bare label must begin its line; a quoted or historical mid-sentence
+        # "was effective ..." must not become this document's metadata.
+        prefix = rf"(?:{prefix}|^[ \t]*{re.escape(label)}\s+)"
     pattern = re.compile(
-        (r"^\s*" if label.casefold() in _LINE_START_LABELS else r"\b")
-        + rf"{re.escape(label)}(?:\s+date)?(?:\s*[:\-]\s*|\s+on\s+)"
-        r"([A-Z][a-z]+\s+\d{1,2},\s+\d{4}|\d{1,2}\s+[A-Z][a-z]+\s+\d{4}|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})",
+        prefix + _DATE_TEXT,
         re.I | re.M,
     )
     match = pattern.search(text)

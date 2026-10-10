@@ -224,3 +224,34 @@ def test_parser_version_change_incremental_reload_retains_unchecked_pdf(tmp_path
     new = dict(rows(path, "SELECT key, doc FROM sources WHERE snapshot = 2 AND key LIKE 'pdf:%'"))
     assert new == old
     assert stats["carried_forward"] == 2
+
+
+def test_new_parser_does_not_resume_old_staged_pdf(tmp_path, recording, monkeypatch):
+    path = tmp_path / 'd1.sqlite'
+    monkeypatch.setattr(loader, 'PARSER_VERSION', '1.0.10+3')
+    run(loader.LocalD1(path), Fetcher(recording), full=True)
+    with pytest.raises(loader.Abort):
+        run(loader.LocalD1(path), Fetcher(recording, {NASA: RuntimeError('Acquisition.gov returned HTTP 403: blocked')}), full=True)
+    old = rows(path, 'SELECT doc FROM sources WHERE snapshot = 2 AND key = ?', f'pdf:{GSA}')[0][0]
+    assert meta(path) == {'current': '1', 'staging': '2'}
+    monkeypatch.setattr(loader, 'PARSER_VERSION', '1.0.10+4')
+    fetcher = Fetcher(recording)
+    stats = run(loader.LocalD1(path), fetcher, full=True)
+    assert GSA in fetcher.asked, 'old derived data must not pass the recent-stage done check'
+    assert NASA in fetcher.asked
+    assert meta(path) == {'current': '2', 'previous': '1'}
+    new = rows(path, 'SELECT doc, content_sha256 FROM sources WHERE snapshot = 2 AND key = ?', f'pdf:{GSA}')[0]
+    assert new[0] != old and new[0] == loader.doc_id('pdf', new[1])
+    assert stats['carried_forward'] == 0
+
+
+def test_staged_fetch_error_is_retried_on_resume(tmp_path, recording):
+    path = tmp_path / 'd1.sqlite'
+    run(loader.LocalD1(path), Fetcher(recording), full=True)
+    db = loader.LocalD1(path)
+    loader.Loader(db, Fetcher(recording), log=lambda _: None).setup()
+    db.execute([f"INSERT OR REPLACE INTO sources SELECT 2,key,url,final_url,source_id,retrieved_at,content_sha256,'HTTP 404',NULL FROM sources WHERE snapshot=1 AND key={loader.quote('pdf:'+NASA)};"])
+    fetcher = Fetcher(recording)
+    run(db, fetcher, revalidate=0)
+    assert NASA in fetcher.asked
+    assert rows(path, 'SELECT error FROM sources WHERE snapshot=2 AND key=?', f'pdf:{NASA}') == [(None,)]
