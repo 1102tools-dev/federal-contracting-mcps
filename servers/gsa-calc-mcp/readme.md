@@ -1,6 +1,6 @@
 # gsa-calc-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 433](https://img.shields.io/badge/regression%20tests-433-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 435](https://img.shields.io/badge/regression%20tests-435-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/gsa-calc-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the GSA CALC+ Labor Ceiling Rates API. Query aw
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through seven audit rounds and the 1.0.14 workflow audit and discovery-description correction against the GSA CALC+ API. 435 collected regression tests (314 offline, 121 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). The content fixes cover vendor worksites, low-sample price checks, comparison filters, title summaries and truncation. The 1.0.15 recovery correction preserves actionable unsupported-worksite guidance in fresh MCP 2.3 clients. See [testing.md](testing.md) for the full testing record and the [test suite map](tests/README.md) for counts by file.*
+*Tested and hardened through nine audit rounds and the 1.0.14 workflow audit and discovery-description correction against the GSA CALC+ API. 435 collected regression tests (314 offline, 121 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). The content fixes cover vendor worksites, low-sample price checks, comparison filters, title summaries and truncation. The 1.0.15 recovery correction preserves actionable unsupported-worksite guidance in fresh MCP 2.3 clients. See [testing.md](testing.md) for the full testing record and the [test suite map](tests/README.md) for counts by file.*
 
 ## Local or hosted
 
