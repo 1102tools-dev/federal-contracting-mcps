@@ -1,6 +1,6 @@
 # Test suite map
 
-300 collected tests. Files are named by the audit round or fix-wave that
+428 collected tests (310 offline, 118 live-gated). Files are named by the audit round or fix-wave that
 produced them and are append-only history: each maps to a section of
 [../testing.md](../testing.md), which narrates what every round found and
 fixed. That traceability is deliberate; do not consolidate or rename rounds.

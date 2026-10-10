@@ -7,21 +7,45 @@ current bounded experiments, failed candidates and revised policies. These
 results supplement the historical live suites below; they do not repeat every
 older live test or establish an official provider quota.
 
+## Round 8 (2026-10-10): bug hunt and 1.1.0
+
+**How it was tested.** Six agents tested the hosted server (1.0.13) in parallel with about 480 tool and API calls, each through one lens: definitions and clause text, section text parsing, dates and versions, search and navigation, a full code review, and 14 real user questions. Every finding was reproduced with a live tool call and checked against eCFR's own API (versioner `full`, `versions`, `structure`, `search`, `corrections`, `agencies`). Over about 2,800 sections and a parser sweep of all 11,542 Title 48 sections, they found no crash-level bugs but about 18 P2s (silently incomplete or wrong in real cases) and about 20 P3s. The full write-ups live with the bug hunt record.
+
+**Why 320 tests missed them.** Every parser test fed 1-3 hand-written elements; live tests checked only response shape (`isinstance(dict)`, `match_count > 0`); the scenario scripts had no asserts.
+
+**The test that was missing.** `tests/test_real_xml_fixtures.py` keeps ten real eCFR responses byte for byte (`tests/fixtures/ecfr_xml/`: 2.101, 52.212-3, 52.219-9, 52.236-27, Subpart 15.3, 2 CFR 200 Appendix VIII, 13 CFR 121.201 and 125.6, FAR 25.504-2, HSAR 3052.225-71) and requires every text node to come out of the parser exactly once, in document order, under the right section. It was committed first and failed 19 of 21 checks on the 1.0.13 parser. Offline, the same check passed on every XML file the hunt saved: 167 files including all of Title 48, 18,044 sections. Every answer too large for one reply (27, up to all of Title 48) reassembles exactly from its pages, with every page under 64,000 characters as sent.
+
+**What was fixed (1.1.0; details in [changelog.md](changelog.md)).**
+
+| Group | Findings | Fix |
+|---|---|---|
+| 1. Text parser | 6 P2, 1 P3: subpart/part reads dropped every section heading; FP-1/FP-DASH/P-2/LI lists dropped or fused; examples dropped; footnote marks fused into numbers ($34.0 + fn 9 read "$34.09"); pending-amendment notices dropped; every clause returned twice; notes, captions, images, line breaks | Real XML parser, one object per section, numbered tables/notes/examples with markers, `[fn N]`, image placeholders, `pending_amendments`, no duplicate, pages |
+| 2. Definitions | 4 P2, 1 P3: fixed window cut 45 of 253 definitions while reporting `truncated: false`; plain names, plurals and "X means" found nothing; the definition ranked behind mentions; terms defined outside 2.101 got a bare 0; substring matches ("allowable cost" -> "Unallowable cost") | Index of 2.101 by defined term, whole blocks first, normalized names, whole-word mentions, `defined_elsewhere` (FAR, then DFARS) |
+| 3. Stale and removed text | 2 P2: superseded and removed versions served as current (52.212-5 three times; the repealed CAS $15M waiver; all of CAS 404/407/408/409/411); recent changes never showed removals | Every search hit checked against the version history; recent changes rebuilt on it |
+| 4. Silent caps and empty answers | 6 P2/P3: version history cut at 1,000; empty history for a section not in the title; oldest corrections kept; wrong agency slugs returned 0; appendices missing from section lists; answers too big to use | All pages read, errors instead of empty answers, newest-first corrections, appendices, depth and paging |
+| 5. P3s | about 20: citation styles, chapter inference for supplement clauses, filters that silently returned 0, structure appendix/subchapter, agency subtitle references, compare 404s, earliest date, date labels | As listed in the changelog |
+| 6. Everyday use | 47 ordinary questions: 41 pass, 6 friction, 0 wrong answers. Friction: page size measured on compact JSON (tables ran 70-80K as sent), structure depth counted from the title, no paging on long section lists, no DFARS definition fallback, loose appendix names, no corrections chapter filter | Size measured as sent, depth from the node asked for, list paging, DFARS fallback, hints and filters |
+
+**Gates before release (all passed on the release commit, Python 3.12).** Offline suite 310 passed; live-gated suite 118 passed against eCFR; a 75-check repro gate covering every repro in the six findings files, the hunt's "tested and working" regression lists (52.212-5 183 paragraphs, 52.219-9 236 with all four Alternates, 252.204-7012 56, 552.238-81 21, 2.101 thresholds by date) and the 14 real-user questions; version, release-guard and hosted-contract checks. After release, both hosted backends (the Dell origin and the Cloudflare container) reported the release commit and the key repros were re-run against `https://ecfr.1102tools.com/mcp`.
+
+All 13 tools kept their names. No privacy promise or cache time changed.
+
 ## Executive Summary
 
-This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across six audit rounds that surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, and (in round 6) a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. The MCP ships with 321 regression tests (203 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
+This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across eight audit rounds. Rounds 1-7 surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. Round 8 (1.1.0, 2026-10-10) was a six-agent bug hunt against eCFR's own data plus a 47-question everyday-use pass; it found the text parser, the definition finder and eCFR's search index were the sources of 18 P2 and about 20 P3 problems, all fixed. The MCP ships with 428 regression tests (310 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 13 |
-| Total regression tests | 321 (203 offline, 118 live-gated) |
-| Audit rounds completed | 7 |
+| Total regression tests | 428 (310 offline, 118 live-gated) |
+| Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 2 |
 | P1 silent-wrong-data bugs found and fixed | 26 |
 | P2 validation gaps found and fixed | 32 |
 | P3 cleanup items found and fixed | 12 |
 | Round 6 external re-audit findings, fixed in 1.0.2 | 12 (2 high, 5 medium, 5 low) |
-| Current release | 1.0.9 |
+| Round 8 bug hunt findings, fixed in 1.1.0 | 18 P2, about 20 P3, plus 6 everyday-use fixes |
+| Current release | 1.1.0 |
 | PyPI status | Published as `ecfr-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.4 Safety Release Verification

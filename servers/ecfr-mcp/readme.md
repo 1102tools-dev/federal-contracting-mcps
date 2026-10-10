@@ -1,6 +1,6 @@
 # ecfr-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 13](https://img.shields.io/badge/tools-13-007a59)](#what-it-does) [![regression tests: 320](https://img.shields.io/badge/regression%20tests-320-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 13](https://img.shields.io/badge/tools-13-007a59)](#what-it-does) [![regression tests: 428](https://img.shields.io/badge/regression%20tests-428-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/ecfr-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the eCFR (Electronic Code of Federal Regulation
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through six rounds of integration testing against the live eCFR API. 320 collected regression tests (202 offline, 118 live-gated) covering 2 P0 catastrophic bugs, 26 P1 silent-wrong-data bugs, 32 P2 validation gaps, and the round-6 audit fixes (Title 48 chapter whitelist, table extraction, appendix access). See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through eight rounds of testing against the live eCFR API. 428 collected regression tests (310 offline, 118 live-gated), including a check that every piece of text in ten saved eCFR responses comes out exactly once and in order. Round 8 (1.1.0, October 2026) fixed 18 P2 and about 20 P3 findings from a six-agent bug hunt plus an everyday-questions pass. See [testing.md](testing.md) for the full testing record.*
 
 ## Local or hosted
 
