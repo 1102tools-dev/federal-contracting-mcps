@@ -1,6 +1,6 @@
 # Acquisition.gov MCP
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests: 239](https://img.shields.io/badge/regression%20tests-239-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests: 240](https://img.shields.io/badge/regression%20tests-240-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/acquisition-gov-mcp -->
 
@@ -50,4 +50,4 @@ Every retrieved source includes a canonical URL, UTC retrieval time, SHA-256 con
 - Duplicate and conflicting index entries are returned with warnings instead of silently resolved.
 - Scanned, encrypted, and malformed PDFs return explicit extraction status and metadata where possible.
 
-Version 1.0.8 passed **236 offline tests**, including **55 independent-review regressions**, real stdio/HTTP smoke checks, parser isolation, cancellation and per-tool correctness cases. See [testing.md](testing.md) for evidence, exact limits, known scope and reproducible commands.
+Version 1.0.9 collects **240 regression cases: 237 offline and 3 optional live tests**. Coverage includes independent-review regressions, real stdio/HTTP smoke checks, parser isolation, cancellation, per-tool correctness and the issuance-date regression that separates quoted memo dates from the document date. See [testing.md](testing.md) for evidence, exact limits, known scope and reproducible commands.

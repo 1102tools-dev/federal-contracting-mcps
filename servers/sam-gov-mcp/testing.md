@@ -2,22 +2,52 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes seven SAM.gov REST APIs (Entity Management v3, Exclusions v4, Opportunities v2, Contract Awards v1, Federal Hierarchy v1, Acquisition Subaward Reporting, Assistance Subaward Reporting) plus the PSC lookup as 19 callable tools. It was hardened across ten audit rounds, the tenth being a ~230-call paced live campaign against production. Live audits surfaced seven catastrophic P1 silent-wrong-data bugs mocks could never catch (apostrophe-rejecting WAF, typo'd-parameter silent drops, empty PIID acceptance, `entityName` vs `exclusionName`, and three Subaward parameter casings). Round 9 (1.0.2), an independent full-source re-audit, found the worst one yet by replaying the documented Entity API response shape through the real pipeline: `get_entity_reps_and_certs` read the wrong JSON key casings, so its default summary mode returned EMPTY clause lists for every entity, and eight prior rounds never noticed because their live assertions only checked `totalRecords`. This MCP is also where the `extra='forbid'` cross-fix pattern was invented and exported to the rest of the suite. The MCP ships with 1,136 regression tests (762 offline, 374 live-gated), the highest count in the 1102tools MCP suite.
+This Model Context Protocol server exposes seven SAM.gov REST APIs (Entity Management v3, Exclusions v4, Opportunities v2, Contract Awards v1, Federal Hierarchy v1, Acquisition Subaward Reporting, Assistance Subaward Reporting) plus the PSC lookup as 20 callable tools. It was hardened across ten audit rounds, the tenth being a ~230-call paced live campaign against production. Live audits surfaced seven catastrophic P1 silent-wrong-data bugs mocks could never catch (apostrophe-rejecting WAF, typo'd-parameter silent drops, empty PIID acceptance, `entityName` vs `exclusionName`, and three Subaward parameter casings). Round 9 (1.0.2), an independent full-source re-audit, found the worst one yet by replaying the documented Entity API response shape through the real pipeline: `get_entity_reps_and_certs` read the wrong JSON key casings, so its default summary mode returned EMPTY clause lists for every entity, and eight prior rounds never noticed because their live assertions only checked `totalRecords`. This MCP is also where the `extra='forbid'` cross-fix pattern was invented and exported to the rest of the suite. The current local release 1.0.13 collects 1,155 regression cases (781 offline and 374 live-gated). The hosted opportunities edition is documented separately from this local package.
 
 | Metric | Value |
 |---|---|
-| MCP tools exposed | 19 |
-| Total regression tests | 1,136 (762 offline, 374 live-gated) |
-| Tests per tool | 59.8 |
+| MCP tools exposed | 20 |
+| Total regression tests | 1,155 (781 offline, 374 live-gated) |
+| Tests per tool | 57.75 collected cases per tool |
 | Audit rounds completed | 10 |
 | Total items addressed | 77 across releases |
 | P1 silent-wrong-data bugs (live-audit-only) | 7 |
 | Round 9 findings | 13 (8 fixed in 1.0.2; all 5 pending items live-resolved in round 10) |
 | Round 10 findings | 10 (fixed/documented in 1.0.4 from a ~230-call paced live campaign) |
-| Current release | 1.0.6 |
+| Current release | 1.0.13 |
 | PyPI status | Published as `sam-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
-## 1.0.6 Safety Release Verification
+## Current regression inventory — local 1.0.13
+
+Collection on 2026-10-10 found 1,155 cases: 781 offline and 374 optional
+live-source cases. Collection does not execute tests or call SAM.gov. The
+ten audit rounds in the summary describe the historical local-package
+audits; the October hosted opportunities fixes do not change this local
+package version or local tool catalog.
+
+A fresh isolated PyPI 1.0.13 installation completed actual stdio
+initialization and `tools/list` with 20 tools, without a SAM API key or
+source request. The imported module came from installed site-packages.
+
+
+| Test file | Collected cases |
+|---|---:|
+| [test_access_status.py](tests/test_access_status.py) | 8 |
+| [test_audit_r10.py](tests/test_audit_r10.py) | 10 |
+| [test_audit_r9.py](tests/test_audit_r9.py) | 17 |
+| [test_credential_guidance.py](tests/test_credential_guidance.py) | 6 |
+| [test_credential_redaction.py](tests/test_credential_redaction.py) | 5 |
+| [test_density_r5.py](tests/test_density_r5.py) | 367 |
+| [test_live_audit_r6.py](tests/test_live_audit_r6.py) | 235 |
+| [test_round_7.py](tests/test_round_7.py) | 133 |
+| [test_sba_business_type.py](tests/test_sba_business_type.py) | 15 |
+| [test_v0_4_features.py](tests/test_v0_4_features.py) | 278 |
+| [test_validation.py](tests/test_validation.py) | 81 |
+
+The release records below are historical evidence with their original
+versions, counts and dates. Their counts are not the current inventory.
+
+## Historical 1.0.6 Safety Release Verification
 
 The complete offline suite passed 762 tests with 374 live tests gated. Shared
 pacing tests verified same-key cross-process serialization, distinct-key

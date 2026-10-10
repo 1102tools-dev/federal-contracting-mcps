@@ -1,6 +1,38 @@
 # Acquisition.gov MCP test record
 
-## Version 1.0.8 hosted parsing follow-up — 2026-09-13
+## Current release 1.0.9 — regression inventory (2026-10-10)
+
+The current package exposes five tools and collects **240 regression
+cases: 237 offline and 3 opt-in live tests**. Collection was repeated on
+2026-10-10 without running a full suite or calling official sources. The
+three optional cases are one in `test_live.py` and two in
+`test_live_hardening.py`; all require `ACQUISITION_GOV_LIVE_TESTS=1`.
+
+The additional 1.0.9 regression is
+[`test_quoted_issued_on_date_is_not_the_documents_date`](tests/test_fable_regressions.py):
+a quoted OMB memo issued on May 2, 2025 must not replace the document's
+own February 20, 2026 issuance date. This documentation refresh changes
+no code, deployment setting or package version.
+
+
+| Test file | Collected cases |
+|---|---:|
+| [test_boundaries.py](tests/test_boundaries.py) | 43 |
+| [test_fable_regressions.py](tests/test_fable_regressions.py) | 56 |
+| [test_hardening.py](tests/test_hardening.py) | 12 |
+| [test_http.py](tests/test_http.py) | 3 |
+| [test_live.py](tests/test_live.py) | 1 |
+| [test_live_hardening.py](tests/test_live_hardening.py) | 2 |
+| [test_per_tool.py](tests/test_per_tool.py) | 67 |
+| [test_server.py](tests/test_server.py) | 20 |
+| [test_smoke.py](tests/test_smoke.py) | 3 |
+| [test_tool_paths.py](tests/test_tool_paths.py) | 33 |
+
+The sections below preserve historical release evidence with their
+original versions, test counts and dates. Their counts are not the
+current 1.0.9 inventory.
+
+## Historical version 1.0.8 hosted parsing follow-up — 2026-09-13
 
 The 1.0.7 production acceptance test caught a Part 52 HTML parsing timeout at the unchanged 40-second parser deadline, despite its earlier constrained-image check passing. Version 1.0.8 removes repeated full-tree CSS-selector matching and duplicate text extraction. Source guards and parser deadlines are unchanged. All **236 offline tests** pass. Three local runs returned identical output: before **0.6492, 0.6579, 0.6565 seconds**; after **0.4721, 0.4792, 0.4619 seconds**. These local timings are not hosted throughput promises. Final deployment and hosted outcomes are recorded in the follow-up evidence.
 
@@ -22,7 +54,7 @@ Fable 5.1 at extra-high effort independently reviewed the immutable 1.0.6 snapsh
 
 Version 1.0.7 binds each stateless request to its own SDK lifespan and cancels its work before releasing the HTTP slot. HTML parsing now runs in a separate, bounded process. HTML and PDF parsing share **one process slot**, so both parsers cannot consume the container's memory allowance simultaneously. The parser module excludes MCP server startup code. The five published tool definitions and source URL allowlist are unchanged.
 
-### Current offline coverage
+### Offline coverage at version 1.0.7
 
 **236 passed, 3 opt-in live tests skipped**, including **55 new review regressions**. P0/P1/P2/P3 below classify test scenarios, not outstanding findings.
 
