@@ -127,3 +127,58 @@ def test_descriptions_explain_deadline_fields():
         assert "commentDeadlineEastern" in tools[name], name
     for name in ("open_comment_periods", "far_case_history"):
         assert "comment_deadline" in tools[name] and "comment_end_date_utc" in tools[name], name
+
+
+# ---------------------------------------------------------------------------
+# R3: comment counts are labeled as posted submissions
+# ---------------------------------------------------------------------------
+
+def test_search_comments_labels_posted_count(monkeypatch):
+    # CMMC DFARS proposed rule: API 97 posted; the FR records 109 received
+    # (dl/fr_2024-18110.json), so an unlabeled 97 reads as the full count.
+    _fake_get(monkeypatch, {"comments": FIXTURE["comments_on_0194"]})
+    out = asyncio.run(srv.search_comments(comment_on_id="090000648664a1fa", page_size=5))
+    assert out["posted_comments"] == 97
+    assert "posted" in out["count_note"] and "received" in out["count_note"]
+    assert "duplicateComments" in out["count_note"]
+
+
+def test_far_case_history_reports_labeled_posted_count(monkeypatch):
+    calls = []
+
+    def route(path, params):
+        if path.startswith("dockets/"):
+            return {"data": {"id": "DARS-2020-0034", "attributes": {"title": "CMMC"}}}
+        if path == "documents":
+            return FIXTURE["docs_DARS-2020-0034"]
+        assert path == "comments" and params["filter[docketId]"] == "DARS-2020-0034"
+        return {"data": [], "meta": {"totalElements": 286}}  # dl/comments_docket_DARS-2020-0034.json
+
+    _fake_get(monkeypatch, route, calls)
+    out = asyncio.run(srv.far_case_history("DARS-2020-0034"))
+    assert out["posted_comments"] == 286
+    assert "not comments received" in out["count_note"]
+    # later pages skip the extra count call
+    calls.clear()
+    asyncio.run(srv.far_case_history("DARS-2020-0034", page_size=5, page_number=2))
+    assert [c[0] for c in calls] == ["dockets/DARS-2020-0034", "documents"]
+
+
+def test_far_case_history_survives_count_failure(monkeypatch):
+    def route(path, params):
+        if path.startswith("dockets/"):
+            return {"data": {"id": "X-1", "attributes": {}}}
+        if path == "documents":
+            return FIXTURE["docs_DARS-2020-0034"]
+        raise srv.ToolError("HTTP 503: upstream")
+
+    _fake_get(monkeypatch, route)
+    out = asyncio.run(srv.far_case_history("DARS-2020-0034"))
+    assert "posted_comments" not in out and "unavailable" in out["posted_comments_error"]
+    assert len(out["documents"]) == 7
+
+
+def test_count_descriptions_say_posted_not_received():
+    tools = {t.name: t.description for t in asyncio.run(srv.mcp.list_tools())}
+    for name in ("search_comments", "far_case_history"):
+        assert "posted_comments" in tools[name] and "received" in tools[name], name

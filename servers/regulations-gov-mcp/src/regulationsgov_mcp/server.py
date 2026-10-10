@@ -823,6 +823,23 @@ def _flag_no_data(
     return response
 
 
+_POSTED_COUNT_NOTE = (
+    "This counts comments posted publicly on Regulations.gov, not comments "
+    "received. The agency's received count can be far higher: identical "
+    "mass-mail comments are often posted once (get_comment_detail shows "
+    "duplicateComments) and some received comments are never posted. Report "
+    "it as posted comments."
+)
+
+
+def _label_posted_count(response: dict[str, Any]) -> dict[str, Any]:
+    total = _safe_dict(response.get("meta")).get("totalElements")
+    if isinstance(total, int):
+        response["posted_comments"] = total
+        response["count_note"] = _POSTED_COUNT_NOTE
+    return response
+
+
 # ---------------------------------------------------------------------------
 # Core tools
 # ---------------------------------------------------------------------------
@@ -998,6 +1015,10 @@ async def search_comments(
 
     docket_id filters comments to all documents in a docket.
 
+    posted_comments (= meta.totalElements) counts comments posted publicly,
+    not comments received; mass-mail duplicates and unposted comments are
+    not in it, so the agency's received count can be much higher.
+
     Page size: 5-100; page_number 1-40. Comments sorted by '-postedDate' by
     default. For larger result sets, split the query into posted_date_ge/le
     windows. Most comment text is in attachments; get_comment_detail with
@@ -1039,10 +1060,10 @@ async def search_comments(
         f"agency_id={agency_id!r}, docket_id={docket_id!r}, "
         f"comment_on_id={comment_on_id!r}"
     )
-    return _compact_listing(_flag_no_data(
+    return _label_posted_count(_compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
         hints=("comment_on_id is the document's hex objectId, not its documentId",),
-    ))
+    )))
 
 
 @mcp.tool(annotations={"title": "Get Comment Detail", **_OPEN_WORLD})
@@ -1284,7 +1305,10 @@ async def far_case_history(
     type and of documents open for comment across the whole docket, and one
     page of its documents, most recent first, with types, dates, and URLs.
     comment_deadline is the closing time in Eastern time; comment_end_date_utc
-    is the raw UTC instant, whose date reads one day late.
+    is the raw UTC instant, whose date reads one day late. Page 1 also gives
+    posted_comments for the whole docket: comments posted publicly, not
+    comments received (mass-mail duplicates and unposted comments are not
+    in it).
     When the docket has more documents, truncated=true and next_page_number
     gives the page that continues the list.
 
@@ -1336,6 +1360,18 @@ async def far_case_history(
         out["documents_by_type"] = facets["documentType"]
     if "withinCommentPeriod" in facets:
         out["open_for_comment"] = _safe_dict(facets["withinCommentPeriod"]).get("true", 0)
+    if page_number == 1:
+        try:
+            comments = await _get("comments", {
+                "page[size]": MIN_PAGE_SIZE, "page[number]": 1, "filter[docketId]": docket_id,
+            })
+        except ToolError as e:
+            out["posted_comments_error"] = f"Comment count unavailable: {e}"
+        else:
+            posted = _safe_dict(comments.get("meta")).get("totalElements")
+            if isinstance(posted, int):
+                out["posted_comments"] = posted
+                out["count_note"] = _POSTED_COUNT_NOTE
     out.update(_page_fields(api_total, page_size, page_number, len(documents)))
     out["documents"] = documents
     if out.get("truncated"):
