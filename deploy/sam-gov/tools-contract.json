@@ -78,7 +78,7 @@
         "agency": {
           "type": "string",
           "maxLength": 200,
-          "description": "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NAVSEA."
+          "description": "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NSWC Dahlgren. Field activities post under their own office names, so a command name matches only its headquarters office (NAVSEA matches NAVSEA HQ, not NSWC or NUWC offices)."
         },
         "place_of_performance_state": {
           "type": "string",
@@ -278,7 +278,7 @@
         "agency": {
           "type": "string",
           "maxLength": 200,
-          "description": "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NAVSEA."
+          "description": "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NSWC Dahlgren. Field activities post under their own office names, so a command name matches only its headquarters office (NAVSEA matches NAVSEA HQ, not NSWC or NUWC offices)."
         },
         "place_of_performance_state": {
           "type": "string",

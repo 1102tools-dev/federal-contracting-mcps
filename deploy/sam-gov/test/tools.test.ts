@@ -131,6 +131,15 @@ test("keyword search matches words, stems, and quoted phrases in title or descri
   await assert.rejects(search({keywords: "NOT OR"}), /no searchable words/, "operators alone are ignored");
 });
 
+test("agency description does not promise a command matches its field activities", async () => {
+  // agency="NAVSEA" matches only the NAVSEA HQ office; warfare centers post as NSWC/NUWC offices.
+  const description = (TOOLS[0].inputSchema.properties as any).agency.description;
+  assert.doesNotMatch(description, /e\.g\. [^.]*NAVSEA\./);
+  assert.match(description, /own office names/);
+  const navy = database(true, [notice(50, {office: "NAVSEA HQ"}), notice(51, {office: "NSWC DAHLGREN"})]);
+  assert.deepEqual(ids(await searchOpportunities(navy, {agency: "NSWC"}, NOW)), [51]);
+});
+
 test("filters combine: type with slash, NAICS prefix, set-aside, agency, state, solicitation", async () => {
   assert.deepEqual(ids(await search({notice_types: ["combined synopsis/solicitation"]})), [2]);
   assert.deepEqual(ids(await search({naics_codes: ["5415"], notice_types: ["Solicitation", "Combined Synopsis/Solicitation"]})), [7, 2, 1]);

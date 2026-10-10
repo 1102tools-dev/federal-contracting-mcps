@@ -52,7 +52,7 @@ const FILTERS = {
   naics_codes: codeList("NAICS codes or prefixes (2 to 6 digits); a prefix such as 5415 matches every code under it."),
   psc_codes: codeList("Product and service codes or prefixes, e.g. D3 or R425."),
   set_aside_codes: {type: "array", items: {type: "string", enum: SET_ASIDE_CODES}, description: "SAM.gov set-aside codes, e.g. SBA (total small business), 8A, SDVOSBC, WOSB, HZC. NONE means the notice says no set-aside was used."},
-  agency: {type: "string", maxLength: 200, description: "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NAVSEA."},
+  agency: {type: "string", maxLength: 200, description: "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NSWC Dahlgren. Field activities post under their own office names, so a command name matches only its headquarters office (NAVSEA matches NAVSEA HQ, not NSWC or NUWC offices)."},
   place_of_performance_state: {type: "string", pattern: "^[A-Za-z]{2}$", description: "Two-letter state code for the place of performance. Most notices leave the place of performance blank, so results also report how many more notices have a contracting office in that state (see office_state)."},
   office_state: {type: "string", pattern: "^[A-Za-z]{2}$", description: "Two-letter state code of the contracting office. Filled in on nearly every notice, but an office's state is not always where the work happens."},
   solicitation_number: {type: "string", maxLength: 100, description: "Exact solicitation number."},
