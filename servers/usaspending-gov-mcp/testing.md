@@ -282,7 +282,7 @@ pre-fix c5293fc source demonstrates failures for changed behavior. Worker
 TypeScript checks, all 55 hosted tool contracts, nine package version
 checks and 64 release guards pass.
 
-A separate source gate repeats 15 content repros against the actual public
+A separate source gate repeats 16 content repros against the actual public
 API, comparing raw upstream amounts/results with each tool answer, and
 checks four descriptions for scope guidance. The source gate passed on
 2026-10-10. It includes FY defaults, exact/ambiguous PIIDs, new-award count,
