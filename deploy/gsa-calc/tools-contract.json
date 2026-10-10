@@ -327,7 +327,7 @@
       "readOnlyHint": true,
       "title": "Suggest Contains"
     },
-    "description": "Discover exact field values via autocomplete/contains matching.\n\n    Returns aggregation buckets showing matching values and their record\n    counts. Use this BEFORE exact_search() to find the right value string.\n\n    Minimum 2 characters required for the search term.\n\n    Example workflow:\n    1. suggest_contains('vendor_name', 'booz') -> finds 'Booz Allen Hamilton Inc.'\n    2. exact_search('vendor_name', 'Booz Allen Hamilton Inc.') -> all their rates\n    ",
+    "description": "Discover exact field values via autocomplete/contains matching.\n\n    Returns aggregation buckets showing matching values and their record\n    counts. Use this BEFORE exact_search() to find the right value string.\n\n    Minimum 2 characters required for the search term.\n\n    GSA lists at most 100 values, most records first. When more values\n    match, truncated is true and other_records counts the records under\n    values not shown; use a longer term to narrow the list.\n\n    Example workflow:\n    1. suggest_contains('vendor_name', 'booz') -> finds 'Booz Allen Hamilton Inc.'\n    2. exact_search('vendor_name', 'Booz Allen Hamilton Inc.') -> all their rates\n    ",
     "inputSchema": {
       "properties": {
         "field": {

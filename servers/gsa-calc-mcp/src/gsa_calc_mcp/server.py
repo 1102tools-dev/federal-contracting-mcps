@@ -873,6 +873,10 @@ async def suggest_contains(
 
     Minimum 2 characters required for the search term.
 
+    GSA lists at most 100 values, most records first. When more values
+    match, truncated is true and other_records counts the records under
+    values not shown; use a longer term to narrow the list.
+
     Example workflow:
     1. suggest_contains('vendor_name', 'booz') -> finds 'Booz Allen Hamilton Inc.'
     2. exact_search('vendor_name', 'Booz Allen Hamilton Inc.') -> all their rates
@@ -889,9 +893,12 @@ async def suggest_contains(
     qs = _build_query_string(suggest_field=field, suggest_term=term)
     data = await _get(qs)
 
-    buckets = _as_list(
-        _safe_dict(_safe_dict(data.get("aggregations")).get(field)).get("buckets")
-    )
+    field_agg = _safe_dict(_safe_dict(data.get("aggregations")).get(field))
+    buckets = _as_list(field_agg.get("buckets"))
+    # GSA returns at most 100 values; sum_other_doc_count is the number of
+    # records under values that were left off the list.
+    other = field_agg.get("sum_other_doc_count")
+    other_records = other if isinstance(other, int) and not isinstance(other, bool) and other > 0 else 0
     suggestions: list[dict[str, Any]] = []
     for b in buckets:
         pair = _safe_bucket_key(b)
@@ -912,6 +919,8 @@ async def suggest_contains(
         "search_term": term,
         "suggestions": suggestions,
         "total_matching_records": total,
+        "truncated": other_records > 0,
+        "other_records": other_records,
     }
 
 

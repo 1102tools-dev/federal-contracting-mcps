@@ -255,3 +255,41 @@ def test_live_g9_sin_541611_lower_bound_not_negative():
         assert b["lower"] == 0 and b["lower_clamped_to_zero"] is True
     else:
         assert b["lower"] == api_lower
+
+
+# ---------------------------------------------------------------------------
+# G-12: suggest_contains says when GSA's 100-value list is cut off
+# ---------------------------------------------------------------------------
+
+def _suggest_body(n_values: int, other: int) -> dict:
+    return {
+        "hits": {"total": {"value": 539, "relation": "eq"}, "hits": []},
+        "aggregations": {"labor_category": {
+            "buckets": [{"key": f"Scrum Master {i}", "doc_count": 4} for i in range(n_values)],
+            "sum_other_doc_count": other,
+        }},
+    }
+
+
+def test_g12_suggest_contains_flags_truncated_list(monkeypatch):
+    monkeypatch.setattr(srv, "_get", _MockGet(_suggest_body(100, 102)))
+    r = _payload(asyncio.run(_call("suggest_contains", field="labor_category", term="Scrum Master")))
+    assert r["truncated"] is True
+    assert r["other_records"] == 102
+
+
+def test_g12_suggest_contains_complete_list(monkeypatch):
+    monkeypatch.setattr(srv, "_get", _MockGet(_suggest_body(3, 0)))
+    r = _payload(asyncio.run(_call("suggest_contains", field="labor_category", term="Scrum Master")))
+    assert r["truncated"] is False
+    assert r["other_records"] == 0
+
+
+@live
+def test_live_g12_scrum_master_truncation_matches_api():
+    api = _api("suggest-contains=labor_category:Scrum+Master&page=1&page_size=100&ordering=current_price&sort=asc")
+    other = api["aggregations"]["labor_category"]["sum_other_doc_count"]
+    r = _payload(asyncio.run(_call("suggest_contains", field="labor_category", term="Scrum Master")))
+    assert r["other_records"] == other
+    assert r["truncated"] is (other > 0)
+    assert len(r["suggestions"]) == len(api["aggregations"]["labor_category"]["buckets"])
