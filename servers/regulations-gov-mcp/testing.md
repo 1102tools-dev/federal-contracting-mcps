@@ -254,3 +254,61 @@ Equity withdrawal action. Direct Regulations.gov DEMO_KEY returned HTTP 429;
 source parity otherwise uses dated historical raw records. Published/live
 verification of 2.0.4 occurs after release. The reviewed nine-tool metadata
 contract is unchanged.
+
+## Published 2.0.4 content audit, round 2 (2026-10-10)
+
+The second content round found **zero new P0, P1, P2, or P3 defects** in the
+published 2.0.4 package and public service. It made 62 practical public MCP
+calls across all nine tools: 61 succeeded, and one caller supplied a calendar
+date where `search_dockets` documents a timestamp. The response explained the
+required `YYYY-MM-DD HH:MM:SS` format; the corrected followup returned 34 FAR
+rulemaking dockets. That successful recovery is not a software defect.
+
+The corpus covered procurement comment deadlines and proposed-rule filtering;
+FAR proposals; CMMC and cybersecurity lifecycle research; SBA size standards
+and methodology; GSAR rulemaking; sustainability and commercial-item
+research; NASA and VA notices; semiconductor public comments; and Pay Equity
+withdrawal. Followups continued deadline, proposal, and comment pages;
+identified the specific CMMC docket after broader attachment-text matches;
+narrowed it to final rules; inspected docket and document details; distinguished
+withdrawal from proposal; read comments and attachment references; inspected
+public organization fields; and used a proposal's source `objectId` to find
+its comments. Generic posting dockets retained their broad scope and paging
+limits, with narrower document searches completing the relevant followups.
+
+The audit recorded 29 passing content, workflow, and package checks. These
+included disjoint continuation pages, chronological deadlines, completion of
+20 VA open records and nine 2026 FAR proposals, the CMMC final-rule lifecycle,
+Pay Equity withdrawal, and semiconductor counts labeled as public posts.
+Current topic-filter and document-specific counts were checked against the
+corresponding exposed tool results. These audit assertions are separate from
+the pytest collection and reflect the public data observed on the audit date.
+
+Primary comparisons used 60 fresh official Federal Register JSON documents
+and two official full-text XML documents, with 88 comparison rows across
+original and followup displays. Apparent deadline differences were resolved
+against primary text: SBA's later extension covered both the numeric size
+standards and methodology proposals; a DFARS extension's dates paragraph
+corrected its stale machine-readable closing date; the VA notice specified
+30 days after publication; and the CMMC interim rule and correction stated
+comment deadlines omitted from the Federal Register API fields. These source
+caveats were not counted as new implementation defects.
+
+A fresh install from official PyPI launched the actual `regulationsgov-mcp`
+2.0.4 console entrypoint through MCP stdio. Initialize, the nine-tool catalog,
+and no-key `get_access_status` passed. Installed CLI, public service, and the
+reviewed frozen contract matched in tool names, descriptions, schemas, and
+annotations. Public health retained the unchanged release SHA
+`b379d69b3ac505d5f1f1ae255896acb2b5f0d866`; initialize reported 2.0.4 with no
+unexpected instructions. No runtime change, new regression, version bump, or
+republish was needed for this round.
+
+The current package suite was rerun: **167 passed, 119 optional live-source
+tests skipped, 286 collected**. Direct official Regulations.gov keyed-source
+verification remains limited by credentials and the established DEMO_KEY
+HTTP 429 quota. The 62 public calls are not 62 independent keyed-source parity
+passes. Comment text and public counts were checked for exposed cross-tool
+consistency; current individual comment raw API responses were not
+independently refetched with a local key. Hosted content success, primary
+Federal Register comparisons, local no-key startup, and skipped direct-source
+tests remain distinct verification layers.
