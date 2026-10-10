@@ -733,7 +733,9 @@
           ]
         }
       }
-    }
+    },
+    "provenance": "Fresh direct GSA parsed JSON response, before any tool output augmentation; canonical JSON hash, not transport-byte hash",
+    "canonical_json_sha256": "d5ce0b726d32d57b6d9705fabfb86063d7ffdda8be3a70fb19a08c96cc37db98"
   },
   "no_exact_grade": {
     "question": "Compare the $135/hour BA/MA3+ proposal for Registered Nurse I, preserving any thin/mixed/empty limitation.",
@@ -746,7 +748,7 @@
     },
     "source_url": "https://api.gsa.gov/acquisition/calc/v3/api/ceilingrates/?keyword=Registered+Nurse+I&filter=education_level:BA%7CMA&filter=experience_range:3%2C999&page=1&page_size=10&ordering=current_price&sort=asc",
     "raw": {
-      "took": 9,
+      "took": 11,
       "timed_out": false,
       "_shards": {
         "total": 5,
@@ -1413,7 +1415,9 @@
           ]
         }
       }
-    }
+    },
+    "provenance": "Fresh direct GSA parsed JSON response, before any tool output augmentation; canonical JSON hash, not transport-byte hash",
+    "canonical_json_sha256": "e18fd468661995163d80f7181f90e256ef11a3f52f1b6c0c15975745b5d6e804"
   },
   "exact_grade": {
     "question": "Registered Nurse I had no BA/MA3+ records. Its primary rows show1\u20132years; inspect BA1+ exact-title rates instead of treating the market as absent.",
@@ -1713,6 +1717,8 @@
           ]
         }
       }
-    }
+    },
+    "provenance": "Fresh direct GSA parsed JSON response, before any tool output augmentation; canonical JSON hash, not transport-byte hash",
+    "canonical_json_sha256": "d2d80521a66657f2342a669d4ecc825ef8d56fddb6cc8e77d36f08b41d399a76"
   }
 }
