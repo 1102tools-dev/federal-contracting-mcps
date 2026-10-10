@@ -1,0 +1,63 @@
+{
+  "content_versions": [
+    {
+      "date": "2017-03-21",
+      "amendment_date": "2017-03-21",
+      "issue_date": "2017-03-21",
+      "identifier": "1194.1",
+      "name": "\u00a7 1194.1   Standards for Section 508 of the Rehabilitation Act.",
+      "part": "1194",
+      "substantive": true,
+      "removed": false,
+      "subpart": null,
+      "title": "36",
+      "type": "section"
+    },
+    {
+      "date": "2016-12-13",
+      "amendment_date": "2016-12-13",
+      "issue_date": "2016-12-21",
+      "identifier": "1194.1",
+      "name": "\u00a7 1194.1   Purpose.",
+      "part": "1194",
+      "substantive": true,
+      "removed": false,
+      "subpart": "A",
+      "title": "36",
+      "type": "section"
+    },
+    {
+      "date": "2017-01-18",
+      "amendment_date": "2017-01-18",
+      "issue_date": "2017-01-18",
+      "identifier": "1194.1",
+      "name": "\u00a7 1194.1   Purpose.",
+      "part": "1194",
+      "substantive": true,
+      "removed": false,
+      "subpart": "A",
+      "title": "36",
+      "type": "section"
+    },
+    {
+      "date": "2017-03-03",
+      "amendment_date": "2017-03-03",
+      "issue_date": "2017-03-03",
+      "identifier": "1194.1",
+      "name": "\u00a7 1194.1   Purpose.",
+      "part": "1194",
+      "substantive": true,
+      "removed": false,
+      "subpart": "A",
+      "title": "36",
+      "type": "section"
+    }
+  ],
+  "meta": {
+    "title": "36",
+    "section": "1194.1",
+    "result_count": "4",
+    "latest_amendment_date": "2017-03-21",
+    "latest_issue_date": "2017-03-21"
+  }
+}

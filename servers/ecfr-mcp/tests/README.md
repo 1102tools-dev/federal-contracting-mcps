@@ -1,6 +1,6 @@
 # Test suite map
 
-449 collected tests (331 offline, 118 live-gated). Files are named by the audit round or fix-wave that
+450 collected tests (332 offline, 118 live-gated). Files are named by the audit round or fix-wave that
 produced them and are append-only history: each maps to a section of
 [../testing.md](../testing.md), which narrates what every round found and
 fixed. That traceability is deliberate; do not consolidate or rename rounds.
@@ -14,6 +14,7 @@ fixed. That traceability is deliberate; do not consolidate or rename rounds.
 | `test_real_xml_fixtures.py` | 1.1.0 (2026-10-10 bug hunt): ten real eCFR responses in `fixtures/ecfr_xml/`; every text node must come out exactly once, in order, under the right section; targeted checks per bug; pages add up to the whole answer; all 253 2.101 definitions found by name | 32 | offline |
 | `test_1_1_0.py` | 1.1.0 fix wave (2026-10-10 bug hunt, groups 1-6): every tool change, eCFR mocked | 67 | offline |
 | `test_e2e_20261010.py` | October 10 content/usability followups: unavailable snapshots, citation title preservation, changes-only, recovery parameters | 12 | offline |
+| `test_content_round3.py` | 1.1.5 source-backed Section 508 chronological timeline and page followups | 1 | offline |
 | `test_content_round2.py` | 1.1.3 ordinary content research: COR original/canonical/acronym definitions, executable grants-comparison followup, intersected correction scopes using primary-source fixtures | 7 | offline |
 | `test_sdk_error_recovery.py` | 1.1.2 delivery correction: real stdio errors retain actionable guidance, then corrected questions complete | 1 | offline |
 | `test_http.py` | HTTP transport checks | 2 | offline |

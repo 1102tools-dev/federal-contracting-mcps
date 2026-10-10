@@ -1039,8 +1039,10 @@ async def get_version_history(
 
     'removed' true means the section was removed on that date.
 
-    History starts 2017-01-01 (eCFR's baseline: a 2017-01-01 version means
-    unchanged since before 2017). Pre-2017 changes are not tracked.
+    Point-in-time text snapshots start 2017-01-01. Version metadata can
+    include earlier dates; those records do not imply that a text snapshot
+    is available before 2017. A 2017-01-01 baseline often means unchanged
+    since before 2017. Use dates from 2017 onward for text comparisons.
 
     part/subpart/section accept int or string.
     """
@@ -1081,6 +1083,12 @@ async def get_version_history(
         versions = [v for v in versions if (v.get("date") or "") >= since_date]
     if until_date:
         versions = [v for v in versions if (v.get("date") or "") <= until_date]
+    # Upstream groups are not reliably chronological (e.g. Section 508).
+    # Sort the full filtered history before slicing so page followups remain
+    # stable and honor the documented section/oldest-first timeline.
+    versions = sorted(versions, key=lambda v: (str(v.get("identifier") or ""),
+                                             v.get("date") or "",
+                                             v.get("issue_date") or ""))
     total = len(versions)
     total_pages = max(1, -(-total // per_page))
     if page > total_pages:
