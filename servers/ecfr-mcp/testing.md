@@ -79,7 +79,7 @@ This Model Context Protocol server exposes the eCFR (Electronic Code of Federal 
 | Round 6 external re-audit findings, fixed in 1.0.2 | 12 (2 high, 5 medium, 5 low) |
 | Round 8 bug hunt findings, fixed in 1.1.0 | 18 P2, about 20 P3, plus 6 everyday-use fixes |
 | Source package version | 1.1.4 |
-| PyPI status | Published as `ecfr-mcp`, auto-publishes via Trusted Publisher on tag push |
+| PyPI status | 1.1.4 pending publication; 1.1.2 is published as `ecfr-mcp` |
 
 ## 1.0.4 Safety Release Verification
 
