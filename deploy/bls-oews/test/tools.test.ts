@@ -440,6 +440,14 @@ test("BLS-6: get_wage_data names industry 999100 as BLS does", () => {
   assert.ok(description.includes("15-1299"));
 });
 
+test("BLS-8: compare tools carry data_year at the top", async () => {
+  const metros = await data("compare_metros", {occ_code: "151252", metro_codes: ["47900", "17820"]});
+  assert.equal(metros.data_year, "2025");
+  assert.deepEqual(Object.keys(metros).slice(0, 4), ["occ_code", "occ_title", "datatype", "data_year"]);
+  const occupations = await data("compare_occupations", {occ_codes: ["151252"]});
+  assert.equal(occupations.data_year, "2025");
+});
+
 // ---------- Python formatting helpers ----------
 
 test("pyjson matches Python's repr, format, round, and strip", () => {

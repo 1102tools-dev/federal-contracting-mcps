@@ -577,6 +577,7 @@ export async function compareMetros(db: Database, args: Args) {
     ["occ_code", occ],
     ["occ_title", title(data, occ)],
     ["datatype", DATATYPE_LABELS[datatype]],
+    ["data_year", data.rel.year],
     ["metros", metros],
     ["metro_names", new Map(ids.map(id => [labels.get(id)!, data.areas.get(id.slice(4, 11)) ?? null]))],
   ]);
@@ -626,6 +627,7 @@ export async function compareOccupations(db: Database, args: Args) {
     ["area_code", scope !== "national" ? area_code : null],
     ["area_name", data.areas.get(area) ?? null],
     ["datatype", DATATYPE_LABELS[datatype]],
+    ["data_year", data.rel.year],
     ["occupations", occupations],
   ]);
   if (!hasNumeric(occupations.values())) {

@@ -695,6 +695,7 @@ async def compare_metros(
         "occ_code": occ_code,
         "occ_title": _occupation_title(occ_code),
         "datatype": DATATYPE_LABELS.get(datatype, datatype),
+        "data_year": OEWS_CURRENT_YEAR,
         "metros": metros,
         "metro_names": {
             label: snapshot.area_name(sid[4:11]) for sid, label in metro_labels.items()
@@ -807,6 +808,7 @@ async def compare_occupations(
         "area_code": area_code if scope != "national" else None,
         "area_name": snapshot.area_name(area),
         "datatype": DATATYPE_LABELS.get(datatype, datatype),
+        "data_year": OEWS_CURRENT_YEAR,
         "occupations": occupations,
     }
     # Flag the all-no-data case, mirroring compare_metros: without this,

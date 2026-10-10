@@ -189,3 +189,19 @@ def test_bls6_industry_labels_match_bls_and_point_federal_it_to_15_1299():
     assert "(Federal Government)" not in description
     # BLS 999100: 15-1299 employment 86,390 vs 15-1252 employment 140.
     assert "15-1299" in description
+
+
+# ---------------------------------------------------------------------------
+# BLS-8: compare tools carry data_year at the top and keep the caller's order
+# ---------------------------------------------------------------------------
+
+def test_bls8_compare_tools_carry_data_year_and_keep_order():
+    metros = _tool("compare_metros", occ_code="15-1232", metro_codes=["47900", "12580", "42660"], datatype="03")
+    assert metros["data_year"] == "2025"
+    # Already true before this fix: the server answers in the order asked
+    # (a client that sorts JSON keys can show otherwise).
+    assert list(metros["metros"]) == ["47900", "12580", "42660"]
+    # BLS dt03: DC 38.84, Baltimore 32.19, Seattle 40.80.
+    assert [v["numeric"] for v in metros["metros"].values()] == [38.84, 32.19, 40.8]
+    occupations = _tool("compare_occupations", occ_codes=["151252", "151212"])
+    assert occupations["data_year"] == "2025"
