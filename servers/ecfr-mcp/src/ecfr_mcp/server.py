@@ -218,12 +218,14 @@ def _cited_title(value: Any) -> int | None:
     return int(m.group(1)) if m else None
 
 
-def _check_cited_title(value: Any, title_number: int, field: str) -> None:
+def _check_cited_title(
+    value: Any, title_number: int, field: str, *, title_field: str = "title_number"
+) -> None:
     cited = _cited_title(value)
     if cited is not None and cited != title_number:
         raise ValueError(
-            f"{field}={value!r} is in title {cited}, but title_number is {title_number}. "
-            f"Pass title_number={cited}."
+            f"{field}={value!r} is in title {cited}, but {title_field} is {title_number}. "
+            f"Pass {title_field}={cited}."
         )
 
 
@@ -1230,7 +1232,7 @@ async def search_cfr(
         cited = _cited_title(raw)
         if cited is not None and title is None:
             title = cited
-        _check_cited_title(raw, title if title is not None else 48, field)
+        _check_cited_title(raw, title if title is not None else 48, field, title_field="title")
     assumed_title = False
     if title is None and any(v is not None for v in (chapter, part, subpart, section)):
         # eCFR refuses hierarchy filters without a title; these are FAR questions.
@@ -2192,7 +2194,7 @@ async def find_recent_changes(
     if since_date is None:
         raise ValueError("since_date is required (YYYY-MM-DD).")
     title = _validate_title_number(title, field="title")
-    _check_cited_title(part, title, "part")
+    _check_cited_title(part, title, "part", title_field="title")
     chapter = _validate_chapter(chapter, title_number=title)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     per_page = _clamp(per_page, field="per_page", lo=1, hi=SEARCH_MAX_PER_PAGE)

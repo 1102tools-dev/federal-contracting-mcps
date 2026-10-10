@@ -63,5 +63,25 @@ def test_explicit_citation_title_is_never_silently_discarded(monkeypatch, tool, 
         raise AssertionError("citation conflict must fail before any upstream lookup")
     monkeypatch.setattr(srv, "_get_json", unexpected)
     monkeypatch.setattr(srv, "_resolve_date", unexpected)
-    with pytest.raises(Exception, match="title_number=2"):
+    with pytest.raises(Exception, match=("title=2" if tool == "find_recent_changes" else "title_number=2")):
         asyncio.run(srv.mcp.call_tool(tool, args))
+
+
+def test_search_citation_error_names_the_actual_title_parameter():
+    with pytest.raises(Exception, match="Pass title=2"):
+        asyncio.run(srv.mcp.call_tool("search_cfr", {
+            "query": "procurement", "title": 48, "part": "2 CFR 200",
+        }))
+
+
+def test_recent_changes_recovers_with_the_suggested_title(monkeypatch):
+    seen = []
+    async def versions(title, params):
+        seen.append((title, params))
+        return [], {}, True
+    monkeypatch.setattr(srv, "_all_versions", versions)
+    r = asyncio.run(srv.mcp.call_tool("find_recent_changes", {
+        "since_date": "2026-09-01", "part": "2 CFR 200", "title": 2,
+    })).structured_content
+    assert r["title"] == 2 and r["part"] == "200"
+    assert seen == [(2, {"issue_date[gte]": "2026-09-01", "part": "200"})]
