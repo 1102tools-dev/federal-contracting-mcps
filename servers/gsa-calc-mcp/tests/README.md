@@ -1,6 +1,6 @@
 # Test suite map
 
-414 collected tests. Files are named by the audit round or fix-wave that
+433 collected tests. Files are named by the audit round or fix-wave that
 produced them and are append-only history: each maps to a section of
 [../testing.md](../testing.md), which narrates what every round found and
 fixed. That traceability is deliberate; do not consolidate or rename rounds.
@@ -13,7 +13,6 @@ fixed. That traceability is deliberate; do not consolidate or rename rounds.
 | `test_audit_r7.py` | Round 7 super-cycle: one-call-per-test live anchors (keyword rates, >= experience differential, live SIN) | 4 | 4 live_smoke |
 | `test_e2e_audit_2026_10.py` | Cross-field population, unverifiable title lists, capped suggestion counts and undefined statistics | 19 | 0 |
 | `test_content_fixes_2026_10.py` | 1.0.12 content-test regressions and direct government API comparisons | 30 | 12 live |
-
 | `test_http.py` | HTTP response handling and upstream error regressions | 2 | 0 |
 | `test_throughput.py` | Request pacing, concurrency and budget regressions | 12 | 0 |
 | `test_response_cache_hosted.py` | Hosted response-cache behavior and safeguards | 5 | 0 |
