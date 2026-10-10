@@ -313,3 +313,45 @@ def test_live_g7_saic_points_to_legal_name():
     assert api["aggregations"]["vendor_name"]["buckets"] == []
     r = _payload(asyncio.run(_call("vendor_rate_card", vendor_name="SAIC")))
     assert "legal name" in r["error"]
+
+
+# ---------------------------------------------------------------------------
+# G-4: sin and security_clearance reach the workflow tools
+# ---------------------------------------------------------------------------
+
+def test_g4_price_check_passes_sin_and_clearance(monkeypatch):
+    mock = _MockGet(_stats_response(59, price=204.30))
+    monkeypatch.setattr(srv, "_get", mock)
+    r = _payload(asyncio.run(_call(
+        "price_reasonableness_check", labor_category="Senior Program Manager", proposed_rate=150,
+        business_size="S", sin="541611", security_clearance="yes",
+    )))
+    qs = mock.calls[0]
+    assert "filter=sin:541611" in qs, qs
+    assert "filter=security_clearance:yes" in qs, qs
+    assert "sin:541611" in r["filters_applied"]
+
+
+def test_g4_igce_benchmark_passes_clearance(monkeypatch):
+    mock = _MockGet(_stats_response(325, price=134.19))
+    monkeypatch.setattr(srv, "_get", mock)
+    asyncio.run(_call("igce_benchmark", labor_category="Systems Administrator", security_clearance="yes"))
+    assert "filter=security_clearance:yes" in mock.calls[0], mock.calls[0]
+
+
+@live
+def test_live_g4_price_check_sin_population_matches_api():
+    api = _api("keyword=Senior+Program+Manager&filter=business_size:S&filter=sin:541611&page=1&page_size=1&ordering=current_price&sort=asc")
+    r = _payload(asyncio.run(_call(
+        "price_reasonableness_check", labor_category="Senior Program Manager", proposed_rate=150,
+        business_size="S", sin="541611",
+    )))
+    assert r["total_rates"] == api["aggregations"]["wage_stats"]["count"]
+
+
+@live
+def test_live_g4_igce_clearance_population_matches_api():
+    api = _api("keyword=Systems+Administrator&filter=security_clearance:yes&page=1&page_size=1&ordering=current_price&sort=asc")
+    r = _payload(asyncio.run(_call("igce_benchmark", labor_category="Systems Administrator", security_clearance="yes")))
+    assert r["total_rates"] == api["aggregations"]["wage_stats"]["count"]
+    assert r["avg_rate"] == round(api["aggregations"]["wage_stats"]["avg"], 2)

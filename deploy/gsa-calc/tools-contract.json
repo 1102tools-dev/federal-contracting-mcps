@@ -529,7 +529,7 @@
       "readOnlyHint": true,
       "title": "IGCE Benchmark"
     },
-    "description": "Get ceiling rate benchmarks for IGCE development.\n\n    Returns statistical summary for a labor category: count, min, max, avg,\n    median, standard deviation, percentile distribution (P10-P90), education\n    breakdown, and outlier bounds.\n\n    This is the primary tool for building Independent Government Cost\n    Estimates. The returned statistics represent the market distribution\n    of GSA MAS ceiling rates for comparable labor categories.\n\n    Reminder: these are ceiling rates (max a contractor can charge), not\n    prices paid. Actual task order rates should be lower per FAR 8.405-2(d).\n    ",
+    "description": "Get ceiling rate benchmarks for IGCE development.\n\n    Returns statistical summary for a labor category: count, min, max, avg,\n    median, standard deviation, percentile distribution (P10-P90), education\n    breakdown, and outlier bounds.\n\n    This is the primary tool for building Independent Government Cost\n    Estimates. The returned statistics represent the market distribution\n    of GSA MAS ceiling rates for comparable labor categories.\n\n    Reminder: these are ceiling rates (max a contractor can charge), not\n    prices paid. Actual task order rates should be lower per FAR 8.405-2(d).\n\n    Optional filters: education_level, experience_min/max, business_size\n    ('S' or 'O'), sin (e.g. '541611'), security_clearance ('yes' or 'no').\n    ",
     "inputSchema": {
       "properties": {
         "labor_category": {
@@ -602,6 +602,22 @@
           ],
           "default": null,
           "title": "Sin"
+        },
+        "security_clearance": {
+          "anyOf": [
+            {
+              "enum": [
+                "yes",
+                "no"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Security Clearance"
         }
       },
       "required": [
@@ -624,7 +640,7 @@
       "readOnlyHint": true,
       "title": "Price Reasonableness Check"
     },
-    "description": "Evaluate a proposed hourly rate against GSA ceiling rate distribution.\n\n    Returns the benchmark statistics plus a positioning analysis: z-score,\n    comparison to median, IQR position, and delta from average.\n\n    Use this for FAR 15.404-1 price analysis: is the proposed rate within\n    the expected range for comparable labor categories on GSA MAS?\n\n    A rate above P75 may be high; above P90 warrants scrutiny. A rate below\n    P25 may indicate an unrealistically low offer (potential performance risk).\n\n    With fewer than 20 comparable rates the result has status LOW_SAMPLE:\n    the statistics are returned but there is no high/low verdict (z_score,\n    vs_median and iqr_position are null). Try a shorter phrase; the\n    labor_category keyword is matched as a literal phrase.\n    ",
+    "description": "Evaluate a proposed hourly rate against GSA ceiling rate distribution.\n\n    Returns the benchmark statistics plus a positioning analysis: z-score,\n    comparison to median, IQR position, and delta from average.\n\n    Use this for FAR 15.404-1 price analysis: is the proposed rate within\n    the expected range for comparable labor categories on GSA MAS?\n\n    A rate above P75 may be high; above P90 warrants scrutiny. A rate below\n    P25 may indicate an unrealistically low offer (potential performance risk).\n\n    Takes the same filters as igce_benchmark, including sin and\n    security_clearance; pass them so the comparison population matches the\n    requirement.\n\n    With fewer than 20 comparable rates the result has status LOW_SAMPLE:\n    the statistics are returned but there is no high/low verdict (z_score,\n    vs_median and iqr_position are null). Try a shorter phrase; the\n    labor_category keyword is matched as a literal phrase.\n    ",
     "inputSchema": {
       "properties": {
         "labor_category": {
@@ -686,6 +702,37 @@
           ],
           "default": null,
           "title": "Business Size"
+        },
+        "sin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sin"
+        },
+        "security_clearance": {
+          "anyOf": [
+            {
+              "enum": [
+                "yes",
+                "no"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Security Clearance"
         }
       },
       "required": [

@@ -994,6 +994,7 @@ async def igce_benchmark(
     experience_max: int | None = None,
     business_size: Literal["S", "O"] | None = None,
     sin: SinInput = None,
+    security_clearance: Literal["yes", "no"] | None = None,
 ) -> dict[str, Any]:
     """Get ceiling rate benchmarks for IGCE development.
 
@@ -1007,6 +1008,9 @@ async def igce_benchmark(
 
     Reminder: these are ceiling rates (max a contractor can charge), not
     prices paid. Actual task order rates should be lower per FAR 8.405-2(d).
+
+    Optional filters: education_level, experience_min/max, business_size
+    ('S' or 'O'), sin (e.g. '541611'), security_clearance ('yes' or 'no').
     """
     _validate_no_control_chars(labor_category, field="labor_category")
     labor_category = _strip_or_none(labor_category)
@@ -1021,6 +1025,7 @@ async def igce_benchmark(
     filters = _build_filters(
         education_level=education_level, experience_min=experience_min,
         experience_max=experience_max, business_size=business_size, sin=sin,
+        security_clearance=security_clearance,
     )
     qs = _build_query_string(
         keyword=labor_category, filters=filters, page=1, page_size=10,
@@ -1044,6 +1049,8 @@ async def price_reasonableness_check(
     experience_min: int | None = None,
     experience_max: int | None = None,
     business_size: Literal["S", "O"] | None = None,
+    sin: SinInput = None,
+    security_clearance: Literal["yes", "no"] | None = None,
 ) -> dict[str, Any]:
     """Evaluate a proposed hourly rate against GSA ceiling rate distribution.
 
@@ -1055,6 +1062,10 @@ async def price_reasonableness_check(
 
     A rate above P75 may be high; above P90 warrants scrutiny. A rate below
     P25 may indicate an unrealistically low offer (potential performance risk).
+
+    Takes the same filters as igce_benchmark, including sin and
+    security_clearance; pass them so the comparison population matches the
+    requirement.
 
     With fewer than 20 comparable rates the result has status LOW_SAMPLE:
     the statistics are returned but there is no high/low verdict (z_score,
@@ -1074,7 +1085,8 @@ async def price_reasonableness_check(
     benchmark = await igce_benchmark(
         labor_category, education_level=education_level,
         experience_min=experience_min, experience_max=experience_max,
-        business_size=business_size,
+        business_size=business_size, sin=sin,
+        security_clearance=security_clearance,
     )
 
     if benchmark.get("total_rates", 0) == 0:
