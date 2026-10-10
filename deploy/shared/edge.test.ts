@@ -293,6 +293,11 @@ test("labels the app from the User-Agent without keeping the string", () => {
   assert.equal(clientApp("openai-mcp/1.0.0"), "chatgpt");
   assert.equal(clientApp("Perplexity-MCP/1.0"), "perplexity");
   assert.equal(clientApp("claude-code/2.1.4 (cli)"), "claude-code");
+  assert.equal(clientApp("openai-mcp/1.0.0 (Codex)"), "codex");
+  assert.equal(clientApp("curl/8.7.1"), "1102tools");
+  assert.equal(clientApp("1102tools-release-guard/1"), "1102tools");
+  assert.equal(clientApp("tedix-mcp-scanner/1.0"), "scanner");
+  assert.equal(clientApp("OldRexTech-govcon-tools/1.0"), "other");
   assert.equal(clientApp("Mozilla/5.0 (Macintosh)"), "other");
   assert.equal(clientApp(null), "other");
 });
