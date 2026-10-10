@@ -1,6 +1,6 @@
 # Test suite map
 
-564 collected Python tests: 297 offline and 267 live-gated (2026-10-10, 1.2.1 preparation). Worker tests and parity scenarios are separate counts. Historical audit files remain append-only; see [../testing.md](../testing.md).
+573 collected Python tests: 306 offline and 267 live-gated (2026-10-10, 1.2.2 preparation). Worker tests and parity scenarios are separate counts. Historical audit files remain append-only; see [../testing.md](../testing.md).
 
 | File | Origin and purpose | Collected | Live-gated |
 |---|---|---:|---:|

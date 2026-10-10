@@ -434,6 +434,25 @@ def scenarios():
             call("compare_locations", {"locations": [{"city": "McLean", "state": "VA"}, {"city": "Arlington", "state": "VA", "county": "Arlington"}]}),
         ],
     })
+    out.append({
+        "name": "2026-10-10 content findings and followups",
+        "today": "2026-10-08",
+        "requests": [
+            *[call("lookup_zip_perdiem", {"zip_code": z, "fiscal_year": 2027})
+              for z in ("12345-garbage", "12345-1234-extra", "12345-", "12345-123", "１２３４５", "20120-1234")],
+            *[call(tool, {"city": city, "state": state, "county": county, "fiscal_year": 2027,
+                         **({"num_nights": 2, "travel_month": "Oct"} if tool == "estimate_travel_cost" else {})})
+              for city, state, county in (("Cambridge", "MA", "Essex"), ("Santa Monica", "CA", "San Diego"),
+                                         ("Sedona", "AZ", "Maricopa"), ("Cambridge", "MA", "Middlesex"))
+              for tool in ("lookup_city_perdiem", "estimate_travel_cost")],
+            *[call("estimate_travel_cost", {"city": "Washington", "state": "DC", "county": "District of Columbia",
+                                           "fiscal_year": 2027, "num_nights": n, "travel_month": m})
+              for n, m in ((2, "Oct"), (2, "Nov"), (4, "Oct"))],
+            call("compare_locations", {"fiscal_year": 2027, "locations": [
+                {"city": "Cambridge", "state": "MA", "county": "Essex"},
+                {"city": "Cambridge", "state": "MA", "county": "Middlesex"}]}),
+        ],
+    })
     out.append(sweep(y2027))
     return out
 

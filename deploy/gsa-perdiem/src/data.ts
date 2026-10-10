@@ -128,7 +128,11 @@ export class Year {
     }
     if (place) {
       const pk = placeKey(state, place);
-      if (pk in this.data.place_map) return this.data.place_map[pk];
+      if (pk in this.data.place_map) {
+        const hits = ((await this.places.get([pk])).get(pk) ?? []).filter(([, kind]) => kind !== "county");
+        if (hits.length && !hits.some(([county]) => county === ck)) return null;
+        return this.data.place_map[pk];
+      }
     }
     const dest = this.data.county_map[ck];
     if (dest !== undefined && place && this.excludes(dest, placeKey(state, place))) return null;
