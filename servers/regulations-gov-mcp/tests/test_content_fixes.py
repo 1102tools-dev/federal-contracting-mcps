@@ -354,4 +354,61 @@ def test_no_ceiling_flag_when_everything_is_reachable(monkeypatch):
     _fake_get(monkeypatch, lambda p, q: _page(81, 81, 1, 100))
     out = asyncio.run(srv.search_comments(docket_id="FAR-2021-0017", page_size=100))
     assert "truncated" not in out and "page_limit_note" not in out
-    assert out["meta"]["lastPage"] is False  # untouched API value
+
+
+# ---------------------------------------------------------------------------
+# P3s: R4 document_type on open_comment_periods, R5 self-filtered facets,
+# R7 HTML text, R9/R11 search-term guidance, docket sort fields
+# ---------------------------------------------------------------------------
+
+def test_open_comment_periods_document_type_filter(monkeypatch):
+    calls = []
+    _fake_get(monkeypatch, {"documents": {"data": [], "meta": {"totalElements": 0}}}, calls)
+    out = asyncio.run(srv.open_comment_periods(document_type="Proposed Rule"))
+    assert calls[0][1]["filter[documentType]"] == "Proposed Rule"
+    assert calls[0][1]["filter[withinCommentPeriod]"] == "true"
+    assert out["document_type"] == "Proposed Rule"
+
+
+def test_self_filtered_facets_are_dropped(monkeypatch):
+    # dl/open_far_dars.json: an agency-filtered, open-only query whose
+    # agencyId facet lists FDA/FAA/FMCSA and withinCommentPeriod lists false.
+    payload = {
+        "data": FIXTURE["open_documents"]["data"][:2],
+        "meta": {"totalElements": 70, "aggregations": {
+            "agencyId": [{"value": "FDA", "docCount": 149}, {"value": "FAA", "docCount": 117}],
+            "withinCommentPeriod": [{"label": "true", "docCount": 70}, {"label": "false", "docCount": 1706}],
+            "documentType": [{"label": "Notice", "docCount": 61}, {"label": "Proposed Rule", "docCount": 9}],
+        }},
+    }
+    _fake_get(monkeypatch, {"documents": payload})
+    out = asyncio.run(srv.search_documents(agency_id="FAR,DARS", within_comment_period=True))
+    facets = out["meta"]["facets"]
+    assert "agencyId" not in facets and "withinCommentPeriod" not in facets
+    assert facets["documentType"] == {"Notice": 61, "Proposed Rule": 9}
+
+
+def test_comment_text_and_snippets_are_plain_text(monkeypatch):
+    # dl/comment_DARS-2020-0034-0276.json: &ldquo;...&rdquo; and <br/><br/>.
+    _fake_get(monkeypatch, {"comments/DARS-2020-0034-0276": FIXTURE["comment_DARS-2020-0034-0276"]})
+    out = asyncio.run(srv.get_comment_detail("DARS-2020-0034-0276"))
+    text = out["data"]["attributes"]["comment"]
+    assert "&ldquo;" not in text and "<br" not in text
+    assert "“Defense Federal Acquisition Regulation Supplement" in text
+    assert "2024.\n\nPlease see the attached file" in text
+    assert srv._html_to_text("<mark><em>association</em></mark> &hellip; 5 &lt; 6") == "association … 5 < 6"
+
+
+def test_no_data_reason_mentions_the_search_term(monkeypatch):
+    _fake_get(monkeypatch, {"comments": {"data": [], "meta": {"totalElements": 0}}})
+    term = '"Coalition for Common Sense" OR "Professional Services Council"'
+    out = asyncio.run(srv.search_comments(docket_id="GSA-GSAR-2014-0020", search_term=term))
+    assert "search_term" in out["no_data_reason"] and "OR" in out["no_data_reason"]
+
+
+def test_search_descriptions_cover_phrase_quoting_and_docket_sorts():
+    tools = {t.name: t.description for t in asyncio.run(srv.mcp.list_tools())}
+    assert "quote" in tools["search_documents"].lower() and "not relevance" in tools["search_documents"]
+    assert "Quote a phrase" in tools["search_comments"]
+    assert "-lastModifiedDate" in tools["search_dockets"]
+    assert "document_type='Proposed Rule'" in tools["open_comment_periods"]

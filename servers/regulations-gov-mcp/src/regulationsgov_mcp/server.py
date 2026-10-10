@@ -14,6 +14,7 @@ rulemaking docket structure, public comments, and comment period status.
 from __future__ import annotations
 
 import collections
+import html as _html
 import json as _json
 import os
 import time
@@ -718,6 +719,25 @@ def _eastern_deadline(value: Any) -> str | None:
     )
 
 
+_BREAK_RE = re.compile(r"<\s*(?:br\s*/?|/p|/div|/li)\s*>", re.IGNORECASE)
+_TAG_RE = re.compile(r"</?[A-Za-z][^<>]*>")
+_BLANK_LINES_RE = re.compile(r"\n{3,}")
+_TRAILING_SPACE_RE = re.compile(r"[ \t]+\n")
+
+
+def _html_to_text(value: Any) -> Any:
+    """Regulations.gov returns comment text and search snippets as HTML
+    (&ldquo;, <br/>, <span style=...>, <mark><em>). Return plain text:
+    breaks become newlines, tags go, entities are decoded."""
+    if not isinstance(value, str) or ("<" not in value and "&" not in value):
+        return value
+    text = _BREAK_RE.sub("\n", value)
+    text = _TAG_RE.sub("", text)
+    text = _html.unescape(text).replace("\xa0", " ")
+    text = _TRAILING_SPACE_RE.sub("\n", text)
+    return _BLANK_LINES_RE.sub("\n\n", text).strip()
+
+
 def _compact_record(value: Any) -> Any:
     """Drop JSON:API self-links and empty attributes from one record.
 
@@ -730,6 +750,9 @@ def _compact_record(value: Any) -> Any:
     attrs = out.get("attributes")
     if isinstance(attrs, dict):
         attrs = {k: v for k, v in attrs.items() if v not in (None, "", [], {})}
+        for field in ("comment", "highlightedContent"):
+            if field in attrs:
+                attrs[field] = _html_to_text(attrs[field])
         if "commentEndDate" in attrs:
             raw = attrs.pop("commentEndDate")
             eastern = _eastern_deadline(raw)
@@ -740,13 +763,20 @@ def _compact_record(value: Any) -> Any:
     return out
 
 
-def _compact_listing(response: dict[str, Any]) -> dict[str, Any]:
+def _compact_listing(
+    response: dict[str, Any], skip_facets: tuple[str, ...] = (),
+) -> dict[str, Any]:
     """Shrink a Regulations.gov search response without losing data rows.
 
     The API attaches meta.aggregations to every search: facet counts for
     every agency (about 300 entries), subtype, and dates, often larger than
     the rows themselves. They become meta.facets: the top counts per facet,
     as {value: count}. Rows lose JSON:API self-links and empty attributes.
+
+    The API computes each facet without that facet's own filter, so with
+    agency_id=DARS the agencyId facet counts every agency site-wide. Facets
+    named in skip_facets (the ones the query filtered on) are dropped
+    instead of passed through as if they described the results.
     """
     response = dict(response)
     response.pop("links", None)
@@ -755,6 +785,8 @@ def _compact_listing(response: dict[str, Any]) -> dict[str, Any]:
     aggregations = _safe_dict(meta.pop("aggregations", None))
     facets: dict[str, Any] = {}
     for name, entries in aggregations.items():
+        if name in skip_facets:
+            continue
         counts = {}
         for entry in _as_list(entries):
             entry = _safe_dict(entry)
@@ -783,6 +815,16 @@ def _compact_detail(response: dict[str, Any]) -> dict[str, Any]:
     if isinstance(response.get("included"), list):
         response["included"] = [_compact_record(r) for r in response["included"]]
     return response
+
+
+def _search_term_hint(search_term: str | None) -> tuple[str, ...]:
+    if not search_term:
+        return ()
+    return (
+        f"search_term {search_term!r} is spelled as intended; "
+        "quoted phrases joined with OR (\"A\" OR \"B\") can return zero, so "
+        "search one quoted phrase per call or use unquoted words",
+    )
 
 
 def _flag_no_data(
@@ -904,6 +946,10 @@ async def search_documents(
     - Lowercase values silently return 0 results (no error)
 
     Key parameters:
+    - search_term: full-text match, including attachment text. Results
+      follow sort (newest first by default), not relevance, so an unquoted
+      multi-word term puts loosely matching recent documents first; quote
+      a phrase ('"Pay Equity and Transparency"') to match it exactly.
     - agency_id: FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA, etc.
       Comma-separate for multiple agencies ('FAR,GSA'). Empty string is rejected.
     - docket_id: e.g., 'FAR-2023-0008' for a specific FAR case
@@ -914,7 +960,9 @@ async def search_documents(
     - comment_end_date_ge/le: YYYY-MM-DD format
 
     Response meta.facets gives the top counts by document type, agency,
-    and comment period status; meta.totalElements is the full match count.
+    and comment period status; a facet the query filtered on is left out,
+    because the API counts it site-wide. meta.totalElements is the full
+    match count.
 
     Comment deadlines: attributes.commentDeadlineEastern is the closing time
     in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw
@@ -1002,10 +1050,17 @@ async def _search_documents(
 
     result = await _get("documents", params)
     ctx = f"agency_id={agency_id!r}, document_type={document_type!r}"
+    skip = tuple(name for name, used in (
+        ("agencyId", agency_id), ("documentType", document_type),
+        ("withinCommentPeriod", within_comment_period),
+        ("postedDate", posted_date_ge or posted_date_le),
+        ("commentEndDate", comment_end_date_ge or comment_end_date_le),
+    ) if used)
     return _flag_page_ceiling(_compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
-        hints=("document_type uses exact casing ('Proposed Rule', not 'proposed rule')",),
-    )), page_size=page_size, page_number=page_number, split_by="posted_date_ge/le")
+        hints=(*_search_term_hint(search_term),
+               "document_type uses exact casing ('Proposed Rule', not 'proposed rule')"),
+    ), skip), page_size=page_size, page_number=page_number, split_by="posted_date_ge/le")
 
 
 @mcp.tool(annotations={"title": "Get Document Detail", **_OPEN_WORLD})
@@ -1054,6 +1109,10 @@ async def search_comments(
     here because the API silently returns 0 comments for it.
 
     docket_id filters comments to all documents in a docket.
+
+    search_term is a full-text match, including attachment text; results
+    follow sort, not relevance. Quote a phrase ('"Professional Services
+    Council"') to match it exactly.
 
     posted_comments (= meta.totalElements) counts comments posted publicly,
     not comments received; mass-mail duplicates and unposted comments are
@@ -1115,10 +1174,14 @@ async def search_comments(
         f"agency_id={agency_id!r}, docket_id={docket_id!r}, "
         f"comment_on_id={comment_on_id!r}"
     )
+    skip = tuple(name for name, used in (
+        ("agencyId", agency_id), ("postedDate", posted_date_ge or posted_date_le),
+    ) if used)
     response = _flag_page_ceiling(_label_posted_count(_compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
-        hints=("comment_on_id is the document's hex objectId, not its documentId",),
-    ))), page_size=page_size, page_number=page_number, split_by="posted_date_ge/le")
+        hints=(*_search_term_hint(search_term),
+               "comment_on_id is the document's hex objectId, not its documentId"),
+    ), skip)), page_size=page_size, page_number=page_number, split_by="posted_date_ge/le")
     if response.get("data"):
         if include_organization:
             await _add_organizations(response)
@@ -1176,7 +1239,8 @@ async def get_comment_detail(
     include_attachments=True returns the attachment download URLs.
 
     Some fields (firstName, lastName, organization) are agency-configurable
-    and may be hidden.
+    and may be hidden. The comment text comes back as plain text (HTML
+    breaks become newlines; tags and entities are decoded).
     """
     comment_id = _validate_id(comment_id, field="comment_id")
     params: dict[str, Any] = {}
@@ -1208,6 +1272,11 @@ async def search_dockets(
     This is a Regulations.gov quirk; ISO 8601 is rejected.
 
     Limited filters: only searchTerm, agencyId, docketType, lastModifiedDate.
+
+    sort: 'title', 'docketId', 'lastModifiedDate'; prefix '-' for descending
+    ('-lastModifiedDate' lists the most recently active dockets first).
+    Catch-all dockets such as DARS_FRDOC_0001 and SBA_FRDOC_0001 hold
+    miscellaneous Federal Register documents and often top that list.
 
     Page size: 5-100; page_number 1-40. The API serves 40 pages; when more
     dockets match, page_limit_note (and truncated=true on page 40) says how
@@ -1249,10 +1318,15 @@ async def search_dockets(
 
     result = await _get("dockets", params)
     ctx = f"agency_id={agency_id!r}, docket_type={docket_type!r}"
+    skip = tuple(name for name, used in (
+        ("agencyId", agency_id), ("docketType", docket_type),
+        ("lastModifiedDate", last_modified_date_ge or last_modified_date_le),
+    ) if used)
     return _flag_page_ceiling(_compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
-        hints=("docket_type uses exact casing ('Rulemaking', not 'rulemaking')",),
-    )), page_size=page_size, page_number=page_number, split_by="last_modified_date_ge/le")
+        hints=(*_search_term_hint(search_term),
+               "docket_type uses exact casing ('Rulemaking', not 'rulemaking')"),
+    ), skip), page_size=page_size, page_number=page_number, split_by="last_modified_date_ge/le")
 
 
 @mcp.tool(annotations={"title": "Get Docket Detail", **_OPEN_WORLD})
@@ -1292,6 +1366,7 @@ def _continue_hint(fields: dict[str, Any], later: str) -> str:
 @mcp.tool(annotations={"title": "Open Comment Periods", **_OPEN_WORLD})
 async def open_comment_periods(
     agency_ids: list[str] | None = None,
+    document_type: Literal["Proposed Rule", "Rule", "Notice", "Supporting & Related Material", "Other"] | None = None,
     page_size: int = DEFAULT_PAGE_SIZE,
     page_number: int = 1,
 ) -> dict[str, Any]:
@@ -1312,7 +1387,9 @@ async def open_comment_periods(
 
     Default searches FAR, DARS, GSA, SBA, OFPP, DOD, NASA, VA in a single
     comma-joined query. Pass agency_ids to narrow or expand the scope. An
-    empty list is rejected; pass None to use the defaults.
+    empty list is rejected; pass None to use the defaults. Most open DOD and
+    VA documents are Paperwork Reduction Act and Privacy Act notices; for
+    rules only, pass document_type='Proposed Rule' (exact casing).
     """
     if agency_ids is not None:
         if not isinstance(agency_ids, list):
@@ -1343,6 +1420,7 @@ async def open_comment_periods(
     # documents, the exact ones this tool exists to surface.
     result = await _search_documents(
         agency_id=",".join(agencies),
+        document_type=document_type,
         within_comment_period=True,
         sort="commentEndDate",
         page_size=page_size,
@@ -1375,6 +1453,7 @@ async def open_comment_periods(
 
     response: dict[str, Any] = {
         "agencies_searched": agencies,
+        **({"document_type": document_type} if document_type else {}),
         "total_open": total_open,
         **_page_fields(api_total, page_size, page_number, len(all_docs)),
         "documents": dated + undated,
