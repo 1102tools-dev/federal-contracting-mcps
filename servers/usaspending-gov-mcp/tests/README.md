@@ -1,10 +1,14 @@
 # Test suite map
 
-Python 3.12 collection on 2026-10-10 for source package 1.0.18 found
-2,309 cases: 1,930 offline and 379 live-gated. The measured offline release
-lane passed 1,930 and skipped 379. Collection itself executes no tests or
+Python 3.12 collection on 2026-10-10 for source package 1.0.20 found
+2,312 cases: 1,933 offline and 379 live-gated. The measured offline release
+lane with frozen MCP SDK 2.0.0 passed 1,933 and skipped 379. Collection itself executes no tests or
 source requests; the separately recorded 151-supported-question Round 4 audit is not
 added to these pytest counts.
+
+The separate fresh published1.0.19 lane with latest MCP SDK2.3 measured
+1,075 passed, 855 failed and 379 skipped; its retained error expectations
+are not credited as passing. See the explicit reconciliation in testing.md.
 
 Files retain their audit-round and fix-wave history; see [../testing.md](../testing.md).
 
@@ -29,7 +33,8 @@ Files retain their audit-round and fix-wave history; see [../testing.md](../test
 | `test_validation.py` | Foundational validation and live checks | 62 | 10 |
 | `test_subaward_period_scope_1017.py` | Round 15 cumulative/dated FFATA scope | 3 | 0 |
 | `test_federal_account_program_scope_1018.py` | Round 16 captured all-year scope, complete program list and financial followup | 3 | 0 |
-| **Total** | | **2,309** | **379** |
+| `test_federal_account_available_fy_1020.py` | Round 16 actual source availability, supported recovery and unexpected503 control | 3 | 0 |
+| **Total** | | **2,312** | **379** |
 
 Live tests need `USASPENDING_LIVE_TESTS=1` (the API is keyless), are paced
 1-2 s apart by `conftest.py`, and the minimal anchor set runs via

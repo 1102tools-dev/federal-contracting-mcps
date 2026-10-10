@@ -1,0 +1,127 @@
+{
+  "source_http400": {
+    "method": "POST",
+    "url": "https://api.usaspending.gov/api/v2/federal_accounts/",
+    "request": {
+      "json": {
+        "keyword": "Energy",
+        "page": 1,
+        "limit": 5,
+        "filters": {
+          "fy": "2027"
+        }
+      }
+    },
+    "status": 400,
+    "headers": {
+      "date": "Sat, 10 Oct 2026 20:13:43 GMT",
+      "content-type": "application/json",
+      "content-length": "261",
+      "connection": "keep-alive",
+      "vary": "Accept, Cookie, origin",
+      "allow": "POST, OPTIONS",
+      "x-frame-options": "DENY",
+      "x-content-type-options": "nosniff",
+      "referrer-policy": "same-origin",
+      "cross-origin-opener-policy": "same-origin",
+      "strict-transport-security": "max-age=31536000; includeSubDomains"
+    },
+    "elapsed": 0.087,
+    "raw": {
+      "detail": "Field 'filters' is outside valid values ['2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026']"
+    },
+    "transport_response_sha256": "55f51ffaf5293bb6f7c5aea3be181a0ac3a6c6edcbe91d1224449e561ad0e876"
+  },
+  "supported_default": {
+    "method": "POST",
+    "url": "https://api.usaspending.gov/api/v2/federal_accounts/",
+    "request": {
+      "json": {
+        "keyword": "Energy",
+        "page": 1,
+        "limit": 5
+      }
+    },
+    "status": 200,
+    "headers": {
+      "date": "Sat, 10 Oct 2026 20:13:42 GMT",
+      "content-type": "application/json",
+      "content-length": "1391",
+      "connection": "keep-alive",
+      "vary": "Accept, Cookie, origin",
+      "allow": "POST, OPTIONS",
+      "cache-trace": "hit-cache",
+      "key": "d4fb0f4f81e6a55aa1ac239ae155cda9",
+      "x-frame-options": "DENY",
+      "x-content-type-options": "nosniff",
+      "referrer-policy": "same-origin",
+      "cross-origin-opener-policy": "same-origin",
+      "strict-transport-security": "max-age=31536000; includeSubDomains"
+    },
+    "elapsed": 0.079,
+    "raw": {
+      "count": 89,
+      "limit": 5,
+      "page": 1,
+      "fy": "2026",
+      "keyword": "Energy",
+      "next": 2,
+      "previous": null,
+      "hasNext": true,
+      "hasPrevious": false,
+      "results": [
+        {
+          "account_id": 5773,
+          "account_number": "089-0215",
+          "account_name": "Energy Conservation, Energy",
+          "budgetary_resources": 12.11,
+          "agency_identifier": "089",
+          "managing_agency": "Department of Energy",
+          "managing_agency_acronym": "DOE"
+        },
+        {
+          "account_id": 4873,
+          "account_number": "068-0109",
+          "account_name": "Energy Research and Development, Environmental Protection Agency",
+          "budgetary_resources": 5259.72,
+          "agency_identifier": "068",
+          "managing_agency": "Environmental Protection Agency",
+          "managing_agency_acronym": "EPA"
+        },
+        {
+          "account_id": 5843,
+          "account_number": "089-5653",
+          "account_name": "Continuing Fund, Southeastern Power Administration, Power Marketing Administration, Energy",
+          "budgetary_resources": 50000.0,
+          "agency_identifier": "089",
+          "managing_agency": "Department of Energy",
+          "managing_agency_acronym": "DOE"
+        },
+        {
+          "account_id": 5859,
+          "account_number": "089-8575",
+          "account_name": "Advances for Cooperative Work, Departmental Operations, Energy",
+          "budgetary_resources": 68467.57,
+          "agency_identifier": "089",
+          "managing_agency": "Department of Energy",
+          "managing_agency_acronym": "DOE"
+        },
+        {
+          "account_id": 5860,
+          "account_number": "089-8576",
+          "account_name": "Gifts and Donations, Energy",
+          "budgetary_resources": 136954.49,
+          "agency_identifier": "089",
+          "managing_agency": "Department of Energy",
+          "managing_agency_acronym": "DOE"
+        }
+      ]
+    },
+    "transport_response_sha256": "d60c2ceb2e5c3993569781029a2f16fbbb78689fac6a08183ebd30db41972566"
+  },
+  "question": "Find Energy federal accounts and FY2027 resources after October rollover.",
+  "year": 2027,
+  "official_source_sha": "03b9e2554837998c4c261c65e2947dc79f23855a",
+  "published_version": "1.0.19",
+  "published_source_sha": "4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b"
+}
