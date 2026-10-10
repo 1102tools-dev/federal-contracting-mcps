@@ -8,7 +8,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Release 1.0.16 collects 2,303 regression cases: 1,924 offline and 379 live-gated. The full offline lane passes; the focused content suite covers fiscal defaults, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats and aggregation filters. See [testing.md](testing.md) for the testing record.*
+*The 1.0.16 source validation collected 2,303 regression cases: 1,924 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
 
 ## Local or hosted
 
@@ -179,6 +179,7 @@ Once configured, try:
 ## Design notes
 
 - **No authentication required.** USAspending.gov is a free, public API.
+- **Fiscal time groups.** Fiscal years run October through September; quarter 1 is October–December and month 1 is October. `new_awards_over_time` combines the source’s fiscal-quarter counts for annual fiscal-year results. A date window that covers only part of a fiscal year returns counts for that requested portion, not the entire year. Quarter and month results retain the source counts.
 - **Award type groups cannot be mixed.** The `award_type` parameter takes one of: `contracts`, `idvs`, `grants`, `loans`, `direct_payments`, `other`. Use separate calls for separate categories.
 - **Actionable error messages.** Common API errors (422 mixed award types, 400 sort field missing, 400 empty keywords) are translated into guidance for the calling LLM.
 - **Sort field auto-handling.** The USAspending API requires the sort field to appear in the fields array; this server adds it automatically.
