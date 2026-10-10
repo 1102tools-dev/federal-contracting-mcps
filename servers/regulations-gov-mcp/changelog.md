@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.4
+
+- Hosted build tooling pins Wrangler 4.149.0, clearing four high-severity
+  development dependency advisories (Miniflare/sharp/undici chain).
+
+- Workflow summaries preserve empty-result, past-end-page, and 40-page-limit
+  recovery guidance from document searches. A page beyond the docket's last
+  document explains which page contains data instead of leaving a bare empty list.
+- Failed organization lookups explicitly leave the submitter's organization
+  unknown; missing public fields no longer imply an individual submitted the comment.
+- Seven regression cases cover both workflow tools and partial enrichment.
+  Python 3.12 offline gate: 167 passed, 119 live-gated skipped (286 collected).
+  The audit separately exercised all nine hosted tools at 2.0.3 with 33 calls;
+  direct Regulations.gov source verification was quota-blocked (HTTP 429).
+
 ## 2.0.3
 
 Fixes from the 2026-10-10 content test (40 real-user questions checked
