@@ -101,6 +101,18 @@ test("award notices and justifications are never dropped by the past-deadline fi
   assert.match(description, /Award notices and justifications are always included/);
 });
 
+test("results say how many matches are award notices or justifications", async () => {
+  const result = await search({naics_codes: ["5415"]});
+  assert.equal(result.total_matches, 4);
+  assert.ok(result.notes.some((n: string) => n.startsWith("1 of the 4 matches is an award notice or justification")), JSON.stringify(result.notes));
+  const counts = await summarizeOpportunities(db, {group_by: "agency", naics_codes: ["5415"]}, NOW);
+  assert.ok(counts.notes.some((n: string) => n.startsWith("1 of the 4 matches")));
+  const typed = await search({naics_codes: ["5415"], notice_types: ["Solicitation"]});
+  assert.ok(!typed.notes.some((n: string) => /take no responses/.test(n)), "no note once notice_types is set");
+  const byType = await summarizeOpportunities(db, {group_by: "notice_type"}, NOW);
+  assert.ok(!byType.notes.some((n: string) => /take no responses/.test(n)), "no note when grouped by notice type");
+});
+
 test("only the latest version of an amended notice is shown unless asked", async () => {
   assert.deepEqual(ids(await search({keywords: "\"zero trust\""})), [1]);
   const all = await search({keywords: "\"zero trust\"", include_earlier_versions: true});

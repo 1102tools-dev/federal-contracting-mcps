@@ -284,6 +284,21 @@ async function officeStateHint(db: Database, args: Args, now: Date): Promise<str
   return `${n} more matching notices leave the place of performance blank but have a contracting office in ${state}; set office_state to "${state}" (instead of place_of_performance_state) to include them. An office's state is not always where the work happens.`;
 }
 
+/** Without a notice type filter, results mix in award notices and
+ * justifications, which take no responses. Count them so answers can say so. */
+async function noResponseCount(db: Database, args: Args, q: Query): Promise<number> {
+  if (list(args, "notice_types", /./, "a SAM.gov notice type", NOTICE_TYPES).length) return 0;
+  const where = [...q.where, `o.notice_type IN (${NO_RESPONSE_TYPES.map(() => "?").join(", ")})`];
+  const {results} = await db.prepare(`SELECT COUNT(*) AS n FROM ${q.from} WHERE ${where.join(" AND ")}`).bind(...q.params, ...NO_RESPONSE_TYPES).all<{n: number}>();
+  return results[0]?.n ?? 0;
+}
+
+function noResponseNote(n: number, total: number): string | undefined {
+  if (!n) return undefined;
+  const verb = n === 1 ? "is an award notice or justification" : "are award notices or justifications";
+  return `${n} of the ${total} matches ${verb}, which take no responses; set notice_types (e.g. Solicitation, Combined Synopsis/Solicitation) to leave them out.`;
+}
+
 export function publicLink(noticeId: string): string {
   return `https://sam.gov/opp/${noticeId}/view`;
 }
@@ -351,15 +366,18 @@ export async function searchOpportunities(db: Database, args: Args, now = new Da
     throw new ToolError("sort must be deadline, newest, or relevance.");
   }
   const where = whereSql(q);
-  const [count, page, asOf, hint] = await Promise.all([
+  const [count, page, asOf, hint, noResponse] = await Promise.all([
     db.prepare(`SELECT COUNT(*) AS n FROM ${q.from}${where}`).bind(...q.params).all<{n: number}>(),
     db.prepare(`SELECT ${SUMMARY_COLUMNS} FROM ${q.from}${where} ORDER BY ${order} LIMIT ? OFFSET ?`).bind(...q.params, limit, offset).all(),
     dataAsOf(db),
     officeStateHint(db, args, now),
+    noResponseCount(db, args, q),
   ]);
   const total = count.results[0]?.n ?? 0;
   const results = page.results.map(summary);
   const notes = [...q.notes];
+  const typeNote = noResponseNote(noResponse, total);
+  if (typeNote) notes.push(typeNote);
   if (hint) notes.push(hint);
   if (total === 0) notes.push("No active notices matched. Try fewer filters, a NAICS prefix, include_past_deadlines, or a wider date range. Archived notices are not searchable here.");
   return {
@@ -455,14 +473,16 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
   const q = buildQuery(args, now);
   const column = GROUPS[groupBy].startsWith("substr") ? "substr(o.posted_date, 1, 7)" : `o.${GROUPS[groupBy]}`;
   const where = whereSql(q);
-  const [groups, count, asOf, hint] = await Promise.all([
+  const [groups, count, asOf, hint, noResponse] = await Promise.all([
     db.prepare(`SELECT ${column} AS value, COUNT(*) AS count FROM ${q.from}${where} GROUP BY value ORDER BY count DESC, value LIMIT ?`).bind(...q.params, top).all<{value: string | null; count: number}>(),
     db.prepare(`SELECT COUNT(*) AS n, COUNT(DISTINCT ${column}) AS g FROM ${q.from}${where}`).bind(...q.params).all<{n: number; g: number}>(),
     dataAsOf(db),
     officeStateHint(db, args, now),
+    groupBy === "notice_type" ? 0 : noResponseCount(db, args, q),
   ]);
   const total = count.results[0]?.n ?? 0;
   const shown = groups.results.reduce((sum, g) => sum + g.count, 0);
+  const typeNote = noResponseNote(noResponse, total);
   return {
     group_by: groupBy,
     total_matches: total,
@@ -470,7 +490,7 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
     groups: groups.results.map(g => ({value: g.value ?? "(blank)", count: g.count})),
     other_count: total - shown,
     data_as_of: asOf,
-    notes: hint ? [...q.notes, hint] : q.notes,
+    notes: [...q.notes, ...(typeNote ? [typeNote] : []), ...(hint ? [hint] : [])],
     source: SOURCE,
   };
 }
