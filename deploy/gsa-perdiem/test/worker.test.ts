@@ -113,6 +113,18 @@ test("comparison rows retain their GSA data source", async () => {
   }
 });
 
+test("published estimate description separates monthly lodging from trip M&IE", async () => {
+  const {env, runtime} = setup();
+  const out: any = await handleMessage({jsonrpc: "2.0", id: 1, method: "tools/list"}, env, runtime);
+  const description = out.result.tools.find((tool: any) => tool.name === "estimate_travel_cost").description;
+  assert.match(description, /add only each month's lodging_total/);
+  assert.match(description, /Calculate M&IE once across the actual trip days/);
+  assert.match(description, /Do not add[\s\S]*grand_total/);
+  assert.doesNotMatch(description, /month's nights separately and add them/);
+  const status = out.result.tools.find((tool: any) => tool.name === "get_data_status").description;
+  assert.match(status, /supplied county for a bundled year also need no key or network call/);
+});
+
 test("tools/list serves exactly the reviewed contract, in the Python server's order", () => {
   const contract = JSON.parse(readFileSync(new URL("../tools-contract.json", import.meta.url), "utf8"));
   const byName = (list: {name: string}[]) => [...list].sort((a, b) => (a.name < b.name ? -1 : 1));
