@@ -844,6 +844,10 @@ async def igce_wage_benchmark(
     percentiles, plus estimated burdened hourly rates using the specified
     burden multiplier range.
 
+    Wages are point-in-time estimates for the OEWS reference month
+    (wage_period in the response), not current rates: escalate them to the
+    period of performance before pricing.
+
     BLS wages are BASE wages (no fringe, overhead, G&A, or profit).
     Multiply by a burden factor to estimate fully-loaded rates:
     - 1.5x-1.7x: lean contractor
@@ -919,8 +923,14 @@ async def igce_wage_benchmark(
         "area_code": area_code,
         "area_name": wage_data.get("area_name"),
         "data_year": wage_data.get("data_year") or OEWS_CURRENT_YEAR,
+        "wage_period": OEWS_RELEASE_NAME,
         "burden_range": f"{burden_low}x - {burden_high}x",
         "benchmarks": benchmarks,
+        "_escalation_note": (
+            f"{OEWS_RELEASE_NAME} wages; escalate to the period of performance. "
+            f"OEWS wages are estimates for {OEWS_RELEASE_NAME}, so these base "
+            f"and burdened rates are {OEWS_RELEASE_NAME} rates, not current ones."
+        ),
         "_note": "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates.",
     }
 

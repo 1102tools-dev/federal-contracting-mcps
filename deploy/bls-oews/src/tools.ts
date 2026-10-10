@@ -662,8 +662,10 @@ export async function igceWageBenchmark(db: Database, args: Args) {
     ["area_code", a.area_code],
     ["area_name", wage.get("area_name")!],
     ["data_year", wage.get("data_year") || data.rel.year],
+    ["wage_period", data.rel.name],
     ["burden_range", `${floatRepr(low)}x - ${floatRepr(high)}x`],
     ["benchmarks", benchmarks],
+    ["_escalation_note", `${data.rel.name} wages; escalate to the period of performance. OEWS wages are estimates for ${data.rel.name}, so these base and burdened rates are ${data.rel.name} rates, not current ones.`],
     ["_note", "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates."],
   ]);
   if (wage.get("no_data")) {

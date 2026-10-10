@@ -31,9 +31,19 @@ const CELLS: [string, (string | null)[], Record<string, string>][] = [
     {f03: "4", f06: "4", f07: "4", f08: "4", f09: "4", f10: "4"}],
   ["OEUM0010540000000291215", ["50", "12.9", "-", "-", "5.6", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "1.003", "1.45"],
     {f03: "5", f04: "5", f06: "5", f07: "5", f08: "5", f09: "5", f10: "5", f11: "5", f12: "5", f13: "5", f14: "5", f15: "5"}],
+  // 2026-10-10 content test repros, as BLS publishes them in oe.data.0.Current.
+  ["OEUM0047260000000151232", ["2430", "6.3", "29.96", "62310", "1.7", "19.01", "23.33", "28.68", "36.05", "44.55", "39530", "48520", "59650", "74980", "92660", "3.185", "0.69"], {}],
+  ["OEUM0017820000000151242", ["110", "19.5", "56.78", "118110", "9.4", "27.29", "40.80", "56.81", "77.08", "80.56", "56770", "84850", "118170", "160330", "167570", "0.357", "0.79"], {}],
+  ["OEUM0047900000000291214", ["770", "27.9", "-", "-", "4.5", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "0.247", "1.17"],
+    {f03: "5", f04: "5", f06: "5", f07: "5", f08: "5", f09: "5", f10: "5", f11: "5", f12: "5", f13: "5", f14: "5", f15: "5"}],
+  ["OEUM0014740000000151212", ["70", "14.1", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "0.712", "0.58"],
+    {f03: "8", f04: "8", f05: "8", f06: "8", f07: "8", f08: "8", f09: "8", f10: "8", f11: "8", f12: "8", f13: "8", f14: "8", f15: "8"}],
+  ["OEUS2400000000000151212", ["8650", "9.9", "72.09", "149940", "3.7", "38.04", "51.34", "67.14", "88.10", "104.12", "79130", "106790", "139640", "183260", "216570", "3.131", "2.55"], {}],
 ];
-const OCCUPATIONS = [["151252", "Software Developers"], ["252021", "Elementary School Teachers, Except Special Education"], ["291215", "Family Medicine Physicians"]];
-const AREAS = [["0000000", "National"], ["0047900", "Washington-Arlington-Alexandria, DC-VA-MD-WV"], ["5100000", "Virginia"], ["0010540", "Albany, OR"], ["7800000", "Virgin Islands"]];
+const OCCUPATIONS = [["151252", "Software Developers"], ["252021", "Elementary School Teachers, Except Special Education"], ["291215", "Family Medicine Physicians"],
+  ["151232", "Computer User Support Specialists"], ["151242", "Database Administrators"], ["291214", "Emergency Medicine Physicians"], ["151212", "Information Security Analysts"]];
+const AREAS = [["0000000", "National"], ["0047900", "Washington-Arlington-Alexandria, DC-VA-MD-WV"], ["5100000", "Virginia"], ["0010540", "Albany, OR"], ["7800000", "Virgin Islands"],
+  ["0047260", "Virginia Beach-Chesapeake-Norfolk, VA-NC"], ["0017820", "Colorado Springs, CO"], ["0014740", "Bremerton-Silverdale-Port Orchard, WA"], ["2400000", "Maryland"]];
 
 function addVersion(sqlite: DatabaseSync, version: number, adjust = (value: string | null) => value) {
   sqlite.prepare("INSERT INTO release (version, database_sha256, manifest, footnotes, loaded_at) VALUES (?, ?, ?, ?, ?)")
@@ -354,6 +364,22 @@ test("2026-07-28 listen streams open at the edge with the SDK's acknowledgement"
   }
   const jsonOnly = await worker.fetch(modern("subscriptions/listen", {notifications: {}}, {Accept: "application/json"}), env());
   assert.equal(jsonOnly.status, 406);
+});
+
+// ---------- 2026-10-10 content test (BLS-1 to BLS-9) ----------
+
+test("BLS-1: the IGCE names the wage month beside the burdened rates", async () => {
+  const igce = await data("igce_wage_benchmark", {occ_code: "15-1232", scope: "metro", area_code: "47260"});
+  assert.equal(igce.wage_period, "May 2025");
+  assert.match(igce._escalation_note, /^May 2025 wages; escalate to the period of performance/);
+  const keys = Object.keys(igce);
+  assert.ok(keys.indexOf("wage_period") < keys.indexOf("benchmarks") && keys.indexOf("benchmarks") < keys.indexOf("_escalation_note"));
+  // The month comes from the release in D1, not from the code.
+  const {sqlite, db: later} = database();
+  sqlite.prepare("UPDATE release SET manifest = ?").run(JSON.stringify({...manifest, release: {...manifest.release, description: "May 2031"}}));
+  const next = JSON.parse((await call("igce_wage_benchmark", {occ_code: "151252"}, later)).content[0].text);
+  assert.equal(next.wage_period, "May 2031");
+  assert.match(next._escalation_note, /^May 2031 wages; escalate/);
 });
 
 // ---------- Python formatting helpers ----------

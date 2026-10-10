@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: MIT
+"""Round 9 (2026-10-10 content test): BLS-1 to BLS-9.
+
+Each test reproduces a finding against the bundled release and checks the
+answer against the value BLS publishes in oe.data.0.Current (May 2025,
+SHA-256 09879508...3370b), quoted in the comments.
+"""
+
+from __future__ import annotations
+
+import asyncio
+
+import bls_oews_mcp.server as srv
+from bls_oews_mcp.constants import OEWS_RELEASE_NAME
+from bls_oews_mcp.server import mcp
+
+
+def _payload(result):
+    if hasattr(result, "structured_content"):
+        return result.structured_content
+    return result[1] if isinstance(result, tuple) else result
+
+
+def _tool(name: str, **kwargs):
+    return _payload(asyncio.run(mcp.call_tool(name, kwargs)))
+
+
+# ---------------------------------------------------------------------------
+# BLS-1: the IGCE says which month the wages describe and to escalate them
+# ---------------------------------------------------------------------------
+
+def test_bls1_igce_states_wage_period_beside_burdened_rates():
+    # Q5 repro: help desk (15-1232), Virginia Beach-Norfolk (47260).
+    data = _tool("igce_wage_benchmark", occ_code="15-1232", scope="metro", area_code="47260")
+    assert data["wage_period"] == OEWS_RELEASE_NAME == "May 2025"  # oe.release: 2025A01 May 2025
+    assert data["_escalation_note"].startswith("May 2025 wages; escalate to the period of performance")
+    keys = list(data)
+    assert keys.index("wage_period") < keys.index("benchmarks") < keys.index("_escalation_note")
+
+
+def test_bls1_wage_period_comes_from_the_release(monkeypatch):
+    monkeypatch.setattr(srv, "OEWS_RELEASE_NAME", "May 2031")
+    data = _tool("igce_wage_benchmark", occ_code="151252")
+    assert data["wage_period"] == "May 2031"
+    assert data["_escalation_note"].startswith("May 2031 wages; escalate to the period of performance")
