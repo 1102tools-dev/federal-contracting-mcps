@@ -8,7 +8,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*The 1.0.20 source validation with frozen MCP SDK 2.0.0 collected 2,312 regression cases: 1,933 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats, cumulative FFATA period scope and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
+*The 1.0.21 candidate source validation with frozen MCP SDK 2.0.0 collected 2,315 regression cases: 1,936 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats, cumulative FFATA period scope and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
 
 Published 1.0.20 completed all 150 available Round 4 content questions on a
 fresh official PyPI installation and the public deployment, with six guided
@@ -18,6 +18,13 @@ The separate full regression run on latest MCP SDK 2.3.0 measured 1,078 passed,
 855 failed and 379 skipped; retained exception/message expectations still fail
 under that SDK. See [the publication record](testing.md#round-16-final-published-verification-1020-2026-10-10)
 for exact source, content and regression provenance.
+
+The new Round 5 audit completed 143 new questions across all 55 tools on
+actual published 1.0.20 CLI/public services, with 10 prior vehicle checks
+recorded separately. It found one P3 discovery-note defect: current NAICS
+matches omitted by the result limit were described as retired. Candidate
+1.0.21 counts actual retired rows separately and guides a larger-limit
+lookup; publication remains pending. See [the Round 5 record](testing.md#round-17-new-round-5-content-audit-1021-candidate-2026-10-10).
 
 Federal-account program lists contain codes/names across all reported years,
 without dollar amounts or a fiscal-year filter. The tool retrieves source pages
