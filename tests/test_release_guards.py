@@ -136,9 +136,10 @@ def test_hosted_servers_send_no_instructions():
 def test_release_dependency_gates_and_postpublication_verification():
     workflow = yaml.safe_load((ROOT / ".github/workflows/publish-pypi.yml").read_text())
     jobs = workflow["jobs"]
-    # Default success() dependency handling must not be bypassed by always().
-    for name in ("publish", "deploy-hosted", "publish-registry"):
-        assert "if" not in jobs[name]
+    # Explicit conditions must retain fail-closed ordering when hosted jobs skip.
+    for name in ("publish", "publish-registry", "release"):
+        assert "!cancelled()" in jobs[name]["if"]
+        assert "always()" not in jobs[name]["if"]
     assert "deploy-hosted" in jobs["publish"]["needs"]
     assert "test-and-build" in jobs["deploy-hosted"]["needs"]
     assert "publish" not in jobs["deploy-hosted"]["needs"]
@@ -237,7 +238,8 @@ def test_release_workflow_accepts_scoped_tags():
     workflow = yaml.safe_load((ROOT / ".github/workflows/publish-pypi.yml").read_text())
     trigger = workflow.get("on") or workflow.get(True)
     assert set(trigger["push"]["tags"]) == {"v*", "*/v*"}
-    assert workflow["jobs"]["release"]["if"] == "startsWith(github.ref, 'refs/tags/')"
+    assert "startsWith(github.ref, 'refs/tags/')" in workflow["jobs"]["release"]["if"]
+    assert workflow["concurrency"] == {"group": "mcp-production-release", "cancel-in-progress": False}
 
 
 def test_post_upload_visibility_delay_preserves_payload_verification(tmp_path, monkeypatch):
@@ -606,3 +608,85 @@ def test_ready_version_still_rejects_unexpected_instructions(tmp_path, monkeypat
     with pytest.raises(AssertionError, match="instructions"):
         verifier.main()
     assert state["tools_lists"] == 0
+
+
+def test_sam_package_only_scope_uses_python_version_and_only_python_manifest():
+    rp = _release_plan()
+    version = rp._package_version('sam-gov-mcp')
+    for services in ('all', 'sam-gov'):
+        plan = rp.plan(services, f'refs/tags/sam-gov/v{version}')
+        assert json.loads(plan['hosted']) == []
+        assert json.loads(plan['packages']) == [{'dir': 'sam-gov-mcp', 'pkg': 'sam-gov-mcp'}]
+        assert plan['manifests'] == 'servers/sam-gov-mcp/server.json'
+        assert plan['scope'] == 'sam-gov'
+        assert 'hosted service' not in plan['release_body']
+    assert json.loads(rp.plan('sam-gov')['hosted']) == []
+    with pytest.raises(SystemExit, match='names version'):
+        rp.plan('all', 'refs/tags/sam-gov/v0.0.1')
+    with pytest.raises(SystemExit, match='conflicts'):
+        rp.plan('gsa-perdiem', f'refs/tags/sam-gov/v{version}')
+    with pytest.raises(SystemExit):
+        rp.plan('sam-gov,not-a-service')
+
+
+def _job_allowed(job, results, hosted, *, cancelled=False):
+    """Evaluate the workflow's small condition subset, including default success().
+
+    GitHub evaluates job conditions before expanding a matrix. Jobs without a
+    status-check function also require every direct dependency to succeed.
+    """
+    import re
+    condition = job.get('if', 'success()').strip()
+    condition = condition.removeprefix('${{').removesuffix('}}').strip()
+    dependencies_ok = all(results[name] == 'success' for name in job.get('needs', []))
+    if not re.search(r'(?:always|cancelled|success|failure)\(\)', condition) and not dependencies_ok:
+        return False
+    condition = re.sub(r'needs\.([a-z-]+)\.result', lambda m: repr(results[m[1]]), condition)
+    condition = condition.replace('needs.plan.outputs.hosted', repr(hosted))
+    condition = condition.replace('github.ref', repr('refs/tags/sam-gov/v1.0.14'))
+    condition = condition.replace('!cancelled()', repr(not cancelled))
+    condition = condition.replace('cancelled()', repr(cancelled)).replace('success()', repr(dependencies_ok))
+    condition = ' '.join(condition.split())
+    condition = condition.replace('&&', ' and ').replace('||', ' or ')
+    return bool(eval(condition, {'__builtins__': {}, 'startsWith': lambda s, prefix: s.startswith(prefix)}))
+
+
+def test_package_only_workflow_skips_empty_matrices_and_cloudflare_credentials():
+    jobs = yaml.safe_load((ROOT / '.github/workflows/publish-pypi.yml').read_text())['jobs']
+    results = {name: 'success' for name in jobs}
+    for name in ('hosted-build', 'deploy-hosted', 'cloudflare-access'):
+        assert 'plan' in jobs[name]['needs']
+        assert not _job_allowed(jobs[name], results, '[]')
+        assert _job_allowed(jobs[name], results, '["gsa-perdiem"]')
+    assert jobs['publish']['needs'].count('shared-safety-tests') == 1
+    summary = jobs['release-summary']['steps'][0]
+    assert summary['env']['EXPECTED_HOSTED'] == "${{ needs.plan.outputs.hosted == '[]' && 'skipped' || 'success' }}"
+    assert 'success/$EXPECTED_HOSTED/success' in summary['run']
+
+
+def test_pypi_gate_truth_table_requires_success_or_exact_package_only_skips():
+    from itertools import product
+    jobs = yaml.safe_load((ROOT / '.github/workflows/publish-pypi.yml').read_text())['jobs']
+    job = jobs['publish']
+    gates = ['plan', 'shared-safety-tests', 'test-and-build', 'hosted-build', 'cloudflare-access', 'deploy-hosted']
+    assert set(job['needs']) == set(gates)
+    for hosted in ('[]', '["gsa-perdiem"]'):
+        for statuses in product(('success', 'failure', 'cancelled', 'skipped'), repeat=len(gates)):
+            results = dict(zip(gates, statuses))
+            expected = statuses[:3] == ('success',) * 3 and statuses[3:] == (
+                ('skipped',) * 3 if hosted == '[]' else ('success',) * 3)
+            assert _job_allowed(job, results, hosted) == expected, (hosted, results)
+            assert not _job_allowed(job, results, hosted, cancelled=True)
+
+
+def test_registry_and_release_resume_after_expected_skips_only_with_publication_success():
+    from itertools import product
+    jobs = yaml.safe_load((ROOT / '.github/workflows/publish-pypi.yml').read_text())['jobs']
+    for hosted in ('[]', '["gsa-perdiem"]'):
+        for plan, publish, registry, deploy in product(('success', 'failure', 'cancelled', 'skipped'), repeat=4):
+            results = {'plan': plan, 'publish': publish, 'publish-registry': registry, 'deploy-hosted': deploy}
+            assert _job_allowed(jobs['publish-registry'], results, hosted) == (plan == publish == 'success')
+            expected = plan == publish == registry == 'success' and deploy == ('skipped' if hosted == '[]' else 'success')
+            assert _job_allowed(jobs['release'], results, hosted) == expected
+            for name in ('publish-registry', 'release'):
+                assert not _job_allowed(jobs[name], results, hosted, cancelled=True)

@@ -3,7 +3,8 @@ name: Release MCP packages and hosted services
 # Builds, deploys (Cloudflare first, verified), and publishes (PyPI via OIDC
 # Trusted Publishing, MCP Registry, GitHub Release) from one tagged commit.
 # `v*` tags release every package and hosted service; `<slug>/v<version>` tags
-# release one hosted service and its package (scripts/release_plan.py).
+# release one hosted service and its package, or only the SAM Python package
+# and registry entry for sam-gov/v<version> (scripts/release_plan.py).
 # Each package must have a Trusted Publisher at
 # https://pypi.org/manage/project/<pkg>/settings/publishing/ pointing at
 # this repo and this workflow filename.
@@ -17,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       services:
-        description: 'Hosted services to release: "all", or comma-separated slugs from deploy/services.json (e.g. gsa-perdiem). Dispatch on a release tag.'
+        description: 'Release scopes: "all", or comma-separated slugs from deploy/services.json (e.g. gsa-perdiem), or sam-gov for its Python package only. Dispatch on a release tag.'
         required: false
         default: all
 
@@ -150,7 +151,15 @@ jobs:
           path: servers/${{ matrix.server.dir }}/dist/
 
   publish:
-    needs: [plan, test-and-build, hosted-build, cloudflare-access, deploy-hosted]
+    needs: [plan, shared-safety-tests, test-and-build, hosted-build, cloudflare-access, deploy-hosted]
+    # Status function permits expected skip propagation; every gate is checked explicitly.
+    if: >-
+      ${{ !cancelled() && needs.plan.result == 'success' &&
+          needs.shared-safety-tests.result == 'success' && needs.test-and-build.result == 'success' &&
+          ((needs.plan.outputs.hosted == '[]' && needs.hosted-build.result == 'skipped' &&
+            needs.cloudflare-access.result == 'skipped' && needs.deploy-hosted.result == 'skipped') ||
+           (needs.plan.outputs.hosted != '[]' && needs.hosted-build.result == 'success' &&
+            needs.cloudflare-access.result == 'success' && needs.deploy-hosted.result == 'success')) }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -182,6 +191,7 @@ jobs:
 
   publish-registry:
     needs: [plan, publish]
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.publish.result == 'success' }}
     runs-on: ubuntu-latest
     environment: mcp-registry-publish
     env:
@@ -221,7 +231,12 @@ jobs:
   # for every tag so the Releases page stays the changelog landing spot.
   release:
     needs: [plan, publish, deploy-hosted, publish-registry]
-    if: startsWith(github.ref, 'refs/tags/')
+    if: >-
+      ${{ !cancelled() && startsWith(github.ref, 'refs/tags/') &&
+          needs.plan.result == 'success' && needs.publish.result == 'success' &&
+          needs.publish-registry.result == 'success' &&
+          ((needs.plan.outputs.hosted == '[]' && needs.deploy-hosted.result == 'skipped') ||
+           (needs.plan.outputs.hosted != '[]' && needs.deploy-hosted.result == 'success')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -236,6 +251,8 @@ jobs:
 
   hosted-build:
     needs: [plan, shared-safety-tests]
+    # Job conditions are evaluated before matrix expansion, so [] is safe.
+    if: needs.plan.outputs.hosted != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -284,6 +301,7 @@ jobs:
 
   deploy-hosted:
     needs: [plan, test-and-build, hosted-build, cloudflare-access]
+    if: needs.plan.outputs.hosted != '[]'
     runs-on: ubuntu-latest
     environment: cloudflare-production
     strategy:
@@ -347,12 +365,15 @@ jobs:
           SCOPE: ${{ needs.plan.outputs.scope }}
           PYPI: ${{ needs.publish.result }}
           HOSTED: ${{ needs.deploy-hosted.result }}
+          EXPECTED_HOSTED: ${{ needs.plan.outputs.hosted == '[]' && 'skipped' || 'success' }}
           REGISTRY: ${{ needs.publish-registry.result }}
         run: |
           printf '## Release %s (scope: %s)\n\n| Destination | Result |\n|---|---|\n| PyPI | %s |\n| Cloudflare | %s |\n| MCP registry | %s |\n' "$GITHUB_SHA" "$SCOPE" "$PYPI" "$HOSTED" "$REGISTRY" >> "$GITHUB_STEP_SUMMARY"
-          test "$PYPI/$HOSTED/$REGISTRY" = success/success/success
+          test "$PYPI/$HOSTED/$REGISTRY" = "success/$EXPECTED_HOSTED/success"
 
   cloudflare-access:
+    needs: [plan, shared-safety-tests]
+    if: needs.plan.outputs.hosted != '[]'
     runs-on: ubuntu-latest
     environment: cloudflare-production
     env:
