@@ -313,6 +313,9 @@ test("get_data_status reports freshness", async () => {
 test("prior-year market research remains available without claiming a complete archive", async () => {
   // Actual active Award Notice from the Oct 10 official public CSV:
   // 6c7ac11adf6844e0bfc05a3283067fab, posted FY2024, archived in 2030.
+  // sam.gov public ContractOpportunitiesFullCSV.csv, downloaded 2026-10-10.
+  // https://sam.gov/api/prod/fileextractservices/v1/api/download/Contract%20Opportunities/datagov/ContractOpportunitiesFullCSV.csv?privacy=Public
+  // SHA256: 0a35bf09b261259ea385ddf183d28e6bc2fe594521b3df054e1daa737e83bfa9
   const older = database(true, [notice(9, {
     notice_id: "6c7ac11adf6844e0bfc05a3283067fab",
     title: "F--EA Environmental Services and Operations (ESO): P0",
