@@ -1032,6 +1032,18 @@ old and final byte hashes are retained separately. The rebuilt final candidate
 has exact source bytes, real console initialization and all 55 metadata checked
 without additional provider calls.
 
+A separate **P3** answers the ordinary question "How many regression cases does
+USAspending have?": the README badge still displayed **2,312** at current main
+`c5cd3e84a4a9aa5eda3ace127f896cff7700b04f` and in the actual published21 PyPI
+description, despite its measured **2,315** cases. This stale badge is distinct
+from the date-scope P2. The current candidate source badge now displays the
+measured **2,318** cases; the actual served SVG accessible label confirms that
+display. Published21's count and candidate22's publication status remain explicit,
+and collection is not represented as an all-tests-pass or code-coverage claim.
+No brittle badge-string regression was added. Raw before-main Markdown,
+published PyPI description, collection proof and actual SVG are retained in
+`coverage-badge-finding-and-ui-proof.json` and related files.
+
 Financial task completion retains these distinctions:
 
 - Energy FY2025 contract obligations crossfoot to **$48,549,338,378.87** in
@@ -1068,10 +1080,11 @@ blanket repaired. The prior actual published21 result **1,081/855/379** and
 frozen **1,936/379** remain distinct historical evidence. Interim source-test
 outputs are retained; the explicit Python 3.12 candidate lane is the release proof.
 
-Round 6 findings: **P0=0 / P1=0 / P2=1 / P3=0**; one corrected in candidate source,
+Round 6 findings: **P0=0 / P1=0 / P2=1 / P3=1**; two corrected in candidate source/documentation,
 zero partial/unresolved confirmed defects. Independent SAM scoped source/regression
-review approves PR169 final head; full content/docs peer and actual published 1.0.22
-verification remain pending. No Round 7 has started.
+review approves PR169 final head; independent full content/source review also
+passes. Exact documentation peer/CI and actual published 1.0.22 verification
+remain pending. No Round 7 has started.
 
 Evidence: `Artifacts/mcp-e2e-20261010/round6/usaspending`, including
 `audit-summary.json`, `question-inventory.json`, `coverage-map.json`,
