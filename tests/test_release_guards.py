@@ -3,6 +3,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import sys
 from pathlib import Path
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
@@ -289,7 +290,7 @@ def test_acquisition_release_gate_requires_real_html_and_pdf(monkeypatch, failur
     verifier = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(verifier)
     calls = []
-    def request(url, payload=None):
+    def request(url, payload=None, *, timeout_seconds=65):
         if payload is None:
             return {'release_sha': 'a' * 40}
         method = payload['method']
@@ -327,7 +328,7 @@ def test_perdiem_release_gate_requires_keyless_contract_and_live_city(monkeypatc
     verifier = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(verifier)
     calls = []
-    def request(url, payload=None):
+    def request(url, payload=None, *, timeout_seconds=65):
         if payload is None:
             return {'release_sha': 'a' * 40,
                     'admission': {'processing': 16, 'waiting': 32, 'total': 48, 'deadline_seconds': 55}}
@@ -372,7 +373,7 @@ def test_regulations_release_gate_requires_publisher_key_and_compact_results(mon
     verifier = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(verifier)
     calls = []
-    def request(url, payload=None):
+    def request(url, payload=None, *, timeout_seconds=65):
         if payload is None:
             return {'release_sha': 'a' * 40,
                     'admission': {'processing': 16, 'waiting': 32, 'total': 48, 'deadline_seconds': 55}}
@@ -427,7 +428,7 @@ def test_perdiem_monitor_city_does_not_repeat_within_the_response_cache():
 
 
 def _mcp_stub(city_result):
-    def request(url, payload=None):
+    def request(url, payload=None, *, timeout_seconds=65):
         if url.endswith('/health'):
             return {'status': 'ok', 'release_sha': '001e536ae6'}
         name = payload['params'].get('name')
@@ -477,7 +478,7 @@ def test_bls_release_gate_requires_bundled_source(monkeypatch, failure):
     verifier = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(verifier)
     calls = []
-    def request(url, payload=None):
+    def request(url, payload=None, *, timeout_seconds=65):
         if payload is None:
             return {'release_sha': 'a' * 40,
                     'admission': {'processing': 16, 'waiting': 32, 'total': 48, 'deadline_seconds': 55}}
@@ -518,7 +519,7 @@ def test_bls_monitor_requires_the_bundled_source(monkeypatch):
     hc = _health_check()
     service = {'endpoint': 'https://bls.example/mcp'}
     def stub(kind):
-        def request(url, payload=None):
+        def request(url, payload=None, *, timeout_seconds=65):
             if url.endswith('/health'):
                 return {'status': 'ok', 'release_sha': '8f87c41aaa'}
             if payload['method'] == 'initialize':
@@ -547,3 +548,61 @@ def test_monitor_fails_the_dell_row_when_the_container_is_serving(monkeypatch):
         raise RuntimeError('Endpoint unavailable')
     monkeypatch.setattr(hc._verify, 'request', down)
     assert hc.check_origins(['ecfr'], services) == ['ecfr: Dell unreachable (RuntimeError)']
+
+
+# Actual initialization must catch up with the deployed health SHA.
+hosted_spec = importlib.util.spec_from_file_location("hosted_release", ROOT / "scripts/verify_hosted_release.py")
+verifier = importlib.util.module_from_spec(hosted_spec)
+hosted_spec.loader.exec_module(verifier)
+
+
+def setup_service(tmp_path, monkeypatch, versions, *, instructions=None):
+    (tmp_path / "deploy/demo").mkdir(parents=True)
+    (tmp_path / "servers/demo-mcp").mkdir(parents=True)
+    (tmp_path / "deploy/services.json").write_text(json.dumps({"demo": {"package": "demo-mcp", "endpoint": "https://example.test/mcp"}}))
+    (tmp_path / "servers/demo-mcp/pyproject.toml").write_text('[project]\nversion="2.0.0"\n')
+    (tmp_path / "deploy/demo/tools-contract.json").write_text("[]")
+    state = {"clock": 0.0, "initializations": 0, "tools_lists": 0, "timeouts": []}
+    def request(url, payload=None, **kwargs):
+        state["timeouts"].append(kwargs.get("timeout_seconds", 65))
+        if url.endswith("/health"):
+            return {"release_sha": "new-sha", "admission": {"processing": 16, "waiting": 32, "total": 48, "deadline_seconds": 55}}
+        if payload["method"] == "initialize":
+            i = state["initializations"]
+            state["initializations"] += 1
+            result = {"serverInfo": {"version": versions[min(i, len(versions)-1)]}}
+            if instructions: result["instructions"] = instructions
+            return {"result": result}
+        assert payload["method"] == "tools/list"
+        state["tools_lists"] += 1
+        return {"result": {"tools": []}}
+    monkeypatch.setattr(verifier, "ROOT", tmp_path)
+    monkeypatch.setattr(verifier, "request", request)
+    monkeypatch.setattr(verifier.time, "monotonic", lambda: state["clock"])
+    monkeypatch.setattr(verifier.time, "sleep", lambda seconds: state.update(clock=state["clock"]+seconds))
+    monkeypatch.setattr(sys, "argv", ["verify_hosted_release.py", "demo", "--sha", "new-sha", "--wait-seconds", "25", "--no-upstream"])
+    return state
+
+
+def test_new_health_sha_waits_for_new_initialization_version(tmp_path, monkeypatch):
+    state = setup_service(tmp_path, monkeypatch, ["1.0.0", "2.0.0"])
+    verifier.main()
+    assert state["initializations"] == 2
+    assert state["clock"] == 10
+    assert state["tools_lists"] == 1
+
+
+def test_persistent_old_initialization_version_times_out_within_deadline(tmp_path, monkeypatch):
+    state = setup_service(tmp_path, monkeypatch, ["1.0.0"])
+    with pytest.raises(SystemExit, match="deadline"):
+        verifier.main()
+    assert state["clock"] == 25
+    assert state["tools_lists"] == 0
+    assert all(0 < timeout <= 25 for timeout in state["timeouts"])
+
+
+def test_ready_version_still_rejects_unexpected_instructions(tmp_path, monkeypatch):
+    state = setup_service(tmp_path, monkeypatch, ["2.0.0"], instructions="unexpected")
+    with pytest.raises(AssertionError, match="instructions"):
+        verifier.main()
+    assert state["tools_lists"] == 0

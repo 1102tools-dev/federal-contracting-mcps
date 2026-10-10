@@ -4,8 +4,8 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 CASES={'usaspending':('get_award_types_reference',{}),'ecfr':('get_latest_date',{}),'gsa-calc':('keyword_search',{'keyword':'program manager','page_size':1}),'federal-register':('search_documents',{'term':'Federal Acquisition Regulation','per_page':1}),'acquisition-gov':('list_rfo_parts',{'part':10}),'gsa-perdiem':('lookup_zip_perdiem',{'zip_code':'22201'}),'regulations-gov':('search_dockets',{'agency_id':'FAR','page_size':5}),'bls-oews':('get_wage_data',{'occ_code':'151252'})}
 
-def request(url,payload=None):
-    cmd=['curl','-fsS','--max-time','65',url]
+def request(url,payload=None,*,timeout_seconds=65):
+    cmd=['curl','-fsS','--max-time',str(timeout_seconds),url]
     if payload is not None:cmd+=['-H','Content-Type: application/json','-H','Accept: application/json, text/event-stream','--data-binary',json.dumps(payload)]
     result=subprocess.run(cmd,capture_output=True,text=True)
     if result.returncode:raise RuntimeError('Endpoint unavailable: '+result.stderr[:200])
@@ -16,21 +16,27 @@ def main():
     service=json.loads((ROOT/'deploy/services.json').read_text())[args.slug]
     base=args.base or service['endpoint'].removesuffix('/mcp')
     version=tomllib.loads((ROOT/'servers'/service['package']/'pyproject.toml').read_text())['project']['version']
-    deadline=time.monotonic()+args.wait_seconds
-    while True:
-        try:
-            health=request(base+'/health')
-            if health.get('release_sha')==args.sha:break
-        except (ValueError,RuntimeError):pass
-        if time.monotonic()>deadline:raise SystemExit('Hosted service did not report expected release commit before the deadline')
-        time.sleep(10)
-    if args.slug != "acquisition-gov":
-        assert health.get("admission") == {"processing":16,"waiting":32,"total":48,"deadline_seconds":55}, "Hosted admission configuration differs"
-    def rpc(method,params):
-        data=request(base+'/mcp',{'jsonrpc':'2.0','id':1,'method':method,'params':params})
+    def rpc(method,params,*,timeout_seconds=65):
+        data=request(base+'/mcp',{'jsonrpc':'2.0','id':1,'method':method,'params':params},timeout_seconds=timeout_seconds)
         if data.get('error') or data.get('result',{}).get('isError'):raise RuntimeError('MCP returned an error for '+method)
         return data['result']
-    init=rpc('initialize',{'protocolVersion':'2025-11-25','capabilities':{},'clientInfo':{'name':'1102tools-release-check','version':'1'}})
+    deadline=time.monotonic()+args.wait_seconds
+    while True:
+        remaining=deadline-time.monotonic()
+        if remaining<=0:raise SystemExit('Hosted service did not report expected release commit and package version before the deadline')
+        try:
+            health=request(base+'/health',timeout_seconds=min(65,remaining))
+            if health.get('release_sha')==args.sha:
+                remaining=deadline-time.monotonic()
+                if remaining<=0:raise SystemExit('Hosted service did not report expected release commit and package version before the deadline')
+                init=rpc('initialize',{'protocolVersion':'2025-11-25','capabilities':{},'clientInfo':{'name':'1102tools-release-check','version':'1'}},timeout_seconds=min(65,remaining))
+                if init['serverInfo']['version']==version and time.monotonic()<=deadline:break
+        except (ValueError,RuntimeError):pass
+        remaining=deadline-time.monotonic()
+        if remaining<=0:raise SystemExit('Hosted service did not report expected release commit and package version before the deadline')
+        time.sleep(min(10,remaining))
+    if args.slug != "acquisition-gov":
+        assert health.get("admission") == {"processing":16,"waiting":32,"total":48,"deadline_seconds":55}, "Hosted admission configuration differs"
     assert init['serverInfo']['version']==version,'Deployed package version differs'
     assert not init.get('instructions'),'Server instructions changed from the published baseline'
     actual=rpc('tools/list',{})['tools']
