@@ -1,6 +1,6 @@
 # Federal contracting MCPs
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 6,084](https://img.shields.io/badge/regression%20tests-6%2C084-007a59)](#why-these-mcps)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![regression tests: 6,092](https://img.shields.io/badge/regression%20tests-6%2C092-007a59)](#why-these-mcps)
 
 [![Claude directory: 9 servers](https://img.shields.io/badge/Claude%20directory-9%20servers-6f42c1?logo=claude&logoColor=white)](#local-or-hosted) [![ChatGPT directory: 6 servers](https://img.shields.io/badge/ChatGPT%20directory-6%20servers-6f42c1?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyBmaWxsPSJ3aGl0ZSIgcm9sZT0iaW1nIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI%2BPHRpdGxlPk9wZW5BSTwvdGl0bGU%2BPHBhdGggZD0iTTIyLjI4MTkgOS44MjExYTUuOTg0NyA1Ljk4NDcgMCAwIDAtLjUxNTctNC45MTA4IDYuMDQ2MiA2LjA0NjIgMCAwIDAtNi41MDk4LTIuOUE2LjA2NTEgNi4wNjUxIDAgMCAwIDQuOTgwNyA0LjE4MThhNS45ODQ3IDUuOTg0NyAwIDAgMC0zLjk5NzcgMi45IDYuMDQ2MiA2LjA0NjIgMCAwIDAgLjc0MjcgNy4wOTY2IDUuOTggNS45OCAwIDAgMCAuNTExIDQuOTEwNyA2LjA1MSA2LjA1MSAwIDAgMCA2LjUxNDYgMi45MDAxQTUuOTg0NyA1Ljk4NDcgMCAwIDAgMTMuMjU5OSAyNGE2LjA1NTcgNi4wNTU3IDAgMCAwIDUuNzcxOC00LjIwNTggNS45ODk0IDUuOTg5NCAwIDAgMCAzLjk5NzctMi45MDAxIDYuMDU1NyA2LjA1NTcgMCAwIDAtLjc0NzUtNy4wNzI5em0tOS4wMjIgMTIuNjA4MWE0LjQ3NTUgNC40NzU1IDAgMCAxLTIuODc2NC0xLjA0MDhsLjE0MTktLjA4MDQgNC43NzgzLTIuNzU4MmEuNzk0OC43OTQ4IDAgMCAwIC4zOTI3LS42ODEzdi02LjczNjlsMi4wMiAxLjE2ODZhLjA3MS4wNzEgMCAwIDEgLjAzOC4wNTJ2NS41ODI2YTQuNTA0IDQuNTA0IDAgMCAxLTQuNDk0NSA0LjQ5NDR6bS05LjY2MDctNC4xMjU0YTQuNDcwOCA0LjQ3MDggMCAwIDEtLjUzNDYtMy4wMTM3bC4xNDIuMDg1MiA0Ljc4MyAyLjc1ODJhLjc3MTIuNzcxMiAwIDAgMCAuNzgwNiAwbDUuODQyOC0zLjM2ODV2Mi4zMzI0YS4wODA0LjA4MDQgMCAwIDEtLjAzMzIuMDYxNUw5Ljc0IDE5Ljk1MDJhNC40OTkyIDQuNDk5MiAwIDAgMS02LjE0MDgtMS42NDY0ek0yLjM0MDggNy44OTU2YTQuNDg1IDQuNDg1IDAgMCAxIDIuMzY1NS0xLjk3MjhWMTEuNmEuNzY2NC43NjY0IDAgMCAwIC4zODc5LjY3NjVsNS44MTQ0IDMuMzU0My0yLjAyMDEgMS4xNjg1YS4wNzU3LjA3NTcgMCAwIDEtLjA3MSAwbC00LjgzMDMtMi43ODY1QTQuNTA0IDQuNTA0IDAgMCAxIDIuMzQwOCA3Ljg3MnptMTYuNTk2MyAzLjg1NThMMTMuMTAzOCA4LjM2NCAxNS4xMTkyIDcuMmEuMDc1Ny4wNzU3IDAgMCAxIC4wNzEgMGw0LjgzMDMgMi43OTEzYTQuNDk0NCA0LjQ5NDQgMCAwIDEtLjY3NjUgOC4xMDQydi01LjY3NzJhLjc5Ljc5IDAgMCAwLS40MDctLjY2N3ptMi4wMTA3LTMuMDIzMWwtLjE0Mi0uMDg1Mi00Ljc3MzUtMi43ODE4YS43NzU5Ljc3NTkgMCAwIDAtLjc4NTQgMEw5LjQwOSA5LjIyOTdWNi44OTc0YS4wNjYyLjA2NjIgMCAwIDEgLjAyODQtLjA2MTVsNC44MzAzLTIuNzg2NmE0LjQ5OTIgNC40OTkyIDAgMCAxIDYuNjgwMiA0LjY2ek04LjMwNjUgMTIuODYzbC0yLjAyLTEuMTYzOGEuMDgwNC4wODA0IDAgMCAxLS4wMzgtLjA1NjdWNi4wNzQyYTQuNDk5MiA0LjQ5OTIgMCAwIDEgNy4zNzU3LTMuNDUzN2wtLjE0Mi4wODA1TDguNzA0IDUuNDU5YS43OTQ4Ljc5NDggMCAwIDAtLjM5MjcuNjgxM3ptMS4wOTc2LTIuMzY1NGwyLjYwMi0xLjQ5OTggMi42MDY5IDEuNDk5OHYyLjk5OTRsLTIuNTk3NCAxLjQ5OTctMi42MDY3LTEuNDk5N1oiLz48L3N2Zz4%3D)](#local-or-hosted) [![Cloudflare Workers](https://img.shields.io/badge/hosted%20on-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/deploy)
 
@@ -11,7 +11,7 @@ Free, open-source, read-only source tools for federal contracting research: oppo
 ## Why these MCPs
 
 - **Free.** MIT-licensed, with no subscription and no credits. Hosted installs need no account or API key.
-- **Tested.** 6,084 collected package regression tests across 9 servers and 133 tools. Optional live-source tests are included in collection; they do not all run in every release. Dated testing records distinguish executed checks, skips, content comparisons, and corrected defects, with up to sixteen documented audit rounds per server.
+- **Tested.** 6,092 collected package regression tests across 9 servers and 133 tools. Optional live-source tests are included in collection; they do not all run in every release. Dated testing records distinguish executed checks, skips, content comparisons, and corrected defects, with up to seventeen documented audit rounds per server.
 - **Listed.** All 9 servers are in the Claude directory and 6 are in the ChatGPT directory, with the rest in review for ChatGPT. Hosted installs need no user API key.
 - **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
 
@@ -20,16 +20,16 @@ Collected package tests include optional live-source tests; a skipped live test 
 | Server | Collected regression tests | Testing record |
 |---|---:|---|
 | SAM.gov | 1,158 | [Testing](servers/sam-gov-mcp/testing.md) |
-| USAspending | 2,312 | [Testing](servers/usaspending-gov-mcp/testing.md) |
+| USAspending | 2,315 | [Testing](servers/usaspending-gov-mcp/testing.md) |
 | GSA CALC+ | 438 | [Testing](servers/gsa-calc-mcp/testing.md) |
 | BLS OEWS | 298 | [Testing](servers/bls-oews-mcp/testing.md) |
 | GSA Per Diem | 583 | [Testing](servers/gsa-perdiem-mcp/testing.md) |
-| eCFR | 456 | [Testing](servers/ecfr-mcp/testing.md) |
+| eCFR | 461 | [Testing](servers/ecfr-mcp/testing.md) |
 | Acquisition.gov | 255 | [Testing](servers/acquisition-gov-mcp/testing.md) |
 | Federal Register | 286 | [Testing](servers/federal-register-mcp/testing.md) |
 | Regulations.gov | 298 | [Testing](servers/regulations-gov-mcp/testing.md) |
 
-The sequential content goal covers eight servers and **5,829 collected tests**; Acquisition.gov's 255 tests remain part of the product total on a separate track. See the [dated audit and release record](docs/releases/2026-10-10-content-audit.md) for findings, published-version acceptance, source limitations and destination evidence.
+The sequential content goal covers eight servers and **5,837 collected tests**; Acquisition.gov's 255 tests remain part of the product total on a separate track. See the [dated audit and release record](docs/releases/2026-10-10-content-audit.md) for findings, published-version acceptance, source limitations and destination evidence.
 
 See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
 

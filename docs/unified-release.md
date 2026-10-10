@@ -168,3 +168,25 @@ must produce skipped hosted build, Cloudflare access and deployment jobs;
 failed, canceled or unexpectedly skipped safety/package jobs prevent publication.
 The production concurrency group retains `cancel-in-progress: false`. Wait for
 each release to finish before pushing the next scoped tag.
+
+### Native SAM mirror releases
+
+The native opportunities mirror has its own runtime version and four-tool
+contract. A native correction does not require republishing the unchanged
+Python package. From `deploy/sam-gov` at the reviewed merge commit, use the
+existing production command with that immutable source identity:
+
+```sh
+npm run deploy -- --var RELEASE_SHA:<reviewed-merge-sha>
+```
+
+Verify actual public health, initialization, tool definitions, original content
+questions and the active D1 snapshot. A catalog-only correction needs no data
+reload. Preserve names, compatible schemas and annotations; no manual directory
+republication is required. Record directory/client propagation separately if
+it was observed.
+
+Record frozen release tests and fresh published-package tests as separate
+lanes, including their actual Python/SDK versions, failures and optional skips.
+Collected case counts establish inventory, not passing coverage. Keep source
+limitations and caller exclusions separate from confirmed content defects.
