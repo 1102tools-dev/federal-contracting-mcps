@@ -809,22 +809,30 @@ async def get_cfr_structure(
     part: str | int | None = None,
     subpart: str | int | None = None,
     appendix: str | int | None = None,
+    depth: int | None = None,
 ) -> dict[str, Any]:
     """Get the hierarchical table of contents for a CFR title or subset.
 
     Returns a nested tree of titles, chapters, parts, subparts, and sections
-    with identifiers, descriptions, and byte sizes.
+    with identifiers, descriptions, and byte sizes, plus the date it
+    describes.
 
     IMPORTANT: Does NOT support section-level filtering (returns 400).
     Use part or subpart, then walk the children to find sections.
 
     Common patterns:
-    - chapter='1' for all FAR parts
-    - chapter='2' for all DFARS parts
     - part='15' for FAR Part 15 structure
     - subpart='15.3' for just that subpart's sections
+    - chapter='1', depth=2 for the FAR's subchapters and parts only
+    - appendix='Appendix A to Part 200' with part='200' (title 2) for one appendix
 
-    part/subpart/chapter/appendix accept int or string.
+    depth keeps that many levels below the top node; deeper levels are
+    replaced by 'children_omitted' (how many there were). A tree too large
+    to send at once (a whole chapter is about 1 MB) is cut to the deepest
+    depth that fits, and 'note' says so.
+
+    subchapter needs chapter in Title 48 (each chapter has its own
+    subchapter A, B, ...). part/subpart/chapter/appendix accept int or string.
     """
     title_number = _validate_title_number(title_number)
     date = _validate_date_ymd(date, field="date")
@@ -833,6 +841,13 @@ async def get_cfr_structure(
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
     appendix = _coerce_cfr_str(appendix, field="appendix")
+    if depth is not None:
+        depth = _clamp(depth, field="depth", lo=1, hi=10)
+    if subchapter and not chapter and title_number == 48:
+        raise ValueError(
+            "subchapter needs chapter in Title 48: every chapter has its own subchapter "
+            "A, B, ... (FAR subchapter A is chapter='1', DFARS subchapter A is chapter='2')."
+        )
 
     if date is None:
         date = await _resolve_date(title_number)
@@ -847,10 +862,58 @@ async def get_cfr_structure(
         params["part"] = part
     if subpart:
         params["subpart"] = subpart
-    if appendix:
-        params["appendix"] = appendix
 
-    return await _get_json(path, params, timeout=DEFAULT_TIMEOUT_STRUCTURE)
+    tree = _safe_dict(await _get_json(path, params, timeout=DEFAULT_TIMEOUT_STRUCTURE))
+    if appendix:
+        # eCFR's structure endpoint has no appendix filter; find it in the tree.
+        found: list[dict[str, Any]] = []
+        names: list[str] = []
+
+        def look(node: Any) -> None:
+            node = _safe_dict(node)
+            if node.get("type") == "appendix":
+                names.append(str(node.get("identifier")))
+                if str(node.get("identifier")).lower() == appendix.lower():
+                    found.append(node)
+            for child in _as_list(node.get("children")):
+                look(child)
+
+        look(tree)
+        if not found:
+            listed = f" Appendices here: {', '.join(names[:20])}." if names else (
+                " Give the part or chapter the appendix belongs to.")
+            raise ValueError(f"No appendix named {appendix!r} in this structure.{listed}")
+        tree = dict(found[0])
+    result = dict(tree)
+    result["date"] = date
+    if depth is not None:
+        result = _trim_tree(result, depth)
+    elif _xml_text.size_of(result) > _xml_text.PAGE_CHARS:
+        full = _xml_text.size_of(result)
+        for level in range(6, 0, -1):
+            trimmed = _trim_tree(result, level)
+            if _xml_text.size_of(trimmed) <= _xml_text.PAGE_CHARS or level == 1:
+                break
+        result = trimmed
+        result["note"] = (
+            f"The full tree is about {full:,} characters, too long to send at once, so "
+            f"levels below depth {level} are left out (see children_omitted). Ask for a "
+            f"part or subpart to see its sections."
+        )
+    return result
+
+
+def _trim_tree(node: dict[str, Any], depth: int) -> dict[str, Any]:
+    """Keep depth levels of children; count what is cut."""
+    out = {k: v for k, v in node.items() if k != "children"}
+    children = [_safe_dict(c) for c in _as_list(node.get("children"))]
+    if not children:
+        return out
+    if depth <= 0:
+        out["children_omitted"] = len(children)
+        return out
+    out["children"] = [_trim_tree(c, depth - 1) for c in children]
+    return out
 
 
 @mcp.tool(annotations={"title": "Get Version History", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -859,16 +922,32 @@ async def get_version_history(
     part: str | int | None = None,
     section: str | int | None = None,
     subpart: str | int | None = None,
+    since_date: str | None = None,
+    until_date: str | None = None,
+    per_page: int = 200,
+    page: int = 1,
 ) -> dict[str, Any]:
     """Get the version history of a CFR section, subpart, or part.
 
-    Returns a list of content versions with dates, amendment info, and
-    whether each version was a substantive text change vs editorial.
+    Returns content_versions (each with date, amendment_date, issue_date,
+    identifier, name, substantive and removed), every version eCFR lists:
+    all of eCFR's pages are read, so Part 52's 2,264 versions are all
+    there. Versions are grouped by section, oldest first.
 
-    The 'substantive' field is key: True = the regulatory text actually
-    changed. False = only editorial/formatting change.
+    since_date/until_date (YYYY-MM-DD) keep versions dated in that range.
+    per_page (default 200, max 1000) and page step through long histories;
+    total_count and total_pages say how many there are.
 
-    History goes back to January 2017 only. Pre-2017 changes are not tracked.
+    'substantive' is eCFR's flag: true when the version's text differs from
+    the one before, including editorial edits such as citation fixes and
+    the "Link to an amendment published at ..." notice eCFR adds when a
+    rule is published; false when re-issued with no text change. To see
+    what actually changed, use compare_versions on the dates.
+
+    'removed' true means the section was removed on that date.
+
+    History starts 2017-01-01 (eCFR's baseline: a 2017-01-01 version means
+    unchanged since before 2017). Pre-2017 changes are not tracked.
 
     part/subpart/section accept int or string.
     """
@@ -876,13 +955,16 @@ async def get_version_history(
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
+    since_date = _validate_date_ymd(since_date, field="since_date")
+    until_date = _validate_date_ymd(until_date, field="until_date")
+    per_page = _clamp(per_page, field="per_page", lo=1, hi=_VERSION_PAGE)
+    page = _clamp(page, field="page", lo=1, hi=10_000)
 
     if not any((part, section, subpart)):
         raise ValueError(
             "get_version_history requires at least one of: part, subpart, section."
         )
 
-    path = f"/api/versioner/v1/versions/title-{title_number}"
     params: dict[str, str] = {}
     if part:
         params["part"] = part
@@ -891,7 +973,56 @@ async def get_version_history(
     if subpart:
         params["subpart"] = subpart
 
-    return await _get_json(path, params)
+    versions, meta, complete = await _all_versions(title_number, params)
+    if not versions:
+        what = f"section {section}" if section else (f"subpart {subpart}" if subpart else f"part {part}")
+        raise ValueError(
+            f"eCFR has no version history for {what} in title {title_number}, so it is "
+            f"not in this title (every section in eCFR has at least its 2017-01-01 "
+            f"version). Check title_number: for example 200.318 is 2 CFR, not 48 CFR."
+        )
+    total_listed = len(versions)
+    if since_date:
+        versions = [v for v in versions if (v.get("date") or "") >= since_date]
+    if until_date:
+        versions = [v for v in versions if (v.get("date") or "") <= until_date]
+    total = len(versions)
+    total_pages = max(1, -(-total // per_page))
+    if page > total_pages:
+        raise ValueError(f"page={page} does not exist; there are {total_pages} page(s) of {per_page}.")
+    shown = []
+    for v in versions[(page - 1) * per_page: page * per_page]:
+        v = {k: val for k, val in v.items() if k != "title"}
+        v["name"] = _clean_heading(v.get("name"))
+        shown.append(v)
+
+    result: dict[str, Any] = {
+        "title": title_number,
+        "content_versions": shown,
+        "total_count": total,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": total_pages,
+        "latest_amendment_date": meta.get("latest_amendment_date"),
+        "latest_issue_date": meta.get("latest_issue_date"),
+    }
+    for key, value in (("part", part), ("subpart", subpart), ("section", section),
+                       ("since_date", since_date), ("until_date", until_date)):
+        if value:
+            result[key] = value
+    if total != total_listed:
+        result["total_before_date_filter"] = total_listed
+    if not complete:
+        result["truncated"] = True
+        result["note"] = (
+            f"eCFR lists more than {_MAX_VERSION_PAGES * _VERSION_PAGE:,} versions here; only "
+            f"the first {_MAX_VERSION_PAGES * _VERSION_PAGE:,} were read. Ask for a subpart or section."
+        )
+    elif page < total_pages:
+        result["note"] = f"Showing page {page} of {total_pages}; call again with page={page + 1} for more."
+    elif total == 0:
+        result["note"] = "No versions are dated in that range."
+    return result
 
 
 @mcp.tool(annotations={"title": "Get Ancestry", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1000,6 +1131,8 @@ async def search_cfr(
                 f"order must be one of {sorted(SEARCH_ORDERS)}. Got {order!r}."
             )
     slugs = _validate_agency_slugs(agency_slugs)
+    if slugs:
+        await _check_agency_slugs(slugs)
 
     params: dict[str, Any] = {"query": q}
     if title is not None:
@@ -1129,6 +1262,41 @@ async def _only_current(data: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+async def _check_agency_slugs(slugs: list[str]) -> None:
+    """Refuse a slug eCFR doesn't know: its search answers 0 results instead of an error."""
+    data = await _get_json("/api/admin/v1/agencies.json")
+    known: dict[str, str] = {}   # slug -> name
+
+    def walk(agency: dict[str, Any]) -> None:
+        if agency.get("slug"):
+            known[agency["slug"]] = agency.get("name") or agency["slug"]
+            if agency.get("short_name"):
+                aliases[str(agency["short_name"]).lower()] = agency["slug"]
+        for child in _as_list(agency.get("children")):
+            walk(_safe_dict(child))
+
+    aliases: dict[str, str] = {}
+    for agency in _as_list(_safe_dict(data).get("agencies")):
+        walk(_safe_dict(agency))
+    if not known:
+        return  # agency list unavailable; let eCFR answer
+    for slug in slugs:
+        if slug in known:
+            continue
+        guesses: list[str] = []
+        if slug in aliases:
+            guesses.append(aliases[slug])
+        words = [w for w in slug.split("-") if len(w) > 2]
+        guesses += [k for k in known if words and all(w in k for w in words)]
+        guesses += difflib.get_close_matches(slug, list(known), n=3, cutoff=0.6)
+        guesses = list(dict.fromkeys(guesses))[:5]
+        hint = f" Did you mean: {', '.join(guesses)}?" if guesses else ""
+        raise ValueError(
+            f"agency_slugs entry {slug!r} is not an eCFR agency, so the search would "
+            f"silently find nothing.{hint} list_agencies() lists every slug."
+        )
+
+
 def _agency_refs_with_children(agency: dict[str, Any]) -> list[dict[str, Any]]:
     """Collect cfr_references from an agency and all of its descendants.
 
@@ -1198,42 +1366,61 @@ async def get_corrections(
     title_number: int = 48,
     limit: int = 50,
     since_year: int | None = None,
+    section: str | int | None = None,
+    part: str | int | None = None,
 ) -> dict[str, Any]:
-    """Get editorial corrections for a CFR title.
+    """Get editorial corrections for a CFR title, newest first.
 
-    Returns a list of corrections with CFR references, corrective actions,
-    error dates, and FR citations. Useful for checking whether a section's
-    current text has been corrected since its last amendment.
+    Returns corrections with CFR references, corrective actions, error
+    dates, and FR citations, sorted by the date the error was corrected,
+    newest first. Useful for checking whether a section's current text has
+    been corrected since its last amendment.
 
-    limit caps the number of corrections returned (default 50, max 1000).
-    since_year further filters to corrections with year >= since_year.
-    Title 48 has ~280 corrections across all years; use since_year to
-    focus on recent ones.
+    section (e.g. '52.204-21') or part (e.g. '52') keeps only corrections
+    that touch it. since_year keeps corrections with year >= since_year.
+    limit caps how many are returned (default 50, max 1000); truncated
+    says whether older ones were left out. Title 48 has ~280 corrections
+    since 2005.
     """
     title_number = _validate_title_number(title_number)
     limit = _clamp(limit, field="limit", lo=1, hi=1000)
     if since_year is not None:
         since_year = _clamp(since_year, field="since_year", lo=1995, hi=2100)
+    section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
+    part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
 
     data = await _get_json(
         "/api/admin/v1/corrections.json",
         {"title": str(title_number)},
     )
-    corrections = _as_list(_safe_dict(data).get("ecfr_corrections"))
+    corrections = [_safe_dict(c) for c in _as_list(_safe_dict(data).get("ecfr_corrections"))]
     total = len(corrections)
 
     if since_year is not None:
         corrections = [
             c for c in corrections
-            if _safe_int(_safe_dict(c).get("year"), default=0) >= since_year
+            if _safe_int(c.get("year"), default=0) >= since_year
         ]
+    if section or part:
+        def touches(c: dict[str, Any]) -> bool:
+            for ref in _as_list(c.get("cfr_references")):
+                h = _safe_dict(_safe_dict(ref).get("hierarchy"))
+                if section and str(h.get("section")) == section:
+                    return True
+                if part and str(h.get("part")) == part:
+                    return True
+            return False
+        corrections = [c for c in corrections if touches(c)]
+    # eCFR lists them oldest first; the recent ones are what people need.
+    corrections.sort(key=lambda c: (c.get("error_corrected") or "", c.get("position") or 0), reverse=True)
 
     filtered_count = len(corrections)
     truncated = filtered_count > limit
     corrections = corrections[:limit]
 
-    return {
+    result: dict[str, Any] = {
         "title": title_number,
+        "order": "newest first (by error_corrected)",
         "corrections": corrections,
         "count_returned": len(corrections),
         "count_filtered": filtered_count,
@@ -1242,6 +1429,13 @@ async def get_corrections(
         "since_year": since_year,
         "limit": limit,
     }
+    if section:
+        result["section"] = section
+    if part:
+        result["part"] = part
+    if truncated:
+        result["note"] = f"Showing the newest {limit} of {filtered_count}; raise limit for older ones."
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -1432,17 +1626,26 @@ def _text_changes(before: dict[str, Any], after: dict[str, Any]) -> list[dict[st
 @mcp.tool(annotations={"title": "List Sections in Part", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def list_sections_in_part(
     part_number: str | int,
-    chapter: str | int = "1",
+    chapter: str | int | None = None,
     title_number: int = 48,
     date: str | None = None,
+    subpart: str | int | None = None,
+    detail: bool = False,
 ) -> dict[str, Any]:
-    """List all sections in a FAR/DFARS part with their headings.
+    """List all sections and appendices in a CFR part with their headings.
 
-    Returns a flat list of sections extracted from the structure tree.
-    Useful for understanding the scope of a FAR part before drilling into
-    specific sections.
+    Returns 'sections' in order, each {identifier, heading}, with
+    type='appendix' on appendices (2 CFR 200's Appendix I-XII, for example)
+    and reserved=true on reserved sections, plus 'subparts' (each with its
+    heading, section_count and first and last section). Useful for seeing
+    the scope of a part before reading specific sections.
 
-    Default chapter='1' (FAR). Use chapter='2' for DFARS.
+    The part number alone is enough: chapter is optional (Title 48 parts
+    are unique: 52 = FAR, 252 = DFARS, 552 = GSAR) and the answer reports
+    the chapter the part is in. subpart (e.g. '52.2') lists one subpart.
+    detail=True adds eCFR's label, size and received_on for each entry
+    (received_on is when eCFR processed the text, not when it was amended;
+    get_version_history has amendment dates).
 
     part_number accepts int or string.
     """
@@ -1451,6 +1654,7 @@ async def list_sections_in_part(
     if not part_number:
         raise ValueError("part_number is required. Pass something like '15' or '252'.")
     chapter = _validate_chapter(chapter, title_number=title_number)
+    subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
     date = _validate_date_ymd(date, field="date")
 
     if date is None:
@@ -1459,6 +1663,8 @@ async def list_sections_in_part(
     params: dict[str, str] = {"part": part_number}
     if chapter:
         params["chapter"] = chapter
+    if subpart:
+        params["subpart"] = subpart
 
     structure = await _get_json(
         f"/api/versioner/v1/structure/{date}/title-{title_number}.json",
@@ -1466,15 +1672,64 @@ async def list_sections_in_part(
         timeout=DEFAULT_TIMEOUT_STRUCTURE,
     )
 
-    sections = _walk_structure(structure, "section")
-    return {
+    entries: list[dict[str, Any]] = []
+    subparts: list[dict[str, Any]] = []
+    found_chapter: list[Any] = []
+
+    def walk(node: Any, current_subpart: dict[str, Any] | None) -> None:
+        node = _safe_dict(node)
+        kind = node.get("type")
+        if kind == "chapter" and not found_chapter:
+            found_chapter.append(node.get("identifier"))
+        if kind == "subpart":
+            current_subpart = {"identifier": node.get("identifier"),
+                               "heading": node.get("label_description"), "section_count": 0}
+            subparts.append(current_subpart)
+        if kind in ("section", "appendix"):
+            entry: dict[str, Any] = {"identifier": node.get("identifier"),
+                                     "heading": node.get("label_description")}
+            if kind == "appendix":
+                entry["type"] = "appendix"
+            if node.get("reserved"):
+                entry["reserved"] = True
+            if detail:
+                for k in ("label", "size", "received_on"):
+                    entry[k] = node.get(k)
+            entries.append(entry)
+            if current_subpart is not None:
+                current_subpart["section_count"] += 1
+                current_subpart.setdefault("first_section", entry["identifier"])
+                current_subpart["last_section"] = entry["identifier"]
+            return
+        for child in _as_list(node.get("children")):
+            walk(child, current_subpart)
+
+    walk(structure, None)
+    if chapter and found_chapter and str(found_chapter[0]) != chapter:
+        raise ValueError(
+            f"Part {part_number} is in chapter {found_chapter[0]}, not chapter {chapter}. "
+            f"Leave chapter out; the part number is enough."
+        )
+    result: dict[str, Any] = {
         "title": title_number,
-        "chapter": chapter,
+        "chapter": found_chapter[0] if found_chapter else chapter,
         "part": part_number,
         "date": date,
-        "section_count": len(sections),
-        "sections": sections,
+        "section_count": sum(1 for e in entries if e.get("type") != "appendix"),
+        "appendix_count": sum(1 for e in entries if e.get("type") == "appendix"),
     }
+    if subpart:
+        result["subpart"] = subpart
+    if subparts:
+        result["subparts"] = subparts
+    result["sections"] = entries
+    if detail and _xml_text.size_of(result) > _xml_text.PAGE_CHARS:
+        raise ValueError(
+            f"Part {part_number} with detail=True is too long to send at once "
+            f"({_xml_text.size_of(result):,} characters). Use detail=False, or "
+            f"subpart= to list one subpart."
+        )
+    return result
 
 
 @mcp.tool(annotations={"title": "Find FAR Definition", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})

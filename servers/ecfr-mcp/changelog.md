@@ -74,6 +74,30 @@ Fixes from the 2026-10-10 bug hunt. All 13 tools keep their names.
   many pages there are. The chapter filter is applied on our side, because
   eCFR's version history ignores it.
 
+**No silent caps or empty answers**
+
+- `get_version_history` reads every page eCFR has (Part 52: all 2,264
+  versions, not the first 1,000), with new optional `since_date`,
+  `until_date`, `per_page` and `page`, plus `total_count`/`total_pages`. A
+  section that isn't in the title is an error instead of an empty list that
+  read as "never amended". The `substantive` description now says what
+  eCFR's flag really means.
+- `get_corrections` returns the newest corrections first (it kept the 50
+  oldest, 2005-2009), with new optional `section` and `part` filters.
+- `search_cfr` refuses an agency slug eCFR doesn't know ("va", "gsa") and
+  suggests the right one, instead of silently finding nothing.
+- `list_sections_in_part` includes appendices (all 12 in 2 CFR 200), lists
+  subparts, returns just identifier and heading by default (FAR 52: 58,200
+  characters, was 142,748; `detail=True` for the old fields), takes an
+  optional `subpart`, reports the part's real chapter, and no longer needs
+  `chapter` (an explicit wrong chapter is an error).
+- `get_cfr_structure` takes an optional `depth`; a tree too large to send
+  (chapter 1 is ~1 MB) is cut to the deepest level that fits, with a note.
+  `appendix` works (eCFR's structure endpoint has no appendix filter, so the
+  appendix is found in the tree; it always failed with HTTP 400 before), a
+  Title 48 `subchapter` without `chapter` is an error instead of silently
+  meaning the FAR, and the answer says which date it describes.
+
 ## 1.0.13
 
 - Hosted service only: the machine running the service can give the answer cache

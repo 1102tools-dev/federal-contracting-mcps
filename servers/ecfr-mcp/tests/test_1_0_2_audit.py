@@ -281,7 +281,7 @@ def test_search_sends_order_and_repeated_agency_slugs():
             "search_cfr", query="cyber", order="Newest_First",
             agency_slugs=["defense-acquisition-regulations-system", "federal-acquisition-regulation"],
         ))
-        _, params = mock.calls[0]
+        params = next(p for path, p in mock.calls if path == "/api/search/v1/results")
         assert params["order"] == "newest_first"
         assert params["agency_slugs[]"] == [
             "defense-acquisition-regulations-system", "federal-acquisition-regulation",
@@ -295,7 +295,8 @@ def test_search_single_slug_string_becomes_list():
     orig, srv._get_json = srv._get_json, mock
     try:
         asyncio.run(_call("search_cfr", query="cyber", agency_slugs="general-services-administration"))
-        assert mock.calls[0][1]["agency_slugs[]"] == ["general-services-administration"]
+        params = next(p for path, p in mock.calls if path == "/api/search/v1/results")
+        assert params["agency_slugs[]"] == ["general-services-administration"]
     finally:
         srv._get_json = orig
 
@@ -347,19 +348,26 @@ def test_appendix_alone_satisfies_content_filter_check():
 
 
 def test_structure_and_ancestry_send_appendix_on_wire():
-    mock = _CaptureJson({"ancestors": []})
+    # 1.1.0: eCFR's structure endpoint rejects an appendix filter (HTTP 400),
+    # so get_cfr_structure finds the appendix in the chapter's tree; ancestry
+    # still sends it, because that endpoint accepts it.
+    tree = {"type": "chapter", "identifier": "2", "children": [
+        {"type": "appendix", "identifier": "Appendix A to Chapter 2", "label_description": "Armed Services Board"},
+    ], "ancestors": []}
+    mock = _CaptureJson(tree)
     orig, srv._get_json = srv._get_json, mock
     try:
-        asyncio.run(_call(
+        r = _payload(asyncio.run(_call(
             "get_cfr_structure", title_number=48, date="2026-08-13",
             chapter="2", appendix="Appendix A to Chapter 2",
-        ))
+        )))
+        assert r["identifier"] == "Appendix A to Chapter 2" and r["date"] == "2026-08-13"
+        assert "appendix" not in mock.calls[0][1]
         asyncio.run(_call(
             "get_ancestry", title_number=48, date="2026-08-13",
             appendix="Appendix A to Chapter 2",
         ))
-        for _path, params in mock.calls:
-            assert params["appendix"] == "Appendix A to Chapter 2"
+        assert mock.calls[-1][1]["appendix"] == "Appendix A to Chapter 2"
     finally:
         srv._get_json = orig
 
