@@ -1,6 +1,6 @@
 # GSA Per Diem Rates MCP: Testing Record
 
-## Round 9 (2026-10-10): content-test corrections and 1.2.1 release preparation
+## Round 9 (2026-10-10): content-test corrections and 1.2.1 release verification
 
 Current suite: **564 collected Python regressions: 297 offline passed and 267 live-gated skipped**. The server exposes **7 tools**. Nine audit rounds are documented through this content-test round. Worker validation is separate: **23 tests passed**, type checks passed, and **1,350 parity calls** had 7 documented parser-message differences and zero unexplained differences.
 
@@ -12,9 +12,9 @@ Current suite: **564 collected Python regressions: 297 offline passed and 267 li
 | FY2025 M&IE filename remains applicable to FY2027 | M&IE source-note regressions in Python and Worker failed before |
 | Seasonal state lists need lodging months | Python and Worker seasonal-month regressions failed before |
 
-Independent source comparison found zero differences for all 40,426 FY2027 ZIPs and 295 published destinations. Findings replay covered Q1-Q42 (including Q40b and combined comparison groups) in 42 calls: Python and Worker answers identical; lodging values, estimate arithmetic, five M&IE tiers and targeted resolution behavior passed source-backed assertions. Most replay API envelopes reconstruct the findings' reported resolutions from downloaded GSA rate files; Milton and Bethesda use raw captures. This replay does not prove fresh upstream city behavior. A fresh Bedford MA DEMO_KEY source probe returned HTTP 429, so fresh API validation remains pending. Hosted findings rerun is prepared for after release.
+Independent source comparison found zero differences for all 40,426 FY2027 ZIPs and 295 published destinations. Findings replay covered Q1-Q42 (including Q40b and combined comparison groups) in 42 calls: Python and Worker answers identical; lodging values, estimate arithmetic, five M&IE tiers and targeted resolution behavior passed source-backed assertions. Most replay API envelopes reconstruct the findings' reported resolutions from downloaded GSA rate files; Milton and Bethesda use raw captures. This replay does not prove fresh upstream city behavior. Direct Bedford MA source probes with DEMO_KEY returned HTTP 429 before and after release; that separate direct-source check was skipped. After release, all 42 findings repro calls passed against the real hosted MCP endpoint using its normal publisher-key service path, including Milton unresolved behavior, ZIP county preservation, seasonal monthly rates, trip notes and M&IE labeling. Hosted values were checked against the independently downloaded GSA files and saved M&IE API capture.
 
-Deferred P3 work: month order/calendar-year labels, per-candidate ZIP county/state provenance (requires schema/loader migration), and date-aware per-night pricing. Multi-month guidance, supplied-county preservation, long-stay notes and the current 41 CFR 301-11.20 citation are included. Version 1.2.1 is a release target until the tag is published.
+Deferred P3 work: month order/calendar-year labels, per-candidate ZIP county/state provenance (requires schema/loader migration), and date-aware per-night pricing. Multi-month guidance, supplied-county preservation, long-stay notes and the current 41 CFR 301-11.20 citation are included. Version **1.2.1** was published as [`gsa-perdiem/v1.2.1`](https://github.com/1102tools-dev/federal-contracting-mcps/releases/tag/gsa-perdiem%2Fv1.2.1) at commit `e9fd0d77ec795bc41498033ffc70ef65f317c087`. [Release workflow 38059809457](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38059809457) completed successfully, including hosted deployment, PyPI, MCP registry and GitHub release. The standard hosted release verifier confirmed that exact SHA, version 1.2.1, the seven-tool contract, admission settings and publisher-key live city lookup. A fresh isolated installation of [the actual PyPI 1.2.1 distribution](https://pypi.org/project/gsa-perdiem-mcp/1.2.1/) confirmed its version and module path outside the checkout, matched all seven tool definitions, and passed bundled ZIP/county, M&IE and seasonal-state checks plus Milton/Gardiner matching with raw captured GSA responses supplied as mocks. The installed-package mock checks made no fresh upstream requests.
 
 ## Executive Summary
 
@@ -31,7 +31,7 @@ This Model Context Protocol server exposes the GSA Per Diem Rates API as 7 calla
 | P2 validation gaps found and fixed | 21 |
 | P3 cleanup items found and fixed | 10 |
 | Round 7 (independent re-audit) findings | 14 |
-| Release under preparation | 1.2.1 |
+| Current release | 1.2.1 |
 | PyPI status | Published as `gsa-perdiem-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.4 Safety Release Verification
@@ -208,7 +208,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round 7 methodology: re-read the entire server source with no reliance on this document's claims; verify match behavior against live API resolution for a dozen city shapes; recompute FTR 301-11.101 estimate math by hand; probe dead fiscal years and OCONUS states live; check every prior claim in this document against the code and live behavior.
 
-Current test count: 564 Python regressions (297 offline + 267 live-gated), with 23 separate Worker tests. The original rounds reported 69 findings; later fixes are recorded above. Release under preparation: 1.2.1. PyPI: `gsa-perdiem-mcp`.
+Current test count: 564 Python regressions (297 offline + 267 live-gated), with 23 separate Worker tests. The original rounds reported 69 findings; later fixes are recorded above. Current release: 1.2.1. PyPI: `gsa-perdiem-mcp`.
 
 Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp. License: MIT.
 
