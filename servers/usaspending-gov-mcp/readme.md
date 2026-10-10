@@ -8,17 +8,17 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Candidate 1.0.22 source collected 2,318 regression cases. The measured frozen Python 3.12 / MCP SDK 2.0.0 full lane passed 1,939 and skipped 379 live-gated cases. Its separately installed MCP 2.3.0 candidate lane measured 1,084 passed, 855 retained legacy negative-expectation failures and 379 skipped. Actual publication of 1.0.22 is pending; the last published verification remains 1.0.21. See [testing.md](testing.md) for lane provenance and the new Round 6 content audit.*
+*Published 1.0.22 has 2,318 collected regression cases. The measured frozen Python 3.12 / MCP SDK 2.0.0 source lane passed 1,939 and skipped 379 live-gated cases. Its separately installed official PyPI package with MCP 2.3.0 measured 1,084 passed, 855 retained legacy negative-expectation failures and 379 skipped. Actual published console/public acceptance passed 153 questions across all 55 tools, including 138 new Round 6 questions and 15 reference/control reads. See [testing.md](testing.md) for separate lane provenance.*
 
-Candidate 1.0.22 clarifies award-date scope: an omitted date type matches the
+Version 1.0.22 clarifies award-date scope: an omitted date type matches the
 interval from first signing through latest action, so it does not prove an
 action occurred inside the requested window. For actual activity use
 `spending_by_transaction`, read every page and deduplicate award identifiers;
 `get_transactions` gives a discovered award's action dates. Explicit
 `date_type="action_date"` bounds the latest action. The new Round 6 audit covers
 all 55 tools with 138 new entity/filter questions and 15 separate prior controls.
-Originals and recovery pass on the installed candidate; actual published 1.0.22
-acceptance remains pending.
+Originals and recovery pass on the actual installed published package and public
+service at release source `d7154fd26f985cee55ff0db3617d4ce587844446`.
 
 Published 1.0.21 completed all 143 new Round 5 questions plus 10 separately
 counted prior vehicle checks on a fresh official PyPI installation and the
@@ -233,13 +233,12 @@ MIT
 ## Regression tests
 
 Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
-package directory. For candidate 1.0.22, the measured Python 3.12.13 / frozen
+package directory. For 1.0.22, the measured Python 3.12.13 / frozen
 SDK 2.0.0 lane passes 1,939 cases and skips 379 live cases. The actually installed
-candidate wheel with SDK 2.3.0 measures 1,084 passed, 855 failed and 379 skipped;
+official published package with SDK 2.3.0 measures 1,084 passed, 855 failed and 379 skipped;
 those failures remain explicit and are not a passing latest-SDK suite. Set
 `USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts below include
-parametrized and live-gated cases collected for candidate 1.0.22 (publication
-pending); the latest published 1.0.21 has 2,315 collected cases.
+parametrized and live-gated cases collected for 1.0.22; the prior published 1.0.21 has 2,315 collected cases.
 
 | Test file | Cases | Coverage |
 |---|---:|---|

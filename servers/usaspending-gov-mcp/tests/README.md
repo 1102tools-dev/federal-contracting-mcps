@@ -1,15 +1,17 @@
 # Test suite map
 
-Frozen Python 3.12.13 collection on 2026-10-10 for candidate source package
+Frozen Python 3.12.13 collection on 2026-10-10 for source package
 1.0.22 found 2,318 cases: 1,939 offline and 379 live-gated. The separately
 executed frozen MCP SDK 2.0.0 full lane passed 1,939 and skipped 379.
 Collection itself executes no tests or source requests; the 138-new-question
-Round 6 content audit is not added to pytest counts. Publication 1.0.22 is pending.
+Round 6 content audit is not added to pytest counts. Actual published 1.0.22
+console/public acceptance passes 153 questions across all 55 tools.
 
-The installed candidate 1.0.22 Python 3.12 / MCP 2.3 full lane measured 1,084 passed,
+Both the installed candidate and separately installed official published 1.0.22
+Python 3.12 / MCP 2.3 full lanes measured 1,084 passed,
 855 failed and 379 skipped; all 855 failed node IDs match retained actual
 published 1.0.21 negative/error expectations. The prior actual published 1.0.21 lane
-measured 1,081 passed/855 failed/379 skipped. Neither is an all-tests-PASS
+measured 1,081 passed/855 failed/379 skipped. None is an all-tests-PASS
 claim. See testing.md for source, frozen, candidate and publication provenance.
 
 Files retain their audit-round and fix-wave history; see [../testing.md](../testing.md).
