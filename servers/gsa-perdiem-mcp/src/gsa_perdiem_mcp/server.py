@@ -1367,7 +1367,11 @@ async def estimate_travel_cost(
 
     travel_month: 3-letter abbreviation (Jan, Feb, ..., Dec). Every night is
     priced at that month's rate; for a trip that crosses into another month
-    or fiscal year, estimate each month's nights separately and add them.
+    or fiscal year, add only each month's lodging_total at the applicable
+    fiscal year rate. Calculate M&IE once across the actual trip days,
+    using 75% only on the actual departure and return days. Do not add
+    separate monthly mie_total or grand_total values: each estimate
+    assumes a new trip.
     If omitted, uses the max monthly lodging rate (conservative estimate
     for IGCE).
     fiscal_year: if omitted, the FY of the next occurrence of travel_month

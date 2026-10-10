@@ -1,8 +1,16 @@
 # GSA Per Diem Rates MCP: Testing Record
 
+## 1.2.3 follow-up: correct published split-trip guidance
+
+The user authorized correcting misleading descriptions within the existing MCP identity, with no directory resubmission. The `estimate_travel_cost` description now tells callers to add only monthly `lodging_total` and calculate M&IE once over actual travel days. This resolves the description limitation recorded in the 1.2.2 audit below; the runtime arithmetic and guidance are unchanged from that patch.
+
+The established Python 3.12 generator updated the tool contract. The reviewed diff changes exactly one description; all seven tool names, schemas, annotations and metadata identifiers remain identical. A read-only USAspending peer review found no blocker. The actual Python and Worker `tools/list` responses have explicit regression tests; the Python regression fails against the old 1.2.2 wheel and passes after correction.
+
+Current source validation: **575 Python collected: 308 passed and 267 live-gated skipped**; **28 Worker passed**; type check passed; **1,368 parity calls: 1,361 identical, seven documented parser-message differences, zero unexplained differences**. Publication and actual hosted/PyPI checks await the serial 1.2.3 follow-up release; the in-flight 1.2.2 release remains immutable.
+
 ## Round 10 (2026-10-10): realistic content audit, 1.2.2 candidate
 
-Current validation: **574 collected Python tests: 307 passed, 267 live-gated skipped**; **27 Worker tests passed**; type checks passed; **1,368 parity calls: 1,361 identical, 7 documented parser-message differences, zero unexplained differences**. The seven published tool definitions remain unchanged. A freshly built 1.2.2 wheel passes all ten new content regressions in an isolated environment.
+1.2.2 validation: **574 collected Python tests: 307 passed, 267 live-gated skipped**; **27 Worker tests passed**; type checks passed; **1,368 parity calls: 1,361 identical, 7 documented parser-message differences, zero unexplained differences**. The seven published tool definitions remain unchanged. A freshly built 1.2.2 wheel passes all ten new content regressions in an isolated environment.
 
 Twenty-five hosted calls covered every tool, current and historical M&IE, seasonal rates, ambiguous ZIPs and county follow-ups, independent cities, unknown cities, OCONUS, malformed inputs, one-night and long-stay estimates, comparisons with partial errors, and split-month arithmetic. All 17 current official GSA source hashes match the bundled data. An independent parser comparison against the verified GSA FY2027 workbooks finds zero mismatches for 40,426 ZIPs and 295 destinations.
 
@@ -36,12 +44,12 @@ Deferred P3 work: month order/calendar-year labels, per-candidate ZIP county/sta
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the GSA Per Diem Rates API as 7 callable tools for federal travel lodging and M&IE rate lookups used in IGCEs and travel cost estimation. Its original hardening program covered seven audit rounds, three of them live audits against the production API; rounds 8 and 9 are recorded separately below and above. The 0.2.x program surfaced 55 bugs. Round 7 (1.0.1), an independent full-source re-audit with live verification, found 14 more and overturned a round-6 headline: the "catastrophic silent-wrong-data" cases (Penasco returning Taos, Santa Rosa Beach returning Fort Walton Beach) were actually the API's CORRECT city-to-county rate-area resolution, and the round-6 "fix" had been stamping false WARNINGs on right answers, including the tool's own recommended Washington, DC query. The current suite collects 574 Python regression tests (307 offline plus 267 live-gated); the historical audit totals below describe their original rounds.
+This Model Context Protocol server exposes the GSA Per Diem Rates API as 7 callable tools for federal travel lodging and M&IE rate lookups used in IGCEs and travel cost estimation. Its original hardening program covered seven audit rounds, three of them live audits against the production API; rounds 8 and 9 are recorded separately below and above. The 0.2.x program surfaced 55 bugs. Round 7 (1.0.1), an independent full-source re-audit with live verification, found 14 more and overturned a round-6 headline: the "catastrophic silent-wrong-data" cases (Penasco returning Taos, Santa Rosa Beach returning Fort Walton Beach) were actually the API's CORRECT city-to-county rate-area resolution, and the round-6 "fix" had been stamping false WARNINGs on right answers, including the tool's own recommended Washington, DC query. The current suite collects 575 Python regression tests (308 offline plus 267 live-gated); the historical audit totals below describe their original rounds.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 7 |
-| Total regression tests | 574 (307 offline, 267 live-gated) |
+| Total regression tests | 575 (308 offline, 267 live-gated) |
 | Tests per tool | 81.9 (Python only) |
 | Audit rounds completed | 10 |
 | P0 catastrophic bugs found and fixed | 1 (path traversal) |
@@ -226,7 +234,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round 7 methodology: re-read the entire server source with no reliance on this document's claims; verify match behavior against live API resolution for a dozen city shapes; recompute FTR 301-11.101 estimate math by hand; probe dead fiscal years and OCONUS states live; check every prior claim in this document against the code and live behavior.
 
-Current test count: 574 Python regressions (307 offline + 267 live-gated), with 27 separate Worker tests. The original rounds reported 69 findings; later fixes are recorded above. Current release: 1.2.1. PyPI: `gsa-perdiem-mcp`.
+Current test count: 575 Python regressions (308 offline + 267 live-gated), with 28 separate Worker tests. The original rounds reported 69 findings; later fixes are recorded above. Current release: 1.2.1. PyPI: `gsa-perdiem-mcp`.
 
 Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp. License: MIT.
 

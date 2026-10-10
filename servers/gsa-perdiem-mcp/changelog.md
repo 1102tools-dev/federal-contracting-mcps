@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.3
+
+- Corrected the published `estimate_travel_cost` description: add monthly lodging totals only and calculate M&IE once over the actual trip days, applying 75% only on departure and return. This matches the corrected runtime guidance from 1.2.2.
+- Updated the contract with the established Python 3.12 generator and reviewed its diff. Only this description changed; all seven tool names, input schemas, annotations and metadata identifiers remain unchanged. The existing MCP identity and endpoint are preserved, with no directory resubmission required by the user-authorized correction.
+- Actual Python and Worker `tools/list` regressions verify the guidance. Validation: 308 Python passed, 267 live-gated skipped (575 collected); 28 Worker passed; type checks and 1,368 parity calls with zero unexplained differences.
+
 ## 1.2.2
 
 - Updated the deployment-only Wrangler pin to 4.149.0; npm audit reports zero advisories after the update. Runtime dependencies are unchanged.

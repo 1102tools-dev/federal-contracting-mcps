@@ -51,3 +51,12 @@ def test_comparison_keeps_each_rows_source():
         assert row["source"]["kind"] == "bundled_gsa_files"
         assert row["source"]["fiscal_year"] == 2027
         assert "gsa.gov" in row["source"]["rate_file"]
+
+
+def test_published_description_does_not_add_independent_trip_mie():
+    tools = asyncio.run(srv.mcp.list_tools())
+    description = next(t.description for t in tools if t.name == "estimate_travel_cost")
+    assert "add only each month's lodging_total" in description
+    assert "Calculate M&IE once across the actual trip days" in description
+    assert "Do not add" in description and "grand_total" in description
+    assert "month's nights separately and add them" not in description
