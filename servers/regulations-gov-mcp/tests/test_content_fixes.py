@@ -303,3 +303,55 @@ def test_include_organization_caps_page_size(monkeypatch):
     with pytest.raises(ValueError, match="capped at 25"):
         asyncio.run(srv.search_comments(docket_id="DARS-2020-0034", page_size=50,
                                         include_organization=True))
+
+
+# ---------------------------------------------------------------------------
+# R8: the 40-page ceiling is flagged, not passed through as lastPage=true
+# ---------------------------------------------------------------------------
+
+def _page(n_rows, total, page_number, page_size, kind="comments", prefix="FAR-2023-0021"):
+    return {
+        "data": [{"id": f"{prefix}-{i:04d}", "type": kind,
+                  "attributes": {"agencyId": "FAR", "title": "Comment", "postedDate": "2024-03-29T04:00:00Z"}}
+                 for i in range(n_rows)],
+        "meta": {"totalElements": total, "totalPages": 40, "pageNumber": page_number,
+                 "pageSize": page_size, "hasNextPage": page_number < 40,
+                 "lastPage": page_number == 40, "numberOfElements": n_rows},
+    }
+
+
+def test_pay_equity_page_40_is_flagged_truncated(monkeypatch):
+    # Content test Q25: totalElements 5145 (= FR's regulations.gov count,
+    # dl/fr_2024-01343.json); page 40 x 100 came back lastPage=true.
+    _fake_get(monkeypatch, lambda p, q: _page(100, 5145, 40, 100))
+    out = asyncio.run(srv.search_comments(docket_id="FAR-2023-0021", page_size=100,
+                                          page_number=40, sort="postedDate"))
+    assert out["truncated"] is True
+    assert out["records_beyond_page_limit"] == 1145
+    assert out["meta"]["lastPage"] is False
+    assert "posted_date_ge/le" in out["truncated_note"]
+
+
+def test_page_one_warns_when_results_exceed_the_ceiling(monkeypatch):
+    _fake_get(monkeypatch, lambda p, q: _page(25, 5145, 1, 25))
+    out = asyncio.run(srv.search_comments(docket_id="FAR-2023-0021"))
+    assert "truncated" not in out
+    assert "4145 cannot be reached" in out["page_limit_note"]
+    assert "page_size up to 100" in out["page_limit_note"]
+
+
+def test_documents_and_dockets_flag_the_ceiling(monkeypatch):
+    _fake_get(monkeypatch, lambda p, q: _page(10, 932, 40, 10, "dockets", "DARS-2020"))
+    out = asyncio.run(srv.search_dockets(agency_id="DARS", page_size=10, page_number=40))
+    assert out["truncated"] is True and out["records_beyond_page_limit"] == 532
+    assert "last_modified_date_ge/le" in out["truncated_note"]
+    _fake_get(monkeypatch, lambda p, q: _page(100, 4001, 40, 100, "documents"))
+    out = asyncio.run(srv.search_documents(agency_id="FAR", page_size=100, page_number=40))
+    assert out["records_beyond_page_limit"] == 1
+
+
+def test_no_ceiling_flag_when_everything_is_reachable(monkeypatch):
+    _fake_get(monkeypatch, lambda p, q: _page(81, 81, 1, 100))
+    out = asyncio.run(srv.search_comments(docket_id="FAR-2021-0017", page_size=100))
+    assert "truncated" not in out and "page_limit_note" not in out
+    assert out["meta"]["lastPage"] is False  # untouched API value

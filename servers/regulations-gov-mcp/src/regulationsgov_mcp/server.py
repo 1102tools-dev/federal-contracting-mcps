@@ -823,6 +823,44 @@ def _flag_no_data(
     return response
 
 
+_MAX_PAGE_NUMBER = 40
+
+
+def _flag_page_ceiling(
+    response: dict[str, Any], *, page_size: int, page_number: int, split_by: str,
+) -> dict[str, Any]:
+    """The API serves 40 pages, then reports lastPage=true even when more
+    records match. Say how many are out of reach and how to get them."""
+    meta = _safe_dict(response.get("meta"))
+    total = meta.get("totalElements")
+    reachable = _MAX_PAGE_NUMBER * page_size
+    if not isinstance(total, int) or total <= reachable:
+        return response
+    beyond = total - reachable
+    split = (
+        f"split the query into {split_by} windows (or raise page_size up to "
+        f"{MAX_TOOL_PAGE_SIZE})" if page_size < MAX_TOOL_PAGE_SIZE
+        else f"split the query into {split_by} windows"
+    )
+    if page_number >= _MAX_PAGE_NUMBER and response.get("data"):
+        response["truncated"] = True
+        response["records_beyond_page_limit"] = beyond
+        response["truncated_note"] = (
+            f"Page {_MAX_PAGE_NUMBER} is the last page the API serves, but {total} records "
+            f"match: {beyond} are beyond it. This is not the end of the results; "
+            f"{split} to reach them."
+        )
+        if meta.get("lastPage") is True:
+            response["meta"] = {**meta, "lastPage": False}
+    else:
+        response["page_limit_note"] = (
+            f"{total} records match, but the API serves only {_MAX_PAGE_NUMBER} pages "
+            f"({reachable} records at page_size={page_size}); {beyond} cannot be "
+            f"reached by paging. To cover them all, {split}."
+        )
+    return response
+
+
 _POSTED_COUNT_NOTE = (
     "This counts comments posted publicly on Regulations.gov, not comments "
     "received. The agency's received count can be far higher: identical "
@@ -882,8 +920,9 @@ async def search_documents(
     in Eastern time (e.g. 'Oct 22, 2026 11:59 PM ET'). The raw
     commentEndDateUtc is a UTC instant whose date reads one day late.
 
-    Page size: 5-100. page_number: 1-40. For larger result sets, split the
-    query into posted_date_ge/le windows.
+    Page size: 5-100. page_number: 1-40. The API serves 40 pages; when more
+    records match, page_limit_note (and truncated=true on page 40) says how
+    many are out of reach. Split the query into posted_date_ge/le windows.
 
     sort: '-postedDate' (newest first, default), 'postedDate', '-commentEndDate',
     'lastModifiedDate', 'title', 'documentId'. Comma-separate for
@@ -963,10 +1002,10 @@ async def _search_documents(
 
     result = await _get("documents", params)
     ctx = f"agency_id={agency_id!r}, document_type={document_type!r}"
-    return _compact_listing(_flag_no_data(
+    return _flag_page_ceiling(_compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
         hints=("document_type uses exact casing ('Proposed Rule', not 'proposed rule')",),
-    ))
+    )), page_size=page_size, page_number=page_number, split_by="posted_date_ge/le")
 
 
 @mcp.tool(annotations={"title": "Get Document Detail", **_OPEN_WORLD})
@@ -1027,8 +1066,9 @@ async def search_comments(
     filed by individuals or the agency hid the field.
 
     Page size: 5-100; page_number 1-40. Comments sorted by '-postedDate' by
-    default. For larger result sets, split the query into posted_date_ge/le
-    windows. Most comment text is in attachments; get_comment_detail with
+    default. The API serves 40 pages; when more comments match,
+    page_limit_note (and truncated=true on page 40) says how many are out of
+    reach. Split the query into posted_date_ge/le windows. Most comment text is in attachments; get_comment_detail with
     include_attachments=True returns their download URLs.
     """
     page_size = _validate_page_size(page_size)
@@ -1075,10 +1115,10 @@ async def search_comments(
         f"agency_id={agency_id!r}, docket_id={docket_id!r}, "
         f"comment_on_id={comment_on_id!r}"
     )
-    response = _label_posted_count(_compact_listing(_flag_no_data(
+    response = _flag_page_ceiling(_label_posted_count(_compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
         hints=("comment_on_id is the document's hex objectId, not its documentId",),
-    )))
+    ))), page_size=page_size, page_number=page_number, split_by="posted_date_ge/le")
     if response.get("data"):
         if include_organization:
             await _add_organizations(response)
@@ -1169,8 +1209,10 @@ async def search_dockets(
 
     Limited filters: only searchTerm, agencyId, docketType, lastModifiedDate.
 
-    Page size: 5-100; page_number 1-40. For larger result sets, split the
-    query into last_modified_date_ge/le windows.
+    Page size: 5-100; page_number 1-40. The API serves 40 pages; when more
+    dockets match, page_limit_note (and truncated=true on page 40) says how
+    many are out of reach. Split the query into last_modified_date_ge/le
+    windows.
     """
     page_size = _validate_page_size(page_size)
     page_number = _validate_page_number(page_number)
@@ -1207,10 +1249,10 @@ async def search_dockets(
 
     result = await _get("dockets", params)
     ctx = f"agency_id={agency_id!r}, docket_type={docket_type!r}"
-    return _compact_listing(_flag_no_data(
+    return _flag_page_ceiling(_compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
         hints=("docket_type uses exact casing ('Rulemaking', not 'rulemaking')",),
-    ))
+    )), page_size=page_size, page_number=page_number, split_by="last_modified_date_ge/le")
 
 
 @mcp.tool(annotations={"title": "Get Docket Detail", **_OPEN_WORLD})
