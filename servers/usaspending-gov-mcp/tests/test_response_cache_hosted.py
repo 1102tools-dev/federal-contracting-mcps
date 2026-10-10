@@ -17,6 +17,9 @@ AWARDS = {"results": [{"Award ID": "W91QUZ06D0010", "Recipient Name": "ACME", "A
           "page_metadata": {"page": 1, "hasNext": False}}
 
 
+LOAD_DATE = ["10/08/2026"]  # USAspending's last load date, changed by the nightly-load test
+
+
 def answer(request):
     path = request.url.path
     if path == "/api/v2/recipient/state/":
@@ -24,7 +27,7 @@ def answer(request):
     if path.startswith("/api/v2/recipient/children/"):
         return httpx.Response(200, json=[{"recipient_id": "abc-C", "name": "ACME CHILD"}])
     if path == "/api/v2/awards/last_updated/":
-        return httpx.Response(200, json={"last_updated": "10/08/2026"})
+        return httpx.Response(200, json={"last_updated": LOAD_DATE[0]})
     if path.startswith("/api/v2/references/"):
         return httpx.Response(200, json={"results": [{"code": "A", "name": "BPA Call"}]})
     return httpx.Response(200, json=AWARDS)
@@ -49,8 +52,12 @@ def upstream(monkeypatch, tmp_path):
         environment={"FEDERAL_API_MIN_INTERVAL_SECONDS": "0.6"},
         pacing_dir=tmp_path, clock=clock, sleep=clock.sleep))
     monkeypatch.setattr(server, "_cache", ResponseCache(
-        enabled=True, max_bytes=1024 * 1024, max_entry_bytes=256 * 1024))
-    state = {"requests": [], "responses": []}
+        enabled=True, max_bytes=1024 * 1024, max_entry_bytes=256 * 1024, clock=clock))
+    monkeypatch.setattr(server.time, "monotonic", clock)
+    monkeypatch.setattr(server, "_version", (None, float("-inf")))
+    monkeypatch.setattr(server, "_version_lock", None)
+    LOAD_DATE[0] = "10/08/2026"
+    state = {"requests": [], "responses": [], "clock": clock}
 
     def handler(request):
         state["requests"].append((request.method, str(request.url), request.content))
@@ -96,6 +103,10 @@ def test_cache_times_by_endpoint():
     assert server._cache_seconds("/api/v2/recipient/abc-C/") == 6 * HOUR
     assert server._cache_seconds("/api/v2/federal_accounts/012-3456/") == 6 * HOUR
     assert server._cache_seconds("/api/v2/agency/097/") == 6 * HOUR
+    # Filed under USAspending's load date, answers last a full day.
+    assert server._cache_seconds("/api/v2/search/spending_by_award/", versioned=True) == DAY
+    assert server._cache_seconds("/api/v2/awards/CONT_AWD_X/", versioned=True) == DAY
+    assert server._cache_seconds("/api/v2/awards/last_updated/", versioned=True) == 15 * MINUTE
 
 
 def test_a_hit_uses_no_pacing_and_no_budget(upstream):
@@ -107,8 +118,9 @@ def test_a_hit_uses_no_pacing_and_no_budget(upstream):
 
     first, second, _ = asyncio.run(upstream["run"](calls))
     assert first == second
-    assert len(upstream["requests"]) == 2
-    assert upstream["budget_starts"]() == 2
+    # The load date (read once, outside the cache) plus the two different searches.
+    assert len(upstream["requests"]) == 3
+    assert upstream["budget_starts"]() == 3
     assert server._cache.stats()["hits"] == 1 and server._cache.stats()["misses"] == 2
 
 
@@ -119,7 +131,7 @@ def test_post_bodies_are_part_of_the_key(upstream):
         await server._post("/api/v2/search/spending_by_award/", {"filters": {"keywords": ["b"]}, "limit": 5})
 
     asyncio.run(upstream["run"](calls))
-    assert len(upstream["requests"]) == 2
+    assert len(upstream["requests"]) == 3  # the load date plus two different bodies
 
 
 def test_cached_answers_match_uncached_answers(upstream, monkeypatch):
@@ -143,9 +155,9 @@ def test_cached_answers_match_uncached_answers(upstream, monkeypatch):
         return out
 
     cached_miss = asyncio.run(upstream["run"](every_tool))
-    distinct = len(set(upstream["requests"]))
+    after_first = len(upstream["requests"])
     cached_hit = asyncio.run(upstream["run"](every_tool))
-    assert len(upstream["requests"]) == distinct
+    assert len(upstream["requests"]) == after_first
     monkeypatch.setattr(server, "_cache", ResponseCache(
         enabled=False, max_bytes=1024 * 1024, max_entry_bytes=256 * 1024))
     uncached = asyncio.run(upstream["run"](every_tool))
@@ -175,3 +187,45 @@ def test_health_reports_cache_counts():
         cache = client.get("/health").json()["cache"]
     assert set(cache) == {"hits", "misses", "entries", "bytes"}
     assert all(isinstance(value, int) for value in cache.values())
+
+
+def test_the_nightly_load_retires_cached_answers(upstream):
+    async def search():
+        return await server.search_awards(keywords=["cybersecurity"])
+
+    asyncio.run(upstream["run"](search))
+    asyncio.run(upstream["run"](search))
+    assert len(upstream["requests"]) == 2  # load date + search, then a hit
+    LOAD_DATE[0] = "10/09/2026"
+    upstream["clock"].now += 16 * MINUTE  # past the 15-minute recheck of the load date
+    asyncio.run(upstream["run"](search))
+    assert len(upstream["requests"]) == 4  # new load date read, and the search asked again
+    assert server._cache.stats()["hits"] == 1 and server._cache.stats()["misses"] == 2
+
+
+def test_answers_under_one_load_date_last_a_full_day(upstream):
+    async def detail():
+        return await server.get_award_detail(generated_award_id="CONT_IDV_W91QUZ06D0010_9700")
+
+    asyncio.run(upstream["run"](detail))
+    upstream["clock"].now += 23 * HOUR
+    asyncio.run(upstream["run"](detail))
+    assert server._cache.stats()["hits"] == 1  # was 6 hours before the load date was used
+    upstream["clock"].now += 2 * HOUR
+    asyncio.run(upstream["run"](detail))
+    assert server._cache.stats()["misses"] == 2
+
+
+def test_an_unreadable_load_date_falls_back_to_the_shorter_times(upstream):
+    upstream["responses"].append(httpx.Response(500, text="boom"))  # the load-date read fails
+
+    async def search():
+        return await server.search_awards(keywords=["cybersecurity"])
+
+    first = asyncio.run(upstream["run"](search))
+    assert first == asyncio.run(upstream["run"](search))
+    assert len(upstream["requests"]) == 2  # failed date read + search; the retry waits a minute
+    upstream["clock"].now += 2 * HOUR  # past the 1-hour search time, so asked again
+    asyncio.run(upstream["run"](search))
+    assert server._cache.stats()["misses"] == 2
+

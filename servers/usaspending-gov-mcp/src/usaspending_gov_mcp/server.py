@@ -12,9 +12,11 @@ defaults matching common federal acquisition workflows.
 
 from __future__ import annotations
 
+import asyncio
 import json as _json
 import os
 import re
+import time
 from datetime import date
 from typing import Any, Literal
 
@@ -75,12 +77,25 @@ _pacer = USASpendingPacer()
 _cache = ResponseCache(max_bytes=48 * 1024 * 1024, max_entry_bytes=4 * 1024 * 1024)
 
 
-def _cache_seconds(path: str) -> float:
-    """How long a hosted answer is kept, by endpoint. USAspending reloads nightly."""
+_LAST_UPDATED = "/api/v2/awards/last_updated/"
+# USAspending's load date and when it was read; see _data_version.
+_version: tuple[str | None, float] = (None, float("-inf"))
+_version_lock: asyncio.Lock | None = None
+
+
+def _cache_seconds(path: str, versioned: bool = False) -> float:
+    """How long a hosted answer is kept, by endpoint. USAspending reloads nightly.
+
+    An answer filed under USAspending's current load date (``versioned``) is kept
+    a full day: the next nightly load changes the date, which retires it, so it
+    is never served from an older load. Without the date, the shorter times apply.
+    """
     if path.startswith(("/api/v2/references/", "/api/v2/autocomplete/")) or path == "/api/v2/recipient/state/":
         return DAY  # reference lists, autocompletes, the state list
-    if path == "/api/v2/awards/last_updated/":
+    if path == _LAST_UPDATED:
         return 15 * MINUTE
+    if versioned:
+        return DAY
     if path.startswith(("/api/v2/search/", "/api/v2/subawards/", "/api/v2/awards/count/")) or path in (
         "/api/v2/recipient/", "/api/v2/federal_accounts/",
     ):
@@ -250,11 +265,45 @@ async def _send(
     return r.content
 
 
+async def _data_version() -> str | None:
+    """USAspending's last load date, read at most every 15 minutes (hosted only).
+
+    Hosted answers are filed under it, so the nightly load retires every answer
+    kept from the previous load. It is read straight from USAspending, outside
+    the cache, so it never counts as a hit or miss. If it can't be read, answers
+    fall back to the shorter times without it, and it is read again after a minute.
+    """
+    global _version, _version_lock
+    if not _cache.enabled:
+        return None
+    value, read_at = _version
+    if time.monotonic() - read_at < 15 * MINUTE:
+        return value
+    if _version_lock is None:
+        _version_lock = asyncio.Lock()
+    async with _version_lock:
+        value, read_at = _version
+        if time.monotonic() - read_at < 15 * MINUTE:
+            return value
+        try:
+            found = _json.loads(await _send("GET", _LAST_UPDATED, params={})).get("last_updated")
+            value = found if isinstance(found, str) and found else None
+            _version = (value, time.monotonic())
+        except Exception:
+            value = None
+            _version = (None, time.monotonic() - 14 * MINUTE)
+    return value
+
+
 async def _cached(method: str, path: str, parse, *, params=None, body=None):
     """Send through the hosted cache, with actionable error translation."""
+    version = None if path == _LAST_UPDATED else await _data_version()
+    key = cache_key(method, path, params, body)
+    if version:
+        key = f"{version}|{key}"
     try:
         return await _cache.get_or_fetch(
-            cache_key(method, path, params, body), _cache_seconds(path),
+            key, _cache_seconds(path, versioned=version is not None),
             lambda: _send(method, path, params=params, body=body), parse,
         )
     except httpx.HTTPStatusError as e:

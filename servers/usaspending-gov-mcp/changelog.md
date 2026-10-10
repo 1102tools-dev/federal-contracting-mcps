@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.11
+
+- Hosted service only: answers are filed under USAspending's last load date,
+  read from `/api/v2/awards/last_updated/` at most every 15 minutes, outside the
+  cache. Searches, totals, counts and details filed under that date are kept 24
+  hours; the next nightly load changes the date and retires them, so no answer
+  from an earlier load is served more than 15 minutes after a new one. If the
+  date can't be read, answers use the 1.0.10 times (searches 1 hour, details 6
+  hours) and the date is read again after a minute.
+- Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package behaves exactly as
+  before. Tools, schemas, pacing and budgets are unchanged.
+
 ## 1.0.10
 
 - Hosted service only: answer repeat questions from a bounded in-memory copy of
