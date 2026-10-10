@@ -176,3 +176,33 @@ def test_composite_match_uses_whole_parts(query, name, match):
     assert (r.get("match_type") == "composite") is match
     best = srv._select_best_rate(response, query_city=query)
     assert (best["match_type"] == "composite") is match
+
+
+# P3-1 / P3-6 (content test 2026-10-10). Sept 28 -> Oct 2, 2026 in San
+# Francisco is 3 nights at the FY2026 Sep rate plus 1 at the FY2027 Oct rate;
+# one travel_month prices all four at one rate, so the answer says so.
+def test_estimate_says_every_night_uses_one_month():
+    r = asyncio.run(srv.estimate_travel_cost(
+        "San Francisco", "CA", 4, travel_month="Sep", fiscal_year=2026, county="San Francisco"))
+    assert r["rate_month"] == "Sep"
+    assert "All 4 nights" in r["rate_month_note"] and "each month" in r["rate_month_note"]
+    one = asyncio.run(srv.estimate_travel_cost(
+        "San Francisco", "CA", 1, travel_month="Sep", fiscal_year=2026, county="San Francisco"))
+    assert "rate_month_note" not in one
+    peak = asyncio.run(srv.estimate_travel_cost("San Francisco", "CA", 4, fiscal_year=2026, county="San Francisco"))
+    assert "rate_month_note" not in peak
+
+
+def test_estimate_flags_long_term_stays():
+    r = asyncio.run(srv.estimate_travel_cost("San Antonio", "TX", 30, fiscal_year=2027, county="Bexar"))
+    assert r["travel_days"] == 31
+    assert "301-11.22" in r["long_term_note"]
+    short = asyncio.run(srv.estimate_travel_cost("San Antonio", "TX", 29, fiscal_year=2027, county="Bexar"))
+    assert "long_term_note" not in short
+
+
+def test_estimate_cites_the_current_ftr_section():
+    # FTR Case 2025-05 (90 FR 56893, Dec. 8, 2025) moved the 75% first/last
+    # day rule to 41 CFR 301-11.20; 301-11.101 no longer exists.
+    doc = srv.estimate_travel_cost.__doc__
+    assert "301-11.20" in doc and "301-11.101" not in doc

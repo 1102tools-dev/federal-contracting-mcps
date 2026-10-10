@@ -1350,12 +1350,16 @@ async def estimate_travel_cost(
     """Estimate total per diem cost for a trip.
 
     Calculates lodging + M&IE for the specified number of nights.
-    First and last travel days use 75% M&IE per 41 CFR 301-11.101.
+    First and last travel days use 75% M&IE per 41 CFR 301-11.20.
 
-    travel_month: 3-letter abbreviation (Jan, Feb, ..., Dec). If omitted,
-    uses the max monthly lodging rate (conservative estimate for IGCE).
+    travel_month: 3-letter abbreviation (Jan, Feb, ..., Dec). Every night is
+    priced at that month's rate; for a trip that crosses into another month
+    or fiscal year, estimate each month's nights separately and add them.
+    If omitted, uses the max monthly lodging rate (conservative estimate
+    for IGCE).
     fiscal_year: if omitted, the FY of the next occurrence of travel_month
-    (or the current FY when no month is given).
+    (or the current FY when no month is given). Pass it for a trip that
+    already happened.
     county: optional; selects the rate area when the city spans more than
     one (see lookup_city_perdiem).
 
@@ -1468,6 +1472,19 @@ async def estimate_travel_cost(
     }
     if month_fallback_note:
         out["month_fallback_note"] = month_fallback_note
+    if rate_month != "MAX" and num_nights > 1:
+        out["rate_month_note"] = (
+            f"All {num_nights} nights are priced at the FY{year} {rate_month} rate. "
+            f"If the trip crosses into another month or fiscal year, estimate each "
+            f"month's nights separately and add them."
+        )
+    if travel_days >= 31:
+        out["long_term_note"] = (
+            "Long stay (31 or more travel days): an agency may prescribe a reduced "
+            "per diem rate (41 CFR 301-11.22), and agency rules such as DoD's Joint "
+            "Travel Regulations may reduce long-term TDY rates. This estimate uses "
+            "GSA's full maximum rates."
+        )
     if res.get("other_candidates"):
         out["other_candidates"] = res["other_candidates"]
     return out

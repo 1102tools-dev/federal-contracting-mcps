@@ -939,6 +939,17 @@ async function estimateTravelCost(ctx: Context, args: Dict): Promise<Dict> {
     _note: "Per diem only (lodging + M&IE). Airfare and ground transport not included.",
   };
   if (monthFallbackNote) out.month_fallback_note = monthFallbackNote;
+  if (rateMonth !== "MAX" && numNights > 1) {
+    out.rate_month_note = `All ${numNights} nights are priced at the FY${year} ${rateMonth} rate. ` +
+      "If the trip crosses into another month or fiscal year, estimate each " +
+      "month's nights separately and add them.";
+  }
+  if (travelDays >= 31) {
+    out.long_term_note = "Long stay (31 or more travel days): an agency may prescribe a reduced " +
+      "per diem rate (41 CFR 301-11.22), and agency rules such as DoD's Joint " +
+      "Travel Regulations may reduce long-term TDY rates. This estimate uses " +
+      "GSA's full maximum rates.";
+  }
   if (res.other_candidates?.length) out.other_candidates = res.other_candidates;
   return out;
 }

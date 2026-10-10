@@ -345,3 +345,21 @@ test("a ZIP answer chosen by county keeps the supplied county (P3-4)", async () 
   assert.notEqual(out.county, "Fairfax");
   assert.match(out.county, /Fairfax/);
 });
+
+test("trip estimates say every night uses one month, flag long stays, and cite the current FTR section (P3-1, P3-6)", async () => {
+  const {call} = setup();
+  const sf = (await call("estimate_travel_cost", {city: "San Francisco", state: "CA", county: "San Francisco", num_nights: 4, travel_month: "Sep", fiscal_year: 2026})).structuredContent;
+  assert.equal(sf.rate_month, "Sep");
+  assert.match(sf.rate_month_note, /All 4 nights.*each month/);
+  const one = (await call("estimate_travel_cost", {city: "San Francisco", state: "CA", county: "San Francisco", num_nights: 1, travel_month: "Sep", fiscal_year: 2026})).structuredContent;
+  assert.equal(one.rate_month_note, undefined);
+  const long = (await call("estimate_travel_cost", {city: "San Antonio", state: "TX", county: "Bexar", num_nights: 30, fiscal_year: 2027})).structuredContent;
+  assert.equal(long.travel_days, 31);
+  assert.match(long.long_term_note, /301-11\.22/);
+  const short = (await call("estimate_travel_cost", {city: "San Antonio", state: "TX", county: "Bexar", num_nights: 29, fiscal_year: 2027})).structuredContent;
+  assert.equal(short.long_term_note, undefined);
+  const tools: {name: string; description: string}[] = JSON.parse(readFileSync(new URL("../tools-contract.json", import.meta.url), "utf8"));
+  const description = tools.find(t => t.name === "estimate_travel_cost")?.description ?? "";
+  assert.match(description, /301-11\.20\b/);
+  assert.doesNotMatch(description, /301-11\.101/);
+});
