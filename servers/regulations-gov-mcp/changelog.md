@@ -2,6 +2,9 @@
 
 ## 2.0.4
 
+- Hosted build tooling pins Wrangler 4.149.0, clearing four high-severity
+  development dependency advisories (Miniflare/sharp/undici chain).
+
 - Workflow summaries preserve empty-result, past-end-page, and 40-page-limit
   recovery guidance from document searches. A page beyond the docket's last
   document explains which page contains data instead of leaving a bare empty list.
