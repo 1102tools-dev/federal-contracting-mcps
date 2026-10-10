@@ -33,6 +33,7 @@ from .constants import (
     BASE_URL,
     DEFAULT_TIMEOUT,
     EDUCATION_LEVELS,
+    LOW_SAMPLE_MIN_RATES,
     MAX_PAGE_SIZE,
     ORDERING_FIELDS,
     USER_AGENT,
@@ -1038,6 +1039,11 @@ async def price_reasonableness_check(
 
     A rate above P75 may be high; above P90 warrants scrutiny. A rate below
     P25 may indicate an unrealistically low offer (potential performance risk).
+
+    With fewer than 20 comparable rates the result has status LOW_SAMPLE:
+    the statistics are returned but there is no high/low verdict (z_score,
+    vs_median and iqr_position are null). Try a shorter phrase; the
+    labor_category keyword is matched as a literal phrase.
     """
     if not isinstance(proposed_rate, (int, float)) or isinstance(proposed_rate, bool):
         raise ValueError("proposed_rate must be a positive number.")
@@ -1063,6 +1069,31 @@ async def price_reasonableness_check(
         }
 
     avg = benchmark.get("avg_rate") or 0
+    n = benchmark.get("total_rates", 0)
+    if n < LOW_SAMPLE_MIN_RATES:
+        # A literal-phrase keyword ("Help Desk Specialist Tier 1") can shrink
+        # the population to one rate; a high/low call on that is noise.
+        return {
+            **benchmark,
+            "status": "LOW_SAMPLE",
+            "proposed_rate": proposed_rate,
+            "message": (
+                f"Only {n} comparable rate{'s' if n != 1 else ''} found for "
+                f"'{labor_category}'. That sample is too small for a high/low "
+                f"verdict (this check needs at least {LOW_SAMPLE_MIN_RATES}). "
+                f"The statistics are shown for reference only. Try a shorter "
+                f"labor category phrase (the keyword is matched as a literal "
+                f"phrase), drop a filter, or run suggest_contains to see the "
+                f"exact titles."
+            ),
+            "analysis": {
+                "z_score": None,
+                "vs_median": None,
+                "iqr_position": None,
+                "delta_from_avg": round(proposed_rate - avg, 2),
+                "delta_from_avg_pct": round(((proposed_rate - avg) / avg) * 100, 1) if avg and avg > 0 else None,
+            },
+        }
     std = benchmark.get("std_deviation") or 0
     median = benchmark.get("percentiles", {}).get("p50_median")
     p25 = benchmark.get("percentiles", {}).get("p25")

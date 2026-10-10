@@ -107,3 +107,69 @@ def test_live_g5_vendor_rate_card_worksite_matches_api():
     tool_sites = [row.get("worksite") for row in r["rates"]]
     assert tool_sites == api_sites
     assert all(tool_sites)
+
+
+# ---------------------------------------------------------------------------
+# G-2: price_reasonableness_check gives no verdict on a tiny sample
+# ---------------------------------------------------------------------------
+
+def _stats_response(n: int, price: float = 71.65) -> dict:
+    """igce_benchmark body for n identical rates (the n=1 'Help Desk
+    Specialist Tier 1' case: std 0, every percentile the same)."""
+    pct = {k: price for k in ("10.0", "25.0", "50.0", "75.0", "90.0")}
+    return {
+        "hits": {"total": {"value": n, "relation": "eq"}, "hits": []},
+        "aggregations": {
+            "wage_stats": {"count": n, "min": price, "max": price, "avg": price,
+                           "std_deviation": 0.0,
+                           "std_deviation_bounds": {"lower": price, "upper": price}},
+            "histogram_percentiles": {"values": pct},
+        },
+    }
+
+
+@pytest.mark.parametrize("n", [1, 5, 19])
+def test_g2_price_check_low_sample_has_no_verdict(monkeypatch, n):
+    monkeypatch.setattr(srv, "_get", _MockGet(_stats_response(n)))
+    r = _payload(asyncio.run(_call(
+        "price_reasonableness_check", labor_category="Help Desk Specialist Tier 1", proposed_rate=95,
+    )))
+    assert r.get("status") == "LOW_SAMPLE", r
+    assert r["total_rates"] == n
+    assert r["analysis"]["iqr_position"] is None
+    assert r["analysis"]["vs_median"] is None
+    assert r["analysis"]["z_score"] is None
+    assert str(n) in r["message"] and "too small" in r["message"]
+    assert r["percentiles"]["p50_median"] == 71.65  # stats still shown
+
+
+def test_g2_price_check_twenty_rates_gets_verdict(monkeypatch):
+    monkeypatch.setattr(srv, "_get", _MockGet(_stats_response(20)))
+    r = _payload(asyncio.run(_call(
+        "price_reasonableness_check", labor_category="Help Desk Specialist", proposed_rate=95,
+    )))
+    assert r.get("status") != "LOW_SAMPLE"
+    assert r["analysis"]["iqr_position"] == "above P75 (high)"
+
+
+@live
+def test_live_g2_help_desk_tier_1_low_sample():
+    api = _api("keyword=Help+Desk+Specialist+Tier+1&page=1&page_size=1&ordering=current_price&sort=asc")
+    api_n = api["aggregations"]["wage_stats"]["count"]
+    assert api_n < 20
+    r = _payload(asyncio.run(_call(
+        "price_reasonableness_check", labor_category="Help Desk Specialist Tier 1", proposed_rate=95,
+    )))
+    assert r["total_rates"] == api_n
+    assert r["status"] == "LOW_SAMPLE"
+    assert r["analysis"]["iqr_position"] is None
+
+
+@live
+def test_live_g2_help_desk_full_population_keeps_verdict():
+    api = _api("keyword=Help+Desk+Specialist&page=1&page_size=1&ordering=current_price&sort=asc")
+    r = _payload(asyncio.run(_call(
+        "price_reasonableness_check", labor_category="Help Desk Specialist", proposed_rate=95,
+    )))
+    assert r["total_rates"] == api["aggregations"]["wage_stats"]["count"] > 1000
+    assert r["analysis"]["iqr_position"] == "within IQR P25-P75 (typical)"

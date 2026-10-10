@@ -624,7 +624,7 @@
       "readOnlyHint": true,
       "title": "Price Reasonableness Check"
     },
-    "description": "Evaluate a proposed hourly rate against GSA ceiling rate distribution.\n\n    Returns the benchmark statistics plus a positioning analysis: z-score,\n    comparison to median, IQR position, and delta from average.\n\n    Use this for FAR 15.404-1 price analysis: is the proposed rate within\n    the expected range for comparable labor categories on GSA MAS?\n\n    A rate above P75 may be high; above P90 warrants scrutiny. A rate below\n    P25 may indicate an unrealistically low offer (potential performance risk).\n    ",
+    "description": "Evaluate a proposed hourly rate against GSA ceiling rate distribution.\n\n    Returns the benchmark statistics plus a positioning analysis: z-score,\n    comparison to median, IQR position, and delta from average.\n\n    Use this for FAR 15.404-1 price analysis: is the proposed rate within\n    the expected range for comparable labor categories on GSA MAS?\n\n    A rate above P75 may be high; above P90 warrants scrutiny. A rate below\n    P25 may indicate an unrealistically low offer (potential performance risk).\n\n    With fewer than 20 comparable rates the result has status LOW_SAMPLE:\n    the statistics are returned but there is no high/low verdict (z_score,\n    vs_median and iqr_position are null). Try a shorter phrase; the\n    labor_category keyword is matched as a literal phrase.\n    ",
     "inputSchema": {
       "properties": {
         "labor_category": {
