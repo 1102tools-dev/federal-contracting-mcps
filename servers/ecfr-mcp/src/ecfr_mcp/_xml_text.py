@@ -489,10 +489,11 @@ def _warnings(units: list[_Unit]) -> list[str]:
 # Pages for answers too large for one tool reply
 # ---------------------------------------------------------------------------
 
-# About 15,000-20,000 tokens of JSON. Claude Code refuses tool output over
-# 25,000 tokens (52.212-3 at 96,187 characters bounced), and other clients
-# cut long output off without saying so.
-PAGE_CHARS = 60_000
+# Measured as sent: the MCP layer sends a tool's dict as JSON indented two
+# spaces, which nearly doubles tables. About 16,000-20,000 tokens. Claude Code
+# refuses tool output over 25,000 tokens (52.212-3 at 96,187 characters
+# bounced), and other clients cut long output off without saying so.
+PAGE_CHARS = 64_000
 
 _MARKER = re.compile(r"^\[See (table|note|example) (\d+)(?::.*)?\]$")
 # Kept with every piece of a split section, or only with its last piece.
@@ -502,8 +503,11 @@ _TRAILER_KEYS = ("citations", "images", "editorial_notes")
 _CONTENT_KEYS = ("paragraphs", "tables", "notes", "examples")
 
 
-def size_of(value: Any) -> int:
-    return len(json.dumps(value, ensure_ascii=False, separators=(",", ":")))
+def size_of(value: Any, depth: int = 0) -> int:
+    """Characters value takes in the reply: JSON indented two spaces, as the
+    MCP layer sends it, nested depth levels deep."""
+    text = json.dumps(value, ensure_ascii=False, indent=2)
+    return len(text) + (text.count("\n") + 1) * 2 * depth
 
 
 def _atoms(unit: dict[str, Any], limit: int) -> list[tuple[str, Any]]:
@@ -549,7 +553,7 @@ def _table_pieces(table: dict[str, Any], limit: int) -> list[dict[str, Any]]:
     chunk_size = 0
     budget = int(limit * 0.6)
     for row in rows:
-        row_size = size_of(row) + 1
+        row_size = size_of(row, 6) + 1
         if chunk and chunk_size + row_size > budget:
             pieces.append({**head, "rows": chunk})
             chunk, chunk_size = [], 0
@@ -611,14 +615,17 @@ class _Plan:
                     if found is not None:
                         wanted.append(found)
             self.unit_groups.append(sorted(wanted))
-        group_sizes = [size_of(record) + 2 for _, _, record in self.groups]
+        group_sizes = [size_of(record, 2) + 2 for _, _, record in self.groups]
         # A level with no sections of its own (a reserved subpart) goes on page 1.
         attached = {g for wanted in self.unit_groups for g in wanted}
         self.orphans = [g for g in range(len(self.groups)) if g not in attached]
         headers = [{k: u[k] for k in _HEADER_KEYS if k in u} for u in self.units]
-        header_sizes = [size_of(h) + 40 for h in headers]
+        # Inside a page, an item sits two levels down (key, list); a section's
+        # items sit two more down (sections list, section).
+        depth = 4 if self.multi else 2
+        header_sizes = [size_of(h, depth - 1) + 60 for h in headers]
 
-        frame_size = size_of(self.frame) + 600  # room for the page note
+        frame_size = size_of(self.frame) + 700  # room for the page note
         self.pages: list[list[tuple[int, str, Any]]] = []
         current: list[tuple[int, str, Any]] = []
         current_size = frame_size + sum(group_sizes[g] for g in self.orphans)
@@ -630,7 +637,7 @@ class _Plan:
 
         for index, unit in enumerate(self.units):
             for kind, value in _atoms(unit, limit):
-                body = size_of(value) + 2 if value is not None else 0
+                body = size_of(value, depth) + 2 if value is not None else 0
                 cost = body + (opening_cost(index) if index != open_unit else 0)
                 if current and current_size + cost > limit:
                     self.pages.append(current)

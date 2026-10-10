@@ -128,6 +128,25 @@ Fixes from the 2026-10-10 bug hunt. All 13 tools keep their names.
 - The Title 48 chapter error lists every chapter, instead of pointing at a
   constant the reader can't see.
 
+**Everyday use** (from a pass of 47 ordinary questions)
+
+- Answer sizes are measured as sent (JSON indented two spaces), so pages of
+  tables and trees really stay under the limit: 13 CFR 121.201 now comes in
+  four pages of at most about 52,000 characters, not two of 70,000-80,000.
+  The page limit is 64,000 characters as sent.
+- `get_cfr_structure` counts `depth` from the node asked for: `part='19'`,
+  `depth=1` gives Part 19's subparts.
+- `list_sections_in_part` comes in pages when the list is too long (new
+  optional `page`).
+- `find_far_definition` also looks in the DFARS when the FAR has no
+  definition ("covered defense information" -> 204.7301).
+- `get_corrections` takes an optional `chapter` ("2" for the DFARS).
+- `compare_versions` takes `changes_only=True` for the short "what changed"
+  answer.
+- An appendix name eCFR doesn't know ("II") gets an error that shows the
+  full form ("Appendix II to Part 200").
+- Search hits leave out eCFR's empty hierarchy levels.
+
 ## 1.0.13
 
 - Hosted service only: the machine running the service can give the answer cache

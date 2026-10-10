@@ -831,7 +831,16 @@ async def get_cfr_content(
     if appendix:
         params["appendix"] = appendix
 
-    xml_content = await _get_xml(path, params)
+    try:
+        xml_content = await _get_xml(path, params)
+    except RuntimeError as e:
+        if appendix and str(e).startswith("HTTP 404"):
+            raise RuntimeError(
+                f"{e} Appendix names must be eCFR's full name, like 'Appendix II to Part 200' "
+                f"(with part='200') or 'Appendix A to Chapter 2' (with chapter='2'); "
+                f"list_sections_in_part lists a part's appendices."
+            ) from e
+        raise
 
     if raw_xml:
         return {"date": date, "title": title_number, "xml": xml_content}
@@ -887,8 +896,10 @@ async def get_cfr_structure(
     - chapter='1', depth=2 for the FAR's subchapters and parts only
     - appendix='Appendix A to Part 200' with part='200' (title 2) for one appendix
 
-    depth keeps that many levels below the top node; deeper levels are
-    replaced by 'children_omitted' (how many there were). A tree too large
+    depth keeps that many levels below the node asked for (part='19',
+    depth=1 gives Part 19's subparts); deeper levels are replaced by
+    'children_omitted' (how many there were). For the sections of one part,
+    list_sections_in_part is shorter. A tree too large
     to send at once (a whole chapter is about 1 MB) is cut to the deepest
     depth that fits, and 'note' says so.
 
@@ -947,12 +958,16 @@ async def get_cfr_structure(
         tree = dict(found[0])
     result = dict(tree)
     result["date"] = date
+    # eCFR always answers from the title down; depth counts from the node
+    # asked for (the subpart, part, subchapter or chapter), not the title.
+    anchor = ("subpart" if subpart else "part" if part else "subchapter" if subchapter
+              else "chapter" if chapter else None)
     if depth is not None:
-        result = _trim_tree(result, depth)
+        result = _trim_below(result, anchor, depth)
     elif _xml_text.size_of(result) > _xml_text.PAGE_CHARS:
         full = _xml_text.size_of(result)
         for level in range(6, 0, -1):
-            trimmed = _trim_tree(result, level)
+            trimmed = _trim_below(result, anchor, level)
             if _xml_text.size_of(trimmed) <= _xml_text.PAGE_CHARS or level == 1:
                 break
         result = trimmed
@@ -962,6 +977,17 @@ async def get_cfr_structure(
             f"part or subpart to see its sections."
         )
     return result
+
+
+def _trim_below(node: dict[str, Any], anchor: str | None, depth: int) -> dict[str, Any]:
+    """Trim depth levels below the first node of type anchor (or below node)."""
+    if anchor is None or node.get("type") == anchor:
+        return _trim_tree(node, depth)
+    children = [_safe_dict(c) for c in _as_list(node.get("children"))]
+    out = {k: v for k, v in node.items() if k != "children"}
+    if children:
+        out["children"] = [_trim_below(c, anchor, depth) for c in children]
+    return out
 
 
 def _trim_tree(node: dict[str, Any], depth: int) -> dict[str, Any]:
@@ -1282,6 +1308,10 @@ def _plain_excerpts(data: dict[str, Any]) -> dict[str, Any]:
         excerpt = row.get("full_text_excerpt")
         if isinstance(excerpt, str):
             row["full_text_excerpt"] = " ".join(html.unescape(_EXCERPT_TAGS.sub("", excerpt)).split())
+        # Drop the empty levels (subtitle, subject_group...) eCFR lists on every hit.
+        for key in ("hierarchy", "hierarchy_headings", "headings"):
+            if isinstance(row.get(key), dict):
+                row[key] = {k: v for k, v in row[key].items() if v is not None}
         rows.append(row)
     data["results"] = rows
     return data
@@ -1507,6 +1537,7 @@ async def get_corrections(
     since_year: int | None = None,
     section: str | int | None = None,
     part: str | int | None = None,
+    chapter: str | int | None = None,
 ) -> dict[str, Any]:
     """Get editorial corrections for a CFR title, newest first.
 
@@ -1515,8 +1546,8 @@ async def get_corrections(
     newest first. Useful for checking whether a section's current text has
     been corrected since its last amendment.
 
-    section (e.g. '52.204-21') or part (e.g. '52') keeps only corrections
-    that touch it. since_year keeps corrections with year >= since_year.
+    section (e.g. '52.204-21'), part (e.g. '52') or chapter (e.g. '2' for
+    the DFARS) keeps only corrections that touch it. since_year keeps corrections with year >= since_year.
     limit caps how many are returned (default 50, max 1000); truncated
     says whether older ones were left out. Title 48 has ~280 corrections
     since 2005.
@@ -1527,6 +1558,7 @@ async def get_corrections(
         since_year = _clamp(since_year, field="since_year", lo=1995, hi=2100)
     section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
+    chapter = _validate_chapter(chapter, title_number=title_number)
 
     data = await _get_json(
         "/api/admin/v1/corrections.json",
@@ -1540,13 +1572,15 @@ async def get_corrections(
             c for c in corrections
             if _safe_int(c.get("year"), default=0) >= since_year
         ]
-    if section or part:
+    if section or part or chapter:
         def touches(c: dict[str, Any]) -> bool:
             for ref in _as_list(c.get("cfr_references")):
                 h = _safe_dict(_safe_dict(ref).get("hierarchy"))
                 if section and str(h.get("section")) == section:
                     return True
                 if part and str(h.get("part")) == part:
+                    return True
+                if chapter and str(h.get("chapter")) == chapter:
                     return True
             return False
         corrections = [c for c in corrections if touches(c)]
@@ -1572,6 +1606,8 @@ async def get_corrections(
         result["section"] = section
     if part:
         result["part"] = part
+    if chapter:
+        result["chapter"] = chapter
     if truncated:
         result["note"] = f"Showing the newest {limit} of {filtered_count}; raise limit for older ones."
     return result
@@ -1634,6 +1670,7 @@ async def compare_versions(
     date_after: str,
     title_number: int = 48,
     chapter: str | int | None = None,
+    changes_only: bool = False,
 ) -> dict[str, Any]:
     """Compare the text of a CFR section at two different dates.
 
@@ -1643,6 +1680,8 @@ async def compare_versions(
     changes), 'identical' when nothing differs, and the parsed text at both
     dates side by side. When both texts together are too long to send, the
     full texts are left out (texts_omitted) and 'changes' is kept.
+    changes_only=True leaves the full texts out every time: the short answer
+    to "what changed".
 
     Dates must be in YYYY-MM-DD format and within the eCFR's tracking range
     (January 2017 to present). Both dates must not exceed the title's
@@ -1745,19 +1784,22 @@ async def compare_versions(
             f"The parsed text is the same on {date_before} and {date_after}. A version "
             f"history entry between these dates may be a re-issue or a link notice only."
         )
-    if _xml_text.size_of(result) <= _xml_text.PAGE_CHARS:
+    if not changes_only and _xml_text.size_of(result) <= _xml_text.PAGE_CHARS:
         return result
-    # Too long to send: keep the changes, drop the full texts.
+    # Too long to send (or not wanted): keep the changes, drop the full texts.
     for side in (before, after):
         for key in ("paragraphs", "tables", "notes", "examples", "citations", "editorial_notes",
                     "images", "table_note", "hierarchy_metadata", "sections"):
             side.pop(key, None)
     result["texts_omitted"] = True
     result["note"] = (
-        "Both full texts together are too long to send, so only the changes are "
-        f"shown. Read either full text with get_cfr_content(section='{section_id}', "
+        ("Only the changes are shown (changes_only)." if changes_only else
+         "Both full texts together are too long to send, so only the changes are shown.")
+        + f" Read either full text with get_cfr_content(section='{section_id}', "
         f"date=...), which comes in pages."
     )
+    if not changes:
+        result["note"] = f"The parsed text is the same on {date_before} and {date_after}. " + result["note"]
     budget = _xml_text.PAGE_CHARS - _xml_text.size_of({**result, "changes": []})
     kept: list[dict[str, Any]] = []
     for change in changes:
@@ -1811,6 +1853,7 @@ async def list_sections_in_part(
     date: str | None = None,
     subpart: str | int | None = None,
     detail: bool = False,
+    page: int = 1,
 ) -> dict[str, Any]:
     """List all sections and appendices in a CFR part with their headings.
 
@@ -1823,6 +1866,8 @@ async def list_sections_in_part(
     The part number alone is enough: chapter is optional (Title 48 parts
     are unique: 52 = FAR, 252 = DFARS, 552 = GSAR) and the answer reports
     the chapter the part is in. subpart (e.g. '52.2') lists one subpart.
+    A list too long to send at once (FAR Part 52 has 680 entries) comes in
+    pages: page and total_pages say where you are; page=2 gets the rest.
     detail=True adds eCFR's label, size and received_on for each entry
     (received_on is when eCFR processed the text, not when it was amended;
     get_version_history has amendment dates).
@@ -1836,6 +1881,7 @@ async def list_sections_in_part(
     chapter = _validate_chapter(chapter, title_number=title_number)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
     date = _validate_date_ymd(date, field="date")
+    page = _clamp(page, field="page", lo=1, hi=1000)
 
     if date is None:
         date = await _resolve_date(title_number)
@@ -1903,12 +1949,33 @@ async def list_sections_in_part(
     if subparts:
         result["subparts"] = subparts
     result["sections"] = entries
-    if detail and _xml_text.size_of(result) > _xml_text.PAGE_CHARS:
-        raise ValueError(
-            f"Part {part_number} with detail=True is too long to send at once "
-            f"({_xml_text.size_of(result):,} characters). Use detail=False, or "
-            f"subpart= to list one subpart."
-        )
+    if _xml_text.size_of(result) <= _xml_text.PAGE_CHARS:
+        if page != 1:
+            raise ValueError(f"This list fits on one page; page={page} does not exist.")
+        return result
+    # Too long to send at once: split the entries into pages.
+    budget = _xml_text.PAGE_CHARS - _xml_text.size_of({**result, "sections": []}) - 600
+    pages: list[list[dict[str, Any]]] = [[]]
+    used = 0
+    for entry in entries:
+        cost = _xml_text.size_of(entry, 2) + 2
+        if pages[-1] and used + cost > budget:
+            pages.append([])
+            used = 0
+        pages[-1].append(entry)
+        used += cost
+    if page > len(pages):
+        raise ValueError(f"page={page} does not exist; this list has {len(pages)} pages.")
+    result["sections"] = pages[page - 1]
+    result["page"] = page
+    result["total_pages"] = len(pages)
+    first, last = pages[page - 1][0]["identifier"], pages[page - 1][-1]["identifier"]
+    result["page_note"] = (
+        f"This list is too long to send at once, so it comes in {len(pages)} pages. "
+        f"This is page {page} of {len(pages)} ({first} to {last})."
+        + (f" Call again with page={page + 1} for the rest." if page < len(pages) else "")
+        + " subpart= lists one subpart."
+    )
     return result
 
 
@@ -1930,10 +1997,11 @@ async def find_far_definition(
     the definition it sits in.
 
     When 2.101 doesn't define the term, the tool searches the rest of the
-    FAR (chapter 1) for "<term>" means and returns where it is defined, with
-    the definition text, under defined_elsewhere (for example 19.001 and
-    52.219-14 for 'similarly situated entity'), plus did_you_mean
-    suggestions from 2.101.
+    FAR (chapter 1), then the DFARS (chapter 2), for "<term>" means and
+    returns where it is defined, with the definition text, under
+    defined_elsewhere (for example 19.001 and 52.219-14 for 'similarly
+    situated entity'; 204.7301 for 'covered defense information'), plus
+    did_you_mean suggestions from 2.101.
 
     term must be at least 3 characters. max_matches caps the number of
     matches returned (default 20, max 100); definitions are never cut, and
@@ -1987,9 +2055,19 @@ async def find_far_definition(
         return result
 
     result["did_you_mean"] = found["did_you_mean"]
-    elsewhere = await _defined_elsewhere(found["query"], date)
+    elsewhere = await _defined_elsewhere(found["query"], date, "1")
+    if not any(e.get("definition") for e in elsewhere):
+        # Not in the FAR at all: it may be a DFARS term ("covered defense information").
+        dfars = await _defined_elsewhere(found["query"], date, "2")
+        if any(e.get("definition") for e in dfars):
+            elsewhere = dfars + elsewhere
     result["defined_elsewhere"] = elsewhere
-    if any(e.get("definition") for e in elsewhere):
+    if any(e.get("definition") and e.get("chapter") == "2" for e in elsewhere):
+        result["note"] = (
+            f"The FAR does not define '{found['query']}'; the DFARS (Title 48 chapter 2) "
+            f"does: see defined_elsewhere (section, heading and the definition text)."
+        )
+    elif any(e.get("definition") for e in elsewhere):
         result["note"] = (
             f"FAR 2.101 does not define '{found['query']}'. It is defined elsewhere in the "
             f"FAR: see defined_elsewhere (section, heading and the definition text)."
@@ -2003,7 +2081,9 @@ async def find_far_definition(
     else:
         result["note"] = (
             f"FAR 2.101 does not define '{found['query']}', and no other FAR (chapter 1) "
-            f"section defines it with 'means'." + (
+            f"or DFARS (chapter 2) section defines it with 'means'. For another agency "
+            f"supplement, try search_cfr with query='\"{found['query']}\" means', title=48 "
+            f"and that chapter." + (
                 f" Close 2.101 terms: {', '.join(found['did_you_mean'])}."
                 if found["did_you_mean"] else ""
             )
@@ -2011,16 +2091,17 @@ async def find_far_definition(
     return result
 
 
-async def _defined_elsewhere(query: str, date: str) -> list[dict[str, Any]]:
-    """FAR sections outside 2.101 that define query, with the definition text.
+async def _defined_elsewhere(query: str, date: str, chapter: str = "1") -> list[dict[str, Any]]:
+    """Title 48 sections outside 2.101 that define query, with the definition text.
 
-    Searches chapter 1 for '"query" means', keeps the newest version of each
-    section, and reads up to three of them to find the defining paragraphs.
+    Searches the chapter (1 = FAR, 2 = DFARS) for '"query" means', keeps the
+    newest version of each section, and reads up to three of them to find
+    the defining paragraphs.
     """
     params = {
         "query": f'"{query}" means',
         "hierarchy[title]": "48",
-        "hierarchy[chapter]": "1",
+        "hierarchy[chapter]": chapter,
         "date": date,
         "per_page": "20",
     }
@@ -2044,6 +2125,8 @@ async def _defined_elsewhere(query: str, date: str) -> list[dict[str, Any]]:
             "section": section,
             "heading": _safe_dict(row.get("headings")).get("section"),
         }
+        if chapter != "1":
+            entry["chapter"] = chapter
         if read < 3:
             read += 1
             try:

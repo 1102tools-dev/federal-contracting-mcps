@@ -155,7 +155,7 @@
       "readOnlyHint": true,
       "title": "Get CFR Structure"
     },
-    "description": "Get the hierarchical table of contents for a CFR title or subset.\n\n    Returns a nested tree of titles, chapters, parts, subparts, and sections\n    with identifiers, descriptions, and byte sizes, plus the date it\n    describes.\n\n    IMPORTANT: Does NOT support section-level filtering (returns 400).\n    Use part or subpart, then walk the children to find sections.\n\n    Common patterns:\n    - part='15' for FAR Part 15 structure\n    - subpart='15.3' for just that subpart's sections\n    - chapter='1', depth=2 for the FAR's subchapters and parts only\n    - appendix='Appendix A to Part 200' with part='200' (title 2) for one appendix\n\n    depth keeps that many levels below the top node; deeper levels are\n    replaced by 'children_omitted' (how many there were). A tree too large\n    to send at once (a whole chapter is about 1 MB) is cut to the deepest\n    depth that fits, and 'note' says so.\n\n    subchapter needs chapter in Title 48 (each chapter has its own\n    subchapter A, B, ...). part/subpart/chapter/appendix accept int or string.\n    ",
+    "description": "Get the hierarchical table of contents for a CFR title or subset.\n\n    Returns a nested tree of titles, chapters, parts, subparts, and sections\n    with identifiers, descriptions, and byte sizes, plus the date it\n    describes.\n\n    IMPORTANT: Does NOT support section-level filtering (returns 400).\n    Use part or subpart, then walk the children to find sections.\n\n    Common patterns:\n    - part='15' for FAR Part 15 structure\n    - subpart='15.3' for just that subpart's sections\n    - chapter='1', depth=2 for the FAR's subchapters and parts only\n    - appendix='Appendix A to Part 200' with part='200' (title 2) for one appendix\n\n    depth keeps that many levels below the node asked for (part='19',\n    depth=1 gives Part 19's subparts); deeper levels are replaced by\n    'children_omitted' (how many there were). For the sections of one part,\n    list_sections_in_part is shorter. A tree too large\n    to send at once (a whole chapter is about 1 MB) is cut to the deepest\n    depth that fits, and 'note' says so.\n\n    subchapter needs chapter in Title 48 (each chapter has its own\n    subchapter A, B, ...). part/subpart/chapter/appendix accept int or string.\n    ",
     "inputSchema": {
       "properties": {
         "title_number": {
@@ -678,7 +678,7 @@
       "readOnlyHint": true,
       "title": "Get Corrections"
     },
-    "description": "Get editorial corrections for a CFR title, newest first.\n\n    Returns corrections with CFR references, corrective actions, error\n    dates, and FR citations, sorted by the date the error was corrected,\n    newest first. Useful for checking whether a section's current text has\n    been corrected since its last amendment.\n\n    section (e.g. '52.204-21') or part (e.g. '52') keeps only corrections\n    that touch it. since_year keeps corrections with year >= since_year.\n    limit caps how many are returned (default 50, max 1000); truncated\n    says whether older ones were left out. Title 48 has ~280 corrections\n    since 2005.\n    ",
+    "description": "Get editorial corrections for a CFR title, newest first.\n\n    Returns corrections with CFR references, corrective actions, error\n    dates, and FR citations, sorted by the date the error was corrected,\n    newest first. Useful for checking whether a section's current text has\n    been corrected since its last amendment.\n\n    section (e.g. '52.204-21'), part (e.g. '52') or chapter (e.g. '2' for\n    the DFARS) keeps only corrections that touch it. since_year keeps corrections with year >= since_year.\n    limit caps how many are returned (default 50, max 1000); truncated\n    says whether older ones were left out. Title 48 has ~280 corrections\n    since 2005.\n    ",
     "inputSchema": {
       "properties": {
         "title_number": {
@@ -732,6 +732,21 @@
           ],
           "default": null,
           "title": "Section"
+        },
+        "chapter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chapter"
         }
       },
       "type": "object",
@@ -818,7 +833,7 @@
       "readOnlyHint": true,
       "title": "Compare Versions"
     },
-    "description": "Compare the text of a CFR section at two different dates.\n\n    Useful for understanding what changed in a regulatory amendment. Returns\n    'changes' (each paragraph that was added, removed or changed, with its\n    before and after text; also heading, table and pending-amendment-link\n    changes), 'identical' when nothing differs, and the parsed text at both\n    dates side by side. When both texts together are too long to send, the\n    full texts are left out (texts_omitted) and 'changes' is kept.\n\n    Dates must be in YYYY-MM-DD format and within the eCFR's tracking range\n    (January 2017 to present). Both dates must not exceed the title's\n    up_to_date_as_of value.\n\n    This tool always returns the section-level XML parsed -- pass a small\n    section_id like '15.305', not a whole part. Whole-part comparisons can\n    exceed 100 KB per side.\n    ",
+    "description": "Compare the text of a CFR section at two different dates.\n\n    Useful for understanding what changed in a regulatory amendment. Returns\n    'changes' (each paragraph that was added, removed or changed, with its\n    before and after text; also heading, table and pending-amendment-link\n    changes), 'identical' when nothing differs, and the parsed text at both\n    dates side by side. When both texts together are too long to send, the\n    full texts are left out (texts_omitted) and 'changes' is kept.\n    changes_only=True leaves the full texts out every time: the short answer\n    to \"what changed\".\n\n    Dates must be in YYYY-MM-DD format and within the eCFR's tracking range\n    (January 2017 to present). Both dates must not exceed the title's\n    up_to_date_as_of value.\n\n    This tool always returns the section-level XML parsed -- pass a small\n    section_id like '15.305', not a whole part. Whole-part comparisons can\n    exceed 100 KB per side.\n    ",
     "inputSchema": {
       "properties": {
         "section_id": {
@@ -859,6 +874,11 @@
           ],
           "default": null,
           "title": "Chapter"
+        },
+        "changes_only": {
+          "default": false,
+          "title": "Changes Only",
+          "type": "boolean"
         }
       },
       "required": [
@@ -883,7 +903,7 @@
       "readOnlyHint": true,
       "title": "List Sections in Part"
     },
-    "description": "List all sections and appendices in a CFR part with their headings.\n\n    Returns 'sections' in order, each {identifier, heading}, with\n    type='appendix' on appendices (2 CFR 200's Appendix I-XII, for example)\n    and reserved=true on reserved sections, plus 'subparts' (each with its\n    heading, section_count and first and last section). Useful for seeing\n    the scope of a part before reading specific sections.\n\n    The part number alone is enough: chapter is optional (Title 48 parts\n    are unique: 52 = FAR, 252 = DFARS, 552 = GSAR) and the answer reports\n    the chapter the part is in. subpart (e.g. '52.2') lists one subpart.\n    detail=True adds eCFR's label, size and received_on for each entry\n    (received_on is when eCFR processed the text, not when it was amended;\n    get_version_history has amendment dates).\n\n    part_number accepts int or string.\n    ",
+    "description": "List all sections and appendices in a CFR part with their headings.\n\n    Returns 'sections' in order, each {identifier, heading}, with\n    type='appendix' on appendices (2 CFR 200's Appendix I-XII, for example)\n    and reserved=true on reserved sections, plus 'subparts' (each with its\n    heading, section_count and first and last section). Useful for seeing\n    the scope of a part before reading specific sections.\n\n    The part number alone is enough: chapter is optional (Title 48 parts\n    are unique: 52 = FAR, 252 = DFARS, 552 = GSAR) and the answer reports\n    the chapter the part is in. subpart (e.g. '52.2') lists one subpart.\n    A list too long to send at once (FAR Part 52 has 680 entries) comes in\n    pages: page and total_pages say where you are; page=2 gets the rest.\n    detail=True adds eCFR's label, size and received_on for each entry\n    (received_on is when eCFR processed the text, not when it was amended;\n    get_version_history has amendment dates).\n\n    part_number accepts int or string.\n    ",
     "inputSchema": {
       "properties": {
         "part_number": {
@@ -948,6 +968,11 @@
           ],
           "default": null,
           "title": "Subpart"
+        },
+        "page": {
+          "default": 1,
+          "title": "Page",
+          "type": "integer"
         }
       },
       "required": [
@@ -970,7 +995,7 @@
       "readOnlyHint": true,
       "title": "Find FAR Definition"
     },
-    "description": "Find a term's definition in FAR 2.101, the FAR's main definitions section.\n\n    Returns each matching definition whole (the defining paragraph and every\n    sub-paragraph under it), first, marked kind='definition'. Matching\n    ignores case, hyphens, spacing, plurals, a trailing \"means\", and the\n    acronym 2.101 puts in a name, so 'service-disabled veteran-owned small\n    business concern', 'SDVOSB concern', 'COTS', 'commercial services' and\n    'contract means' all find their definitions. Other 2.101 paragraphs that\n    use the term (whole words only) follow as kind='mention', each naming\n    the definition it sits in.\n\n    When 2.101 doesn't define the term, the tool searches the rest of the\n    FAR (chapter 1) for \"<term>\" means and returns where it is defined, with\n    the definition text, under defined_elsewhere (for example 19.001 and\n    52.219-14 for 'similarly situated entity'), plus did_you_mean\n    suggestions from 2.101.\n\n    term must be at least 3 characters. max_matches caps the number of\n    matches returned (default 20, max 100); definitions are never cut, and\n    truncated says whether mentions were left out.\n    ",
+    "description": "Find a term's definition in FAR 2.101, the FAR's main definitions section.\n\n    Returns each matching definition whole (the defining paragraph and every\n    sub-paragraph under it), first, marked kind='definition'. Matching\n    ignores case, hyphens, spacing, plurals, a trailing \"means\", and the\n    acronym 2.101 puts in a name, so 'service-disabled veteran-owned small\n    business concern', 'SDVOSB concern', 'COTS', 'commercial services' and\n    'contract means' all find their definitions. Other 2.101 paragraphs that\n    use the term (whole words only) follow as kind='mention', each naming\n    the definition it sits in.\n\n    When 2.101 doesn't define the term, the tool searches the rest of the\n    FAR (chapter 1), then the DFARS (chapter 2), for \"<term>\" means and\n    returns where it is defined, with the definition text, under\n    defined_elsewhere (for example 19.001 and 52.219-14 for 'similarly\n    situated entity'; 204.7301 for 'covered defense information'), plus\n    did_you_mean suggestions from 2.101.\n\n    term must be at least 3 characters. max_matches caps the number of\n    matches returned (default 20, max 100); definitions are never cut, and\n    truncated says whether mentions were left out.\n    ",
     "inputSchema": {
       "properties": {
         "term": {
