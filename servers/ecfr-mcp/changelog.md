@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.1.0
+
+Fixes from the 2026-10-10 bug hunt. All 13 tools keep their names.
+
+**Text parsing** (`get_cfr_content`, `lookup_far_clause`, `compare_versions`)
+
+- eCFR's XML is now read with a real XML parser instead of regular
+  expressions. Every text node in eCFR's response comes out once, in order;
+  a test checks this on ten saved eCFR responses, and an offline sweep
+  checked all of Title 48 plus 13 CFR 121 and 124-127, 2 CFR 200 and others
+  (18,044 sections).
+- Subpart, part and appendix requests return one object per section under
+  `sections`, each with its own section number and heading. Before, they
+  came back as one run of paragraphs with no section numbers.
+- Indented and list paragraphs (`FP-1`, `FP-2`, `FP-DASH`, `P-2`, `LI` and
+  similar) are their own paragraphs. Before, they were dropped or fused into
+  neighbors (2 CFR 200 Appendix VIII came back empty; 52.212-3 had a
+  5,714-character run-on paragraph).
+- Clause text is no longer repeated in `extracts`, which roughly halves
+  clause answers (52.219-9 is 58,910 characters, not 116,283).
+- Worked examples (`examples`), notes such as drafting notes (`notes`) and
+  table captions are kept, numbered, and marked in place in `paragraphs`
+  (for example `[See example 1: Example 1 to paragraph (b).]`).
+- Footnote marks read `[fn 9]`, so 13 CFR 121.201's NAICS 531110 standard
+  reads `$34.0 [fn 9]`, not `$34.09`. Line breaks in table cells become
+  spaces, and whitespace is collapsed.
+- Images (formulas, forms) appear as `[Image: <link>]` with a warning.
+- eCFR's "Link to an amendment published at ..." notices are returned as
+  `pending_amendments`, with a warning that the text may be about to change.
+- `hierarchy_metadata` paths carry the real date instead of
+  `_SUBSTITUTE_DATE_`, plus a full `url`.
+- Answers over about 60,000 characters come in pages, split between
+  paragraphs, table rows and sections. New optional `page` parameter on
+  `get_cfr_content` and `lookup_far_clause`; each page says which page it is
+  and how many there are.
+- `compare_versions` now returns `changes` (paragraphs added, removed or
+  changed, plus heading, table and pending-amendment-link changes) and
+  `identical`. When both texts together are too long, it keeps the changes
+  and leaves out the full texts, and says so.
+
 ## 1.0.13
 
 - Hosted service only: the machine running the service can give the answer cache

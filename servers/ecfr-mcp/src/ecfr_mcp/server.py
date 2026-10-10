@@ -14,8 +14,8 @@ never needs to process raw XML. Structure and metadata endpoints return JSON.
 from __future__ import annotations
 
 import asyncio
+import difflib
 import hashlib
-import html
 import json as _json
 import re
 import time
@@ -25,7 +25,7 @@ from typing import Any
 import httpx
 from mcp.server import MCPServer
 
-from . import __version__
+from . import __version__, _xml_text
 from ._throughput import EcfrPacer, EcfrXmlPacer
 from ._response_cache import DAY, HOUR, MINUTE, ResponseCache, cache_key, positive_int_from_env
 from ._xml_cache import XmlCache
@@ -532,143 +532,18 @@ async def _get_xml_uncached(path: str, params: dict[str, Any] | None = None) -> 
 
 
 # ---------------------------------------------------------------------------
-# XML parsing helpers (server-side so Claude never sees raw XML)
+# XML parsing (server-side so Claude never sees raw XML; see _xml_text.py)
 # ---------------------------------------------------------------------------
 
-_HEAD_RE = re.compile(r"<HEAD\b[^>]*>(.*?)</HEAD>", re.IGNORECASE | re.DOTALL)
-_CITA_RE = re.compile(r"<CITA\b[^>]*>(.*?)</CITA>", re.IGNORECASE | re.DOTALL)
-# Text blocks in document order: paragraphs (P), flush paragraphs (FP), and
-# inline headings (HD1-HD3, which carry text like '(End of clause)' and
-# 'Alternate I' markers). Round 6: HD and FP content was silently dropped.
-_BLOCK_RE = re.compile(r"<(P|FP|HD1|HD2|HD3)\b[^>]*>(.*?)</\1>", re.IGNORECASE | re.DOTALL)
-_EXTRACT_RE = re.compile(r"<EXTRACT\b[^>]*>(.*?)</EXTRACT>", re.IGNORECASE | re.DOTALL)
-# Editorial notes: <EDNOTE><HED>Editorial Note:</HED><PSPACE>text</PSPACE></EDNOTE>
-_EDNOTE_RE = re.compile(r"<EDNOTE\b[^>]*>(.*?)</EDNOTE>", re.IGNORECASE | re.DOTALL)
-# Tables. eCFR content XML carries both HTML-style <table><tr><td> markup
-# (e.g. the FAR 1.106 OMB control number table) and GPO-style
-# <GPOTABLE><ROW><ENT>. Round 6: table content was silently dropped; FAR
-# 1.106 (a 562-cell table) came back as a single stray paragraph.
-_TABLE_RE = re.compile(r"<(GPOTABLE|TABLE)\b[^>]*>(.*?)</\1>", re.IGNORECASE | re.DOTALL)
-_TABLE_ROW_RE = re.compile(r"<(TR|ROW)\b[^>]*>(.*?)</\1>", re.IGNORECASE | re.DOTALL)
-_TABLE_CELL_RE = re.compile(r"<(TD|TH|ENT)\b[^>]*>(.*?)</\1>", re.IGNORECASE | re.DOTALL)
-_XML_DECL_RE = re.compile(r"<\?xml[^>]*\?>", re.IGNORECASE)
-_PI_RE = re.compile(r"<\?[^>]*\?>")
-_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
-_CDATA_RE = re.compile(r"<!\[CDATA\[(.*?)\]\]>", re.DOTALL)
-_ITAG_RE = re.compile(r"<I\b[^>]*>(.*?)</I>", re.IGNORECASE | re.DOTALL)
-_ETAG_RE = re.compile(r"<E\b[^>]*>(.*?)</E>", re.IGNORECASE | re.DOTALL)
-_ANY_TAG_RE = re.compile(r"<[^>]+>")
-_META_RE = re.compile(r'hierarchy_metadata="([^"]+)"')
+def _parse_xml_to_text(xml_content: Any, date: str | None = None) -> dict[str, Any]:
+    """Clean text from an eCFR XML content response.
 
-
-def _clean_inline(s: str) -> str:
-    """Strip tags, unescape entities, collapse whitespace."""
-    s = _ANY_TAG_RE.sub("", s)
-    s = html.unescape(s)
-    return s.strip()
-
-
-def _parse_xml_to_text(xml_content: Any) -> dict[str, Any]:
-    """Extract clean text from eCFR XML content response.
-
-    Returns structured data with heading, paragraphs, citations, plus
-    tables and editorial_notes when present. Handles <I>, <E> (emphasis),
-    <EXTRACT>, <P>, <FP>, <HD1>-<HD3>, <HEAD>, <CITA>, <EDNOTE>, and both
-    HTML-style and GPO-style table markup.
-
-    Robust to bytes/None/int input, case variations, and malformed XML.
+    One object per section (heading, paragraphs, citations, and tables,
+    notes, examples, images, pending_amendments and editorial_notes when
+    present). Multi-section responses list them under 'sections'. date fills
+    the date into eCFR's hierarchy paths.
     """
-    if xml_content is None:
-        return {"heading": "", "paragraphs": [], "citations": []}
-    if isinstance(xml_content, bytes):
-        try:
-            xml_content = xml_content.decode("utf-8", errors="replace")
-        except Exception:
-            xml_content = str(xml_content)
-    if not isinstance(xml_content, str):
-        xml_content = str(xml_content)
-
-    text = _XML_DECL_RE.sub("", xml_content)
-    text = _PI_RE.sub("", text)
-    text = _COMMENT_RE.sub("", text)
-    # Preserve CDATA content
-    text = _CDATA_RE.sub(lambda m: m.group(1), text)
-
-    head_match = _HEAD_RE.search(text)
-    heading = _clean_inline(head_match.group(1)) if head_match else ""
-
-    citations = [_clean_inline(c) for c in _CITA_RE.findall(text)]
-    citations = [c for c in citations if c]
-
-    # Editorial notes come out before the paragraph pass so their bodies
-    # (and any nested <P>) are not double-counted as regulatory text.
-    editorial_notes = [_clean_inline(n) for n in _EDNOTE_RE.findall(text)]
-    editorial_notes = [n for n in editorial_notes if n]
-    text = _EDNOTE_RE.sub(" ", text)
-
-    # Tables likewise: rows of cell strings, removed from the paragraph pass
-    # so cell text is not duplicated. A table whose content resists row
-    # parsing is counted and reported rather than silently dropped.
-    tables: list[list[list[str]]] = []
-    tables_unparsed = 0
-    for _tag, table_body in _TABLE_RE.findall(text):
-        rows: list[list[str]] = []
-        for _row_tag, row_body in _TABLE_ROW_RE.findall(table_body):
-            cells = [_clean_inline(c) for _cell_tag, c in _TABLE_CELL_RE.findall(row_body)]
-            if any(cells):
-                rows.append(cells)
-        if rows:
-            tables.append(rows)
-        elif _clean_inline(table_body):
-            tables_unparsed += 1
-    text = _TABLE_RE.sub(" ", text)
-
-    clean_paragraphs: list[str] = []
-    for _tag, p in _BLOCK_RE.findall(text):
-        p = _ITAG_RE.sub(r"*\1*", p)
-        p = _ETAG_RE.sub(r"*\1*", p)
-        p = _clean_inline(p)
-        if p:
-            clean_paragraphs.append(p)
-
-    extract_texts: list[str] = []
-    for ex in _EXTRACT_RE.findall(text):
-        ex_clean = _clean_inline(ex)
-        if ex_clean:
-            extract_texts.append(ex_clean)
-
-    metadata: list[Any] = []
-    for m in _META_RE.findall(xml_content):
-        cleaned = m.replace("&quot;", '"').replace("&amp;quot;", '"')
-        try:
-            metadata.append(_json.loads(cleaned))
-        except (ValueError, _json.JSONDecodeError):
-            pass
-
-    result: dict[str, Any] = {
-        "heading": heading,
-        "paragraphs": clean_paragraphs,
-        "citations": citations,
-    }
-    if extract_texts:
-        result["extracts"] = extract_texts
-    if tables:
-        result["tables"] = tables
-        result["table_note"] = (
-            f"{len(tables)} table(s) extracted into 'tables': "
-            f"each entry is a list of rows, each row a list of cell strings."
-        )
-    if tables_unparsed:
-        result["warning"] = (
-            f"{tables_unparsed} table(s) contained content that could not be "
-            f"parsed into rows and were omitted. Use raw_xml=True to inspect."
-        )
-    if editorial_notes:
-        result["editorial_notes"] = editorial_notes
-    if metadata:
-        result["hierarchy_metadata"] = metadata
-
-    return result
+    return _xml_text.parse(xml_content, date)
 
 
 def _walk_structure(node: Any, target_type: str = "section") -> list[dict[str, Any]]:
@@ -778,13 +653,23 @@ async def get_cfr_content(
     chapter: str | int | None = None,
     appendix: str | int | None = None,
     raw_xml: bool = False,
+    page: int = 1,
 ) -> dict[str, Any]:
     """Get the full text of a CFR section, subpart, part, or appendix.
 
     This is the primary workhorse for reading regulatory text. Returns
-    parsed clean text by default (heading, paragraphs, citations, plus
-    tables and editorial_notes when present). Set raw_xml=True to get the
+    parsed clean text by default: heading, paragraphs and citations, plus
+    tables, notes, examples, images, pending_amendments and editorial_notes
+    when present. Tables, notes and examples are numbered, and a marker like
+    "[See table 1: ...]" sits in the paragraphs where each appears. [fn N]
+    marks a footnote reference. pending_amendments means eCFR links a
+    published amendment that may not be in effect yet. A subpart, part or
+    appendix request returns one object per section under 'sections', each
+    with its own section number and heading. Set raw_xml=True to get the
     original XML instead.
+
+    Answers longer than about 60,000 characters come in pages: the reply
+    says page and total_pages, and page=2 (and so on) returns the rest.
 
     Specify the narrowest scope possible to keep responses manageable:
     - section='15.305' for a single FAR section
@@ -814,6 +699,7 @@ async def get_cfr_content(
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
     chapter = _validate_chapter(chapter, title_number=title_number)
     appendix = _coerce_cfr_str(appendix, field="appendix")
+    page = _clamp(page, field="page", lo=1, hi=10_000)
 
     if not any((section, part, subpart, chapter, appendix)):
         raise ValueError(
@@ -843,7 +729,7 @@ async def get_cfr_content(
     if raw_xml:
         return {"date": date, "title": title_number, "xml": xml_content}
 
-    parsed = _parse_xml_to_text(xml_content)
+    parsed = _parse_xml_to_text(xml_content, date)
     parsed["date"] = date
     parsed["title"] = title_number
     if section:
@@ -856,7 +742,16 @@ async def get_cfr_content(
         parsed["chapter"] = chapter
     if appendix:
         parsed["appendix"] = appendix
-    return parsed
+    if "sections" in parsed:
+        narrower = (
+            "To read one section instead, call get_cfr_content with section= "
+            "set to an identifier from 'sections' (list_sections_in_part lists them all)."
+        )
+    elif section == "2.101" and title_number == 48:
+        narrower = "For one FAR definition, find_far_definition returns just that term."
+    else:
+        narrower = ""
+    return _xml_text.paginate(parsed, page, narrower=narrower)
 
 
 @mcp.tool(annotations={"title": "Get CFR Structure", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1206,6 +1101,7 @@ async def lookup_far_clause(
     section_id: str | int,
     chapter: str | int = "1",
     date: str | None = None,
+    page: int = 1,
 ) -> dict[str, Any]:
     """Convenience tool: look up the current text of a FAR or DFARS clause.
 
@@ -1213,7 +1109,10 @@ async def lookup_far_clause(
     Default chapter='1' (FAR). Use chapter='2' for DFARS (e.g., '252.227-7014').
 
     Auto-resolves the latest available date. Returns parsed clean text
-    with heading, paragraphs, and citations.
+    with heading, paragraphs and citations, plus tables, notes (such as
+    drafting notes, which are not clause text), examples, images and
+    pending_amendments when present; see get_cfr_content. A clause longer
+    than about 60,000 characters comes in pages: use page=2 and so on.
 
     Common FAR sections: 2.101 (Definitions), 9.104-1 (Responsibility),
     15.305 (Proposal Evaluation), 19.502-2 (Small Business Set-Asides),
@@ -1234,6 +1133,7 @@ async def lookup_far_clause(
         date=date,
         chapter=chapter,
         section=section_id,
+        page=page,
     )
 
 
@@ -1248,8 +1148,11 @@ async def compare_versions(
     """Compare the text of a CFR section at two different dates.
 
     Useful for understanding what changed in a regulatory amendment. Returns
-    the parsed text at both dates side by side. You can then diff the
-    paragraphs to identify specific changes.
+    'changes' (each paragraph that was added, removed or changed, with its
+    before and after text; also heading, table and pending-amendment-link
+    changes), 'identical' when nothing differs, and the parsed text at both
+    dates side by side. When both texts together are too long to send, the
+    full texts are left out (texts_omitted) and 'changes' is kept.
 
     Dates must be in YYYY-MM-DD format and within the eCFR's tracking range
     (January 2017 to present). Both dates must not exceed the title's
@@ -1299,12 +1202,79 @@ async def compare_versions(
         {**params, "section": section_id},
     )
 
-    return {
+    before = {"date": date_before, **_parse_xml_to_text(old_xml, date_before)}
+    after = {"date": date_after, **_parse_xml_to_text(new_xml, date_after)}
+    changes = _text_changes(before, after)
+    result: dict[str, Any] = {
         "section": section_id,
         "title": title_number,
-        "before": {"date": date_before, **_parse_xml_to_text(old_xml)},
-        "after": {"date": date_after, **_parse_xml_to_text(new_xml)},
+        "identical": not changes,
+        "change_count": len(changes),
+        "changes": changes,
+        "before": before,
+        "after": after,
     }
+    if not changes:
+        result["note"] = (
+            f"The parsed text is the same on {date_before} and {date_after}. A version "
+            f"history entry between these dates may be a re-issue or a link notice only."
+        )
+    if _xml_text.size_of(result) <= _xml_text.PAGE_CHARS:
+        return result
+    # Too long to send: keep the changes, drop the full texts.
+    for side in (before, after):
+        for key in ("paragraphs", "tables", "notes", "examples", "citations", "editorial_notes",
+                    "images", "table_note", "hierarchy_metadata", "sections"):
+            side.pop(key, None)
+    result["texts_omitted"] = True
+    result["note"] = (
+        "Both full texts together are too long to send, so only the changes are "
+        f"shown. Read either full text with get_cfr_content(section='{section_id}', "
+        f"date=...), which comes in pages."
+    )
+    budget = _xml_text.PAGE_CHARS - _xml_text.size_of({**result, "changes": []})
+    kept: list[dict[str, Any]] = []
+    for change in changes:
+        budget -= _xml_text.size_of(change) + 1
+        if budget < 0:
+            break
+        kept.append(change)
+    if len(kept) < len(changes):
+        result["changes"] = kept
+        result["changes_truncated"] = True
+        result["note"] += (
+            f" Only the first {len(kept)} of {len(changes)} changes fit; compare two "
+            f"dates closer together (get_version_history lists the amendment dates)."
+        )
+    return result
+
+
+def _text_changes(before: dict[str, Any], after: dict[str, Any]) -> list[dict[str, Any]]:
+    """What differs between two parsed texts of one section, paragraph by paragraph."""
+    changes: list[dict[str, Any]] = []
+    if before.get("heading") != after.get("heading"):
+        changes.append({"change": "heading", "before": before.get("heading"), "after": after.get("heading")})
+    old, new = before.get("paragraphs", []), after.get("paragraphs", [])
+    names = {"replace": "changed", "delete": "removed", "insert": "added"}
+    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(a=old, b=new, autojunk=False).get_opcodes():
+        if op == "equal":
+            continue
+        change: dict[str, Any] = {"change": names[op], "before_paragraph": i1 + 1, "after_paragraph": j1 + 1}
+        if i2 > i1:
+            change["before"] = old[i1:i2]
+        if j2 > j1:
+            change["after"] = new[j1:j2]
+        changes.append(change)
+    for key in ("tables", "notes", "examples"):
+        if before.get(key, []) != after.get(key, []):
+            changes.append({"change": key, "detail": f"{key} differ; compare 'before' and 'after'"})
+    if before.get("pending_amendments", []) != after.get("pending_amendments", []):
+        changes.append({
+            "change": "pending amendment link",
+            "before": before.get("pending_amendments", []),
+            "after": after.get("pending_amendments", []),
+        })
+    return changes
 
 
 @mcp.tool(annotations={"title": "List Sections in Part", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})

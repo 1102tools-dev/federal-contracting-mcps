@@ -76,6 +76,16 @@ def _source_texts(div: ET.Element) -> list[str]:
     return out
 
 
+def _text_without(e: ET.Element, skip: str) -> str:
+    """e's text, leaving out any nested <skip> element (an amendment link inside Authority)."""
+    parts = [e.text or ""]
+    for child in e:
+        if child.tag != skip:
+            parts.append(_text_without(child, skip))
+        parts.append(child.tail or "")
+    return "".join(parts)
+
+
 def _side_texts(div: ET.Element, tag: str) -> list[str]:
     found: list[str] = []
 
@@ -83,8 +93,9 @@ def _side_texts(div: ET.Element, tag: str) -> list[str]:
         if not top and (e.tag in SECTION_DIVS or e.tag in GROUP_DIVS):
             return
         if e.tag == tag:
-            found.append("".join(e.itertext()))
-            return
+            found.append(_text_without(e, "XREF") if tag != "XREF" else "".join(e.itertext()))
+            if tag != "XREF":
+                return
         for child in e:
             walk(child, False)
 
@@ -152,7 +163,26 @@ def test_every_text_node_appears_once_in_order(name):
         return
     # A multi-section response: the container's own text, then each section
     # under its own identifier, in document order.
+    _check_container(root, parsed, name)
+
+
+PLURALS = {"TITLE": "titles", "SUBTITLE": "subtitles", "CHAPTER": "chapters", "SUBCHAP": "subchapters",
+           "PART": "parts", "SUBPART": "subparts", "SUBJGRP": "subject_groups"}
+
+
+def _check_container(root: ET.Element, parsed: dict, name: str) -> None:
+    """The container's own text, each grouping level's, then each section's."""
     _check_unit(root, parsed, f"{name} (container)")
+    groups = [d for d in root.iter() if d.tag in GROUP_DIVS and d is not root]
+    seen: dict[str, int] = {}
+    for div in groups:
+        key = PLURALS.get((div.get("TYPE") or "").upper(), "divisions")
+        record = parsed[key][seen.get(key, 0)]
+        seen[key] = seen.get(key, 0) + 1
+        if key != "subject_groups":
+            assert record[key[:-1]] == div.get("N"), f"{name}: {key} out of order"
+        _check_unit(div, record, f"{name} {key[:-1]} {div.get('N')}")
+    divs = [d for d in root.iter() if d.tag in SECTION_DIVS and d is not root]
     sections = parsed["sections"]
     assert [s.get("section") or s.get("appendix") for s in sections] == [d.get("N") for d in divs]
     for div, section in zip(divs, sections):
@@ -266,3 +296,128 @@ def test_definitions_section_keeps_every_paragraph():
     assert len(r["editorial_notes"]) == 1
     assert any(p.startswith("*Supplies* means all property") for p in r["paragraphs"])
 
+
+# --- pages for answers too long to send at once -----------------------------
+
+from ecfr_mcp import _xml_text  # noqa: E402
+
+
+def _all_pages(result: dict, limit: int) -> list[dict]:
+    pages = _xml_text.all_pages(result, limit=limit)
+    # The tool's own entry point gives the same pages one at a time.
+    assert [_xml_text.paginate(result, n, limit=limit) for n in (1, len(pages))] == [pages[0], pages[-1]]
+    return pages
+
+
+def _gather(pieces: list[dict]) -> dict:
+    """Join the pieces of each section back together, in order."""
+    units: dict[str, dict] = {}
+    for piece in pieces:
+        key = piece.get("section") or piece.get("appendix") or "_"
+        unit = units.setdefault(key, {"heading": piece.get("heading"), "paragraphs": [], "tables": {},
+                                      "notes": [], "examples": [], "citations": piece.get("citations", [])})
+        unit["paragraphs"] += piece.get("paragraphs", [])
+        unit["notes"] += piece.get("notes", [])
+        unit["examples"] += piece.get("examples", [])
+        if piece.get("citations"):
+            unit["citations"] = piece["citations"]
+        for table in piece.get("tables", []):
+            unit["tables"].setdefault(table["table"], []).extend(table["rows"])
+    return units
+
+
+def _expected(unit: dict) -> dict:
+    return {"heading": unit.get("heading"), "paragraphs": unit.get("paragraphs", []),
+            "tables": {t["table"]: t["rows"] for t in unit.get("tables", [])},
+            "notes": unit.get("notes", []), "examples": unit.get("examples", []),
+            "citations": unit.get("citations", [])}
+
+
+@pytest.mark.parametrize("name,limit", [
+    ("t48_2.101.xml", _xml_text.PAGE_CHARS),
+    ("t13_121.201.xml", _xml_text.PAGE_CHARS),
+    ("t13_121.201.xml", 9_000),
+    ("t13_125.6.xml", 4_000),
+    ("t48_52.212-3.xml", 7_000),
+])
+def test_pages_of_one_section_add_up_to_the_whole(name, limit):
+    full = _parse(name)
+    pages = _all_pages(full, limit)
+    assert len(pages) > 1
+    for n, page in enumerate(pages, start=1):
+        assert page["page"] == n and page["total_pages"] == len(pages)
+        assert f"page {n} of {len(pages)}" in page["page_note"]
+        assert _xml_text.size_of(page) <= limit or len(page.get("paragraphs", [])) <= 1
+        assert page["heading"] == full["heading"]
+    gathered = _gather(pages)["_"]
+    gathered.pop("heading")
+    expected = _expected(full)
+    expected.pop("heading")
+    assert gathered == expected
+    assert "continues_on_next_page" in pages[0]
+    assert "continued_from_previous_page" in pages[-1]
+
+
+def test_pages_of_a_subpart_keep_sections_whole_and_in_order():
+    full = _parse("t48_subpart_15.3.xml")
+    pages = _all_pages(full, 6_000)
+    assert len(pages) > 2
+    pieces = [piece for page in pages for piece in page["sections"]]
+    gathered = _gather(pieces)
+    assert list(gathered) == [s["section"] for s in full["sections"]]
+    for section in full["sections"]:
+        assert gathered[section["section"]] == _expected(section)
+    for page in pages:
+        assert page["heading"] == "Subpart 15.3—Source Selection"
+        assert page["section_count"] == 9
+        assert _xml_text.size_of(page) <= 6_000
+
+
+def test_large_table_pages_repeat_the_header_row():
+    full = _parse("t13_121.201.xml")
+    pages = _all_pages(full, 9_000)
+    continued = [t for page in pages for t in page.get("tables", []) if t.get("continued")]
+    assert continued
+    for piece in continued:
+        assert piece["header_row"] == full["tables"][0]["rows"][0]
+        assert piece["caption"] == "Small Business Size Standards by NAICS Industry"
+
+
+def test_an_answer_that_fits_is_unchanged_and_page_two_is_refused():
+    full = _parse("t48_52.219-9.xml")
+    assert _xml_text.paginate(full, 1) is full
+    with pytest.raises(ValueError, match="fits on one page"):
+        _xml_text.paginate(full, 2)
+
+
+def test_asking_past_the_last_page_says_how_many_there_are():
+    full = _parse("t48_2.101.xml")
+    with pytest.raises(ValueError, match="has 2 pages"):
+        _xml_text.paginate(full, 3)
+
+
+def test_part_pages_carry_only_their_own_subparts():
+    sections = "".join(
+        f'<DIV8 N="9.{n}" TYPE="SECTION"><HEAD>9.{n} Section {n}.</HEAD><P>{"word " * 300}</P></DIV8>'
+        for n in range(1, 7)
+    )
+    xml = (
+        '<DIV5 N="9" TYPE="PART"><HEAD>PART 9—TEST</HEAD>'
+        '<AUTH><HED>Authority:</HED><PSPACE>40 U.S.C. 121(c).</PSPACE></AUTH>'
+        f'<DIV6 N="9.1" TYPE="SUBPART"><HEAD>Subpart 9.1—First</HEAD>{sections[:len(sections) // 2]}</DIV6>'
+        '<DIV6 N="9.2" TYPE="SUBPART"><HEAD>Subpart 9.2 [Reserved]</HEAD></DIV6>'
+        f'<DIV6 N="9.3" TYPE="SUBPART"><HEAD>Subpart 9.3—Third</HEAD>'
+        '<SOURCE><HED>Source:</HED><PSPACE>91 FR 1, Jan. 2, 2026.</PSPACE></SOURCE>'
+        f'{sections[len(sections) // 2:]}</DIV6></DIV5>'
+    )
+    full = srv._parse_xml_to_text(xml)
+    assert full["authority"] == "Authority: 40 U.S.C. 121(c)."
+    assert [s["subpart"] for s in full["sections"]] == ["9.1"] * 3 + ["9.3"] * 3
+    assert full["subparts"][2]["source"] == "Source: 91 FR 1, Jan. 2, 2026."
+    pages = _all_pages(full, 5_000)
+    assert len(pages) >= 3
+    assert {r["subpart"] for r in pages[0]["subparts"]} >= {"9.1", "9.2"}
+    for page in pages:
+        assert page["authority"] == full["authority"]
+        assert {r["subpart"] for r in page["subparts"]} >= {s["subpart"] for s in page["sections"]}
+    assert "9.3" not in {r["subpart"] for r in pages[0]["subparts"]}

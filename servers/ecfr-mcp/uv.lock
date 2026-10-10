@@ -222,7 +222,7 @@ wheels = [
 
 [[package]]
 name = "ecfr-mcp"
-version = "1.0.13"
+version = "1.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "filelock" },

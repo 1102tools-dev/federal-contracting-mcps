@@ -210,17 +210,17 @@ def test_parser_extracts_html_style_table():
         "</DIV8>"
     )
     r = srv._parse_xml_to_text(xml)
-    assert r["tables"] == [[["FAR segment", "OMB Control Number"],
-                            ["15.305(a)(2)(ii)", "9000-0142."]]]
+    assert r["tables"] == [{"table": 1, "rows": [["FAR segment", "OMB Control Number"],
+                                                 ["15.305(a)(2)(ii)", "9000-0142."]]}]
     assert "table_note" in r
-    # Cell text must not leak into paragraphs.
-    assert all("9000-0142" not in p for p in r["paragraphs"])
+    # Cell text must not leak into paragraphs; a marker holds the table's place.
+    assert r["paragraphs"] == ["[See table 1]"]
 
 
 def test_parser_extracts_gpo_style_table():
     xml = "<GPOTABLE><ROW><ENT>a</ENT><ENT>b</ENT></ROW></GPOTABLE>"
     r = srv._parse_xml_to_text(xml)
-    assert r["tables"] == [[["a", "b"]]]
+    assert r["tables"] == [{"table": 1, "rows": [["a", "b"]]}]
 
 
 def test_parser_warns_on_unparseable_table():
@@ -483,7 +483,7 @@ def test_live_far_1_106_table_content_recovered():
         "get_cfr_content", title_number=48, section="1.106", date=_live_date(),
     )))
     assert r.get("tables"), "FAR 1.106 should parse into tables"
-    flat = [cell for table in r["tables"] for row in table for cell in row]
+    flat = [cell for table in r["tables"] for row in table["rows"] for cell in row]
     assert any("9000-0142" in c for c in flat), "OMB control numbers missing from table cells"
 
 
