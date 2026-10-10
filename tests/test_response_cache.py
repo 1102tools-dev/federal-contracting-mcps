@@ -278,3 +278,19 @@ def test_the_five_hosted_images_turn_the_cache_on():
         dockerfile = (ROOT / "deploy" / slug / "Dockerfile").read_text()
         assert "MCP_RESPONSE_CACHE=1" in dockerfile, slug
         assert "MCP_RESPONSE_CACHE_SECONDS" not in dockerfile, slug
+
+
+def test_the_hosting_machine_can_give_the_cache_more_room(rc):
+    Cache = rc.ResponseCache
+    env = {"MCP_RESPONSE_CACHE": "1", "MCP_RESPONSE_CACHE_MB": "256", "MCP_RESPONSE_CACHE_ENTRIES": "32768"}
+    big = Cache(max_bytes=48 * 1024 * 1024, max_entry_bytes=1024, environment=env)
+    assert big.enabled and big.max_bytes == 256 * 1024 * 1024 and big.max_entries == 32768
+    plain = Cache(max_bytes=48 * 1024 * 1024, max_entry_bytes=1024, environment={"MCP_RESPONSE_CACHE": "1"})
+    assert plain.max_bytes == 48 * 1024 * 1024 and plain.max_entries == 4096
+    bad = Cache(max_bytes=48 * 1024 * 1024, max_entry_bytes=1024,
+                environment={"MCP_RESPONSE_CACHE": "1", "MCP_RESPONSE_CACHE_MB": "lots", "MCP_RESPONSE_CACHE_ENTRIES": "-5"})
+    assert bad.max_bytes == 48 * 1024 * 1024 and bad.max_entries == 4096
+    # An explicit enabled= (tests, callers that size the cache themselves) ignores the overrides.
+    fixed = Cache(max_bytes=1024, max_entry_bytes=512, enabled=True, environment=env)
+    assert fixed.max_bytes == 1024 and fixed.max_entries == 4096
+

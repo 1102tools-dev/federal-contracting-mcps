@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.13
+
+- Hosted service only: the machine running the service can give the answer cache
+  more room with `MCP_RESPONSE_CACHE_MB` (size in MiB) and
+  `MCP_RESPONSE_CACHE_ENTRIES`. Unset, the sizes are unchanged, so the small
+  Cloudflare backup containers keep the defaults.
+  `MCP_XML_CACHE_MB` does the same for the XML text cache (default 40 MiB).
+- Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package behaves exactly as
+  before. Tools, schemas, pacing, budgets and cache times are unchanged.
+
 ## 1.0.12
 
 - Hosted service only: answers are filed under eCFR's update state, a short
