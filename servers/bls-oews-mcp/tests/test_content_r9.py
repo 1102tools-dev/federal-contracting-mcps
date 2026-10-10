@@ -117,3 +117,27 @@ def test_bls2_wageless_cell_is_still_no_data():
     data = _tool("igce_wage_benchmark", occ_code="29-1214", scope="metro", area_code="47900")
     assert data["no_data"] is True
     assert data["reliability"]["employment"] == "770"
+
+
+# ---------------------------------------------------------------------------
+# BLS-4: a wageless IGCE says what BLS did publish
+# ---------------------------------------------------------------------------
+
+def test_bls4_top_coded_igce_reports_employment_and_floor():
+    # Q10: DC emergency medicine physicians. BLS: employment 770, every wage
+    # "-" with footnote 5 (">= $115.00 per hour or $239,200 per year").
+    data = _tool("igce_wage_benchmark", occ_code="29-1214", scope="metro", area_code="47900")
+    reason = data["no_data_reason"]
+    assert "BLS publishes no estimate" not in reason
+    assert "employment (770)" in reason
+    assert "equal to or greater than $115.00 per hour or $239,200 per year" in reason
+
+
+def test_bls4_unreleased_igce_points_to_a_wider_area():
+    # Q11: Bremerton (14740) information security analysts. BLS: employment
+    # 70, every wage "-" with footnote 8 ("Estimate not released.").
+    data = _tool("igce_wage_benchmark", occ_code="15-1212", scope="metro", area_code="14740")
+    reason = data["no_data_reason"]
+    assert "employment (70)" in reason
+    assert "Estimate not released." in reason
+    assert "scope='state'" in reason

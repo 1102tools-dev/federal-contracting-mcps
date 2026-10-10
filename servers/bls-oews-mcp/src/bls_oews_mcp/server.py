@@ -984,12 +984,20 @@ async def igce_wage_benchmark(
         response["no_data"] = True
         response["no_data_reason"] = wage_data.get("no_data_reason")
     elif not has_benchmark:
+        # Say what BLS did publish: employment, and the footnote on the wage
+        # cells (top-coded at a stated floor, or not released).
+        employment = wages.get("Employment", _NO_DATA)
+        published = (
+            f"BLS publishes employment ({employment['formatted']}) for this cell but no wage estimate"
+            if employment.get("numeric") is not None
+            else "BLS publishes no wage estimate for this cell"
+        )
         response["no_data"] = True
         response["no_data_reason"] = (
             f"No wage values for occ_code={wage_data['occ_code']} scope={scope} "
-            f"area_code={area_code!r} industry=000000. BLS publishes no estimate "
-            f"for this occupation at this area/industry level (or every "
-            f"requested cell is unreleased)."
+            f"area_code={area_code!r} industry=000000. {published}; Annual Mean "
+            f"Wage reads: {annual_mean.get('formatted', 'No data')} A wider area "
+            f"(scope='state' or scope='national') may publish one."
         )
     if annual_only:
         response["annual_only"] = True

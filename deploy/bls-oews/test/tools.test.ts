@@ -412,6 +412,17 @@ test("BLS-2: the IGCE shows the sample behind the benchmark", async () => {
   assert.equal(topCoded.reliability.employment, "770");
 });
 
+test("BLS-4: a wageless IGCE says what BLS did publish", async () => {
+  const topCoded = (await data("igce_wage_benchmark", {occ_code: "29-1214", scope: "metro", area_code: "47900"})).no_data_reason;
+  assert.doesNotMatch(topCoded, /BLS publishes no estimate/);
+  assert.match(topCoded, /employment \(770\)/);
+  assert.match(topCoded, /equal to or greater than \$115\.00 per hour or \$239,200 per year/);
+  const unreleased = (await data("igce_wage_benchmark", {occ_code: "15-1212", scope: "metro", area_code: "14740"})).no_data_reason;
+  assert.match(unreleased, /employment \(70\)/);
+  assert.match(unreleased, /Estimate not released\./);
+  assert.match(unreleased, /scope='state'/);
+});
+
 // ---------- Python formatting helpers ----------
 
 test("pyjson matches Python's repr, format, round, and strip", () => {

@@ -701,8 +701,13 @@ export async function igceWageBenchmark(db: Database, args: Args) {
     response.set("no_data", true);
     response.set("no_data_reason", wage.get("no_data_reason")!);
   } else if (!hasBenchmark) {
+    // Say what BLS did publish: employment, and the footnote on the wage
+    // cells (top-coded at a stated floor, or not released).
+    const published = numeric("Employment") !== null
+      ? `BLS publishes employment (${formatted("Employment")}) for this cell but no wage estimate`
+      : "BLS publishes no wage estimate for this cell";
     response.set("no_data", true);
-    response.set("no_data_reason", `No wage values for occ_code=${wage.get("occ_code")} scope=${a.scope} area_code=${repr(a.area_code)} industry=000000. BLS publishes no estimate for this occupation at this area/industry level (or every requested cell is unreleased).`);
+    response.set("no_data_reason", `No wage values for occ_code=${wage.get("occ_code")} scope=${a.scope} area_code=${repr(a.area_code)} industry=000000. ${published}; Annual Mean Wage reads: ${formatted("Annual Mean Wage")} A wider area (scope='state' or scope='national') may publish one.`);
   }
   if (annualOnly) {
     response.set("annual_only", true);
