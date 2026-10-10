@@ -1,0 +1,1257 @@
+[
+  {
+    "arguments": {
+      "cfr_title": 48,
+      "cfr_part": "52",
+      "pub_date_gte": "2026-01-01",
+      "per_page": 5
+    },
+    "response": {
+      "description": "Documents published on or after 01/01/2026 and affecting 48 CFR 52",
+      "count": 10,
+      "total_pages": 2,
+      "next_page_url": "https://www.federalregister.gov/api/v1/documents?conditions%5Bcfr%5D%5Bpart%5D=52&conditions%5Bcfr%5D%5Btitle%5D=48&conditions%5Bpublication_date%5D%5Bgte%5D=2026-01-01&fields%5B%5D=title&fields%5B%5D=document_number&fields%5B%5D=publication_date&fields%5B%5D=type&fields%5B%5D=abstract&fields%5B%5D=agencies&fields%5B%5D=docket_ids&fields%5B%5D=regulation_id_numbers&fields%5B%5D=comment_url&fields%5B%5D=comments_close_on&fields%5B%5D=cfr_references&fields%5B%5D=html_url&fields%5B%5D=pdf_url&fields%5B%5D=citation&fields%5B%5D=dates&fields%5B%5D=effective_on&fields%5B%5D=action&fields%5B%5D=significant&fields%5B%5D=executive_order_number&fields%5B%5D=subtype&fields%5B%5D=signing_date&fields%5B%5D=presidential_document_number&format=json&order=newest&page=2&per_page=5&search_after_cursor=WzE3ODIxNzI4MDAwMDAsIjIwMjYtMTI1NjIiXQ",
+      "results": [
+        {
+          "title": "Federal Acquisition Regulation: Revolutionary FAR Overhaul Parts 8, 12, 13, 15, 38, 44, and 51",
+          "document_number": "2026-19162",
+          "publication_date": "2026-09-18",
+          "type": "Proposed Rule",
+          "abstract": "OFPP, DoD, GSA, and NASA (collectively referred to as the Federal Acquisition Regulatory Council or FAR Council) are proposing to amend the Federal Acquisition Regulation (FAR) to implement Executive Order (E.O.) 14275, Restoring Common Sense to Federal Procurement. The E.O. directs the elimination of excessive acquisition regulations to stop the inefficient use of American taxpayer dollars. The FAR Council is issuing twelve proposed rules that collectively will streamline the FAR in its entirety. This rule proposes revisions to FAR parts 8, 12, 13, 15, 38, 44, 51, and 52.",
+          "agencies": [
+            {
+              "raw_name": "OFFICE OF MANAGEMENT AND BUDGET",
+              "name": "Management and Budget Office",
+              "id": 280,
+              "url": "https://www.federalregister.gov/agencies/management-and-budget-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/280",
+              "parent_id": null,
+              "slug": "management-and-budget-office"
+            },
+            {
+              "raw_name": "Office of Federal Procurement Policy",
+              "name": "Federal Procurement Policy Office",
+              "id": 184,
+              "url": "https://www.federalregister.gov/agencies/federal-procurement-policy-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/184",
+              "parent_id": 280,
+              "slug": "federal-procurement-policy-office"
+            },
+            {
+              "raw_name": "DEPARTMENT OF DEFENSE",
+              "name": "Defense Department",
+              "id": 103,
+              "url": "https://www.federalregister.gov/agencies/defense-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/103",
+              "parent_id": null,
+              "slug": "defense-department"
+            },
+            {
+              "raw_name": "GENERAL SERVICES ADMINISTRATION",
+              "name": "General Services Administration",
+              "id": 210,
+              "url": "https://www.federalregister.gov/agencies/general-services-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/210",
+              "parent_id": null,
+              "slug": "general-services-administration"
+            },
+            {
+              "raw_name": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+              "name": "National Aeronautics and Space Administration",
+              "id": 301,
+              "url": "https://www.federalregister.gov/agencies/national-aeronautics-and-space-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/301",
+              "parent_id": null,
+              "slug": "national-aeronautics-and-space-administration"
+            }
+          ],
+          "docket_ids": [
+            "FAR Case 2026-003, Docket No. FAR-2026-0003, Sequence No. 1"
+          ],
+          "regulation_id_numbers": [
+            "9000-AO88"
+          ],
+          "comment_url": "http://www.regulations.gov/commenton/FAR-2026-0003-0001",
+          "comments_close_on": "2026-10-19",
+          "cfr_references": [
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "8",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "12",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "13",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "15",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "38",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "44",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "51",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "52",
+              "title": 48
+            }
+          ],
+          "html_url": "https://www.federalregister.gov/documents/2026/09/18/2026-19162/federal-acquisition-regulation-revolutionary-far-overhaul-parts-8-12-13-15-38-44-and-51",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-18/pdf/2026-19162.pdf",
+          "citation": "91 FR 59406",
+          "dates": "Interested parties should submit written comments to the Regulatory Secretariat Division at the address shown below on or before October 19, 2026, to be considered in the formation of the final rule.",
+          "effective_on": null,
+          "action": "Proposed rule.",
+          "significant": null
+        },
+        {
+          "title": "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Overhaul Parts 16, 17, and 35",
+          "document_number": "2026-19160",
+          "publication_date": "2026-09-18",
+          "type": "Proposed Rule",
+          "abstract": "OFPP, DoD, GSA, and NASA (collectively referred to as the Federal Acquisition Regulatory Council or FAR Council) are proposing to amend the Federal Acquisition Regulation (FAR) to implement Executive Order (E.O.) 14275, Restoring Common Sense to Federal Procurement. The E.O. directs the elimination of excessive acquisition regulations to stop the inefficient use of American taxpayer dollars. The FAR Council is issuing twelve proposed rules that collectively, if finalized, would streamline the FAR in its entirety. This rule proposes revisions to FAR part 16, Types of Contracts, part 17, Special Contracting Methods, part 35, Research and Development Contracting, and part 52, Solicitation Provisions and Contract Clauses.",
+          "agencies": [
+            {
+              "raw_name": "OFFICE OF MANAGEMENT AND BUDGET",
+              "name": "Management and Budget Office",
+              "id": 280,
+              "url": "https://www.federalregister.gov/agencies/management-and-budget-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/280",
+              "parent_id": null,
+              "slug": "management-and-budget-office"
+            },
+            {
+              "raw_name": "Office of Federal Procurement Policy",
+              "name": "Federal Procurement Policy Office",
+              "id": 184,
+              "url": "https://www.federalregister.gov/agencies/federal-procurement-policy-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/184",
+              "parent_id": 280,
+              "slug": "federal-procurement-policy-office"
+            },
+            {
+              "raw_name": "DEPARTMENT OF DEFENSE",
+              "name": "Defense Department",
+              "id": 103,
+              "url": "https://www.federalregister.gov/agencies/defense-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/103",
+              "parent_id": null,
+              "slug": "defense-department"
+            },
+            {
+              "raw_name": "GENERAL SERVICES ADMINISTRATION",
+              "name": "General Services Administration",
+              "id": 210,
+              "url": "https://www.federalregister.gov/agencies/general-services-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/210",
+              "parent_id": null,
+              "slug": "general-services-administration"
+            },
+            {
+              "raw_name": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+              "name": "National Aeronautics and Space Administration",
+              "id": 301,
+              "url": "https://www.federalregister.gov/agencies/national-aeronautics-and-space-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/301",
+              "parent_id": null,
+              "slug": "national-aeronautics-and-space-administration"
+            }
+          ],
+          "docket_ids": [
+            "FAR Case 2026-006, Docket No. FAR-2026-0006, Sequence No. 1"
+          ],
+          "regulation_id_numbers": [
+            "9000-AO91"
+          ],
+          "comment_url": "http://www.regulations.gov/commenton/FAR-2026-0006-0001",
+          "comments_close_on": "2026-10-19",
+          "cfr_references": [
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "16",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "17",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "35",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "52",
+              "title": 48
+            }
+          ],
+          "html_url": "https://www.federalregister.gov/documents/2026/09/18/2026-19160/federal-acquisition-regulation-revolutionary-federal-acquisition-regulation-overhaul-parts-16-17-and",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-18/pdf/2026-19160.pdf",
+          "citation": "91 FR 59476",
+          "dates": "Interested parties should submit written comments to the Regulatory Secretariat Division at the address shown below on or before October 19, 2026, to be considered in the formation of the final rule.",
+          "effective_on": null,
+          "action": "Proposed rule.",
+          "significant": null
+        },
+        {
+          "title": "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Overhaul Parts 9, 27, and 47",
+          "document_number": "2026-19159",
+          "publication_date": "2026-09-18",
+          "type": "Proposed Rule",
+          "abstract": "OFPP, DoD, GSA, and NASA (collectively referred to as the Federal Acquisition Regulatory Council or FAR Council) are proposing to amend the Federal Acquisition Regulation (FAR) to implement Executive Order (E.O.) 14275, Restoring Common Sense to Federal Procurement. The E.O. directs the elimination of excessive acquisition regulations to stop the inefficient use of American taxpayer dollars. The FAR Council is issuing twelve proposed rules that collectively, if finalized, would streamline the FAR in its entirety. This rule proposes revisions to FAR parts 9, 27, 47, and 52.",
+          "agencies": [
+            {
+              "raw_name": "OFFICE OF MANAGEMENT AND BUDGET",
+              "name": "Management and Budget Office",
+              "id": 280,
+              "url": "https://www.federalregister.gov/agencies/management-and-budget-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/280",
+              "parent_id": null,
+              "slug": "management-and-budget-office"
+            },
+            {
+              "raw_name": "Office of Federal Procurement Policy",
+              "name": "Federal Procurement Policy Office",
+              "id": 184,
+              "url": "https://www.federalregister.gov/agencies/federal-procurement-policy-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/184",
+              "parent_id": 280,
+              "slug": "federal-procurement-policy-office"
+            },
+            {
+              "raw_name": "DEPARTMENT OF DEFENSE",
+              "name": "Defense Department",
+              "id": 103,
+              "url": "https://www.federalregister.gov/agencies/defense-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/103",
+              "parent_id": null,
+              "slug": "defense-department"
+            },
+            {
+              "raw_name": "GENERAL SERVICES ADMINISTRATION",
+              "name": "General Services Administration",
+              "id": 210,
+              "url": "https://www.federalregister.gov/agencies/general-services-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/210",
+              "parent_id": null,
+              "slug": "general-services-administration"
+            },
+            {
+              "raw_name": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+              "name": "National Aeronautics and Space Administration",
+              "id": 301,
+              "url": "https://www.federalregister.gov/agencies/national-aeronautics-and-space-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/301",
+              "parent_id": null,
+              "slug": "national-aeronautics-and-space-administration"
+            }
+          ],
+          "docket_ids": [
+            "FAR Case 2026-011, Docket No. FAR-2026-0011, Sequence No. 1"
+          ],
+          "regulation_id_numbers": [
+            "9000-AO84"
+          ],
+          "comment_url": "http://www.regulations.gov/commenton/FAR-2026-0011-0001",
+          "comments_close_on": "2026-10-19",
+          "cfr_references": [
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "9",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "27",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "47",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "52",
+              "title": 48
+            }
+          ],
+          "html_url": "https://www.federalregister.gov/documents/2026/09/18/2026-19159/federal-acquisition-regulation-revolutionary-federal-acquisition-regulation-overhaul-parts-9-27-and",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-18/pdf/2026-19159.pdf",
+          "citation": "91 FR 59584",
+          "dates": "Interested parties should submit written comments to the Regulatory Secretariat Division at the address shown below on or before October 19, 2026, to be considered in the formation of the final rule.",
+          "effective_on": null,
+          "action": "Proposed rule.",
+          "significant": null
+        },
+        {
+          "title": "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Overhaul Parts 14, 28, 36, and 52",
+          "document_number": "2026-19158",
+          "publication_date": "2026-09-18",
+          "type": "Proposed Rule",
+          "abstract": "OFPP, DoD, GSA, and NASA (collectively referred to as the Federal Acquisition Regulatory Council or FAR Council) are proposing to amend the Federal Acquisition Regulation (FAR) to implement Executive Order (E.O.) 14275, Restoring Common Sense to Federal Procurement. The E.O. directs the elimination of excessive acquisition regulations to stop the inefficient use of American taxpayer dollars. The FAR Council is issuing twelve proposed rules that collectively will streamline the FAR in its entirety. This rule proposes revisions to FAR parts 14, 28, 36, and 52.",
+          "agencies": [
+            {
+              "raw_name": "OFFICE OF MANAGEMENT AND BUDGET",
+              "name": "Management and Budget Office",
+              "id": 280,
+              "url": "https://www.federalregister.gov/agencies/management-and-budget-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/280",
+              "parent_id": null,
+              "slug": "management-and-budget-office"
+            },
+            {
+              "raw_name": "Office of Federal Procurement Policy",
+              "name": "Federal Procurement Policy Office",
+              "id": 184,
+              "url": "https://www.federalregister.gov/agencies/federal-procurement-policy-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/184",
+              "parent_id": 280,
+              "slug": "federal-procurement-policy-office"
+            },
+            {
+              "raw_name": "DEPARTMENT OF DEFENSE",
+              "name": "Defense Department",
+              "id": 103,
+              "url": "https://www.federalregister.gov/agencies/defense-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/103",
+              "parent_id": null,
+              "slug": "defense-department"
+            },
+            {
+              "raw_name": "GENERAL SERVICES ADMINISTRATION",
+              "name": "General Services Administration",
+              "id": 210,
+              "url": "https://www.federalregister.gov/agencies/general-services-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/210",
+              "parent_id": null,
+              "slug": "general-services-administration"
+            },
+            {
+              "raw_name": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+              "name": "National Aeronautics and Space Administration",
+              "id": 301,
+              "url": "https://www.federalregister.gov/agencies/national-aeronautics-and-space-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/301",
+              "parent_id": null,
+              "slug": "national-aeronautics-and-space-administration"
+            }
+          ],
+          "docket_ids": [
+            "FAR Case 2026-010, Docket No. FAR-2026-0010, Sequence No. 1"
+          ],
+          "regulation_id_numbers": [
+            "9000-AO83"
+          ],
+          "comment_url": "http://www.regulations.gov/commenton/FAR-2026-0010-0001",
+          "comments_close_on": "2026-10-19",
+          "cfr_references": [
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "14",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "28",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "36",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "52",
+              "title": 48
+            }
+          ],
+          "html_url": "https://www.federalregister.gov/documents/2026/09/18/2026-19158/federal-acquisition-regulation-revolutionary-federal-acquisition-regulation-overhaul-parts-14-28-36",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-18/pdf/2026-19158.pdf",
+          "citation": "91 FR 59534",
+          "dates": "Interested parties should submit written comments to the Regulatory Secretariat Division at the address shown below on or before October 19, 2026, to be considered in the formation of the final rule.",
+          "effective_on": null,
+          "action": "Proposed rule.",
+          "significant": null
+        },
+        {
+          "title": "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Overhaul Parts 3 and 49",
+          "document_number": "2026-12562",
+          "publication_date": "2026-06-23",
+          "type": "Proposed Rule",
+          "abstract": "OFPP, DoD, GSA, and NASA (collectively referred to as the Federal Acquisition Regulatory Council or FAR Council) are proposing to amend the Federal Acquisition Regulation (FAR) to implement Executive Order (E.O.) 14275, Restoring Common Sense to Federal Procurement. The E.O. directs the elimination of excessive acquisition regulations to stop the inefficient use of American taxpayer dollars. The FAR Council is issuing twelve proposed rules that collectively will streamline the FAR in its entirety. This rule proposes revisions to FAR parts 3 and 49.",
+          "agencies": [
+            {
+              "raw_name": "OFFICE OF MANAGEMENT AND BUDGET",
+              "name": "Management and Budget Office",
+              "id": 280,
+              "url": "https://www.federalregister.gov/agencies/management-and-budget-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/280",
+              "parent_id": null,
+              "slug": "management-and-budget-office"
+            },
+            {
+              "raw_name": "Office of Federal Procurement Policy",
+              "name": "Federal Procurement Policy Office",
+              "id": 184,
+              "url": "https://www.federalregister.gov/agencies/federal-procurement-policy-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/184",
+              "parent_id": 280,
+              "slug": "federal-procurement-policy-office"
+            },
+            {
+              "raw_name": "DEPARTMENT OF DEFENSE",
+              "name": "Defense Department",
+              "id": 103,
+              "url": "https://www.federalregister.gov/agencies/defense-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/103",
+              "parent_id": null,
+              "slug": "defense-department"
+            },
+            {
+              "raw_name": "GENERAL SERVICES ADMINISTRATION",
+              "name": "General Services Administration",
+              "id": 210,
+              "url": "https://www.federalregister.gov/agencies/general-services-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/210",
+              "parent_id": null,
+              "slug": "general-services-administration"
+            },
+            {
+              "raw_name": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+              "name": "National Aeronautics and Space Administration",
+              "id": 301,
+              "url": "https://www.federalregister.gov/agencies/national-aeronautics-and-space-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/301",
+              "parent_id": null,
+              "slug": "national-aeronautics-and-space-administration"
+            }
+          ],
+          "docket_ids": [
+            "FAR Case 2026-007, Docket No. FAR-2026-0007, Sequence No. 1"
+          ],
+          "regulation_id_numbers": [
+            "9000-AO92"
+          ],
+          "comment_url": null,
+          "comments_close_on": "2026-07-23",
+          "cfr_references": [
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "3",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "49",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "52",
+              "title": 48
+            }
+          ],
+          "html_url": "https://www.federalregister.gov/documents/2026/06/23/2026-12562/federal-acquisition-regulation-revolutionary-federal-acquisition-regulation-overhaul-parts-3-and-49",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-06-23/pdf/2026-12562.pdf",
+          "citation": "91 FR 37698",
+          "dates": "Interested parties should submit written comments to the Regulatory Secretariat Division at the address shown below on or before July 23, 2026, to be considered in the formation of the final rule.",
+          "effective_on": null,
+          "action": "Proposed rule.",
+          "significant": null
+        }
+      ]
+    },
+    "provenance": "Actualpublished1.0.15 successful console output; parsed replay fixture, not rawprimarybytes."
+  },
+  {
+    "arguments": {
+      "cfr_title": 48,
+      "cfr_part": "52",
+      "term": "commercial",
+      "per_page": 5
+    },
+    "response": {
+      "description": "Documents matching 'commercial' and affecting 48 CFR 52",
+      "count": 634,
+      "total_pages": 127,
+      "next_page_url": "https://www.federalregister.gov/api/v1/documents?conditions%5Bcfr%5D%5Bpart%5D=52&conditions%5Bcfr%5D%5Btitle%5D=48&conditions%5Bterm%5D=commercial&fields%5B%5D=title&fields%5B%5D=document_number&fields%5B%5D=publication_date&fields%5B%5D=type&fields%5B%5D=abstract&fields%5B%5D=agencies&fields%5B%5D=docket_ids&fields%5B%5D=regulation_id_numbers&fields%5B%5D=comment_url&fields%5B%5D=comments_close_on&fields%5B%5D=cfr_references&fields%5B%5D=html_url&fields%5B%5D=pdf_url&fields%5B%5D=citation&fields%5B%5D=dates&fields%5B%5D=effective_on&fields%5B%5D=action&fields%5B%5D=significant&fields%5B%5D=executive_order_number&fields%5B%5D=subtype&fields%5B%5D=signing_date&fields%5B%5D=presidential_document_number&format=json&order=newest&page=2&per_page=5",
+      "results": [
+        {
+          "title": "Federal Acquisition Regulation: Revolutionary FAR Overhaul Parts 8, 12, 13, 15, 38, 44, and 51",
+          "document_number": "2026-19162",
+          "publication_date": "2026-09-18",
+          "type": "Proposed Rule",
+          "abstract": "OFPP, DoD, GSA, and NASA (collectively referred to as the Federal Acquisition Regulatory Council or FAR Council) are proposing to amend the Federal Acquisition Regulation (FAR) to implement Executive Order (E.O.) 14275, Restoring Common Sense to Federal Procurement. The E.O. directs the elimination of excessive acquisition regulations to stop the inefficient use of American taxpayer dollars. The FAR Council is issuing twelve proposed rules that collectively will streamline the FAR in its entirety. This rule proposes revisions to FAR parts 8, 12, 13, 15, 38, 44, 51, and 52.",
+          "agencies": [
+            {
+              "raw_name": "OFFICE OF MANAGEMENT AND BUDGET",
+              "name": "Management and Budget Office",
+              "id": 280,
+              "url": "https://www.federalregister.gov/agencies/management-and-budget-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/280",
+              "parent_id": null,
+              "slug": "management-and-budget-office"
+            },
+            {
+              "raw_name": "Office of Federal Procurement Policy",
+              "name": "Federal Procurement Policy Office",
+              "id": 184,
+              "url": "https://www.federalregister.gov/agencies/federal-procurement-policy-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/184",
+              "parent_id": 280,
+              "slug": "federal-procurement-policy-office"
+            },
+            {
+              "raw_name": "DEPARTMENT OF DEFENSE",
+              "name": "Defense Department",
+              "id": 103,
+              "url": "https://www.federalregister.gov/agencies/defense-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/103",
+              "parent_id": null,
+              "slug": "defense-department"
+            },
+            {
+              "raw_name": "GENERAL SERVICES ADMINISTRATION",
+              "name": "General Services Administration",
+              "id": 210,
+              "url": "https://www.federalregister.gov/agencies/general-services-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/210",
+              "parent_id": null,
+              "slug": "general-services-administration"
+            },
+            {
+              "raw_name": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+              "name": "National Aeronautics and Space Administration",
+              "id": 301,
+              "url": "https://www.federalregister.gov/agencies/national-aeronautics-and-space-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/301",
+              "parent_id": null,
+              "slug": "national-aeronautics-and-space-administration"
+            }
+          ],
+          "docket_ids": [
+            "FAR Case 2026-003, Docket No. FAR-2026-0003, Sequence No. 1"
+          ],
+          "regulation_id_numbers": [
+            "9000-AO88"
+          ],
+          "comment_url": "http://www.regulations.gov/commenton/FAR-2026-0003-0001",
+          "comments_close_on": "2026-10-19",
+          "cfr_references": [
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "8",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "12",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "13",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "15",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "38",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "44",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "51",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "52",
+              "title": 48
+            }
+          ],
+          "html_url": "https://www.federalregister.gov/documents/2026/09/18/2026-19162/federal-acquisition-regulation-revolutionary-far-overhaul-parts-8-12-13-15-38-44-and-51",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-18/pdf/2026-19162.pdf",
+          "citation": "91 FR 59406",
+          "dates": "Interested parties should submit written comments to the Regulatory Secretariat Division at the address shown below on or before October 19, 2026, to be considered in the formation of the final rule.",
+          "effective_on": null,
+          "action": "Proposed rule.",
+          "significant": null
+        },
+        {
+          "title": "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Overhaul Parts 16, 17, and 35",
+          "document_number": "2026-19160",
+          "publication_date": "2026-09-18",
+          "type": "Proposed Rule",
+          "abstract": "OFPP, DoD, GSA, and NASA (collectively referred to as the Federal Acquisition Regulatory Council or FAR Council) are proposing to amend the Federal Acquisition Regulation (FAR) to implement Executive Order (E.O.) 14275, Restoring Common Sense to Federal Procurement. The E.O. directs the elimination of excessive acquisition regulations to stop the inefficient use of American taxpayer dollars. The FAR Council is issuing twelve proposed rules that collectively, if finalized, would streamline the FAR in its entirety. This rule proposes revisions to FAR part 16, Types of Contracts, part 17, Special Contracting Methods, part 35, Research and Development Contracting, and part 52, Solicitation Provisions and Contract Clauses.",
+          "agencies": [
+            {
+              "raw_name": "OFFICE OF MANAGEMENT AND BUDGET",
+              "name": "Management and Budget Office",
+              "id": 280,
+              "url": "https://www.federalregister.gov/agencies/management-and-budget-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/280",
+              "parent_id": null,
+              "slug": "management-and-budget-office"
+            },
+            {
+              "raw_name": "Office of Federal Procurement Policy",
+              "name": "Federal Procurement Policy Office",
+              "id": 184,
+              "url": "https://www.federalregister.gov/agencies/federal-procurement-policy-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/184",
+              "parent_id": 280,
+              "slug": "federal-procurement-policy-office"
+            },
+            {
+              "raw_name": "DEPARTMENT OF DEFENSE",
+              "name": "Defense Department",
+              "id": 103,
+              "url": "https://www.federalregister.gov/agencies/defense-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/103",
+              "parent_id": null,
+              "slug": "defense-department"
+            },
+            {
+              "raw_name": "GENERAL SERVICES ADMINISTRATION",
+              "name": "General Services Administration",
+              "id": 210,
+              "url": "https://www.federalregister.gov/agencies/general-services-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/210",
+              "parent_id": null,
+              "slug": "general-services-administration"
+            },
+            {
+              "raw_name": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+              "name": "National Aeronautics and Space Administration",
+              "id": 301,
+              "url": "https://www.federalregister.gov/agencies/national-aeronautics-and-space-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/301",
+              "parent_id": null,
+              "slug": "national-aeronautics-and-space-administration"
+            }
+          ],
+          "docket_ids": [
+            "FAR Case 2026-006, Docket No. FAR-2026-0006, Sequence No. 1"
+          ],
+          "regulation_id_numbers": [
+            "9000-AO91"
+          ],
+          "comment_url": "http://www.regulations.gov/commenton/FAR-2026-0006-0001",
+          "comments_close_on": "2026-10-19",
+          "cfr_references": [
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "16",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "17",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "35",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "52",
+              "title": 48
+            }
+          ],
+          "html_url": "https://www.federalregister.gov/documents/2026/09/18/2026-19160/federal-acquisition-regulation-revolutionary-federal-acquisition-regulation-overhaul-parts-16-17-and",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-18/pdf/2026-19160.pdf",
+          "citation": "91 FR 59476",
+          "dates": "Interested parties should submit written comments to the Regulatory Secretariat Division at the address shown below on or before October 19, 2026, to be considered in the formation of the final rule.",
+          "effective_on": null,
+          "action": "Proposed rule.",
+          "significant": null
+        },
+        {
+          "title": "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Overhaul Parts 9, 27, and 47",
+          "document_number": "2026-19159",
+          "publication_date": "2026-09-18",
+          "type": "Proposed Rule",
+          "abstract": "OFPP, DoD, GSA, and NASA (collectively referred to as the Federal Acquisition Regulatory Council or FAR Council) are proposing to amend the Federal Acquisition Regulation (FAR) to implement Executive Order (E.O.) 14275, Restoring Common Sense to Federal Procurement. The E.O. directs the elimination of excessive acquisition regulations to stop the inefficient use of American taxpayer dollars. The FAR Council is issuing twelve proposed rules that collectively, if finalized, would streamline the FAR in its entirety. This rule proposes revisions to FAR parts 9, 27, 47, and 52.",
+          "agencies": [
+            {
+              "raw_name": "OFFICE OF MANAGEMENT AND BUDGET",
+              "name": "Management and Budget Office",
+              "id": 280,
+              "url": "https://www.federalregister.gov/agencies/management-and-budget-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/280",
+              "parent_id": null,
+              "slug": "management-and-budget-office"
+            },
+            {
+              "raw_name": "Office of Federal Procurement Policy",
+              "name": "Federal Procurement Policy Office",
+              "id": 184,
+              "url": "https://www.federalregister.gov/agencies/federal-procurement-policy-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/184",
+              "parent_id": 280,
+              "slug": "federal-procurement-policy-office"
+            },
+            {
+              "raw_name": "DEPARTMENT OF DEFENSE",
+              "name": "Defense Department",
+              "id": 103,
+              "url": "https://www.federalregister.gov/agencies/defense-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/103",
+              "parent_id": null,
+              "slug": "defense-department"
+            },
+            {
+              "raw_name": "GENERAL SERVICES ADMINISTRATION",
+              "name": "General Services Administration",
+              "id": 210,
+              "url": "https://www.federalregister.gov/agencies/general-services-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/210",
+              "parent_id": null,
+              "slug": "general-services-administration"
+            },
+            {
+              "raw_name": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+              "name": "National Aeronautics and Space Administration",
+              "id": 301,
+              "url": "https://www.federalregister.gov/agencies/national-aeronautics-and-space-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/301",
+              "parent_id": null,
+              "slug": "national-aeronautics-and-space-administration"
+            }
+          ],
+          "docket_ids": [
+            "FAR Case 2026-011, Docket No. FAR-2026-0011, Sequence No. 1"
+          ],
+          "regulation_id_numbers": [
+            "9000-AO84"
+          ],
+          "comment_url": "http://www.regulations.gov/commenton/FAR-2026-0011-0001",
+          "comments_close_on": "2026-10-19",
+          "cfr_references": [
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "9",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "27",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "47",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "52",
+              "title": 48
+            }
+          ],
+          "html_url": "https://www.federalregister.gov/documents/2026/09/18/2026-19159/federal-acquisition-regulation-revolutionary-federal-acquisition-regulation-overhaul-parts-9-27-and",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-18/pdf/2026-19159.pdf",
+          "citation": "91 FR 59584",
+          "dates": "Interested parties should submit written comments to the Regulatory Secretariat Division at the address shown below on or before October 19, 2026, to be considered in the formation of the final rule.",
+          "effective_on": null,
+          "action": "Proposed rule.",
+          "significant": null
+        },
+        {
+          "title": "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Overhaul Parts 14, 28, 36, and 52",
+          "document_number": "2026-19158",
+          "publication_date": "2026-09-18",
+          "type": "Proposed Rule",
+          "abstract": "OFPP, DoD, GSA, and NASA (collectively referred to as the Federal Acquisition Regulatory Council or FAR Council) are proposing to amend the Federal Acquisition Regulation (FAR) to implement Executive Order (E.O.) 14275, Restoring Common Sense to Federal Procurement. The E.O. directs the elimination of excessive acquisition regulations to stop the inefficient use of American taxpayer dollars. The FAR Council is issuing twelve proposed rules that collectively will streamline the FAR in its entirety. This rule proposes revisions to FAR parts 14, 28, 36, and 52.",
+          "agencies": [
+            {
+              "raw_name": "OFFICE OF MANAGEMENT AND BUDGET",
+              "name": "Management and Budget Office",
+              "id": 280,
+              "url": "https://www.federalregister.gov/agencies/management-and-budget-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/280",
+              "parent_id": null,
+              "slug": "management-and-budget-office"
+            },
+            {
+              "raw_name": "Office of Federal Procurement Policy",
+              "name": "Federal Procurement Policy Office",
+              "id": 184,
+              "url": "https://www.federalregister.gov/agencies/federal-procurement-policy-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/184",
+              "parent_id": 280,
+              "slug": "federal-procurement-policy-office"
+            },
+            {
+              "raw_name": "DEPARTMENT OF DEFENSE",
+              "name": "Defense Department",
+              "id": 103,
+              "url": "https://www.federalregister.gov/agencies/defense-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/103",
+              "parent_id": null,
+              "slug": "defense-department"
+            },
+            {
+              "raw_name": "GENERAL SERVICES ADMINISTRATION",
+              "name": "General Services Administration",
+              "id": 210,
+              "url": "https://www.federalregister.gov/agencies/general-services-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/210",
+              "parent_id": null,
+              "slug": "general-services-administration"
+            },
+            {
+              "raw_name": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+              "name": "National Aeronautics and Space Administration",
+              "id": 301,
+              "url": "https://www.federalregister.gov/agencies/national-aeronautics-and-space-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/301",
+              "parent_id": null,
+              "slug": "national-aeronautics-and-space-administration"
+            }
+          ],
+          "docket_ids": [
+            "FAR Case 2026-010, Docket No. FAR-2026-0010, Sequence No. 1"
+          ],
+          "regulation_id_numbers": [
+            "9000-AO83"
+          ],
+          "comment_url": "http://www.regulations.gov/commenton/FAR-2026-0010-0001",
+          "comments_close_on": "2026-10-19",
+          "cfr_references": [
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "14",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "28",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "36",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "52",
+              "title": 48
+            }
+          ],
+          "html_url": "https://www.federalregister.gov/documents/2026/09/18/2026-19158/federal-acquisition-regulation-revolutionary-federal-acquisition-regulation-overhaul-parts-14-28-36",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-09-18/pdf/2026-19158.pdf",
+          "citation": "91 FR 59534",
+          "dates": "Interested parties should submit written comments to the Regulatory Secretariat Division at the address shown below on or before October 19, 2026, to be considered in the formation of the final rule.",
+          "effective_on": null,
+          "action": "Proposed rule.",
+          "significant": null
+        },
+        {
+          "title": "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Overhaul Parts 3 and 49",
+          "document_number": "2026-12562",
+          "publication_date": "2026-06-23",
+          "type": "Proposed Rule",
+          "abstract": "OFPP, DoD, GSA, and NASA (collectively referred to as the Federal Acquisition Regulatory Council or FAR Council) are proposing to amend the Federal Acquisition Regulation (FAR) to implement Executive Order (E.O.) 14275, Restoring Common Sense to Federal Procurement. The E.O. directs the elimination of excessive acquisition regulations to stop the inefficient use of American taxpayer dollars. The FAR Council is issuing twelve proposed rules that collectively will streamline the FAR in its entirety. This rule proposes revisions to FAR parts 3 and 49.",
+          "agencies": [
+            {
+              "raw_name": "OFFICE OF MANAGEMENT AND BUDGET",
+              "name": "Management and Budget Office",
+              "id": 280,
+              "url": "https://www.federalregister.gov/agencies/management-and-budget-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/280",
+              "parent_id": null,
+              "slug": "management-and-budget-office"
+            },
+            {
+              "raw_name": "Office of Federal Procurement Policy",
+              "name": "Federal Procurement Policy Office",
+              "id": 184,
+              "url": "https://www.federalregister.gov/agencies/federal-procurement-policy-office",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/184",
+              "parent_id": 280,
+              "slug": "federal-procurement-policy-office"
+            },
+            {
+              "raw_name": "DEPARTMENT OF DEFENSE",
+              "name": "Defense Department",
+              "id": 103,
+              "url": "https://www.federalregister.gov/agencies/defense-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/103",
+              "parent_id": null,
+              "slug": "defense-department"
+            },
+            {
+              "raw_name": "GENERAL SERVICES ADMINISTRATION",
+              "name": "General Services Administration",
+              "id": 210,
+              "url": "https://www.federalregister.gov/agencies/general-services-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/210",
+              "parent_id": null,
+              "slug": "general-services-administration"
+            },
+            {
+              "raw_name": "NATIONAL AERONAUTICS AND SPACE ADMINISTRATION",
+              "name": "National Aeronautics and Space Administration",
+              "id": 301,
+              "url": "https://www.federalregister.gov/agencies/national-aeronautics-and-space-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/301",
+              "parent_id": null,
+              "slug": "national-aeronautics-and-space-administration"
+            }
+          ],
+          "docket_ids": [
+            "FAR Case 2026-007, Docket No. FAR-2026-0007, Sequence No. 1"
+          ],
+          "regulation_id_numbers": [
+            "9000-AO92"
+          ],
+          "comment_url": null,
+          "comments_close_on": "2026-07-23",
+          "cfr_references": [
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "3",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "49",
+              "title": 48
+            },
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "52",
+              "title": 48
+            }
+          ],
+          "html_url": "https://www.federalregister.gov/documents/2026/06/23/2026-12562/federal-acquisition-regulation-revolutionary-federal-acquisition-regulation-overhaul-parts-3-and-49",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-06-23/pdf/2026-12562.pdf",
+          "citation": "91 FR 37698",
+          "dates": "Interested parties should submit written comments to the Regulatory Secretariat Division at the address shown below on or before July 23, 2026, to be considered in the formation of the final rule.",
+          "effective_on": null,
+          "action": "Proposed rule.",
+          "significant": null
+        }
+      ],
+      "max_reachable_page": 50,
+      "paging_note": "Only pages 1-50 can be read (250 of 634 documents at per_page=5). Use per_page=100 and/or narrower publication date ranges to reach the rest."
+    },
+    "provenance": "Actualpublished1.0.15 successful console output; parsed replay fixture, not rawprimarybytes."
+  },
+  {
+    "arguments": {
+      "agencies": [
+        "federal-motor-carrier-safety-administration"
+      ],
+      "pub_date_gte": "2026-10-01",
+      "pub_date_lte": "2026-10-10",
+      "page": 1,
+      "per_page": 100
+    },
+    "response": {
+      "description": "Documents published from 10/01/2026 to 10/10/2026 and from Federal Motor Carrier Safety Administration",
+      "count": 5,
+      "total_pages": 1,
+      "results": [
+        {
+          "title": "Parts and Accessories Necessary for Safe Operation; Application for Exemption From Aurora Operations, Inc (USDOT #341156)",
+          "document_number": "2026-20734",
+          "publication_date": "2026-10-09",
+          "type": "Notice",
+          "abstract": "FMCSA announces its decision to grant a limited five-year exemption to Aurora Operations, Inc. (Aurora) and other motor carriers operating Level 4 automated driving system (ADS)-equipped commercial motor vehicles (CMVs), with prior notice to FMCSA, from compliance with the warning device placement requirements, the steady-burning lamp requirements, and the requirements for the types and number of warning devices. This exemption permits motor carriers to use cab-mounted warning beacons in lieu of traditional warning devices on Level 4 ADS- equipped CMVs. The Agency has determined that granting the exemption would likely achieve a level of safety equivalent to or greater than the level of safety provided by the regulation.",
+          "agencies": [
+            {
+              "raw_name": "DEPARTMENT OF TRANSPORTATION",
+              "name": "Transportation Department",
+              "id": 492,
+              "url": "https://www.federalregister.gov/agencies/transportation-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/492",
+              "parent_id": null,
+              "slug": "transportation-department"
+            },
+            {
+              "raw_name": "Federal Motor Carrier Safety Administration",
+              "name": "Federal Motor Carrier Safety Administration",
+              "id": 181,
+              "url": "https://www.federalregister.gov/agencies/federal-motor-carrier-safety-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/181",
+              "parent_id": 492,
+              "slug": "federal-motor-carrier-safety-administration"
+            }
+          ],
+          "docket_ids": [
+            "Docket No. FMCSA-2026-0958"
+          ],
+          "regulation_id_numbers": [],
+          "comment_url": null,
+          "comments_close_on": null,
+          "cfr_references": [],
+          "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20734/parts-and-accessories-necessary-for-safe-operation-application-for-exemption-from-aurora-operations",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-10-09/pdf/2026-20734.pdf",
+          "citation": "91 FR 64736",
+          "dates": "The exemption is effective October 7, 2026 and expires October 7, 2031.",
+          "effective_on": "2026-10-07",
+          "action": "Notice of final disposition; grant of application for exemption.",
+          "significant": null
+        },
+        {
+          "title": "Qualification of Drivers; Commercial Vehicle Safety Alliance; Application for Exemption",
+          "document_number": "2026-20649",
+          "publication_date": "2026-10-08",
+          "type": "Notice",
+          "abstract": "FMCSA announces its decision to renew provisionally for one year an exemption to allow drivers with a commercial learner's permit (CLP) or commercial driver's license (CDL) issued by the State of Alaska, and their employers, to rely on a paper copy of the medical examiner's certificate (MEC) as proof of the driver's medical certification for up to 60 days after the MEC was issued. Alaska is the only State that has not implemented the Medical Examiner's Certification Integration (NRII) final rule. Drivers licensed in all other States and the District of Columbia, and their employers, may no longer rely on the paper MEC as proof of the driver's medical certification for any period of time as of October 12, 2026. The provisional exemption renewal for the State of Alaska is limited to one year.",
+          "agencies": [
+            {
+              "raw_name": "DEPARTMENT OF TRANSPORTATION",
+              "name": "Transportation Department",
+              "id": 492,
+              "url": "https://www.federalregister.gov/agencies/transportation-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/492",
+              "parent_id": null,
+              "slug": "transportation-department"
+            },
+            {
+              "raw_name": "Federal Motor Carrier Safety Administration",
+              "name": "Federal Motor Carrier Safety Administration",
+              "id": 181,
+              "url": "https://www.federalregister.gov/agencies/federal-motor-carrier-safety-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/181",
+              "parent_id": 492,
+              "slug": "federal-motor-carrier-safety-administration"
+            }
+          ],
+          "docket_ids": [
+            "Docket No. FMCSA-2026-0265"
+          ],
+          "regulation_id_numbers": [],
+          "comment_url": null,
+          "comments_close_on": null,
+          "cfr_references": [],
+          "html_url": "https://www.federalregister.gov/documents/2026/10/08/2026-20649/qualification-of-drivers-commercial-vehicle-safety-alliance-application-for-exemption",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-10-08/pdf/2026-20649.pdf",
+          "citation": "91 FR 64454",
+          "dates": "The exemption is effective October 12, 2026 and expires October 12, 2027.",
+          "effective_on": "2026-10-12",
+          "action": "Notice of provisional renewal of exemption; request for comments.",
+          "significant": null
+        },
+        {
+          "title": "Agency Information Collection Activities; New Information Collection: Hours of Service of Drivers; Pilot Program To Allow Commercial Drivers To Split Sleeper Berth Time",
+          "document_number": "2026-20524",
+          "publication_date": "2026-10-07",
+          "type": "Notice",
+          "abstract": "In accordance with the Paperwork Reduction Act of 1995, the Federal Motor Carrier Safety Administration (FMCSA) announces its plan to submit the Information Collection Request (ICR) described below to the Office of Management and Budget (OMB) for review and approval and invites public comment. This notice invites comments on a proposed information collection titled Hours of Service of Drivers: Pilot Program to Allow Commercial Drivers to Split Sleeper Berth Time. This research study will collect data on commercial motor vehicle (CMV) drivers to examine whether more-flexible sleeper berth (FSB) options improve the working conditions and quality of life of America's truck drivers and result in an equivalent or greater level of safety relative to operations under the current regulations. Approximately 256 CMV drivers will provide data in the study. The study will provide FMCSA with data to examine driver fatigue and driving performance while operating under current hours of service (HOS) regulations and while operating under FSB exemptions.",
+          "agencies": [
+            {
+              "raw_name": "DEPARTMENT OF TRANSPORTATION",
+              "name": "Transportation Department",
+              "id": 492,
+              "url": "https://www.federalregister.gov/agencies/transportation-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/492",
+              "parent_id": null,
+              "slug": "transportation-department"
+            },
+            {
+              "raw_name": "Federal Motor Carrier Safety Administration",
+              "name": "Federal Motor Carrier Safety Administration",
+              "id": 181,
+              "url": "https://www.federalregister.gov/agencies/federal-motor-carrier-safety-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/181",
+              "parent_id": 492,
+              "slug": "federal-motor-carrier-safety-administration"
+            }
+          ],
+          "docket_ids": [
+            "Docket No. FMCSA-2026-2080"
+          ],
+          "regulation_id_numbers": [],
+          "comment_url": "http://www.regulations.gov/commenton/FMCSA-2026-2080-0001",
+          "comments_close_on": "2026-12-07",
+          "cfr_references": [],
+          "html_url": "https://www.federalregister.gov/documents/2026/10/07/2026-20524/agency-information-collection-activities-new-information-collection-hours-of-service-of-drivers",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-10-07/pdf/2026-20524.pdf",
+          "citation": "91 FR 64214",
+          "dates": "Comments on this notice must be received on or before December 7, 2026.",
+          "effective_on": null,
+          "action": "Notice and request for comments.",
+          "significant": null
+        },
+        {
+          "title": "Agency Information Collection Activities; New Information Collection: Hours of Service of Drivers: Pilot Program To Allow Commercial Drivers To Pause Their 14-Hour Driving Window",
+          "document_number": "2026-20476",
+          "publication_date": "2026-10-06",
+          "type": "Notice",
+          "abstract": "In accordance with the Paperwork Reduction Act of 1995, FMCSA announces its plan to submit the Information Collection Request (ICR) described below to the Office of Management and Budget (OMB) for review and approval and invites public comment. This notice invites comments on a proposed information collection titled Hours of Service of Drivers: Pilot Program to Allow Commercial Drivers to Pause Their 14- Hour Driving Window. This research study will collect data on commercial motor vehicle (CMV) drivers to examine if extending the 14- hour \"driving window\" with up to 3 hours of off duty, sleeper berth, or on-duty/not driving time (provided it is taken at the location of cargo delivery or pickup) improves the working conditions and quality of life of America's truck drivers and result in an equivalent or greater level of safety relative to operations under the current regulations. Approximately 256 CMV drivers will provide data in the study. The study will provide FMCSA with data to examine driver fatigue and driving performance while operating under current hours of service (HOS) regulations and while operating under split duty period (SDP) exemptions.",
+          "agencies": [
+            {
+              "raw_name": "DEPARTMENT OF TRANSPORTATION",
+              "name": "Transportation Department",
+              "id": 492,
+              "url": "https://www.federalregister.gov/agencies/transportation-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/492",
+              "parent_id": null,
+              "slug": "transportation-department"
+            },
+            {
+              "raw_name": "Federal Motor Carrier Safety Administration",
+              "name": "Federal Motor Carrier Safety Administration",
+              "id": 181,
+              "url": "https://www.federalregister.gov/agencies/federal-motor-carrier-safety-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/181",
+              "parent_id": 492,
+              "slug": "federal-motor-carrier-safety-administration"
+            }
+          ],
+          "docket_ids": [
+            "Docket No. FMCSA-2026-2081"
+          ],
+          "regulation_id_numbers": [],
+          "comment_url": "http://www.regulations.gov/commenton/FMCSA-2026-2081-0001",
+          "comments_close_on": "2026-12-07",
+          "cfr_references": [],
+          "html_url": "https://www.federalregister.gov/documents/2026/10/06/2026-20476/agency-information-collection-activities-new-information-collection-hours-of-service-of-drivers",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-10-06/pdf/2026-20476.pdf",
+          "citation": "91 FR 63640",
+          "dates": "Comments on this notice must be received on or before December 7, 2026.",
+          "effective_on": null,
+          "action": "Notice and request for comments.",
+          "significant": null
+        },
+        {
+          "title": "Clarification to the Applicability of Emergency Exemptions; Response to Petitions for Reconsideration",
+          "document_number": "2026-20325",
+          "publication_date": "2026-10-05",
+          "type": "Rule",
+          "abstract": "FMCSA amends its emergency declaration regulations to revise from 14 days to 30 days the length of the relief automatically triggered subsequent to a regional declaration of emergency by a Governor of a State, the Governor's authorized representative, or FMCSA. This action is in response to several petitions for reconsideration received after publication of a final rule in October 2023.",
+          "agencies": [
+            {
+              "raw_name": "DEPARTMENT OF TRANSPORTATION",
+              "name": "Transportation Department",
+              "id": 492,
+              "url": "https://www.federalregister.gov/agencies/transportation-department",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/492",
+              "parent_id": null,
+              "slug": "transportation-department"
+            },
+            {
+              "raw_name": "Federal Motor Carrier Safety Administration",
+              "name": "Federal Motor Carrier Safety Administration",
+              "id": 181,
+              "url": "https://www.federalregister.gov/agencies/federal-motor-carrier-safety-administration",
+              "json_url": "https://www.federalregister.gov/api/v1/agencies/181",
+              "parent_id": 492,
+              "slug": "federal-motor-carrier-safety-administration"
+            }
+          ],
+          "docket_ids": [
+            "Docket No. FMCSA-2025-0124"
+          ],
+          "regulation_id_numbers": [
+            "2126-AC77"
+          ],
+          "comment_url": null,
+          "comments_close_on": null,
+          "cfr_references": [
+            {
+              "chapter": null,
+              "citation_url": null,
+              "part": "390",
+              "title": 49
+            }
+          ],
+          "html_url": "https://www.federalregister.gov/documents/2026/10/05/2026-20325/clarification-to-the-applicability-of-emergency-exemptions-response-to-petitions-for-reconsideration",
+          "pdf_url": "https://www.govinfo.gov/content/pkg/FR-2026-10-05/pdf/2026-20325.pdf",
+          "citation": "91 FR 63156",
+          "dates": "Effective October 5, 2026.",
+          "effective_on": "2026-10-05",
+          "action": "Final rule.",
+          "significant": false
+        }
+      ]
+    },
+    "provenance": "Actualpublished1.0.15 successful console output; parsed replay fixture, not rawprimarybytes."
+  }
+]

@@ -21,6 +21,7 @@ from typing import Any, Literal
 
 import httpx
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__
 from ._throughput import FederalRegisterPacer
@@ -41,6 +42,16 @@ mcp = MCPServer("federal-register", version=__version__)
 # Validators
 # ---------------------------------------------------------------------------
 
+
+class _UserInputError(ValueError, ToolError):
+    """Deliberate input correction, visible to clients across supported SDKs.
+
+    ValueError compatibility is retained for direct validator callers. Only
+    explicit validation sites use this marker; unrelated parsing, transport
+    and programming exceptions keep the SDK's unexpected-error handling.
+    """
+
+
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _EARLIEST_FR_DATE = "1994-01-01"
 
@@ -49,22 +60,22 @@ def _validate_date(value: str | None, field_name: str) -> str | None:
     if value is None:
         return None
     if not _DATE_RE.match(value):
-        raise ValueError(
+        raise _UserInputError(
             f"{field_name} must be in YYYY-MM-DD format (e.g. '2026-01-15'). "
             f"Got {value!r}. ISO 8601 datetimes and 'YYYY/MM/DD' are rejected."
         )
     try:
         date.fromisoformat(value)
     except ValueError as exc:
-        raise ValueError(f"{field_name}={value!r} is not a valid calendar date: {exc}") from exc
+        raise _UserInputError(f"{field_name}={value!r} is not a valid calendar date: {exc}") from exc
     return value
 
 
 def _clamp(value: int, *, field: str, lo: int, hi: int) -> int:
     if value < lo:
-        raise ValueError(f"{field} must be >= {lo}. Got {value}.")
+        raise _UserInputError(f"{field} must be >= {lo}. Got {value}.")
     if value > hi:
-        raise ValueError(
+        raise _UserInputError(
             f"{field} exceeds maximum of {hi}. Got {value}. Paginate with 'page' instead."
         )
     return value
@@ -74,7 +85,7 @@ def _reject_empty_list(value: list[Any] | None, field: str) -> list[Any] | None:
     if value is None:
         return None
     if len(value) == 0:
-        raise ValueError(
+        raise _UserInputError(
             f"{field}=[] is silently ignored by the API (matches everything). "
             f"Omit {field} entirely to search without it."
         )
@@ -83,7 +94,7 @@ def _reject_empty_list(value: list[Any] | None, field: str) -> list[Any] | None:
 
 def _check_date_range(gte: str | None, lte: str | None, field_pair: str) -> None:
     if gte and lte and gte > lte:
-        raise ValueError(
+        raise _UserInputError(
             f"{field_pair}: gte ({gte}) is after lte ({lte}). "
             f"Check parameter order (gte = start / lte = end)."
         )
@@ -100,7 +111,7 @@ def _strip_or_none(value: str | None) -> str | None:
 def _require_min_length(value: str, *, field: str, minimum: int) -> str:
     stripped = value.strip()
     if len(stripped) < minimum:
-        raise ValueError(
+        raise _UserInputError(
             f"{field} must be at least {minimum} characters after trimming whitespace. "
             f"Got {value!r} ({len(stripped)} chars). Short queries match too broadly "
             f"and return unrelated results."
@@ -112,7 +123,7 @@ def _clamp_str_len(value: str | None, *, field: str, maximum: int) -> str | None
     if value is None:
         return None
     if len(value) > maximum:
-        raise ValueError(
+        raise _UserInputError(
             f"{field} exceeds maximum length of {maximum} chars. "
             f"Got {len(value)}. Very long query strings cause HTTP 414 errors."
         )
@@ -136,14 +147,14 @@ def _validate_doc_number(value: str, *, field: str = "document_number") -> str:
     # Round 5 fix: handle None and non-string inputs cleanly
     # instead of crashing with AttributeError.
     if value is None:
-        raise ValueError(f"{field} cannot be empty.")
+        raise _UserInputError(f"{field} cannot be empty.")
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be a string. Got {type(value).__name__}.")
+        raise _UserInputError(f"{field} must be a string. Got {type(value).__name__}.")
     stripped = value.strip()
     if not stripped:
-        raise ValueError(f"{field} cannot be empty.")
+        raise _UserInputError(f"{field} cannot be empty.")
     if not _DOC_NUMBER_RE.match(stripped):
-        raise ValueError(
+        raise _UserInputError(
             f"{field}={value!r} has invalid format. Accepted shapes: modern "
             f"'YYYY-NNNNN' (e.g. '2026-07731'), legacy pre-2011 forms such as "
             f"'E9-12940', 'X94-70302', or '94-16174', and correction numbers "
@@ -157,7 +168,7 @@ def _warn_pre_fr_date(value: str | None, field: str) -> str | None:
     if value is None:
         return None
     if value < _EARLIEST_FR_DATE:
-        raise ValueError(
+        raise _UserInputError(
             f"{field}={value!r} predates the Federal Register API (earliest date: "
             f"{_EARLIEST_FR_DATE}). The API will return empty results for pre-1994 dates."
         )
@@ -179,7 +190,7 @@ def _validate_cfr(
     if cfr_title is None and cfr_part is None:
         return None, None
     if cfr_part is not None and cfr_title is None:
-        raise ValueError(
+        raise _UserInputError(
             "cfr_part requires cfr_title (the API silently ignores a part "
             "filter without its CFR title). Pass both, e.g. cfr_title=48, "
             "cfr_part='52'."
@@ -187,13 +198,13 @@ def _validate_cfr(
     title_str: str | None = None
     if cfr_title is not None:
         if not 1 <= cfr_title <= 50:
-            raise ValueError(f"cfr_title must be between 1 and 50. Got {cfr_title}.")
+            raise _UserInputError(f"cfr_title must be between 1 and 50. Got {cfr_title}.")
         title_str = str(cfr_title)
     part_str: str | None = None
     if cfr_part is not None:
         part_str = str(cfr_part).strip()
         if not _CFR_PART_RE.match(part_str):
-            raise ValueError(
+            raise _UserInputError(
                 f"cfr_part={cfr_part!r} must be a part number ('52') or a "
                 f"part range ('1-50'). Section syntax like '52.212-4' is not "
                 f"accepted; pass the part ('52')."
@@ -390,7 +401,7 @@ def _validate_no_control_chars(value: Any, *, field: str) -> Any:
     if value is None:
         return None
     if isinstance(value, str) and _CONTROL_CHARS_RE.search(value):
-        raise ValueError(
+        raise _UserInputError(
             f"{field}={value!r} contains control characters "
             f"(null byte / newline / tab / CR). Remove them and retry."
         )
@@ -407,7 +418,7 @@ def _reject_empty_strings_in_list(
         return None
     cleaned = [v for v in value if v is not None and str(v).strip()]
     if not cleaned:
-        raise ValueError(
+        raise _UserInputError(
             f"{field}={value!r} contains only empty / whitespace strings. "
             f"Pass real values or omit the parameter."
         )
@@ -721,11 +732,11 @@ async def search_documents(
         presidential_document_type, "presidential_document_type"
     )
     if executive_order_number is not None and executive_order_number < 1:
-        raise ValueError(
+        raise _UserInputError(
             f"executive_order_number must be a positive EO number (e.g. 14275). Got {executive_order_number}."
         )
     if far_council and agencies:
-        raise ValueError(
+        raise _UserInputError(
             "far_council=True cannot be combined with agencies: it already "
             "selects documents filed jointly by DoD, GSA and NASA. Drop agencies."
         )
@@ -742,7 +753,7 @@ async def search_documents(
         correction is not None, significant is not None,
         cfr_title_str, presidential_document_type, executive_order_number,
     ]):
-        raise ValueError(
+        raise _UserInputError(
             "search_documents requires at least one filter. Typical: "
             "term=<keywords>, agencies=[<slug>], doc_types=['RULE'], or a "
             "publication_date range. Calling without filters silently "
@@ -765,7 +776,7 @@ async def search_documents(
         _drop_null_presidential_fields(data)
         return data
     if page > _MAX_API_PAGE:
-        raise ValueError(
+        raise _UserInputError(
             f"page={page} is past the Federal Register's 50-page limit: the API "
             f"returns page 1 again for any later page. Use per_page=100 (pages "
             f"1-50 then reach 5,000 documents) or split the publication date "
@@ -831,9 +842,9 @@ async def get_documents_batch(
     to keep batches small; get_document returns it.
     """
     if not document_numbers:
-        raise ValueError("document_numbers list cannot be empty.")
+        raise _UserInputError("document_numbers list cannot be empty.")
     if len(document_numbers) > 20:
-        raise ValueError(f"Max 20 documents per batch. Got {len(document_numbers)}.")
+        raise _UserInputError(f"Max 20 documents per batch. Got {len(document_numbers)}.")
 
     validated = [_validate_doc_number(d, field=f"document_numbers[{i}]")
                  for i, d in enumerate(document_numbers)]
@@ -917,7 +928,7 @@ async def get_facet_counts(
         agencies, doc_types, term, pub_date_gte, pub_date_lte, cfr_title_str,
         presidential_document_type,
     ]):
-        raise ValueError(
+        raise _UserInputError(
             "get_facet_counts requires at least one filter "
             "(agencies, doc_types, term, pub_date_gte/lte, or cfr_title). "
             "An unfiltered query returns all-time aggregates and is rarely useful."
