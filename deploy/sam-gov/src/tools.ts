@@ -429,6 +429,9 @@ export async function getOpportunity(db: Database, args: Args) {
   }
   const notes = ["Attachments and amendment documents are not included; open the sam.gov link for them."];
   if (row.is_latest === 0) notes.unshift("A newer version of this notice exists; related_notices entries with latest_version true are current.");
+  if (/T\d{2}:\d{2}(:\d{2})?$/.test(row.response_deadline ?? "")) {
+    notes.push(`SAM.gov's file gives this response deadline without a time zone. It is most likely the contracting office's local time${row.office_state ? ` (office in ${row.office_state})` : ""}; confirm on the sam.gov page.`);
+  }
   if (relatedTotal > related.length) notes.push(`${relatedTotal} other notices share this solicitation number; ${related.length} are listed.`);
   const contact = (prefix: string) => {
     const c = {title: row[`${prefix}_title`], name: row[`${prefix}_name`], email: row[`${prefix}_email`], phone: row[`${prefix}_phone`], fax: row[`${prefix}_fax`]};

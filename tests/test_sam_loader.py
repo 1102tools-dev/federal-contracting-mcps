@@ -100,6 +100,21 @@ def test_deadlines_convert_to_utc_with_eastern_default():
     assert loader.utc_deadline("TBD") is None
 
 
+def test_deadlines_without_an_offset_use_the_contracting_office_time_zone():
+    # HC101326QA336 (DISA, Scott AFB IL): sam.gov's API gives responseTz America/Chicago.
+    rows = [notice("1d5b93726acd4b6ab971f09a16948a67", ResponseDeadLine="2026-10-12T16:00:00", State="IL"),
+            notice("449ef17b" + "0" * 24, ResponseDeadLine="2026-10-16T08:00:00", State="CA"),
+            notice("fccafe1a" + "0" * 24, ResponseDeadLine="2026-11-05T10:00:00", State="AE"),
+            notice("df1edaa1" + "0" * 24, ResponseDeadLine="2026-11-21T21:00:00", State="PA"),
+            notice("e" * 32, ResponseDeadLine="2026-10-12T16:00:00", State=""),
+            notice("f" * 32, ResponseDeadLine="2026-10-12T16:00:00-04:00", State="IL")]
+    parsed, _ = loader.parse(csv_bytes(rows), TODAY.isoformat())
+    utc = {i[:8]: r["response_deadline_utc"] for i, r in parsed.items()}
+    assert utc == {"1d5b9372": "2026-10-12T21:00:00Z", "449ef17b": "2026-10-16T15:00:00Z",
+                   "fccafe1a": "2026-11-05T09:00:00Z", "df1edaa1": "2026-11-22T02:00:00Z",
+                   "e" * 8: "2026-10-12T20:00:00Z", "f" * 8: "2026-10-12T20:00:00Z"}
+
+
 def test_parse_skips_inactive_blank_and_past_archive_notices():
     rows = [
         notice("a" * 32, SetASideCode='["SBA"]', ResponseDeadLine="2026-10-01"),

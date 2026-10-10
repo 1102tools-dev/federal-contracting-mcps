@@ -219,6 +219,15 @@ test("get_opportunity returns full details, related notices, and handles misses"
   await assert.rejects(getOpportunity(db, {id: "x"}), /Unknown argument/);
 });
 
+test("get_opportunity says when the deadline has no time zone", async () => {
+  // HC101326QA336: the file says 2026-10-12T16:00:00; sam.gov's API says America/Chicago.
+  const disa = database(true, [notice(30, {office_state: "IL", response_deadline: "2026-10-12T16:00:00", response_deadline_utc: "2026-10-12T21:00:00Z"})]);
+  const result = await getOpportunity(disa, {notice_id: id(30)}) as any;
+  assert.ok(result.notes.some((n: string) => n.startsWith("SAM.gov's file gives this response deadline without a time zone")), JSON.stringify(result.notes));
+  const withZone = await getOpportunity(db, {notice_id: id(1)}) as any;
+  assert.ok(!withZone.notes.some((n: string) => /without a time zone/.test(n)));
+});
+
 test("summarize_opportunities groups with the search filters", async () => {
   const bySetAside = await summarizeOpportunities(db, {group_by: "set_aside", naics_codes: ["5415"]}, NOW);
   assert.equal(bySetAside.total_matches, 4);
