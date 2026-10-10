@@ -1554,7 +1554,7 @@
       "readOnlyHint": true,
       "title": "Get IDV Funding"
     },
-    "description": "List the funding records (File C) for an IDV's child orders.",
+    "description": "List File C funding records associated with an IDV.\n\n    Rows can identify the IDV itself as well as associated awards; they are\n    not a complete list of child orders. File C coverage can be partial or\n    lagged and does not establish the full child-order obligation or amount\n    paid. Use get_idv_amounts() for reported child-order obligation totals\n    and get_idv_activity() or get_idv_children() for child-order records.\n    ",
     "inputSchema": {
       "properties": {
         "award_id": {
@@ -1822,7 +1822,7 @@
       "readOnlyHint": true,
       "title": "Get Submission Periods"
     },
-    "description": "Return the list of agency submission periods (when each agency last\n    submitted data for each fiscal period). Useful for understanding which\n    quarters of which fiscal years have full data coverage.",
+    "description": "List the reporting calendar and submission/certification deadlines.\n\n    Returns available fiscal reporting periods and their scheduled start,\n    due, certification and reveal dates. These are global calendar periods,\n    not records of when individual agencies actually submitted or certified\n    data. A listed period does not establish complete agency data coverage.\n    ",
     "inputSchema": {
       "properties": {},
       "title": "get_submission_periodsArguments",
