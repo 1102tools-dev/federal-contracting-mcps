@@ -355,6 +355,41 @@ def _current_fiscal_year() -> int:
     return today.year + 1 if today.month >= 10 else today.year
 
 
+def _last_completed_fiscal_year() -> int:
+    """The most recent fiscal year that has ended (FY2026 from 2026-10-01 on).
+
+    Agency and state tools default to it. USAspending's own default is the
+    current fiscal year, which for the first weeks after October 1 holds a
+    few days of data (DoD showed $1,000,000 of contracts on 2026-10-10).
+    """
+    return _current_fiscal_year() - 1
+
+
+def _echo_fiscal_year(
+    result: Any, fy: int | str, *, defaulted: bool, key: str = "fiscal_year",
+    param: str = "fiscal_year",
+) -> Any:
+    """Make every agency/state answer say which fiscal year it covers.
+
+    Some endpoints echo the year, some (obligations_by_award_category,
+    recipient/state) do not. When the caller gave no year, also say that the
+    last completed fiscal year was used and how to ask for the current one.
+    """
+    if not isinstance(result, dict):
+        return result
+    if key not in result or result.get(key) in (None, ""):
+        result[key] = int(fy) if str(fy).isdigit() else fy
+    if defaulted:
+        current = _current_fiscal_year()
+        result["fiscal_year_note"] = (
+            f"No {param} given, so this covers FY{fy}, the last completed federal "
+            f"fiscal year (October {int(fy) - 1} through September {fy}). FY{current} "
+            f"began October 1 and is only partly reported; pass {param}={current} "
+            f"for it to date."
+        )
+    return result
+
+
 def _clamp_limit(limit: int, *, cap: int, field: str = "limit") -> int:
     """Clamp a limit to valid bounds, raising on nonsense values."""
     if limit < 1:
@@ -1335,17 +1370,23 @@ async def get_agency_overview(
     toptier_code: str,
     fiscal_year: int | None = None,
 ) -> dict[str, Any]:
-    """Get summary information for a specific agency in a given fiscal year.
+    """Get descriptive information for an agency: name, mission, website,
+    data notes and DEF codes. It has no dollar figures; for spending use
+    get_agency_obligations_by_award_category() (split by award type) or
+    get_agency_budgetary_resources() (obligations and outlays by year).
 
     toptier_code is the 3- or 4-digit agency code (e.g. '097' for DoD,
     '075' for HHS, '080' for NASA). Shorter inputs like '97' are left-padded
     to '097' automatically. Get valid codes via list_toptier_agencies().
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default). The answer always carries fiscal_year.
     """
     code = _normalize_toptier(toptier_code)
-    params = {}
-    if fiscal_year is not None:
-        params["fiscal_year"] = str(_validate_fiscal_year(fiscal_year))
-    return await _get(f"/api/v2/agency/{code}/", params=params)
+    defaulted = fiscal_year is None
+    fy = _last_completed_fiscal_year() if defaulted else _validate_fiscal_year(fiscal_year)
+    result = await _get(f"/api/v2/agency/{code}/", params={"fiscal_year": str(fy)})
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get Agency Awards", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1353,16 +1394,25 @@ async def get_agency_awards(
     toptier_code: str,
     fiscal_year: int | None = None,
 ) -> dict[str, Any]:
-    """Get award summary totals for an agency in a given fiscal year.
+    """Get one obligation total and transaction count for an agency's awards
+    in a fiscal year.
 
-    Returns obligation totals by award category. toptier_code is auto-padded
-    to 3 digits if a shorter numeric value is supplied.
+    The total covers ALL award types together (contracts, IDVs, grants,
+    loans, direct payments, other), so for most civilian agencies it is far
+    larger than contract spending (VA FY2026: $313B here vs $84B contracts).
+    For the split by award type use get_agency_obligations_by_award_category().
+    toptier_code is auto-padded to 3 digits if a shorter numeric value is
+    supplied.
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     code = _normalize_toptier(toptier_code)
-    params = {}
-    if fiscal_year is not None:
-        params["fiscal_year"] = str(_validate_fiscal_year(fiscal_year))
-    return await _get(f"/api/v2/agency/{code}/awards/", params=params)
+    defaulted = fiscal_year is None
+    fy = _last_completed_fiscal_year() if defaulted else _validate_fiscal_year(fiscal_year)
+    result = await _get(f"/api/v2/agency/{code}/awards/", params={"fiscal_year": str(fy)})
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get NAICS Details", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1408,18 +1458,45 @@ async def get_psc_filter_tree(
 
 
 @mcp.tool(annotations={"title": "Get State Profile", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
-async def get_state_profile(state_fips: str) -> dict[str, Any]:
-    """Get spending profile for a US state by its 2-digit FIPS code.
+async def get_state_profile(state_fips: str, year: str | int | None = None) -> dict[str, Any]:
+    """Get the federal award totals for recipients located in a US state.
 
     Examples: '06' = California, '48' = Texas, '24' = Maryland, '51' = Virginia.
-    Returns award totals, top agencies, top recipients, and district data.
+    Returns one summary: state name and code, total_prime_amount and
+    total_prime_awards (all award types together), loan face value,
+    award_amount_per_capita, total_outlays, and population / median household
+    income (older Census vintages: see pop_year and mhi_year). It has no
+    breakdown by agency, recipient or district; for those use
+    spending_by_geography() or spending_by_category() with a time window.
+
+    year: a fiscal year like 2026, 'all' (every year on file) or 'latest'
+    (USAspending's own default: the current fiscal year to date, which right
+    after October 1 holds only a few days of data). Defaults to the last
+    completed fiscal year. The answer always carries fiscal_year.
     """
     if not state_fips or not state_fips.strip().isdigit() or len(state_fips.strip()) != 2:
         raise ValueError(
             f"state_fips must be a 2-digit numeric FIPS code (e.g., '06' for CA, '51' for VA). "
             f"Got {state_fips!r}."
         )
-    return await _get(f"/api/v2/recipient/state/{state_fips.strip()}/")
+    defaulted = year is None or not str(year).strip()
+    if defaulted:
+        year_str = str(_last_completed_fiscal_year())
+    else:
+        year_str = str(year).strip().lower()
+        if year_str not in ("all", "latest"):
+            year_str = str(_validate_fiscal_year(_parse_year_int(year_str, field="year")))
+    result = await _get(f"/api/v2/recipient/state/{state_fips.strip()}/", params={"year": year_str})
+    return _echo_fiscal_year(result, year_str, defaulted=defaulted, param="year")
+
+
+def _parse_year_int(value: str, *, field: str) -> int:
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise ValueError(
+            f"{field} must be a fiscal year like 2026, 'all', or 'latest'. Got {value!r}."
+        ) from exc
 
 
 # ===========================================================================
@@ -1791,16 +1868,22 @@ async def get_agency_sub_agencies(
     sort accepts name, total_obligations, transaction_count, or
     new_award_count (this endpoint has no outlay column; a former
     'total_outlays' option was rejected by the API with HTTP 400).
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     toptier_code = _normalize_toptier(toptier_code)
-    fy = _validate_fy(fiscal_year)
+    defaulted = fiscal_year is None
+    fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
-    params: dict[str, Any] = {"page": str(page), "limit": str(limit), "order": order, "sort": sort}
-    if fy:
-        params["fiscal_year"] = fy
-    return await _get(f"/api/v2/agency/{toptier_code}/sub_agency/", params=params)
+    params: dict[str, Any] = {
+        "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
+    }
+    result = await _get(f"/api/v2/agency/{toptier_code}/sub_agency/", params=params)
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get Agency Federal Accounts", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1817,16 +1900,22 @@ async def get_agency_federal_accounts(
     Returns each federal account with its obligated amount and gross outlay
     for the given fiscal year. Useful for understanding how an agency's
     money flows through Treasury.
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     toptier_code = _normalize_toptier(toptier_code)
-    fy = _validate_fy(fiscal_year)
+    defaulted = fiscal_year is None
+    fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
-    params: dict[str, Any] = {"page": str(page), "limit": str(limit), "order": order, "sort": sort}
-    if fy:
-        params["fiscal_year"] = fy
-    return await _get(f"/api/v2/agency/{toptier_code}/federal_account/", params=params)
+    params: dict[str, Any] = {
+        "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
+    }
+    result = await _get(f"/api/v2/agency/{toptier_code}/federal_account/", params=params)
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get Agency Object Classes", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1843,16 +1932,22 @@ async def get_agency_object_classes(
     Object classes are OMB categories: Personnel Compensation, Travel,
     Contractual Services, Equipment, Grants, etc. Useful for understanding
     what types of expenditures an agency makes.
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     toptier_code = _normalize_toptier(toptier_code)
-    fy = _validate_fy(fiscal_year)
+    defaulted = fiscal_year is None
+    fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
-    params: dict[str, Any] = {"page": str(page), "limit": str(limit), "order": order, "sort": sort}
-    if fy:
-        params["fiscal_year"] = fy
-    return await _get(f"/api/v2/agency/{toptier_code}/object_class/", params=params)
+    params: dict[str, Any] = {
+        "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
+    }
+    result = await _get(f"/api/v2/agency/{toptier_code}/object_class/", params=params)
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get Agency Program Activities", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1869,16 +1964,22 @@ async def get_agency_program_activities(
     Program activities are the specific named programs that obligate funds
     (e.g., 'Cybersecurity and Infrastructure Security Agency'). Useful for
     pinpointing which program funds a specific activity.
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     toptier_code = _normalize_toptier(toptier_code)
-    fy = _validate_fy(fiscal_year)
+    defaulted = fiscal_year is None
+    fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
     limit = _clamp_limit(limit, cap=100)
-    params: dict[str, Any] = {"page": str(page), "limit": str(limit), "order": order, "sort": sort}
-    if fy:
-        params["fiscal_year"] = fy
-    return await _get(f"/api/v2/agency/{toptier_code}/program_activity/", params=params)
+    params: dict[str, Any] = {
+        "page": str(page), "limit": str(limit), "order": order, "sort": sort, "fiscal_year": fy,
+    }
+    result = await _get(f"/api/v2/agency/{toptier_code}/program_activity/", params=params)
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 @mcp.tool(annotations={"title": "Get Agency Obligations by Award Category", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1891,15 +1992,19 @@ async def get_agency_obligations_by_award_category(
     Returns total obligated dollars split by category: contracts, IDVs, grants,
     loans, direct payments, other. Quick way to see what mix of award types
     an agency uses (heavy contractor agency vs grant-issuing agency vs mixed).
+
+    fiscal_year defaults to the last completed fiscal year, not the current
+    one (USAspending's own default, which right after October 1 holds only a
+    few days of data). The answer always carries fiscal_year.
     """
     toptier_code = _normalize_toptier(toptier_code)
-    fy = _validate_fy(fiscal_year)
-    params: dict[str, Any] = {}
-    if fy:
-        params["fiscal_year"] = fy
-    return await _get(
-        f"/api/v2/agency/{toptier_code}/obligations_by_award_category/", params=params,
+    defaulted = fiscal_year is None
+    fy = str(_last_completed_fiscal_year()) if defaulted else _validate_fy(fiscal_year)
+    result = await _get(
+        f"/api/v2/agency/{toptier_code}/obligations_by_award_category/",
+        params={"fiscal_year": fy},
     )
+    return _echo_fiscal_year(result, fy, defaulted=defaulted)
 
 
 # ---------------------------------------------------------------------------
