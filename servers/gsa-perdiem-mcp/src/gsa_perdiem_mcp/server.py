@@ -1171,6 +1171,9 @@ async def lookup_zip_perdiem(
         "has_monthly_data": best["has_monthly_data"],
         "source": source,
     }
+    if county_clean:
+        # "county" above is the rate area's definition; keep the caller's input too.
+        out["county_supplied"] = county_clean
     if len(candidates) > 1:
         out["same_rate_areas"] = [p["city"] for p in candidates]
     return out

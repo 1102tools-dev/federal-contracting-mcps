@@ -737,6 +737,8 @@ async function lookupZipPerdiem(ctx: Context, args: Dict): Promise<Dict> {
     has_monthly_data: best.has_monthly_data,
     source,
   };
+  // "county" above is the rate area's definition; keep the caller's input too.
+  if (county) out.county_supplied = county;
   if (candidates.length > 1) out.same_rate_areas = candidates.map(p => p.city);
   return out;
 }

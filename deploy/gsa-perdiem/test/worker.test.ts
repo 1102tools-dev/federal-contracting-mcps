@@ -334,3 +334,14 @@ test("composite names match whole slash-separated parts only", async () => {
     assert.equal(out.match_type === "composite", match, `${query} vs ${name}: ${out.status} ${out.match_type}`);
   }
 });
+
+test("a ZIP answer chosen by county keeps the supplied county (P3-4)", async () => {
+  // GSA's FY2027 ZIP file lists 20120 under Fairfax County, VA (District of Columbia) and Loudoun County, VA.
+  const {call} = setup();
+  const out = (await call("lookup_zip_perdiem", {zip_code: "20120", county: "Fairfax", fiscal_year: 2027})).structuredContent;
+  assert.equal(out.status, "resolved");
+  assert.equal(out.matched_city, "District of Columbia");
+  assert.equal(out.county_supplied, "Fairfax");
+  assert.notEqual(out.county, "Fairfax");
+  assert.match(out.county, /Fairfax/);
+});

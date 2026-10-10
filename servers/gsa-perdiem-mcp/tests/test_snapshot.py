@@ -71,6 +71,15 @@ def test_zip_county_selects_candidate():
     assert r["status"] == "resolved" and r["is_standard_rate"] is True
 
 
+def test_zip_county_answer_keeps_the_supplied_county():
+    # P3-4 (content test 2026-10-10): GSA's FY2027 ZIP file lists 20120 under
+    # Fairfax County, VA (District of Columbia) and Loudoun County, VA.
+    r = _run(srv.lookup_zip_perdiem("20120", 2027, county="Fairfax"))
+    assert r["status"] == "resolved" and r["matched_city"] == "District of Columbia"
+    assert r["county_supplied"] == "Fairfax"
+    assert "Fairfax" in r["county"] and r["county"] != "Fairfax"
+
+
 def test_zip_invalid_county_is_reported():
     r = _run(srv.lookup_zip_perdiem("01011", 2027, county="Nowhere"))
     assert r["status"] == "invalid_county"
