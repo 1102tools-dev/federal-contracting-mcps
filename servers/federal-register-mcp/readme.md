@@ -1,6 +1,6 @@
 # federal-register-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 243](https://img.shields.io/badge/regression%20tests-243-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 282](https://img.shields.io/badge/regression%20tests-282-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/federal-register-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the Federal Register API. Proposed rules, final
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through six rounds of integration testing against the live Federal Register API. 243 collected regression tests (143 offline, 100 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through eight audit rounds and integration testing against the live Federal Register API. 282 collected regression tests (177 offline, 105 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines, FAR Council agency mapping, presidential filters, parent-agency public inspection, and page limits. See [testing.md](testing.md) for the full testing record.*
 
 ## Local or hosted
 

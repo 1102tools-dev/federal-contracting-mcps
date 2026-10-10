@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.13
+
+- Add FAR Council co-filing searches, presidential document fields and filters,
+  and parent-agency public inspection matching.
+- Reject unreachable pages above 50, expose capped counts, and honor one-result
+  searches. Preserve requested batch order, remove image metadata, clarify
+  correction searches, and identify FAR case-history match sources.
+
 ## 1.0.12
 
 - Hosted service only: the machine running the service can give the answer cache

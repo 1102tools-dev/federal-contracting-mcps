@@ -30,6 +30,7 @@ from .constants import (
     DEFAULT_FIELDS,
     DEFAULT_TIMEOUT,
     FACET_NAMES,
+    PRESIDENTIAL_FIELDS,
     USER_AGENT,
 )
 
@@ -433,6 +434,8 @@ def _build_search_params(
     significant: bool | None = None,
     cfr_title: str | None = None,
     cfr_part: str | None = None,
+    presidential_document_type: list[str] | None = None,
+    executive_order_number: int | None = None,
     fields: list[str] | None = None,
     per_page: int = 20,
     page: int = 1,
@@ -472,6 +475,11 @@ def _build_search_params(
         params.append(("conditions[cfr][title]", cfr_title))
     if cfr_part:
         params.append(("conditions[cfr][part]", cfr_part))
+    if presidential_document_type:
+        for t in presidential_document_type:
+            params.append(("conditions[presidential_document_type][]", t))
+    if executive_order_number is not None:
+        params.append(("conditions[executive_order_numbers][]", str(executive_order_number)))
 
     for f in (fields or DEFAULT_FIELDS):
         params.append(("fields[]", f))
@@ -481,6 +489,122 @@ def _build_search_params(
     params.append(("order", order))
 
     return urllib.parse.urlencode(params)
+
+
+def _drop_null_presidential_fields(data: Any) -> None:
+    """Search results ask for the presidential fields (EO number, subtype,
+    signing date, document number) on every document; keep them only where
+    they have a value so other documents don't grow by four null keys."""
+    if not isinstance(data, dict):
+        return
+    for doc in data.get("results") or []:
+        if isinstance(doc, dict):
+            for key in PRESIDENTIAL_FIELDS:
+                if key in doc and doc[key] is None:
+                    del doc[key]
+
+
+# The API serves pages 1-50 only; any later page comes back as page 1.
+_MAX_API_PAGE = 50
+# The API stops counting search hits here.
+_COUNT_CAP = 10_000
+
+
+def _fix_paging(data: Any, *, per_page: int) -> None:
+    """Replace the API's total_pages (reported as at most 50) with the true
+    count and say how far paging can reach."""
+    if not isinstance(data, dict):
+        return
+    count = data.get("count")
+    if not isinstance(count, int) or count <= 0:
+        return
+    total_pages = -(-count // per_page)
+    data["total_pages"] = total_pages
+    if total_pages > _MAX_API_PAGE:
+        data["max_reachable_page"] = _MAX_API_PAGE
+        data["paging_note"] = (
+            f"Only pages 1-{_MAX_API_PAGE} can be read ({_MAX_API_PAGE * per_page:,} of "
+            f"{count:,} documents at per_page={per_page}). Use per_page=100 and/or "
+            f"narrower publication date ranges to reach the rest."
+        )
+
+
+# ---------------------------------------------------------------------------
+# FAR Council documents
+# ---------------------------------------------------------------------------
+
+# The FAR Council (DoD, GSA, NASA) files every FAR document jointly under
+# those three agencies; OFPP was added to the tags only from about mid-2025,
+# and the API's "Federal Acquisition Regulation System" agency holds two
+# documents ever (2001, 2019). The API's agency filter is OR-only, so a FAR
+# Council search asks for NASA (a co-signer of every FAR document, with a
+# small volume of its own) and keeps the documents also filed by DoD and GSA.
+_FAR_COUNCIL_AGENCIES = frozenset({
+    "defense-department",
+    "general-services-administration",
+    "national-aeronautics-and-space-administration",
+})
+_FAR_COUNCIL_SCAN_AGENCY = "national-aeronautics-and-space-administration"
+_FAR_COUNCIL_SCAN_CAP = 500
+_EMPTY_FAR_SLUG = "federal-acquisition-regulation-system"
+_EMPTY_FAR_SLUG_NOTE = (
+    "The Federal Register agency 'federal-acquisition-regulation-system' holds "
+    "only 2 documents ever (2001, 2019). FAR rules and notices are filed jointly "
+    "under DoD, GSA and NASA (OFPP added only from about mid-2025). Use "
+    "far_council=True instead."
+)
+
+
+def _is_far_council_doc(doc: dict[str, Any]) -> bool:
+    slugs = {a.get("slug") for a in (doc.get("agencies") or []) if isinstance(a, dict)}
+    return _FAR_COUNCIL_AGENCIES <= slugs
+
+
+async def _far_council_search(
+    filters: dict[str, Any], *, per_page: int, page: int, order: str,
+) -> dict[str, Any]:
+    scanned: list[dict[str, Any]] = []
+    nasa_total = 0
+    for page_num in range(1, _FAR_COUNCIL_SCAN_CAP // 100 + 1):
+        qs = _build_search_params(
+            agencies=[_FAR_COUNCIL_SCAN_AGENCY], **filters,
+            per_page=100, page=page_num, order=order,
+        )
+        data = await _get(f"{BASE_URL}/documents.json?{qs}")
+        nasa_total = data.get("count", 0) or 0
+        page_results = data.get("results") or []
+        scanned.extend(page_results)
+        if len(page_results) < 100 or len(scanned) >= nasa_total:
+            break
+    matches = [d for d in scanned if _is_far_council_doc(d)]
+    complete = len(scanned) >= nasa_total
+    start = (page - 1) * per_page
+    result: dict[str, Any] = {
+        "description": (
+            "FAR Council documents: filed jointly by DoD, GSA and NASA "
+            f"(scanned {len(scanned)} of {nasa_total} NASA-filed documents matching the other filters)"
+        ),
+        "count": len(matches),
+        "total_pages": max(1, -(-len(matches) // per_page)),
+        "results": matches[start:start + per_page],
+        "far_council": {
+            "rule": "documents whose agencies include defense-department, "
+                    "general-services-administration and "
+                    "national-aeronautics-and-space-administration",
+            "nasa_documents": nasa_total,
+            "scanned": len(scanned),
+            "scan_cap": _FAR_COUNCIL_SCAN_CAP,
+            "complete": complete,
+        },
+    }
+    if not complete:
+        result["count_is_lower_bound"] = True
+        result["note"] = (
+            f"Only the first {len(scanned)} of {nasa_total} NASA-filed documents were "
+            "scanned, so count is a lower bound. Narrow with a publication date "
+            "range (one year is usually under 200 documents) for an exact count."
+        )
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -504,9 +628,12 @@ async def search_documents(
     significant: bool | None = None,
     cfr_title: int | None = None,
     cfr_part: str | int | None = None,
+    presidential_document_type: list[Literal["executive_order", "proclamation", "memorandum", "determination", "notice", "presidential_order", "other"]] | None = None,
+    executive_order_number: int | None = None,
     per_page: int = 20,
     page: int = 1,
     order: Literal["newest", "oldest", "relevance", "executive_order_number"] = "newest",
+    far_council: bool = False,
 ) -> dict[str, Any]:
     """Search Federal Register documents.
 
@@ -516,7 +643,17 @@ async def search_documents(
     Key parameters:
     - agencies: list of agency URL slugs (OR logic). Use list_agencies() to find slugs.
       Common: 'defense-department', 'general-services-administration',
-      'federal-procurement-policy-office', 'small-business-administration'
+      'small-business-administration', 'defense-acquisition-regulations-system'
+      (DFARS), 'federal-procurement-policy-office' (OFPP and the CAS Board)
+    - far_council: True for FAR rules, proposed rules and notices (the FAR
+      Council's output). There is no single FAR agency slug: FAR documents
+      are filed jointly under DoD, GSA and NASA, OFPP was added only from
+      about mid-2025 (so the OFPP slug misses earlier FAR rules and adds CAS
+      Board documents), and 'federal-acquisition-regulation-system' holds 2
+      documents ever. far_council=True keeps documents filed by all three of
+      DoD, GSA and NASA; count is exact when far_council.complete is true
+      (narrow by date if not). Cannot be combined with agencies. For FAR
+      clause changes only, cfr_title=48 + cfr_part='1-99' also works.
     - doc_types: PRORULE (proposed rule), RULE (final rule), NOTICE, PRESDOCU
     - term: full-text keyword search (strips stop words)
     - docket_id: docket identifier (token match). 'FAR Case 2023-008' = exact,
@@ -526,14 +663,36 @@ async def search_documents(
     - pub_date_gte/lte: publication date range (YYYY-MM-DD)
     - comment_date_gte/lte: comment close date range
     - effective_date_gte/lte: effective date range
-    - correction: True for modern corrections (C1- prefix documents)
+    - correction: True finds only the Office of the Federal Register's own
+      correction notices (C1- prefix documents). Agency-issued corrections
+      ('Final rule; correction.', 'Correcting amendment.') are ordinary RULE
+      documents and are not flagged: search doc_types=['RULE'] with
+      term='correction' and check each document's action.
     - significant: True for EO 12866 significant rules only
     - cfr_title + cfr_part: documents affecting a CFR location, e.g.
       cfr_title=48, cfr_part='52' for FAR part 52 (part accepts ranges
       like '1-99'; cfr_part requires cfr_title)
+    - presidential_document_type: executive_order, proclamation, memorandum,
+      determination, notice, presidential_order, other. Use
+      ['executive_order'] to count or list executive orders: doc_types=
+      ['PRESDOCU'] alone also returns proclamations, memoranda and notices.
+    - executive_order_number: one EO by number (e.g. 14275)
+    - order: 'executive_order_number' sorts EOs by number (pair it with
+      presidential_document_type=['executive_order'])
 
-    Count caps at 10,000 for broad queries. Use date ranges for accurate counts.
+    Presidential documents carry executive_order_number, subtype (Executive
+    Order, Proclamation, Memorandum, ...), signing_date and
+    presidential_document_number; other documents omit those keys.
+
+    Count caps at 10,000 for broad queries (count_capped=true says so); use
+    get_facet_counts for the true number, or narrower date ranges.
     per_page capped at 100 to stay within MCP response size limits.
+
+    Paging: the Federal Register serves only pages 1-50 of any search (a
+    later page silently comes back as page 1), so page > 50 is refused.
+    total_pages is the true page count; when it passes 50,
+    max_reachable_page and paging_note say how to reach the rest (per_page=100
+    reaches 5,000 documents; split the publication date range beyond that).
     """
     agencies = _reject_empty_list(agencies, "agencies")
     agencies = _reject_empty_strings_in_list(agencies, field="agencies")
@@ -558,17 +717,30 @@ async def search_documents(
     _check_date_range(comment_date_gte, comment_date_lte, "comment_date")
     _check_date_range(effective_date_gte, effective_date_lte, "effective_date")
     cfr_title_str, cfr_part_str = _validate_cfr(cfr_title, cfr_part)
+    presidential_document_type = _reject_empty_list(
+        presidential_document_type, "presidential_document_type"
+    )
+    if executive_order_number is not None and executive_order_number < 1:
+        raise ValueError(
+            f"executive_order_number must be a positive EO number (e.g. 14275). Got {executive_order_number}."
+        )
+    if far_council and agencies:
+        raise ValueError(
+            "far_council=True cannot be combined with agencies: it already "
+            "selects documents filed jointly by DoD, GSA and NASA. Drop agencies."
+        )
 
     # Require at least one real filter. An unfiltered search_documents() call
     # silently returned the Federal Register's 10,000-doc "most recent"
     # default as if those were search hits, which is very confusing UX.
     if not any([
+        far_council,
         agencies, doc_types, term, docket_id, regulation_id_number,
         pub_date_gte, pub_date_lte,
         comment_date_gte, comment_date_lte,
         effective_date_gte, effective_date_lte,
         correction is not None, significant is not None,
-        cfr_title_str,
+        cfr_title_str, presidential_document_type, executive_order_number,
     ]):
         raise ValueError(
             "search_documents requires at least one filter. Typical: "
@@ -577,17 +749,57 @@ async def search_documents(
             "returns the Federal Register's 10,000-doc unfiltered default."
         )
 
-    qs = _build_search_params(
-        agencies=agencies, doc_types=doc_types, term=term,
+    filters: dict[str, Any] = dict(
+        doc_types=doc_types, term=term,
         docket_id=docket_id, regulation_id_number=regulation_id_number,
         pub_date_gte=pub_date_gte, pub_date_lte=pub_date_lte,
         comment_date_gte=comment_date_gte, comment_date_lte=comment_date_lte,
         effective_date_gte=effective_date_gte, effective_date_lte=effective_date_lte,
         correction=correction, significant=significant,
         cfr_title=cfr_title_str, cfr_part=cfr_part_str,
-        per_page=per_page, page=page, order=order,
+        presidential_document_type=presidential_document_type,
+        executive_order_number=executive_order_number,
     )
-    return await _get(f"{BASE_URL}/documents.json?{qs}")
+    if far_council:
+        data = await _far_council_search(filters, per_page=per_page, page=page, order=order)
+        _drop_null_presidential_fields(data)
+        return data
+    if page > _MAX_API_PAGE:
+        raise ValueError(
+            f"page={page} is past the Federal Register's 50-page limit: the API "
+            f"returns page 1 again for any later page. Use per_page=100 (pages "
+            f"1-50 then reach 5,000 documents) or split the publication date "
+            f"range into smaller searches."
+        )
+
+    # The API treats per_page=1 as 20. Ask for pages of 2 and keep the one
+    # document that page `page` of size 1 would hold.
+    wire_per_page, wire_page, pick = per_page, page, None
+    if per_page == 1:
+        wire_per_page, wire_page, pick = 2, (page + 1) // 2, (page - 1) % 2
+
+    qs = _build_search_params(
+        agencies=agencies, **filters,
+        per_page=wire_per_page, page=wire_page, order=order,
+    )
+    data = await _get(f"{BASE_URL}/documents.json?{qs}")
+    if isinstance(data, dict):
+        if "results" not in data:
+            data["results"] = []  # zero-hit answers come back without the key
+        if pick is not None:
+            data["results"] = data["results"][pick:pick + 1]
+        if isinstance(data.get("count"), int) and data["count"] >= _COUNT_CAP:
+            data["count_capped"] = True
+            data["count_note"] = (
+                "The Federal Register stops counting search hits at 10,000, so the "
+                "true number is higher. get_facet_counts (facet='type' or 'yearly') "
+                "with the same filters gives the true number."
+            )
+    if agencies and _EMPTY_FAR_SLUG in agencies and isinstance(data, dict):
+        data["note"] = _EMPTY_FAR_SLUG_NOTE
+    _drop_null_presidential_fields(data)
+    _fix_paging(data, per_page=per_page)
+    return data
 
 
 @mcp.tool(annotations={"title": "Get Document", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -614,7 +826,9 @@ async def get_documents_batch(
 
     Pass a list of document numbers. More efficient than individual calls.
     Always returns {count, results, [errors]}; errors.not_found lists any
-    requested numbers the API could not locate.
+    requested numbers the API could not locate. Results come back in the
+    order requested. Image metadata (images, images_metadata) is left out
+    to keep batches small; get_document returns it.
     """
     if not document_numbers:
         raise ValueError("document_numbers list cannot be empty.")
@@ -630,7 +844,15 @@ async def get_documents_batch(
     # count/results wrapper. Normalize so callers can always iterate
     # data["results"].
     if isinstance(data, dict) and "results" not in data:
-        return {"count": 1, "results": [data]}
+        data = {"count": 1, "results": [data]}
+    if isinstance(data, dict) and isinstance(data.get("results"), list):
+        position = {n.upper(): i for i, n in reversed(list(enumerate(validated)))}
+        results = [d for d in data["results"] if isinstance(d, dict)]
+        for d in results:
+            d.pop("images", None)
+            d.pop("images_metadata", None)
+        results.sort(key=lambda d: position.get(str(d.get("document_number") or "").upper(), len(position)))
+        data["results"] = results
     return data
 
 
@@ -647,6 +869,7 @@ async def get_facet_counts(
     pub_date_lte: str | None = None,
     cfr_title: int | None = None,
     cfr_part: str | int | None = None,
+    presidential_document_type: list[Literal["executive_order", "proclamation", "memorandum", "determination", "notice", "presidential_order", "other"]] | None = None,
 ) -> dict[str, Any]:
     """Get document counts grouped by type, agency, topic, or time period.
 
@@ -659,9 +882,19 @@ async def get_facet_counts(
     Useful for understanding the volume of rulemaking by agency, type, or
     over time within a date range before drilling into specific documents.
 
+    presidential_document_type (executive_order, proclamation, memorandum,
+    determination, notice, presidential_order, other) narrows to one kind
+    of presidential document, e.g. executive orders per month.
+
     At least one filter (agencies, doc_types, term, pub_date_gte/lte, or
     cfr_title) is required. An unfiltered facet query returns the entire
     all-time aggregate.
+
+    FAR Council counts: facets cannot express "filed by DoD AND GSA AND
+    NASA", and no single agency slug covers FAR documents (OFPP only from
+    about mid-2025; 'federal-acquisition-regulation-system' holds 2 documents
+    ever). Count FAR rules with search_documents(far_council=True,
+    doc_types=[...], pub_date_gte/lte=...) and read its count.
     """
     agencies = _reject_empty_list(agencies, "agencies")
     agencies = _reject_empty_strings_in_list(agencies, field="agencies")
@@ -676,8 +909,14 @@ async def get_facet_counts(
     )
     _check_date_range(pub_date_gte, pub_date_lte, "publication_date")
     cfr_title_str, cfr_part_str = _validate_cfr(cfr_title, cfr_part)
+    presidential_document_type = _reject_empty_list(
+        presidential_document_type, "presidential_document_type"
+    )
 
-    if not any([agencies, doc_types, term, pub_date_gte, pub_date_lte, cfr_title_str]):
+    if not any([
+        agencies, doc_types, term, pub_date_gte, pub_date_lte, cfr_title_str,
+        presidential_document_type,
+    ]):
         raise ValueError(
             "get_facet_counts requires at least one filter "
             "(agencies, doc_types, term, pub_date_gte/lte, or cfr_title). "
@@ -701,12 +940,19 @@ async def get_facet_counts(
         params.append(("conditions[cfr][title]", cfr_title_str))
     if cfr_part_str:
         params.append(("conditions[cfr][part]", cfr_part_str))
+    for t in presidential_document_type or []:
+        params.append(("conditions[presidential_document_type][]", t))
 
     qs = urllib.parse.urlencode(params) if params else ""
     url = f"{BASE_URL}/documents/facets/{facet}"
     if qs:
         url += f"?{qs}"
-    return await _get(url)
+    data = await _get(url)
+    if agencies and _EMPTY_FAR_SLUG in agencies and isinstance(data, dict):
+        # Facet answers are keyed by bucket name; "note" cannot collide with
+        # a document type, agency slug, topic or date bucket.
+        data["note"] = _EMPTY_FAR_SLUG_NOTE
+    return data
 
 
 @mcp.tool(annotations={"title": "Get Public Inspection", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -727,12 +973,13 @@ async def get_public_inspection(
     Useful for getting early notice of upcoming regulatory actions.
 
     Parameters:
-    - agency_filter: case-insensitive substring match against each
-      document's agency slugs, names, and raw names. CAUTION: PI documents
-      list only the FILING sub-agency, so a parent slug like
-      'defense-department' will not match a Defense Logistics Agency
-      filing. Prefer a short distinctive fragment ('defense', 'acquisition
-      regulations') over a full parent slug.
+    - agency_filter: case-insensitive substring match against agency slugs,
+      names, and short names. Sub-agencies are included: PI documents list
+      only the FILING sub-agency, so the filter is also matched against the
+      Federal Register agency list and every agency below a matching one
+      counts ('defense-department' or 'DOD' also returns Army, Navy, Air
+      Force, Corps of Engineers and Defense Logistics Agency filings).
+      filters_applied.includes_sub_agencies says whether that worked.
     - keyword_filter: substring match against document titles
     - limit: max documents returned after filtering (default 50, max 500).
       Unfiltered dumps can exceed 170KB; narrow with filters or raise the cap.
@@ -746,6 +993,7 @@ async def get_public_inspection(
     data = await _get(f"{BASE_URL}/public-inspection-documents/current.json")
 
     results = data.get("results", [])
+    includes_sub_agencies: bool | None = None
 
     if agency_filter:
         # Round 6 fix: PI documents carry only the filing sub-agency, and
@@ -756,12 +1004,45 @@ async def get_public_inspection(
         agency_lower = agency_filter.lower()
         agency_spaced = agency_lower.replace("-", " ")
 
+        def _text_match(a: dict[str, Any], keys: tuple[str, ...]) -> bool:
+            blob = " ".join(str(a.get(k) or "") for k in keys).lower()
+            return agency_lower in blob or agency_spaced in blob
+
+        # FR-1 (1.0.13): a parent filter must also catch filings by its
+        # sub-agencies (Army, Navy, DLA... under DoD). The agency list gives
+        # each agency's parent_id; take every matching agency and everything
+        # below it.
+        family_ids: set[Any] = set()
+        includes_sub_agencies = False
+        try:
+            agency_list = await _get(f"{BASE_URL}/agencies.json")
+            if isinstance(agency_list, list):
+                children: dict[Any, list[Any]] = {}
+                for a in agency_list:
+                    if isinstance(a, dict) and a.get("parent_id") is not None:
+                        children.setdefault(a["parent_id"], []).append(a.get("id"))
+                stack = [
+                    a.get("id") for a in agency_list
+                    if isinstance(a, dict) and a.get("id") is not None
+                    and _text_match(a, ("slug", "name", "short_name"))
+                ]
+                while stack:
+                    agency_id = stack.pop()
+                    if agency_id in family_ids:
+                        continue
+                    family_ids.add(agency_id)
+                    stack.extend(children.get(agency_id, []))
+                includes_sub_agencies = True
+        except Exception:
+            # Agency list unavailable: fall back to matching the filing
+            # agency only, and say so in filters_applied.
+            family_ids = set()
+
         def _agency_match(doc: dict[str, Any]) -> bool:
             for a in doc.get("agencies", []):
-                blob = " ".join(
-                    str(a.get(k) or "") for k in ("slug", "name", "raw_name")
-                ).lower()
-                if agency_lower in blob or agency_spaced in blob:
+                if _text_match(a, ("slug", "name", "raw_name")):
+                    return True
+                if a.get("id") in family_ids or a.get("parent_id") in family_ids:
                     return True
             return False
 
@@ -785,6 +1066,7 @@ async def get_public_inspection(
         "truncated": truncated,
         "filters_applied": {
             "agency": agency_filter,
+            "includes_sub_agencies": includes_sub_agencies,
             "keyword": keyword_filter,
             "limit": limit,
         },
@@ -801,13 +1083,21 @@ async def list_agencies(
 
     Use the 'slug' values with search_documents() and other tools.
     Common procurement slugs:
-    - federal-procurement-policy-office (OFPP)
     - defense-department (DoD)
     - general-services-administration (GSA)
-    - defense-acquisition-regulations-system (DARS/DFARS)
-    - small-business-administration (SBA)
     - national-aeronautics-and-space-administration (NASA)
+    - defense-acquisition-regulations-system (DARS/DFARS)
+    - federal-procurement-policy-office (OFPP and the CAS Board)
+    - small-business-administration (SBA)
     - veterans-affairs-department (VA)
+
+    The FAR has no single slug. FAR rules and notices are filed jointly
+    under DoD, GSA and NASA; OFPP was added only from about mid-2025, so
+    the OFPP slug misses earlier FAR rules. The agency named 'Federal
+    Acquisition Regulation System' (federal-acquisition-regulation-system)
+    holds 2 documents ever; it carries a note in these results. For FAR
+    documents use search_documents(far_council=True) or
+    open_comment_periods(far_council=True).
 
     Parameters:
     - query: optional case-insensitive substring match against name, short_name,
@@ -836,6 +1126,10 @@ async def list_agencies(
     if not include_detail:
         slim_fields = ("id", "name", "short_name", "slug", "parent_id")
         results = [{k: a.get(k) for k in slim_fields} for a in results]
+    results = [
+        {**a, "note": _EMPTY_FAR_SLUG_NOTE} if a.get("slug") == _EMPTY_FAR_SLUG else a
+        for a in results
+    ]
 
     return {
         "total_agencies": len(data),
@@ -859,6 +1153,7 @@ async def open_comment_periods(
     agencies: list[str] | None = None,
     term: str | None = None,
     limit: int = 50,
+    far_council: bool = False,
 ) -> dict[str, Any]:
     """Find documents with currently open comment periods, soonest deadline first.
 
@@ -874,13 +1169,19 @@ async def open_comment_periods(
     recently published document with an unusually short comment window
     can fall outside the scan in that oversubscribed case.
 
-    Default: searches all agencies. Pass agency slugs to narrow scope.
-    Common for procurement: ['federal-procurement-policy-office',
-    'defense-department', 'general-services-administration']
+    Default: searches all agencies. Pass agency slugs to narrow scope,
+    e.g. ['defense-acquisition-regulations-system'] for DFARS or
+    ['general-services-administration'] for GSA and GSAR.
 
     Parameters:
+    - far_council: True for open FAR proposed rules and FAR information
+      collections (documents filed jointly by DoD, GSA and NASA; there is no
+      single FAR agency slug and the OFPP tag only appears from about
+      mid-2025). Cannot be combined with agencies.
     - limit: max documents returned after sorting (default 50, max 100).
-      Unfiltered dumps across all agencies can approach 200KB.
+      Unfiltered dumps across all agencies can approach 200KB; several
+      broad agencies together (e.g. DoD + GSA) can pass 100KB, so lower
+      limit for those.
     """
     agencies = _reject_empty_list(agencies, "agencies")
     limit = _clamp(limit, field="limit", lo=1, hi=100)
@@ -899,6 +1200,7 @@ async def open_comment_periods(
             per_page=_OPEN_COMMENT_PAGE_SIZE,
             page=page_num,
             order="oldest",
+            far_council=far_council,
         )
         total_open = data.get("count", 0)
         page_results = data.get("results", [])
@@ -936,6 +1238,11 @@ async def far_case_history(docket_id: str) -> dict[str, Any]:
     all 2023 cases (token '2023' matches '2023-008'), but a partial token
     like 'FAR Case 20' matches nothing. Be specific to avoid false positives.
 
+    Each document carries matched_by: 'docket' or 'docket+text' when its
+    docket ids name the case, 'text' when it only mentions the case in its
+    text (regulatory agendas, related or companion cases, FAC
+    introductions, public meetings). Read 'text' matches with care.
+
     Each underlying search returns at most 100 documents. truncated=True
     flags that one of the searches hit that cap (docket_matches and
     term_matches carry the API's full counts); narrow the docket_id if so.
@@ -961,9 +1268,19 @@ async def far_case_history(docket_id: str) -> dict[str, Any]:
     term_results = term_data.get("results", []) or []
 
     merged: dict[str, dict[str, Any]] = {}
+    docket_numbers = {d.get("document_number") for d in docket_results}
+    term_numbers = {d.get("document_number") for d in term_results}
     for i, doc in enumerate(docket_results + term_results):
         key = doc.get("document_number") or f"_missing_number_{i}"
         if key not in merged:
+            number = doc.get("document_number")
+            in_docket = number is not None and number in docket_numbers
+            in_text = number is not None and number in term_numbers
+            doc["matched_by"] = (
+                "docket+text" if in_docket and in_text
+                else "docket" if in_docket or (number is None and i < len(docket_results))
+                else "text"
+            )
             merged[key] = doc
     documents = sorted(
         merged.values(), key=lambda d: d.get("publication_date") or "9999-99-99"
