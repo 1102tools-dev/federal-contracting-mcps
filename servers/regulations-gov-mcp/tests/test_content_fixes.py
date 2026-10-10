@@ -182,3 +182,66 @@ def test_count_descriptions_say_posted_not_received():
     tools = {t.name: t.description for t in asyncio.run(srv.mcp.list_tools())}
     for name in ("search_comments", "far_case_history"):
         assert "posted_comments" in tools[name] and "received" in tools[name], name
+
+
+# ---------------------------------------------------------------------------
+# R10: far_case_history keeps subtype (and the FR document number)
+# ---------------------------------------------------------------------------
+
+# Pay Equity (FAR-2023-0021). The 2025 row is the withdrawal: the FR API says
+# 2025-00118 is "Proposed rule; withdrawal." with regulations.gov document
+# FAR-2023-0021-5147; search_documents in the content test showed its
+# subtype "Withdrawal". The documents listing was not saved (quota), so the
+# two rows are rebuilt from those values.
+PAY_EQUITY_DOCS = {
+    "data": [
+        {"id": "FAR-2023-0021-5147", "type": "documents", "attributes": {
+            "agencyId": "FAR", "docketId": "FAR-2023-0021", "documentType": "Proposed Rule",
+            "subtype": "Withdrawal", "frDocNum": "2025-00118",
+            "title": "Pay Equity and Transparency in Federal Contracting",
+            "postedDate": "2025-01-08T05:00:00Z", "withinCommentPeriod": False}},
+        {"id": "FAR-2023-0021-0001", "type": "documents", "attributes": {
+            "agencyId": "FAR", "docketId": "FAR-2023-0021", "documentType": "Proposed Rule",
+            "subtype": "Notice of Proposed Rulemaking (NPRM)", "frDocNum": "2024-01343",
+            "title": "Federal Acquisition Regulation: Pay Equity and Transparency in Federal Contracting",
+            "postedDate": "2024-01-30T05:00:00Z", "commentEndDate": "2024-04-02T03:59:59Z",
+            "withinCommentPeriod": False}},
+    ],
+    "meta": {"totalElements": 2, "lastPage": True},
+}
+
+
+def _history_route(docs, posted=0):
+    def route(path, params):
+        if path.startswith("dockets/"):
+            return {"data": {"id": path.split("/")[1], "attributes": {"title": "t"}}}
+        if path == "documents":
+            return docs
+        return {"data": [], "meta": {"totalElements": posted}}
+    return route
+
+
+def test_far_case_history_shows_withdrawal_subtype(monkeypatch):
+    _fake_get(monkeypatch, _history_route(PAY_EQUITY_DOCS, 5145))
+    out = asyncio.run(srv.far_case_history("FAR-2023-0021", page_size=5))
+    rows = _rows_by_id(out["documents"])
+    assert rows["FAR-2023-0021-5147"]["subtype"] == "Withdrawal"
+    assert rows["FAR-2023-0021-5147"]["fr_doc_num"] == "2025-00118"
+    assert rows["FAR-2023-0021-0001"]["subtype"] == "Notice of Proposed Rulemaking (NPRM)"
+
+
+def test_far_case_history_shows_extension_subtype_from_saved_listing(monkeypatch):
+    # dl/docs_FAR-2021-0017.json: -0012 shares the NPRM's title; only the
+    # subtype says it is the extension notice.
+    _fake_get(monkeypatch, _history_route(FIXTURE["docs_FAR-2021-0017"], 81))
+    rows = _rows_by_id(asyncio.run(srv.far_case_history("FAR-2021-0017"))["documents"])
+    assert rows["FAR-2021-0017-0012"]["subtype"] == "Extension of Comment Period"
+    assert rows["FAR-2021-0017-0012"]["fr_doc_num"] == "2023-24025"
+
+
+def test_open_comment_periods_rows_carry_subtype(monkeypatch):
+    _fake_get(monkeypatch, {"documents": FIXTURE["open_documents"]})
+    rows = _rows_by_id(asyncio.run(srv.open_comment_periods(page_size=100))["documents"])
+    gsar = rows["GSA-GSAR-2026-0563-0001"]
+    assert gsar["subtype"] == "Notice of Proposed Rulemaking (NPRM)"
+    assert gsar["fr_doc_num"] == "2026-19331"

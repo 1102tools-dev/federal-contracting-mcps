@@ -1201,7 +1201,8 @@ async def open_comment_periods(
     Searches for documents where withinCommentPeriod=true, sorted by
     soonest closing deadline (ascending commentEndDate), so page 1 holds
     the deadlines you can still act on. Returns document IDs, titles,
-    agencies, comment deadlines, docket IDs, and the API-true total_open.
+    agencies, document types and subtypes, Federal Register document
+    numbers, comment deadlines, docket IDs, and the API-true total_open.
     comment_deadline is the closing time in Eastern time (e.g. 'Oct 22,
     2026 11:59 PM ET'); comment_end_date_utc is the raw UTC instant, whose
     date reads one day late.
@@ -1258,6 +1259,8 @@ async def open_comment_periods(
             "agency": attrs.get("agencyId"),
             "title": attrs.get("title"),
             "document_type": attrs.get("documentType"),
+            "subtype": attrs.get("subtype"),
+            "fr_doc_num": attrs.get("frDocNum"),
             "comment_deadline": attrs.get("commentDeadlineEastern"),
             "comment_end_date_utc": attrs.get("commentEndDateUtc"),
             "docket_id": attrs.get("docketId"),
@@ -1303,7 +1306,10 @@ async def far_case_history(
     Returns the docket metadata (title, abstract, RIN linking to the
     Unified Agenda), the docket's total document count, counts by document
     type and of documents open for comment across the whole docket, and one
-    page of its documents, most recent first, with types, dates, and URLs.
+    page of its documents, most recent first, with types, subtypes, Federal
+    Register document numbers, dates, and URLs. subtype tells a withdrawal,
+    extension, or correction apart from a new proposed rule (a withdrawal
+    keeps document_type 'Proposed Rule').
     comment_deadline is the closing time in Eastern time; comment_end_date_utc
     is the raw UTC instant, whose date reads one day late. Page 1 also gives
     posted_comments for the whole docket: comments posted publicly, not
@@ -1336,7 +1342,9 @@ async def far_case_history(
         documents.append({
             "document_id": item.get("id"),
             "document_type": attrs.get("documentType"),
+            "subtype": attrs.get("subtype"),
             "title": attrs.get("title"),
+            "fr_doc_num": attrs.get("frDocNum"),
             "posted_date": attrs.get("postedDate"),
             "comment_deadline": attrs.get("commentDeadlineEastern"),
             "comment_end_date_utc": attrs.get("commentEndDateUtc"),
