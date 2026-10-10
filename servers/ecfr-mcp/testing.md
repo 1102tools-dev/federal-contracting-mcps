@@ -1,5 +1,17 @@
 # eCFR MCP: Testing Record
 
+## Content research round 4 (1.1.6 candidate, October 10, 2026)
+
+The new ordinary and power-user corpus covered all 13 tools and nine titles: grants financial management and subrecipient decisions; SBA receipts and subcontracting; drones over people; FMLA eligibility and military caregiver leave; construction fall protection and training; legacy federal property; human-subject exemptions; radio interference; motor-carrier definitions; and FAR labor/data-rights clauses and definitions. A fresh uncached official PyPI 1.1.5 install with SDK 2.3.0 and the published service each completed 77 calls. One initial reporting question selected a definition citation incorrectly; its raw answer is preserved and excluded, leaving 76 valid original/followup calls per surface. The later explicit legacy-definition question independently reproduced the defect.
+
+One new P2 was confirmed: an ordinary current read of the removed 41 CFR 102-75.45 definition gave only a generic error through the installed CLI, hiding the existing actionable HTTP 404 guidance. Fresh official XML confirms current absence, history records removal on December 16, 2025, and the December 15 snapshot contains the definition. The candidate marks only expected HTTP 404 responses as SDK tool errors while retaining direct RuntimeError compatibility and comparison behavior; unexpected HTTP errors keep their prior classification. Its actual installed 1.1.6 executable exposes the guidance and completes history, dated text and removal-comparison followups (four calls). No tool descriptions, schemas or annotations changed.
+
+Sixty-one fresh primary captures (59 HTTP 200, two expected HTTP 404) support 96 passing comparisons per surface, including complete definition blocks/fallbacks, all 47 grant Subpart D sections across three pages, all 196 grant and 66 SBA change records, 19 FMLA change records, date/ancestry/agency/scope results, oldest-first historical search and an available December 2016 FMLA comparison. The 404 checks establish source absence rather than successful text retrieval. Published CLI guidance failure is recorded separately as the confirmed P2. Of 76 valid calls, 74 answers matched exactly; one differed only in volatile search relevance score and one is the confirmed hidden-guidance defect. Across all 77 attempted calls, 74 matched exactly; the excluded initial citation repeats the same guidance difference. Initial reconciliation assumptions that missed separately returned notes/pending links, and incorrectly indexed content anchors, were corrected and preserved as harness errors; they are not product findings.
+
+Python 3.12 collected 456 tests. Frozen SDK 2.0.0 and fresh candidate-wheel SDK 2.3.0 each passed 338 with 118 explicit live skips. Against actual published 1.1.5, three of the five new collected cases fail and two unexpected-error controls pass; all five pass on the candidate; controls verify unexpected errors are not reclassified. Both 13-tool contract checks, version consistency, wheel/sdist build and new-version PyPI guard passed. No new full 456-case live-suite run is claimed. Published version remains 1.1.5; final actual 1.1.6 publication verification is pending release-owner gates.
+
+Snapshots are through October 7, not the audit date. Availability remains title/section/date-specific. Zero correction matches were independently checked against complete title correction sources, not treated as proof that no corrections exist elsewhere. Definition fallback explicitly reads only its first three suggestions; five remaining suggestions are marked unread. Coverage is a sampled corpus, not every regulation. No additional confirmed P0/P1/P2/P3 findings or unresolved product defects were identified beyond the fixed P2; release verification remains pending. Evidence: `Artifacts/mcp-e2e-20261010/round4/ecfr`.
+
 ## Published round 3 verification (1.1.5, October 10, 2026)
 
 The scoped release workflow `38076027377` succeeded at source `7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336`. A fresh uncached install by name from official PyPI selected eCFR 1.1.5 with MCP SDK 2.3.0. The first install preceded index propagation; its failure is preserved and excluded from verification counts. Both initialize responses reported 1.1.5, the public health response matched the release SHA, both 13-tool contracts matched the reviewed baseline, and all 12 installed modules and the official wheel payload matched reviewed source.
@@ -93,12 +105,12 @@ All 13 tools kept their names. No privacy promise or cache time changed.
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across eight audit rounds. Rounds 1-7 surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. Round 8 (1.1.0, 2026-10-10) was a six-agent bug hunt against eCFR's own data plus a 47-question everyday-use pass; it found the text parser, the definition finder and eCFR's search index were the sources of 18 P2 and about 20 P3 problems, all fixed. The MCP ships with 451 collected regression tests (333 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
+This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across eight audit rounds. Rounds 1-7 surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. Round 8 (1.1.0, 2026-10-10) was a six-agent bug hunt against eCFR's own data plus a 47-question everyday-use pass; it found the text parser, the definition finder and eCFR's search index were the sources of 18 P2 and about 20 P3 problems, all fixed. The current source collects 456 regression tests (338 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 13 |
-| Total regression tests | 451 (333 offline, 118 live-gated) |
+| Total regression tests | 456 (338 offline, 118 live-gated) |
 | Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 2 |
 | P1 silent-wrong-data bugs found and fixed | 26 |
@@ -106,8 +118,8 @@ This Model Context Protocol server exposes the eCFR (Electronic Code of Federal 
 | P3 cleanup items found and fixed | 12 |
 | Round 6 external re-audit findings, fixed in 1.0.2 | 12 (2 high, 5 medium, 5 low) |
 | Round 8 bug hunt findings, fixed in 1.1.0 | 18 P2, about 20 P3, plus 6 everyday-use fixes |
-| Source package version | 1.1.5 |
-| PyPI status | Published 1.1.5; actual installed CLI and public service verified |
+| Source package version | 1.1.6 candidate |
+| PyPI status | Published 1.1.5 verified; candidate 1.1.6 publication verification pending |
 
 ## 1.0.4 Safety Release Verification
 
