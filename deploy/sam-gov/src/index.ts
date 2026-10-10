@@ -70,7 +70,7 @@ export async function handleMessage(message: Message, env: Env): Promise<object 
     case "tools/call": {
       const name = params?.name;
       const args = params?.arguments ?? {};
-      const handler = typeof name === "string" ? HANDLERS[name] : undefined;
+      const handler = typeof name === "string" && Object.hasOwn(HANDLERS, name) ? HANDLERS[name] : undefined;
       if (!handler) return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: `Unknown tool: ${name}`}], isError: true}};
       if (typeof args !== "object" || Array.isArray(args)) {
         return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: "arguments must be an object."}], isError: true}};
