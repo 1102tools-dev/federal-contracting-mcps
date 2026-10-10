@@ -51,7 +51,7 @@ const ST_DOT = new RegExp(`(?<!${WORD})st\\.`, "gu");
 const COUNTY_SUFFIX = new RegExp(`[\\t\\n\\v\\f\\r\\x1c-\\x20\\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]+(county|parish|counties|parishes)$`, "iu");
 
 export function norm(name: string): string {
-  let s = name.toLowerCase().replaceAll("’", "'").replaceAll("‘", "'");
+  let s = name.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replaceAll("’", "'").replaceAll("‘", "'");
   s = s.replace(SAINT, "st").replace(ST_DOT, "st");
   s = s.replaceAll("'", "").replaceAll("`", "").replaceAll(".", "");
   s = s.replaceAll("-", " ").replaceAll("/", " ").replaceAll(",", " ");

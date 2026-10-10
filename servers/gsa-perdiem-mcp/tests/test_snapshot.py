@@ -176,3 +176,28 @@ def test_county_definitions_and_carve_outs(state, city, county, expected):
     assert r["status"] == "resolved", r
     assert r["match_type"] == "county"
     assert r["matched_city"] == expected
+
+
+@pytest.mark.parametrize("county", ["Doña Ana", "Dona Ana", "Doña Ana County", "Dona Ana County"])
+def test_white_sands_worksite_county_completes_keyless_travel_workflow(county):
+    # Army headquarters is in Doña Ana; FY2027 has no NSA for that county.
+    lookup = _run(srv.lookup_city_perdiem("White Sands Missile Range", "NM", 2027, county=county))
+    assert lookup["status"] == "resolved"
+    assert lookup["is_standard_rate"] is True
+    assert lookup["lodging_by_month"]["May"] == 113
+    assert lookup["mie_daily"] == 68
+    estimate = _run(srv.estimate_travel_cost("White Sands Missile Range", "NM", 2, fiscal_year=2027, travel_month="May", county=county))
+    assert estimate["status"] == "resolved"
+    assert estimate["lodging_total"] == 226
+    assert estimate["mie_total"] == 170
+    assert estimate["grand_total"] == 396
+
+
+@pytest.mark.parametrize("county", ["Doña Ana", "Dona Ana"])
+def test_white_sands_zip_and_comparison_followups_preserve_correct_rate(county):
+    z = _run(srv.lookup_zip_perdiem("88002", 2027, county=county))
+    assert z["status"] == "resolved"
+    assert z["mie_daily"] == 68
+    c = _run(srv.compare_locations([{"city": "White Sands Missile Range", "state": "NM", "county": county}], 2027))
+    assert c["locations"][0]["status"] == "resolved"
+    assert c["locations"][0]["max_daily_total"] == 181

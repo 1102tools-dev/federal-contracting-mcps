@@ -8,20 +8,20 @@
     "source": "github",
     "subfolder": "servers/gsa-perdiem-mcp"
   },
-  "version": "1.2.3",
+  "version": "1.2.4",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "gsa-perdiem-mcp",
-      "version": "1.2.3",
+      "version": "1.2.4",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "description": "Free api.data.gov key; required for city lookups (ZIP, state, and M&IE work without it).",
+          "description": "Free api.data.gov key; required only for city-only/API requests or unbundled fiscal years. Bundled city-plus-county lookups, estimates, comparisons, ZIP, state, and M&IE requests work without it.",
           "isRequired": false,
           "isSecret": true,
           "format": "string",

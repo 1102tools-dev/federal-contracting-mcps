@@ -10,6 +10,7 @@ sub-county carve-outs (city limits, military installations). Keys are
 from __future__ import annotations
 
 import re
+import unicodedata
 
 _SAINT_RE = re.compile(r"\bsaint\b")
 _ST_DOT_RE = re.compile(r"\bst\.")
@@ -17,8 +18,9 @@ _COUNTY_SUFFIX_RE = re.compile(r"\s+(county|parish|counties|parishes)$", re.IGNO
 
 
 def norm(name: str) -> str:
-    """Lowercase, fold 'Saint'/'St.', drop apostrophes/periods, hyphens -> spaces."""
-    s = name.lower().replace("’", "'").replace("‘", "'")
+    """Fold accents and case, St./Saint, punctuation, and whitespace."""
+    s = "".join(c for c in unicodedata.normalize("NFKD", name) if not unicodedata.combining(c))
+    s = s.lower().replace("’", "'").replace("‘", "'")
     s = _SAINT_RE.sub("st", s)
     s = _ST_DOT_RE.sub("st", s)
     s = s.replace("'", "").replace("`", "").replace(".", "")

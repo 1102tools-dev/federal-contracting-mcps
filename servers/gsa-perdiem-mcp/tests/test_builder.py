@@ -114,3 +114,11 @@ def test_location_definitions(state, text, counties):
 def test_unknown_sub_county_wording_requires_a_pin():
     _, unparsed = parse_location_defined("CO", "Denver less the city of Glendale")
     assert unparsed
+
+
+def test_census_utf8_names_remain_usable_with_plain_and_accented_counties():
+    # Actual Census 2020 code files use UTF-8; Latin-1 produced doã±a ana.
+    raw = "STATE|COUNTYNAME\nNM|Doña Ana County\n".encode("utf-8")
+    assert bs._read_pipe(raw)[0]["COUNTYNAME"] == "Doña Ana County"
+    from gsa_perdiem_mcp._geo import county_key
+    assert county_key("NM", bs._read_pipe(raw)[0]["COUNTYNAME"]) == county_key("NM", "Dona Ana")
