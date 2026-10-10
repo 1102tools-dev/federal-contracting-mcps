@@ -116,7 +116,7 @@ MIT
 The published 2.0.5 Round 3 replay completed 115 actual public questions across
 all nine tools and recovered the conditional OSHA deadline from the linked
 notice. A fresh install with MCP SDK 2.3.0 exposed hidden repair guidance;
-the 2.0.6 candidate preserves anticipated filter/date guidance across SDK
+published 2.0.6 preserves anticipated filter/date guidance across SDK
 versions. Both SDK 2.0.0 and 2.3.0 suites pass 179 tests and skip 119 optional
 live checks (298 collected). See [testing.md](testing.md) for separate actual
 console, captured-provider, public, and primary-source evidence.
