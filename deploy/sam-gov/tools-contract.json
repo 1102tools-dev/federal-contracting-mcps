@@ -185,7 +185,7 @@
   },
   {
     "name": "summarize_opportunities",
-    "description": "Count active SAM.gov notices grouped by agency, sub-tier, office, NAICS, PSC, set-aside, notice type, place-of-performance state, contracting office state, or posted month. Accepts the same filters as search_opportunities, e.g. counts of open solicitations under one NAICS by set-aside, or which agencies posted the most sources sought notices this quarter.\n\nCounts cover active notices in SAM.gov's public daily file only, not archived or historical notices.",
+    "description": "Count active SAM.gov notices grouped by agency, sub-tier, office, NAICS, PSC, set-aside, notice type, place-of-performance state, contracting office state, or posted month. Accepts the same filters as search_opportunities, e.g. counts of open solicitations under one NAICS by set-aside, or which agencies posted the most sources sought notices this quarter.\n\nCounts cover active notices in SAM.gov's public daily file, including notices posted in earlier fiscal years that remain active. This is not a complete historical archive; archived notices are not included.",
     "inputSchema": {
       "type": "object",
       "properties": {
