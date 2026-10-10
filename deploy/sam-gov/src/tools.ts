@@ -101,7 +101,7 @@ export const TOOLS = [
       properties: {
         group_by: {type: "string", enum: Object.keys(GROUPS), description: "Field to group counts by."},
         ...FILTERS,
-        top: {type: "integer", minimum: 1, maximum: 100, default: 25, description: "Number of groups to return, largest first."},
+        top: {type: "integer", minimum: 1, maximum: 100, default: 25, description: "Number of groups to return, largest first. For posted_month, the most recent months, in month order."},
       },
       required: ["group_by"],
       additionalProperties: false,
@@ -476,8 +476,9 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
   const q = buildQuery(args, now);
   const column = GROUPS[groupBy].startsWith("substr") ? "substr(o.posted_date, 1, 7)" : `o.${GROUPS[groupBy]}`;
   const where = whereSql(q);
+  const byMonth = groupBy === "posted_month";
   const [groups, count, asOf, hint, noResponse] = await Promise.all([
-    db.prepare(`SELECT ${column} AS value, COUNT(*) AS count FROM ${q.from}${where} GROUP BY value ORDER BY count DESC, value LIMIT ?`).bind(...q.params, top).all<{value: string | null; count: number}>(),
+    db.prepare(`SELECT ${column} AS value, COUNT(*) AS count FROM ${q.from}${where} GROUP BY value ORDER BY ${byMonth ? "value DESC" : "count DESC, value"} LIMIT ?`).bind(...q.params, top).all<{value: string | null; count: number}>(),
     db.prepare(`SELECT COUNT(*) AS n, COUNT(DISTINCT ${column}) AS g FROM ${q.from}${where}`).bind(...q.params).all<{n: number; g: number}>(),
     dataAsOf(db),
     officeStateHint(db, args, now),
@@ -486,14 +487,16 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
   const total = count.results[0]?.n ?? 0;
   const shown = groups.results.reduce((sum, g) => sum + g.count, 0);
   const typeNote = noResponseNote(noResponse, total);
+  const rows = byMonth ? [...groups.results].reverse() : groups.results;
+  const monthNote = byMonth ? "Months are in order. Each month counts only notices still active today; SAM.gov archives notices over time, so earlier months look smaller and the counts are not a posting trend." : undefined;
   return {
     group_by: groupBy,
     total_matches: total,
     distinct_values: count.results[0]?.g ?? 0,
-    groups: groups.results.map(g => ({value: g.value ?? "(blank)", count: g.count})),
+    groups: rows.map(g => ({value: g.value ?? "(blank)", count: g.count})),
     other_count: total - shown,
     data_as_of: asOf,
-    notes: [...q.notes, ...(typeNote ? [typeNote] : []), ...(hint ? [hint] : [])],
+    notes: [...q.notes, ...[typeNote, monthNote, hint].filter((n): n is string => !!n)],
     source: SOURCE,
   };
 }

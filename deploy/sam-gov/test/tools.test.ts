@@ -237,6 +237,14 @@ test("summarize_opportunities groups with the search filters", async () => {
   await assert.rejects(summarizeOpportunities(db, {group_by: "vendor"}, NOW), /group_by must be one of/);
 });
 
+test("posted_month groups come back in month order with a note on archiving", async () => {
+  const byMonth = await summarizeOpportunities(db, {group_by: "posted_month"}, NOW);
+  assert.deepEqual(byMonth.groups, [{value: "2026-08", count: 1}, {value: "2026-09", count: 4}]);
+  assert.ok(byMonth.notes.some((n: string) => /only notices still active/.test(n)), JSON.stringify(byMonth.notes));
+  const byAgency = await summarizeOpportunities(db, {group_by: "agency"}, NOW);
+  assert.ok(!byAgency.notes.some((n: string) => /only notices still active/.test(n)));
+});
+
 test("get_data_status reports freshness", async () => {
   const current = await getDataStatus(db, {}, NOW) as any;
   assert.deepEqual([current.status, current.file_age_days, current.active_notices, current.api_key_required], ["current", 1, 7, false]);

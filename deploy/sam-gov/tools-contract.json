@@ -330,7 +330,7 @@
           "minimum": 1,
           "maximum": 100,
           "default": 25,
-          "description": "Number of groups to return, largest first."
+          "description": "Number of groups to return, largest first. For posted_month, the most recent months, in month order."
         }
       },
       "required": [
