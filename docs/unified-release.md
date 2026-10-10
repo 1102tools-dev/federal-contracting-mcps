@@ -192,10 +192,19 @@ Collected case counts establish inventory, not passing coverage. Keep source
 limitations and caller exclusions separate from confirmed content defects.
 
 
-## October 10 Round6 verification checkpoint
+## Historical October 10 Round6 verification checkpoint
 
 The four reviewed scoped releases completed serially: USAspending1.0.22 at `d7154fd26f985cee55ff0db3617d4ce587844446`, then CALC1.0.17, Federal Register1.0.15 and eCFR1.1.8 at `881bad8f1e46f67dbd6bfe4fab95636b7cccb8dd`. Each completed13 successful jobs; actual current remote tag targets match the workflow SHAs. The workflow retains global `mcp-production-release` concurrency with `cancel-in-progress: false`; subsequent tags were pushed only after prior completion. Documentation commits do not replace immutable runtime identities.
 
 Actual current public contracts passed all eight services/112 tools; all five Dell services passed45 checks. Dell evidence comprises public HTTPS GET health/POST initialize with backend headers, direct-origin HTTPS GET health, and authenticated SSH container-local HTTP health/initialize. Direct-origin HTTPS POST is not claimed. All16 official wheel/sdist artifacts passed downloaded SHA256/size/non-yanked checks. Full owner content acceptance and actual website publication passed; served shared documentation and final closure remain separate gates. Website source7c910eaf and snapshot81ed741f published through Pages04a6fab9, with49public assets/two configuration/four copy checks plus actual browser verification passed.
 
 The next authorized phase resolves the retained fresh SDK2.3 USAspending855, Federal Register60 and Per Diem16 failures after Round6 closes. Then exactly one final federal-contracting content round fixes/releases P0–P2 findings and stops. Acquisition.gov remains excluded; no additional audit loop is required by the current goal. See the [dated release record](releases/2026-10-10-content-audit.md) for current acceptance and source qualifications.
+
+
+## October 10 SDK correction checkpoint
+
+Round6 is closed. The subsequent reviewed SDK correction releases completed serially, with13 successful jobs each: GSA Per Diem1.2.5 and Federal Register1.0.16 at `cde5b0bc87c937b13483f26296fe0e944f24aff5`, then USAspending1.0.23 at `ac050ab90808dda721ed4c58df09e5c79f6b16af`. The workflow retains `mcp-production-release` concurrency and `cancel-in-progress: false`. Documentation-only merges preserve these immutable runtime identities.
+
+Fresh official PyPI installations with SDK2.3 pass321/190/1943 tests respectively, with267/105/379 explicitly skipped; all855 prior USAspending failed IDs execute and pass. Its default suite includes incidental source calls, so this is not an entirely offline or full optional-live run. Repository inventory6121 includes5866 eight-server cases and255 passive Acquisition cases; collection is not execution. Current public112-tool contracts, all-five Dell45checks and actual Cloudflare production release identities pass. Fresh read-only Per Diem D1 acceptance confirms unchanged complete data and zero writes; no reload is needed. Website source e05bbecd and snapshot8c62827 published through Pages88b1b1d9;49 assets/two configuration/four copy checks and actual browser verification pass. Coordinator-documentation and evidence closure remain pending.
+
+After SDK closure, exactly one final federal-contracting content round will fix and release confirmed P0–P2 findings, then stop. No additional round is authorized. Acquisition.gov remains excluded. The dated release record distinguishes original questions, actual published acceptance, skipped checks and source limitations.

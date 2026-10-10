@@ -1,27 +1,27 @@
 # October 10, 2026 MCP content audit and release record
 
-## Current summary — Round 6 released and content verified
+## Current summary — Round 6 closed; SDK corrections published
 
-Eight supported servers have completed six sequential content audits using ordinary and power-user questions checked against authoritative sources. Acquisition.gov is on a separate, excluded track. The cumulative ledger contains **71 distinct findings: 0 P0, 2 P1, 42 P2 and 27 P3**. Earlier totals include historical tooling and shared documentation corrections as identified below. Round 6 adds **three P2 and two P3**; a residual prior CALC P3 correction is counted once. Source corrections are merged; All 71 findings are fixed and live content verified, with no partially fixed or unresolved confirmed content findings. Current owner documentation and the website are published; the final coordinator record and served-file evidence close this round.
+Eight supported servers completed Round 6 using ordinary and power-user questions checked against authoritative sources. Acquisition.gov remains excluded. Round 6 closed with **71 distinct findings fixed and live verified**. The subsequent SDK 2.3 campaign corrected **three additional grouped defects**, bringing the cumulative total to **74: 0 P0, 2 P1, 44 P2 and 28 P3**. All 74 corrections have passed their applicable published content checks; SDK website publication is verified; final coordinator-documentation closure is still in progress. Earlier totals include historical tooling and shared documentation corrections identified below.
 
-Round 6 corrects USAspending’s date-scope explanation and current test records, CALC’s misleading exact-title population, eCFR’s scientific-notation rendering, and Federal Register’s comment-period source/recovery explanation. Originals, source evidence, meaningful regressions, independent reviews and published follow-ups are recorded below. Historical proofs are preserved, including the CALC residual reassessment and superseded eCFR false-zero assessment.
+Round 6 corrected USAspending date-scope explanations and test records, CALC exact-title population guidance, eCFR scientific-notation rendering, and Federal Register comment-period recovery. The SDK campaign restores specific ordinary-input recovery messages in the local Federal Register and Per Diem packages (P2 each), and USAspending (P3). Its **931 previously failing assertions are not 931 bugs**: expected-input regressions and strict unexpected-fault masking checks now pass. Successful financial and rate answers remain unchanged.
 
 | MCP | Current published version |
 |---|---|
 | SAM.gov | Python 1.0.14; hosted mirror 1.0.4 |
-| USAspending | 1.0.22 |
+| USAspending | 1.0.23 |
 | GSA CALC+ | 1.0.17 |
 | BLS OEWS | 1.1.4 |
-| GSA Per Diem | 1.2.4 |
+| GSA Per Diem | 1.2.5 |
 | eCFR | 1.1.8 |
-| Federal Register | 1.0.15 |
+| Federal Register | 1.0.16 |
 | Regulations.gov | 2.0.6 |
 
-All four Round 6 releases completed 13 successful jobs in sequence. Actual public identities/112 tool definitions, all five configured Dell services/45 checks and 16 official wheel/sdist artifacts passed. Current owner documentation and the website version/count updates are published and verified. Final coordinator documentation and immutable closure are recorded separately below. The repository contains **6,106 collected package tests**, including **5,851** for the eight-server goal and 255 passive Acquisition tests; collection is not execution. Fresh SDK 2.3 suites still report 855 USAspending, 60 Federal Register and 16 Per Diem failures; these remain explicit and are the next authorized correction campaign.
+All three SDK releases completed serially with **13 successful jobs each**. Fresh official PyPI installations with SDK 2.3 passed **2,454 tests**, skipped **751**, and collected **3,205** across the three updated packages; all 855 prior USAspending failed IDs were executed and passed. Its default suite includes incidental source calls, and these results do not establish that every optional live-source test passed. The separate repository inventory is **6,121 collected cases**, including **5,866** for the eight supported servers and 255 passive Acquisition cases. Collection is not execution. Current public identity/112-tool checks, all-five Dell/45 backend checks, all 16 official wheel/sdist downloads, and the three new Cloudflare production identities passed. Per Diem's production data remained complete and unchanged; no reload was needed.
 
-Known limits include SAM’s active-only feed and credentialed Python data access, USAspending reporting lag and award/action-date distinctions, CALC capped or approximate source aggregations, BLS May 2025/top-coded data, Per Diem CONUS/geography limits, eCFR snapshot/history lag, Federal Register source-date omissions and bounded scans, and Regulations.gov credentials/quota/attachment access. Skipped or unavailable source checks are not passed checks. No manual directory republication is needed for the compatible endpoint/metadata corrections.
+Known limits include SAM's active-only feed and credentialed Python access; USAspending reporting lag and award/action-date distinctions; CALC capped or approximate aggregations; BLS May 2025/top-coded data; Per Diem CONUS/geography limits; eCFR snapshot/history lag; Federal Register source-date omissions and bounded scans; and Regulations.gov credentials, quota and attachment access. Skipped or unavailable source checks are not passes. Compatible corrections require no manual directory republication. Detailed historical evidence remains below.
 
-**Remaining sequence:** complete Round 6 closure; resolve the targeted SDK 2.3 failures and release any confirmed product corrections; run exactly one final content round focused on federal contracting, fix/release P0–P2 findings, then stop. No further round is authorized by the current goal. This opening will be replaced with the final one-page findings, fixes, versions and limitations summary at completion.
+**Remaining sequence:** finish SDK coordinator-documentation and evidence closure, then run **exactly one final federal-contracting content round**, fix and release its confirmed P0–P2 findings, and stop. No further round follows it. At completion, this opening will be replaced with the final one-page findings, fixes, versions and limitations summary.
 
 ## Historical round records
 
@@ -722,3 +722,98 @@ Website source [PR8](https://github.com/1102tools-dev/federal-contracting-prompt
 Actual Cloudflare Pages [04a6fab9](https://04a6fab9.1102tools.pages.dev) published successfully. All49 public assets and two configuration checks passed, plus four live-copy checks. HTML comparison removes only Cloudflare-injected analytics. Actual browser verification confirms6106collected tests, current22/17/8/15version cards and the unchanged28-word impersonal summary with the dated-record link. Evidence: `coordinator/round6-final-site-public-assets.json`, `round6-final-site-public-copy.json`, `round6-final-site-browser.json`, final source/deployment independent peers and `round6-final-site-pages.log`.
 
 All71 confirmed content findings are fully fixed and live verified; source limitations, optional skips and fresh SDK failures remain distinct. The final shared documentation PR and actual19served-file checks bind the current README, this release record, release guide and each supported server's README/testing record. `coordinator/round6-closure-manifest.json` and its independent peer seal the final accepted proof set after those checks; owner content acceptance and successful releases alone do not constitute that immutable closure. After Round6 closes, the targeted SDK2.3 correction campaign precedes exactly one final federal-contracting content round, fixing/releasing P0–P2 then stopping. No further round or Acquisition audit is part of the updated goal.
+
+
+## Targeted MCP SDK 2.3 corrections — published acceptance and website verified
+
+This targeted campaign followed the sealed, completed Round 6. It is not another general content audit. Three grouped ordinary-user recovery defects were confirmed and corrected: Federal Register P2, GSA Per Diem P2, and USAspending P3. The cumulative ledger is **74 distinct findings: 0 P0, 2 P1, 44 P2 and 28 P3**, derived from the independently reconciled Round 6 total of 71 plus these three. The 931 failed SDK assertions (855 USAspending, 60 Federal Register, 16 Per Diem) are not 931 defects.
+
+Runtime and actual published-package acceptance have passed. Whole-campaign closure remains a separate gate. Website source PR9 and snapshot PR11 are merged and published; the final root documentation and closure seal remain separate gates. The single final federal-contracting content round has not been activated by this record. Acquisition.gov remains excluded from the eight-server audit goal.
+
+### User-visible corrections and review scope
+
+| Server / finding | Before: actual published console with MCP 2.3.0 | Expected and verified published correction | Severity / runtime PR / docs PR |
+|---|---|---|---|
+| GSA Per Diem / GPD-SDK23-001 | A Boston May FY2027 rate request using Massachusetts, and a three-night budget request using May 2027 as travel month, hid the USPS/state and exact-month guidance behind a generic tool error. | Specific correction guidance is visible; corrected requests resolve the same bundled rates and $1,237 budget. Four actual console and four native-public calls cover the two originals and two valid recoveries. | P2 / #179 / #182 |
+| Federal Register / FR-SDK-001 | Natural FAR part 52, clause 52.212-4 and continued FMCSA page-51 research requests lost title/part/paging correction hints. | Three specific guidance responses and three valid recoveries pass in actual console and public calls; six answers match across those transports. | P2 / #180 / #183 |
+| USAspending / USA-SDK23-001 | Battelle parent-ID child discovery, a first-200 Energy research request and latest-action selection without a period lost the existing UEI, page-size and required-window reasons. | Three original hints and five valid discovery/recovery outputs pass in eight actual console and eight public calls. Public already exposed the hints. No wrong successful financial answer is claimed. | P3 / #181 / #184 |
+
+The fixes use explicit anticipated validation markers compatible with both ValueError and ToolError. They do not blanket-catch arbitrary source, parsing or programming faults. Successful source answers, query semantics and tool names/schemas/annotations remain unchanged. Independent runtime, source/contract and publication peers corroborate those boundaries. USAspending’s 436 operational-error mock assertions retain causal, status and request checks while expecting current SDK masking; they are not additional product findings. The actual Energy recovery returned 20 matching contracts on the first supported page and an empty second page; it does not establish that 200 matching awards exist.
+
+The six owner PRs separate runtime corrections (#179–181) from final published documentation (#182–184). Saved served-document receipts prove GPD and FR README/testing bytes at their immutable merged revisions, and USA README/testing/test-map current-main bytes at docs merge 6dd741f8ed24060c722c02a39f4a31695b03cb39. Historical candidate, in-progress CI and initial install/harness receipts remain preserved and are superseded only for current acceptance by the final receipts.
+
+### Actual published execution and collected inventory
+
+All three packages were freshly installed by name from official PyPI without candidate-wheel substitution; their recorded runtime uses Python 3.12.13 and MCP 2.3.0. Module and wheel/source parity, imported site-packages provenance and original/recovery console evidence are retained separately from the frozen source lane.
+
+| Actual published package | Passed | Failed / errors | Skipped | Collected |
+|---|---:|---:|---:|---:|
+| USAspending 1.0.23 | 1,943 | 0 / 0 | 379 | 2,322 |
+| Federal Register 1.0.16 | 190 | 0 / 0 | 105 | 295 |
+| GSA Per Diem 1.2.5 | 321 | 0 / 0 | 267 | 588 |
+| Three corrected packages | **2,454** | **0 / 0** | **751** | **3,205** |
+
+USAspending’s measured default/non-gated suite took 338.153 seconds and includes existing incidental unmocked source controls. It is not entirely offline and does not execute the 379 explicitly live-gated skipped cases. The acceptance receipt confirms all 855 formerly failing assertions were present, executed and passed. The FR and GPD skips likewise do not establish provider-key or comprehensive live-source coverage. Retained frozen SDK 2.0 and installed candidate SDK 2.3 runs are distinct evidence; neither replaces these actual published SDK 2.3 executions. Initial by-name index lag and bounded retries are retained for USA/GPD, and corrected metadata-envelope/header harness assumptions remain visible.
+
+The independently reviewed census at ac050ab90808dda721ed4c58df09e5c79f6b16af measures **6,121 collected product tests**, comprising **5,866 eight-goal cases** and 255 passive Acquisition cases. It uses nine isolated Python 3.12.13 environments with frozen MCP 2.0.0, not the published SDK 2.3 execution environments. The nine raw collection logs, lock/environment provenance, 413 before/after source hashes and 24-file collection seal were independently reconciled. These are collected counts only, not 6,121 passes or new provider questions. The census increments reflect measured tests: USA 2,322, FR 295, GPD 588; unchanged goal packages remain BLS 298, eCFR 464, CALC 443, Regulations.gov 298 and SAM Python 1,158.
+
+### Immutable releases and production destinations
+
+The global mcp-production-release concurrency group has cancel-in-progress false. Exact annotated tags/peeled commits and complete workflow job lists prove the following serial releases; no prior scoped tag was replaced. Each entire workflow succeeded before the next release began.
+
+| Tag | Exact source SHA | Workflow | Jobs |
+|---|---|---|---:|
+| gsa-perdiem/v1.2.5 | cde5b0bc87c937b13483f26296fe0e944f24aff5 | [38094673272](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38094673272) | 13 success |
+| federal-register/v1.0.16 | cde5b0bc87c937b13483f26296fe0e944f24aff5 | [38094950025](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38094950025) | 13 success |
+| usaspending/v1.0.23 | ac050ab90808dda721ed4c58df09e5c79f6b16af | [38095298566](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38095298566) | 13 success |
+
+There were **39 successful jobs** in total. The recorded next-workflow creation occurred 22 seconds after GPD’s last job and 45 seconds after FR’s last job. The zero-active-publisher/queue observation is point-in-time evidence, not a promise about later unrelated workflows. Package publication, hosted deployment, registry publication and release summaries are separate successful destinations within those runs.
+
+Current actual public version and source identities are mixed by design; documentation integration HEAD is not asserted as every service’s code SHA.
+
+| Public MCP | Version | Actual release source SHA | Tool definitions |
+|---|---|---|---:|
+| gsa-perdiem | 1.2.5 | cde5b0bc87c937b13483f26296fe0e944f24aff5 | 7 |
+| gsa-calc | 1.0.17 | 881bad8f1e46f67dbd6bfe4fab95636b7cccb8dd | 8 |
+| ecfr | 1.1.8 | 881bad8f1e46f67dbd6bfe4fab95636b7cccb8dd | 13 |
+| usaspending | 1.0.23 | ac050ab90808dda721ed4c58df09e5c79f6b16af | 55 |
+| regulations-gov | 2.0.6 | c0553538fca43e13a8c7db5a6ecd77a887303c32 | 9 |
+| sam-gov | 1.0.4 | e81411afed154e04f79c74865acedaeb45b7f40f | 4 |
+| bls-oews | 1.1.4 | 5ba4a4bac4ecd098da1c48dcd09594d9e38fcf1f | 8 |
+| federal-register | 1.0.16 | cde5b0bc87c937b13483f26296fe0e944f24aff5 | 8 |
+
+SAM’s public native mirror is 1.0.4 at e81411afed154e04f79c74865acedaeb45b7f40f. Its distinct published Python package remains sam-gov-mcp 1.0.14 at d6ea8fea87732e5d28945be9cbd2917c87c844c8; no mirror/Python version conflation is intended. No unchanged MCP was force-bumped for this targeted campaign. Compatible existing tool identities and metadata require no user manual directory republishing.
+
+The eight public receipts pass all 40 health/SHA/version/no-instructions/exact-contract checks and contain 112 complete tool definitions. Independent destination review recomputes the checks against the exact recorded checkout contracts and expected mixed identity matrix. The five Dell receipts pass 45 checks. Their precise transports are public HTTPS GET health and POST initialize with origin backend headers, direct-origin HTTPS GET health, and authenticated SSH Docker execution of container-local HTTP GET health and POST initialize. This does not claim direct-origin HTTPS POST verification.
+
+Cloudflare production **deployment IDs** and **Worker version IDs** are separate identities, each with 100% active allocation and the expected RELEASE_SHA binding:
+
+| Service | Deployment ID | Worker version ID |
+|---|---|---|
+| gsa-perdiem | 264632c1-d434-4281-8ff6-20c0aa646a41 | 324f840a-418f-4a43-b0cb-1f591e28e32d |
+| federal-register | 4063cf5b-221e-4b9c-be3f-8dfa10a7f9d1 | e92194cb-da14-4718-ba53-bd81e0e99dd2 |
+| usaspending | 9b7ea6b2-7432-4f67-95f7-46fc83f7f7b3 | 8ce83b91-1183-4b33-b854-c862efd64711 |
+
+All five Dell image IDs below are literal inspected Docker image **config IDs**. The saved RepoDigests strings have the same suffixes; no independently downloaded OCI distribution manifest or remote-registry manifest hash was verified. They must not be relabeled as manifest hashes.
+
+| Dell origin | Docker image config ID |
+|---|---|
+| usaspending | sha256:f284d3b3846d54994a442c1a1225f04a3a7025ea696510b5aa051a55e31c0eaa |
+| ecfr | sha256:1adcb00d2aadf4136ebeada78c3b2f3b3f1f38df250857840a22d73b532e77c6 |
+| gsa-calc | sha256:38c72d9c33da236e11815686b510daca9bb389561837618bfff9136a1f3e13e0 |
+| federal-register | sha256:fb62ceb6c733efd0e9dd5c64673e175b116b415320d95758ad89cf84a1b11050 |
+| regulations-gov | sha256:5f4311557f47bcab147f8a52ef48b76a7c791540a8e49ba76c554287557c5a99 |
+
+Official PyPI inventory verifies eight current Python versions and 16 actual wheel/sdist downloads against official size, SHA256 and non-yanked metadata. Coordinator bytes were downloaded in memory; its receipt is not a second retained raw-byte rehash proof for every archive. Independent destination review additionally rehashes the four retained GPD/FR owner archives. Package expected versions and archive hashes alone do not establish build SHA; owner installed-module/wheel/source parity provides that separate provenance.
+
+### Data applicability, source limits and preserved proof history
+
+The fresh SDK GPD remote D1 receipt executes three SELECT-only statements. The active release remains ba0994b637ca8ae7, loaded 2026-10-10T18:13:46Z; all seven FY2021–FY2027 parts and places remain complete and unchanged. Places part 2dee3470caca1a82 has 43,665 actual rows, exactly its expected count. All statements report zero writes, zero changes and changed_db false. All nine bundled source files at publication cde5 match the Round 6 hashes. The native Worker+D1 public path, rather than the retained unused container, serves GPD. No data reload is required for this error-guidance fix. FY evidence reads completeness and expected-row metadata; it does not recount every year table or redownload all official sources.
+
+Existing source limitations persist: optional keyed/live-gated tests remain skipped; provider result caps and paged discovery are not exhaustive inventories; GSA CALC ceiling rates are not awarded prices and its approximate percentiles/title buckets retain bounded variation qualifications; GPD bundled fiscal-year/place applicability is distinct from a fresh universal-source claim; SAM native source status and Python availability are distinct deployments; BLS remains its stated bundled source vintage. This targeted SDK acceptance introduces no broad new source freshness assertion.
+
+Round 6’s 65-proof sealed history is preserved. The SDK preservation receipt verified all 65 bytes/hashes unchanged over the implementation interval. Owner candidate/publication seals, independent peer receipts and the separate census seal retain provenance; historical pending wording is not silently rewritten as completion. The website’s stale USA comparison inventory of 2,315 is an existing Round 6 documentation-propagation residual being corrected to measured 2,322, not a fourth new SDK finding. Website source e05bbecd8ea19ce6648e1acfa27211418a396339 and deployment snapshot 8c62827 are published through Pages88b1b1d9. All49 public assets/two configuration files/four copy checks and actual browser checks pass. The initial immediate copy check saw an old cached prompts.json; its 3/4 result is retained separately, and the subsequent 4/4 check confirms propagation. All57 prompts,25 protected source assets, directory links, passive Acquisition card and exact28-word impersonal summary remain preserved.
+
+Primary saved receipts (paths relative to `Artifacts/mcp-e2e-20261010/`): coordinator/sdk23-campaign-state.json; coordinator/sdk23-release-concurrency-peer.json; coordinator/sdk23-deployment-identities.json; coordinator/sdk23-final-public-matrix.json; coordinator/sdk23-final-dell.json; coordinator/sdk23-final-pypi-artifacts.json; coordinator/sdk23-final-destinations-peer.json; coordinator/sdk23-final-collection-peer-sam.json; coordinator/sdk23-gpd-data-readonly-acceptance.json; coordinator/sdk23-r6-seal-preservation.json; sdk23/usaspending/final-published-summary.json; sdk23/federal-register/final-published16/FINAL-PUBLISHED.json; sdk23/gsa-perdiem/final-published-acceptance-1.2.5.json; and each owner current-github-docs.json.
+
+This section records reviewed evidence and explicit remaining publication/closure gates. The coordinator owns final publication and closure.
