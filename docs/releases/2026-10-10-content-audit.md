@@ -375,3 +375,16 @@ These counts report completed lanes separately from collection. Acquisition's255
 | **Eight-server goal** | | |**5,829**|**Collected cases, not an all-passed fresh-suite total.**|
 | Passive Acquisition inventory |Excluded|Separate completed track|255|No Round4 audit or future dispatch.|
 | **Nine-package product inventory** | | |**6,084**|Independent canonical-source collection only.|
+
+
+### Round4 completed release workflows
+
+| Scoped tag | Frozen source | Successful workflow | Cloudflare deployment / scope |
+|---|---|---|---|
+|sam-gov/v1.0.14|`d6ea8fea87732e5d28945be9cbd2917c87c844c8`|[38080882021](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38080882021)|Package-only; hosted jobs genuinely skipped, native mirror unchanged.|
+|usaspending/v1.0.19|`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`|[38082477859](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38082477859)|`cbc8da27-84ce-4c95-ac2f-7aa10bc7c99c`; preserved intermediate release.|
+|gsa-calc/v1.0.16|`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`|[38082856566](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38082856566)|`ab04ec42-39e2-4b28-9b37-8cb5b1d795f8`.|
+|ecfr/v1.1.6|`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`|[38083173160](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38083173160)|`4b4313cb-77f2-4e54-8998-fe136013b875`.|
+|usaspending/v1.0.20|`2a93b7b706d818da647f9d56cacbf543f867fa79`|[38083846513](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38083846513)|`571c0cb3-0551-4f1a-b32f-cde5c15e6fc8`; finalUSAversion.|
+
+Source/content/documentation PRs132–145 and147–149 are merged; root coordinatorPR146 remains a draft until final website/content/documentation gates close. Runtime/content corrections are PR136(eCFR),137(SAM),139(CALC),141(USAprograms/catalog) and147(USAavailability); PR138 fixes the actual Regulations badge. PR135 is release infrastructure and PR144/145 are meaningful timing-test repairs, not new content findings. Automated registry updates succeeded without requiring manual directory republication. Actual directory/client propagation remains unobserved.
