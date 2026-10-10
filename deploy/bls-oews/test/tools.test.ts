@@ -24,6 +24,10 @@ const FOOTNOTES = {
 };
 // [key, v01..v17, {fNN: footnote code}] as loaded from the bundled release.
 const CELLS: [string, (string | null)[], Record<string, string>][] = [
+  ["OEUM0047900000000252031", ["20400", "4.4", "-", "84940", "0.9", "-", "-", "-", "-", "-", "57290", "65050", "80300", "102320", "117160", "6.504", "0.95"], {"f03": "4", "f06": "4", "f07": "4", "f08": "4", "f09": "4", "f10": "4"}],
+  ["OEUM0042660000000252031", ["7720", "4.1", "-", "101680", "2.1", "-", "-", "-", "-", "-", "61140", "82360", "102670", "127290", "132300", "3.699", "0.54"], {"f03": "4", "f06": "4", "f07": "4", "f08": "4", "f09": "4", "f10": "4"}],
+  ["OEUN0000000000000272011", ["55000", "17.7", "58.29", "-", "8.4", "16.50", "20.34", "29.05", "97.95", "143.68", "-", "-", "-", "-", "-", null, null], {"f04": "4", "f11": "4", "f12": "4", "f13": "4", "f14": "4", "f15": "4"}],
+
   ["OEUN0000000000000272042", ["36180", "3.1", "60.46", "-", "2.6", "20.35", "27.57", "47.80", "75.33", "132.56", "-", "-", "-", "-", "-", null, null],
     {f04: "4", f11: "4", f12: "4", f13: "4", f14: "4", f15: "4"}],
   ["OEUN0000000000000151252", ["1687890", "0.6", "71.20", "148100", "0.4", "39.64", "50.58", "65.38", "82.68", "103.21", "82460", "105210", "135980", "171980", "214670", null, null], {}],
@@ -43,9 +47,9 @@ const CELLS: [string, (string | null)[], Record<string, string>][] = [
   ["OEUS2400000000000151212", ["8650", "9.9", "72.09", "149940", "3.7", "38.04", "51.34", "67.14", "88.10", "104.12", "79130", "106790", "139640", "183260", "216570", "3.131", "2.55"], {}],
 ];
 const OCCUPATIONS = [["151252", "Software Developers"], ["252021", "Elementary School Teachers, Except Special Education"], ["291215", "Family Medicine Physicians"],
-  ["272042", "Musicians and Singers"],
+  ["272042", "Musicians and Singers"], ["272011", "Actors"], ["252031", "Secondary School Teachers, Except Special and Career/Technical Education"],
   ["151232", "Computer User Support Specialists"], ["151242", "Database Administrators"], ["291214", "Emergency Medicine Physicians"], ["151212", "Information Security Analysts"]];
-const AREAS = [["0000000", "National"], ["0047900", "Washington-Arlington-Alexandria, DC-VA-MD-WV"], ["5100000", "Virginia"], ["0010540", "Albany, OR"], ["7800000", "Virgin Islands"],
+const AREAS = [["0042660", "Seattle-Tacoma-Bellevue, WA"], ["0000000", "National"], ["0047900", "Washington-Arlington-Alexandria, DC-VA-MD-WV"], ["5100000", "Virginia"], ["0010540", "Albany, OR"], ["7800000", "Virgin Islands"],
   ["0047260", "Virginia Beach-Chesapeake-Norfolk, VA-NC"], ["0017820", "Colorado Springs, CO"], ["0014740", "Bremerton-Silverdale-Port Orchard, WA"], ["2400000", "Maryland"]];
 
 function addVersion(sqlite: DatabaseSync, version: number, adjust = (value: string | null) => value) {
@@ -160,7 +164,8 @@ test("unpublished cells carry the BLS footnote; no-data results say why", async 
   const physicians = await data("get_wage_data", {occ_code: "291215", scope: "metro", area_code: 10540, datatypes: ["15"]});
   assert.equal(physicians.wages["Annual 90th Percentile"].formatted, `[Not published] ${FOOTNOTES["5"]}`);
   assert.equal(physicians.no_data, true);
-  assert.match(physicians.no_data_reason, /BLS publishes no estimate for this occupation/);
+  assert.doesNotMatch(physicians.no_data_reason, /BLS publishes no estimate/);
+  assert.match(physicians.no_data_reason, /equal to or greater than/);
   const unknownSoc = await data("get_wage_data", {occ_code: "999999"});
   assert.match(unknownSoc.no_data_reason, /occ_code=999999 is not an occupation in the May 2025 OEWS release/);
   assert.equal(unknownSoc.data_year, null);
@@ -487,4 +492,24 @@ test("pyjson matches Python's repr, format, round, and strip", () => {
   assert.ok(parsed.a instanceof PyFloat);
   assert.equal(parsed.b, 2);
   assert.equal(parsed.c, 123456789012345678901234567890n);
+});
+
+test("teacher hourly comparison completes recovery to published annual wages", async () => {
+  const args = {occ_code: "252031", metro_codes: ["47900", "42660"]};
+  const hourly = await data("compare_metros", {...args, datatype: "03"});
+  assert.doesNotMatch(hourly.no_data_reason, /retired|not surveyed/);
+  assert.match(hourly.no_data_reason, /do not generally work year-round/);
+  assert.match(hourly.no_data_reason, /Try an annual wage measure/);
+  const annual = await data("compare_metros", args);
+  assert.equal(annual.metros["47900"].numeric, 84940);
+  assert.equal(annual.metros["42660"].numeric, 101680);
+});
+test("performer annual comparison completes recovery to published hourly wages", async () => {
+  const args = {occ_codes: ["272011", "272042"]};
+  const annual = await data("compare_occupations", args);
+  assert.doesNotMatch(annual.no_data_reason, /retired|not surveyed/);
+  assert.match(annual.no_data_reason, /do not generally work year-round/);
+  assert.match(annual.no_data_reason, /Try an hourly wage measure/);
+  const hourly = await data("compare_occupations", {...args, datatype: "03"});
+  assert.deepEqual(Object.values(hourly.occupations).map((v: any) => v.numeric), [58.29, 60.46]);
 });

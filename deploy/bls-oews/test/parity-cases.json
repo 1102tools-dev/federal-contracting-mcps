@@ -220,5 +220,10 @@
   {"name": "hourly-only IGCE musicians", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "27-2042"}},
   {"name": "hourly-only IGCE actors followup", "tool": "igce_wage_benchmark", "arguments": {"occ_code": "27-2011"}},
   {"name": "national ratios unsupported", "tool": "get_wage_data", "arguments": {"occ_code": "151252", "datatypes": ["16", "17"]}},
-  {"name": "national occupation comparison ratios unsupported", "tool": "compare_occupations", "arguments": {"occ_codes": ["151252", "151212"], "datatype": "17"}}
+  {"name": "national occupation comparison ratios unsupported", "tool": "compare_occupations", "arguments": {"occ_codes": ["151252", "151212"], "datatype": "17"}},
+  {"name": "teacher hourly comparison recovery", "tool": "compare_metros", "arguments": {"occ_code": "252031", "metro_codes": ["47900", "42660"], "datatype": "03"}},
+  {"name": "teacher annual comparison followup", "tool": "compare_metros", "arguments": {"occ_code": "252031", "metro_codes": ["47900", "42660"]}},
+  {"name": "performer annual comparison recovery", "tool": "compare_occupations", "arguments": {"occ_codes": ["272011", "272042"]}},
+  {"name": "performer hourly comparison followup", "tool": "compare_occupations", "arguments": {"occ_codes": ["272011", "272042"], "datatype": "03"}},
+  {"name": "topcoded source floor explanation", "tool": "get_wage_data", "arguments": {"occ_code": "291214", "scope": "metro", "area_code": "47900"}}
 ]

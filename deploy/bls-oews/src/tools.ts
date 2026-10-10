@@ -486,6 +486,21 @@ interface WageResult {
   data: Lookup;
 }
 
+function unpublishedReason(values: Iterable<Py>, datatypes: string[]): string | null {
+  const cells = [...values].filter((value): value is Map<string, Py> => value instanceof Map && value.get("raw") !== null);
+  if (!cells.length) return null;
+  const notes = [...new Set(cells.map(value => value.get("formatted")).filter(
+    (value): value is string => typeof value === "string" && value.startsWith("[Not published]"),
+  ))];
+  let reason = "BLS includes requested cells but does not publish numeric values for these measures.";
+  if (notes.length) reason += " " + notes.join(" ");
+  if (notes.some(note => note.includes("do not generally work year-round"))) {
+    if (datatypes.every(dt => HOURLY.has(dt))) reason += " Try an annual wage measure, such as datatype '04'.";
+    else if (datatypes.every(dt => ["04", "11", "12", "13", "14", "15"].includes(dt))) reason += " Try an hourly wage measure, such as datatype '03'.";
+  }
+  return reason;
+}
+
 async function wageData(db: Database, a: Record<string, any>, extraOccupations: string[] = []): Promise<WageResult> {
   const {scope, area_code} = a;
   const occ = validateSoc(a.occ_code);
@@ -538,7 +553,7 @@ async function wageData(db: Database, a: Record<string, any>, extraOccupations: 
     } else if (areaName === null) {
       cause = `area_code=${repr(area_code)} is not an OEWS area in the ${data.rel.name} release.`;
     } else {
-      cause = "BLS publishes no estimate for this occupation at this area/industry level (or every requested cell is unreleased).";
+      cause = unpublishedReason(wages.values(), datatypes) ?? "BLS publishes no estimate for this occupation at this area/industry level (or every requested cell is unreleased).";
     }
     response.set("no_data_reason", `No wage values for occ_code=${occ} scope=${scope} area_code=${repr(area_code)} industry=${industry}. ${cause}`);
   }
@@ -587,7 +602,7 @@ export async function compareMetros(db: Database, args: Args) {
   ]);
   if (metros.size && !hasNumeric(metros.values())) {
     response.set("no_data", true);
-    response.set("no_data_reason", `No BLS data for occ_code=${occ} across any of the requested metros. Likely cause: the SOC code does not exist, is retired, or is not surveyed at MSA level. Verify the SOC at bls.gov/soc.`);
+    response.set("no_data_reason", unpublishedReason(metros.values(), [datatype]) ?? `No BLS data for occ_code=${occ} across any of the requested metros. Likely cause: the SOC code does not exist, is retired, or is not surveyed at MSA level. Verify the SOC at bls.gov/soc.`);
   }
   if (collapsed.length) response.set("_note", `Inputs ${repr(collapsed)} normalized to the same series as another input and were collapsed (first spelling wins).`);
   response.set("source", source(data.rel));
@@ -639,7 +654,7 @@ export async function compareOccupations(db: Database, args: Args) {
   ]);
   if (!hasNumeric(occupations.values())) {
     response.set("no_data", true);
-    response.set("no_data_reason", `No BLS data for any requested occupation at scope=${scope} area_code=${repr(area_code)}. Likely causes: nonexistent or retired SOC codes, or SOCs not surveyed at this geographic level. Verify at bls.gov/soc.`);
+    response.set("no_data_reason", unpublishedReason(occupations.values(), [datatype]) ?? `No BLS data for any requested occupation at scope=${scope} area_code=${repr(area_code)}. Likely causes: nonexistent or retired SOC codes, or SOCs not surveyed at this geographic level. Verify at bls.gov/soc.`);
   }
   if (collapsed.length) response.set("_note", `Inputs ${repr(collapsed)} normalized to the same series as another input and were collapsed (first spelling wins).`);
   response.set("source", source(data.rel));

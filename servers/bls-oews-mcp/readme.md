@@ -1,6 +1,6 @@
 # bls-oews-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 295](https://img.shields.io/badge/regression%20tests-295-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 298](https://img.shields.io/badge/regression%20tests-298-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/bls-oews-mcp -->
 
