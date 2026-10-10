@@ -367,6 +367,13 @@ function normalizeForMatch(s: string): string {
   return squash(s.toLowerCase().replace(PY_PUNCT, " "));
 }
 
+/** The query is one whole slash-separated part of an NSA name ("Woburn" in
+ * "Burlington / Woburn"), never a substring of a part ("Milton" in "Hamilton"). */
+function isCompositePart(query: string, nsaName: string): boolean {
+  const q = normalizeForMatch(query);
+  return q !== "" && nsaName.split("/").some(part => normalizeForMatch(part) === q);
+}
+
 function normalizeCityForUrl(city: string): string {
   const s = squash(city.replaceAll("'", " ").replaceAll("\u2019", " ").replaceAll("-", " "));
   try {
@@ -477,14 +484,17 @@ async function resolveCity(ctx: Context, response: unknown, city: string, state:
 
   const exact = parsed.filter(p => normalizeForMatch(p.city!) === q);
   if (exact.length) return {status: "resolved", rate: exact[0], match_type: "exact"};
-  const composite = parsed.filter(p => !p.is_standard_rate && normalizeForMatch(p.city!).includes(q));
-  if (composite.length === 1) return {status: "resolved", rate: composite[0], match_type: "composite"};
 
+  // A list of every rate area in the state means GSA did not recognize the
+  // city; no name match inside that list is GSA's answer.
   const standard = parsed.filter(p => p.is_standard_rate);
   const nsa = parsed.filter(p => !p.is_standard_rate);
   if (standard.length && nsa.length && isFullStateList(snap, state, nsa)) {
     return {status: "unresolved", suggestion: await censusSuggestion(snap, state, city)};
   }
+
+  const composite = nsa.filter(p => isCompositePart(city, p.city!));
+  if (composite.length === 1) return {status: "resolved", rate: composite[0], match_type: "composite"};
 
   const candidates = [...nsa, ...standard.slice(0, 1)];
   if (candidates.length === 1) {
@@ -727,6 +737,8 @@ async function lookupZipPerdiem(ctx: Context, args: Dict): Promise<Dict> {
     has_monthly_data: best.has_monthly_data,
     source,
   };
+  // "county" above is the rate area's definition; keep the caller's input too.
+  if (county) out.county_supplied = county;
   if (candidates.length > 1) out.same_rate_areas = candidates.map(p => p.city);
   return out;
 }
@@ -774,6 +786,8 @@ async function lookupStateRates(ctx: Context, args: Dict): Promise<Dict> {
       mie: r.meals,
       max_daily: add(r.lodging_max, r.meals),
       seasonal: r.has_seasonal_variation,
+      // Season months, so "Virginia Beach in July" needs no second call.
+      ...(r.has_seasonal_variation ? {lodging_by_month: r.lodging_by_month} : {}),
     })),
     source,
   };
@@ -785,7 +799,7 @@ async function getMieBreakdown(ctx: Context, args: Dict): Promise<Dict> {
   const year = validateFiscalYear(ctx, args.fiscal_year, "fiscal_year");
   const snap = await ctx.snapshot.year(year);
   if (snap !== null) {
-    return {
+    const out: Dict = {
       fiscal_year: year,
       tiers: snap.mie_tiers.map(t => ({
         total: t.total,
@@ -797,6 +811,13 @@ async function getMieBreakdown(ctx: Context, args: Dict): Promise<Dict> {
       })),
       source: snap.source,
     };
+    const covers = typeof snap.source.mie_file_covers === "string" ? snap.source.mie_file_covers : "";
+    const first = /^FY(\d{4})\b/.exec(covers);
+    if (first && Number(first[1]) !== year) {
+      out.mie_note = `GSA names its M&IE breakdown file for FY${first[1]}, the first fiscal ` +
+        `year it applies to; GSA lists it for ${covers}, which includes FY${year}.`;
+    }
+    return out;
   }
 
   const path = `conus/mie/${year}`;
@@ -927,6 +948,17 @@ async function estimateTravelCost(ctx: Context, args: Dict): Promise<Dict> {
     _note: "Per diem only (lodging + M&IE). Airfare and ground transport not included.",
   };
   if (monthFallbackNote) out.month_fallback_note = monthFallbackNote;
+  if (rateMonth !== "MAX" && numNights > 1) {
+    out.rate_month_note = `All ${numNights} nights are priced at the FY${year} ${rateMonth} rate. ` +
+      "If the trip crosses into another month or fiscal year, estimate each " +
+      "month's nights separately and add them.";
+  }
+  if (travelDays >= 31) {
+    out.long_term_note = "Long stay (31 or more travel days): an agency may prescribe a reduced " +
+      "per diem rate (41 CFR 301-11.22), and agency rules such as DoD's Joint " +
+      "Travel Regulations may reduce long-term TDY rates. This estimate uses " +
+      "GSA's full maximum rates.";
+  }
   if (res.other_candidates?.length) out.other_candidates = res.other_candidates;
   return out;
 }

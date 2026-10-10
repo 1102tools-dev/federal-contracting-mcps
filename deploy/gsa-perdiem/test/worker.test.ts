@@ -288,3 +288,97 @@ test("Python number and text helpers", () => {
   const parsed = loads('{"a": 1.0, "b": 2, "c": 99999999999999999999}', {bigints: true});
   assert.equal(dumps(parsed, null), '{"a":1.0,"b":2,"c":99999999999999999999}');
 });
+
+// P2-1 (content test 2026-10-10): real GSA responses captured 2026-10-10.
+// GSA did not recognize Milton, OH and returned every Ohio rate area; "milton"
+// is inside "Hamilton" but is not that rate area.
+const REAL_CITY = (file: string) => readFileSync(`${ROOT}servers/gsa-perdiem-mcp/tests/fixtures/gsa_city/${file}`, "utf8");
+
+test("a town whose name is inside an NSA name does not get that NSA's rate", async () => {
+  const {call} = setup({runtime: {fetch: gsa({
+    "city/Milton/state/OH/year/2027": {body: REAL_CITY("city_Milton_state_OH_year_2027.json")},
+    "city/Gardiner/state/MT/year/2027": {body: REAL_CITY("city_Gardiner_state_MT_year_2027.json")},
+  })}});
+  const milton = (await call("lookup_city_perdiem", {city: "Milton", state: "OH", fiscal_year: 2027})).structuredContent;
+  assert.equal(milton.status, "unresolved");
+  assert.equal(milton.matched_city, undefined);
+  assert.equal(milton.census_suggestion.destination, "Standard Rate");
+  assert.equal(milton.census_suggestion.lodging_range, "$113/night");
+  assert.equal(milton.census_suggestion.mie_daily, 68);
+  const row = (await call("compare_locations", {locations: [{city: "Milton", state: "OH"}], fiscal_year: 2027})).structuredContent.locations[0];
+  assert.equal(row.status, "unresolved");
+  const gardiner = (await call("lookup_city_perdiem", {city: "Gardiner", state: "MT", fiscal_year: 2027})).structuredContent;
+  assert.equal(gardiner.matched_city, "Big Sky / West Yellowstone/Gardiner");
+  assert.equal(gardiner.match_type, "composite");
+});
+
+test("composite names match whole slash-separated parts only", async () => {
+  const cases: [string, string, boolean][] = [
+    ["Milton", "Hamilton", false],
+    ["Overland", "Kansas City / Overland Park", false],
+    ["Park", "Kansas City / Overland Park", false],
+    ["Fayette", "Lafayette / West Lafayette", false],
+    ["Anton", "San Antonio", false],
+    ["Columbia", "District of Columbia", false],
+    ["Bedford", "Plymouth / Taunton / New Bedford", false],
+    ["Overland Park", "Kansas City / Overland Park", true],
+    ["west  lafayette", "Lafayette / West Lafayette", true],
+    ["St Petersburg", "Tampa / St. Petersburg", true],
+    ["Whitefish", "Kalispell/Whitefish", true],
+  ];
+  for (const [query, name, match] of cases) {
+    const path = `city/${encodeURIComponent(query.replace(/\s+/g, " "))}/state/WY/year/2027`;
+    const body = {rates: [{rate: [rate(name, "Somewhere", 80, 150)], state: "WY", year: 2027}]};
+    const {call} = setup({runtime: {fetch: gsa({[path]: {body}})}});
+    const out = (await call("lookup_city_perdiem", {city: query, state: "WY", fiscal_year: 2027})).structuredContent;
+    assert.equal(out.match_type === "composite", match, `${query} vs ${name}: ${out.status} ${out.match_type}`);
+  }
+});
+
+test("a ZIP answer chosen by county keeps the supplied county (P3-4)", async () => {
+  // GSA's FY2027 ZIP file lists 20120 under Fairfax County, VA (District of Columbia) and Loudoun County, VA.
+  const {call} = setup();
+  const out = (await call("lookup_zip_perdiem", {zip_code: "20120", county: "Fairfax", fiscal_year: 2027})).structuredContent;
+  assert.equal(out.status, "resolved");
+  assert.equal(out.matched_city, "District of Columbia");
+  assert.equal(out.county_supplied, "Fairfax");
+  assert.notEqual(out.county, "Fairfax");
+  assert.match(out.county, /Fairfax/);
+});
+
+test("trip estimates say every night uses one month, flag long stays, and cite the current FTR section (P3-1, P3-6)", async () => {
+  const {call} = setup();
+  const sf = (await call("estimate_travel_cost", {city: "San Francisco", state: "CA", county: "San Francisco", num_nights: 4, travel_month: "Sep", fiscal_year: 2026})).structuredContent;
+  assert.equal(sf.rate_month, "Sep");
+  assert.match(sf.rate_month_note, /All 4 nights.*each month/);
+  const one = (await call("estimate_travel_cost", {city: "San Francisco", state: "CA", county: "San Francisco", num_nights: 1, travel_month: "Sep", fiscal_year: 2026})).structuredContent;
+  assert.equal(one.rate_month_note, undefined);
+  const long = (await call("estimate_travel_cost", {city: "San Antonio", state: "TX", county: "Bexar", num_nights: 30, fiscal_year: 2027})).structuredContent;
+  assert.equal(long.travel_days, 31);
+  assert.match(long.long_term_note, /301-11\.22/);
+  const short = (await call("estimate_travel_cost", {city: "San Antonio", state: "TX", county: "Bexar", num_nights: 29, fiscal_year: 2027})).structuredContent;
+  assert.equal(short.long_term_note, undefined);
+  const tools: {name: string; description: string}[] = JSON.parse(readFileSync(new URL("../tools-contract.json", import.meta.url), "utf8"));
+  const description = tools.find(t => t.name === "estimate_travel_cost")?.description ?? "";
+  assert.match(description, /301-11\.20\b/);
+  assert.doesNotMatch(description, /301-11\.101/);
+});
+
+test("the M&IE table explains why its file is named FY 2025 (P3-5)", async () => {
+  const {call} = setup();
+  const fy2027 = (await call("get_mie_breakdown", {fiscal_year: 2027})).structuredContent;
+  assert.equal(fy2027.source.mie_file_covers, "FY2025-present");
+  assert.match(fy2027.mie_note, /FY2025.*FY2027/);
+  assert.equal((await call("get_mie_breakdown", {fiscal_year: 2025})).structuredContent.mie_note, undefined);
+});
+
+test("state lists show season months for seasonal areas (P3-2)", async () => {
+  // GSA FY2027 rate file: Virginia Beach $129 Oct-May, $212 Jun-Aug, $129 Sep; Richmond is flat.
+  const {call} = setup();
+  const rows = JSON.parse((await call("lookup_state_rates", {state: "VA", fiscal_year: 2027})).content[0].text).rates;
+  const vb = rows.find((r: any) => r.city === "Virginia Beach").lodging_by_month;
+  assert.deepEqual([vb.Oct, vb.May, vb.Jun, vb.Jul, vb.Aug, vb.Sep], [129, 129, 212, 212, 212, 129]);
+  const richmond = rows.find((r: any) => r.city === "Richmond");
+  assert.equal(richmond.seasonal, false);
+  assert.equal(richmond.lodging_by_month, undefined);
+});

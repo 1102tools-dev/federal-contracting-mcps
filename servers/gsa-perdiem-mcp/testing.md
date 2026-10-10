@@ -1,21 +1,37 @@
 # GSA Per Diem Rates MCP: Testing Record
 
+## Round 9 (2026-10-10): content-test corrections and 1.2.1 release preparation
+
+Current suite: **564 collected Python regressions: 297 offline passed and 267 live-gated skipped**. The server exposes **7 tools**. Nine audit rounds are documented through this content-test round. Worker validation is separate: **23 tests passed**, type checks passed, and **1,350 parity calls** had 7 documented parser-message differences and zero unexplained differences.
+
+| Finding | Regression evidence |
+|---|---|
+| Unrecognized Milton, OH must not inherit Hamilton's rate | `test_city_resolution.py`: unresolved city, comparison result, complete slash-part table, and legacy-selector checks; 9 Python and 2 Worker cases failed before the fix |
+| ZIP county input must survive the resolved rate definition | `test_snapshot.py::test_zip_county_answer_keeps_the_supplied_county`; matching Worker regression failed before |
+| Trips price each night using one month; long stays need an agency-rate note | `test_snapshot.py` estimate notes and citation checks; 3 Python cases and corresponding Worker case failed before |
+| FY2025 M&IE filename remains applicable to FY2027 | M&IE source-note regressions in Python and Worker failed before |
+| Seasonal state lists need lodging months | Python and Worker seasonal-month regressions failed before |
+
+Independent source comparison found zero differences for all 40,426 FY2027 ZIPs and 295 published destinations. Findings replay covered Q1-Q42 (including Q40b and combined comparison groups) in 42 calls: Python and Worker answers identical; lodging values, estimate arithmetic, five M&IE tiers and targeted resolution behavior passed source-backed assertions. Most replay API envelopes reconstruct the findings' reported resolutions from downloaded GSA rate files; Milton and Bethesda use raw captures. This replay does not prove fresh upstream city behavior. A fresh Bedford MA DEMO_KEY source probe returned HTTP 429, so fresh API validation remains pending. Hosted findings rerun is prepared for after release.
+
+Deferred P3 work: month order/calendar-year labels, per-candidate ZIP county/state provenance (requires schema/loader migration), and date-aware per-night pricing. Multi-month guidance, supplied-county preservation, long-stay notes and the current 41 CFR 301-11.20 citation are included. Version 1.2.1 is a release target until the tag is published.
+
 ## Executive Summary
 
-This Model Context Protocol server exposes the GSA Per Diem Rates API as 6 callable tools for federal travel lodging and M&IE rate lookups used in IGCEs and travel cost estimation. It was hardened across seven audit rounds, three of them live audits against the production API. The 0.2.x program surfaced 55 bugs. Round 7 (1.0.1), an independent full-source re-audit with live verification, found 14 more and overturned a round-6 headline: the "catastrophic silent-wrong-data" cases (Penasco returning Taos, Santa Rosa Beach returning Fort Walton Beach) were actually the API's CORRECT city-to-county rate-area resolution, and the round-6 "fix" had been stamping false WARNINGs on right answers, including the tool's own recommended Washington, DC query. The MCP ships with 441 regression tests (186 offline plus 255 live-gated) at 73.5 tests per tool.
+This Model Context Protocol server exposes the GSA Per Diem Rates API as 7 callable tools for federal travel lodging and M&IE rate lookups used in IGCEs and travel cost estimation. It was hardened across seven audit rounds, three of them live audits against the production API. The 0.2.x program surfaced 55 bugs. Round 7 (1.0.1), an independent full-source re-audit with live verification, found 14 more and overturned a round-6 headline: the "catastrophic silent-wrong-data" cases (Penasco returning Taos, Santa Rosa Beach returning Fort Walton Beach) were actually the API's CORRECT city-to-county rate-area resolution, and the round-6 "fix" had been stamping false WARNINGs on right answers, including the tool's own recommended Washington, DC query. The current suite collects 564 Python regression tests (297 offline plus 267 live-gated); the historical audit totals below describe their original rounds.
 
 | Metric | Value |
 |---|---|
-| MCP tools exposed | 6 |
-| Total regression tests | 441 (186 offline, 255 live-gated) |
-| Tests per tool | 73.5 |
-| Audit rounds completed | 8 |
+| MCP tools exposed | 7 |
+| Total regression tests | 564 (297 offline, 267 live-gated) |
+| Tests per tool | 80.6 (Python only) |
+| Audit rounds completed | 9 |
 | P0 catastrophic bugs found and fixed | 1 (path traversal) |
 | P1 silent-wrong-data bugs found and fixed | 23 |
 | P2 validation gaps found and fixed | 21 |
 | P3 cleanup items found and fixed | 10 |
 | Round 7 (independent re-audit) findings | 14 |
-| Current release | 1.0.4 |
+| Release under preparation | 1.2.1 |
 | PyPI status | Published as `gsa-perdiem-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.4 Safety Release Verification
@@ -27,7 +43,9 @@ No federal API was called.
 
 ## What Was Tested
 
-The MCP exposes 6 tools covering the GSA Per Diem API surface. Testing covered all of them end-to-end.
+The MCP exposes 7 tools covering published GSA files and the GSA Per Diem API surface. Testing covered all of them end-to-end.
+
+**Data status:** `get_data_status`
 
 **Core lookups:** `lookup_city_perdiem`, `lookup_state_rates`, `lookup_zip_perdiem`, `get_mie_breakdown`
 
@@ -55,7 +73,7 @@ Prior unit tests in v0.1.x awaited raw coroutines and mocked the HTTP layer. The
 
 ### Live audit status
 
-Rounds 1, 6, and 7 ran against the production Per Diem API. The repository includes 251 live-gated regression tests executable via `MCP_LIVE_TESTS=1 PERDIEM_API_KEY=... pytest`. Note the gate variable: earlier versions of this document said `PERDIEM_LIVE_TESTS=1`, which was never the gate and silently skipped every live test. The `api.data.gov` key is free (1,000 req/hr) and not gated behind an approval workflow.
+Rounds 1, 6, and 7 ran against the production Per Diem API. The repository includes 267 live-gated regression tests executable via `MCP_LIVE_TESTS=1 PERDIEM_API_KEY=... pytest`. Note the gate variable: earlier versions of this document said `PERDIEM_LIVE_TESTS=1`, which was never the gate and silently skipped every live test. The `api.data.gov` key is free (1,000 req/hr) and not gated behind an approval workflow.
 
 ## Round 7 (1.0.1): Independent re-audit
 
@@ -190,7 +208,7 @@ Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 during the orig
 
 Round 7 methodology: re-read the entire server source with no reliance on this document's claims; verify match behavior against live API resolution for a dozen city shapes; recompute FTR 301-11.101 estimate math by hand; probe dead fiscal years and OCONUS states live; check every prior claim in this document against the code and live behavior.
 
-Test count: 441 regression tests (186 offline + 255 live-gated). Tests per tool: 73.5. Total findings across all rounds: 69. Current version: 1.0.5. PyPI: `gsa-perdiem-mcp`.
+Current test count: 564 Python regressions (297 offline + 267 live-gated), with 23 separate Worker tests. The original rounds reported 69 findings; later fixes are recorded above. Release under preparation: 1.2.1. PyPI: `gsa-perdiem-mcp`.
 
 Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/gsa-perdiem-mcp. License: MIT.
 

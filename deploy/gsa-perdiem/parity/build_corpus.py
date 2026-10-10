@@ -247,8 +247,13 @@ def scenarios():
             call("lookup_city_perdiem", {"city": c, "state": s, "fiscal_year": 2027})
             for c, s in [("Abingdon", "VA"), ("Bethesda", "MD"), ("Boise", "ID"), ("Chester", "MA"),
                          ("Crystal City", "VA"), ("Fort Meade", "MD"), ("McLean", "VA"), ("Tysons", "VA"),
-                         ("Xyzzyville", "VA")]
+                         ("Xyzzyville", "VA"), ("Milton", "OH"), ("Gardiner", "MT")]
         ] + [
+            call("compare_locations", {"locations": [
+                {"city": "Milton", "state": "OH"}, {"city": "Gardiner", "state": "MT"},
+            ], "fiscal_year": 2027}),
+            call("estimate_travel_cost", {"city": "Milton", "state": "OH", "num_nights": 2, "fiscal_year": 2027}),
+            call("estimate_travel_cost", {"city": "Gardiner", "state": "MT", "num_nights": 30, "travel_month": "Jul"}),
             call("lookup_city_perdiem", {"city": "mclean", "state": "va"}),
             call("lookup_city_perdiem", {"city": "Crystal-City", "state": "VA"}),
             call("estimate_travel_cost", {"city": "McLean", "state": "VA", "num_nights": 2, "fiscal_year": 2027}),

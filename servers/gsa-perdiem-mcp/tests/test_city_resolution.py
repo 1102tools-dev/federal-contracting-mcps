@@ -124,3 +124,85 @@ def test_local_city_lookup_without_key_asks_for_one(monkeypatch):
     assert "DEMO_KEY" not in str(caught.value)
     zip_rate = asyncio.run(srv.lookup_zip_perdiem("22201", 2027))
     assert zip_rate["source"]["kind"] != "gsa_per_diem_api", "bundled lookups stay keyless"
+
+
+# P2-1 (content test 2026-10-10). Milton and Gardiner were captured from the
+# GSA API on 2026-10-10 with DEMO_KEY. GSA did not recognize Milton, OH: it
+# returned all six Ohio rate areas plus the Standard Rate. "milton" is inside
+# "Hamilton" but is not that rate area; Census puts Ohio's Miltons in counties
+# that are all at the standard rate.
+def test_town_inside_an_nsa_name_is_not_that_nsa():
+    r = _city("Milton", "OH")
+    assert r["status"] == "unresolved"
+    assert "matched_city" not in r and "mie_daily" not in r
+    suggestion = r["census_suggestion"]
+    assert suggestion["destination"] == "Standard Rate"
+    assert (suggestion["lodging_range"], suggestion["mie_daily"]) == ("$113/night", 68)
+
+
+def test_compare_does_not_give_milton_hamiltons_rate():
+    r = asyncio.run(srv.compare_locations([{"city": "Milton", "state": "OH"}], 2027))
+    row = r["locations"][0]
+    assert row["status"] == "unresolved"
+    assert row.get("matched_city") != "Hamilton"
+
+
+def test_whole_part_of_a_composite_name_still_matches():
+    # GSA's name has no spaces around the second slash.
+    r = _city("Gardiner", "MT")
+    assert r["status"] == "resolved"
+    assert r["matched_city"] == "Big Sky / West Yellowstone/Gardiner"
+    assert r["match_type"] == "composite"
+
+
+@pytest.mark.parametrize("query,name,match", [
+    ("Milton", "Hamilton", False),
+    ("Overland", "Kansas City / Overland Park", False),
+    ("Park", "Kansas City / Overland Park", False),
+    ("Fayette", "Lafayette / West Lafayette", False),
+    ("Anton", "San Antonio", False),
+    ("Columbia", "District of Columbia", False),
+    ("Bedford", "Plymouth / Taunton / New Bedford", False),
+    ("Overland Park", "Kansas City / Overland Park", True),
+    ("west  lafayette", "Lafayette / West Lafayette", True),
+    ("St Petersburg", "Tampa / St. Petersburg", True),
+    ("Whitefish", "Kalispell/Whitefish", True),
+])
+def test_composite_match_uses_whole_parts(query, name, match):
+    response = {"rates": [{"rate": [
+        {"city": name, "county": "Somewhere", "meals": 80, "months": {"month": [{"short": "Jan", "value": 150}]}},
+    ]}]}
+    r = srv._resolve_city(response, query, "ZZ", 2027)
+    assert (r.get("match_type") == "composite") is match
+    best = srv._select_best_rate(response, query_city=query)
+    assert (best["match_type"] == "composite") is match
+
+
+# P3-1 / P3-6 (content test 2026-10-10). Sept 28 -> Oct 2, 2026 in San
+# Francisco is 3 nights at the FY2026 Sep rate plus 1 at the FY2027 Oct rate;
+# one travel_month prices all four at one rate, so the answer says so.
+def test_estimate_says_every_night_uses_one_month():
+    r = asyncio.run(srv.estimate_travel_cost(
+        "San Francisco", "CA", 4, travel_month="Sep", fiscal_year=2026, county="San Francisco"))
+    assert r["rate_month"] == "Sep"
+    assert "All 4 nights" in r["rate_month_note"] and "each month" in r["rate_month_note"]
+    one = asyncio.run(srv.estimate_travel_cost(
+        "San Francisco", "CA", 1, travel_month="Sep", fiscal_year=2026, county="San Francisco"))
+    assert "rate_month_note" not in one
+    peak = asyncio.run(srv.estimate_travel_cost("San Francisco", "CA", 4, fiscal_year=2026, county="San Francisco"))
+    assert "rate_month_note" not in peak
+
+
+def test_estimate_flags_long_term_stays():
+    r = asyncio.run(srv.estimate_travel_cost("San Antonio", "TX", 30, fiscal_year=2027, county="Bexar"))
+    assert r["travel_days"] == 31
+    assert "301-11.22" in r["long_term_note"]
+    short = asyncio.run(srv.estimate_travel_cost("San Antonio", "TX", 29, fiscal_year=2027, county="Bexar"))
+    assert "long_term_note" not in short
+
+
+def test_estimate_cites_the_current_ftr_section():
+    # FTR Case 2025-05 (90 FR 56893, Dec. 8, 2025) moved the 75% first/last
+    # day rule to 41 CFR 301-11.20; 301-11.101 no longer exists.
+    doc = srv.estimate_travel_cost.__doc__
+    assert "301-11.20" in doc and "301-11.101" not in doc

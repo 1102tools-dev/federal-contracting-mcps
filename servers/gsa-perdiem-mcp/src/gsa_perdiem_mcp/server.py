@@ -631,6 +631,14 @@ def _normalize_for_match(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
+def _is_composite_part(query: str, nsa_name: str) -> bool:
+    """True when the normalized query is one whole slash-separated part of
+    an NSA name ("Woburn" in "Burlington / Woburn"), never a substring of a
+    part ("Milton" is not part of "Hamilton")."""
+    q = _normalize_for_match(query)
+    return bool(q) and q in {_normalize_for_match(part) for part in nsa_name.split("/")}
+
+
 def _select_best_rate(
     response: Any,
     query_city: str | None = None,
@@ -683,11 +691,11 @@ def _select_best_rate(
         exact = [p for p in parsed if p["city"] and _normalize_for_match(p["city"]) == q]
         if exact:
             return tag(exact[0], "exact")
-        # Composite name match (e.g., "Boston" matches "Boston / Cambridge")
+        # Composite name match: a whole part ("Boston" in "Boston / Cambridge")
         composite = [
             p for p in parsed
             if p["city"]
-            and q in _normalize_for_match(p["city"])
+            and _is_composite_part(query_city, p["city"])
             and not p["is_standard_rate"]
         ]
         if composite:
@@ -842,17 +850,17 @@ def _resolve_city(
     exact = [p for p in parsed if _normalize_for_match(p["city"]) == q]
     if exact:
         return {"status": "resolved", "rate": exact[0], "match_type": "exact"}
-    composite = [
-        p for p in parsed
-        if not p["is_standard_rate"] and q in _normalize_for_match(p["city"])
-    ]
-    if len(composite) == 1:
-        return {"status": "resolved", "rate": composite[0], "match_type": "composite"}
 
+    # A list of every rate area in the state means GSA did not recognize the
+    # city; no name match inside that list is GSA's answer.
     standard = [p for p in parsed if p["is_standard_rate"]]
     nsa = [p for p in parsed if not p["is_standard_rate"]]
     if standard and nsa and _is_full_state_list(snap, state, nsa):
         return {"status": "unresolved", "suggestion": _census_suggestion(snap, state, city)}
+
+    composite = [p for p in nsa if _is_composite_part(city, p["city"])]
+    if len(composite) == 1:
+        return {"status": "resolved", "rate": composite[0], "match_type": "composite"}
 
     candidates = nsa + standard[:1]
     if len(candidates) == 1:
@@ -1163,6 +1171,9 @@ async def lookup_zip_perdiem(
         "has_monthly_data": best["has_monthly_data"],
         "source": source,
     }
+    if county_clean:
+        # "county" above is the rate area's definition; keep the caller's input too.
+        out["county_supplied"] = county_clean
     if len(candidates) > 1:
         out["same_rate_areas"] = [p["city"] for p in candidates]
     return out
@@ -1176,7 +1187,8 @@ async def lookup_state_rates(
     """Get all Non-Standard Area (NSA) per diem rates for a state.
 
     Returns every city/county with rates above the standard rate in that
-    state, plus the state's standard rate. Useful for comparing rates
+    state, plus the state's standard rate. Seasonal areas include their
+    lodging rate for each month (lodging_by_month). Useful for comparing rates
     across cities within a state or for building a travel IGCE with
     multiple destinations. Bundled fiscal years are answered from GSA's
     published files with no API call.
@@ -1239,6 +1251,8 @@ async def lookup_state_rates(
                 "mie": r["meals"],
                 "max_daily": r["lodging_max"] + r["meals"],
                 "seasonal": r["has_seasonal_variation"],
+                # Season months, so "Virginia Beach in July" needs no second call.
+                **({"lodging_by_month": r["lodging_by_month"]} if r["has_seasonal_variation"] else {}),
             }
             for r in nsa_only
         ],
@@ -1264,7 +1278,7 @@ async def get_mie_breakdown(fiscal_year: int | None = None) -> dict[str, Any]:
     year = _validate_fiscal_year(fiscal_year, field="fiscal_year")
     snap = snapshot.load_year(year)
     if snap is not None:
-        return {
+        out = {
             "fiscal_year": year,
             "tiers": [
                 {
@@ -1279,6 +1293,14 @@ async def get_mie_breakdown(fiscal_year: int | None = None) -> dict[str, Any]:
             ],
             "source": snap.source,
         }
+        covers = snap.source.get("mie_file_covers") or ""
+        first = re.match(r"FY(\d{4})\b", covers)
+        if first and int(first.group(1)) != year:
+            out["mie_note"] = (
+                f"GSA names its M&IE breakdown file for FY{first.group(1)}, the first fiscal "
+                f"year it applies to; GSA lists it for {covers}, which includes FY{year}."
+            )
+        return out
 
     path = f"conus/mie/{year}"
     data = await _get(path)
@@ -1339,12 +1361,16 @@ async def estimate_travel_cost(
     """Estimate total per diem cost for a trip.
 
     Calculates lodging + M&IE for the specified number of nights.
-    First and last travel days use 75% M&IE per 41 CFR 301-11.101.
+    First and last travel days use 75% M&IE per 41 CFR 301-11.20.
 
-    travel_month: 3-letter abbreviation (Jan, Feb, ..., Dec). If omitted,
-    uses the max monthly lodging rate (conservative estimate for IGCE).
+    travel_month: 3-letter abbreviation (Jan, Feb, ..., Dec). Every night is
+    priced at that month's rate; for a trip that crosses into another month
+    or fiscal year, estimate each month's nights separately and add them.
+    If omitted, uses the max monthly lodging rate (conservative estimate
+    for IGCE).
     fiscal_year: if omitted, the FY of the next occurrence of travel_month
-    (or the current FY when no month is given).
+    (or the current FY when no month is given). Pass it for a trip that
+    already happened.
     county: optional; selects the rate area when the city spans more than
     one (see lookup_city_perdiem).
 
@@ -1457,6 +1483,19 @@ async def estimate_travel_cost(
     }
     if month_fallback_note:
         out["month_fallback_note"] = month_fallback_note
+    if rate_month != "MAX" and num_nights > 1:
+        out["rate_month_note"] = (
+            f"All {num_nights} nights are priced at the FY{year} {rate_month} rate. "
+            f"If the trip crosses into another month or fiscal year, estimate each "
+            f"month's nights separately and add them."
+        )
+    if travel_days >= 31:
+        out["long_term_note"] = (
+            "Long stay (31 or more travel days): an agency may prescribe a reduced "
+            "per diem rate (41 CFR 301-11.22), and agency rules such as DoD's Joint "
+            "Travel Regulations may reduce long-term TDY rates. This estimate uses "
+            "GSA's full maximum rates."
+        )
     if res.get("other_candidates"):
         out["other_candidates"] = res["other_candidates"]
     return out

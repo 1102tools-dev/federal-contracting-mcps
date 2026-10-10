@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.1
+
+- City lookups: a composite rate-area name matches only when the city is one whole slash-separated part of it ("Woburn" in "Burlington / Woburn"), and a GSA answer that lists every rate area in the state is reported as `unresolved` before any name match. Previously "Milton, OH", which GSA does not recognize, got Hamilton's rate because "milton" is inside "Hamilton"; it is now `unresolved` with the Census suggestion (Standard Rate, $113/$68).
+- `estimate_travel_cost`: the description says every night is priced at one month's rate and that a trip crossing a month or fiscal year needs one estimate per month; multi-night estimates for a named month carry `rate_month_note`, and stays of 31 or more travel days carry `long_term_note` (agencies may prescribe a reduced rate, 41 CFR 301-11.22). The 75% first/last-day rule is now cited as 41 CFR 301-11.20 (renumbered from 301-11.101 by FTR Case 2025-05).
+- `lookup_state_rates`: seasonal rate areas include `lodging_by_month`.
+- `lookup_zip_perdiem`: when `county` selects the rate, the answer keeps the input as `county_supplied` (`county` stays the rate area's definition).
+- `get_mie_breakdown`: for bundled years after FY2025, `mie_note` explains that GSA names the breakdown file for its first fiscal year.
+
 ## 1.2.0
 
 - City lookups (`lookup_city_perdiem`, `estimate_travel_cost`, `compare_locations`) require `PERDIEM_API_KEY`; the shared `DEMO_KEY` fallback is gone. Without a key they return setup instructions (free key at https://api.data.gov/signup/) instead of calling GSA. ZIP, state, and M&IE lookups for bundled fiscal years still need no key. `get_data_status` reports `key_missing` with `credential_env` and `setup_url`, and results no longer carry `access_note`. Hosted behavior is unchanged.

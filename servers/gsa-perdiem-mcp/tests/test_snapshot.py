@@ -71,6 +71,15 @@ def test_zip_county_selects_candidate():
     assert r["status"] == "resolved" and r["is_standard_rate"] is True
 
 
+def test_zip_county_answer_keeps_the_supplied_county():
+    # P3-4 (content test 2026-10-10): GSA's FY2027 ZIP file lists 20120 under
+    # Fairfax County, VA (District of Columbia) and Loudoun County, VA.
+    r = _run(srv.lookup_zip_perdiem("20120", 2027, county="Fairfax"))
+    assert r["status"] == "resolved" and r["matched_city"] == "District of Columbia"
+    assert r["county_supplied"] == "Fairfax"
+    assert "Fairfax" in r["county"] and r["county"] != "Fairfax"
+
+
 def test_zip_invalid_county_is_reported():
     r = _run(srv.lookup_zip_perdiem("01011", 2027, county="Nowhere"))
     assert r["status"] == "invalid_county"
@@ -117,12 +126,30 @@ def test_state_rates_from_snapshot_match_gsa_state_list():
     assert r["standard_rate"] == {"lodging": 113, "mie": 68}
 
 
+def test_state_rates_show_season_months_for_seasonal_areas():
+    # P3-2 (content test 2026-10-10). GSA FY2027 rate file: Virginia Beach
+    # $129 Oct-May, $212 Jun-Aug, $129 Sep; Richmond is flat.
+    rows = {x["city"]: x for x in _run(srv.lookup_state_rates("VA", 2027))["rates"]}
+    vb = rows["Virginia Beach"]["lodging_by_month"]
+    assert (vb["Oct"], vb["May"], vb["Jun"], vb["Jul"], vb["Aug"], vb["Sep"]) == (129, 129, 212, 212, 212, 129)
+    assert rows["Richmond"]["seasonal"] is False and "lodging_by_month" not in rows["Richmond"]
+
+
 def test_mie_breakdown_from_snapshot():
     r = _run(srv.get_mie_breakdown(2027))
     assert [t["total"] for t in r["tiers"]] == [68, 74, 80, 86, 92]
     t = r["tiers"][0]
     assert (t["breakfast"], t["lunch"], t["dinner"], t["incidental"], t["first_last_day_75pct"]) == (
         16, 19, 28, 5, 51.0)
+
+
+def test_mie_breakdown_explains_the_fy2025_file_name():
+    # P3-5 (content test 2026-10-10): GSA's "FY 2025 MIE Breakdown.docx" is
+    # the current table; GSA's API conus/mie/2027 returns the same tiers.
+    r = _run(srv.get_mie_breakdown(2027))
+    assert r["source"]["mie_file_covers"] == "FY2025-present"
+    assert "FY2025" in r["mie_note"] and "FY2027" in r["mie_note"]
+    assert "mie_note" not in _run(srv.get_mie_breakdown(2025))
 
 
 @pytest.mark.parametrize("state,city,county,expected", [

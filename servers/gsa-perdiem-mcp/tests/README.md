@@ -1,16 +1,22 @@
 # Test suite map
 
-438 collected tests. Files are named by the audit round or fix-wave that
-produced them and are append-only history: each maps to a section of
-[../testing.md](../testing.md), which narrates what every round found and
-fixed. That traceability is deliberate; do not consolidate or rename rounds.
+564 collected Python tests: 297 offline and 267 live-gated (2026-10-10, 1.2.1 preparation). Worker tests and parity scenarios are separate counts. Historical audit files remain append-only; see [../testing.md](../testing.md).
 
-| File | Origin and purpose | Tests | Live |
-|---|---|---|---|
-| `test_validation.py` | Foundational input validation: cities, states, zips, fiscal years (largest offline set) | 173 | 8 live |
-| `test_live_audit_r6.py` | Round 6 all-live audit: every tool against the production GSA per diem API (the unmatched-city test was drift-proofed 2026-08 when new-FY rates made its city a real NSA) | 56 | all live |
-| `test_audit_r7.py` | Round 7 fix-wave regressions: the false WARNING stamped on the API's correct city-to-county resolution (Penasco->Taos was right all along) and the OCONUS empty-success trap | 21 | 3 live |
-| `test_audit_r8.py` | Round 8 super-cycle: one-call-per-test live anchors (Penasco resolves warning-free, CONUS zip fallback, OCONUS explains itself, M&IE tier table) | 4 | 4 live_smoke |
+| File | Origin and purpose | Collected | Live-gated |
+|---|---|---:|---:|
+| `test_access_status.py` | Hosted key handling and bundled data status | 7 | 0 |
+| `test_audit_r7.py` | Round 7 rate-area resolution and OCONUS regressions | 22 | 3 |
+| `test_audit_r8.py` | Round 8 live smoke anchors | 4 | 4 |
+| `test_builder.py` | Snapshot builder integrity | 13 | 0 |
+| `test_city_resolution.py` | City and county resolution; round 9 whole-part composite matching | 38 | 0 |
+| `test_credential_redaction.py` | Credential redaction | 6 | 0 |
+| `test_directory_contract.py` | Published tool and description contract | 3 | 0 |
+| `test_hosted_throughput.py` | Hosted pacing and concurrency | 5 | 0 |
+| `test_live_audit_r6.py` | Round 6 production API matrix | 240 | 240 |
+| `test_live_parity.py` | Live bundled-data/API parity | 12 | 12 |
+| `test_pacing.py` | Shared pacing | 3 | 0 |
+| `test_snapshot.py` | Bundled ZIP/state/M&IE data; round 9 notes and seasonal-month corrections | 38 | 0 |
+| `test_validation.py` | Input validation and API response handling | 173 | 8 |
 
 Live tests need `MCP_LIVE_TESTS=1 + PERDIEM_API_KEY`, are paced automatically by `conftest.py` (which
 also resets the cached async client per test so batched live runs cannot hit
