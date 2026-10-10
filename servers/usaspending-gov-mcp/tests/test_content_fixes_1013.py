@@ -2,7 +2,7 @@
 """Regression suite for the 2026-10-10 content test fixes (1.0.13).
 
 Each test names the finding it covers (findings-usaspending.md, U1-U13) and
-fails on 1.0.12. Offline: the HTTP plumbing is replaced with recorders that
+pins behavior changed in 1.0.13. Offline: the HTTP plumbing is replaced with recorders that
 return trimmed copies of the live API answers seen on 2026-10-10.
 """
 
@@ -445,7 +445,7 @@ def test_live_u4_dhs_grouped_has_next():
 @pytest.fixture
 def oct10(monkeypatch):
     import datetime as _dt
-    monkeypatch.setattr(srv, "_today", lambda: _dt.date(2026, 10, 10))
+    monkeypatch.setattr(srv, "_today", lambda: _dt.date(2026, 10, 10), raising=False)
     monkeypatch.setattr(srv, "_current_fiscal_year", lambda: 2027)
 
 
@@ -495,3 +495,50 @@ def test_u1_no_note_when_dod_lag_does_not_apply(monkeypatch, oct10, tool, kwargs
     monkeypatch.setattr(srv, "_post", _MockPost({"results": []}))
     out = _payload(asyncio.run(_call(tool, **kwargs)))
     assert "data_note" not in out, tool
+
+@pytest.mark.parametrize('tool,extra', [('spending_over_time', {}), ('spending_by_category', {'category': 'awarding_agency'})])
+def test_u13_aggregation_filters_reach_upstream(monkeypatch, tool, extra):
+    mock = _MockPost({'results': []})
+    monkeypatch.setattr(srv, '_post', mock)
+    out = _payload(asyncio.run(_call(tool, funding_agency='Department of Defense',
+        recipient_name='Lockheed Martin', extent_competed_type_codes=['B', 'C', 'G'],
+        contract_pricing_type_codes=['Y', 'Z'], **FY26, **extra)))
+    filters = mock.calls[0][1]['filters']
+    assert filters['extent_competed_type_codes'] == ['B', 'C', 'G']
+    assert filters['contract_pricing_type_codes'] == ['Y', 'Z']
+    assert filters['recipient_search_text'] == ['Lockheed Martin']
+    assert {'type': 'funding', 'tier': 'toptier', 'name': 'Department of Defense'} in filters['agencies']
+    assert '90 days' in out['data_note']
+
+
+def test_u6_recipient_search_labels_overlap_and_period(monkeypatch):
+    monkeypatch.setattr(srv, '_post', _MockPost({'results': [{'id': 'parent-P', 'amount': 123}]}))
+    out = _payload(asyncio.run(_call('search_recipients', keyword='Leidos')))
+    assert out['results'][0]['amount'] == 123
+    assert 'trailing 12 months' in out['data_note'] and 'do not sum' in out['data_note']
+
+
+def test_u8_detail_preserves_amounts_and_warns_file_c(monkeypatch):
+    monkeypatch.setattr(srv, '_get', _MockGet({'total_outlay': -5684.70, 'total_obligation': 1291222928.24}))
+    out = _payload(asyncio.run(_call('get_award_detail', generated_award_id='123')))
+    assert out['total_outlay'] == -5684.70
+    assert 'File C' in out['data_note'] and 'amount paid' in out['data_note']
+
+
+def test_u8_funding_warns_incomplete_coverage(monkeypatch):
+    monkeypatch.setattr(srv, '_post', _MockPost({'results': []}))
+    out = _payload(asyncio.run(_call('get_award_funding', generated_award_id='123')))
+    assert 'partial or lagged' in out['data_note']
+
+
+@pytest.mark.parametrize("tool,phrases", [
+    ("get_agency_awards", ["all award types", "get_agency_obligations_by_award_category"]),
+    ("get_agency_overview", ["no dollar figures"]),
+    ("search_awards", ["lifetime", "End Date"]),
+    ("spending_over_time", ["FISCAL periods", "clipped", "October"]),
+])
+def test_u5_u7_u9_u10_descriptions_explain_scope(tool, phrases):
+    tools = asyncio.run(mcp.list_tools())
+    description = next(t.description for t in tools if t.name == tool)
+    for phrase in phrases:
+        assert phrase.lower() in description.lower()

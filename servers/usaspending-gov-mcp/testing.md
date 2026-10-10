@@ -267,3 +267,32 @@ Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/usas
 ## RC5 pacing and tool-profile remediation (2026-08-22)
 
 Version 1.0.4 carries the suite-wide asynchronous pacing-lock correction and the `acquisition-agent` tool profile. The full offline lane passed (1,788 tests; 375 live-gated tests skipped). Isolated published-wheel verification confirmed the standalone default still exposes all 55 tools and the acquisition profile exposes the documented 20-tool allowlist.
+
+
+## 1.0.13 content correction verification (2026-10-10)
+
+The October content campaign found wrong default fiscal years, PIID keyword
+lookup masquerading as an exact lookup, missing date modes, missing DoD lag
+caveats and incorrect grouped-subaward pagination. Release 1.0.13 corrects
+these paths and adds recipient/File C caveats and aggregate filters.
+
+The full Python suite passes; the focused content suite passes 63 offline
+cases with four live tests gated. Running the focused tests against the
+pre-fix c5293fc source demonstrates failures for changed behavior. Worker
+TypeScript checks, all 55 hosted tool contracts, nine package version
+checks and 64 release guards pass.
+
+A separate source gate repeats 15 content repros against the actual public
+API, comparing raw upstream amounts/results with each tool answer, and
+checks four descriptions for scope guidance. The source gate passed on
+2026-10-10. It includes FY defaults, exact/ambiguous PIIDs, new-award count,
+grouped-subaward next-page probing, DoD monthly totals, sole-source/recipient/
+funding-agency and pricing filters, Leidos recipient overlap, and both
+Booz Allen and Electric Boat File C amounts.
+
+Deferred part of P3 U13: vehicle/parent-IDV totals filtered by fiscal action
+date and ordering agency. Upstream search has no equivalent parent filter.
+Filtering paginated IDV children by award start dates would not establish
+transaction obligations in a fiscal window and would risk silently incomplete
+totals. The existing child/activity tools remain available, with reporting-gap
+and keyword-completeness guidance. All other U1-U13 items are addressed.

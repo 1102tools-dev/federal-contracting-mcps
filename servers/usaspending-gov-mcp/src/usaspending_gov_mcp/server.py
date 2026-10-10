@@ -969,6 +969,9 @@ async def spending_over_time(
     keywords: list[str] | None = None,
     awarding_agency: str | None = None,
     awarding_subagency: str | None = None,
+    funding_agency: str | None = None,
+    extent_competed_type_codes: list[str | int] | None = None,
+    contract_pricing_type_codes: list[str | int] | None = None,
     recipient_name: str | None = None,
     naics_codes: list[str | int] | None = None,
     psc_codes: list[str | int] | None = None,
@@ -1021,6 +1024,9 @@ async def spending_over_time(
         award_type_codes=award_type_codes,
         awarding_agency=awarding_agency,
         awarding_subagency=awarding_subagency,
+        funding_agency=funding_agency,
+        extent_competed_type_codes=extent_competed_type_codes,
+        contract_pricing_type_codes=contract_pricing_type_codes,
         recipient_name=recipient_name,
         naics_codes=naics_codes,
         psc_codes=psc_codes,
@@ -1043,7 +1049,7 @@ async def spending_over_time(
     )
     return _add_note(result, _dod_lag_note(
         _window_end(time_period_start, time_period_end),
-        agencies=(awarding_agency,), award_types=award_type,
+        agencies=(awarding_agency, funding_agency), award_types=award_type,
     ))
 
 
@@ -1057,6 +1063,10 @@ async def spending_by_category(
     keywords: list[str] | None = None,
     awarding_agency: str | None = None,
     awarding_subagency: str | None = None,
+    funding_agency: str | None = None,
+    recipient_name: str | None = None,
+    extent_competed_type_codes: list[str | int] | None = None,
+    contract_pricing_type_codes: list[str | int] | None = None,
     naics_codes: list[str | int] | None = None,
     psc_codes: list[str | int] | None = None,
     award_type: Literal["contracts", "idvs", "grants", "loans", "direct_payments", "other"] | None = None,
@@ -1106,6 +1116,10 @@ async def spending_by_category(
         award_type_codes=award_type_codes,
         awarding_agency=awarding_agency,
         awarding_subagency=awarding_subagency,
+        funding_agency=funding_agency,
+        recipient_name=recipient_name,
+        extent_competed_type_codes=extent_competed_type_codes,
+        contract_pricing_type_codes=contract_pricing_type_codes,
         naics_codes=naics_codes,
         psc_codes=psc_codes,
         set_aside_type_codes=set_aside_type_codes,
@@ -1129,7 +1143,7 @@ async def spending_by_category(
     )
     return _add_note(result, _dod_lag_note(
         _window_end(time_period_start, time_period_end),
-        agencies=(awarding_agency,), award_types=award_type,
+        agencies=(awarding_agency, funding_agency), award_types=award_type,
     ))
 
 
@@ -1146,7 +1160,9 @@ async def get_award_detail(generated_award_id: str) -> dict[str, Any]:
     obligation, recipient details, parent award info, latest transaction
     contract data (competition, set-aside, pricing type), period of
     performance, place of performance, NAICS hierarchy, PSC hierarchy,
-    base and all options value, and sub-award totals.
+    base and all options value, and sub-award totals. Award-level outlays and
+    total_account_obligation are partial or lagged File C measures, not a
+    reliable amount paid; compare with total_obligation for coverage.
 
     Accepts either a generated award id (CONT_AWD_*, CONT_IDV_*, ASST_NON_*,
     ASST_AGG_*) or the numeric internal database id from a prior response.
@@ -1167,7 +1183,10 @@ async def get_award_detail(generated_award_id: str) -> dict[str, Any]:
     # returned the agency list dressed up as award detail).
     if not award_id.isdigit():
         award_id = _validate_generated_award_id(award_id, field="generated_award_id")
-    return await _get(f"/api/v2/awards/{award_id}/")
+    result = await _get(f"/api/v2/awards/{award_id}/")
+    return _add_note(result, "Award-level outlays and total_account_obligation come from File C. "
+                     "They can be partial or lagged and do not establish the amount paid to the contractor. "
+                     "Compare total_account_obligation with total_obligation for File C coverage.")
 
 
 @mcp.tool(annotations={"title": "Get Transactions", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1217,8 +1236,8 @@ async def get_award_funding(
     """Fetch File C funding data for an award: federal account, object class, program activity.
 
     Shows which Treasury accounts, object classes, and program activities
-    funded an award. Useful for appropriations analysis and understanding
-    what colors of money paid for what.
+    funded an award. File C can be partial or lagged; these rows do not
+    establish the full award obligation or amount paid to the contractor.
 
     Sort fields: reporting_fiscal_date, account_title,
     transaction_obligated_amount, object_class.
@@ -1229,7 +1248,7 @@ async def get_award_funding(
     _validate_no_control_chars(generated_award_id, field="generated_award_id")
     if page < 1:
         raise ValueError(f"page must be >= 1. Got {page}.")
-    return await _post(
+    result = await _post(
         "/api/v2/awards/funding/",
         {
             "award_id": generated_award_id.strip(),
@@ -1240,6 +1259,9 @@ async def get_award_funding(
         },
     )
 
+    return _add_note(result, "File C funding can be partial or lagged; these rows are not the full "
+                     "award obligation or amount paid. Compare with get_award_detail total_obligation "
+                     "and total_account_obligation for coverage.")
 
 @mcp.tool(annotations={"title": "Get IDV Children", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_idv_children(
@@ -1889,7 +1911,10 @@ async def search_recipients(
     }
     if keyword and keyword.strip():
         payload["keyword"] = keyword.strip()
-    return await _post("/api/v2/recipient/", payload)
+    result = await _post("/api/v2/recipient/", payload)
+    return _add_note(result, "Recipient search amounts cover the trailing 12 months. Parent (-P) rows "
+                     "include child (-C) rows; do not sum both levels. Recipient profiles use a separate "
+                     "rollup and may differ from transaction-search totals or name matches.")
 
 
 # Case-insensitive: the API accepts uppercase hex (verified live), and the
@@ -1941,7 +1966,9 @@ async def get_recipient_profile(
     hashes; it is a name lookup only.)
 
     year: optional 'all' or a fiscal year like 2026 (int or str both
-    accepted). Default is 'latest' (trailing 12 months).
+    accepted). Default is 'latest' (trailing 12 months). Parent (-P) totals
+    include their children. Profiles use a separate recipient rollup and can
+    differ from transaction searches by recipient_name and award-type scope.
     """
     recipient_hash = _validate_recipient_hash(recipient_hash)
     params = {}

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.13
+
+- Agency and state queries default to the last completed fiscal year and echo it.
+- PIID lookups check exact contracts and IDVs, identify ambiguity, and label fuzzy fallback.
+- Search, count and aggregates accept date_type, including new_awards_only.
+- Recent DoD results warn about the 90-day publication delay; grouped subaward pagination probes for another row.
+- Recipient and File C responses explain period, overlap and coverage limits; spending tools accept funding agency, competition and pricing filters.
+- Clarify fiscal buckets, lifetime award amounts and the lack of an expiry filter.
+
 ## 1.0.12
 
 - Hosted service only: the machine running the service can give the answer cache
