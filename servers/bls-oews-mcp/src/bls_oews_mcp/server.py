@@ -839,7 +839,9 @@ _IGCE_BENCHMARKS = [
     ("Annual 75th Percentile", "Hourly 75th Percentile"),
     ("Annual 90th Percentile", "Hourly 90th Percentile"),
 ]
-_IGCE_REQUEST = ["03", "04", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]
+_IGCE_REQUEST = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]
+# Relative standard error (percent) above which the IGCE flags a thin estimate.
+_RSE_WARNING = 10.0
 
 
 @mcp.tool(annotations={"title": "IGCE Wage Benchmark", **_LOCAL_ONLY})
@@ -857,7 +859,9 @@ async def igce_wage_benchmark(
     75th, and 90th percentiles (25th/75th are the usual junior/senior
     anchors), plus estimated burdened hourly rates using the specified
     burden multiplier range. Hourly figures are BLS's published hourly
-    wages (annual / 2080 only where BLS publishes no hourly wage).
+    wages (annual / 2080 only where BLS publishes no hourly wage). Also
+    returns the cell's employment and relative standard errors
+    (reliability) and flags thin estimates.
 
     Wages are point-in-time estimates for the OEWS reference month
     (wage_period in the response), not current rates: escalate them to the
@@ -949,14 +953,44 @@ async def igce_wage_benchmark(
             f"OEWS wages are estimates for {OEWS_RELEASE_NAME}, so these base "
             f"and burdened rates are {OEWS_RELEASE_NAME} rates, not current ones."
         ),
-        "_note": "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates.",
+        # The sample behind the benchmark: a 110-person cell with a 19.5%
+        # employment RSE should not read like a 69,060-person one.
+        "reliability": {
+            "employment": wages.get("Employment", _NO_DATA).get("formatted"),
+            "employment_rse": wages.get("Employment RSE (%)", _NO_DATA).get("formatted"),
+            "mean_wage_rse": wages.get("Mean Wage RSE (%)", _NO_DATA).get("formatted"),
+        },
     }
+    imprecise = []
+    for name, label in (("employment RSE", "Employment RSE (%)"), ("mean wage RSE", "Mean Wage RSE (%)")):
+        rse = wages.get(label, _NO_DATA)
+        if rse.get("numeric") is not None and rse["numeric"] > _RSE_WARNING:
+            imprecise.append(f"{name} {rse['formatted']}")
+    if imprecise:
+        response["_reliability_warning"] = (
+            f"Thin estimate: {', '.join(imprecise)} (relative standard error; "
+            f"the larger it is, the less precise the estimate). Employment "
+            f"here is {response['reliability']['employment']}. Cross-check "
+            f"against the state or national figure before relying on it."
+        )
+    response["_note"] = "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates."
 
     # Propagate the no_data flag from the underlying wage_data call so the
     # caller knows the benchmarks are all zero-value, not real suppressions.
+    # Employment and RSEs can be published for a cell with no wage estimate,
+    # so the IGCE judges "no data" by its wage benchmarks alone.
+    has_benchmark = any("numeric_annual" in b for b in benchmarks.values())
     if wage_data.get("no_data"):
         response["no_data"] = True
         response["no_data_reason"] = wage_data.get("no_data_reason")
+    elif not has_benchmark:
+        response["no_data"] = True
+        response["no_data_reason"] = (
+            f"No wage values for occ_code={wage_data['occ_code']} scope={scope} "
+            f"area_code={area_code!r} industry=000000. BLS publishes no estimate "
+            f"for this occupation at this area/industry level (or every "
+            f"requested cell is unreleased)."
+        )
     if annual_only:
         response["annual_only"] = True
         response["_hourly_warning"] = (

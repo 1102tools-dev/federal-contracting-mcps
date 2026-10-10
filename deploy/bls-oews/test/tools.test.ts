@@ -398,6 +398,20 @@ test("BLS-3: the IGCE carries the 25th and 75th percentiles", async () => {
   assert.deepEqual([bench["Annual 75th Percentile"].annual, bench["Annual 75th Percentile"].hourly_base], ["$160,330", "$77.08"]);
 });
 
+test("BLS-2: the IGCE shows the sample behind the benchmark", async () => {
+  const thin = await data("igce_wage_benchmark", {occ_code: "15-1242", scope: "metro", area_code: "17820"});
+  assert.deepEqual(thin.reliability, {employment: "110", employment_rse: "19.5%", mean_wage_rse: "9.4%"});
+  assert.match(thin._reliability_warning, /employment RSE 19\.5%/);
+  assert.doesNotMatch(thin._reliability_warning, /mean wage RSE/);
+  const solid = await data("igce_wage_benchmark", {occ_code: "15-1252", scope: "metro", area_code: "47900"});
+  assert.deepEqual(solid.reliability, {employment: "69,060", employment_rse: "3.2%", mean_wage_rse: "1.0%"});
+  assert.equal(solid._reliability_warning, undefined);
+  // Employment alone does not make a wageless cell look benchmarked.
+  const topCoded = await data("igce_wage_benchmark", {occ_code: "29-1214", scope: "metro", area_code: "47900"});
+  assert.equal(topCoded.no_data, true);
+  assert.equal(topCoded.reliability.employment, "770");
+});
+
 // ---------- Python formatting helpers ----------
 
 test("pyjson matches Python's repr, format, round, and strip", () => {

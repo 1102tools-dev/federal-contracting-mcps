@@ -46,7 +46,9 @@ const IGCE_BENCHMARKS = [
   ["Annual 25th Percentile", "Hourly 25th Percentile"], ["Annual Median", "Hourly Median"],
   ["Annual 75th Percentile", "Hourly 75th Percentile"], ["Annual 90th Percentile", "Hourly 90th Percentile"],
 ];
-const IGCE_REQUEST = ["03", "04", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"];
+const IGCE_REQUEST = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"];
+// Relative standard error (percent) above which the IGCE flags a thin estimate.
+const RSE_WARNING = 10;
 // Maps keep insertion order; plain objects would sort numeric-looking keys.
 const COMMON_SOC_CODES = new Map<string, Py>([
   ["111021", "General and Operations Managers"], ["113021", "Computer and Information Systems Managers"],
@@ -645,6 +647,7 @@ export async function igceWageBenchmark(db: Database, args: Args) {
   const {response: wage, data} = await wageData(db, {...a, industry: "000000", datatypes: IGCE_REQUEST}, [normalized]);
   const wages = wage.get("wages") as Map<string, Map<string, Py>>;
   const numeric = (label: string) => wages.get(label)?.get("numeric") ?? null;
+  const formatted = (label: string) => wages.get(label)?.get("formatted") ?? "No data";
   const annualOnly = numeric("Hourly Mean Wage") === null && numeric("Annual Mean Wage") !== null;
   const benchmarks = new Map<string, Py>();
   for (const [label, hourlyLabel] of IGCE_BENCHMARKS) {
@@ -677,11 +680,29 @@ export async function igceWageBenchmark(db: Database, args: Args) {
     ["burden_range", `${floatRepr(low)}x - ${floatRepr(high)}x`],
     ["benchmarks", benchmarks],
     ["_escalation_note", `${data.rel.name} wages; escalate to the period of performance. OEWS wages are estimates for ${data.rel.name}, so these base and burdened rates are ${data.rel.name} rates, not current ones.`],
-    ["_note", "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates."],
+    // The sample behind the benchmark.
+    ["reliability", new Map<string, Py>([
+      ["employment", formatted("Employment")], ["employment_rse", formatted("Employment RSE (%)")], ["mean_wage_rse", formatted("Mean Wage RSE (%)")],
+    ])],
   ]);
+  const imprecise: string[] = [];
+  for (const [name, label] of [["employment RSE", "Employment RSE (%)"], ["mean wage RSE", "Mean Wage RSE (%)"]]) {
+    const rse = numeric(label);
+    if (rse instanceof PyFloat && rse.value > RSE_WARNING) imprecise.push(`${name} ${formatted(label)}`);
+  }
+  if (imprecise.length) {
+    response.set("_reliability_warning", `Thin estimate: ${imprecise.join(", ")} (relative standard error; the larger it is, the less precise the estimate). Employment here is ${formatted("Employment")}. Cross-check against the state or national figure before relying on it.`);
+  }
+  response.set("_note", "BLS wages are base wages only (no fringe/overhead/G&A/profit). Burdened rates are estimates.");
+  // Employment and RSEs can be published for a cell with no wage estimate,
+  // so the IGCE judges "no data" by its wage benchmarks alone.
+  const hasBenchmark = [...benchmarks.values()].some(b => Object.hasOwn(b as object, "numeric_annual"));
   if (wage.get("no_data")) {
     response.set("no_data", true);
     response.set("no_data_reason", wage.get("no_data_reason")!);
+  } else if (!hasBenchmark) {
+    response.set("no_data", true);
+    response.set("no_data_reason", `No wage values for occ_code=${wage.get("occ_code")} scope=${a.scope} area_code=${repr(a.area_code)} industry=000000. BLS publishes no estimate for this occupation at this area/industry level (or every requested cell is unreleased).`);
   }
   if (annualOnly) {
     response.set("annual_only", true);

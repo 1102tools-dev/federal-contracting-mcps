@@ -87,3 +87,33 @@ def test_bls3_igce_has_25th_and_75th_percentiles():
     ]
     assert (bench["Annual 25th Percentile"]["annual"], bench["Annual 25th Percentile"]["hourly_base"]) == ("$84,850", "$40.80")
     assert (bench["Annual 75th Percentile"]["annual"], bench["Annual 75th Percentile"]["hourly_base"]) == ("$160,330", "$77.08")
+
+
+# ---------------------------------------------------------------------------
+# BLS-2: IGCE shows the sample behind the benchmark
+# ---------------------------------------------------------------------------
+
+def test_bls2_igce_shows_employment_and_rse():
+    # Q7: Colorado Springs database administrators. BLS dt01 = 110,
+    # dt02 = 19.5, dt05 = 9.4.
+    data = _tool("igce_wage_benchmark", occ_code="15-1242", scope="metro", area_code="17820")
+    assert data["reliability"] == {"employment": "110", "employment_rse": "19.5%", "mean_wage_rse": "9.4%"}
+    assert "employment RSE 19.5%" in data["_reliability_warning"]
+    assert "mean wage RSE" not in data["_reliability_warning"]
+
+
+def test_bls2_no_warning_for_a_solid_estimate():
+    # DC software developers: BLS dt01 = 69,060, dt02 = 3.2, dt05 = 1.0.
+    data = _tool("igce_wage_benchmark", occ_code="15-1252", scope="metro", area_code="47900")
+    assert data["reliability"] == {"employment": "69,060", "employment_rse": "3.2%", "mean_wage_rse": "1.0%"}
+    assert "_reliability_warning" not in data
+    assert "no_data" not in data
+
+
+def test_bls2_wageless_cell_is_still_no_data():
+    # DC emergency medicine physicians (29-1214): BLS publishes employment
+    # 770 but every wage cell is "-" (footnote 5). Employment alone must not
+    # make the IGCE look like it has benchmarks.
+    data = _tool("igce_wage_benchmark", occ_code="29-1214", scope="metro", area_code="47900")
+    assert data["no_data"] is True
+    assert data["reliability"]["employment"] == "770"
