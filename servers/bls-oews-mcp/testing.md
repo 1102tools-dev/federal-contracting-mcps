@@ -17,6 +17,52 @@ This Model Context Protocol server exposes BLS Occupational Employment and Wage 
 | Content correction version | 1.1.4 (bundled May 2025 OEWS release; release gates recorded below) |
 | PyPI status | Published as `bls-oews-mcp`, auto-publishes via Trusted Publisher on tag push |
 
+## 1.1.4 realistic content audit, round 6 (2026-10-10)
+
+No new P0, P1, P2 or P3 findings in the completed new scope; no runtime,
+data, version or tool definition change. Actual freshly installed official
+by-name, uncached PyPI 1.1.4 stdio and the public service each completed
+**71 new questions** across all eight tools, with identical content at
+release SHA `5ba4a4bac4ecd098da1c48dcd09594d9e38fcf1f`.
+
+The new corpus covers construction trades, telecommunications, aircraft
+maintenance, welding and machining, chemical/survey/forestry technicians,
+childcare, culinary work, graphic design, speech therapy and performing arts.
+National, six-state, four-metro and eight-industry contexts are kept separate.
+All **503 wage/benchmark objects** reconcile to the source and IGCE arithmetic;
+**40 selected fresh official BLS API cells and attached footnotes** match.
+One initial API batch returned HTTP 503; its bounded retry passed, with three
+successful numeric batches in total. The failure is preserved without an
+inferred cause. Four caller-composed staffing budgets are calculations from
+captured tool answers, not four additional tool calls.
+
+Athletes publish annual wages only, with the annual/2080 hourly-equivalent
+warning retained. Source discovery confirms that choreographers publish both
+periods; the new performing-arts-industry dancer followup publishes hourly
+wages without fabricating annual salary. An initial copied semantic expectation
+that choreographers were hourly-only was corrected against the source; the
+conditional user question and tool answer were correct. This is a reviewer
+expectation correction, not a product finding. These are May 2025 wage bases
+with illustrative burdens, not current contractor prices or forecasts.
+
+Both frozen MCP 2.0 and fresh official-package MCP 2.3 full suites measured
+**297 passed / one optional live parity skipped / 298 collected**. Worker
+checks passed 31 tests; TypeScript, wheel/sdist build and production Python
+3.12 eight-tool metadata checks passed. Python/Worker parity measured 227
+cases: 216 identical, 11 documented transport differences, zero unexpected.
+Installed published module bytes match current source. Optional skips and
+existing regression cases are distinct from the new content corpus.
+
+Direct flat-footnote and concept-HTML requests returned HTTP 403 and are
+recorded as unavailable. Official concepts were read through the web reader;
+the fresh API provided numeric values and attached footnotes. Historical
+releases and unsupported geographic/industry combinations are not invented.
+Evidence is in `Artifacts/mcp-e2e-20261010/round6/bls-oews`, including the
+inventory, full actual CLI/public responses, per-question semantic checks,
+primary batch captures/retry log, composed budgets, lane provenance and
+coverage/findings records. Independent peer review is a separate gate; no
+package release is needed for this documentation record.
+
 ## 1.1.4 realistic content audit, round 5 (2026-10-10)
 
 No new P0, P1, P2 or P3 findings in the completed new scope; no runtime,
