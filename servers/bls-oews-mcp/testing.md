@@ -7,15 +7,39 @@ This Model Context Protocol server exposes BLS Occupational Employment and Wage 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 294 (293 offline, 1 optional live parity check) |
+| Total regression tests | 295 (294 offline, 1 optional live parity check) |
 | Audit rounds completed | 9 |
 | P0 usability-breaking bugs found and fixed | 1 |
 | P1 silent-wrong-data bugs found and fixed | 14 |
 | P1 response-shape crash paths found and fixed | 12 |
 | P2 validation gaps found and fixed | 12 |
 | P3 cleanup items found and fixed | 8 |
-| Content correction version | 1.1.2 (bundled May 2025 OEWS release; release gates recorded below) |
+| Content correction version | 1.1.3 (bundled May 2025 OEWS release; release gates recorded below) |
 | PyPI status | Published as `bls-oews-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## 1.1.3 installed CLI compatibility correction (2026-10-10)
+
+A fresh official PyPI installation of 1.1.2 resolved MCP 2.3.0. A normal
+question about national software-developer employment ratios returned only
+"Error executing tool get_wage_data", losing the guidance that those ratios
+exist only at state/metro scope. The SDK now redacts unexpected ValueError
+failures. The public Worker retained the expected message.
+
+Intentional user-input failures now inherit both ValueError (preserving direct
+Python callers) and the SDK's anticipated ToolError. Internal series-length
+invariant failures remain ordinary exceptions. There is no dependency downgrade
+or tool metadata change. A real installed-CLI regression failed against published
+1.1.2/MCP 2.3.0 before the patch, then passed against the installed 1.1.3 wheel,
+including a valid Virginia ratio followup that completes the user's task.
+
+Measured full suites: **294 passed, 1 skipped, 295 collected** under both frozen
+MCP 2.0.0 and freshly resolved MCP 2.3.0. An installed-wheel CLI client called
+all eight tools plus the hourly-only musicians/actors and annual-only teacher
+controls; all passed. Worker typecheck and **29 tests** passed. Python/Worker
+parity remains **222 cases, 211 identical, 11 documented differences, zero
+unexpected**. All eight tool definitions are unchanged; wheel/sdist builds,
+version consistency, and new-PyPI-version guard passed. These are pre-release
+corrective checks; actual 1.1.3 publication and rollout checks remain separate.
 
 ## 1.1.2 end-to-end content audit (2026-10-10)
 

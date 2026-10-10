@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.3
+
+- Preserve actionable user-input guidance in installed CLI clients using MCP
+  2.3.0, including unsupported national employment-ratio questions. Expected
+  failures use SDK ToolError while remaining ValueError for direct Python callers.
+- Keep frozen MCP 2.0.0 behavior, wage values and reviewed tool metadata unchanged.
+- Add a real CLI regression that follows the national-ratio guidance with a
+  Virginia lookup and completes the wage research task.
+
 ## 1.1.2
 
 - Preserve published hourly wages and burdened hourly benchmarks for hourly-only
