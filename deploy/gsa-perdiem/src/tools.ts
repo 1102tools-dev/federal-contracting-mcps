@@ -367,6 +367,13 @@ function normalizeForMatch(s: string): string {
   return squash(s.toLowerCase().replace(PY_PUNCT, " "));
 }
 
+/** The query is one whole slash-separated part of an NSA name ("Woburn" in
+ * "Burlington / Woburn"), never a substring of a part ("Milton" in "Hamilton"). */
+function isCompositePart(query: string, nsaName: string): boolean {
+  const q = normalizeForMatch(query);
+  return q !== "" && nsaName.split("/").some(part => normalizeForMatch(part) === q);
+}
+
 function normalizeCityForUrl(city: string): string {
   const s = squash(city.replaceAll("'", " ").replaceAll("\u2019", " ").replaceAll("-", " "));
   try {
@@ -477,14 +484,17 @@ async function resolveCity(ctx: Context, response: unknown, city: string, state:
 
   const exact = parsed.filter(p => normalizeForMatch(p.city!) === q);
   if (exact.length) return {status: "resolved", rate: exact[0], match_type: "exact"};
-  const composite = parsed.filter(p => !p.is_standard_rate && normalizeForMatch(p.city!).includes(q));
-  if (composite.length === 1) return {status: "resolved", rate: composite[0], match_type: "composite"};
 
+  // A list of every rate area in the state means GSA did not recognize the
+  // city; no name match inside that list is GSA's answer.
   const standard = parsed.filter(p => p.is_standard_rate);
   const nsa = parsed.filter(p => !p.is_standard_rate);
   if (standard.length && nsa.length && isFullStateList(snap, state, nsa)) {
     return {status: "unresolved", suggestion: await censusSuggestion(snap, state, city)};
   }
+
+  const composite = nsa.filter(p => isCompositePart(city, p.city!));
+  if (composite.length === 1) return {status: "resolved", rate: composite[0], match_type: "composite"};
 
   const candidates = [...nsa, ...standard.slice(0, 1)];
   if (candidates.length === 1) {

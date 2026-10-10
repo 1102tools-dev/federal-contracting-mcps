@@ -631,6 +631,14 @@ def _normalize_for_match(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
+def _is_composite_part(query: str, nsa_name: str) -> bool:
+    """True when the normalized query is one whole slash-separated part of
+    an NSA name ("Woburn" in "Burlington / Woburn"), never a substring of a
+    part ("Milton" is not part of "Hamilton")."""
+    q = _normalize_for_match(query)
+    return bool(q) and q in {_normalize_for_match(part) for part in nsa_name.split("/")}
+
+
 def _select_best_rate(
     response: Any,
     query_city: str | None = None,
@@ -683,11 +691,11 @@ def _select_best_rate(
         exact = [p for p in parsed if p["city"] and _normalize_for_match(p["city"]) == q]
         if exact:
             return tag(exact[0], "exact")
-        # Composite name match (e.g., "Boston" matches "Boston / Cambridge")
+        # Composite name match: a whole part ("Boston" in "Boston / Cambridge")
         composite = [
             p for p in parsed
             if p["city"]
-            and q in _normalize_for_match(p["city"])
+            and _is_composite_part(query_city, p["city"])
             and not p["is_standard_rate"]
         ]
         if composite:
@@ -842,17 +850,17 @@ def _resolve_city(
     exact = [p for p in parsed if _normalize_for_match(p["city"]) == q]
     if exact:
         return {"status": "resolved", "rate": exact[0], "match_type": "exact"}
-    composite = [
-        p for p in parsed
-        if not p["is_standard_rate"] and q in _normalize_for_match(p["city"])
-    ]
-    if len(composite) == 1:
-        return {"status": "resolved", "rate": composite[0], "match_type": "composite"}
 
+    # A list of every rate area in the state means GSA did not recognize the
+    # city; no name match inside that list is GSA's answer.
     standard = [p for p in parsed if p["is_standard_rate"]]
     nsa = [p for p in parsed if not p["is_standard_rate"]]
     if standard and nsa and _is_full_state_list(snap, state, nsa):
         return {"status": "unresolved", "suggestion": _census_suggestion(snap, state, city)}
+
+    composite = [p for p in nsa if _is_composite_part(city, p["city"])]
+    if len(composite) == 1:
+        return {"status": "resolved", "rate": composite[0], "match_type": "composite"}
 
     candidates = nsa + standard[:1]
     if len(candidates) == 1:

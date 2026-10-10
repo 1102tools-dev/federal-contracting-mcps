@@ -124,3 +124,55 @@ def test_local_city_lookup_without_key_asks_for_one(monkeypatch):
     assert "DEMO_KEY" not in str(caught.value)
     zip_rate = asyncio.run(srv.lookup_zip_perdiem("22201", 2027))
     assert zip_rate["source"]["kind"] != "gsa_per_diem_api", "bundled lookups stay keyless"
+
+
+# P2-1 (content test 2026-10-10). Milton and Gardiner were captured from the
+# GSA API on 2026-10-10 with DEMO_KEY. GSA did not recognize Milton, OH: it
+# returned all six Ohio rate areas plus the Standard Rate. "milton" is inside
+# "Hamilton" but is not that rate area; Census puts Ohio's Miltons in counties
+# that are all at the standard rate.
+def test_town_inside_an_nsa_name_is_not_that_nsa():
+    r = _city("Milton", "OH")
+    assert r["status"] == "unresolved"
+    assert "matched_city" not in r and "mie_daily" not in r
+    suggestion = r["census_suggestion"]
+    assert suggestion["destination"] == "Standard Rate"
+    assert (suggestion["lodging_range"], suggestion["mie_daily"]) == ("$113/night", 68)
+
+
+def test_compare_does_not_give_milton_hamiltons_rate():
+    r = asyncio.run(srv.compare_locations([{"city": "Milton", "state": "OH"}], 2027))
+    row = r["locations"][0]
+    assert row["status"] == "unresolved"
+    assert row.get("matched_city") != "Hamilton"
+
+
+def test_whole_part_of_a_composite_name_still_matches():
+    # GSA's name has no spaces around the second slash.
+    r = _city("Gardiner", "MT")
+    assert r["status"] == "resolved"
+    assert r["matched_city"] == "Big Sky / West Yellowstone/Gardiner"
+    assert r["match_type"] == "composite"
+
+
+@pytest.mark.parametrize("query,name,match", [
+    ("Milton", "Hamilton", False),
+    ("Overland", "Kansas City / Overland Park", False),
+    ("Park", "Kansas City / Overland Park", False),
+    ("Fayette", "Lafayette / West Lafayette", False),
+    ("Anton", "San Antonio", False),
+    ("Columbia", "District of Columbia", False),
+    ("Bedford", "Plymouth / Taunton / New Bedford", False),
+    ("Overland Park", "Kansas City / Overland Park", True),
+    ("west  lafayette", "Lafayette / West Lafayette", True),
+    ("St Petersburg", "Tampa / St. Petersburg", True),
+    ("Whitefish", "Kalispell/Whitefish", True),
+])
+def test_composite_match_uses_whole_parts(query, name, match):
+    response = {"rates": [{"rate": [
+        {"city": name, "county": "Somewhere", "meals": 80, "months": {"month": [{"short": "Jan", "value": 150}]}},
+    ]}]}
+    r = srv._resolve_city(response, query, "ZZ", 2027)
+    assert (r.get("match_type") == "composite") is match
+    best = srv._select_best_rate(response, query_city=query)
+    assert (best["match_type"] == "composite") is match
