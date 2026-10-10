@@ -1557,11 +1557,15 @@ async def autocomplete_naics(
     )
     if exclude_retired:
         results = response.get("results") or []
-        active = [r for r in results if r.get("year_retired") is None][:limit]
+        current = [r for r in results if r.get("year_retired") is None]
+        retired_count = len(results) - len(current)
+        active = current[:limit]
         response["results"] = active
         response["_note"] = (
-            f"Filtered {len(results) - len(active)} retired codes. "
-            "Pass exclude_retired=False to include them."
+            f"Filtered {retired_count} retired codes from the fetched matches. "
+            f"{len(current) - len(active)} additional current codes were omitted by limit={limit}. "
+            "Increase limit to request more current matches. "
+            "Pass exclude_retired=False to include retired codes."
         )
     return response
 
