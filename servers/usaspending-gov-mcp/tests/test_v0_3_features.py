@@ -13,6 +13,7 @@ import asyncio
 import os
 
 import pytest
+from tests._sdk_error_assertions import unexpected_source_error_text
 
 import usaspending_gov_mcp.server as srv  # noqa: E402
 from usaspending_gov_mcp.server import mcp  # noqa: E402
@@ -1785,7 +1786,8 @@ def test_q03_http_errors_surfaced(status, detail, tool, kwargs, _, monkeypatch):
     try:
         asyncio.run(_call(tool, **kwargs))
     except Exception as e:
-        assert str(status) in str(e) or detail in str(e).lower()
+        msg = unexpected_source_error_text(e, tool)
+        assert str(status) in msg or detail in msg.lower()
         return
     raise AssertionError(f"expected error for HTTP {status}")
 
@@ -1802,7 +1804,8 @@ def test_q04_network_error(tool, kwargs, _, monkeypatch):
     try:
         asyncio.run(_call(tool, **kwargs))
     except Exception as e:
-        assert "network error" in str(e).lower() or "connection" in str(e).lower()
+        msg = unexpected_source_error_text(e, tool)
+        assert "network error" in msg.lower() or "connection" in msg.lower()
         return
     raise AssertionError("expected error")
 
@@ -1915,7 +1918,8 @@ def test_q12_html_error_cleaned(tool, kwargs, _, monkeypatch):
     try:
         asyncio.run(_call(tool, **kwargs))
     except Exception as e:
-        s = str(e)
+        msg = unexpected_source_error_text(e, tool)
+        s = msg
         # Title/h1 extracted, no raw HTML tags
         assert ("Bad Gateway" in s or "502" in s) and "<html" not in s
         return
@@ -2008,7 +2012,8 @@ def test_q18_timeout_error(tool, kwargs, _, monkeypatch):
     try:
         asyncio.run(_call(tool, **kwargs))
     except Exception as e:
-        assert "timeout" in str(e).lower() or "network error" in str(e).lower()
+        msg = unexpected_source_error_text(e, tool)
+        assert "timeout" in msg.lower() or "network error" in msg.lower()
         return
     raise AssertionError("expected error")
 
@@ -2028,7 +2033,8 @@ def test_q19_non_dict_response_rejected(tool, kwargs, _, monkeypatch):
     try:
         asyncio.run(_call(tool, **kwargs))
     except Exception as e:
-        assert "unexpected list" in str(e) or "expected JSON object" in str(e)
+        msg = unexpected_source_error_text(e, tool)
+        assert "unexpected list" in msg or "expected JSON object" in msg
         return
     raise AssertionError("expected error")
 
@@ -2226,7 +2232,8 @@ def test_states_q18_invalid_response_type_raises(monkeypatch):
     try:
         asyncio.run(_call("list_states"))
     except Exception as e:
-        assert "unexpected" in str(e).lower() or "int" in str(e).lower()
+        msg = unexpected_source_error_text(e, 'list_states')
+        assert "unexpected" in msg.lower() or "int" in msg.lower()
         return
     raise AssertionError("expected error")
 
@@ -2249,7 +2256,8 @@ def test_states_q19_http_error_surfaced(monkeypatch):
     try:
         asyncio.run(_call("list_states"))
     except Exception as e:
-        assert "500" in str(e) or "db down" in str(e).lower()
+        msg = unexpected_source_error_text(e, 'list_states')
+        assert "500" in msg or "db down" in msg.lower()
         return
     raise AssertionError("expected error")
 
@@ -2262,7 +2270,8 @@ def test_states_q20_network_error_surfaced(monkeypatch):
     try:
         asyncio.run(_call("list_states"))
     except Exception as e:
-        assert "network error" in str(e).lower() or "connection" in str(e).lower()
+        msg = unexpected_source_error_text(e, 'list_states')
+        assert "network error" in msg.lower() or "connection" in msg.lower()
         return
     raise AssertionError("expected error")
 

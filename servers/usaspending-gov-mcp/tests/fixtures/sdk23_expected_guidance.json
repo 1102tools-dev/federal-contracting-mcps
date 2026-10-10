@@ -1,0 +1,766 @@
+{
+  "provenance": "actual official PyPI1.0.22 SDK2.3 console ordinary original/recovery capture before22-ordinary-console.json; parsed public source-derived outputs, not raw HTTP bytes",
+  "parent": {
+    "id": "d035b043-1694-6193-563e-4e6b32dbf656-P",
+    "duns": "007901598",
+    "uei": "F125YU6SWK59",
+    "name": "BATTELLE MEMORIAL INSTITUTE",
+    "recipient_level": "P",
+    "amount": 2790767863.33
+  },
+  "children": [
+    {
+      "recipient_id": "d035b043-1694-6193-563e-4e6b32dbf656-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "007901598",
+      "uei": "F125YU6SWK59",
+      "amount": 409223913.78,
+      "state_province": "OH"
+    },
+    {
+      "recipient_id": "74457bb7-b18d-9762-896e-e575e7a4ed82-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "032987476",
+      "uei": "CWKJEXDG79A7",
+      "amount": 1619342568.27,
+      "state_province": "WA"
+    },
+    {
+      "recipient_id": "de47f26d-a8c9-19a6-4475-7f569f4ce139-C",
+      "name": "BATTELLE NATIONAL BIODEFENSE INSTITUTE, LLC",
+      "duns": "623876740",
+      "uei": "CK69CE2FGMM8",
+      "amount": 38810281.36,
+      "state_province": "MD"
+    },
+    {
+      "recipient_id": "094b64c8-bbe6-5af3-2b26-c52e97d87eba-C",
+      "name": "BATTELLE ENERGY ALLIANCE, LLC",
+      "duns": "152020629",
+      "uei": "HG7XL5RBNX55",
+      "amount": 1057023061.27,
+      "state_province": "ID"
+    },
+    {
+      "recipient_id": "9a7b543a-2b81-001e-d309-3a0f027dff01-C",
+      "name": "BATTELLE SAVANNAH RIVER ALLIANCE, LLC",
+      "duns": "117519705",
+      "uei": "KNXDWU1G3E81",
+      "amount": 84813660.15,
+      "state_province": "SC"
+    },
+    {
+      "recipient_id": "4c08756a-0de3-3783-577e-b9575b16aa22-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "926695685",
+      "uei": "ZFX8JGFQ89F4",
+      "amount": 4423358.55,
+      "state_province": "OH"
+    },
+    {
+      "recipient_id": "5c3d3d4d-14d0-b6ee-6101-733efb3cbefb-C",
+      "name": "SEEBYTE LIMITED",
+      "duns": "237305128",
+      "uei": "KP34LPMZBF73",
+      "amount": 200000.0,
+      "state_province": null
+    },
+    {
+      "recipient_id": "0c127d32-ccd2-ec67-ca49-788624a2ceb7-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "078348849",
+      "uei": "PSM2KUYFMFJ6",
+      "amount": 140932.0,
+      "state_province": "MD"
+    },
+    {
+      "recipient_id": "64492f0b-114e-618d-fe2e-4c69319e88a9-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "102525099",
+      "uei": "GTA1HRZ9P243",
+      "amount": -107735.26,
+      "state_province": "FL"
+    },
+    {
+      "recipient_id": "7fc3db98-98c1-8090-3721-57e47bbab16a-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "033245403",
+      "uei": "SFD9G59JAME3",
+      "amount": 0,
+      "state_province": "VA"
+    },
+    {
+      "recipient_id": "940c210b-3e57-1219-acd6-4fda8394c78f-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "932976603",
+      "uei": "RGMTFW9M4U64",
+      "amount": 0,
+      "state_province": "CA"
+    },
+    {
+      "recipient_id": "f23acbe7-72a2-9b0c-35e3-a79020ec8282-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "069348761",
+      "uei": "Q7Y2D73XQKM3",
+      "amount": 0,
+      "state_province": "MA"
+    },
+    {
+      "recipient_id": "859e5c9d-a057-cfd5-8a09-052a480ce766-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "169739021",
+      "uei": "NMN6R3VBMKN5",
+      "amount": 0,
+      "state_province": "WA"
+    },
+    {
+      "recipient_id": "540fa317-13cd-3e1a-d405-261e0323e466-C",
+      "name": "BATTELLE EDUCATION",
+      "duns": "079265584",
+      "uei": "MVHMBTMKBU51",
+      "amount": 0,
+      "state_province": "OH"
+    },
+    {
+      "recipient_id": "bc966654-ca32-0a2d-1c30-449c6a7310c1-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "004492575",
+      "uei": "KBBTPKVZ7DN5",
+      "amount": 0,
+      "state_province": "WA"
+    },
+    {
+      "recipient_id": "dbb8d394-6e03-cc26-58d9-e04269e4a309-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "014061448",
+      "uei": "JV6TBSUWW5N5",
+      "amount": 0,
+      "state_province": "OH"
+    },
+    {
+      "recipient_id": "af40fe84-c7a7-0b3c-f220-100badeb3b10-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "134660666",
+      "uei": "JN3NGQDCBM17",
+      "amount": 0,
+      "state_province": "VA"
+    },
+    {
+      "recipient_id": "85fffb78-6646-c4fe-096b-7329d952f459-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "118330294",
+      "uei": "HR87MQG156R1",
+      "amount": 0,
+      "state_province": "TX"
+    },
+    {
+      "recipient_id": "d043d29c-34cc-7fd6-3ce1-cddef9e29f4d-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "123154309",
+      "uei": "GQKQBXZSD5J3",
+      "amount": 0,
+      "state_province": "AL"
+    },
+    {
+      "recipient_id": "a9f0fe1d-38f4-ba71-db77-2b4c9c12f0b4-C",
+      "name": "BATTELLE MEMORIAL INSTITUTE",
+      "duns": "180011314",
+      "uei": "FG8QB99NF8K3",
+      "amount": 0,
+      "state_province": "VA"
+    },
+    {
+      "recipient_id": "33966afd-1e96-33c3-a053-a6efed3895c2-C",
+      "name": "BATTELLE ENERGY ALLIANCE, LLC",
+      "duns": "039956334",
+      "uei": "DE8LUZMKWPF4",
+      "amount": 0,
+      "state_province": "ID"
+    },
+    {
+      "recipient_id": "2a8cd5da-b043-b5a5-18fb-8f48ab00a90b-C",
+      "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC.",
+      "duns": "073229523",
+      "uei": "D8CMPLV4GKR5",
+      "amount": 0,
+      "state_province": "MA"
+    },
+    {
+      "recipient_id": "1658fd0d-0c2b-55a4-8d58-f90b90324a5f-C",
+      "name": "OMNIVIZ INC",
+      "duns": "032847522",
+      "uei": "CMEELMZK4SK3",
+      "amount": 0,
+      "state_province": "MA"
+    }
+  ],
+  "award_page": {
+    "spending_level": "awards",
+    "limit": 100,
+    "results": [
+      {
+        "internal_id": 292026551,
+        "Award ID": "89233018CNR000004",
+        "Recipient Name": "FLUOR MARINE PROPULSION, LLC",
+        "Recipient UEI": "CWHMVCX7K1N6",
+        "Description": "MANAGEMENT AND OPERATION OF THE NAVAL NUCLEAR LABORATORY AND NAVAL NUCLEAR PROPULSION PROGRAM SUPPORT",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 14754114287.21,
+        "Total Outlays": 10139709686.17,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2018-07-12",
+        "End Date": "2028-09-30",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "M1HA",
+          "description": "OPERATION OF GOVERNMENT-OWNED CONTRACTOR-OPERATED (GOCO) R&D FACILITIES"
+        },
+        "generated_internal_id": "CONT_AWD_89233018CNR000004_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2026-09-29 10:10:22",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292027803,
+        "Award ID": "89243024CSC000002",
+        "Recipient Name": "FERMI FORWARD DISCOVERY GROUP, LLC",
+        "Recipient UEI": "VLS6K3EVCMW5",
+        "Description": "MANAGEMENT AND OPERATING CONTRACT FOR THE FERMI NATIONAL ACCELERATOR LABORATORY (FNAL)",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 2508091708.12,
+        "Total Outlays": 1346724066.92,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2024-09-30",
+        "End Date": "2029-12-31",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "M1HA",
+          "description": "OPERATION OF GOVERNMENT-OWNED CONTRACTOR-OPERATED (GOCO) R&D FACILITIES"
+        },
+        "generated_internal_id": "CONT_AWD_89243024CSC000002_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2026-09-29 16:44:32",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292036677,
+        "Award ID": "89303321CEM000080",
+        "Recipient Name": "BATTELLE SAVANNAH RIVER ALLIANCE, LLC",
+        "Recipient UEI": "KNXDWU1G3E81",
+        "Description": "SAVANNAH RIVER NATIONAL LABORATORY MANAGEMENT AND OPERATING (M&O) CONTRACT",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 1643484968.75,
+        "Total Outlays": 1302747460.09,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2021-02-16",
+        "End Date": "2030-02-15",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "AJ12",
+          "description": "GENERAL SCIENCE AND TECHNOLOGY R&D SERVICES; GENERAL SCIENCE AND TECHNOLOGY; APPLIED RESEARCH"
+        },
+        "generated_internal_id": "CONT_AWD_89303321CEM000080_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2026-09-21 15:17:47",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292028975,
+        "Award ID": "89243318CFE000003",
+        "Recipient Name": "LEIDOS, INC.",
+        "Recipient UEI": "MYKLJHTX3MM7",
+        "Description": "RESEARCH SUPPORT SERVICES (RSS)",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 1083287885.0,
+        "Total Outlays": 818135409.57,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2018-12-31",
+        "End Date": "2028-12-30",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "R425",
+          "description": "SUPPORT- PROFESSIONAL: ENGINEERING/TECHNICAL"
+        },
+        "generated_internal_id": "CONT_AWD_89243318CFE000003_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2026-09-25 09:22:06",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292026799,
+        "Award ID": "89233119CNA000063",
+        "Recipient Name": "GENERAL ATOMICS",
+        "Recipient UEI": "TVRYQ3N3B8H5",
+        "Description": "RESEARCH&DEVELOPMENT AND FABRICATION OF INERTIAL CONFINEMENT FUSION (ICF) TARGETS FOR THE OFFICE OF RTD&E NA-11, EXPERIMENTAL SCIENCES NA-113",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 179974624.06,
+        "Total Outlays": 149392145.67,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2019-08-01",
+        "End Date": "2024-09-30",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "R425",
+          "description": "SUPPORT- PROFESSIONAL: ENGINEERING/TECHNICAL"
+        },
+        "generated_internal_id": "CONT_AWD_89233119CNA000063_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2025-08-01 11:20:29",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292026945,
+        "Award ID": "89233120CNA000134",
+        "Recipient Name": "THE AEROSPACE CORPORATION",
+        "Recipient UEI": "YA8LJBJCND19",
+        "Description": "SYSTEM ENGINEERING AND INTEGRATION (SE&I) SUPPORT AND INDEPENDENT TECHNICAL AND PROGRAMMATIC ANALYSIS FOR THE OFFICES OF DEFENSE NUCLEAR NONPROLIFERATION AND DEFENSE PROGRAMS",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 139469579.87,
+        "Total Outlays": 123915533.98,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2020-01-01",
+        "End Date": "2025-05-31",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "AR16",
+          "description": "R&D- SPACE: AERONAUTICS/SPACE TECHNOLOGY (MANAGEMENT/SUPPORT)"
+        },
+        "generated_internal_id": "CONT_AWD_89233120CNA000134_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2025-04-23 18:30:18",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292027364,
+        "Award ID": "89233124CNA000365",
+        "Recipient Name": "GENERAL ATOMICS",
+        "Recipient UEI": "TVRYQ3N3B8H5",
+        "Description": "RESEARCH & DEVELOPMENT AND FABRICATION OF INERTIAL CONFINEMENT FUSION (ICF) TARGETS FOR THE OFFICE OF RTD&E NA-11, EXPERIMENTAL SCIENCES NA-113",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 92366341.4,
+        "Total Outlays": 67587042.04,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2024-10-01",
+        "End Date": "2029-09-30",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "AJ12",
+          "description": "GENERAL SCIENCE AND TECHNOLOGY R&D SERVICES; GENERAL SCIENCE AND TECHNOLOGY; APPLIED RESEARCH"
+        },
+        "generated_internal_id": "CONT_AWD_89233124CNA000365_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2026-09-10 23:41:27",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292027571,
+        "Award ID": "89233125FNA400697",
+        "Recipient Name": "THE AEROSPACE CORPORATION",
+        "Recipient UEI": "YA8LJBJCND19",
+        "Description": "SYSTEM ENGINEERING AND INTEGRATION (SE&I) SUPPORT AND INDEPENDENT TECHNICAL AND PROGRAMMATIC ANALYSIS FOR THE OFFICES OF DEFENSE NUCLEAR NONPROLIFERATION AND DEFENSE PROGRAMS",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 41772736.47,
+        "Total Outlays": 24426512.82,
+        "Contract Award Type": "DELIVERY ORDER",
+        "Start Date": "2025-06-01",
+        "End Date": "2027-05-31",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "AR14",
+          "description": "SPACE R&D SERVICES; SPACE FLIGHT, RESEARCH AND SUPPORTING ACTIVITIES; R&D ADMINISTRATIVE EXPENSES"
+        },
+        "generated_internal_id": "CONT_AWD_89233125FNA400697_8900_89233125DNA000062_8900",
+        "Last Modified Date": "2026-09-14 14:10:28",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292027570,
+        "Award ID": "89233125FNA400696",
+        "Recipient Name": "THE AEROSPACE CORPORATION",
+        "Recipient UEI": "YA8LJBJCND19",
+        "Description": "SYSTEM ENGINEERING AND INTEGRATION (SE&I) SUPPORT AND INDEPENDENT TECHNICAL AND PROGRAMMATIC ANALYSIS FOR THE OFFICES OF DEFENSE NUCLEAR NONPROLIFERATION (DNN - NA-20)",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 20491125.0,
+        "Total Outlays": 12017516.6,
+        "Contract Award Type": "DELIVERY ORDER",
+        "Start Date": "2025-06-01",
+        "End Date": "2027-05-31",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "AR14",
+          "description": "SPACE R&D SERVICES; SPACE FLIGHT, RESEARCH AND SUPPORTING ACTIVITIES; R&D ADMINISTRATIVE EXPENSES"
+        },
+        "generated_internal_id": "CONT_AWD_89233125FNA400696_8900_89233125DNA000062_8900",
+        "Last Modified Date": "2026-08-26 13:40:40",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292028699,
+        "Award ID": "89243218CNE000001",
+        "Recipient Name": "ELECTRIC POWER RESEARCH INSTITUTE INC",
+        "Recipient UEI": "JBV2SMLRBK29",
+        "Description": "MONITORING THE HIGH BURN-UP LONG TERM STORAGE CASK DEMONSTRATION PROJECT",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 18897805.11,
+        "Total Outlays": 10585648.81,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2018-10-16",
+        "End Date": "2028-10-15",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "AG52",
+          "description": "R&D- ENERGY: NUCLEAR (APPLIED RESEARCH/EXPLORATORY DEVELOPMENT)"
+        },
+        "generated_internal_id": "CONT_AWD_89243218CNE000001_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2026-09-23 09:40:13",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292027158,
+        "Award ID": "89233122CNA000255",
+        "Recipient Name": "NEVADA SYSTEM OF HIGHER EDUCATION",
+        "Recipient UEI": "MV1JFXA4S621",
+        "Description": "TECHNICAL RESEARCH, ENGINEERING, AND DEVELOPMENT SERVICES (TREDS) II SUPPORTING THE DEPARTMENT OF ENERGY (DOE) NATIONAL NUCLEAR SECURITY ADMINISTRATION (NNSA) - NEVADA FIELD OFFICE (NFO)",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 17790848.8,
+        "Total Outlays": 14780221.42,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2022-05-03",
+        "End Date": "2027-04-30",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "AC21",
+          "description": "NATIONAL DEFENSE R&D SERVICES; ATOMIC ENERGY DEFENSE ACTIVITIES; BASIC RESEARCH"
+        },
+        "generated_internal_id": "CONT_AWD_89233122CNA000255_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2026-08-26 11:18:19",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292027276,
+        "Award ID": "89233123CNA000311",
+        "Recipient Name": "MERRICK-SMSI JOINT VENTURE LLP",
+        "Recipient UEI": "GLTQW6JJ48T4",
+        "Description": "GLOVEBOX DEMONSTRATION PROGRAM",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 5790230.0,
+        "Total Outlays": 4971735.5,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2023-10-01",
+        "End Date": "2027-09-30",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "R499",
+          "description": "SUPPORT- PROFESSIONAL: OTHER"
+        },
+        "generated_internal_id": "CONT_AWD_89233123CNA000311_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2026-09-11 14:00:56",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292027138,
+        "Award ID": "89233121FNA400401",
+        "Recipient Name": "NATIONAL STRATEGIC RESEARCH INSTITUTE",
+        "Recipient UEI": "CZLHXAXKJYX1",
+        "Description": "TASK ORDER WITH UNIVERSITY OF NEBRASKA NATIONAL STRATEGIC RESEARCH INSTITUTE NSRI",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 3445614.22,
+        "Total Outlays": 3283575.86,
+        "Contract Award Type": "DELIVERY ORDER",
+        "Start Date": "2021-09-28",
+        "End Date": "2026-09-30",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "AG45",
+          "description": "ENERGY R&D SVCS; ENERGY INFORMATION, POLICY & REGULATION; R&D FACILITIES & MAJ EQUIP"
+        },
+        "generated_internal_id": "CONT_AWD_89233121FNA400401_8900_89233121DNA000037_8900",
+        "Last Modified Date": "2026-06-16 12:04:27",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292027163,
+        "Award ID": "89233122CNA000267",
+        "Recipient Name": "RADIABEAM SYSTEMS, LLC",
+        "Recipient UEI": "GRKLZTXQZXE6",
+        "Description": "SBIR PHASE III - NOVEL LOW-COST MEDICAL ACCELERATOR DESIGNS FOR USE IN CHALLENGING ENVIRONMENTS",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 1558088.0,
+        "Total Outlays": 1265066.0,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2022-07-01",
+        "End Date": "2025-10-31",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "R425",
+          "description": "SUPPORT- PROFESSIONAL: ENGINEERING/TECHNICAL"
+        },
+        "generated_internal_id": "CONT_AWD_89233122CNA000267_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2025-03-14 16:30:16",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292030250,
+        "Award ID": "89243324PFE000820",
+        "Recipient Name": "SINTEF AS",
+        "Recipient UEI": "MBCJWBFTQC56",
+        "Description": "SINTEF POST-COMBUSTION SOLVENT-BASED CO2 CAPTURE TECHNOLOGY FOR SOLVENT DEGRADATION STUDIES, EMISSION MEASUREMENT TECHNIQUES, AND DEVELOPMENT OF NEW ANALYTICAL METHODS FOR ASSOCIATED NEWLY IDENTIFIED COMPONENTS.",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 619572.0,
+        "Total Outlays": 495857.6,
+        "Contract Award Type": "PURCHASE ORDER",
+        "Start Date": "2024-10-01",
+        "End Date": "2026-10-30",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "H235",
+          "description": "EQUIPMENT AND MATERIALS TESTING- SERVICE AND TRADE EQUIPMENT"
+        },
+        "generated_internal_id": "CONT_AWD_89243324PFE000820_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2026-09-10 10:00:33",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292027467,
+        "Award ID": "89233124FNA400637",
+        "Recipient Name": "NATIONAL STRATEGIC RESEARCH INSTITUTE",
+        "Recipient UEI": "CZLHXAXKJYX1",
+        "Description": "WEAPONS OF MASS DESTRUCTION (WMD) CRISIS RESPONSE TABLETOP EXERCISE (TTX)",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 147320.0,
+        "Total Outlays": 147320.0,
+        "Contract Award Type": "DELIVERY ORDER",
+        "Start Date": "2024-08-14",
+        "End Date": "2025-02-14",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "AG45",
+          "description": "ENERGY R&D SVCS; ENERGY INFORMATION, POLICY & REGULATION; R&D FACILITIES & MAJ EQUIP"
+        },
+        "generated_internal_id": "CONT_AWD_89233124FNA400637_8900_89233121DNA000037_8900",
+        "Last Modified Date": "2024-11-07 11:49:45",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292029705,
+        "Award ID": "89243322CFE000071",
+        "Recipient Name": "THE PENNSYLVANIA STATE UNIVERSITY",
+        "Recipient UEI": "NPM2J7MSCF61",
+        "Description": "MEMBRANE-BASED ELECTROCHEMICAL SENSORS FOR CORROSION AND ENVIRONMENTAL MONITORING IN NATURAL GAS PIPELINES",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 130000.0,
+        "Total Outlays": 130000.0,
+        "Contract Award Type": "DEFINITIVE CONTRACT",
+        "Start Date": "2022-10-01",
+        "End Date": "2024-03-31",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "R425",
+          "description": "SUPPORT- PROFESSIONAL: ENGINEERING/TECHNICAL"
+        },
+        "generated_internal_id": "CONT_AWD_89243322CFE000071_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2025-03-26 09:50:29",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292030338,
+        "Award ID": "89243325PFE000832",
+        "Recipient Name": "THE JOHNS HOPKINS UNIVERSITY APPLIED PHYSICS LABORATORY LLC",
+        "Recipient UEI": "C1HBCJ9RMBV3",
+        "Description": "REDS (RARE EARTH DISILICATES) SUPPORT RELATED PROJECT ENABLE USE OF CMC MATERIALS IN HIGH EFFICIENCY HYDROGEN TURBINES AS PART OF THE ADVANCED MATERIALS MULTIYEAR RESEARCH PROGRAM WITH JOHNS HOPKINS",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 126934.0,
+        "Total Outlays": 62488.0,
+        "Contract Award Type": "PURCHASE ORDER",
+        "Start Date": "2025-01-08",
+        "End Date": "2026-08-15",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "H235",
+          "description": "EQUIPMENT AND MATERIALS TESTING- SERVICE AND TRADE EQUIPMENT"
+        },
+        "generated_internal_id": "CONT_AWD_89243325PFE000832_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2025-11-12 12:41:19",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292029858,
+        "Award ID": "89243322PFE000564",
+        "Recipient Name": "SOUTHWEST RESEARCH INSTITUTE",
+        "Recipient UEI": "PB11V1KH3KV4",
+        "Description": "PURCHASE OF LAB SERVICES THROUGH SOUTHWEST RESEARCH INSTITUTE FOR FIELD TESTING OF ADVANCED PIPELINE SENSORS FOR NATURAL GAS PIPELINE  TECHNICAL CONTACT IS RUISHU WRIGHT, SHE CAN BE REACHED AT RUISHU.WRIGHT@NETL.DOE.GOV, OR VIA PHONE AT 412-386-501",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 100000.0,
+        "Total Outlays": 100000.0,
+        "Contract Award Type": "PURCHASE ORDER",
+        "Start Date": "2022-08-08",
+        "End Date": "2023-06-01",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "B529",
+          "description": "SPECIAL STUDIES/ANALYSIS- SCIENTIFIC DATA"
+        },
+        "generated_internal_id": "CONT_AWD_89243322PFE000564_8900_-NONE-_-NONE-",
+        "Last Modified Date": "2025-01-31 08:50:17",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      },
+      {
+        "internal_id": 292042190,
+        "Award ID": "89503125FWA400663",
+        "Recipient Name": "SYSCOM, INC",
+        "Recipient UEI": "SR9YMM6QE8B5",
+        "Description": "JANITORIAL SERVICES FOR MULTIPLE DSW SUBSTATIONS (PARKER, DAVIS AND MEAD) IN SUPPORT OF WESTERN AREA POWER ADMINISTRATION DESERT SOUTHWEST REGION",
+        "Awarding Agency": "Department of Energy",
+        "Awarding Sub Agency": "Department of Energy",
+        "Funding Agency": "Department of Energy",
+        "Award Amount": 0.0,
+        "Total Outlays": null,
+        "Contract Award Type": "DELIVERY ORDER",
+        "Start Date": "2025-08-27",
+        "End Date": "2027-09-01",
+        "NAICS": {
+          "code": "541715",
+          "description": "RESEARCH AND DEVELOPMENT IN THE PHYSICAL, ENGINEERING, AND LIFE SCIENCES (EXCEPT NANOTECHNOLOGY AND BIOTECHNOLOGY)"
+        },
+        "PSC": {
+          "code": "S201",
+          "description": "HOUSEKEEPING- CUSTODIAL JANITORIAL"
+        },
+        "generated_internal_id": "CONT_AWD_89503125FWA400663_8900_47QRCA25DSF32_4732",
+        "Last Modified Date": "2026-07-24 09:52:13",
+        "awarding_agency_id": 930,
+        "agency_slug": "department-of-energy"
+      }
+    ],
+    "page_metadata": {
+      "page": 1,
+      "hasNext": false,
+      "last_record_unique_id": null,
+      "last_record_sort_value": "None"
+    },
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  },
+  "count": {
+    "results": {
+      "contracts": 1,
+      "direct_payments": 0,
+      "grants": 0,
+      "idvs": 0,
+      "loans": 0,
+      "other": 0
+    },
+    "spending_level": "awards",
+    "messages": [
+      "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "
+    ]
+  }
+}

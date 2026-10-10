@@ -42,6 +42,7 @@ import os
 
 import httpx as _httpx
 import pytest
+from tests._sdk_error_assertions import unexpected_source_error_text
 
 import usaspending_gov_mcp.server as srv  # noqa: E402
 from usaspending_gov_mcp.server import mcp  # noqa: E402
@@ -390,7 +391,7 @@ def test_children_http_error_translated(monkeypatch):
     try:
         asyncio.run(_call("get_recipient_children", uei_or_duns=LOCKHEED_UEI))
     except Exception as e:
-        msg = str(e)
+        msg = unexpected_source_error_text(e, 'get_recipient_children')
         assert "404" in msg
         # Path-conditioned hint: recipient endpoints must not get award advice
         assert "generated_internal_id" not in msg

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.23
+
+- Preserve specific expected user-input recovery messages on supported MCP SDKs using an explicit input-error marker compatible with direct ValueError callers and client-visible ToolError handling. Recipient UEI, supported pagination and required date-window originals retain their existing guidance; unknown source/parser/programming failures keep their existing SDK masking.
+- Correct retained operational test expectations to assert strict SDK wrappers and original causal status/detail/cleaning, without claiming internal causes are client-visible recovery hints. Names, schemas, annotations, descriptions, financial payloads and source queries remain unchanged.
+- Add captured ordinary-workflow regressions and unexpected-fault masking controls. Both measured Python 3.12.13 full lanes (frozen MCP 2.0.0 and installed candidate-wheel MCP 2.3.0) give 1,943 passed / 379 skipped / 2,322 collected, with all 855 prior failed IDs passing. Publication and actual published-package acceptance remain pending coordinator review and release.
+
 ## 1.0.22
 
 - Explain default award-date windows as source interval overlap rather than proof of an action inside the window. Preserve returned award rows, counts, amounts and existing DoD reporting notes; guide actual dated transaction pagination and distinct-award recovery.

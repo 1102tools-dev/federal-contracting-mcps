@@ -1,12 +1,14 @@
 # usaspending-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,318](https://img.shields.io/badge/regression%20tests-2%2C318-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,322](https://img.shields.io/badge/regression%20tests-2%2C322-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
 Free, open-source MCP server for the USAspending.gov federal contract, award, subaward, recipient, agency, and federal account API.
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
+
+*Candidate 1.0.23 source collects 2,322 regression cases. Both the frozen MCP SDK 2.0.0 lane and actually installed candidate-wheel MCP 2.3.0 lane measure 1,943 passed and 379 skipped. All 855 retained SDK 2.3 failures are resolved with specific visible expected-input guidance or strict unexpected-fault causal/masking assertions. Publication remains pending; the actual published 1.0.22 record below is preserved.*
 
 *Published 1.0.22 has 2,318 collected regression cases. The measured frozen Python 3.12 / MCP SDK 2.0.0 source lane passed 1,939 and skipped 379 live-gated cases. Its separately installed official PyPI package with MCP 2.3.0 measured 1,084 passed, 855 retained legacy negative-expectation failures and 379 skipped. Actual published console/public acceptance passed 153 questions across all 55 tools, including 138 new Round 6 questions and 15 reference/control reads. See [testing.md](testing.md) for separate lane provenance.*
 
@@ -233,12 +235,12 @@ MIT
 ## Regression tests
 
 Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
-package directory. For 1.0.22, the measured Python 3.12.13 / frozen
-SDK 2.0.0 lane passes 1,939 cases and skips 379 live cases. The actually installed
-official published package with SDK 2.3.0 measures 1,084 passed, 855 failed and 379 skipped;
-those failures remain explicit and are not a passing latest-SDK suite. Set
+package directory. For candidate 1.0.23, both measured Python 3.12.13 / frozen
+SDK 2.0.0 and installed candidate-wheel SDK 2.3.0 lanes pass 1,943 cases and skip
+379 live cases. Actual published 1.0.22 measured 1,084 passed / 855 failed / 379
+skipped; that prior execution remains separate. Set
 `USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts below include
-parametrized and live-gated cases collected for 1.0.22; the prior published 1.0.21 has 2,315 collected cases.
+parametrized and live-gated cases collected for candidate 1.0.23 (publication pending).
 
 | Test file | Cases | Coverage |
 |---|---:|---|
@@ -264,4 +266,5 @@ parametrized and live-gated cases collected for 1.0.22; the prior published 1.0.
 | [test_federal_account_available_fy_1020.py](tests/test_federal_account_available_fy_1020.py) | 3 | Current-FY source availability, supported recovery and unchanged 503 control |
 | [test_naics_current_retired_1021.py](tests/test_naics_current_retired_1021.py) | 3 | Actual retired rows versus active rows omitted by the requested limit |
 | [test_award_date_overlap_r6.py](tests/test_award_date_overlap_r6.py) | 3 | Award interval overlap versus complete dated-transaction recovery |
-| **Total** | **2,318** | **1,939 frozen offline passes; 379 live-gated skips** |
+| [test_sdk23_expected_guidance.py](tests/test_sdk23_expected_guidance.py) | 4 | Visible ordinary recovery hints, no pre-validation source requests, preserved source outputs and unexpected-fault masking |
+| **Total** | **2,322** | **1,943 passes on each tested SDK; 379 live-gated skips** |
