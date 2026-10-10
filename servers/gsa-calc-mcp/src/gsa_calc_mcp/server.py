@@ -1167,7 +1167,8 @@ async def vendor_rate_card(
     contractor's site (Contractor_Facility); check worksite before comparing.
 
     Pass a partial name (e.g., 'booz' for Booz Allen Hamilton). The tool
-    finds the exact registered name automatically.
+    finds the exact registered name automatically. Use part of the legal
+    name, not an acronym ('Science Applications', not 'SAIC').
 
     total_rates counts rate rows, not titles: one title can have several
     rows (worksite, contract, SIN). distinct_labor_categories is the number
@@ -1208,7 +1209,13 @@ async def vendor_rate_card(
     if not suggestions:
         return {
             "vendor_search": vendor_name,
-            "error": f"No vendor found matching '{vendor_name}'. Try a shorter or different term.",
+            "error": (
+                f"No vendor found matching '{vendor_name}'. CALC+ lists vendors "
+                f"by their registered legal name, not acronyms or brand names: "
+                f"for example SAIC is 'SCIENCE APPLICATIONS INTERNATIONAL "
+                f"CORPORATION', so search 'Science Applications'. Try part of "
+                f"the legal name, or a shorter or different term."
+            ),
         }
 
     exact_name = suggestions[0]["value"]

@@ -293,3 +293,23 @@ def test_live_g12_scrum_master_truncation_matches_api():
     assert r["other_records"] == other
     assert r["truncated"] is (other > 0)
     assert len(r["suggestions"]) == len(api["aggregations"]["labor_category"]["buckets"])
+
+
+# ---------------------------------------------------------------------------
+# G-7: an acronym miss points to the registered legal name
+# ---------------------------------------------------------------------------
+
+def test_g7_vendor_not_found_suggests_legal_name(monkeypatch):
+    empty = {"hits": {"total": {"value": 0}, "hits": []}, "aggregations": {"vendor_name": {"buckets": []}}}
+    monkeypatch.setattr(srv, "_get", _MockGet(empty))
+    r = _payload(asyncio.run(_call("vendor_rate_card", vendor_name="SAIC")))
+    assert "No vendor found matching 'SAIC'" in r["error"]
+    assert "legal name" in r["error"]
+
+
+@live
+def test_live_g7_saic_points_to_legal_name():
+    api = _api("suggest-contains=vendor_name:SAIC&page=1&page_size=1&ordering=current_price&sort=asc")
+    assert api["aggregations"]["vendor_name"]["buckets"] == []
+    r = _payload(asyncio.run(_call("vendor_rate_card", vendor_name="SAIC")))
+    assert "legal name" in r["error"]
