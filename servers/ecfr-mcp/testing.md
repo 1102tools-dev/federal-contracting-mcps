@@ -1,5 +1,18 @@
 # eCFR MCP: Testing Record
 
+## Content research round 2 (1.1.3, October 10, 2026)
+
+The published 1.1.2 service was tested with **46 ordinary and power-user questions, 20 useful followups and four additional scope/read followups (70 public calls)** across all 13 tools. Research covered FAR and agency supplements, grants and indirect costs, small-business subcontracting, Davis-Bacon provisions, hazardous waste, hazardous-material shipment tables and HIPAA disclosures. Fifty independent checks against primary eCFR XML/JSON passed.
+
+Three P2 defects were confirmed and fixed: an unpossessive COR definition query incorrectly claimed FAR 2.101 had no definition; comparison followup instructions lost a non-default CFR title; combined correction filters included unrelated parts/sections. Seven new regressions cover the original questions and canonical/acronym or historical-read followups. Before logs show one COR failure, one executable comparison-hint failure and three correction-scope failures; all seven pass after the fixes.
+
+Python 3.12 collected **448 tests (330 offline plus 118 live-gated)**. Both frozen MCP SDK 2.0.0 and a fresh installed candidate wheel using SDK 2.3.0 passed 330, with 118 live tests explicitly skipped in these offline lanes. The actual published 1.1.2 executable reproduced all three defects in seven original/followup calls; the candidate 1.1.3 executable completed those seven plus all 66 corpus questions/followups (**73 calls**) successfully. The full live regression suite is still running. Both SDK tool-contract checks, source build, version consistency and new-version PyPI guard passed. Final published 1.1.3 checks belong to the subsequent release gate.
+
+Source limits are explicit: sampled titles were current through October 7, rather than the October 10 audit date. The 40-page hazardous-materials answer was sampled on the initial, next and final pages; three Acetone shipment entries matched the primary table exactly, but intermediate pages were not all read. A zero-hit FAR “price realism” phrase search was treated as a source/search limitation; the useful “price analysis” and 15.404-1 followups succeeded. There are no unresolved confirmed content defects in this round.
+
+Evidence is preserved in Workspace `Artifacts/mcp-e2e-20261010/round2/ecfr/`: corpus and full public responses, authoritative source index and XML/JSON, exact findings, before/after regression logs, published/candidate CLI wire results and gate logs. This historical record does not claim deployment of the candidate.
+
+
 ## Fresh-install delivery correction (1.1.2)
 
 The final actual PyPI 1.1.1 install selected MCP SDK 2.3.0. Its stdio client replaced ordinary unavailable-date and citation-conflict guidance with generic errors. Public hosted content remained correct under frozen SDK 2.0.0, but a fresh installed CLI could not see the same recovery instructions. This was a new P2 found by release verification of the original user questions, separate from the content audit.
@@ -46,12 +59,12 @@ All 13 tools kept their names. No privacy promise or cache time changed.
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across eight audit rounds. Rounds 1-7 surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. Round 8 (1.1.0, 2026-10-10) was a six-agent bug hunt against eCFR's own data plus a 47-question everyday-use pass; it found the text parser, the definition finder and eCFR's search index were the sources of 18 P2 and about 20 P3 problems, all fixed. The MCP ships with 441 collected regression tests (323 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
+This Model Context Protocol server exposes the eCFR (Electronic Code of Federal Regulations) API as 13 callable tools covering regulatory text, structure, search, version history, and common acquisition workflows. It was hardened across eight audit rounds. Rounds 1-7 surfaced and fixed 84 bugs, including two catastrophic silent wrong-data paths, multiple 23MB payload bombs triggered by empty-string inputs, a chapter whitelist that rejected nine live agency FAR supplements and a parser that silently discarded table content. Round 8 (1.1.0, 2026-10-10) was a six-agent bug hunt against eCFR's own data plus a 47-question everyday-use pass; it found the text parser, the definition finder and eCFR's search index were the sources of 18 P2 and about 20 P3 problems, all fixed. The MCP ships with 448 collected regression tests (330 offline plus 118 live-gated) that run on every change and can be executed against the real public eCFR API on demand.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 13 |
-| Total regression tests | 441 (323 offline, 118 live-gated) |
+| Total regression tests | 448 (330 offline, 118 live-gated) |
 | Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 2 |
 | P1 silent-wrong-data bugs found and fixed | 26 |
@@ -59,7 +72,7 @@ This Model Context Protocol server exposes the eCFR (Electronic Code of Federal 
 | P3 cleanup items found and fixed | 12 |
 | Round 6 external re-audit findings, fixed in 1.0.2 | 12 (2 high, 5 medium, 5 low) |
 | Round 8 bug hunt findings, fixed in 1.1.0 | 18 P2, about 20 P3, plus 6 everyday-use fixes |
-| Source package version | 1.1.2 |
+| Source package version | 1.1.3 |
 | PyPI status | Published as `ecfr-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.4 Safety Release Verification

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.3
+
+- Natural definition names such as “contracting officer representative” now find the complete FAR 2.101 definition even when its formal name uses a possessive.
+- Comparison read/history followups retain the requested CFR title; full-text read hints also retain an explicit chapter. Grants comparisons can now be followed directly to the correct historical text.
+- Combined chapter, part and section filters in editorial-correction research now match the same CFR reference, so a Part 52 query does not include unrelated FAR parts.
+- Seven regressions preserve these original questions and useful followups. Tool definitions and input schemas remain unchanged.
+
 ## 1.1.2
 
 - Expected validation and domain errors now inherit SDK `ToolError` as well as `ValueError`. Fresh MCP SDK 2.3.0 installations preserve the latest-date and corrected-title recovery guidance, matching the frozen hosted SDK 2.0.0 behavior. Ordinary internal/network failures keep their existing exception classes.
