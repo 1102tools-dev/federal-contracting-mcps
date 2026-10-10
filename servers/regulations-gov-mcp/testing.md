@@ -546,3 +546,58 @@ were read. The corpus, source ledger, fresh hashes, caller exclusions and
 installed-package provenance are retained under
 `Artifacts/mcp-e2e-20261010/round5/regulations/`. This record changes no runtime
 behavior or package version.
+
+
+## October 10, 2026: Round 6 general content audit (2.0.6)
+
+New ordinary and power-user questions covered all nine tools across FDA medical
+devices and participation notices, FSIS swine inspection, APHIS biotechnology,
+Coast Guard security and inspection notices, FMCSA research and exemptions, HUD
+fair-housing testing, EEOC pregnancy accommodation and ITA submission time limits.
+**133 actual public calls completed**, comprising **132 data requests with new
+tool/argument combinations compared with Round 5** and one access-status call.
+**168 semantic assertions**, **72 selected source comparisons** and **10 composed
+task answers** used **46 fresh Federal Register JSON and 16 fresh XML captures**;
+all **62 source hashes** were verified. No prior data-question replay is counted
+as new coverage.
+
+Followups recovered the FDA quality-system proposal, final rule and correction
+and their February 2, 2026 transition date; distinguished the FSIS final rule
+from its earlier proposal; and recovered PWFA and ITA final rules in agency
+document buckets outside their proposal dockets. Coast Guard notice 2026-19895
+reopens comments through **October 29**, following the original September 23
+date. Its primary API closing field instead says August 24: the full DATES text
+resolves that conflict, rather than a machine-date parity pass. The app's
+reported October 29 remained qualified as source metadata. All **50 dated
+returned occurrences** retained `controlling_deadline_established: false` and
+linked-notice verification guidance.
+
+Actual notice recovery also separated FDA hearing participation (September 14),
+prehearing conference (September 28) and disclosure (October 13), and patent
+redetermination comments (October 16) from due-diligence petitions (February 16,
+2027). A public meeting date differs from its comment deadline; HUD committee
+nominations are not general comments. The Coast Guard public availability
+notice does not disclose the private security directive itself, and FMCSA
+research notices do not grant general permission to pause driving limits.
+No new P0–P3 product defect was confirmed within this completed source scope.
+
+Fresh official by-name PyPI 2.0.6 actual console startup, nine-tool catalog and
+no-key access status passed. The production Python 3.12 console, public and
+frozen catalogs agree on names, descriptions, schemas and annotations. An
+initial Python 3.14 console attempt retained description-indentation differences
+with the same cleaned description text; it is not claimed as byte-identical
+metadata. A separate fresh installed-package regression lane using Python
+3.14.3, MCP SDK 2.3.0 and pytest 9.1.1 passed **179**, skipped **119** optional
+checks and collected **298**. These results are separate from the content audit.
+
+No local Regulations.gov key was available, so keyed local data parity was not
+executed. Historical quota429 and attachment403 are not new Round6 probes;
+attachment references do not establish their contents were read. Unlinked FDA
+provider deadlines remain unverified. Posted feedback is not all feedback
+received, and an organization label or attachment link alone does not establish
+an author's position. Publication and posted metadata do not establish current
+legal enforceability or unrestricted participation. Capped docket histories
+retain pagination limits. Evidence, fresh capture timestamps and hashes, source
+reconciliations, task answers and installed-package provenance are retained under
+`Artifacts/mcp-e2e-20261010/round6/regulations/`. This record changes no runtime
+behavior or package version.
