@@ -10,6 +10,8 @@ ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network c
 
 *Tested and hardened through ten rounds of integration testing against the live GSA Per Diem API, including a round-7 independent re-audit with live verification. 583 collected Python regression tests (316 offline, 267 live-gated) covering 1 P0 path-traversal bug, 23 P1 silent-wrong-data bugs, 21 P2 validation gaps, 14 round-7 findings, the 1.1.0 rate-area ambiguity fixes, and the 1.2.1 and 1.2.2 content-test corrections. See [testing.md](testing.md) for the full testing record.*
 
+The October 10 round-3 content audit checked 101 new travel questions across all seven tools against fresh official sources. Published 1.2.4 fixes valid Doña Ana County worksite lookups and clarifies when a local API key is needed. The actual installed CLI and public Worker replays passed; the keyless CLI explicitly returns missing-key guidance for two city-only API paths. Separate regression validation recorded 316 Python tests passed and 267 optional live tests skipped, plus 29 Worker tests passed. See [testing.md](testing.md) for source comparisons and scope limits.
+
 ## Local or hosted
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
