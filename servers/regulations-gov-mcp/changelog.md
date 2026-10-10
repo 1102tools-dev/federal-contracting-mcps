@@ -9,7 +9,7 @@
   unknown; missing public fields no longer imply an individual submitted the comment.
 - Seven regression cases cover both workflow tools and partial enrichment.
   Python 3.12 offline gate: 167 passed, 119 live-gated skipped (286 collected).
-  The audit separately exercised all nine hosted tools at 2.0.3 with 20 calls;
+  The audit separately exercised all nine hosted tools at 2.0.3 with 33 calls;
   direct Regulations.gov source verification was quota-blocked (HTTP 429).
 
 ## 2.0.3

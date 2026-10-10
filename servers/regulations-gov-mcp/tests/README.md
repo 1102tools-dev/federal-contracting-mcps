@@ -35,5 +35,5 @@ do not substitute the hosted publisher key. The content tests use saved
 source fixtures, with synthetic Pay Equity withdrawal/page-40 cases labeled
 in `test_content_fixes.py`. Saved-source coverage is distinct from a live pass.
 
-The 2.0.4 content audit also exercised all nine hosted tools separately (20 calls).
+The 2.0.4 content audit also exercised all nine hosted tools separately (33 calls).
 That hosted coverage does not replace the 119 skipped direct-source tests.

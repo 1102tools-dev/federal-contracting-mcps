@@ -235,7 +235,7 @@ behavior and effective dates absent from source records remain skipped P3s.
 
 ## Workflow content audit (2.0.4, 2026-10-10)
 
-Current hosted 2.0.3 answered 20 calls across all nine tools, including
+Current hosted 2.0.3 answered 33 calls across all nine tools, including
 semiconductor lifecycle/detail/comments, CMMC docket discovery and history,
 Pay Equity withdrawal, open proposed rules, default mixed open documents,
 page-40 ceiling and past-end queries, organization enrichment, and validation
