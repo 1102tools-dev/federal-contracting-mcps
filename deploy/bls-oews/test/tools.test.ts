@@ -382,6 +382,15 @@ test("BLS-1: the IGCE names the wage month beside the burdened rates", async () 
   assert.match(next._escalation_note, /^May 2031 wages; escalate/);
 });
 
+test("BLS-7: IGCE hourly figures are BLS's published hourly wages", async () => {
+  // BLS dt06 = 19.01; annual 39,530 / 2080 gave 19.00.
+  const tenth = (await data("igce_wage_benchmark", {occ_code: "15-1232", scope: "metro", area_code: "47260"})).benchmarks["Annual 10th Percentile"];
+  assert.deepEqual([tenth.annual, tenth.hourly_base, tenth.numeric_hourly, tenth.hourly_burdened_low], ["$39,530", "$19.01", 19.01, "$34.22"]);
+  // Annual-only occupations still fall back to annual / 2080 (63,970 / 2080 = 30.75).
+  const teachers = await data("igce_wage_benchmark", {occ_code: "25-2021"});
+  assert.equal(teachers.benchmarks["Annual Median"].hourly_base, "$30.75");
+});
+
 // ---------- Python formatting helpers ----------
 
 test("pyjson matches Python's repr, format, round, and strip", () => {

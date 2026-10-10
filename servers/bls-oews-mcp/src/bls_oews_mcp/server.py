@@ -829,6 +829,17 @@ async def compare_occupations(
     return response
 
 
+# IGCE benchmarks: each annual figure with BLS's matching hourly figure, and
+# the datatypes the IGCE requests for them.
+_IGCE_BENCHMARKS = [
+    ("Annual Mean Wage", "Hourly Mean Wage"),
+    ("Annual 10th Percentile", "Hourly 10th Percentile"),
+    ("Annual Median", "Hourly Median"),
+    ("Annual 90th Percentile", "Hourly 90th Percentile"),
+]
+_IGCE_REQUEST = ["03", "04", "06", "08", "10", "11", "13", "15"]
+
+
 @mcp.tool(annotations={"title": "IGCE Wage Benchmark", **_LOCAL_ONLY})
 async def igce_wage_benchmark(
     occ_code: Union[str, int],
@@ -842,7 +853,8 @@ async def igce_wage_benchmark(
 
     Returns annual and hourly wages at mean, median, 10th, and 90th
     percentiles, plus estimated burdened hourly rates using the specified
-    burden multiplier range.
+    burden multiplier range. Hourly figures are BLS's published hourly
+    wages (annual / 2080 only where BLS publishes no hourly wage).
 
     Wages are point-in-time estimates for the OEWS reference month
     (wage_period in the response), not current rates: escalate them to the
@@ -878,12 +890,14 @@ async def igce_wage_benchmark(
             f"Reasonable max ~4.0x for high-overhead (SCIF/deployed) work."
         )
 
-    # "03" rides along to detect annual-only occupations: BLS suppresses the
-    # hourly mean for jobs that do not work a standard year-round schedule
-    # (pilots, teachers), and a 2080-hour derived rate misstates their cost.
+    # Each annual benchmark rides with BLS's published hourly wage (BLS
+    # computes annual as hourly x 2080, so hourly is the primary figure).
+    # "03" also detects annual-only occupations: BLS suppresses the hourly
+    # mean for jobs that do not work a standard year-round schedule (pilots,
+    # teachers), and a 2080-hour derived rate misstates their cost.
     wage_data = await get_wage_data(
         occ_code=occ_code, scope=scope, area_code=area_code,
-        datatypes=["03", "04", "11", "13", "15"], year=year,
+        datatypes=_IGCE_REQUEST, year=year,
     )
 
     wages = wage_data.get("wages", {})
@@ -895,11 +909,12 @@ async def igce_wage_benchmark(
     )
     benchmarks: dict[str, Any] = {}
 
-    for label in ["Annual Mean Wage", "Annual 10th Percentile", "Annual Median", "Annual 90th Percentile"]:
+    for label, hourly_label in _IGCE_BENCHMARKS:
         entry = wages.get(label, {})
         annual = entry.get("numeric")
         if annual and not entry.get("suppressed"):
-            hourly = round(annual / 2080, 2)
+            published = wages.get(hourly_label, {}).get("numeric")
+            hourly = published if published is not None else round(annual / 2080, 2)
             benchmarks[label] = {
                 "annual": f"${annual:,}",
                 "hourly_base": f"${hourly:.2f}",

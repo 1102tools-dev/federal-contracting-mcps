@@ -39,6 +39,13 @@ const COUNT = new Set(["01"]);
 const RATIO = new Set(["16", "17"]);
 const RSE = new Set(["02", "05"]);
 const IGCE_DATATYPES = ["04", "11", "13", "15"];
+// igce_wage_benchmark: each annual figure with BLS's matching hourly figure,
+// and the datatypes it requests for them.
+const IGCE_BENCHMARKS = [
+  ["Annual Mean Wage", "Hourly Mean Wage"], ["Annual 10th Percentile", "Hourly 10th Percentile"],
+  ["Annual Median", "Hourly Median"], ["Annual 90th Percentile", "Hourly 90th Percentile"],
+];
+const IGCE_REQUEST = ["03", "04", "06", "08", "10", "11", "13", "15"];
 // Maps keep insertion order; plain objects would sort numeric-looking keys.
 const COMMON_SOC_CODES = new Map<string, Py>([
   ["111021", "General and Operations Managers"], ["113021", "Computer and Information Systems Managers"],
@@ -629,19 +636,22 @@ export async function igceWageBenchmark(db: Database, args: Args) {
   if (high.value > 10) {
     throw new ToolError(`burden_high=${floatRepr(high)} is implausibly large. Reasonable max ~4.0x for high-overhead (SCIF/deployed) work.`);
   }
-  // "03" rides along to detect annual-only occupations (BLS publishes no
-  // hourly mean for jobs off a 2080-hour year, such as pilots and teachers).
+  // Each annual benchmark rides with BLS's published hourly wage (BLS computes
+  // annual as hourly x 2080). "03" also detects annual-only occupations (BLS
+  // publishes no hourly mean for jobs off a 2080-hour year, such as pilots
+  // and teachers).
   const normalized = strip(str(a.occ_code).replaceAll("-", ""));
-  const {response: wage, data} = await wageData(db, {...a, industry: "000000", datatypes: ["03", "04", "11", "13", "15"]}, [normalized]);
+  const {response: wage, data} = await wageData(db, {...a, industry: "000000", datatypes: IGCE_REQUEST}, [normalized]);
   const wages = wage.get("wages") as Map<string, Map<string, Py>>;
   const numeric = (label: string) => wages.get(label)?.get("numeric") ?? null;
   const annualOnly = numeric("Hourly Mean Wage") === null && numeric("Annual Mean Wage") !== null;
   const benchmarks = new Map<string, Py>();
-  for (const label of ["Annual Mean Wage", "Annual 10th Percentile", "Annual Median", "Annual 90th Percentile"]) {
+  for (const [label, hourlyLabel] of IGCE_BENCHMARKS) {
     const item = wages.get(label) ?? new Map<string, Py>();
     const annual = item.get("numeric");
     if (typeof annual === "number" && annual !== 0 && !item.get("suppressed")) {
-      const hourly = round(annual / 2080, 2);
+      const published = numeric(hourlyLabel);
+      const hourly = published instanceof PyFloat ? published.value : round(annual / 2080, 2);
       benchmarks.set(label, {
         annual: `$${group(intStr(annual))}`,
         hourly_base: `$${fixed(hourly, 2)}`,

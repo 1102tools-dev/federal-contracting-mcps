@@ -43,3 +43,30 @@ def test_bls1_wage_period_comes_from_the_release(monkeypatch):
     data = _tool("igce_wage_benchmark", occ_code="151252")
     assert data["wage_period"] == "May 2031"
     assert data["_escalation_note"].startswith("May 2031 wages; escalate to the period of performance")
+
+
+# ---------------------------------------------------------------------------
+# BLS-7: IGCE hourly figures are BLS's published hourly wages
+# ---------------------------------------------------------------------------
+
+def test_bls7_igce_uses_published_hourly_wages():
+    # Q5: Norfolk help desk 10th percentile. BLS dt06 = 19.01 (annual
+    # 39,530 / 2080 = 19.0048 -> 19.00 was shown).
+    data = _tool("igce_wage_benchmark", occ_code="15-1232", scope="metro", area_code="47260")
+    tenth = data["benchmarks"]["Annual 10th Percentile"]
+    assert tenth["annual"] == "$39,530"
+    assert tenth["hourly_base"] == "$19.01"
+    assert tenth["numeric_hourly"] == 19.01
+    assert tenth["hourly_burdened_low"] == "$34.22"  # 19.01 x 1.8
+    # Q38: Colorado Springs database architects mean. BLS dt03 = 64.14
+    # (annual 133,400 / 2080 = 64.13 was shown).
+    data = _tool("igce_wage_benchmark", occ_code="15-1243", scope="metro", area_code="17820")
+    assert data["benchmarks"]["Annual Mean Wage"]["hourly_base"] == "$64.14"
+
+
+def test_bls7_annual_only_still_derives_hourly_and_warns():
+    # Secondary teachers (25-2031): BLS hourly is "-" (footnote 4); annual
+    # mean 76,320 / 2080 = 36.69.
+    data = _tool("igce_wage_benchmark", occ_code="25-2031")
+    assert data["annual_only"] is True
+    assert data["benchmarks"]["Annual Mean Wage"]["hourly_base"] == "$36.69"
