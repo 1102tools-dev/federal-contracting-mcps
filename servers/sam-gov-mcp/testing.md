@@ -47,6 +47,54 @@ source request. The imported module came from installed site-packages.
 The release records below are historical evidence with their original
 versions, counts and dates. Their counts are not the current inventory.
 
+## October 10, 2026 round 2 — published opportunities mirror 1.0.2
+
+This content and usability audit covered 87 ordinary and power-user questions
+and followups, plus the data-status question, against the public four-tool
+opportunities mirror. Workflows included industry and set-aside searches,
+agency and place-of-performance distinctions, notice types, date windows,
+summaries across all ten grouping dimensions, pagination, solicitation and
+amendment followups, award details, and useful recovery from empty results.
+
+All 87 final published content calls passed independent comparisons with a
+fresh official SAM.gov Contract Opportunities Full CSV, including 390 returned
+rows. The downloaded file's SHA-256 was
+`0a35bf09b261259ea385ddf183d28e6bc2fe594521b3df054e1daa737e83bfa9`.
+These checks establish parity with that active-notice snapshot, not complete
+historical coverage or access to attachments. The source normalization and
+version grouping used by the comparison are recorded in the audit evidence.
+
+One new P3 finding was fixed and verified in published mirror 1.0.2: the status
+answer incorrectly excluded all past fiscal years, although older notices can
+remain active. The corrected answer distinguishes those records from a
+complete historical archive. FY2024 searches retained 1,854 active records,
+including 1,682 award notices. A regression using an actual FY2024 EPA award
+row failed before the fix and passed afterward; the Worker suite passed 28
+tests. All 87 content outputs remained unchanged after deployment. There were
+no new P0, P1 or P2 findings and no unresolved round-2 findings.
+
+Final public initialization reported mirror 1.0.2 and health reported source
+`5ba4a4bac4ecd098da1c48dcd09594d9e38fcf1f`; the exact four-tool catalog and
+corrected status were verified. Loader run `38065331780` succeeded, and live
+status reported `2026-10-10T15:52:32Z`, 64,417 active rows and 46,083 latest
+versions. Runtime deployment and loader source are separate identities.
+
+The Python package remains 1.0.13 with 20 tools. Its 1,155-case collection and
+previous offline execution result of 781 passed / 374 optional live-source
+skipped are separate evidence; neither collection nor skips count as live
+source passes. Actual fresh PyPI installed CLI initialization, catalog and
+no-key access guidance were verified. Nineteen realistic credentialed Python
+questions were recorded but not executed without `SAM_API_KEY`; the mirror
+audit does not establish keyed Entity, Exclusions, Awards, Hierarchy or
+Subaward API correctness.
+
+Resumable evidence is retained in
+`Artifacts/mcp-e2e-20261010/round2/sam-gov/`: `REPORT.md`, `summary.json`,
+`final-published-corpus.json`, `final-source-comparison.json`,
+`final-before-after-parity.json`, `source-fixture-before.txt`,
+`latest-loader-verified.json`, `final-ready-status.json`,
+`python-readiness.json` and `final-ready-python-metadata.json`.
+
 ## Historical 1.0.6 Safety Release Verification
 
 The complete offline suite passed 762 tests with 374 live tests gated. Shared
@@ -146,9 +194,9 @@ UEI/CAGE format enforcement everywhere they appear, the opportunities date-span 
 
 Empty-string filters, code-set validation, NAICS format, case normalization, and the opaque PSC 404 body translation. (Round 9 revised the code-set philosophy for business types: format-check plus pass-through, because the FDD set is far larger than any local table.)
 
-## Test Coverage
+## Historical Test Coverage
 
-The repo ships 1,136 regression tests (762 offline, 374 live-gated). All pass on every release cycle; live tests require `SAM_LIVE_TESTS=1` plus a key with real quota, are paced 2-4 s apart by `tests/conftest.py` (a round-10 guard: an unpaced full live pass once burned a key's whole daily quota in 105 seconds), and a minimal anchor subset runs via `pytest -m live_smoke`.
+This historical inventory recorded 1,136 regression tests (762 offline, 374 live-gated); the current 1.0.13 inventory is listed above. Optional live tests require `SAM_LIVE_TESTS=1` plus a key with real quota, are paced 2-4 s apart by `tests/conftest.py` (a round-10 guard: an unpaced full live pass once burned a key's whole daily quota in 105 seconds), and a minimal anchor subset runs via `pytest -m live_smoke`. Gated tests skipped during offline runs are not successful live-source checks.
 
 | File | Purpose | Test count |
 |---|---|---|
