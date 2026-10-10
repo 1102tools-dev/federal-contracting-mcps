@@ -311,13 +311,43 @@ export function toolName(body: ArrayBuffer | null): string | null {
   return typeof name === "string" && TOOL_NAME.test(name) ? name : "other";
 }
 
-export function logToolCall(service: string, body: ArrayBuffer | null, response: Response, started: number): void {
+/** Which app sent a request, as a platform label; the User-Agent itself is never logged. */
+export function clientApp(userAgent: string | null): string {
+  const ua = (userAgent ?? "").toLowerCase();
+  if (ua.includes("claude-user")) return "claude";
+  if (ua.startsWith("openai-mcp")) return "chatgpt";
+  if (ua.includes("perplexity")) return "perplexity";
+  if (ua.includes("claude-code")) return "claude-code";
+  return "other";
+}
+
+export function logToolCall(service: string, body: ArrayBuffer | null, response: Response, started: number, userAgent: string | null): void {
   const tool = toolName(body);
   if (tool === null) return;
   console.log(JSON.stringify({
-    event: "tool_call", service, tool, backend: response.headers.get("X-1102tools-Backend"),
+    event: "tool_call", service, tool, client: clientApp(userAgent), backend: response.headers.get("X-1102tools-Backend"),
     status: response.status, ms: Date.now() - started,
   }));
+}
+
+// Requests turned away before the server sees them; the container-backed
+// Workers return these before logToolCall runs, so the wrapper skips them too.
+const TURNED_AWAY = new Set([403, 413, 429]);
+
+/** Logs each tools/call a Worker answers itself (the D1 services), the same
+ * way the container-backed Workers log the calls they forward. */
+export function withToolCallLog<E>(service: string, handler: (request: Request, env: E) => Promise<Response>) {
+  return async (request: Request, env: E): Promise<Response> => {
+    if (request.method !== "POST") return handler(request, env);
+    // The body is read once here and handed on; a tee'd clone would stall the
+    // handler's cancel of an oversized body.
+    const body = await readBounded(request);
+    if (body === null) return tooLarge();
+    const started = Date.now();
+    const response = await handler(new Request(request, {body}), env);
+    if (!TURNED_AWAY.has(response.status)) logToolCall(service, body, response, started, request.headers.get("User-Agent"));
+    return response;
+  };
 }
 
 // --- Per-address request limits ---------------------------------------------

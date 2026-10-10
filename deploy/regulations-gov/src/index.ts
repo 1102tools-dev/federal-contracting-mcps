@@ -52,7 +52,7 @@ export default {
       const started = Date.now();
       const response = await originFirst(env, url.pathname, {method: request.method, headers, body},
         () => fetchWithRetry(() => backend.fetch(forwarded())), {"X-Regulations-Key": env.REGULATIONS_GOV_API_KEY ?? ""});
-      logToolCall("regulations-gov", body, response, started);
+      logToolCall("regulations-gov", body, response, started, request.headers.get("User-Agent"));
       return response;
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));

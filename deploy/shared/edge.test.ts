@@ -1,7 +1,7 @@
 // Run: node --test deploy/shared/edge.test.ts
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withinLimit} from "./edge.ts";
+import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit} from "./edge.ts";
 
 const HEADERS = {
   "content-type": "application/json",
@@ -276,14 +276,46 @@ test("logs the tool name of a tools/call and never its arguments", () => {
   console.log = (line: string) => { lines.push(line); };
   try {
     const response = new Response("{}", {status: 200, headers: {"X-1102tools-Backend": "origin"}});
-    logToolCall("gsa-calc", call, response, Date.now() - 5);
-    logToolCall("gsa-calc", body({jsonrpc: "2.0", id: 2, method: "tools/list"}), response, Date.now());
+    logToolCall("gsa-calc", call, response, Date.now() - 5, "Claude-User");
+    logToolCall("gsa-calc", body({jsonrpc: "2.0", id: 2, method: "tools/list"}), response, Date.now(), "Claude-User");
   } finally {
     console.log = original;
   }
   assert.equal(lines.length, 1);
   const line = JSON.parse(lines[0]);
-  assert.deepEqual({...line, ms: 0}, {event: "tool_call", service: "gsa-calc", tool: "keyword_search", backend: "origin", status: 200, ms: 0});
+  assert.deepEqual({...line, ms: 0}, {event: "tool_call", service: "gsa-calc", tool: "keyword_search", client: "claude", backend: "origin", status: 200, ms: 0});
   assert.ok(line.ms >= 0);
+  assert.ok(!lines[0].includes("secret"));
+});
+
+test("labels the app from the User-Agent without keeping the string", () => {
+  assert.equal(clientApp("Claude-User"), "claude");
+  assert.equal(clientApp("openai-mcp/1.0.0"), "chatgpt");
+  assert.equal(clientApp("Perplexity-MCP/1.0"), "perplexity");
+  assert.equal(clientApp("claude-code/2.1.4 (cli)"), "claude-code");
+  assert.equal(clientApp("Mozilla/5.0 (Macintosh)"), "other");
+  assert.equal(clientApp(null), "other");
+});
+
+test("the D1 wrapper logs answered tools/call requests only", async () => {
+  const lines: string[] = [];
+  const original = console.log;
+  console.log = (line: string) => { lines.push(line); };
+  const post = (method: string, status: number) => withToolCallLog("sam-gov", async (request: Request) => {
+    await request.text();
+    return new Response("{}", {status});
+  })(new Request("https://sam.1102tools.com/mcp", {
+    method: "POST", headers: {"User-Agent": "openai-mcp/1.0.0"},
+    body: JSON.stringify({jsonrpc: "2.0", id: 1, method, params: {name: "search_opportunities", arguments: {q: "secret words"}}}),
+  }), {});
+  try {
+    assert.equal((await post("tools/call", 200)).status, 200);
+    await post("tools/list", 200);
+    await post("tools/call", 429);
+  } finally {
+    console.log = original;
+  }
+  assert.equal(lines.length, 1);
+  assert.deepEqual({...JSON.parse(lines[0]), ms: 0}, {event: "tool_call", service: "sam-gov", tool: "search_opportunities", client: "chatgpt", backend: null, status: 200, ms: 0});
   assert.ok(!lines[0].includes("secret"));
 });

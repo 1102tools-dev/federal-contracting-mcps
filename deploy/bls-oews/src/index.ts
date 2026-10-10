@@ -1,4 +1,5 @@
 import {Container} from "@cloudflare/containers";
+import {withToolCallLog} from "../../shared/edge.ts";
 import worker, {type Env} from "./worker.ts";
 
 // Every request is answered by the Worker from D1 (src/worker.ts).
@@ -10,4 +11,4 @@ export class BLSOEWS extends Container<Env> {
   sleepAfter = "2m";
 }
 
-export default worker;
+export default {fetch: withToolCallLog("bls-oews", worker.fetch)} satisfies ExportedHandler<Env>;

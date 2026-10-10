@@ -84,7 +84,7 @@ export default {
       const started = Date.now();
       const response = await originFirst(env, url.pathname, {method: request.method, headers, body},
         () => fetchWithRetry(() => backend.fetch(forwarded())));
-      logToolCall("gsa-calc", body, response, started);
+      logToolCall("gsa-calc", body, response, started, request.headers.get("User-Agent"));
       return response;
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));

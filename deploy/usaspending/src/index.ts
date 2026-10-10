@@ -49,7 +49,7 @@ export default {
       const started = Date.now();
       const response = await originFirst(env, url.pathname, {method: request.method, headers, body},
         () => fetchWithRetry(() => backend.fetch(forwarded())));
-      logToolCall("usaspending", body, response, started);
+      logToolCall("usaspending", body, response, started, request.headers.get("User-Agent"));
       return response;
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: error instanceof Error ? error.message.slice(0, 200) : "unknown"}));
