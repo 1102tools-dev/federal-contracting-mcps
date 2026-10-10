@@ -2,6 +2,7 @@
 
 ## 1.2.4
 
+- Corrected the registry environment-variable description: an API key is needed for city-only/API requests or unbundled years, while bundled city-plus-county workflows are keyless. The variable remains optional; existing tool schemas and MCP identity are unchanged.
 - Decode the official Census 2020 county/place files as UTF-8 and rebuild the place index. Latin-1 decoding corrupted Doña Ana County and prevented valid White Sands worksite lookups and estimates.
 - Fold accents consistently in Python and Worker place/county matching, so both `Doña Ana` and `Dona Ana` complete keyless lookups, ZIP follow-ups, estimates and comparisons. Official rate files and their source hashes remain unchanged.
 - Seven new Python regressions fail before the correction. Validation: 316 Python passed, 267 optional live-gated skipped (583 collected); 29 Worker passed; type check and 1,368 parity calls with zero unexplained differences. Hosted acceptance additionally requires the existing D1 data-load workflow to activate the regenerated place index.

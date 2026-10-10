@@ -21,7 +21,7 @@
       },
       "environmentVariables": [
         {
-          "description": "Free api.data.gov key; required for city lookups (ZIP, state, and M&IE work without it).",
+          "description": "Free api.data.gov key; required only for city-only/API requests or unbundled fiscal years. Bundled city-plus-county lookups, estimates, comparisons, ZIP, state, and M&IE requests work without it.",
           "isRequired": false,
           "isSecret": true,
           "format": "string",
