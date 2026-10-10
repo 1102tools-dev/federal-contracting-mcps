@@ -15,7 +15,7 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 |---|---|
 | MCP tools exposed | 8 |
 | Total regression tests | 414 (293 offline, 121 live-gated) |
-| Tests per tool | 42.9 |
+| Tests per tool | 51.8 |
 | Audit rounds completed | 7 |
 | P1 crashes (shape-shift) found and fixed | 19 |
 | P1 silent-wrong-data bugs found and fixed | 33 (30 in 0.2.x, 3 in round 6) |
@@ -227,3 +227,5 @@ tests skipped. All 30 tests in `test_content_fixes_2026_10.py` passed with the l
 enabled, including 12 comparisons against the government API. Hosted tool
 contract checks, version validation for all nine packages, and all 64 release
 guard tests passed. The Worker type check passed and all six Worker tests passed.
+
+The README badge and test suite map were reconciled with pytest collection: 414 Python tests (293 offline, 121 live-gated). The saved Q1-Q30 findings gate also passed 43 comparisons against fresh GSA responses, with four explicit deferred rows for raw payload trimming and per-site/future-year statistics.
