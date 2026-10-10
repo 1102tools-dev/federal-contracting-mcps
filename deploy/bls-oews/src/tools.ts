@@ -43,9 +43,10 @@ const IGCE_DATATYPES = ["04", "11", "13", "15"];
 // and the datatypes it requests for them.
 const IGCE_BENCHMARKS = [
   ["Annual Mean Wage", "Hourly Mean Wage"], ["Annual 10th Percentile", "Hourly 10th Percentile"],
-  ["Annual Median", "Hourly Median"], ["Annual 90th Percentile", "Hourly 90th Percentile"],
+  ["Annual 25th Percentile", "Hourly 25th Percentile"], ["Annual Median", "Hourly Median"],
+  ["Annual 75th Percentile", "Hourly 75th Percentile"], ["Annual 90th Percentile", "Hourly 90th Percentile"],
 ];
-const IGCE_REQUEST = ["03", "04", "06", "08", "10", "11", "13", "15"];
+const IGCE_REQUEST = ["03", "04", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"];
 // Maps keep insertion order; plain objects would sort numeric-looking keys.
 const COMMON_SOC_CODES = new Map<string, Py>([
   ["111021", "General and Operations Managers"], ["113021", "Computer and Information Systems Managers"],

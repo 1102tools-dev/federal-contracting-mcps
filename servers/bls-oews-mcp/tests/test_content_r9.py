@@ -70,3 +70,20 @@ def test_bls7_annual_only_still_derives_hourly_and_warns():
     data = _tool("igce_wage_benchmark", occ_code="25-2031")
     assert data["annual_only"] is True
     assert data["benchmarks"]["Annual Mean Wage"]["hourly_base"] == "$36.69"
+
+
+# ---------------------------------------------------------------------------
+# BLS-3: IGCE carries the 25th and 75th percentiles
+# ---------------------------------------------------------------------------
+
+def test_bls3_igce_has_25th_and_75th_percentiles():
+    # Q7: Colorado Springs database administrators (15-1242). BLS dt12 =
+    # 84,850, dt07 = 40.80, dt14 = 160,330, dt09 = 77.08.
+    data = _tool("igce_wage_benchmark", occ_code="15-1242", scope="metro", area_code="17820")
+    bench = data["benchmarks"]
+    assert list(bench) == [
+        "Annual Mean Wage", "Annual 10th Percentile", "Annual 25th Percentile",
+        "Annual Median", "Annual 75th Percentile", "Annual 90th Percentile",
+    ]
+    assert (bench["Annual 25th Percentile"]["annual"], bench["Annual 25th Percentile"]["hourly_base"]) == ("$84,850", "$40.80")
+    assert (bench["Annual 75th Percentile"]["annual"], bench["Annual 75th Percentile"]["hourly_base"]) == ("$160,330", "$77.08")

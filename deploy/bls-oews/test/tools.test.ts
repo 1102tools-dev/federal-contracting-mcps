@@ -391,6 +391,13 @@ test("BLS-7: IGCE hourly figures are BLS's published hourly wages", async () => 
   assert.equal(teachers.benchmarks["Annual Median"].hourly_base, "$30.75");
 });
 
+test("BLS-3: the IGCE carries the 25th and 75th percentiles", async () => {
+  const bench = (await data("igce_wage_benchmark", {occ_code: "15-1242", scope: "metro", area_code: "17820"})).benchmarks;
+  assert.deepEqual(Object.keys(bench), ["Annual Mean Wage", "Annual 10th Percentile", "Annual 25th Percentile", "Annual Median", "Annual 75th Percentile", "Annual 90th Percentile"]);
+  assert.deepEqual([bench["Annual 25th Percentile"].annual, bench["Annual 25th Percentile"].hourly_base], ["$84,850", "$40.80"]);
+  assert.deepEqual([bench["Annual 75th Percentile"].annual, bench["Annual 75th Percentile"].hourly_base], ["$160,330", "$77.08"]);
+});
+
 // ---------- Python formatting helpers ----------
 
 test("pyjson matches Python's repr, format, round, and strip", () => {

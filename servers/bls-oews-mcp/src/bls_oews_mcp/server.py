@@ -834,10 +834,12 @@ async def compare_occupations(
 _IGCE_BENCHMARKS = [
     ("Annual Mean Wage", "Hourly Mean Wage"),
     ("Annual 10th Percentile", "Hourly 10th Percentile"),
+    ("Annual 25th Percentile", "Hourly 25th Percentile"),
     ("Annual Median", "Hourly Median"),
+    ("Annual 75th Percentile", "Hourly 75th Percentile"),
     ("Annual 90th Percentile", "Hourly 90th Percentile"),
 ]
-_IGCE_REQUEST = ["03", "04", "06", "08", "10", "11", "13", "15"]
+_IGCE_REQUEST = ["03", "04", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]
 
 
 @mcp.tool(annotations={"title": "IGCE Wage Benchmark", **_LOCAL_ONLY})
@@ -851,8 +853,9 @@ async def igce_wage_benchmark(
 ) -> dict[str, Any]:
     """Get wage benchmarks formatted for IGCE development.
 
-    Returns annual and hourly wages at mean, median, 10th, and 90th
-    percentiles, plus estimated burdened hourly rates using the specified
+    Returns annual and hourly wages at the mean and the 10th, 25th, median,
+    75th, and 90th percentiles (25th/75th are the usual junior/senior
+    anchors), plus estimated burdened hourly rates using the specified
     burden multiplier range. Hourly figures are BLS's published hourly
     wages (annual / 2080 only where BLS publishes no hourly wage).
 
