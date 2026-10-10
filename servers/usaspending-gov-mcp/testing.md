@@ -2,14 +2,14 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across fifteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.17 source collects 2,306 regression cases (1,927 offline and 379 live-gated). Its measured offline lane passed 1,927 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records. Published 1.0.17 completed all 130 questions on each surface after the two documented targeted timeout recoveries, with all 55 tool definitions matched and six guided dated-report followups passed.
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across sixteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit; the sixteenth is the new Round 4 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.18 source collects 2,309 regression cases (1,930 offline and 379 live-gated). Its measured offline lane passed 1,930 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records. Published 1.0.17 completed all 130 questions on each surface after the two documented targeted timeout recoveries, with all 55 tool definitions matched and six guided dated-report followups passed.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 55 |
-| Total regression tests | 2,306 (1,927 offline, 379 live-gated) |
-| Collected cases per tool | 41.93 (not a coverage percentage) |
-| Audit rounds completed | 15 (including the new Round 3 content audit) |
+| Total regression tests | 2,309 (1,930 offline, 379 live-gated) |
+| Collected cases per tool | 41.98 (not a coverage percentage) |
+| Audit rounds completed | 16 (including the new Round 4 content audit) |
 | Initial integration issues (round 1) | 28+ |
 | P1 silent-wrong-data bugs found and fixed | 11 (rounds 1-9) |
 | P2 validation gaps found and fixed | 7 (rounds 1-9) |
@@ -18,7 +18,7 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Round 9 (v0.3) live audit findings | 1 (list_states JSON-array response shape) |
 | Round 10 (1.0.1) semantic audit findings | 22 (12 search family, 10 entity family), all fixed |
 | Historical release cycles through 1.0.3 | 15 (v0.1.2 through v1.0.3) |
-| Current source package | 1.0.17 |
+| Current source package | 1.0.18 candidate; published baseline 1.0.17 |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification

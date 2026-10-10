@@ -302,7 +302,7 @@
       "readOnlyHint": true,
       "title": "Get Agency Budgetary Resources"
     },
-    "description": "Get an agency's budgetary resources by fiscal year.\n\n    Returns total budgetary resources, obligations, outlays, and discretionary\n    vs mandatory breakdown for each fiscal year on file.\n    ",
+    "description": "Get an agency's budgetary resources by fiscal year.\n\n    Returns agency budgetary resources, obligations and outlays for each\n    fiscal year on file, plus government-wide budgetary resources and the\n    agency's obligations by reported fiscal period. This endpoint does not\n    provide a discretionary-versus-mandatory breakdown.\n    ",
     "inputSchema": {
       "properties": {
         "toptier_code": {
@@ -1347,7 +1347,7 @@
       "readOnlyHint": true,
       "title": "Get Federal Account Program Activities"
     },
-    "description": "Get the program activities funded under a federal account.",
+    "description": "List program activity codes and names associated with a federal account.\n\n    The source lists distinct programs across all reported fiscal years; it\n    has no fiscal-year filter and includes no dollar amounts. fiscal_year is\n    retained for compatibility, but does not filter this list. The response\n    explicitly discloses any requested year that was not applied.\n\n    Retrieves source pages internally, up to 2,000 records, and reports whether\n    the list is complete. For single-year account resources and obligations,\n    use get_federal_account_fy_snapshot with the numeric account_id returned\n    by list_federal_accounts. get_agency_program_activities provides fiscal-year\n    program amounts for an agency, not for this individual federal account.\n    ",
     "inputSchema": {
       "properties": {
         "account_code": {
@@ -1894,7 +1894,7 @@
       "readOnlyHint": true,
       "title": "List Federal Accounts"
     },
-    "description": "List Treasury federal accounts (TAS) with budgetary resources.\n\n    keyword filters by account name or AID. fiscal_year defaults to current FY.\n    sort is a dict like {'field':'budgetary_resources','direction':'desc'}.\n    ",
+    "description": "List Treasury federal accounts (TAS) with budgetary resources.\n\n    keyword filters by account name or AID. fiscal_year controls the reported\n    budgetary-resource values, not which account rows are included. When\n    omitted, the source uses its latest available fiscal year, which may\n    differ from the current fiscal year; check the returned fy value.\n    sort is a dict like {'field':'budgetary_resources','direction':'desc'}.\n    ",
     "inputSchema": {
       "properties": {
         "fiscal_year": {
