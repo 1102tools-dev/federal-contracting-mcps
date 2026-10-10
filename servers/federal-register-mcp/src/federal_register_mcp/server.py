@@ -1146,6 +1146,16 @@ async def list_agencies(
 
 _OPEN_COMMENT_SCAN_CAP = 500
 _OPEN_COMMENT_PAGE_SIZE = 100
+_COMMENT_DEADLINE_VERIFICATION_NOTE = (
+    "Dates and total_open come from Federal Register API comments_close_on metadata. "
+    "complete describes scanning matching indexed records, not verification of every "
+    "currently open opportunity or its controlling deadline. Metadata can conflict "
+    "with a publication's DATES section, especially after an extension or reopening; "
+    "a zero result does not prove no comments are accepted. Use search_documents "
+    "with the docket_id or subject term, then get_document to read DATES and the "
+    "linked official publication, including later extension or reopening notices, "
+    "before deciding the controlling deadline."
+)
 
 
 @mcp.tool(annotations={"title": "Open Comment Periods", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1155,7 +1165,7 @@ async def open_comment_periods(
     limit: int = 50,
     far_council: bool = False,
 ) -> dict[str, Any]:
-    """Find documents with currently open comment periods, soonest deadline first.
+    """Find source-reported open comment periods, soonest indexed deadline first.
 
     Covers proposed rules, notices, AND final/interim rules that accept
     comments (dozens of RULE-type documents have open periods at any time).
@@ -1163,11 +1173,17 @@ async def open_comment_periods(
     documents oldest-published first (where the soonest deadlines live),
     sorts by close date, and returns the first `limit`.
 
-    Honest bound: total_open is the API's true government-wide count;
+    Source scope: total_open is the API's matching metadata count;
     scanned is how many this call examined. When total_open exceeds
-    scanned, narrow with agencies/term for exhaustive coverage. A very
+    scanned, narrow with agencies/term for complete indexed coverage. A very
     recently published document with an unusually short comment window
     can fall outside the scan in that oversubscribed case.
+
+    complete means the matching indexed records were scanned, not that every
+    currently open opportunity or controlling deadline was verified. The API's
+    comments_close_on metadata can disagree with DATES after an extension or
+    reopening. Even a zero result needs docket/subject search_documents and
+    get_document DATES/linked publication checks before ruling out comments.
 
     Default: searches all agencies. Pass agency slugs to narrow scope,
     e.g. ['defense-acquisition-regulations-system'] for DFARS or
@@ -1229,6 +1245,8 @@ async def open_comment_periods(
         "documents": returned,
         "complete": complete,
         "truncated": not complete or len(returned) < total_open,
+        "deadline_source": "Federal Register API comments_close_on metadata",
+        "deadline_verification_note": _COMMENT_DEADLINE_VERIFICATION_NOTE,
     }
     if count_is_lower_bound:
         answer["total_open_is_lower_bound"] = True

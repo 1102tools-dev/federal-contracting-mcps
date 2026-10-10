@@ -1,6 +1,6 @@
 # federal-register-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 286](https://img.shields.io/badge/regression%20tests-286-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 289](https://img.shields.io/badge/regression%20tests-289-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/federal-register-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the Federal Register API. Proposed rules, final
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through nine audit rounds and integration testing against the live Federal Register API. 286 collected regression tests (181 offline, 105 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines, FAR Council agency mapping, presidential filters, parent-agency public inspection, and page limits. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through nine audit rounds and integration testing against the live Federal Register API. 289 collected regression tests (184 offline, 105 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines, FAR Council agency mapping, presidential filters, parent-agency public inspection, and page limits. See [testing.md](testing.md) for the full testing record.*
 
 The October 10, 2026 content research round 3 found zero new defects in 54 ordinary and power-user calls across all eight tools. All 54 public answers matched primary-source comparisons, and all 54 answers from a fresh official PyPI 1.0.14 CLI installation matched the public service. The current offline suite passed 181 tests with 105 live-gated skips; no new full live-suite run is claimed. See [the round 3 record](testing.md#content-research-round-3-2026-10-10-published-1014) for coverage and source limits.
 
@@ -26,6 +26,8 @@ The October 10, 2026 content research round 4 found zero new defects in 63 valid
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#federal-register)
 
 The October 10, 2026 content research round 5 found zero new content defects in 71 ordinary questions across all eight tools. A fresh official PyPI 1.0.14 stdio CLI matched all 71 public answers in substance (69 exactly; two dynamic page-view differences). Complete EPA/NRC/FCC/VA comment scans and deadline-to-document followups passed. Frozen tests passed 181 with 105 skips; the separate MCP 2.3 published-package lane retained 60 legacy validation/error-expectation failures (121 passed, 105 skipped). See [the round 5 record](testing.md#content-research-round-5-2026-10-10-published-1014) for primary evidence, source bounds and execution distinctions.
+
+The October 10, 2026 content research round 6 completed 71 genuinely new questions across all eight tools, plus one prior public-inspection control excluded from new coverage. All 72 valid published 1.0.14 CLI/public answers matched exactly. A new P3 scope/recovery finding is fixed in candidate 1.0.15: indexed comment metadata can omit a reopened period, so zero results and scan completeness now carry deadline-source verification guidance. The actual Coast Guard docket/detail followup recovers the October 29 DATES deadline while preserving the reported August 24 metadata. Candidate tests measured 184 passed/105 skipped frozen, and 124 passed/60 failed/105 skipped with SDK 2.3; those 60 retained legacy negatives are separate from passing ordinary content. Publication and actual 1.0.15 acceptance remain pending. See [the round 6 record](testing.md#content-research-round-6-2026-10-10-published-1014-candidate-1015).
 
 ## What it does
 

@@ -1,0 +1,25 @@
+{
+  "description": "Documents with a comment closing date on or after 10/10/2026, from Pipeline and Hazardous Materials Safety Administration, and of type Proposed Rule, Rule, and Notice",
+  "count": 3,
+  "total_pages": 1,
+  "results": [
+    {
+      "document_number": "2026-18915",
+      "comments_close_on": "2026-10-16",
+      "publication_date": "2026-09-16",
+      "title": "Hazardous Materials: Notice of Applications for New Special Permits"
+    },
+    {
+      "document_number": "2026-18917",
+      "comments_close_on": "2026-10-16",
+      "publication_date": "2026-09-16",
+      "title": "Hazardous Materials: Notice of Actions on Special Permits"
+    },
+    {
+      "document_number": "2026-19276",
+      "comments_close_on": "2026-12-21",
+      "publication_date": "2026-09-21",
+      "title": "Hazardous Materials: Information Collection Activities"
+    }
+  ]
+}

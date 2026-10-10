@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.15
+
+- Qualify open-comment counts and completeness as source-indexed metadata. Always explain deadline verification and docket/publication recovery, including zero results, because reopening notices can report a later DATES deadline than their indexed close date. Preserve raw counts, dates, sorting and scan limits.
+- Add two source-derived guidance regressions and one accurate-source control; retain the existing completeness controls.
+
 ## 1.0.14
 
 - Upgrade the deployment-only Wrangler toolchain to 4.149.0, clearing the four high-severity npm audit entries; Worker types and bundle dry-run verified.
