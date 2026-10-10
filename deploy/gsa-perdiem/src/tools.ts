@@ -1002,7 +1002,7 @@ async function compareLocations(ctx: Context, args: Dict): Promise<Dict> {
       continue;
     }
     try {
-      const [res] = await lookupCity(ctx, city, state, year, county);
+      const [res, source] = await lookupCity(ctx, city, state, year, county);
       if (res.status === "resolved") {
         const best = res.rate!;
         results.push({
@@ -1016,11 +1016,12 @@ async function compareLocations(ctx: Context, args: Dict): Promise<Dict> {
           mie: best.meals,
           max_daily_total: add(best.lodging_max, best.meals),
           seasonal: best.has_seasonal_variation,
+          source,
         });
       } else if (res.status === "no_data") {
-        results.push({location: label, error: "no rates found" + noRatesHint(ctx, year)});
+        results.push({location: label, error: "no rates found" + noRatesHint(ctx, year), source});
       } else {
-        const entry: Dict = {location: label, ...unresolvedPayload(res, city, state)};
+        const entry: Dict = {location: label, ...unresolvedPayload(res, city, state), source};
         if ("candidates" in entry) {
           entry.candidates = entry.candidates.map((c: Dict) => ({destination: c.destination, max_daily_total: c.max_daily_total}));
         }

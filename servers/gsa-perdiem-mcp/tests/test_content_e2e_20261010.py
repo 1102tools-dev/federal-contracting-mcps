@@ -39,3 +39,15 @@ def test_split_month_guidance_separates_lodging_from_trip_mie():
     assert "lodging_total" in note and "once for the entire trip" in note
     assert "Do not add" in note and "grand_total" in note
     assert "each month's nights separately and add them" not in note
+
+
+def test_comparison_keeps_each_rows_source():
+    r = asyncio.run(srv.compare_locations([
+        {"city": "Cambridge", "state": "MA", "county": "Middlesex"},
+        {"city": "Cambridge", "state": "MA", "county": "Essex"},
+    ], 2027))
+    assert {row["status"] for row in r["locations"]} == {"resolved", "invalid_county"}
+    for row in r["locations"]:
+        assert row["source"]["kind"] == "bundled_gsa_files"
+        assert row["source"]["fiscal_year"] == 2027
+        assert "gsa.gov" in row["source"]["rate_file"]

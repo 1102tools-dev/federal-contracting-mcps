@@ -99,6 +99,20 @@ test("split-month guidance adds lodging and computes M&IE once per trip", async 
   assert.match(a.rate_month_note, /lodging_total.*once for the entire trip.*Do not add.*grand_total/);
 });
 
+test("comparison rows retain their GSA data source", async () => {
+  const {call} = setup();
+  const r = (await call("compare_locations", {fiscal_year: 2027, locations: [
+    {city: "Cambridge", state: "MA", county: "Middlesex"},
+    {city: "Cambridge", state: "MA", county: "Essex"},
+  ]})).structuredContent;
+  assert.deepEqual(r.locations.map((row: any) => row.status), ["resolved", "invalid_county"]);
+  for (const row of r.locations) {
+    assert.equal(row.source.kind, "bundled_gsa_files");
+    assert.equal(row.source.fiscal_year, 2027);
+    assert.match(row.source.rate_file, /gsa.gov/);
+  }
+});
+
 test("tools/list serves exactly the reviewed contract, in the Python server's order", () => {
   const contract = JSON.parse(readFileSync(new URL("../tools-contract.json", import.meta.url), "utf8"));
   const byName = (list: {name: string}[]) => [...list].sort((a, b) => (a.name < b.name ? -1 : 1));
