@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.22
+
+- Explain default award-date windows as source interval overlap rather than proof of an action inside the window. Preserve returned award rows, counts, amounts and existing DoD reporting notes; guide actual dated transaction pagination and distinct-award recovery.
+- Correct the four date-scope tool descriptions, distinguishing award filters from transaction obligation aggregates. Existing names, schemas, annotations and hosted identity remain unchanged.
+- Add three official-source regressions: published 1.0.21 gives two failures and one unchanged control pass; candidate correction passes all three. Frozen Python 3.12 / MCP 2.0 suite: 1,939 passed, 379 skipped. Installed candidate MCP 2.3 suite: 1,084 passed, 855 retained legacy negative-expectation failures, 379 skipped; all 855 failed IDs match published 1.0.21. Publication and broad Round 6 closure remain pending.
+
 ## 1.0.21
 
 - Correct NAICS discovery guidance: count actual retired source rows separately from current matches omitted by the requested result limit. Explain larger-limit recovery without misclassifying current codes as retired.
