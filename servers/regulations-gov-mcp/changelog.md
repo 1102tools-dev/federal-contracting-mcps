@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.5
+
+- Attribute displayed comment dates to Regulations.gov metadata, with an explicit unestablished controlling-deadline status and notice/docket verification links. Guide users through DATES, extensions, and conditional eligibility instead of treating a provider timestamp as definitive.
+- Preserve raw dates and Eastern formatting; add nine captured-data regressions across search, detail, and lifecycle/open-period workflows (176 passed, 119 optional live skipped, 295 collected).
+
 ## 2.0.4
 
 - Hosted build tooling pins Wrangler 4.149.0, clearing four high-severity

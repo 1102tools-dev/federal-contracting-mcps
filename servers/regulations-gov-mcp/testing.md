@@ -2,18 +2,18 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the Regulations.gov API as 9 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The 2.0.4 package collects 286 regression tests (167 offline plus 119 live-gated). The 2026-10-10 offline gate passed 167 tests; all 119 live-gated tests were skipped because DEMO_KEY returned HTTP 429. See the content-fix section and [test suite map](tests/README.md) for current coverage.
+This Model Context Protocol server exposes the Regulations.gov API as 9 callable tools for federal rulemaking dockets, proposed rules, final rules, public comments, and comment-period tracking. It was hardened across four audit rounds, then re-audited end to end in the suite-wide round-7 wave (1.0.1) by an independent full-source review with live verification. The signature 0.2.0 finding was `agency_id=""` silently returning all 1,951,938 documents. The signature round-7 finding was its ironic sequel: `open_comment_periods` sorted by deadline DESCENDING and truncated at 50, so the soonest-closing documents (the ones the tool exists to surface) were silently dropped; live proof was FDA with 71 open documents where the ones closing in 2 days were among the missing. The 2.0.5 package collects 295 regression tests (176 offline plus 119 live-gated). The 2026-10-10 offline gate passed 176 tests; all 119 live-gated tests were skipped because DEMO_KEY returned HTTP 429. See the content-fix section and [test suite map](tests/README.md) for current coverage.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 9 |
-| Total regression tests | 286 (167 offline, 119 live-gated) |
+| Total regression tests | 295 (176 offline, 119 live-gated) |
 | Audit rounds completed | 8 |
 | P0 catastrophic bugs found and fixed | 1 (`extra='ignore'` silent typo drop) |
 | P1 silent-wrong-data bugs found and fixed | 10 |
 | P2 validation gaps found and fixed | 7 |
 | Round-7 wave findings | 12 |
-| Current package | 2.0.4 |
+| Current package | 2.0.5 |
 | PyPI status | Published as `regulationsgov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -25,7 +25,7 @@ for the same key. No federal API was called.
 
 ## What Was Tested
 
-The current MCP exposes nine tools. The 2026-10-10 content audit called all nine hosted tools through 33 live tool calls. The offline package suite passed 167 tests; all 119 direct-source live-gated tests were skipped. Hosted calls and saved-source regressions do not replace that skipped full source suite.
+The current MCP exposes nine tools. The first 2026-10-10 content audit called all nine hosted tools through 33 live tool calls; Round 3 adds 115 new calls. The candidate offline package suite passed 176 tests; all 119 direct-source live-gated tests were skipped. Hosted calls and saved-source regressions do not replace that skipped full source suite.
 
 **Core:** `search_documents`, `get_document_detail`, `search_comments`, `get_comment_detail`, `search_dockets`, `get_docket_detail`
 
@@ -123,13 +123,14 @@ Four items: missing publish workflow, missing test_validation.py, missing dev de
 
 ## Test Coverage
 
-The current suite collects 286 tests (167 offline, 119 live-gated). The 2026-10-10 offline run passed 167 and skipped 119; collection is not a live-pass claim. The per-file counts and live gates are maintained in [tests/README.md](tests/README.md).
+The current suite collects 295 tests (176 offline, 119 live-gated). The 2026-10-10 offline run passed 176 and skipped 119; collection is not a live-pass claim. The per-file counts and live gates are maintained in [tests/README.md](tests/README.md).
 
 | File | Purpose | Test count |
 |---|---|---|
 | `tests/test_access_status.py` | Credential presence, setup guidance, tool-only output | 9 (0 live-gated) |
 | `tests/test_audit_r7.py` | Round 7: ascending deadlines, pagination, API limits, and validation | 27 (4 live-gated) |
 | `tests/test_audit_r8.py` | Round 8: one-call source contract anchors | 4 (4 live-gated; live_smoke) |
+| `tests/test_deadline_source_guidance.py` | 2.0.5 provider deadline provenance and controlling-date followup | 9 (0 live-gated) |
 | `tests/test_workflow_content_audit.py` | 2.0.4 workflow recovery and partial enrichment | 7 (0 live-gated) |
 | `tests/test_content_fixes.py` | 2.0.3 R1–R11: Eastern deadlines, posted counts, organizations, subtypes, page ceiling, facets, type filter, comment text, and hints | 35 (0 live-gated) |
 | `tests/test_credential_redaction.py` | Credential and error-payload redaction | 6 (0 live-gated) |
@@ -312,3 +313,36 @@ consistency; current individual comment raw API responses were not
 independently refetched with a local key. Hosted content success, primary
 Federal Register comparisons, local no-key startup, and skipped direct-source
 tests remain distinct verification layers.
+
+
+## Deadline provenance content audit (2.0.5 candidate, round 3, 2026-10-10)
+
+The new published-2.0.4 campaign made 115 ordinary and power-user hosted calls
+across all nine tools: FAR conflicts/inflation, DARS supply chains, EPA PFAS,
+OSHA heat, FDA food labeling, FAA unmanned aircraft, and DOE/EERE heat pumps.
+58 content assertions passed. Fresh primary evidence comprises 68 Federal
+Register JSON records and two XML records, with 110 comparison rows.
+
+One P2 was confirmed: OSHA-2021-0009-25576 displays October 2, 2025 as an
+unqualified deadline, while Federal Register 2025-18670 says October 30, 2025
+for timely NOITA filers. Faithfully formatting provider metadata did not
+justify presenting it as controlling. All four date-bearing tools now state
+that the field is a Regulations.gov metadata date. Each dated record includes
+an explicit unestablished controlling-date status, source document/docket
+links, a Federal Register notice link when available, and guidance to inspect
+DATES, later extensions/corrections, and conditional eligibility. Raw provider
+dates are preserved; the fix does not substitute an invented corrected date.
+
+Nine captured-data regressions exercise actual MCP return shaping for search,
+detail, history, and open periods: eight failed on 2.0.4, one unchanged
+undated case passed; all nine pass on the candidate. A normal matched deadline
+retains identical date values. Full candidate suite: 176 passed, 119 optional
+live checks skipped, 295 collected. Four descriptions changed; names, input
+schemas, and annotations are unchanged.
+
+Direct Regulations.gov DEMO_KEY returned HTTP429; two public attachment
+requests returned HTTP403. These are unavailable checks, not passes. Two EPA
+agenda dates lack primary corroboration. The historical OSHA provider date
+conflict remains a source-data limitation: users must verify the controlling
+conditional date using the linked notice. Published/live 2.0.5 verification
+will be recorded after the coordinator releases it.

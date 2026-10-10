@@ -8,14 +8,14 @@
     "source": "github",
     "subfolder": "servers/regulations-gov-mcp"
   },
-  "version": "2.0.4",
+  "version": "2.0.5",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "regulationsgov-mcp",
-      "version": "2.0.4",
+      "version": "2.0.5",
       "transport": {
         "type": "stdio"
       },

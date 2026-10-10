@@ -249,7 +249,9 @@ def test_open_comment_periods_pages_with_next_page_metadata(monkeypatch):
     first = _payload(asyncio.run(_call("open_comment_periods")))
     assert (first["returned"], first["page_number"], first["page_size"]) == (25, 1, 25)
     assert first["truncated"] is True and first["next_page_number"] == 2
-    assert "documents 1-25 of 70" in first["truncated_note"] and "close later" in first["truncated_note"]
+    assert "documents 1-25 of 70" in first["truncated_note"]
+    assert all(doc["comment_deadline_verification"]["controlling_deadline_established"] is False
+               for doc in first["documents"])
     assert "page_number=2" in first["truncated_note"]
     last = _payload(asyncio.run(_call("open_comment_periods", page_size=50, page_number=2)))
     assert calls[-1]["params"]["page[size]"] == 50 and calls[-1]["params"]["page[number]"] == 2
