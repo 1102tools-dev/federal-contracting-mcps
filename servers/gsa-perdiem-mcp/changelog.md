@@ -2,6 +2,8 @@
 
 ## 1.2.2
 
+- Updated the deployment-only Wrangler pin to 4.149.0; npm audit reports zero advisories after the update. Runtime dependencies are unchanged.
+
 - Split-month trip results explain that only monthly lodging totals should be added; M&IE must be computed once using actual departure and return days. Adding independent monthly trip totals overstated M&IE. The README carries the corrected example. The frozen published tool description remains pending directory review.
 - City-limit rate carve-outs reject a supplied county that conflicts with the known Census place/county record instead of silently ignoring it. Valid county/city carve-outs and multi-county installations remain supported.
 - ZIP lookups validate the complete five-digit or ZIP+4 format before extracting a prefix, rejecting malformed suffixes and non-ASCII digits.
