@@ -15,8 +15,8 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 |---|---|
 | MCP tools exposed | 8 |
 | Total regression tests | 435 (314 offline, 121 live-gated) |
-| Tests per tool | 51.8 |
-| Audit rounds completed | 7 |
+| Tests per tool | 54.4 |
+| Audit rounds completed | 9 |
 | P1 crashes (shape-shift) found and fixed | 19 |
 | P1 silent-wrong-data bugs found and fixed | 33 (30 in 0.2.x, 3 in round 6) |
 | P2 validation gaps found and fixed | 20 (19 in 0.2.x, 1 in round 6) |
@@ -364,19 +364,47 @@ descriptions, identities and successful-query behavior are unchanged.
 
 The candidate suite has **435 collected tests: 314 passed and 121 optional live
 skipped** in both the frozen MCP 2.0 lane and a separately installed candidate
-wheel with fresh MCP 2.3. The live skips are not passes. The completed new corpus contains **132 unique
-ordinary/power-user questions and follow-ups across all eight tools**, with 142
-primary GSA response captures and 13 additional direct proofs. Both the actual
-fresh published-package/public comparison and the installed candidate replay
-pass 3,200 source/workflow conditions each. Ten exact-title cost scenarios retain
-eligible counts, thin populations, and the distinction between ceiling budgets
-and prices paid. An empty BA/MA armed-guard population leads to three successful
-high-school eligibility follow-ups.
+wheel with fresh MCP 2.3. The live skips are not passes. The completed new
+corpus contains **132 unique ordinary/power-user questions and follow-ups
+across all eight tools**, with 142 primary GSA response captures and 13
+additional direct proofs. The published-baseline and candidate corpora use the
+registered MCP tool pipeline in actual installed packages, not direct `.fn`
+calls or stdio CLI calls. The baseline has 132 actual public HTTP JSON-RPC
+calls. Its source/public checks and the registered installed-candidate replay
+pass 3,200 conditions each. Actual stdio checks are recorded separately: the
+published baseline has two original worksite errors and two corrected follow-
+ups plus a Network Engineer smoke query; the candidate has the four
+original/recovery calls. Both discover all eight tools. Ten exact-title cost
+scenarios retain eligible counts, thin populations, and the distinction between
+ceiling budgets and prices paid. An empty BA/MA armed-guard population leads to
+three successful high-school eligibility follow-ups.
 
-The published/public comparison records 209 approximate percentile scalar
-variations (maximum $2.7026/hour) and five distributed bucket-count/list variations
-supported by fresh official responses and the source error bound; the candidate
-replay documents three bucket variations separately. These are not identical
-parity claims. Suggestion caps, unavailable worksite-filtered statistics, and
-single-field sort ties remain source limitations. Final actual published 1.0.15
-and public deployment verification awaits the coordinator release.
+The published-baseline/public comparison records 209 approximate percentile scalar
+variations (maximum $2.7026/hour) and five distributed bucket-count/list
+variations supported by fresh official responses and the source error bound;
+the candidate replay documents three bucket variations separately. These are
+not identical parity claims. Suggestion caps, unavailable worksite-filtered
+statistics, and single-field sort ties remain source limitations. Final actual published verification installed `gsa-calc-mcp==1.0.15` uncached by
+name from official PyPI into a fresh Python 3.12 environment with MCP 2.3.0.
+The installed registered-tool pipeline and public HTTPS service each completed
+132 cases across all eight tools, with 142 current primary GSA captures and
+3,200 passing source/workflow checks. These calls are separate from five actual
+stdio CLI calls: two original worksite questions, two successful corrected
+follow-ups, and one smoke query. All eight installed/public definitions match
+the frozen contract; public version 1.0.15 and release SHA
+`7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336` match the successful scoped release.
+Installed server bytes also match the official wheel and reviewed source. The
+fresh published suite passed 314 tests with 121 optional live skips (435
+collected).
+
+The final comparison records 216 approximate percentile variations, at most
+$2.9341/hour, and six documented distributed bucket variations. Twelve repeated
+primary aggregations, three additional suggestion requests, two exact-title
+primary requests, and three worksite proofs reconcile those source differences.
+Shared suggestion counts differ by at most four within published error bounds;
+the two remaining architecture tail titles were independently confirmed at
+14 rates each (public approximate counts 12 and 14). The source still caps
+suggestions at 100 even when a larger page size is requested. This is qualified
+source equivalence, not a claim of identical responses. No further product
+finding was observed in the final verification. Detailed evidence is retained
+under `Artifacts/mcp-e2e-20261010/round3/gsa-calc/final-published`.
