@@ -2,6 +2,31 @@
 
 ## 1.1.1
 
+Fixes from the 2026-10-10 content test (BLS-1 to BLS-9). Data is unchanged
+(still the May 2025 release); the hosted Worker answers the same way.
+
+- `igce_wage_benchmark`:
+  - returns `wage_period` (the release's reference month, from the bundled
+    manifest) and `_escalation_note` ("May 2025 wages; escalate to the
+    period of performance") beside the burdened rates (BLS-1);
+  - takes hourly figures from BLS's published hourly wages, deriving
+    annual / 2080 only where BLS publishes none (BLS-7);
+  - adds the 25th and 75th percentiles (BLS-3);
+  - returns `reliability` (employment, employment RSE, mean wage RSE) and a
+    `_reliability_warning` when either RSE is above 10% (BLS-2);
+  - for a cell with employment but no wage estimate (top-coded or not
+    released), `no_data_reason` quotes BLS's footnote and the employment
+    instead of "BLS publishes no estimate" (BLS-4).
+- `list_common_metros` and `list_common_soc_codes` use BLS's own area names
+  and occupation titles and add Huntsville, Virginia Beach-Norfolk, San
+  Antonio, Colorado Springs, Dayton, and SOCs 15-1299, 15-1243, 17-2141,
+  13-1081, 13-1161 (BLS-5).
+- `get_wage_data` names industry 999100 as BLS does ("Federal Executive
+  Branch (OEWS Designation)") and notes that federal IT staff mostly fall
+  under 15-1299 (BLS-6).
+- `compare_metros` and `compare_occupations` return `data_year` (BLS-8).
+- Employment per 1,000 jobs is formatted to BLS's three decimals (BLS-9).
+
 - The bundled release's year and name now come from `data/manifest.json`
   instead of constants, so a new OEWS release needs no code change.
   `.github/workflows/data-refresh.yml` checks BLS weekly and, when BLS

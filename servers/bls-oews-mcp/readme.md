@@ -89,7 +89,7 @@ BLS OEWS data represents employer-reported base wages (no fringe, overhead, G&A,
 - 2.0x-2.5x: large contractor with clearance overhead
 - 2.5x-3.0x: high-overhead (SCIF, deployed)
 
-The `igce_wage_benchmark` tool applies the multiplier automatically.
+The `igce_wage_benchmark` tool applies the multiplier automatically. OEWS wages are estimates for the release's May reference month, so escalate them to the period of performance; the tool's `wage_period` and `_escalation_note` say which month.
 
 ## Data year
 
