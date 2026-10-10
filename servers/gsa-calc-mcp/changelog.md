@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.13
+
+- Mark capped suggestion totals as lower bounds instead of presenting 10,000 as an exact count.
+- Disclose that IGCE keyword searches match vendor and contract fields as well as titles. Price checks with off-title matches return `MIXED_SEARCH_FIELDS` without a verdict; missing, empty, truncated or approximate title lists return `UNVERIFIED_POPULATION`. Use exact labor-title search to inspect comparable rates.
+- Return null z-scores when the mean or standard deviation is unavailable or variance is zero; unavailable means no longer fabricate dollar deltas from zero.
+- Add 19 MCP-level regressions; published tool metadata remains unchanged.
+
 ## 1.0.12
 
 - Show worksite and contract end in vendor rate cards, distinguish rate rows

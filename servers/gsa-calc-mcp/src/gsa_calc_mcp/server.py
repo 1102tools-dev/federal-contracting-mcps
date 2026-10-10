@@ -742,6 +742,35 @@ def _title_summary(data: Any, top_n: int) -> dict[str, Any]:
     return out
 
 
+def _population_scope(data: Any, keyword: str) -> dict[str, Any]:
+    """Identify off-title matches from GSA's cross-field keyword search.
+
+    Keyword searches also match vendor_name and idv_piid. An IGCE phrase
+    such as Systems Engineering can therefore include every title at a
+    vendor named Systems Engineering Inc. The terms list may be truncated
+    and distributed counts approximate, so give examples rather than a
+    purported exact count of unrelated rows.
+    """
+    agg = _safe_dict(_safe_dict(_safe_dict(data).get("aggregations")).get("labor_category"))
+    pattern = re.compile(re.escape(keyword).replace(r"\*", ".*"), re.IGNORECASE)
+    off_title = [p for p in (_safe_bucket_key(b) for b in _as_list(agg.get("buckets")))
+                 if p is not None and isinstance(p[0], str) and not pattern.search(p[0])]
+    buckets = agg.get("buckets")
+    complete = (
+        isinstance(buckets, list) and bool(buckets)
+        and all((p := _safe_bucket_key(b)) is not None and isinstance(p[0], str) and bool(p[0]) for b in buckets)
+        and agg.get("sum_other_doc_count") == 0
+        and agg.get("doc_count_error_upper_bound", 0) == 0
+    )
+    return {
+        "search_fields": ["labor_category", "vendor_name", "idv_piid"],
+        "off_title_matches_detected": bool(off_title),
+        "title_list_complete": complete,
+        "title_only_population_verified": complete and not off_title,
+        "off_title_examples": [{"title": k, "count": c} for k, c in off_title[:5]],
+    }
+
+
 # ---------------------------------------------------------------------------
 # Core search tools
 # ---------------------------------------------------------------------------
@@ -940,14 +969,24 @@ async def suggest_contains(
     else:
         total = 0
 
-    return {
+    result = {
         "field": field,
         "search_term": term,
         "suggestions": suggestions,
         "total_matching_records": total,
+        "total_matching_records_is_lower_bound": (
+            isinstance(total_obj, dict) and total_obj.get("relation") == "gte"
+        ),
         "truncated": other_records > 0,
         "other_records": other_records,
     }
+    if result["total_matching_records_is_lower_bound"]:
+        result["_count_note"] = (
+            f"GSA reports at least {total} matching records, not an exact total. "
+            "Its suggestion response caps hits.total and omits wage_stats. "
+            "Narrow the term or use keyword_search/exact_search for full statistics."
+        )
+    return result
 
 
 @mcp.tool(annotations={"title": "Filtered Browse", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1076,11 +1115,16 @@ async def igce_benchmark(
         # Which titles were pooled: "Senior Software Engineer" matches 53
         # titles (I-IV, Health IT ..., Principal ...), not one.
         "matched_titles": _title_summary(data, top_n=10),
+        "population_scope": _population_scope(data, labor_category),
         "_note": (
             "Ceiling rates (NTE), not prices paid. Sample size matters for "
-            "IGCE reliability. labor_category is matched as a literal phrase "
-            "inside each title, so the population pools every title "
-            "containing it (see matched_titles) and misses other spellings "
+            "IGCE reliability. GSA's keyword search matches labor titles, "
+            "vendor names and contract numbers. A literal phrase can match "
+            "any of these fields. Statistics pool all those "
+            "matches, including off-title rows when a vendor or contract "
+            "matches (see population_scope and matched_titles). For title-only "
+            "rates, discover a title with suggest_contains and use exact_search "
+            "on labor_category. Different spellings remain separate searches "
             "('Cyber Security' vs 'Cybersecurity'). Statistics are on "
             "current-year ceiling rates."
         ),
@@ -1142,7 +1186,33 @@ async def price_reasonableness_check(
             "message": f"No comparable ceiling rates found for '{labor_category}' with the given filters.",
         }
 
-    avg = benchmark.get("avg_rate") or 0
+    scope = benchmark.get("population_scope", {})
+    if not scope.get("title_only_population_verified"):
+        off_title = scope.get("off_title_matches_detected")
+        return {
+            **benchmark,
+            "status": "MIXED_SEARCH_FIELDS" if off_title else "UNVERIFIED_POPULATION",
+            "proposed_rate": proposed_rate,
+            "message": (
+                ("GSA's keyword search also matched vendor names or contract "
+                 "numbers, returning labor titles that do not contain the "
+                 "requested phrase. " if off_title else
+                 "GSA's labor title aggregation is missing or incomplete, so "
+                 "off-title vendor/contract matches cannot be ruled out. ") +
+                "These pooled statistics do not establish "
+                "a comparable title population, so no high/low verdict is given. "
+                "Use suggest_contains and exact_search on labor_category to "
+                "inspect title-only rates, then select comparable requirements."
+            ),
+            "analysis": {
+                "z_score": None, "vs_median": None, "iqr_position": None,
+                "delta_from_avg": None, "delta_from_avg_pct": None,
+            },
+        }
+
+    avg = benchmark.get("avg_rate")
+    delta = round(proposed_rate - avg, 2) if avg is not None else None
+    delta_pct = round(((proposed_rate - avg) / avg) * 100, 1) if avg is not None and avg > 0 else None
     n = benchmark.get("total_rates", 0)
     if n < LOW_SAMPLE_MIN_RATES:
         # A literal-phrase keyword ("Help Desk Specialist Tier 1") can shrink
@@ -1164,16 +1234,16 @@ async def price_reasonableness_check(
                 "z_score": None,
                 "vs_median": None,
                 "iqr_position": None,
-                "delta_from_avg": round(proposed_rate - avg, 2),
-                "delta_from_avg_pct": round(((proposed_rate - avg) / avg) * 100, 1) if avg and avg > 0 else None,
+                "delta_from_avg": delta,
+                "delta_from_avg_pct": delta_pct,
             },
         }
-    std = benchmark.get("std_deviation") or 0
+    std = benchmark.get("std_deviation")
     median = benchmark.get("percentiles", {}).get("p50_median")
     p25 = benchmark.get("percentiles", {}).get("p25")
     p75 = benchmark.get("percentiles", {}).get("p75")
 
-    z_score = round((proposed_rate - avg) / std, 2) if std and std > 0 else 0
+    z_score = round((proposed_rate - avg) / std, 2) if avg is not None and std is not None and std > 0 else None
 
     iqr_position = None
     if p25 is not None and p75 is not None:
@@ -1194,16 +1264,23 @@ async def price_reasonableness_check(
     else:
         vs_median = "equal"
 
+    analysis = {
+        "z_score": z_score,
+        "vs_median": vs_median,
+        "iqr_position": iqr_position,
+        "delta_from_avg": delta,
+        "delta_from_avg_pct": delta_pct,
+    }
+    if z_score is None:
+        analysis["z_score_reason"] = (
+            "Z-score unavailable: the average or standard deviation is missing, "
+            "or the standard deviation is zero. A zero z-score would incorrectly "
+            "claim the proposed rate equals the population average."
+        )
     return {
         **benchmark,
         "proposed_rate": proposed_rate,
-        "analysis": {
-            "z_score": z_score,
-            "vs_median": vs_median,
-            "iqr_position": iqr_position,
-            "delta_from_avg": round(proposed_rate - avg, 2),
-            "delta_from_avg_pct": round(((proposed_rate - avg) / avg) * 100, 1) if avg and avg > 0 else None,
-        },
+        "analysis": analysis,
     }
 
 

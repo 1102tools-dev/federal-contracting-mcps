@@ -130,7 +130,9 @@ def _stats_response(n: int, price: float = 71.65) -> dict:
 
 @pytest.mark.parametrize("n", [1, 5, 19])
 def test_g2_price_check_low_sample_has_no_verdict(monkeypatch, n):
-    monkeypatch.setattr(srv, "_get", _MockGet(_stats_response(n)))
+    body = _stats_response(n)
+    body["aggregations"]["labor_category"] = {"buckets": [{"key": "Help Desk Specialist Tier 1", "doc_count": n}], "sum_other_doc_count": 0}
+    monkeypatch.setattr(srv, "_get", _MockGet(body))
     r = _payload(asyncio.run(_call(
         "price_reasonableness_check", labor_category="Help Desk Specialist Tier 1", proposed_rate=95,
     )))
@@ -144,7 +146,9 @@ def test_g2_price_check_low_sample_has_no_verdict(monkeypatch, n):
 
 
 def test_g2_price_check_twenty_rates_gets_verdict(monkeypatch):
-    monkeypatch.setattr(srv, "_get", _MockGet(_stats_response(20)))
+    body = _stats_response(20)
+    body["aggregations"]["labor_category"] = {"buckets": [{"key": "Help Desk Specialist", "doc_count": 20}], "sum_other_doc_count": 0}
+    monkeypatch.setattr(srv, "_get", _MockGet(body))
     r = _payload(asyncio.run(_call(
         "price_reasonableness_check", labor_category="Help Desk Specialist", proposed_rate=95,
     )))
