@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.12
+
+- Show worksite and contract end in vendor rate cards, distinguish rate rows
+  from labor categories, and explain vendor legal-name matching.
+- With fewer than 20 rates, retain statistics without a price verdict. Add SIN
+  and clearance filters to workflow tools, matched labor titles, SIN category
+  summaries, truncation flags, and worksite counts.
+- Clamp negative two-sigma lower bounds to zero and identify current-year prices.
+
 ## 1.0.11
 
 - Hosted service only: the machine running the service can give the answer cache

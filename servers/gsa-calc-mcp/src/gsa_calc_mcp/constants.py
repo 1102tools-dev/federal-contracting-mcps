@@ -10,6 +10,9 @@ USER_AGENT = f"gsa-calc-mcp/{__version__}"
 
 MAX_PAGE_SIZE = 500
 
+# price_reasonableness_check gives no high/low verdict below this many rates.
+LOW_SAMPLE_MIN_RATES = 20
+
 EDUCATION_LEVELS = {
     "AA": "Associate's",
     "BA": "Bachelor's",

@@ -176,7 +176,7 @@ async def main():
 
     await t("vendor_rate_card 'leidos'",
         vendor_rate_card("leidos"),
-        check=lambda r: (r.get("total_categories",0) > 0, f"vendor={r.get('vendor')}, categories={r.get('total_categories',0)}"))
+        check=lambda r: (r.get("total_rates",0) > 0, f"vendor={r.get('vendor')}, categories={r.get('total_rates',0)}"))
 
     await t("vendor_rate_card nonexistent vendor",
         vendor_rate_card("zzzznonexistentcorp"),
@@ -401,15 +401,15 @@ async def main():
 
     await t("vendor_rate_card 'raytheon'",
         vendor_rate_card("raytheon"),
-        check=lambda r: (r.get("total_categories",0) > 0, f"vendor={r.get('vendor')}, cats={r.get('total_categories',0)}"))
+        check=lambda r: (r.get("total_rates",0) > 0, f"vendor={r.get('vendor')}, cats={r.get('total_rates',0)}"))
 
     await t("vendor_rate_card 'deloitte'",
         vendor_rate_card("deloitte"),
-        check=lambda r: (r.get("total_categories",0) > 0, f"vendor={r.get('vendor')}, cats={r.get('total_categories',0)}"))
+        check=lambda r: (r.get("total_rates",0) > 0, f"vendor={r.get('vendor')}, cats={r.get('total_rates',0)}"))
 
     await t("vendor_rate_card 'accenture'",
         vendor_rate_card("accenture"),
-        check=lambda r: (r.get("total_categories",0) > 0 or "error" in r, f"result={'found' if r.get('total_categories',0) > 0 else 'not found'}"))
+        check=lambda r: (r.get("total_rates",0) > 0 or "error" in r, f"result={'found' if r.get('total_rates',0) > 0 else 'not found'}"))
 
     # ── 3.4 SIN COMPARISON ──
     print("\n━━━ 3.4 SIN comparison ━━━")

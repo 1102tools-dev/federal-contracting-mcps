@@ -9,13 +9,13 @@ older live test or establish an official provider quota.
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The MCP ships with 380 regression tests (271 offline plus 109 live-gated).
+This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The MCP ships with 414 regression tests (293 offline plus 121 live-gated).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 380 (271 offline, 109 live-gated) |
-| Tests per tool | 42.9 |
+| Total regression tests | 414 (293 offline, 121 live-gated) |
+| Tests per tool | 51.8 |
 | Audit rounds completed | 7 |
 | P1 crashes (shape-shift) found and fixed | 19 |
 | P1 silent-wrong-data bugs found and fixed | 33 (30 in 0.2.x, 3 in round 6) |
@@ -24,7 +24,7 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | Round 5 Hypothesis + live findings | 0 (shape-only assertions; see round 6 for what that missed) |
 | Round 6 differential-count findings | 3 high-severity (worksite ignored, experience_min exact-match, vendor_rate_card unpageable) + 4 dead hardcoded SINs + 1 validation gap |
 | Retroactive additional findings | 12 |
-| Current release | 1.0.8 |
+| Current release | 1.0.12 |
 | PyPI status | Published as `gsa-calc-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -215,3 +215,17 @@ live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
 ## RC5 pacing remediation (2026-08-22)
 
 Version 1.0.4 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (247 tests; 109 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 8 tools.
+
+## 1.0.12 content-test verification (2026-10-10)
+
+Vendor worksite and contract dates, low-sample price checks, rate/category
+counts, matched titles, SIN and clearance filters, nonnegative lower bounds,
+truncation flags, current-year price guidance, and worksite counts.
+
+The full Python 3.12 offline suite passed 293 tests with 121 live-gated
+tests skipped. All 30 tests in `test_content_fixes_2026_10.py` passed with the live flag
+enabled, including 12 comparisons against the government API. Hosted tool
+contract checks, version validation for all nine packages, and all 64 release
+guard tests passed. The Worker type check passed and all six Worker tests passed.
+
+The README badge and test suite map were reconciled with pytest collection: 414 Python tests (293 offline, 121 live-gated). The saved Q1-Q30 findings gate also passed 43 comparisons against fresh GSA responses, with four explicit deferred rows for raw payload trimming and per-site/future-year statistics.

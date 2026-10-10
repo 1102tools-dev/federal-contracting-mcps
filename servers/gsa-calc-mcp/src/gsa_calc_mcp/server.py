@@ -33,6 +33,7 @@ from .constants import (
     BASE_URL,
     DEFAULT_TIMEOUT,
     EDUCATION_LEVELS,
+    LOW_SAMPLE_MIN_RATES,
     MAX_PAGE_SIZE,
     ORDERING_FIELDS,
     USER_AGENT,
@@ -648,6 +649,9 @@ def _extract_stats(data: Any) -> dict[str, Any]:
     percentiles = _safe_dict(_safe_dict(aggs.get("histogram_percentiles")).get("values"))
     ed_counts = _as_list(_safe_dict(aggs.get("education_level_counts")).get("buckets"))
     biz_size = _as_list(_safe_dict(aggs.get("business_size")).get("buckets"))
+    # Counts only: GSA ignores a worksite filter, so a per-site price split
+    # is not available from one call, but the counts show the mix.
+    worksites = _as_list(_safe_dict(aggs.get("worksite")).get("buckets"))
     std_bounds = _safe_dict(wage_stats.get("std_deviation_bounds"))
 
     hits = _safe_dict(data.get("hits"))
@@ -685,6 +689,16 @@ def _extract_stats(data: Any) -> dict[str, Any]:
                 return _safe_number(percentiles[k])
         return None
 
+    # avg - 2 sigma goes negative on wide populations (SIN 541611: -$0.61);
+    # a negative hourly rate is meaningless, so floor it at $0 and say so.
+    outlier_bounds: dict[str, Any] = {
+        "lower": _safe_number(std_bounds.get("lower")),
+        "upper": _safe_number(std_bounds.get("upper")),
+    }
+    if outlier_bounds["lower"] is not None and outlier_bounds["lower"] < 0:
+        outlier_bounds["lower"] = 0
+        outlier_bounds["lower_clamped_to_zero"] = True
+
     return {
         "total_rates": true_count if true_count is not None else 0,
         "hits_capped": capped,
@@ -699,13 +713,33 @@ def _extract_stats(data: Any) -> dict[str, Any]:
             "p75": _pct(75.0),
             "p90": _pct(90.0),
         },
-        "outlier_bounds_2sigma": {
-            "lower": _safe_number(std_bounds.get("lower")),
-            "upper": _safe_number(std_bounds.get("upper")),
-        },
+        "outlier_bounds_2sigma": outlier_bounds,
         "education_breakdown": _bucket_dict(ed_counts),
         "business_size_breakdown": _bucket_dict(biz_size),
+        "worksite_breakdown": _bucket_dict(worksites),
     }
+
+
+def _title_summary(data: Any, top_n: int) -> dict[str, Any]:
+    """Labor category titles behind a result, from the labor_category
+    aggregation (case-sensitive, most records first).
+
+    GSA caps that aggregation at 500 buckets. When titles were left off
+    (sum_other_doc_count > 0) the distinct count is unknown: distinct is
+    None and distinct_min gives the floor.
+    """
+    agg = _safe_dict(_safe_dict(_safe_dict(data).get("aggregations")).get("labor_category"))
+    pairs = [p for p in (_safe_bucket_key(b) for b in _as_list(agg.get("buckets"))) if p is not None]
+    other = agg.get("sum_other_doc_count")
+    complete = not (isinstance(other, int) and other > 0)
+    out: dict[str, Any] = {
+        "top": [{"title": k, "count": c} for k, c in pairs[:top_n]],
+        "distinct": len(pairs) if complete else None,
+    }
+    if not complete:
+        out["distinct_min"] = len(pairs)
+        out["records_in_titles_not_listed"] = other
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -865,6 +899,10 @@ async def suggest_contains(
 
     Minimum 2 characters required for the search term.
 
+    GSA lists at most 100 values, most records first. When more values
+    match, truncated is true and other_records counts the records under
+    values not shown; use a longer term to narrow the list.
+
     Example workflow:
     1. suggest_contains('vendor_name', 'booz') -> finds 'Booz Allen Hamilton Inc.'
     2. exact_search('vendor_name', 'Booz Allen Hamilton Inc.') -> all their rates
@@ -881,9 +919,12 @@ async def suggest_contains(
     qs = _build_query_string(suggest_field=field, suggest_term=term)
     data = await _get(qs)
 
-    buckets = _as_list(
-        _safe_dict(_safe_dict(data.get("aggregations")).get(field)).get("buckets")
-    )
+    field_agg = _safe_dict(_safe_dict(data.get("aggregations")).get(field))
+    buckets = _as_list(field_agg.get("buckets"))
+    # GSA returns at most 100 values; sum_other_doc_count is the number of
+    # records under values that were left off the list.
+    other = field_agg.get("sum_other_doc_count")
+    other_records = other if isinstance(other, int) and not isinstance(other, bool) and other > 0 else 0
     suggestions: list[dict[str, Any]] = []
     for b in buckets:
         pair = _safe_bucket_key(b)
@@ -904,6 +945,8 @@ async def suggest_contains(
         "search_term": term,
         "suggestions": suggestions,
         "total_matching_records": total,
+        "truncated": other_records > 0,
+        "other_records": other_records,
     }
 
 
@@ -977,12 +1020,15 @@ async def igce_benchmark(
     experience_max: int | None = None,
     business_size: Literal["S", "O"] | None = None,
     sin: SinInput = None,
+    security_clearance: Literal["yes", "no"] | None = None,
 ) -> dict[str, Any]:
     """Get ceiling rate benchmarks for IGCE development.
 
     Returns statistical summary for a labor category: count, min, max, avg,
     median, standard deviation, percentile distribution (P10-P90), education
-    breakdown, and outlier bounds.
+    breakdown, worksite counts (worksite_breakdown: Customer_Facility /
+    Contractor_Facility / Virtual; counts only, prices are pooled across
+    sites), and outlier bounds.
 
     This is the primary tool for building Independent Government Cost
     Estimates. The returned statistics represent the market distribution
@@ -990,6 +1036,17 @@ async def igce_benchmark(
 
     Reminder: these are ceiling rates (max a contractor can charge), not
     prices paid. Actual task order rates should be lower per FAR 8.405-2(d).
+
+    labor_category is matched as a literal phrase anywhere in the title:
+    'Program Manager' pools Program Manager I-VI, Senior and Executive
+    Program Manager, and so on. matched_titles lists the top 10 pooled
+    titles with counts and the number of distinct titles. Different
+    spellings are separate populations ('Cyber Security Analyst' vs
+    'Cybersecurity Analyst'). Statistics are on current-year ceiling rates
+    (current_price), not next-year or option-year prices.
+
+    Optional filters: education_level, experience_min/max, business_size
+    ('S' or 'O'), sin (e.g. '541611'), security_clearance ('yes' or 'no').
     """
     _validate_no_control_chars(labor_category, field="labor_category")
     labor_category = _strip_or_none(labor_category)
@@ -1004,6 +1061,7 @@ async def igce_benchmark(
     filters = _build_filters(
         education_level=education_level, experience_min=experience_min,
         experience_max=experience_max, business_size=business_size, sin=sin,
+        security_clearance=security_clearance,
     )
     qs = _build_query_string(
         keyword=labor_category, filters=filters, page=1, page_size=10,
@@ -1015,7 +1073,17 @@ async def igce_benchmark(
         "labor_category": labor_category,
         "filters_applied": filters,
         **stats,
-        "_note": "Ceiling rates (NTE), not prices paid. Sample size matters for IGCE reliability.",
+        # Which titles were pooled: "Senior Software Engineer" matches 53
+        # titles (I-IV, Health IT ..., Principal ...), not one.
+        "matched_titles": _title_summary(data, top_n=10),
+        "_note": (
+            "Ceiling rates (NTE), not prices paid. Sample size matters for "
+            "IGCE reliability. labor_category is matched as a literal phrase "
+            "inside each title, so the population pools every title "
+            "containing it (see matched_titles) and misses other spellings "
+            "('Cyber Security' vs 'Cybersecurity'). Statistics are on "
+            "current-year ceiling rates."
+        ),
     }
 
 
@@ -1027,6 +1095,8 @@ async def price_reasonableness_check(
     experience_min: int | None = None,
     experience_max: int | None = None,
     business_size: Literal["S", "O"] | None = None,
+    sin: SinInput = None,
+    security_clearance: Literal["yes", "no"] | None = None,
 ) -> dict[str, Any]:
     """Evaluate a proposed hourly rate against GSA ceiling rate distribution.
 
@@ -1038,6 +1108,15 @@ async def price_reasonableness_check(
 
     A rate above P75 may be high; above P90 warrants scrutiny. A rate below
     P25 may indicate an unrealistically low offer (potential performance risk).
+
+    Takes the same filters as igce_benchmark, including sin and
+    security_clearance; pass them so the comparison population matches the
+    requirement.
+
+    With fewer than 20 comparable rates the result has status LOW_SAMPLE:
+    the statistics are returned but there is no high/low verdict (z_score,
+    vs_median and iqr_position are null). Try a shorter phrase; the
+    labor_category keyword is matched as a literal phrase.
     """
     if not isinstance(proposed_rate, (int, float)) or isinstance(proposed_rate, bool):
         raise ValueError("proposed_rate must be a positive number.")
@@ -1052,7 +1131,8 @@ async def price_reasonableness_check(
     benchmark = await igce_benchmark(
         labor_category, education_level=education_level,
         experience_min=experience_min, experience_max=experience_max,
-        business_size=business_size,
+        business_size=business_size, sin=sin,
+        security_clearance=security_clearance,
     )
 
     if benchmark.get("total_rates", 0) == 0:
@@ -1063,6 +1143,31 @@ async def price_reasonableness_check(
         }
 
     avg = benchmark.get("avg_rate") or 0
+    n = benchmark.get("total_rates", 0)
+    if n < LOW_SAMPLE_MIN_RATES:
+        # A literal-phrase keyword ("Help Desk Specialist Tier 1") can shrink
+        # the population to one rate; a high/low call on that is noise.
+        return {
+            **benchmark,
+            "status": "LOW_SAMPLE",
+            "proposed_rate": proposed_rate,
+            "message": (
+                f"Only {n} comparable rate{'s' if n != 1 else ''} found for "
+                f"'{labor_category}'. That sample is too small for a high/low "
+                f"verdict (this check needs at least {LOW_SAMPLE_MIN_RATES}). "
+                f"The statistics are shown for reference only. Try a shorter "
+                f"labor category phrase (the keyword is matched as a literal "
+                f"phrase), drop a filter, or run suggest_contains to see the "
+                f"exact titles."
+            ),
+            "analysis": {
+                "z_score": None,
+                "vs_median": None,
+                "iqr_position": None,
+                "delta_from_avg": round(proposed_rate - avg, 2),
+                "delta_from_avg_pct": round(((proposed_rate - avg) / avg) * 100, 1) if avg and avg > 0 else None,
+            },
+        }
     std = benchmark.get("std_deviation") or 0
     median = benchmark.get("percentiles", {}).get("p50_median")
     p25 = benchmark.get("percentiles", {}).get("p25")
@@ -1114,13 +1219,22 @@ async def vendor_rate_card(
 
     Auto-discovers the exact vendor name via suggest-contains, then pulls
     their rate records. Returns labor categories, rates, education levels,
-    experience requirements, SINs, and contract numbers.
+    experience requirements, SINs, contract numbers, contract end dates, and
+    worksite. A vendor often lists the same category twice at two prices,
+    one for work at the customer's site (Customer_Facility) and one at the
+    contractor's site (Contractor_Facility); check worksite before comparing.
 
     Pass a partial name (e.g., 'booz' for Booz Allen Hamilton). The tool
-    finds the exact registered name automatically.
+    finds the exact registered name automatically. Use part of the legal
+    name, not an acronym ('Science Applications', not 'SAIC').
 
-    Large vendors span many pages: Booz Allen Hamilton carries ~1,900 labor
-    categories. The default page_size is 100 (~23KB) because a 500-row page
+    total_rates counts rate rows, not titles: one title can have several
+    rows (worksite, contract, SIN). distinct_labor_categories is the number
+    of distinct titles (case-sensitive); when a vendor has more than 500 it
+    is null and distinct_labor_categories_min gives the floor.
+
+    Large vendors span many pages: Booz Allen Hamilton carries ~1,900 rate
+    rows (more than 500 distinct titles). The default page_size is 100 (~23KB) because a 500-row page
     for a vendor that size is ~114KB and overflows MCP client output limits.
     Rows are ordered by labor_category ascending by default, so a partial
     card is alphabet-biased; check has_more and keep calling with next_page
@@ -1153,7 +1267,13 @@ async def vendor_rate_card(
     if not suggestions:
         return {
             "vendor_search": vendor_name,
-            "error": f"No vendor found matching '{vendor_name}'. Try a shorter or different term.",
+            "error": (
+                f"No vendor found matching '{vendor_name}'. CALC+ lists vendors "
+                f"by their registered legal name, not acronyms or brand names: "
+                f"for example SAIC is 'SCIENCE APPLICATIONS INTERNATIONAL "
+                f"CORPORATION', so search 'Science Applications'. Try part of "
+                f"the legal name, or a shorter or different term."
+            ),
         }
 
     exact_name = suggestions[0]["value"]
@@ -1187,6 +1307,11 @@ async def vendor_rate_card(
             "sin": src.get("sin"),
             "idv_piid": src.get("idv_piid"),
             "business_size": src.get("business_size"),
+            # A vendor often carries one title at two prices, one per site
+            # (Customer_Facility / Contractor_Facility / Virtual); without
+            # this the two rows look like duplicates at different prices.
+            "worksite": src.get("worksite"),
+            "contract_end": src.get("contract_end"),
         })
 
     hits_total = _safe_dict(data.get("hits")).get("total")
@@ -1204,9 +1329,15 @@ async def vendor_rate_card(
     end_row = (page - 1) * page_size + returned
     has_more = returned > 0 and end_row < total
 
+    # total is a row count: one title can have several rows (worksite,
+    # contract, SIN). Distinct titles come from the labor_category
+    # aggregation, which GSA caps at 500 buckets; past that, give a floor.
+    titles = _title_summary(data, top_n=0)
+
     response: dict[str, Any] = {
         "vendor": exact_name,
-        "total_categories": total,
+        "total_rates": total,
+        "distinct_labor_categories": titles["distinct"] or None,
         "page": page,
         "returned": returned,
         "returned_range": f"rows {start_row}-{end_row} of {total}" if returned else None,
@@ -1215,6 +1346,8 @@ async def vendor_rate_card(
         "rates": rates,
         "_stats": _extract_stats(data),
     }
+    if "distinct_min" in titles:
+        response["distinct_labor_categories_min"] = titles["distinct_min"]
     if has_more:
         response["_truncation_note"] = (
             f"Partial rate card: rows are ordered by {ordering} ({sort}), so "
@@ -1242,7 +1375,13 @@ async def sin_analysis(
     """Get rate distribution and statistics for a specific SIN.
 
     Returns rate statistics, education breakdown, business size breakdown,
-    and sample records for a GSA MAS Special Item Number.
+    and labor_categories for a GSA MAS Special Item Number: the 25 titles
+    with the most rates on the SIN, with counts (exact, case-sensitive
+    titles). It does not return individual rate rows or per-title prices;
+    for what a title costs on the SIN, call igce_benchmark(title, sin=...).
+    When GSA's 500-title list is cut off, labor_categories.distinct is null
+    and records_in_titles_not_listed counts the rates under titles not
+    listed.
 
     Common SINs for professional services (live-verified to return records):
     - 54151S: IT Professional Services
@@ -1268,6 +1407,9 @@ async def sin_analysis(
     result: dict[str, Any] = {
         "sin": sin_code,
         **stats,
+        # The titles on the SIN, most rates first (the Q14 "what labor
+        # categories are on 54151S" question had no answer before).
+        "labor_categories": _title_summary(data, top_n=25),
     }
     if not stats.get("total_rates"):
         # A valid-looking SIN with zero records is usually a retired code,
