@@ -908,6 +908,8 @@ async def get_cfr_structure(
     """
     title_number = _validate_title_number(title_number)
     date = _validate_date_ymd(date, field="date")
+    for field, raw in (("part", part), ("subpart", subpart)):
+        _check_cited_title(raw, title_number, field)
     chapter = _validate_chapter(chapter, title_number=title_number)
     subchapter = _coerce_cfr_str(subchapter, field="subchapter", maxlen=8)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
@@ -1134,7 +1136,7 @@ async def get_ancestry(
     """
     title_number = _validate_title_number(title_number)
     date = _validate_date_ymd(date, field="date")
-    for field, raw in (("section", section), ("part", part)):
+    for field, raw in (("section", section), ("part", part), ("subpart", subpart)):
         _check_cited_title(raw, title_number, field)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
@@ -1721,6 +1723,14 @@ async def compare_versions(
     if title_number == 48:
         chapter = _check_title48_chapter(chapter, section_id)
 
+    latest = await _resolve_date(title_number)
+    if date_after > latest:
+        raise ValueError(
+            f"date_after ({date_after}) exceeds the latest available eCFR snapshot "
+            f"({latest}) for title {title_number}. Choose a date on or before {latest}; "
+            "an unavailable snapshot does not mean the section was removed."
+        )
+
     params: dict[str, str] = {}
     if chapter:
         params["chapter"] = chapter
@@ -1764,7 +1774,7 @@ async def compare_versions(
                 f"{date_after}. get_version_history(section='{section_id}') gives the exact date."
             ),
         }
-        if _xml_text.size_of(result) > _xml_text.PAGE_CHARS:
+        if changes_only or _xml_text.size_of(result) > _xml_text.PAGE_CHARS:
             result["before"] = {"date": date_before, "present": not added}
             result["after"] = {"date": date_after, "present": added}
             result["texts_omitted"] = True
@@ -1875,6 +1885,8 @@ async def list_sections_in_part(
     part_number accepts int or string.
     """
     title_number = _validate_title_number(title_number)
+    for field, raw in (("part_number", part_number), ("subpart", subpart)):
+        _check_cited_title(raw, title_number, field)
     part_number = _coerce_cfr_str(part_number, field="part_number", strip_prefixes=True)
     if not part_number:
         raise ValueError("part_number is required. Pass something like '15' or '252'.")
@@ -2180,6 +2192,7 @@ async def find_recent_changes(
     if since_date is None:
         raise ValueError("since_date is required (YYYY-MM-DD).")
     title = _validate_title_number(title, field="title")
+    _check_cited_title(part, title, "part")
     chapter = _validate_chapter(chapter, title_number=title)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     per_page = _clamp(per_page, field="per_page", lo=1, hi=SEARCH_MAX_PER_PAGE)
