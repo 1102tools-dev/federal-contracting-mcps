@@ -134,6 +134,24 @@ def test_earlier_versions_are_flagged_but_separate_awards_are_not():
     assert stale == ["a", "e"]
 
 
+def test_separate_notices_of_other_types_sharing_a_solicitation_number_stay_latest():
+    # Real cases from the 2026-10-10 file, all latest: true on sam.gov's API.
+    tomah = {"Sol#": "36C25227Q0035", "Sub-Tier": "VETERANS AFFAIRS, DEPARTMENT OF", "Office": "252-NETWORK CONTRACT OFFICE 12"}
+    wilmington = {"Sol#": "W912PM27BA002", "Sub-Tier": "DEPT OF THE ARMY", "Office": "W074 ENDIST WILMINGTON"}
+    rows = [
+        # The Tomah solicitation, then a separate presolicitation chain 25-29 minutes later.
+        notice("b3bbb65fa234403598d9cceb8f2dfb24", **tomah, Type="Solicitation", BaseType="Solicitation", PostedDate="2026-10-08 09:08:00"),
+        notice("7bd34e5ed23844f2aa2487540e9960de", **tomah, Type="Presolicitation", BaseType="Presolicitation", PostedDate="2026-10-08 09:33:30"),
+        notice("304e92aa89ac4dbd94107bfe42e95101", **tomah, Type="Presolicitation", BaseType="Presolicitation", PostedDate="2026-10-08 09:37:16"),
+        # A consolidation notice, then a presolicitation under the same number.
+        notice("60c3f2a8dc834bfb972cf0e1c54536b6", **wilmington, Type="Special Notice", BaseType="Special Notice", PostedDate="2026-10-05 14:21:00"),
+        notice("5b2b99c1e01246e4ac13b25f808c66cd", **wilmington, Type="Presolicitation", BaseType="Special Notice", PostedDate="2026-10-05 14:52:19"),
+    ]
+    parsed, _ = loader.parse(csv_bytes(rows), TODAY.isoformat())
+    latest = {i[:8] for i, r in parsed.items() if r["is_latest"]}
+    assert latest == {"b3bbb65f", "304e92aa", "60c3f2a8", "5b2b99c1"}  # 7bd34e5e is the earlier presolicitation
+
+
 def test_new_amendment_flips_the_previous_version(tmp_path, d1):
     original = notice("a" * 32, **{"Sol#": "SOL-9", "PostedDate": "2026-08-01 09:00:00"})
     load(tmp_path, [original], "--allow-small")

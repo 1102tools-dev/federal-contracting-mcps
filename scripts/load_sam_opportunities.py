@@ -145,11 +145,14 @@ def normalize(source):
 
 def version_key(row):
     """Rows sharing a key are versions of one notice. Versions share a
-    solicitation number and sub-tier; award notices must also share the award
-    number and awardee, since one solicitation can have thousands of awards."""
+    solicitation number, sub-tier, and notice type: offices often post a
+    solicitation, presolicitation, or special notice as separate current
+    notices under one number, and the file has no link between versions.
+    Award notices must also share the award number and awardee, since one
+    solicitation can have thousands of awards."""
     if not row["solicitation_number"]:
         return None
-    key = (row["solicitation_number"].upper(), row["sub_tier"])
+    key = (row["solicitation_number"].upper(), row["sub_tier"], row["notice_type"])
     if row["notice_type"] == "Award Notice":
         if not (row["award_number"] or row["awardee"]):
             return None
