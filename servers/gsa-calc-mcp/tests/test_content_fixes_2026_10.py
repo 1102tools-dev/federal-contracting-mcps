@@ -218,3 +218,40 @@ def test_live_g6_vendor_rate_card_counts_match_api():
         assert r["distinct_labor_categories"] == len(lc["buckets"])
     else:
         assert r["distinct_labor_categories_min"] == len(lc["buckets"])
+
+
+# ---------------------------------------------------------------------------
+# G-9: the 2-sigma lower bound never goes below $0
+# ---------------------------------------------------------------------------
+
+def test_g9_negative_lower_bound_clamped(monkeypatch):
+    body = _stats_response(27820, price=143.57)
+    body["aggregations"]["wage_stats"]["std_deviation"] = 72.09
+    body["aggregations"]["wage_stats"]["std_deviation_bounds"] = {"lower": -0.61, "upper": 287.75}
+    monkeypatch.setattr(srv, "_get", _MockGet(body))
+    r = _payload(asyncio.run(_call("sin_analysis", sin_code="541611")))
+    b = r["outlier_bounds_2sigma"]
+    assert b["lower"] == 0
+    assert b["lower_clamped_to_zero"] is True
+    assert b["upper"] == 287.75
+
+
+def test_g9_positive_lower_bound_unchanged(monkeypatch):
+    body = _stats_response(298, price=167.08)
+    body["aggregations"]["wage_stats"]["std_deviation_bounds"] = {"lower": 74.96, "upper": 259.2}
+    monkeypatch.setattr(srv, "_get", _MockGet(body))
+    r = _payload(asyncio.run(_call("igce_benchmark", labor_category="Senior Software Engineer")))
+    assert r["outlier_bounds_2sigma"] == {"lower": 74.96, "upper": 259.2}
+
+
+@live
+def test_live_g9_sin_541611_lower_bound_not_negative():
+    api = _api("filter=sin:541611&page=1&page_size=1&ordering=current_price&sort=asc")
+    api_lower = api["aggregations"]["wage_stats"]["std_deviation_bounds"]["lower"]
+    r = _payload(asyncio.run(_call("sin_analysis", sin_code="541611", page_size=1)))
+    b = r["outlier_bounds_2sigma"]
+    assert b["lower"] >= 0
+    if api_lower < 0:
+        assert b["lower"] == 0 and b["lower_clamped_to_zero"] is True
+    else:
+        assert b["lower"] == api_lower

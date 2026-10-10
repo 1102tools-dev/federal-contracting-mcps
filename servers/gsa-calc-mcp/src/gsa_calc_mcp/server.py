@@ -686,6 +686,16 @@ def _extract_stats(data: Any) -> dict[str, Any]:
                 return _safe_number(percentiles[k])
         return None
 
+    # avg - 2 sigma goes negative on wide populations (SIN 541611: -$0.61);
+    # a negative hourly rate is meaningless, so floor it at $0 and say so.
+    outlier_bounds: dict[str, Any] = {
+        "lower": _safe_number(std_bounds.get("lower")),
+        "upper": _safe_number(std_bounds.get("upper")),
+    }
+    if outlier_bounds["lower"] is not None and outlier_bounds["lower"] < 0:
+        outlier_bounds["lower"] = 0
+        outlier_bounds["lower_clamped_to_zero"] = True
+
     return {
         "total_rates": true_count if true_count is not None else 0,
         "hits_capped": capped,
@@ -700,10 +710,7 @@ def _extract_stats(data: Any) -> dict[str, Any]:
             "p75": _pct(75.0),
             "p90": _pct(90.0),
         },
-        "outlier_bounds_2sigma": {
-            "lower": _safe_number(std_bounds.get("lower")),
-            "upper": _safe_number(std_bounds.get("upper")),
-        },
+        "outlier_bounds_2sigma": outlier_bounds,
         "education_breakdown": _bucket_dict(ed_counts),
         "business_size_breakdown": _bucket_dict(biz_size),
     }
