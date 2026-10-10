@@ -45,16 +45,38 @@ async def test_long_provider_cooldown_fails_promptly_without_new_attempt(tmp_pat
     assert len(json.loads(next(tmp_path.glob('*.json')).read_text())['starts'])==1
 
 @pytest.mark.asyncio
-async def test_start_spacing_not_completion_spacing_and_errors_count(tmp_path):
+async def test_start_spacing_not_completion_spacing_and_errors_count(tmp_path, monkeypatch):
     clock=Clock(); p=pacer(tmp_path,clock=clock,sleep=clock.sleep)
+    write=p._write_state; histories=[]
+    def delayed_write(path, state):
+        histories.append(list(state['starts']))
+        write(path, state)
+        if len(histories)==1:
+            clock.now+=.2  # Persistence/scheduling can delay body entry after reservation.
+    monkeypatch.setattr(p, '_write_state', delayed_write)
     with pytest.raises(ValueError):
         async with p.request_slot():
-            first=clock(); clock.now+=0.4
+            first_body=clock(); clock.now+=.4
             raise ValueError('network failed')
     async with p.request_slot():
-        assert clock() == pytest.approx(first+0.6)
-    state=json.loads(next(tmp_path.glob('*.json')).read_text())
-    assert len(state['starts'])==2
+        assert clock()-first_body == pytest.approx(.4)
+    assert len(histories[-1])==2  # Failed attempts still consume their reservation.
+    for _ in range(498):
+        async with p.request_slot(): pass
+    before=clock()
+    with pytest.raises(RuntimeError, match='500 upstream attempts per hour'):
+        async with p.request_slot(): pass
+    assert clock()==before  # Exhaustion fails promptly without consuming another attempt.
+    assert len(histories)==500
+    clock.now=4600
+    async with p.request_slot(): pass
+    reservations=[history[-1] for history in histories]
+    assert len(reservations)==501
+    assert reservations[1]-reservations[0] == pytest.approx(.6)
+    assert all(b-a >= .6-1e-6 for a,b in zip(reservations,reservations[1:]))
+    assert all(len(history)<=500 for history in histories)
+    assert all(sum(t-3600 < start <= t for start in reservations)<=500 for t in reservations)
+    assert reservations[500] == 4600
 
 @pytest.mark.asyncio
 async def test_retry_after_shared_and_cancelled_attempt_consumed(tmp_path):
@@ -82,16 +104,19 @@ async def test_cancellation_waiting_does_not_leak_slot(tmp_path):
 
 @pytest.mark.asyncio
 async def test_real_overlap_bounded_to_two_across_instances(tmp_path):
-    active=peak=0; starts=[]
+    active=peak=0
     async def call():
         nonlocal active,peak
         async with pacer(tmp_path).request_slot():
-            active+=1; peak=max(peak,active); starts.append(time.time())
+            active+=1; peak=max(peak,active)
             await asyncio.sleep(2.0)
             active-=1
     await asyncio.gather(*(call() for _ in range(6)))
     assert 2 <= peak <= 2
-    assert all(b-a >= .59 for a,b in zip(starts,starts[1:]))
+    # Body entry can lag the persisted permit; measure the shared reservation contract.
+    state=json.loads(next(tmp_path.glob('*.json')).read_text())
+    assert len(state['starts'])==6
+    assert all(b-a >= .6-1e-6 for a,b in zip(state['starts'],state['starts'][1:]))
 
 @pytest.mark.asyncio
 async def test_positive_override_cannot_accelerate_default(tmp_path):
@@ -155,10 +180,11 @@ async def test_cross_process_start_spacing(tmp_path):
     children=[ctx.Process(target=child_budget,args=(str(tmp_path),q)) for _ in range(3)]
     try:
         for child in children: child.start()
-        starts=sorted([await asyncio.to_thread(q.get,True,15) for _ in range(6)])
-        assert all(b-a >= .58 for a,b in zip(starts,starts[1:]))
+        # Queue receipt/body entry can lag persistence or process scheduling.
+        for _ in range(6): await asyncio.to_thread(q.get,True,15)
         state=json.loads(next(tmp_path.glob('*.json')).read_text())
         assert len(state['starts'])==6
+        assert all(b-a >= .6-1e-6 for a,b in zip(state['starts'],state['starts'][1:]))
     finally:
         for child in children:
             await asyncio.to_thread(child.join,5)
