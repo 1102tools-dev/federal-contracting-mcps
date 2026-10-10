@@ -62,6 +62,31 @@ const db = database();
 const ids = (result: {results: {notice_id: string}[]}) => result.results.map(r => Number.parseInt(r.notice_id, 16));
 const search = async (args: Record<string, unknown>) => searchOpportunities(db, args, NOW);
 
+test("inherited object names cannot masquerade as tools or grouping fields", async () => {
+  for (const name of ["toString", "constructor", "__proto__", "hasOwnProperty"]) {
+    const result: any = await handleMessage({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name, arguments: {}}}, {DB: db} as any);
+    assert.equal(result.result.isError, true);
+    assert.match(result.result.content[0].text, /Unknown tool/);
+    await assert.rejects(summarizeOpportunities(db, {group_by: name}, NOW), {name: "Error", message: /group_by must be one of/});
+  }
+});
+
+test("reversed date ranges give corrective errors instead of false no-match answers", async () => {
+  for (const [from, to] of [["posted_from", "posted_to"], ["deadline_from", "deadline_to"]]) {
+    const args = {[from]: "2026-10-15", [to]: "2026-10-01"};
+    await assert.rejects(search(args), new RegExp(`${from} must be on or before ${to}`));
+    await assert.rejects(summarizeOpportunities(db, {group_by: "agency", ...args}, NOW), new RegExp(`${from} must be on or before ${to}`));
+  }
+});
+
+test("relevance paging breaks equal scores and dates by notice ID", async () => {
+  const tied = database(true, [notice(92, {title: "Cloud migration"}), notice(91, {title: "Cloud migration"}), notice(93, {title: "Cloud migration"})]);
+  const page = (offset: number) => searchOpportunities(tied, {keywords: "cloud migration", sort: "relevance", limit: 1, offset}, NOW);
+  assert.deepEqual(ids(await page(0)), [91]);
+  assert.deepEqual(ids(await page(1)), [92]);
+  assert.deepEqual(ids(await page(2)), [93]);
+});
+
 test("tool list is the four hosted tools, all read-only", () => {
   assert.deepEqual(TOOLS.map(t => t.name), ["search_opportunities", "get_opportunity", "summarize_opportunities", "get_data_status"]);
   for (const tool of TOOLS) assert.equal(tool.annotations.readOnlyHint, true);

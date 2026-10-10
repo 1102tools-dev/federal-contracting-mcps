@@ -253,6 +253,10 @@ function buildQuery(args: Args, now: Date): Query {
       q.params.push(value);
     }
   }
+  for (const [from, to] of [["posted_from", "posted_to"], ["deadline_from", "deadline_to"]]) {
+    const lower = date(args, from), upper = date(args, to);
+    if (lower && upper && lower > upper) throw new ToolError(`${from} must be on or before ${to}.`);
+  }
   const today = now.toISOString().slice(0, 10);
   q.where.push("(o.archive_date IS NULL OR o.archive_date >= ?)");
   q.params.push(today);
@@ -360,7 +364,7 @@ export async function searchOpportunities(db: Database, args: Args, now = new Da
   let order: string;
   if (sort === "relevance") {
     if (!q.fts) throw new ToolError("sort=relevance needs keywords.");
-    order = "bm25(opportunities_fts, 10.0, 1.0), o.posted_date DESC";
+    order = "bm25(opportunities_fts, 10.0, 1.0), o.posted_date DESC, o.notice_id";
   } else if (sort === "newest") {
     order = "o.posted_at DESC, o.notice_id";
   } else if (sort === "deadline") {
@@ -485,7 +489,7 @@ export async function getOpportunity(db: Database, args: Args) {
 export async function summarizeOpportunities(db: Database, args: Args, now = new Date()) {
   unknownKeys(args, Object.keys(TOOLS[2].inputSchema.properties));
   const groupBy = str(args, "group_by", 40);
-  if (!groupBy || !(groupBy in GROUPS)) throw new ToolError(`group_by must be one of: ${Object.keys(GROUPS).join(", ")}.`);
+  if (!groupBy || !Object.hasOwn(GROUPS, groupBy)) throw new ToolError(`group_by must be one of: ${Object.keys(GROUPS).join(", ")}.`);
   const top = int(args, "top", 25, 1, 100);
   const q = buildQuery(args, now);
   const column = GROUPS[groupBy].startsWith("substr") ? "substr(o.posted_date, 1, 7)" : `o.${GROUPS[groupBy]}`;

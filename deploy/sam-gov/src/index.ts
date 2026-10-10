@@ -5,7 +5,7 @@ import {HANDLERS, TOOLS, ToolError, type Database} from "./tools.ts";
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
 // this Worker from D1. No container, no session state, no SAM.gov API key.
 
-const SERVER_VERSION = "1.0.0";
+const SERVER_VERSION = "1.0.1";
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const MAX_BODY_BYTES = 65536;
 
@@ -70,7 +70,7 @@ export async function handleMessage(message: Message, env: Env): Promise<object 
     case "tools/call": {
       const name = params?.name;
       const args = params?.arguments ?? {};
-      const handler = typeof name === "string" ? HANDLERS[name] : undefined;
+      const handler = typeof name === "string" && Object.hasOwn(HANDLERS, name) ? HANDLERS[name] : undefined;
       if (!handler) return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: `Unknown tool: ${name}`}], isError: true}};
       if (typeof args !== "object" || Array.isArray(args)) {
         return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: "arguments must be an object."}], isError: true}};
