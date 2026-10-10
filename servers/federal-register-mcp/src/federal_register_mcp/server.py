@@ -901,12 +901,13 @@ async def get_public_inspection(
     Useful for getting early notice of upcoming regulatory actions.
 
     Parameters:
-    - agency_filter: case-insensitive substring match against each
-      document's agency slugs, names, and raw names. CAUTION: PI documents
-      list only the FILING sub-agency, so a parent slug like
-      'defense-department' will not match a Defense Logistics Agency
-      filing. Prefer a short distinctive fragment ('defense', 'acquisition
-      regulations') over a full parent slug.
+    - agency_filter: case-insensitive substring match against agency slugs,
+      names, and short names. Sub-agencies are included: PI documents list
+      only the FILING sub-agency, so the filter is also matched against the
+      Federal Register agency list and every agency below a matching one
+      counts ('defense-department' or 'DOD' also returns Army, Navy, Air
+      Force, Corps of Engineers and Defense Logistics Agency filings).
+      filters_applied.includes_sub_agencies says whether that worked.
     - keyword_filter: substring match against document titles
     - limit: max documents returned after filtering (default 50, max 500).
       Unfiltered dumps can exceed 170KB; narrow with filters or raise the cap.
@@ -920,6 +921,7 @@ async def get_public_inspection(
     data = await _get(f"{BASE_URL}/public-inspection-documents/current.json")
 
     results = data.get("results", [])
+    includes_sub_agencies: bool | None = None
 
     if agency_filter:
         # Round 6 fix: PI documents carry only the filing sub-agency, and
@@ -930,12 +932,45 @@ async def get_public_inspection(
         agency_lower = agency_filter.lower()
         agency_spaced = agency_lower.replace("-", " ")
 
+        def _text_match(a: dict[str, Any], keys: tuple[str, ...]) -> bool:
+            blob = " ".join(str(a.get(k) or "") for k in keys).lower()
+            return agency_lower in blob or agency_spaced in blob
+
+        # FR-1 (1.0.13): a parent filter must also catch filings by its
+        # sub-agencies (Army, Navy, DLA... under DoD). The agency list gives
+        # each agency's parent_id; take every matching agency and everything
+        # below it.
+        family_ids: set[Any] = set()
+        includes_sub_agencies = False
+        try:
+            agency_list = await _get(f"{BASE_URL}/agencies.json")
+            if isinstance(agency_list, list):
+                children: dict[Any, list[Any]] = {}
+                for a in agency_list:
+                    if isinstance(a, dict) and a.get("parent_id") is not None:
+                        children.setdefault(a["parent_id"], []).append(a.get("id"))
+                stack = [
+                    a.get("id") for a in agency_list
+                    if isinstance(a, dict) and a.get("id") is not None
+                    and _text_match(a, ("slug", "name", "short_name"))
+                ]
+                while stack:
+                    agency_id = stack.pop()
+                    if agency_id in family_ids:
+                        continue
+                    family_ids.add(agency_id)
+                    stack.extend(children.get(agency_id, []))
+                includes_sub_agencies = True
+        except Exception:
+            # Agency list unavailable: fall back to matching the filing
+            # agency only, and say so in filters_applied.
+            family_ids = set()
+
         def _agency_match(doc: dict[str, Any]) -> bool:
             for a in doc.get("agencies", []):
-                blob = " ".join(
-                    str(a.get(k) or "") for k in ("slug", "name", "raw_name")
-                ).lower()
-                if agency_lower in blob or agency_spaced in blob:
+                if _text_match(a, ("slug", "name", "raw_name")):
+                    return True
+                if a.get("id") in family_ids or a.get("parent_id") in family_ids:
                     return True
             return False
 
@@ -959,6 +994,7 @@ async def get_public_inspection(
         "truncated": truncated,
         "filters_applied": {
             "agency": agency_filter,
+            "includes_sub_agencies": includes_sub_agencies,
             "keyword": keyword_filter,
             "limit": limit,
         },
