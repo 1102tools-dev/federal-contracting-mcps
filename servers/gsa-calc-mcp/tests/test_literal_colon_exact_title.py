@@ -5,14 +5,21 @@ from copy import deepcopy
 import pytest
 import gsa_calc_mcp.server as s
 F=json.loads((Path(__file__).parent/'fixtures/literal_colon_title_source_2026_10.json').read_text())
-def test_source_discovered_ocean_title_is_literal_exact_population(monkeypatch):
-    async def source(q):
-        return deepcopy(F['literal_keyword' if q.startswith('keyword=') else 'delimiter_exact_before']['raw'])
+@pytest.mark.parametrize('before,keyword,count',[
+    ('delimiter_exact_before','literal_keyword',1),
+    ('graduate_exact_before','graduate_literal_keyword',0),
+])
+def test_source_discovered_ocean_title_is_literal_exact_population(monkeypatch,before,keyword,count):
+    async def source(q):return deepcopy(F[keyword if q.startswith('keyword=') else before]['raw'])
     monkeypatch.setattr(s,'_get',source)
-    r=asyncio.run(s.mcp.call_tool('exact_search',F['delimiter_exact_before']['arguments'])).structured_content
-    assert r['_stats']['total_rates']==1
-    assert round(r['_stats']['min_rate'],2)==round(r['_stats']['max_rate'],2)==176.1
-    assert {h['_source']['labor_category'] for h in r['hits']['hits']}=={F['delimiter_exact_before']['arguments']['value']}
+    r=asyncio.run(s.mcp.call_tool('exact_search',F[before]['arguments'])).structured_content
+    assert r['_stats']['total_rates']==count
+    assert {h['_source']['labor_category'] for h in r['hits']['hits']}==({F[before]['arguments']['value']} if count else set())
+    if count:
+        assert round(r['_stats']['min_rate'],2)==round(r['_stats']['max_rate'],2)==176.1
+    else:
+        assert r['_stats']['min_rate'] is None and not r['hits']['hits']
+
 
 def test_non_delimited_ocean_grade_keeps_original_exact_search(monkeypatch):
     calls=[]

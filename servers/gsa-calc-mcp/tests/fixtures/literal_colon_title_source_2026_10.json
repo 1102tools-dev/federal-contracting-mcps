@@ -6069,5 +6069,373 @@
       }
     },
     "control_note": "Captured ordinary SIN complete-population statistics but approximate/capped title buckets; guard must not certify an exact title from this broad population. Not a live claim that the literal keyword returns this SIN."
+  },
+  "graduate_exact_before": {
+    "question": "For the discovered senior naval/marine/ocean-engineering title, does any exact rate meet our MA graduate requirement? Keep zero eligible rows distinct from the broader engineering market.",
+    "arguments": {
+      "field": "labor_category",
+      "value": "Engineer 1: Sr. Naval Architect Sr. Marine Engineer Sr. Ocean Engineer",
+      "education_level": "MA",
+      "page_size": 11
+    },
+    "url": "https://api.gsa.gov/acquisition/calc/v3/api/ceilingrates/?search=labor_category:Engineer+1%3A+Sr.+Naval+Architect+Sr.+Marine+Engineer+Sr.+Ocean+Engineer&filter=education_level:MA&page=1&page_size=11&ordering=current_price&sort=asc",
+    "retrieved_utc": "2026-10-10T22:01:16.227374+00:00",
+    "raw": {
+      "took": 5,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+      },
+      "hits": {
+        "total": {
+          "value": 2,
+          "relation": "eq"
+        },
+        "max_score": null,
+        "hits": [
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1702397876",
+            "_score": null,
+            "_source": {
+              "contract_end": "2030-07-19",
+              "security_clearance": false,
+              "next_year_price": 115.88,
+              "second_year_price": 119.36,
+              "vendor_name": "OAK RIDGE ASSOCIATED UNIVERSITIES, INCORPORATED",
+              "idv_piid": "GS00F195CA",
+              "business_size": "O",
+              "contract_start": "2015-07-20",
+              "data_source": "ACR",
+              "labor_category": "Engineer 1",
+              "schedule": "MAS",
+              "cont_end_dtg": "20300719",
+              "min_years_experience": 1,
+              "sin": "541620,562910REM,611430",
+              "worksite": "Customer_Facility",
+              "education_level": "Masters",
+              "id": 1702397876,
+              "current_price": 112.5,
+              "dt_termg": "",
+              "category": "Human Capital; Miscellaneous; Professional Services",
+              "subcategory": "Business Administrative Services; Technical and Engineering Services (Non IT); Marketing and Public Relations; Environmental Services; Human Resources; Complementary SINs; Training",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20150720"
+            },
+            "sort": [
+              112.5
+            ]
+          },
+          {
+            "_index": "ceilingrates-2026-10-10_02-00-02",
+            "_id": "1702397844",
+            "_score": null,
+            "_source": {
+              "contract_end": "2030-07-19",
+              "security_clearance": false,
+              "next_year_price": 133.27,
+              "second_year_price": 137.27,
+              "vendor_name": "OAK RIDGE ASSOCIATED UNIVERSITIES, INCORPORATED",
+              "idv_piid": "GS00F195CA",
+              "business_size": "O",
+              "contract_start": "2015-07-20",
+              "data_source": "ACR",
+              "labor_category": "Engineer 1",
+              "schedule": "MAS",
+              "cont_end_dtg": "20300719",
+              "min_years_experience": 1,
+              "sin": "541620,562910REM,611430",
+              "worksite": "Contractor_Facility",
+              "education_level": "Masters",
+              "id": 1702397844,
+              "current_price": 129.39,
+              "dt_termg": "",
+              "category": "Human Capital; Miscellaneous; Professional Services",
+              "subcategory": "Business Administrative Services; Technical and Engineering Services (Non IT); Marketing and Public Relations; Environmental Services; Human Resources; Complementary SINs; Training",
+              "_timestamp": "2026-10-10T02:00:03Z",
+              "cont_beg_dtg": "20150720"
+            },
+            "sort": [
+              129.39
+            ]
+          }
+        ]
+      },
+      "aggregations": {
+        "labor_category": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Engineer 1",
+              "doc_count": 2
+            }
+          ]
+        },
+        "security_clearance": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "false",
+              "doc_count": 2
+            }
+          ]
+        },
+        "histogram_percentiles": {
+          "values": {
+            "10.0": 112.5,
+            "25.0": 112.5,
+            "30.0": 112.5,
+            "35.0": 112.5,
+            "50.0": 129.38999938964844,
+            "65.0": 129.38999938964844,
+            "70.0": 129.38999938964844,
+            "75.0": 129.38999938964844,
+            "90.0": 129.38999938964844
+          }
+        },
+        "min_years_experience": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "1",
+              "doc_count": 2
+            }
+          ]
+        },
+        "worksite": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Contractor_Facility",
+              "doc_count": 1
+            },
+            {
+              "key": "Customer_Facility",
+              "doc_count": 1
+            }
+          ]
+        },
+        "wage_histogram": {
+          "buckets": [
+            {
+              "min": 112.5,
+              "key": 112.5,
+              "max": 112.5,
+              "doc_count": 1
+            },
+            {
+              "min": 129.38999938964844,
+              "key": 129.38999938964844,
+              "max": 129.38999938964844,
+              "doc_count": 1
+            }
+          ]
+        },
+        "education_level": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Masters",
+              "doc_count": 2
+            }
+          ]
+        },
+        "current_price": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "112.5",
+              "doc_count": 1
+            },
+            {
+              "key": "129.39",
+              "doc_count": 1
+            }
+          ]
+        },
+        "business_size": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "O",
+              "doc_count": 2
+            }
+          ]
+        },
+        "wage_stats": {
+          "count": 2,
+          "min": 112.5,
+          "max": 129.38999938964844,
+          "avg": 120.94499969482422,
+          "sum": 241.88999938964844,
+          "sum_of_squares": 29398.021942053223,
+          "variance": 71.31801984558115,
+          "variance_population": 71.31801984558115,
+          "variance_sampling": 142.6360396911623,
+          "std_deviation": 8.444999694824219,
+          "std_deviation_population": 8.444999694824219,
+          "std_deviation_sampling": 11.94303310265706,
+          "std_deviation_bounds": {
+            "upper": 137.83499908447266,
+            "lower": 104.05500030517578,
+            "upper_population": 137.83499908447266,
+            "lower_population": 104.05500030517578,
+            "upper_sampling": 144.83106590013833,
+            "lower_sampling": 97.0589334895101
+          }
+        },
+        "median_price": {
+          "values": {
+            "50.0": 129.38999938964844
+          }
+        },
+        "education_level_counts": {
+          "buckets": [
+            {
+              "key": "AA",
+              "doc_count": 0
+            },
+            {
+              "key": "BA",
+              "doc_count": 0
+            },
+            {
+              "key": "HS",
+              "doc_count": 0
+            },
+            {
+              "key": "MA",
+              "doc_count": 2
+            },
+            {
+              "key": "PHD",
+              "doc_count": 0
+            },
+            {
+              "key": "TEC",
+              "doc_count": 0
+            }
+          ]
+        }
+      }
+    }
+  },
+  "graduate_literal_keyword": {
+    "question": "Check the full literal ocean title with MA eligibility through supported keyword lookup, verifying that no other matching title population is presented as its graduate-qualified rates.",
+    "arguments": {
+      "keyword": "Engineer 1: Sr. Naval Architect Sr. Marine Engineer Sr. Ocean Engineer",
+      "education_level": "MA",
+      "page_size": 11
+    },
+    "url": "https://api.gsa.gov/acquisition/calc/v3/api/ceilingrates/?keyword=Engineer+1%3A+Sr.+Naval+Architect+Sr.+Marine+Engineer+Sr.+Ocean+Engineer&filter=education_level:MA&page=1&page_size=11&ordering=current_price&sort=asc",
+    "retrieved_utc": "2026-10-10T22:01:17.305374+00:00",
+    "raw": {
+      "took": 13,
+      "timed_out": false,
+      "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+      },
+      "hits": {
+        "total": {
+          "value": 0,
+          "relation": "eq"
+        },
+        "max_score": null,
+        "hits": []
+      },
+      "aggregations": {
+        "labor_category": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": []
+        },
+        "security_clearance": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": []
+        },
+        "histogram_percentiles": {
+          "values": {
+            "10.0": null,
+            "25.0": null,
+            "30.0": null,
+            "35.0": null,
+            "50.0": null,
+            "65.0": null,
+            "70.0": null,
+            "75.0": null,
+            "90.0": null
+          }
+        },
+        "min_years_experience": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": []
+        },
+        "worksite": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": []
+        },
+        "wage_histogram": {
+          "buckets": []
+        },
+        "education_level": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": []
+        },
+        "current_price": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": []
+        },
+        "business_size": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": []
+        },
+        "wage_stats": {
+          "count": 0,
+          "min": null,
+          "max": null,
+          "avg": null,
+          "sum": 0.0,
+          "sum_of_squares": null,
+          "variance": null,
+          "variance_population": null,
+          "variance_sampling": null,
+          "std_deviation": null,
+          "std_deviation_population": null,
+          "std_deviation_sampling": null,
+          "std_deviation_bounds": {
+            "upper": null,
+            "lower": null,
+            "upper_population": null,
+            "lower_population": null,
+            "upper_sampling": null,
+            "lower_sampling": null
+          }
+        },
+        "median_price": {
+          "values": {
+            "50.0": null
+          }
+        }
+      }
+    }
   }
 }
