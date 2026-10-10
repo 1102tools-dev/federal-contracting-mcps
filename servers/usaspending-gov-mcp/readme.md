@@ -1,6 +1,6 @@
 # usaspending-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,309](https://img.shields.io/badge/regression%20tests-2%2C309-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,312](https://img.shields.io/badge/regression%20tests-2%2C312-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*The 1.0.18 source validation collected 2,309 regression cases: 1,930 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats, cumulative FFATA period scope and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
+*The 1.0.20 source validation with frozen MCP SDK 2.0.0 collected 2,312 regression cases: 1,933 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats, cumulative FFATA period scope and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
 
 Published 1.0.17 completed all 130 content questions on a fresh official
 PyPI installation and the public deployment, after one targeted timeout
@@ -23,7 +23,7 @@ that was not applied. Use the numeric account ID with the fiscal-year snapshot
 for single-year account resources. Agency program totals apply to the whole
 agency. Account listings default to the source’s latest available FY; check
 `fy`, especially after October rollover. Agency budgetary resources do not
-provide a mandatory/discretionary split. Candidate 1.0.18 publication is pending.
+provide a mandatory/discretionary split. Candidate 1.0.20 publication is pending.
 
 ## Local or hosted
 
@@ -214,9 +214,9 @@ MIT
 ## Regression tests
 
 Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
-package directory. The default lane passes 1,930 cases and skips 379 live
+package directory. The frozen SDK 2.0.0 lane passes 1,933 cases and skips 379 live
 cases. Set `USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts
-below include parametrized and live-gated cases collected for 1.0.18.
+below include parametrized and live-gated cases collected for 1.0.20.
 
 | Test file | Cases | Coverage |
 |---|---:|---|
@@ -239,4 +239,5 @@ below include parametrized and live-gated cases collected for 1.0.18.
 | [test_new_awards_fiscal_year_1016.py](tests/test_new_awards_fiscal_year_1016.py) | 6 | Captured annual fiscal-year correction and unchanged quarter/month samples |
 | [test_subaward_period_scope_1017.py](tests/test_subaward_period_scope_1017.py) | 3 | Cumulative FFATA scope and complete dated-report recovery |
 | [test_federal_account_program_scope_1018.py](tests/test_federal_account_program_scope_1018.py) | 3 | Captured all-year program scope, complete list and single-year financial recovery |
-| **Total** | **2,309** | **1,930 offline; 379 live-gated** |
+| [test_federal_account_available_fy_1020.py](tests/test_federal_account_available_fy_1020.py) | 3 | Current-FY source availability, supported recovery and unchanged 503 control |
+| **Total** | **2,312** | **1,933 offline; 379 live-gated** |

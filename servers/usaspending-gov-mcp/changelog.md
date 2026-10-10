@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.20
+
+- Preserve the official available-year explanation for a normal explicit fiscal-year federal-account request rejected by the source, and guide omission of the unavailable year plus checking returned `fy`. Use a purposeful tool error so supported MCP SDK2.3 clients receive this explanation.
+- Match only the actual source HTTP400 available-year response and a requested year outside its dynamically returned range. Preserve other errors, financial values and all55 tool definitions.
+- Add three captured-primary regressions: the SDK2.3 source-message check fails before, recovery/503 controls pass before, all three pass after on SDK2.0 and SDK2.3. Frozen source suite: 1,933 passed, 379 skipped, 2,312 collected. The separate published1.0.19/latestSDK full lane remains 1,075 passed, 855 failed, 379 skipped; no blanket SDK expectation repair is claimed.
+
 ## 1.0.19
 
 - Carry the four reviewed 1.0.18 content corrections into a new release version after the immutable 1.0.18 release attempt stopped at an offline throughput timing test; publication and deployment were skipped.

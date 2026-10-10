@@ -22,6 +22,7 @@ from typing import Any, Literal
 
 import httpx
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__
 from ._throughput import USASpendingPacer
@@ -2816,7 +2817,30 @@ async def list_federal_accounts(
         payload["filters"] = {"fy": fy}
     if sort:
         payload["sort"] = sort
-    return await _post("/api/v2/federal_accounts/", payload)
+    try:
+        return await _post("/api/v2/federal_accounts/", payload)
+    except RuntimeError as exc:
+        # A normal current-FY request can precede source reporting availability.
+        # Only the authoritative available-year rejection is an anticipated
+        # tool error; keep unrelated failures on their existing path.
+        source_error = exc.__cause__
+        if fy and isinstance(source_error, httpx.HTTPStatusError) and source_error.response.status_code == 400:
+            try:
+                source_body = source_error.response.json()
+            except ValueError:
+                source_body = None
+            detail = source_body.get("detail") if isinstance(source_body, dict) else None
+            if isinstance(detail, str) and re.fullmatch(
+                r"Field 'filters' is outside valid values \[(?:'\d{4}'(?:, )?)+\]", detail,
+            ):
+                available = re.findall(r"'(\d{4})'", detail)
+                if fy not in available:
+                    raise ToolError(
+                        f"{exc}. Requested fiscal year {fy} is not available from the source. "
+                        "Omit fiscal_year to retrieve the source's latest available year, "
+                        "and check the returned fy before interpreting its resource values."
+                    ) from exc
+        raise
 
 
 @mcp.tool(annotations={"title": "Get Federal Account Detail", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
