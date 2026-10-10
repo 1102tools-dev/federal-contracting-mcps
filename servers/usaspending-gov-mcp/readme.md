@@ -10,11 +10,14 @@ No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
 *The 1.0.20 source validation with frozen MCP SDK 2.0.0 collected 2,312 regression cases: 1,933 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats, cumulative FFATA period scope and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
 
-Published 1.0.17 completed all 130 content questions on a fresh official
-PyPI installation and the public deployment, after one targeted timeout
-recovery in each lane. All 55 tool definitions matched; six guided followup
-calls recovered complete dated subaward reports. See
-[the publication record](testing.md#round-15-published-verification-1017-2026-10-10).
+Published 1.0.20 completed all 150 available Round 4 content questions on a
+fresh official PyPI installation and the public deployment, with six guided
+followups and all 55 tool definitions matched. The explicit FY2027 request
+honestly reports source availability and guides latest-year recovery.
+The separate full regression run on latest MCP SDK 2.3.0 measured 1,078 passed,
+855 failed and 379 skipped; retained exception/message expectations still fail
+under that SDK. See [the publication record](testing.md#round-16-final-published-verification-1020-2026-10-10)
+for exact source, content and regression provenance.
 
 Federal-account program lists contain codes/names across all reported years,
 without dollar amounts or a fiscal-year filter. The tool retrieves source pages
@@ -23,7 +26,8 @@ that was not applied. Use the numeric account ID with the fiscal-year snapshot
 for single-year account resources. Agency program totals apply to the whole
 agency. Account listings default to the source’s latest available FY; check
 `fy`, especially after October rollover. Agency budgetary resources do not
-provide a mandatory/discretionary split. Candidate 1.0.20 publication is pending.
+provide a mandatory/discretionary split. Published 1.0.20 preserves the source available-year explanation and guides
+omission of an unavailable year plus checking the returned `fy`.
 
 ## Local or hosted
 

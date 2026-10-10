@@ -756,57 +756,57 @@ as actual published acceptance.
 The scoped release workflow
 [38083846513](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38083846513)
 completed successfully at `2a93b7b706d818da647f9d56cacbf543f867fa79`.
-A fresh official by-name, uncached PyPI installation supplied1.0.20 with
-latest MCP SDK2.3.0. The first install attempt found the new version absent
+A fresh official by-name, uncached PyPI installation supplied 1.0.20 with
+latest MCP SDK 2.3.0. The first install attempt found the new version absent
 from the index; the second succeeded. The bootstrap failure remains preserved
 and excluded from content checks; no candidate package substituted for the
 published installation.
 
-**All150 available original questions passed on actual CLI and public
+**All 150 available original questions passed on actual CLI and public
 surfaces**, with zero invocation errors and zero retained-source parity
-mismatches. All55 actual catalogs match the reviewed tool definitions; names,
+mismatches. All 55 actual catalogs match the reviewed tool definitions; names,
 schemas, descriptions and annotations remain unchanged by the availability
 correction. The installed runtime matches the frozen release source. Six
 actual installed CLI/public catalog-guided followups passed, recovering the
 complete Science program list, accurate single-year account financial values,
 agency-wide program scope and latest-available FY semantics.
 
-The154 retained original fresh-primary canonical JSON hashes were recomputed
+The 154 retained original fresh-primary canonical JSON hashes were recomputed
 and verified. Four additional targeted fresh official requests confirmed the
-complete25-record Science source list, unchanged FY2024 obligations of
-$9,281,790,861.20, the default availableFY2026 and the exact FY2027 HTTP400
+complete 25-record Science source list, unchanged FY2024 obligations of
+$9,281,790,861.20, the default available FY2026 and the exact FY2027 HTTP 400
 available-year explanation. The broad primary campaign was not repeated;
 retained-source comparisons and fresh targeted requests are distinct lanes.
 Both official PyPI wheel and source archive match their advertised digest and
 all eight runtime modules byte for byte against the frozen release. The
 published-wheel dependency/entry-point/payload guard passes after selection
-of the single20wheel; the initial guard failure from a directory containing
-both19/20 wheels remains retained and was not a payload mismatch.
+of the single 1.0.20 wheel; the initial guard failure from a directory containing
+both 1.0.19/1.0.20 wheels remains retained and was not a payload mismatch.
 
-The ordinary explicitFY2027 question now returns the source's actual
+The ordinary explicit FY2027 question now returns the source's actual
 available-year explanation and supported omit-year/check-returned-fy recovery
 on **both actual CLI and public**. The CLI recovery output matches the fresh
 official FY2026 response; the six-step public workflow also verifies that
 same default. FY2027 data remains unavailable and is not counted as a
 successful data retrieval. No year was silently relabeled or fabricated.
-All five Round4 findings are fixed and verified in publication:
+All five Round 4 findings are fixed and verified in publication:
 **P0=0 / P1=0 / P2=2 / P3=3**, with zero partial or unresolved product findings
-in this completed corpus. This is the completion of Round4, not a new audit.
+in this completed corpus. This is the completion of Round 4, not a new audit.
 
-The actual fresh published1.0.20/latestSDK full regression run measured
-**1,078 passed / 855 failed / 379 skipped / 2,312 collected**. The855 failed
-node IDs exactly match the immutable actual1.0.19/latestSDK failure set; all
-855 failure blocks contain generic SDK2.3 errors masking retained expected
+The actual fresh published 1.0.20/latest SDK full regression run measured
+**1,078 passed / 855 failed / 379 skipped / 2,312 collected**. The 855 failed
+node IDs exactly match the immutable actual 1.0.19/latest SDK failure set; all
+855 failure blocks contain generic SDK 2.3 errors masking retained expected
 exception/message assertions. The three new availability regressions pass.
 These measured failures are not credited as passing or repaired globally.
-The separate frozenSDK2.0.0 source lane remains **1,933 passed / 379 skipped**,
-with2,312 collected; the release CI/test-only repair provenance is retained.
-There is no claim that the latestSDK full suite passed. Skipped tests are not
+The separate frozen SDK 2.0.0 source lane remains **1,933 passed / 379 skipped**,
+with 2,312 collected; the release CI/test-only repair provenance is retained.
+There is no claim that the latest SDK full suite passed. Skipped tests are not
 credited as executed content checks.
 
-Independent SAM review separately verified published20 originals/recoveries,
-focused captured-source tests, all55 catalogs and eight runtime modules.
-The earlier failed18 release, actual19 acceptance,855failure inventory,
+Independent SAM review separately verified published 1.0.20 originals/recoveries,
+focused captured-source tests, all 55 catalogs and eight runtime modules.
+The earlier failed 1.0.18 release, actual 1.0.19 acceptance, 855-failure inventory,
 state-caption and expected-lookup corrections remain intact. Public metadata
 is observed; propagation into every directory client was not independently
 observed. This final documentation-only update changes no runtime or version
