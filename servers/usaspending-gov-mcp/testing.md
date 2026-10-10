@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across sixteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit; the sixteenth is the new Round 4 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.20 source collects 2,312 regression cases (1,933 offline and 379 live-gated). Its measured frozen MCP SDK 2.0.0 offline lane passed 1,933 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records. Published 1.0.17 completed all 130 questions on each surface after the two documented targeted timeout recoveries, with all 55 tool definitions matched and six guided dated-report followups passed.
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across sixteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, the thirteenth was the full end-to-end audit and description follow-up, and the fourteenth was the fresh ordinary/power-user Round 2 audit, and the fifteenth was the new Round 3 content audit; the sixteenth is the new Round 4 content audit. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.20 source collects 2,312 regression cases (1,933 offline and 379 live-gated). Its measured frozen MCP SDK 2.0.0 offline lane passed 1,933 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records. Published 1.0.20 completed all 150 available Round 4 questions on actual installed CLI and public requests, with all55 tool definitions matched and six guided followups passed. Its separate fresh/latestSDK2.3 full regression execution measured 1,078 passed, 855 failed and 379 skipped; these failures are retained exception/message expectations and are not credited as passing.
 
 | Metric | Value |
 |---|---|
@@ -18,7 +18,7 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Round 9 (v0.3) live audit findings | 1 (list_states JSON-array response shape) |
 | Round 10 (1.0.1) semantic audit findings | 22 (12 search family, 10 entity family), all fixed |
 | Historical release cycles through 1.0.3 | 15 (v0.1.2 through v1.0.3) |
-| Current source package | 1.0.20 candidate; published 1.0.19 |
+| Current source package | 1.0.20 published |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -750,3 +750,72 @@ fresh/latest failure log and 855-entry inventory; plus captured availability
 fixture, before/after/full frozen logs, `available-fy-candidate20-console.json`
 and independently sealed peer records. Candidate corrections are not credited
 as actual published acceptance.
+
+## Round 16 final published verification (1.0.20, 2026-10-10)
+
+The scoped release workflow
+[38083846513](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38083846513)
+completed successfully at `2a93b7b706d818da647f9d56cacbf543f867fa79`.
+A fresh official by-name, uncached PyPI installation supplied 1.0.20 with
+latest MCP SDK 2.3.0. The first install attempt found the new version absent
+from the index; the second succeeded. The bootstrap failure remains preserved
+and excluded from content checks; no candidate package substituted for the
+published installation.
+
+**All 150 available original questions passed on actual CLI and public
+surfaces**, with zero invocation errors and zero retained-source parity
+mismatches. All 55 actual catalogs match the reviewed tool definitions; names,
+schemas, descriptions and annotations remain unchanged by the availability
+correction. The installed runtime matches the frozen release source. Six
+actual installed CLI/public catalog-guided followups passed, recovering the
+complete Science program list, accurate single-year account financial values,
+agency-wide program scope and latest-available FY semantics.
+
+The 154 retained original fresh-primary canonical JSON hashes were recomputed
+and verified. Four additional targeted fresh official requests confirmed the
+complete 25-record Science source list, unchanged FY2024 obligations of
+$9,281,790,861.20, the default available FY2026 and the exact FY2027 HTTP 400
+available-year explanation. The broad primary campaign was not repeated;
+retained-source comparisons and fresh targeted requests are distinct lanes.
+Both official PyPI wheel and source archive match their advertised digest and
+all eight runtime modules byte for byte against the frozen release. The
+published-wheel dependency/entry-point/payload guard passes after selection
+of the single 1.0.20 wheel; the initial guard failure from a directory containing
+both 1.0.19/1.0.20 wheels remains retained and was not a payload mismatch.
+
+The ordinary explicit FY2027 question now returns the source's actual
+available-year explanation and supported omit-year/check-returned-fy recovery
+on **both actual CLI and public**. The CLI recovery output matches the fresh
+official FY2026 response; the six-step public workflow also verifies that
+same default. FY2027 data remains unavailable and is not counted as a
+successful data retrieval. No year was silently relabeled or fabricated.
+All five Round 4 findings are fixed and verified in publication:
+**P0=0 / P1=0 / P2=2 / P3=3**, with zero partial or unresolved product findings
+in this completed corpus. This is the completion of Round 4, not a new audit.
+
+The actual fresh published 1.0.20/latest SDK full regression run measured
+**1,078 passed / 855 failed / 379 skipped / 2,312 collected**. The 855 failed
+node IDs exactly match the immutable actual 1.0.19/latest SDK failure set; all
+855 failure blocks contain generic SDK 2.3 errors masking retained expected
+exception/message assertions. The three new availability regressions pass.
+These measured failures are not credited as passing or repaired globally.
+The separate frozen SDK 2.0.0 source lane remains **1,933 passed / 379 skipped**,
+with 2,312 collected; the release CI/test-only repair provenance is retained.
+There is no claim that the latest SDK full suite passed. Skipped tests are not
+credited as executed content checks.
+
+Independent SAM review separately verified published 1.0.20 originals/recoveries,
+focused captured-source tests, all 55 catalogs and eight runtime modules.
+The earlier failed 1.0.18 release, actual 1.0.19 acceptance, 855-failure inventory,
+state-caption and expected-lookup corrections remain intact. Public metadata
+is observed; propagation into every directory client was not independently
+observed. This final documentation-only update changes no runtime or version
+and requires no manual directory republication.
+
+Evidence: `Artifacts/mcp-e2e-20261010/round4/usaspending`, especially
+`final-verification-1.0.20.json`, `final20-published-provenance.json`,
+`final20-published-campaign.json`, `final20-published-guided-workflow.json`,
+`final20-source-availability.json`, `final20-targeted-primary.json`,
+`final20-official-artifact-payloads.json`, actual install/test/collection logs,
+`final20-published-failure-inventory.json`, `evidence-hashes.json` and
+`post-release/peer-sam-final20.json`. No later-round work is claimed.

@@ -6,8 +6,8 @@ lane with frozen MCP SDK 2.0.0 passed 1,933 and skipped 379. Collection itself e
 source requests; the separately recorded 151-supported-question Round 4 audit is not
 added to these pytest counts.
 
-The separate fresh published1.0.19 lane with latest MCP SDK2.3 measured
-1,075 passed, 855 failed and 379 skipped; its retained error expectations
+The separate fresh published1.0.20 lane with latest MCP SDK2.3 measured
+1,078 passed, 855 failed and 379 skipped; its retained error expectations
 are not credited as passing. See the explicit reconciliation in testing.md.
 
 Files retain their audit-round and fix-wave history; see [../testing.md](../testing.md).
