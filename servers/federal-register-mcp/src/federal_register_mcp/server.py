@@ -11,8 +11,10 @@ changing, what has changed, and what comment periods are open.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
+import time
 import urllib.parse
 from datetime import date
 from typing import Any, Literal
@@ -234,6 +236,11 @@ _pacer = FederalRegisterPacer()
 # Hosted only (MCP_RESPONSE_CACHE=1); see _cache_seconds for how long.
 _cache = ResponseCache(max_bytes=48 * 1024 * 1024, max_entry_bytes=4 * 1024 * 1024)
 _API_PATH = urllib.parse.urlsplit(BASE_URL).path
+# The newest published document; its date changes when a new daily issue is out.
+_NEWEST = f"{BASE_URL}/documents.json?per_page=1&order=newest&fields%5B%5D=publication_date"
+# The newest publication date and when it was read; see _data_version.
+_version: tuple[str | None, float] = (None, float("-inf"))
+_version_lock: asyncio.Lock | None = None
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -292,8 +299,13 @@ def _ensure_json_container(data: Any, *, url: str) -> dict[str, Any] | list[Any]
     )
 
 
-def _cache_seconds(url: str) -> float:
-    """How long a hosted answer is kept, by endpoint."""
+def _cache_seconds(url: str, versioned: bool = False) -> float:
+    """How long a hosted answer is kept, by endpoint.
+
+    An answer filed under the newest publication date (``versioned``) is kept a
+    full day: the next daily issue changes the date, which retires it. Public
+    inspection changes during the day and keeps its 10 minutes either way.
+    """
     path = urllib.parse.urlsplit(url).path
     if path == f"{_API_PATH}/public-inspection-documents/current.json":
         return 10 * MINUTE  # changes during the business day
@@ -301,6 +313,8 @@ def _cache_seconds(url: str) -> float:
         return DAY
     if path.startswith(f"{_API_PATH}/documents/") and not path.startswith(f"{_API_PATH}/documents/facets/"):
         return DAY  # published documents (single or batch) don't change
+    if versioned:
+        return DAY  # until the next daily issue
     return HOUR  # searches, open comment periods, FAR case history, facet counts
 
 
@@ -318,10 +332,45 @@ async def _fetch(url: str) -> bytes:
     return r.content
 
 
+async def _data_version() -> str | None:
+    """The newest publication date, read at most every 15 minutes (hosted only).
+
+    Hosted answers are filed under it, so each new daily issue retires the
+    searches kept from the day before. It is read straight from the Federal
+    Register, outside the cache, so it never counts as a hit or miss. If it
+    can't be read, answers use the shorter times and it is read again after a minute.
+    """
+    global _version, _version_lock
+    if not _cache.enabled:
+        return None
+    value, read_at = _version
+    if time.monotonic() - read_at < 15 * MINUTE:
+        return value
+    if _version_lock is None:
+        _version_lock = asyncio.Lock()
+    async with _version_lock:
+        value, read_at = _version
+        if time.monotonic() - read_at < 15 * MINUTE:
+            return value
+        try:
+            results = json.loads(await _fetch(_NEWEST)).get("results") or []
+            found = results[0].get("publication_date") if results and isinstance(results[0], dict) else None
+            value = found if isinstance(found, str) and found else None
+            _version = (value, time.monotonic())
+        except Exception:
+            value = None
+            _version = (None, time.monotonic() - 14 * MINUTE)
+    return value
+
+
 async def _get(url: str) -> Any:
+    version = await _data_version()
+    key = cache_key("GET", url)
+    if version:
+        key = f"{version}|{key}"
     try:
         return await _cache.get_or_fetch(
-            cache_key("GET", url), _cache_seconds(url), lambda: _fetch(url),
+            key, _cache_seconds(url, versioned=version is not None), lambda: _fetch(url),
             lambda content: _ensure_json_container(json.loads(content), url=url),
         )
     except httpx.HTTPStatusError as e:

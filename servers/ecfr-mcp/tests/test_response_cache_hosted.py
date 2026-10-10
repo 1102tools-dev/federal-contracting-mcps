@@ -18,10 +18,13 @@ XML = ('<DIV8 N="15.305" TYPE="SECTION"><HEAD>15.305 Proposal evaluation.</HEAD>
        '<P>(a) Proposal evaluation is an assessment of the proposal.</P></DIV8>')
 
 
+CURRENT = [LATEST]  # eCFR's up-to-date date, changed by the daily-update test
+
+
 def answer(request):
     path = request.url.path
     if path.endswith("/titles.json"):
-        return httpx.Response(200, json={"titles": [{"number": 48, "name": "FAR", "up_to_date_as_of": LATEST,
+        return httpx.Response(200, json={"titles": [{"number": 48, "name": "FAR", "up_to_date_as_of": CURRENT[0],
                                                      "latest_amended_on": LATEST, "reserved": False}]})
     if path.endswith(".xml"):
         return httpx.Response(200, text=XML)
@@ -52,9 +55,13 @@ def upstream(monkeypatch, tmp_path):
     monkeypatch.setattr(server, "_xml_pacer", EcfrXmlPacer(
         environment=env, pacing_dir=tmp_path / "xml", clock=clock, sleep=clock.sleep))
     monkeypatch.setattr(server, "_cache", ResponseCache(
-        enabled=True, max_bytes=1024 * 1024, max_entry_bytes=256 * 1024))
-    monkeypatch.setattr(server, "_xml_cache", XmlCache(max_entries=64))
-    state = {"requests": [], "responses": []}
+        enabled=True, max_bytes=1024 * 1024, max_entry_bytes=256 * 1024, clock=clock))
+    monkeypatch.setattr(server, "_xml_cache", XmlCache(max_entries=64, clock=clock))
+    monkeypatch.setattr(server.time, "monotonic", clock)
+    monkeypatch.setattr(server, "_version", (None, float("-inf")))
+    monkeypatch.setattr(server, "_version_lock", None)
+    CURRENT[0] = LATEST
+    state = {"requests": [], "responses": [], "clock": clock}
 
     def handler(request):
         state["requests"].append(str(request.url))
@@ -96,6 +103,11 @@ def test_cache_times_by_endpoint():
     assert server._cache_seconds("/api/search/v1/results") == HOUR
     assert server._cache_seconds("/api/versioner/v1/versions/title-48") == HOUR
     assert server._cache_seconds("/api/admin/v1/corrections.json") == HOUR
+    # Filed under eCFR's update state, answers last until its next daily update (at most a day).
+    assert server._cache_seconds(f"/api/versioner/v1/full/{recent}/title-48.xml", versioned=True) == DAY
+    assert server._cache_seconds("/api/search/v1/results", versioned=True) == DAY
+    assert server._cache_seconds("/api/versioner/v1/versions/title-48", versioned=True) == DAY
+    assert server._cache_seconds("/api/versioner/v1/titles.json", versioned=True) == 15 * MINUTE
 
 
 def test_a_hit_uses_no_pacing_and_no_budget(upstream):
@@ -106,9 +118,10 @@ def test_a_hit_uses_no_pacing_and_no_budget(upstream):
 
     first, second = asyncio.run(upstream["run"](calls))
     assert first == second
-    # One titles.json (latest date) and one XML call; the repeat made none.
-    assert len(upstream["requests"]) == 2
-    assert upstream["budget_starts"]() == 2  # the XML call also takes a JSON-lane start
+    # titles.json for the latest date, titles.json again for the update state
+    # (read outside the cache) and one XML call; the repeat made none.
+    assert len(upstream["requests"]) == 3
+    assert upstream["budget_starts"]() == 3  # the XML call also takes a JSON-lane start
     assert server._cache_stats()["hits"] == 2 and server._cache_stats()["misses"] == 2
 
 
@@ -134,9 +147,9 @@ def test_cached_answers_match_uncached_answers(upstream, monkeypatch):
 
     cached_miss = asyncio.run(upstream["run"](every_tool))
     distinct = len(set(upstream["requests"]))
-    assert len(upstream["requests"]) == distinct
+    assert len(upstream["requests"]) == distinct + 1  # titles.json twice: latest date and update state
     cached_hit = asyncio.run(upstream["run"](every_tool))
-    assert len(upstream["requests"]) == distinct
+    assert len(upstream["requests"]) == distinct + 1
     monkeypatch.setattr(server, "_cache", ResponseCache(
         enabled=False, max_bytes=1024 * 1024, max_entry_bytes=256 * 1024))
     monkeypatch.setattr(server, "_xml_cache", XmlCache(max_entries=0))
@@ -167,3 +180,48 @@ def test_health_reports_cache_counts():
         cache = client.get("/health").json()["cache"]
     assert set(cache) == {"hits", "misses", "entries", "bytes"}
     assert all(isinstance(value, int) for value in cache.values())
+
+
+def test_the_next_daily_update_retires_cached_answers(upstream):
+    async def search():
+        return await server.search_cfr(query="proposal evaluation")
+
+    asyncio.run(upstream["run"](search))
+    asyncio.run(upstream["run"](search))
+    before = len(upstream["requests"])
+    CURRENT[0] = "2026-10-07"
+    upstream["clock"].now += 16 * MINUTE  # past the 15-minute recheck of the update state
+    asyncio.run(upstream["run"](search))
+    searches = [r for r in upstream["requests"] if "/search/" in r]
+    assert len(searches) == 2  # asked once, a hit, then asked again under the new update state
+    assert len(upstream["requests"]) > before
+
+
+def test_answers_under_one_update_last_a_full_day(upstream):
+    async def search():
+        return await server.search_cfr(query="proposal evaluation")
+
+    asyncio.run(upstream["run"](search))
+    misses = server._cache_stats()["misses"]
+    upstream["clock"].now += 23 * HOUR
+    asyncio.run(upstream["run"](search))
+    assert server._cache_stats()["misses"] == misses  # was 1 hour before the update state was used
+    upstream["clock"].now += 2 * HOUR
+    asyncio.run(upstream["run"](search))
+    assert server._cache_stats()["misses"] > misses
+
+
+def test_an_unreadable_update_state_falls_back_to_the_shorter_times(upstream):
+    upstream["responses"].append(httpx.Response(500, text="boom"))  # the update-state read fails
+
+    async def search():
+        return await server.search_cfr(query="proposal evaluation")
+
+    first = asyncio.run(upstream["run"](search))
+    requests = len(upstream["requests"])
+    assert first == asyncio.run(upstream["run"](search))
+    assert len(upstream["requests"]) == requests  # a hit; the state retry waits a minute
+    upstream["clock"].now += 2 * HOUR  # past the 1-hour search time, so asked again
+    asyncio.run(upstream["run"](search))
+    assert len([r for r in upstream["requests"] if "/search/" in r]) == 2
+
