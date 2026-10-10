@@ -385,7 +385,7 @@
       "readOnlyHint": true,
       "title": "Get Ancestry"
     },
-    "description": "Get the breadcrumb hierarchy path for a section, part, or appendix.\n\n    Returns ancestors from title down to the target node: title > chapter >\n    subchapter > part > subpart > section. Useful for understanding where\n    a section sits in the CFR hierarchy and what regulation it belongs to.\n\n    part/section/appendix accept int or string.\n    ",
+    "description": "Get the breadcrumb hierarchy path for a section, part, or appendix.\n\n    Returns ancestors from title down to the target node: title > chapter >\n    subchapter > part > subpart > section. Useful for understanding where\n    a section sits in the CFR hierarchy and what regulation it belongs to.\n\n    part/subpart/section/appendix accept int or string. The answer says\n    which date it describes.\n    ",
     "inputSchema": {
       "properties": {
         "title_number": {
@@ -449,6 +449,21 @@
           ],
           "default": null,
           "title": "Appendix"
+        },
+        "subpart": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subpart"
         }
       },
       "type": "object",
@@ -468,7 +483,7 @@
       "readOnlyHint": true,
       "title": "Search CFR"
     },
-    "description": "Full-text search across the Code of Federal Regulations.\n\n    Returns matching sections with excerpts, headings, scores, and hierarchy.\n\n    current_only=True (default) returns only text in effect now. eCFR's own\n    \"current\" index still lists some superseded and removed versions, so\n    each hit is checked against the section's version history: older\n    copies of a section are dropped, and hits whose text has since been\n    replaced or removed are dropped and listed under current_check\n    ('superseded' with the current version's date, 'removed' with the\n    removal date). Up to 10 parts per page are checked; any hit not\n    checked is marked. current_only=False returns every historical\n    version, so a section amended 5 times appears 5 times.\n\n    Search caps at 10,000 total results. Use hierarchy filters (title,\n    chapter, part) to narrow if you hit the cap.\n\n    order controls result ordering: 'relevance' (default), 'newest_first',\n    'oldest_first', 'hierarchy', or 'citations'.\n\n    agency_slugs filters to one or more agencies (single slug string or a\n    list, e.g. 'defense-acquisition-regulations-system'). Use list_agencies()\n    to find slugs.\n\n    last_modified_after/before use YYYY-MM-DD format and filter by the\n    date sections were last amended. Useful for finding recent regulatory changes.\n\n    per_page accepts 1 to 5000 (default 20); paginate with page for more.\n    ",
+    "description": "Full-text search across the Code of Federal Regulations.\n\n    Returns matching sections with excerpts, headings, scores, and hierarchy.\n\n    current_only=True (default) returns only text in effect now. eCFR's own\n    \"current\" index still lists some superseded and removed versions, so\n    each hit is checked against the section's version history: older\n    copies of a section are dropped, and hits whose text has since been\n    replaced or removed are dropped and listed under current_check\n    ('superseded' with the current version's date, 'removed' with the\n    removal date). Up to 10 parts per page are checked; any hit not\n    checked is marked. current_only=False returns every historical\n    version, so a section amended 5 times appears 5 times.\n\n    Search caps at 10,000 total results. Use hierarchy filters (title,\n    chapter, part) to narrow if you hit the cap. chapter/part/subpart/section\n    filters need a title; without one, title 48 is assumed (title_assumed\n    says so). Labels like 'FAR Part 15', 'Subpart 15.3' or '§ 52.212-5' are\n    read as 15, 15.3 and 52.212-5. Most titles other than 48 number chapters\n    in Roman numerals (2 CFR chapter 'II').\n\n    order controls result ordering: 'relevance' (default), 'newest_first',\n    'oldest_first', 'hierarchy', or 'citations'.\n\n    agency_slugs filters to one or more agencies (single slug string or a\n    list, e.g. 'defense-acquisition-regulations-system'). Use list_agencies()\n    to find slugs.\n\n    last_modified_after/before use YYYY-MM-DD format and filter by the\n    date sections were last amended. Useful for finding recent regulatory changes.\n\n    per_page accepts 1 to 5000 (default 20); paginate with page for more.\n    ",
     "inputSchema": {
       "properties": {
         "query": {
@@ -736,7 +751,7 @@
       "readOnlyHint": true,
       "title": "Lookup FAR Clause"
     },
-    "description": "Convenience tool: look up the current text of a FAR or DFARS clause.\n\n    Pass a section identifier like '15.305', '52.212-4', '2.101', etc.\n    Default chapter='1' (FAR). Use chapter='2' for DFARS (e.g., '252.227-7014').\n\n    Auto-resolves the latest available date. Returns parsed clean text\n    with heading, paragraphs and citations, plus tables, notes (such as\n    drafting notes, which are not clause text), examples, images and\n    pending_amendments when present; see get_cfr_content. A clause longer\n    than about 60,000 characters comes in pages: use page=2 and so on.\n\n    Common FAR sections: 2.101 (Definitions), 9.104-1 (Responsibility),\n    15.305 (Proposal Evaluation), 19.502-2 (Small Business Set-Asides),\n    52.212-4 (Commercial Terms), 52.212-5 (Required Commercial Terms).\n    ",
+    "description": "Convenience tool: look up the current text of a FAR, DFARS or FAR supplement section or clause.\n\n    Pass a section identifier like '15.305', '52.212-4', '2.101',\n    'DFARS 252.204-7012' or '552.238-81'. The chapter comes from the number\n    (52.x = FAR, 252.x = DFARS, 552.x = GSAR, 852.x = VAAR, 1852.x = NFS,\n    3052.x = HSAR), so chapter is optional. Prefixes like 'FAR', 'DFARS',\n    '§' and '48 CFR', en dashes, and trailing paragraph cites such as\n    '(d)(11)(xviii)' are handled.\n\n    Auto-resolves the latest available date. Returns parsed clean text\n    with heading, paragraphs and citations, plus tables, notes (such as\n    drafting notes, which are not clause text), examples, images and\n    pending_amendments when present; see get_cfr_content. A clause longer\n    than about 60,000 characters comes in pages: use page=2 and so on.\n\n    Common FAR sections: 2.101 (Definitions), 9.104-1 (Responsibility),\n    15.305 (Proposal Evaluation), 19.502-2 (Small Business Set-Asides),\n    52.212-4 (Commercial Terms), 52.212-5 (Required Commercial Terms).\n    ",
     "inputSchema": {
       "properties": {
         "section_id": {
@@ -757,9 +772,12 @@
             },
             {
               "type": "integer"
+            },
+            {
+              "type": "null"
             }
           ],
-          "default": "1",
+          "default": null,
           "title": "Chapter"
         },
         "date": {

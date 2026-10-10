@@ -429,3 +429,85 @@ def test_structure_too_large_is_cut_with_a_note(monkeypatch):
     assert small["children"][0]["children_omitted"] == 40 and "note" not in small
     with pytest.raises(ValueError, match="needs chapter"):
         _run(srv.get_cfr_structure(subchapter="H", date=DATE))
+
+
+# --- P3s: citations, chapters, filters, dates ------------------------------
+
+@pytest.mark.parametrize("raw,expected", [
+    ("§ 15.305", "15.305"), ("§§ 15.305", "15.305"), ("FAR § 52.232-40", "52.232-40"),
+    ("52.212–4", "52.212-4"), ("2 CFR 200.320", "200.320"), ("FAR Part 22", "22"),
+    ("Subpart 15.3", "15.3"), ("22.1003-5(a)(xviii)", "22.1003-5"), ("48 C.F.R. 22.1102", "22.1102"),
+    ("FAR15.305", "15.305"), ("HSAR 3052.225-71", "3052.225-71"), ("Section 15.305", "15.305"),
+])
+def test_common_citation_styles_normalize(raw, expected):
+    assert srv._coerce_cfr_str(raw, field="section", strip_prefixes=True, strip_cites=True) == expected
+
+
+@pytest.mark.parametrize("section,chapter", [
+    ("52.212-4", "1"), ("252.204-7012", "2"), ("552.238-81", "5"), ("852.219-75", "8"),
+    ("1852.204-76", "18"), ("3052.225-71", "30"), ("9903.201-5", "99"),
+])
+def test_supplement_clause_finds_its_chapter(mock_xml, section, chapter):
+    fake = mock_xml(lambda path, params: f'<DIV8 N="{section}" TYPE="SECTION"><HEAD>{section} X.</HEAD></DIV8>')
+    _run(srv.lookup_far_clause(section))
+    assert fake.calls[0][1]["chapter"] == chapter
+
+
+def test_wrong_chapter_and_wrong_title_are_errors():
+    with pytest.raises(ValueError, match="chapter 2"):
+        _run(srv.lookup_far_clause("252.204-7012", chapter="1"))
+    with pytest.raises(ValueError, match="title_number=2"):
+        _run(srv.get_cfr_content(section="2 CFR 200.320"))
+
+
+def test_compare_versions_reports_a_removed_section(mock_xml):
+    def answers(path, params):
+        if "2026-10-07" in path:
+            return RuntimeError("HTTP 404: Resource not found.")
+        return '<DIV8 N="9904.407" TYPE="SECTION"><HEAD>9904.407 Standard.</HEAD><P>text</P></DIV8>'
+    mock_xml(answers)
+    r = _run(srv.compare_versions("9904.407", "2026-09-30", "2026-10-07", chapter="99"))
+    assert r["changes"][0]["change"] == "section removed"
+    assert r["after"] == {"date": "2026-10-07", "present": False}
+    assert r["before"]["paragraphs"] == ["text"]
+
+
+def test_compare_versions_accepts_the_2017_baseline(mock_xml):
+    mock_xml(lambda path, params: _BEFORE)
+    assert _run(srv.compare_versions("1.1", "2017-01-01", "2026-10-07"))["identical"] is True
+
+
+def test_search_hierarchy_filter_without_title_assumes_48(monkeypatch):
+    seen = []
+
+    async def fake(path, params=None, timeout=None):
+        seen.append(params)
+        return {"results": [{"full_text_excerpt": "the <strong>simplified</strong> acquisition<span>…</span>"}]}
+    monkeypatch.setattr(srv, "_get_json", fake)
+    r = _run(srv.search_cfr("simplified acquisition threshold", part="FAR Part 13", current_only=False))
+    assert seen[0]["hierarchy[title]"] == "48" and seen[0]["hierarchy[part]"] == "13"
+    assert "48" in r["title_assumed"]
+    assert r["results"][0]["full_text_excerpt"] == "the simplified acquisition…"
+    with pytest.raises(ValueError, match="10,000"):
+        _run(srv.search_cfr("contract", page=3, per_page=5000))
+
+
+def test_search_arabic_chapter_in_a_roman_title_is_an_error(monkeypatch):
+    async def fake(path, params=None, timeout=None):
+        return {"results": [{"hierarchy": {}}] if params["hierarchy[chapter]"] == "II" else []}
+    monkeypatch.setattr(srv, "_get_json", fake)
+    with pytest.raises(ValueError, match="chapter='II'"):
+        _run(srv.search_cfr("procurement", title=2, chapter="2", current_only=False))
+
+
+def test_agency_summary_keeps_subtitle_references(monkeypatch):
+    async def fake(path, params=None, timeout=None):
+        return {"agencies": [{"name": "Federal Travel Regulation System", "slug": "ftr", "children": [],
+                              "cfr_references": [{"title": 41, "subtitle": "F"}]},
+                             {"name": "Panel", "slug": "p", "children": [], "cfr_references": [
+                                 {"title": 22, "chapter": "XIV", "subchapter": "B"},
+                                 {"title": 22, "chapter": "XIV", "subchapter": "D"}]}]}
+    monkeypatch.setattr(srv, "_get_json", fake)
+    r = _run(srv.list_agencies())
+    assert r["agencies"][0]["cfr_references"] == [{"title": 41, "subtitle": "F", "chapter": None}]
+    assert len(r["agencies"][1]["cfr_references"]) == 2

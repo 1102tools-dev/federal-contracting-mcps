@@ -98,6 +98,36 @@ Fixes from the 2026-10-10 bug hunt. All 13 tools keep their names.
   Title 48 `subchapter` without `chapter` is an error instead of silently
   meaning the FAR, and the answer says which date it describes.
 
+**Smaller fixes**
+
+- Citations people copy work everywhere a section, part or subpart is
+  taken: "§ 15.305", en dashes ("52.212–4"), "2 CFR 200.320", "48 C.F.R.",
+  "FAR Part 22", "Subpart 15.3", "Section 15.305", "FAR15.305", supplement
+  prefixes (DFARS, GSAR, VAAR, HSAR, NFS and the rest) and long paragraph
+  cites such as "(d)(11)(xviii)". A cite naming a different title than
+  title_number is an error that says which title to use.
+- `lookup_far_clause` works out the chapter from the number (252.x DFARS,
+  552.x GSAR, 852.x VAAR, 1852.x NFS, 3052.x HSAR); `chapter` is optional
+  (default none, was "1"), and a chapter that doesn't own the section is an
+  error instead of a 404. The same check applies to `get_cfr_content`,
+  `compare_versions` and `search_cfr` in Title 48.
+- `search_cfr`: chapter/part/subpart/section filters without a title assume
+  title 48 (`title_assumed`) instead of an HTTP 400; an Arabic chapter in a
+  title that numbers chapters in Roman numerals ("2" in 2 CFR) is an error
+  that names the right chapter; asking past eCFR's 10,000-result limit is an
+  error; excerpts are plain text instead of HTML.
+- `compare_versions` reports a section added or removed between the two
+  dates as a change, instead of a generic 404, and accepts 2017-01-01, the
+  date the version history starts (the floor was 2017-01-03).
+- 404 messages say what was sent to eCFR and mention a wrong chapter.
+- `list_agencies` keeps subtitle, subchapter and part references (the
+  Federal Travel Regulation is 41 CFR subtitle F); it showed only
+  `chapter: null`.
+- `get_ancestry` says which date it describes and takes an optional
+  `subpart`.
+- The Title 48 chapter error lists every chapter, instead of pointing at a
+  constant the reader can't see.
+
 ## 1.0.13
 
 - Hosted service only: the machine running the service can give the answer cache

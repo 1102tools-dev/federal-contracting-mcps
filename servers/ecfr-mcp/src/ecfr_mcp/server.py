@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import difflib
 import hashlib
+import html
 import json as _json
 import re
 import time
@@ -192,11 +193,38 @@ def _validate_title_number(value: Any, *, field: str = "title_number") -> int:
 # Section/part/subpart/chapter normalization. LLMs often pass ints or
 # include human-friendly prefixes.
 
-_SECTION_PREFIX_RE = re.compile(r"^\s*(?:FAR|DFARS|GSAR|48\s*CFR|CFR)\s+", re.IGNORECASE)
+# Regulation names people put in front of a cite: the FAR and its supplements.
+_REG_NAMES = (
+    "FAR|DFARS|GSAR|VAAR|HSAR|NFS|DEAR|AGAR|AIDAR|CAR|DIAR|DOLAR|DOSAR|DTAR|EDAR|"
+    "EPAAR|HHSAR|HUDAR|JAR|LIFAR|NRCAR|NSFAR|SSAAR|TAR|FEHBAR|AFARS|NMCARS|DLAD"
+)
+_SECTION_PREFIX_RE = re.compile(
+    rf"^\s*(?:(?:{_REG_NAMES})(?![A-Za-z])\s*|\d+\s*C\.?\s*F\.?\s*R\.?\s*|C\.?F\.?R\.?\s+)",
+    re.IGNORECASE,
+)
+# Labels copied from headings: "§ 9.104-1", "Part 22", "Subpart 15.3", "Section 15.305".
+_LABEL_PREFIX_RE = re.compile(r"^\s*(?:§+|sections?\b\.?|sec\.|subpart\b|part\b)\s*", re.IGNORECASE)
+_CITED_TITLE_RE = re.compile(r"^\s*(\d+)\s*C\.?\s*F\.?\s*R\b", re.IGNORECASE)
+_DASHES = str.maketrans({"\u2013": "-", "\u2014": "-", "\u2011": "-", "\u2212": "-"})
 
-# Trailing paragraph cites like '15.305(a)' or '52.212-4(c)(2)(ii)'. The cited
-# paragraph is not a separate eCFR document; the base section is.
-_PAREN_CITE_RE = re.compile(r"(?:\([A-Za-z0-9]{1,4}\))+\s*$")
+# Trailing paragraph cites like '15.305(a)' or '52.212-4(c)(2)(xviii)'. The
+# cited paragraph is not a separate eCFR document; the base section is.
+_PAREN_CITE_RE = re.compile(r"(?:\s*\([A-Za-z0-9]{1,6}\))+\s*$")
+
+
+def _cited_title(value: Any) -> int | None:
+    """The title named in a cite like '2 CFR 200.320', if any."""
+    m = _CITED_TITLE_RE.match(value) if isinstance(value, str) else None
+    return int(m.group(1)) if m else None
+
+
+def _check_cited_title(value: Any, title_number: int, field: str) -> None:
+    cited = _cited_title(value)
+    if cited is not None and cited != title_number:
+        raise ValueError(
+            f"{field}={value!r} is in title {cited}, but title_number is {title_number}. "
+            f"Pass title_number={cited}."
+        )
 
 
 def _coerce_cfr_str(
@@ -232,7 +260,12 @@ def _coerce_cfr_str(
     if not s:
         return None
     if strip_prefixes:
-        s = _SECTION_PREFIX_RE.sub("", s).strip()
+        s = s.translate(_DASHES)
+        previous = None
+        while s != previous:
+            previous = s
+            s = _SECTION_PREFIX_RE.sub("", s)
+            s = _LABEL_PREFIX_RE.sub("", s).strip()
         if not s:
             return None
     if strip_cites:
@@ -253,11 +286,10 @@ def _validate_chapter(value: Any, *, title_number: int | None = None) -> str | N
         return None
     # For title 48 we know every legitimate chapter.
     if title_number == 48 and s not in TITLE_48_CHAPTERS:
-        sample = ", ".join(list(TITLE_48_CHAPTERS.keys())[:10])
+        listing = "; ".join(f"{k} = {v.split(' (')[0]}" for k, v in TITLE_48_CHAPTERS.items())
         raise ValueError(
-            f"chapter={value!r} is not a valid Title 48 chapter. "
-            f"Valid chapters: {sample} (see TITLE_48_CHAPTERS for full list). "
-            f"Chapter 1=FAR, 2=DFARS."
+            f"chapter={value!r} is not a valid Title 48 chapter. Title 48 chapters: {listing}. "
+            f"For a section or part number, leave chapter out."
         )
     return s
 
@@ -414,7 +446,9 @@ def _format_error(status: int, body: Any) -> str:
             "(3) 'current' is not a valid date keyword -- use a specific YYYY-MM-DD date; "
             "(4) paragraph cites like '15.305(a)(2)' are not separate documents -- "
             "request the base section and read the paragraph from its text; "
-            f"(5) point-in-time history begins {ECFR_EARLIEST_DATE} -- earlier dates always 404. "
+            f"(5) point-in-time history begins {ECFR_EARLIEST_DATE} -- earlier dates always 404; "
+            "(6) a chapter that doesn't own the section (Title 48: 52.x is chapter 1, "
+            "252.x chapter 2, 552.x chapter 5) -- leave chapter out. "
             f"API response: {cleaned}"
         )
     if status == 406:
@@ -444,6 +478,14 @@ def _format_error(status: int, body: Any) -> str:
     if 500 <= status < 600:
         return f"HTTP {status}: eCFR server error. {cleaned}. Retry after a short backoff."
     return f"HTTP {status}: {cleaned}"
+
+
+def _what_was_asked(status: int, path: str, params: dict[str, Any] | None) -> str:
+    """Echo a not-found request, so the reader sees how the input was read."""
+    if status != 404:
+        return ""
+    asked = ", ".join(f"{k}={v}" for k, v in (params or {}).items())
+    return f" Request sent: {path}" + (f" ({asked})" if asked else "")
 
 
 async def _get_json(
@@ -476,7 +518,7 @@ async def _fetch_json(path: str, params: dict[str, Any] | None, timeout: float) 
     except httpx.RequestError as e:
         raise RuntimeError(f"Network error calling eCFR: {e}") from e
     if r.status_code >= 400:
-        raise RuntimeError(_format_error(r.status_code, r.text))
+        raise RuntimeError(_format_error(r.status_code, r.text) + _what_was_asked(r.status_code, path, params))
     try:
         r.json()
     except (ValueError, _json.JSONDecodeError) as e:
@@ -524,7 +566,7 @@ async def _get_xml_uncached(path: str, params: dict[str, Any] | None = None) -> 
     except httpx.RequestError as e:
         raise RuntimeError(f"Network error calling eCFR: {e}") from e
     if r.status_code >= 400:
-        raise RuntimeError(_format_error(r.status_code, r.text))
+        raise RuntimeError(_format_error(r.status_code, r.text) + _what_was_asked(r.status_code, path, params))
     text = r.text
     if not isinstance(text, str):
         text = str(text)
@@ -638,6 +680,21 @@ def _latest_versions(versions: list[dict[str, Any]]) -> dict[str, dict[str, Any]
     return latest
 
 
+def _check_title48_chapter(chapter: str | None, identifier: str | None) -> str | None:
+    """The chapter a Title 48 part or section belongs to; an error if chapter disagrees."""
+    if not identifier:
+        return chapter
+    owner = _title48_chapter(identifier.split(".")[0])
+    if owner is None or owner not in TITLE_48_CHAPTERS:
+        return chapter
+    if chapter and chapter != owner:
+        raise ValueError(
+            f"{identifier} is in Title 48 chapter {owner} ({TITLE_48_CHAPTERS[owner]}), not "
+            f"chapter {chapter}. Leave chapter out; the number is enough."
+        )
+    return owner
+
+
 def _title48_chapter(part: Any) -> str | None:
     """Title 48 chapter that owns a part: FAR parts 1-99, then part // 100."""
     number = _safe_int(str(part).split(".")[0]) if part is not None else None
@@ -740,12 +797,16 @@ async def get_cfr_content(
     """
     title_number = _validate_title_number(title_number)
     date = _validate_date_ymd(date, field="date")
+    for field, raw in (("section", section), ("part", part), ("subpart", subpart)):
+        _check_cited_title(raw, title_number, field)
     section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
     chapter = _validate_chapter(chapter, title_number=title_number)
     appendix = _coerce_cfr_str(appendix, field="appendix")
     page = _clamp(page, field="page", lo=1, hi=10_000)
+    if title_number == 48 and chapter and not appendix:
+        _check_title48_chapter(chapter, section or subpart or part)
 
     if not any((section, part, subpart, chapter, appendix)):
         raise ValueError(
@@ -952,6 +1013,8 @@ async def get_version_history(
     part/subpart/section accept int or string.
     """
     title_number = _validate_title_number(title_number)
+    for field, raw in (("section", section), ("part", part), ("subpart", subpart)):
+        _check_cited_title(raw, title_number, field)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
@@ -1032,6 +1095,7 @@ async def get_ancestry(
     part: str | int | None = None,
     section: str | int | None = None,
     appendix: str | int | None = None,
+    subpart: str | int | None = None,
 ) -> dict[str, Any]:
     """Get the breadcrumb hierarchy path for a section, part, or appendix.
 
@@ -1039,13 +1103,17 @@ async def get_ancestry(
     subchapter > part > subpart > section. Useful for understanding where
     a section sits in the CFR hierarchy and what regulation it belongs to.
 
-    part/section/appendix accept int or string.
+    part/subpart/section/appendix accept int or string. The answer says
+    which date it describes.
     """
     title_number = _validate_title_number(title_number)
     date = _validate_date_ymd(date, field="date")
+    for field, raw in (("section", section), ("part", part)):
+        _check_cited_title(raw, title_number, field)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
     appendix = _coerce_cfr_str(appendix, field="appendix")
+    subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
 
     if date is None:
         date = await _resolve_date(title_number)
@@ -1058,8 +1126,12 @@ async def get_ancestry(
         params["section"] = section
     if appendix:
         params["appendix"] = appendix
+    if subpart:
+        params["subpart"] = subpart
 
-    return await _get_json(path, params)
+    result = dict(await _get_json(path, params))
+    result["date"] = date
+    return result
 
 
 @mcp.tool(annotations={"title": "Search CFR", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1093,7 +1165,11 @@ async def search_cfr(
     version, so a section amended 5 times appears 5 times.
 
     Search caps at 10,000 total results. Use hierarchy filters (title,
-    chapter, part) to narrow if you hit the cap.
+    chapter, part) to narrow if you hit the cap. chapter/part/subpart/section
+    filters need a title; without one, title 48 is assumed (title_assumed
+    says so). Labels like 'FAR Part 15', 'Subpart 15.3' or '§ 52.212-5' are
+    read as 15, 15.3 and 52.212-5. Most titles other than 48 number chapters
+    in Roman numerals (2 CFR chapter 'II').
 
     order controls result ordering: 'relevance' (default), 'newest_first',
     'oldest_first', 'hierarchy', or 'citations'.
@@ -1115,12 +1191,28 @@ async def search_cfr(
 
     per_page = _clamp(per_page, field="per_page", lo=1, hi=SEARCH_MAX_PER_PAGE)
     page = _clamp(page, field="page", lo=1, hi=SEARCH_MAX_TOTAL)
+    if page * per_page > SEARCH_MAX_TOTAL:
+        raise ValueError(
+            f"page {page} of {per_page} reaches past result {SEARCH_MAX_TOTAL:,}, eCFR's limit. "
+            f"Narrow the search with title, chapter or part filters instead."
+        )
     if title is not None:
         title = _validate_title_number(title, field="title")
+    for field, raw in (("section", section), ("part", part), ("subpart", subpart)):
+        cited = _cited_title(raw)
+        if cited is not None and title is None:
+            title = cited
+        _check_cited_title(raw, title if title is not None else 48, field)
+    assumed_title = False
+    if title is None and any(v is not None for v in (chapter, part, subpart, section)):
+        # eCFR refuses hierarchy filters without a title; these are FAR questions.
+        title, assumed_title = 48, True
     chapter = _validate_chapter(chapter, title_number=title)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
     section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
+    if title == 48 and chapter:
+        _check_title48_chapter(chapter, part or subpart or section)
     last_modified_after = _validate_date_ymd(last_modified_after, field="last_modified_after")
     last_modified_before = _validate_date_ymd(last_modified_before, field="last_modified_before")
     order_clean = _strip_or_none(order)
@@ -1159,10 +1251,52 @@ async def search_cfr(
     params["per_page"] = str(per_page)
     params["page"] = str(page)
 
-    data = await _get_json("/api/search/v1/results", params)
+    data = _plain_excerpts(await _get_json("/api/search/v1/results", params))
+    if (not _as_list(data.get("results")) and title not in (None, 48) and chapter
+            and chapter.isdigit() and 0 < int(chapter) < 40):
+        # Most titles number chapters in Roman numerals: '2' finds nothing in 2 CFR.
+        roman = _roman(int(chapter))
+        probe = await _get_json("/api/search/v1/results",
+                                {**params, "hierarchy[chapter]": roman, "per_page": "1", "page": "1"})
+        if _as_list(_safe_dict(probe).get("results")):
+            raise ValueError(
+                f"Title {title} numbers its chapters in Roman numerals, so chapter='{chapter}' "
+                f"finds nothing. Use chapter='{roman}'."
+            )
+    if assumed_title:
+        data["title_assumed"] = "48 (no title was given; pass title= to search another title)"
     if not current_only:
         return data
     return await _only_current(data)
+
+
+_EXCERPT_TAGS = re.compile(r"<[^>]+>")
+
+
+def _plain_excerpts(data: dict[str, Any]) -> dict[str, Any]:
+    """eCFR's excerpts carry HTML highlight tags; send plain text."""
+    data = dict(data)
+    rows = []
+    for row in _as_list(data.get("results")):
+        row = dict(_safe_dict(row))
+        excerpt = row.get("full_text_excerpt")
+        if isinstance(excerpt, str):
+            row["full_text_excerpt"] = " ".join(html.unescape(_EXCERPT_TAGS.sub("", excerpt)).split())
+        rows.append(row)
+    data["results"] = rows
+    return data
+
+
+_ROMAN = [(10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")]
+
+
+def _roman(number: int) -> str:
+    out = ""
+    for value, letters in _ROMAN:
+        while number >= value:
+            out += letters
+            number -= value
+    return out
 
 
 # How many parts' version histories one search page may read.
@@ -1297,6 +1431,11 @@ async def _check_agency_slugs(slugs: list[str]) -> None:
         )
 
 
+# A reference can point at a subtitle, chapter, subchapter or part: the
+# Federal Travel Regulation is 41 CFR subtitle F, with no chapter at all.
+_REF_KEYS = ("title", "subtitle", "chapter", "subchapter", "part")
+
+
 def _agency_refs_with_children(agency: dict[str, Any]) -> list[dict[str, Any]]:
     """Collect cfr_references from an agency and all of its descendants.
 
@@ -1311,7 +1450,7 @@ def _agency_refs_with_children(agency: dict[str, Any]) -> list[dict[str, Any]]:
     def _walk(a: dict[str, Any]) -> None:
         for r in _as_list(a.get("cfr_references")):
             r = _safe_dict(r)
-            key = (r.get("title"), r.get("chapter"))
+            key = tuple(r.get(k) for k in _REF_KEYS)
             if key in seen:
                 continue
             seen.add(key)
@@ -1349,7 +1488,7 @@ async def list_agencies(summary_only: bool = True) -> dict[str, Any]:
             "short_name": a.get("short_name"),
             "slug": a.get("slug"),
             "cfr_references": [
-                {"title": r.get("title"), "chapter": r.get("chapter")}
+                {k: r.get(k) for k in _REF_KEYS if r.get(k) is not None or k in ("title", "chapter")}
                 for r in refs
             ],
             "child_count": len(_as_list(a.get("children"))),
@@ -1445,14 +1584,18 @@ async def get_corrections(
 @mcp.tool(annotations={"title": "Lookup FAR Clause", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def lookup_far_clause(
     section_id: str | int,
-    chapter: str | int = "1",
+    chapter: str | int | None = None,
     date: str | None = None,
     page: int = 1,
 ) -> dict[str, Any]:
-    """Convenience tool: look up the current text of a FAR or DFARS clause.
+    """Convenience tool: look up the current text of a FAR, DFARS or FAR supplement section or clause.
 
-    Pass a section identifier like '15.305', '52.212-4', '2.101', etc.
-    Default chapter='1' (FAR). Use chapter='2' for DFARS (e.g., '252.227-7014').
+    Pass a section identifier like '15.305', '52.212-4', '2.101',
+    'DFARS 252.204-7012' or '552.238-81'. The chapter comes from the number
+    (52.x = FAR, 252.x = DFARS, 552.x = GSAR, 852.x = VAAR, 1852.x = NFS,
+    3052.x = HSAR), so chapter is optional. Prefixes like 'FAR', 'DFARS',
+    '§' and '48 CFR', en dashes, and trailing paragraph cites such as
+    '(d)(11)(xviii)' are handled.
 
     Auto-resolves the latest available date. Returns parsed clean text
     with heading, paragraphs and citations, plus tables, notes (such as
@@ -1467,10 +1610,11 @@ async def lookup_far_clause(
     section_id = _coerce_cfr_str(section_id, field="section_id", strip_prefixes=True, strip_cites=True)
     if not section_id:
         raise ValueError(
-            "section_id is required. Pass a FAR/DFARS section like '15.305' or '52.212-4'. "
+            "section_id is required. Pass a section like '15.305', '52.212-4' or '252.204-7012'. "
             f"Common sections: {', '.join(list(COMMON_FAR_SECTIONS.keys())[:5])}."
         )
     chapter = _validate_chapter(chapter, title_number=48)
+    chapter = _check_title48_chapter(chapter, section_id)
     date = _validate_date_ymd(date, field="date")
     if date is None:
         date = await _resolve_date(48)
@@ -1509,6 +1653,7 @@ async def compare_versions(
     exceed 100 KB per side.
     """
     title_number = _validate_title_number(title_number)
+    _check_cited_title(section_id, title_number, "section_id")
     section_id = _coerce_cfr_str(section_id, field="section_id", strip_prefixes=True, strip_cites=True)
     if not section_id:
         raise ValueError(
@@ -1534,22 +1679,57 @@ async def compare_versions(
             f"snapshots do not exist and always return 404."
         )
     chapter = _validate_chapter(chapter, title_number=title_number)
+    if title_number == 48:
+        chapter = _check_title48_chapter(chapter, section_id)
 
     params: dict[str, str] = {}
     if chapter:
         params["chapter"] = chapter
 
-    old_xml = await _get_xml(
-        f"/api/versioner/v1/full/{date_before}/title-{title_number}.xml",
-        {**params, "section": section_id},
-    )
-    new_xml = await _get_xml(
-        f"/api/versioner/v1/full/{date_after}/title-{title_number}.xml",
-        {**params, "section": section_id},
-    )
+    async def text_on(day: str) -> dict[str, Any]:
+        try:
+            xml = await _get_xml(
+                f"/api/versioner/v1/full/{day}/title-{title_number}.xml",
+                {**params, "section": section_id},
+            )
+        except RuntimeError as e:
+            if not str(e).startswith("HTTP 404"):
+                raise
+            return {"date": day, "present": False}
+        return {"date": day, **_parse_xml_to_text(xml, day)}
 
-    before = {"date": date_before, **_parse_xml_to_text(old_xml, date_before)}
-    after = {"date": date_after, **_parse_xml_to_text(new_xml, date_after)}
+    before = await text_on(date_before)
+    after = await text_on(date_after)
+    if before.get("present") is False and after.get("present") is False:
+        raise ValueError(
+            f"Section {section_id} is not in the eCFR text of title {title_number} on "
+            f"{date_before} or on {date_after}. Check the section number and title; "
+            f"get_version_history(section='{section_id}') lists the dates it existed."
+        )
+    if before.get("present") is False or after.get("present") is False:
+        added = before.get("present") is False
+        missing, there = (date_before, after) if added else (date_after, before)
+        result = {
+            "section": section_id,
+            "title": title_number,
+            "identical": False,
+            "change_count": 1,
+            "changes": [{
+                "change": "section added" if added else "section removed",
+                "detail": f"{section_id} is not in the eCFR text on {missing}; it is on {there['date']}.",
+            }],
+            "before": before,
+            "after": after,
+            "note": (
+                f"{section_id} was {'added' if added else 'removed'} between {date_before} and "
+                f"{date_after}. get_version_history(section='{section_id}') gives the exact date."
+            ),
+        }
+        if _xml_text.size_of(result) > _xml_text.PAGE_CHARS:
+            result["before"] = {"date": date_before, "present": not added}
+            result["after"] = {"date": date_after, "present": added}
+            result["texts_omitted"] = True
+        return result
     changes = _text_changes(before, after)
     result: dict[str, Any] = {
         "section": section_id,
