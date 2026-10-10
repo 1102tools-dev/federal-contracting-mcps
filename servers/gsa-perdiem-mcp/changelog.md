@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.4
+
+- Decode the official Census 2020 county/place files as UTF-8 and rebuild the place index. Latin-1 decoding corrupted Doña Ana County and prevented valid White Sands worksite lookups and estimates.
+- Fold accents consistently in Python and Worker place/county matching, so both `Doña Ana` and `Dona Ana` complete keyless lookups, ZIP follow-ups, estimates and comparisons. Official rate files and their source hashes remain unchanged.
+- Seven new Python regressions fail before the correction. Validation: 316 Python passed, 267 optional live-gated skipped (583 collected); 29 Worker passed; type check and 1,368 parity calls with zero unexplained differences. Hosted acceptance additionally requires the existing D1 data-load workflow to activate the regenerated place index.
+
 ## 1.2.3
 
 - Clarified keyless setup: bundled city-plus-county lookups, estimates and comparisons need no API key. README setup, data-status description and missing-key guidance now distinguish these from city-name/API and unbundled-year requests.

@@ -44,7 +44,7 @@ from gsa_perdiem_mcp._geo import (  # noqa: E402
 )
 
 SCHEMA_VERSION = 1
-BUILDER_VERSION = 1
+BUILDER_VERSION = 2
 CENSUS = "https://www2.census.gov/geo/docs/reference/codes2020/"
 
 # GSA source files per fiscal year, and the fiscal years each M&IE breakdown
@@ -324,7 +324,7 @@ def parse_mie_docx(data: bytes, url: str) -> list[dict[str, float]]:
 # ---------------------------------------------------------------------------
 
 def _read_pipe(data: bytes) -> list[dict[str, str]]:
-    return list(csv.DictReader(io.StringIO(data.decode("latin-1")), delimiter="|"))
+    return list(csv.DictReader(io.StringIO(data.decode("utf-8-sig")), delimiter="|"))
 
 
 def _place_aliases(name: str) -> set[str]:

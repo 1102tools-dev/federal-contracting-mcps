@@ -441,3 +441,24 @@ test("state lists show season months for seasonal areas (P3-2)", async () => {
   assert.equal(richmond.seasonal, false);
   assert.equal(richmond.lodging_by_month, undefined);
 });
+
+test("White Sands valid accented/plain county completes lookup, ZIP, estimate and comparison", async () => {
+  const {call} = setup();
+  for (const county of ["Doña Ana", "Dona Ana", "Doña Ana County", "Dona Ana County"]) {
+    const args = {city: "White Sands Missile Range", state: "NM", county, fiscal_year: 2027};
+    const lookup = (await call("lookup_city_perdiem", args)).structuredContent;
+    assert.equal(lookup.status, "resolved");
+    assert.equal(lookup.is_standard_rate, true);
+    assert.equal(lookup.mie_daily, 68);
+    const trip = (await call("estimate_travel_cost", {...args, num_nights: 2, travel_month: "May"})).structuredContent;
+    assert.equal(trip.lodging_total, 226);
+    assert.equal(trip.mie_total.value, 170);
+    assert.equal(trip.grand_total.value, 396);
+    const zip = (await call("lookup_zip_perdiem", {zip_code: "88002", county, fiscal_year: 2027})).structuredContent;
+    assert.equal(zip.status, "resolved");
+    assert.equal(zip.mie_daily, 68);
+    const comparison = (await call("compare_locations", {locations: [{city: args.city, state: args.state, county}], fiscal_year: 2027})).structuredContent;
+    assert.equal(comparison.locations[0].status, "resolved");
+    assert.equal(comparison.locations[0].max_daily_total, 181);
+  }
+});

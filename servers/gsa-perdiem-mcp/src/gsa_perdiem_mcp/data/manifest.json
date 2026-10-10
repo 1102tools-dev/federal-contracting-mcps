@@ -1,5 +1,5 @@
 {
-  "builder": 1,
+  "builder": 2,
   "census": {
     "county": {
       "bytes": 126639,
@@ -215,6 +215,6 @@
       }
     }
   },
-  "places_sha256": "f7206c4c5fa4290a010906a672a273425121c39e3d6cccbb07c3379844f83446",
+  "places_sha256": "d10188713b8f9fa112492c39a041f31f05dd0c471739362dcb1cd00bea494c7f",
   "schema": 1
 }
