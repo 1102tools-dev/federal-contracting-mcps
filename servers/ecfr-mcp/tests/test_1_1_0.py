@@ -318,3 +318,114 @@ def test_recent_changes_include_removals_and_page(monkeypatch):
     assert cas["total_pages"] == 2 and len(cas["changes"]) == 1 and "page=3" not in cas.get("note", "")
     with pytest.raises(ValueError, match="does not exist"):
         _run(srv.find_recent_changes("2026-09-10", chapter="99", per_page=1, page=3))
+
+
+# --- no silent caps or empty answers ---------------------------------------
+
+def _version(ident, date, **extra):
+    return {"identifier": ident, "date": date, "amendment_date": date, "issue_date": date,
+            "name": f"{ident}   Name.", "substantive": True, "removed": False, "title": "48", **extra}
+
+
+def test_version_history_reads_every_page_and_pages_its_answer(monkeypatch):
+    pages = {None: [_version(f"52.{n}", "2017-01-01") for n in range(1000)],
+             "2": [_version(f"52.{n}", "2020-01-01") for n in range(1000, 2000)],
+             "3": [_version("52.240-1", "2026-03-13")]}
+
+    async def fake(path, params=None, timeout=None):
+        return {"content_versions": pages[params.get("page")],
+                "meta": {"total_pages": "3", "latest_amendment_date": "2026-03-13"}}
+
+    monkeypatch.setattr(srv, "_get_json", fake)
+    r = _run(srv.get_version_history(part="52"))
+    assert r["total_count"] == 2001 and r["total_pages"] == 11 and len(r["content_versions"]) == 200
+    assert "page=2" in r["note"] and "title" not in r["content_versions"][0]
+    assert r["content_versions"][0]["name"] == "52.0 Name."
+    last = _run(srv.get_version_history(part="52", page=11))
+    assert last["content_versions"][-1]["identifier"] == "52.240-1"
+    recent = _run(srv.get_version_history(part="52", since_date="2026-01-01"))
+    assert [v["identifier"] for v in recent["content_versions"]] == ["52.240-1"]
+    assert recent["total_before_date_filter"] == 2001
+
+
+def test_version_history_of_a_section_not_in_the_title_is_an_error(monkeypatch):
+    async def fake(path, params=None, timeout=None):
+        return {"content_versions": [], "meta": {"result_count": "0"}}
+    monkeypatch.setattr(srv, "_get_json", fake)
+    with pytest.raises(ValueError, match="not in this title"):
+        _run(srv.get_version_history(section="200.318"))
+
+
+def test_corrections_newest_first_and_filtered(monkeypatch):
+    def corr(day, section, part):
+        return {"error_corrected": day, "position": 1, "year": int(day[:4]),
+                "cfr_references": [{"hierarchy": {"part": part, "section": section}}]}
+
+    async def fake(path, params=None, timeout=None):
+        return {"ecfr_corrections": [corr("2005-09-27", "52.204-1", "52"), corr("2025-03-07", "252.242-7005", "252"),
+                                     corr("2019-01-01", "52.204-21", "52")]}
+    monkeypatch.setattr(srv, "_get_json", fake)
+    r = _run(srv.get_corrections(limit=2))
+    assert [c["error_corrected"] for c in r["corrections"]] == ["2025-03-07", "2019-01-01"]
+    assert r["truncated"] is True
+    assert _run(srv.get_corrections(section="52.204-21"))["count_filtered"] == 1
+    assert _run(srv.get_corrections(part="52"))["count_filtered"] == 2
+
+
+def test_unknown_agency_slug_is_an_error_with_a_suggestion(monkeypatch):
+    async def fake(path, params=None, timeout=None):
+        assert path == "/api/admin/v1/agencies.json", "search must not run"
+        return {"agencies": [{"slug": "veterans-affairs-department", "name": "Veterans Affairs",
+                              "short_name": "VA", "children": []}]}
+    monkeypatch.setattr(srv, "_get_json", fake)
+    with pytest.raises(ValueError, match="Did you mean: veterans-affairs-department"):
+        _run(srv.search_cfr("prompt payment", title=48, agency_slugs="va"))
+
+
+_PART_200 = {"type": "title", "identifier": "2", "children": [
+    {"type": "chapter", "identifier": "II", "children": [
+        {"type": "part", "identifier": "200", "children": [
+            {"type": "subpart", "identifier": "A", "label_description": "Acronyms and Definitions", "children": [
+                {"type": "section", "identifier": "200.0", "label_description": "Acronyms.", "label": "§ 200.0 Acronyms."},
+                {"type": "section", "identifier": "200.2", "label_description": "[Reserved]", "reserved": True},
+            ]},
+            {"type": "appendix", "identifier": "Appendix II to Part 200",
+             "label_description": "Contract Provisions for Non-Federal Entity Contracts"},
+        ]},
+    ]},
+]}
+
+
+def test_section_list_has_appendices_subparts_and_the_real_chapter(monkeypatch):
+    async def fake(path, params=None, timeout=None):
+        assert "chapter" not in params
+        return _PART_200
+    monkeypatch.setattr(srv, "_get_json", fake)
+    r = _run(srv.list_sections_in_part(200, title_number=2, date=DATE))
+    assert r["chapter"] == "II" and r["section_count"] == 2 and r["appendix_count"] == 1
+    assert r["sections"][0] == {"identifier": "200.0", "heading": "Acronyms."}
+    assert r["sections"][1]["reserved"] is True
+    assert r["sections"][2]["type"] == "appendix"
+    assert r["subparts"] == [{"identifier": "A", "heading": "Acronyms and Definitions", "section_count": 2,
+                              "first_section": "200.0", "last_section": "200.2"}]
+    assert _run(srv.list_sections_in_part(200, title_number=2, date=DATE, detail=True))["sections"][0]["label"]
+
+
+def test_structure_too_large_is_cut_with_a_note(monkeypatch):
+    big = {"type": "chapter", "identifier": "1", "children": [
+        {"type": "part", "identifier": str(n), "label_description": "P", "children": [
+            {"type": "section", "identifier": f"{n}.{k}", "label_description": "x" * 200} for k in range(40)
+        ]} for n in range(1, 30)
+    ]}
+
+    async def fake(path, params=None, timeout=None):
+        return big
+    monkeypatch.setattr(srv, "_get_json", fake)
+    r = _run(srv.get_cfr_structure(chapter="1", date=DATE))
+    assert "too long to send at once" in r["note"]
+    assert r["children"][0]["children_omitted"] == 40
+    assert r["date"] == DATE
+    small = _run(srv.get_cfr_structure(chapter="1", date=DATE, depth=1))
+    assert small["children"][0]["children_omitted"] == 40 and "note" not in small
+    with pytest.raises(ValueError, match="needs chapter"):
+        _run(srv.get_cfr_structure(subchapter="H", date=DATE))

@@ -155,7 +155,7 @@
       "readOnlyHint": true,
       "title": "Get CFR Structure"
     },
-    "description": "Get the hierarchical table of contents for a CFR title or subset.\n\n    Returns a nested tree of titles, chapters, parts, subparts, and sections\n    with identifiers, descriptions, and byte sizes.\n\n    IMPORTANT: Does NOT support section-level filtering (returns 400).\n    Use part or subpart, then walk the children to find sections.\n\n    Common patterns:\n    - chapter='1' for all FAR parts\n    - chapter='2' for all DFARS parts\n    - part='15' for FAR Part 15 structure\n    - subpart='15.3' for just that subpart's sections\n\n    part/subpart/chapter/appendix accept int or string.\n    ",
+    "description": "Get the hierarchical table of contents for a CFR title or subset.\n\n    Returns a nested tree of titles, chapters, parts, subparts, and sections\n    with identifiers, descriptions, and byte sizes, plus the date it\n    describes.\n\n    IMPORTANT: Does NOT support section-level filtering (returns 400).\n    Use part or subpart, then walk the children to find sections.\n\n    Common patterns:\n    - part='15' for FAR Part 15 structure\n    - subpart='15.3' for just that subpart's sections\n    - chapter='1', depth=2 for the FAR's subchapters and parts only\n    - appendix='Appendix A to Part 200' with part='200' (title 2) for one appendix\n\n    depth keeps that many levels below the top node; deeper levels are\n    replaced by 'children_omitted' (how many there were). A tree too large\n    to send at once (a whole chapter is about 1 MB) is cut to the deepest\n    depth that fits, and 'note' says so.\n\n    subchapter needs chapter in Title 48 (each chapter has its own\n    subchapter A, B, ...). part/subpart/chapter/appendix accept int or string.\n    ",
     "inputSchema": {
       "properties": {
         "title_number": {
@@ -249,6 +249,18 @@
           ],
           "default": null,
           "title": "Appendix"
+        },
+        "depth": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depth"
         }
       },
       "type": "object",
@@ -268,7 +280,7 @@
       "readOnlyHint": true,
       "title": "Get Version History"
     },
-    "description": "Get the version history of a CFR section, subpart, or part.\n\n    Returns a list of content versions with dates, amendment info, and\n    whether each version was a substantive text change vs editorial.\n\n    The 'substantive' field is key: True = the regulatory text actually\n    changed. False = only editorial/formatting change.\n\n    History goes back to January 2017 only. Pre-2017 changes are not tracked.\n\n    part/subpart/section accept int or string.\n    ",
+    "description": "Get the version history of a CFR section, subpart, or part.\n\n    Returns content_versions (each with date, amendment_date, issue_date,\n    identifier, name, substantive and removed), every version eCFR lists:\n    all of eCFR's pages are read, so Part 52's 2,264 versions are all\n    there. Versions are grouped by section, oldest first.\n\n    since_date/until_date (YYYY-MM-DD) keep versions dated in that range.\n    per_page (default 200, max 1000) and page step through long histories;\n    total_count and total_pages say how many there are.\n\n    'substantive' is eCFR's flag: true when the version's text differs from\n    the one before, including editorial edits such as citation fixes and\n    the \"Link to an amendment published at ...\" notice eCFR adds when a\n    rule is published; false when re-issued with no text change. To see\n    what actually changed, use compare_versions on the dates.\n\n    'removed' true means the section was removed on that date.\n\n    History starts 2017-01-01 (eCFR's baseline: a 2017-01-01 version means\n    unchanged since before 2017). Pre-2017 changes are not tracked.\n\n    part/subpart/section accept int or string.\n    ",
     "inputSchema": {
       "properties": {
         "title_number": {
@@ -320,6 +332,40 @@
           ],
           "default": null,
           "title": "Subpart"
+        },
+        "page": {
+          "default": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "per_page": {
+          "default": 200,
+          "title": "Per Page",
+          "type": "integer"
+        },
+        "since_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Since Date"
+        },
+        "until_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Until Date"
         }
       },
       "type": "object",
@@ -617,7 +663,7 @@
       "readOnlyHint": true,
       "title": "Get Corrections"
     },
-    "description": "Get editorial corrections for a CFR title.\n\n    Returns a list of corrections with CFR references, corrective actions,\n    error dates, and FR citations. Useful for checking whether a section's\n    current text has been corrected since its last amendment.\n\n    limit caps the number of corrections returned (default 50, max 1000).\n    since_year further filters to corrections with year >= since_year.\n    Title 48 has ~280 corrections across all years; use since_year to\n    focus on recent ones.\n    ",
+    "description": "Get editorial corrections for a CFR title, newest first.\n\n    Returns corrections with CFR references, corrective actions, error\n    dates, and FR citations, sorted by the date the error was corrected,\n    newest first. Useful for checking whether a section's current text has\n    been corrected since its last amendment.\n\n    section (e.g. '52.204-21') or part (e.g. '52') keeps only corrections\n    that touch it. since_year keeps corrections with year >= since_year.\n    limit caps how many are returned (default 50, max 1000); truncated\n    says whether older ones were left out. Title 48 has ~280 corrections\n    since 2005.\n    ",
     "inputSchema": {
       "properties": {
         "title_number": {
@@ -641,6 +687,36 @@
           ],
           "default": null,
           "title": "Since Year"
+        },
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
         }
       },
       "type": "object",
@@ -789,7 +865,7 @@
       "readOnlyHint": true,
       "title": "List Sections in Part"
     },
-    "description": "List all sections in a FAR/DFARS part with their headings.\n\n    Returns a flat list of sections extracted from the structure tree.\n    Useful for understanding the scope of a FAR part before drilling into\n    specific sections.\n\n    Default chapter='1' (FAR). Use chapter='2' for DFARS.\n\n    part_number accepts int or string.\n    ",
+    "description": "List all sections and appendices in a CFR part with their headings.\n\n    Returns 'sections' in order, each {identifier, heading}, with\n    type='appendix' on appendices (2 CFR 200's Appendix I-XII, for example)\n    and reserved=true on reserved sections, plus 'subparts' (each with its\n    heading, section_count and first and last section). Useful for seeing\n    the scope of a part before reading specific sections.\n\n    The part number alone is enough: chapter is optional (Title 48 parts\n    are unique: 52 = FAR, 252 = DFARS, 552 = GSAR) and the answer reports\n    the chapter the part is in. subpart (e.g. '52.2') lists one subpart.\n    detail=True adds eCFR's label, size and received_on for each entry\n    (received_on is when eCFR processed the text, not when it was amended;\n    get_version_history has amendment dates).\n\n    part_number accepts int or string.\n    ",
     "inputSchema": {
       "properties": {
         "part_number": {
@@ -810,9 +886,12 @@
             },
             {
               "type": "integer"
+            },
+            {
+              "type": "null"
             }
           ],
-          "default": "1",
+          "default": null,
           "title": "Chapter"
         },
         "title_number": {
@@ -831,6 +910,26 @@
           ],
           "default": null,
           "title": "Date"
+        },
+        "detail": {
+          "default": false,
+          "title": "Detail",
+          "type": "boolean"
+        },
+        "subpart": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subpart"
         }
       },
       "required": [
