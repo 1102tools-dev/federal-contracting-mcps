@@ -582,3 +582,85 @@ campaigns, `final-timeout-recovery.json`,
 `final-evidence-hashes.json`. The final frozen collection is independently
 recorded under `coordinator/round3-final-collection/collection.json`. This is
 publication acceptance of Round 3, not a new content-audit round.
+
+## Round 16: new realistic content audit (1.0.18 candidate, 2026-10-10)
+
+The new Round 4 inventory contains **151 supported questions across all 55
+substantive tools**. On a fresh official by-name, uncached PyPI 1.0.17 install
+with MCP SDK 2.3.0, 150 questions completed through actual installed stdio,
+the public service and a registered-tool pipeline capturing fresh official
+API responses. All successful responses matched their source counterparts.
+The one supported unavailable request is an explicit FY2027 account listing:
+the official source returns HTTP 400 while default/explicit FY2026 remain
+usable. This is a reporting-availability limitation, not a fabricated FY2027
+fallback or a product defect. Two unsupported arguments introduced by the
+audit harness are preserved and excluded from the supported-question/pass
+counts; corrected funding followups were executed separately.
+
+New workflows cover HHS biotechnology/pharmaceutical procurement, competed
+fixed-price market research, new versus modified awards, all six award types,
+a different Interior vehicle, Energy science grants and agency accountability,
+USDA resources, all category/time/geographic dimensions, reported FFATA grant
+primes and complete dated reports, Johns Hopkins recipient disambiguation,
+Treasury Science account resources and reporting-calendar/reference followups.
+Actual discovered Johns Hopkins Applied Physics Laboratory parent and main
+university child are distinct recipients; their totals are not interchanged.
+HHS FY2025 contract annual/quarter/month obligations crossfoot to
+$21,290,558,265.84. APL FY2025 new awards crossfoot to 360; July–December 2024
+partitions into FY2024=157 and FY2025=55. The actual main-university recipient
+September–October 2024 counts crossfoot to FY2024=96 and FY2025=3; complete
+FY2023/FY2024/FY2025 counts are 636/672/499. These are window-specific source
+counts, not estimates for every Johns Hopkins entity.
+
+**Four confirmed findings: P0=0, P1=0, P2=2, P3=2.** The first P2 accepted an
+FY2024 Science-account program request without disclosing that the source
+ignores fiscal year, lists programs across all reported years and supplies no
+amounts. Its list includes AMERICAN SCIENCE CLOUD (PL 119-21), from legislation
+approved July 4, 2025. The second P2 returned only the first 10 of 25 programs,
+with no existing tool argument capable of retrieving the remaining pages.
+Fresh official pages 10/10/5 exactly equal the source's 100-limit response.
+The [pinned source implementation](https://github.com/fedspendingtransparency/usaspending-api/blob/03b9e2554837998c4c261c65e2947dc79f23855a/usaspending_api/accounts/v2/views/federal_account_program_activities.py)
+and [endpoint contract](https://github.com/fedspendingtransparency/usaspending-api/blob/03b9e2554837998c4c261c65e2947dc79f23855a/usaspending_api/api_contracts/contracts/v2/federal_accounts/federal_account_code/program_activities.md)
+confirm the all-year list and source paging. The candidate retrieves pages
+internally, up to 2,000 records, and discloses completeness, no amounts and any
+requested year that was not applied. It preserves source codes, names and
+types. The actual Science list fits on one 100-limit source page; the separate
+three-page source comparison establishes completeness, not a claim that this
+candidate case exercised multiple internal pages.
+
+The two P3 findings correct catalog claims: agency budgetary resources do not
+provide a mandatory/discretionary split, and account listings default to the
+source's latest available FY rather than necessarily the current FY. FY affects
+account budgetary-resource values, not which account rows are included. The
+actual post-rollover source default is FY2026, with FY2027 listing unavailable.
+Agency-wide program amounts cannot be relabeled as account-level program
+amounts. Single-year account resources remain available through the numeric
+account-ID fiscal-year snapshot: Science FY2024 obligations remain
+$9,281,790,861.20. No amount or unsupported fiscal program ranking is invented.
+
+Three captured-source regressions yield **two failures and one unchanged
+financial-followup pass before correction**, and all three pass afterward.
+The complete source suite measures **1,930 passed / 379 live-gated skipped /
+2,309 collected**. Skipped tests are not executed content checks. The freshly
+installed candidate wheel with latest SDK 2.3.0 completes all 150 available
+questions through actual CLI stdio. Unaffected results match the saved fresh
+source results; corrected program queries disclose all-year scope and preserve
+source records while returning the complete 25-record Science list. All 55
+catalogs retain names, input schemas, annotations and identity; exactly three
+descriptions change. The six-step actual installed catalog-guided workflow
+recovers single-year financial resources with the discovered numeric account
+ID, distinguishes agency-wide programs and checks the returned latest FY.
+Version checks, wheel/sdist build, approved hosted contract and diff checks
+pass. Compatible metadata changes use continuous review and require no manual
+directory republication. Candidate checks do not establish published 1.0.18
+PyPI/public acceptance; root's serial publication and final replay are pending.
+
+Evidence: `Artifacts/mcp-e2e-20261010/round4/usaspending`, especially
+`question-inventory.json`, `coverage.json`, `findings.json`, `audit-summary.json`,
+`primary-capture-index.json`, fresh pinned official implementation/contracts,
+GPO law provenance, FY2027 source response, original campaign files,
+`semantic-checks.json`, before/fixed/full-suite/collection logs,
+`candidate-catalog.json`, `candidate-replay.json` and
+`candidate-guided-workflow.json`. The 154 pipeline-captured response hashes
+are over canonical JSON; separate direct source captures identify their raw
+transport-byte hashes explicitly.
