@@ -788,7 +788,8 @@ def test_live_find_recent_changes_filter_actually_applied():
     r = asyncio.run(_call("find_recent_changes", since_date="2025-01-01", title=48, per_page=5))
     data = _payload(r)
     # With real filter, should return a small number, not the 10K cap.
-    assert 0 < data.get("meta", {}).get("total_count", 0) < 10000
+    assert 0 < data.get("total_count", 0) < 10000
+    assert len(data["changes"]) == 5
 
 
 @pytest.mark.skipif(not LIVE, reason="requires MCP_LIVE_TESTS=1")

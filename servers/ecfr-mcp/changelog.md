@@ -58,6 +58,22 @@ Fixes from the 2026-10-10 bug hunt. All 13 tools keep their names.
   `defined_elsewhere` (for example 19.001 and 52.219-14 for "similarly
   situated entity"), with `did_you_mean` suggestions from 2.101.
 
+**Current text only** (`search_cfr`, `find_recent_changes`)
+
+- `search_cfr` with `current_only=True` (the default) now checks every hit
+  against the section's version history. eCFR's own "current" index still
+  lists many superseded and removed versions (52.212-5 came back three
+  times; a CAS waiver search returned only the repealed "$15 million" text;
+  every section of CAS 404, 407, 408, 409 and 411 showed as current). Older
+  copies are dropped; hits whose text has since been replaced or removed are
+  dropped and listed under `current_check` (`superseded` with the current
+  version's date, `removed` with the removal date).
+- `find_recent_changes` is rebuilt on the version history, so removals show
+  up (`change: "removed"`), each change says amended, removed or re-issued,
+  and `summary` counts them. New optional `page`; `total_pages` says how
+  many pages there are. The chapter filter is applied on our side, because
+  eCFR's version history ignores it.
+
 ## 1.0.13
 
 - Hosted service only: the machine running the service can give the answer cache

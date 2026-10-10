@@ -301,14 +301,18 @@ def test_search_single_slug_string_becomes_list():
 
 
 def test_find_recent_changes_orders_newest_first():
-    mock = _CaptureJson({"results": [], "meta": {}})
+    # 1.1.0: built on the version history (removals included), newest first.
+    mock = _CaptureJson({"content_versions": [
+        {"identifier": "1.1", "part": "1", "issue_date": "2026-05-02", "date": "2026-05-02", "substantive": True},
+        {"identifier": "1.2", "part": "1", "issue_date": "2026-06-01", "date": "2026-06-01", "substantive": True},
+    ], "meta": {"total_pages": "1"}})
     orig, srv._get_json = srv._get_json, mock
     try:
-        asyncio.run(_call("find_recent_changes", since_date="2026-05-01", title=48))
-        _, params = mock.calls[0]
-        assert params["order"] == "newest_first"
-        assert params["last_modified_on_or_after"] == "2026-05-01"
-        assert params["query"] == "*"
+        r = asyncio.run(srv.find_recent_changes(since_date="2026-05-01", title=48))
+        path, params = mock.calls[0]
+        assert path == "/api/versioner/v1/versions/title-48"
+        assert params["issue_date[gte]"] == "2026-05-01"
+        assert [c["identifier"] for c in r["changes"]] == ["1.2", "1.1"]
     finally:
         srv._get_json = orig
 

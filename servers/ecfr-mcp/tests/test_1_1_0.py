@@ -237,3 +237,84 @@ def test_term_defined_outside_2_101_is_found(mock_xml, monkeypatch):
     ]
     assert second["section"] == "19.307" and "definition" not in second
     assert "defined elsewhere" in r["note"]
+
+
+# --- search_cfr current_only and find_recent_changes: the version history decides
+
+def _row(section, part, starts):
+    return {"hierarchy": {"title": "48", "part": part, "section": section}, "starts_on": starts, "ends_on": None}
+
+
+def _versions(*rows):
+    return {"content_versions": [
+        {"identifier": i, "part": p, "date": d, "amendment_date": d, "issue_date": d,
+         "substantive": True, "removed": r, "name": f"{i}   Name.", "type": "section", "subpart": None}
+        for i, p, d, r in rows
+    ], "meta": {"total_pages": "1"}}
+
+
+def test_search_drops_old_copies_and_reports_replaced_and_removed(monkeypatch):
+    histories = {
+        "52": _versions(("52.212-5", "52", "2025-08-27", False), ("52.212-5", "52", "2026-03-13", False)),
+        "9903": _versions(("9903.201-5", "9903", "2014-10-17", False), ("9903.201-5", "9903", "2026-10-01", False)),
+        "9904": _versions(("9904.409", "9904", "2014-10-17", False), ("9904.409", "9904", "2026-08-07", True)),
+    }
+    calls = []
+
+    async def fake(path, params=None, timeout=None):
+        calls.append((path, params))
+        if path == "/api/search/v1/results":
+            return {"results": [
+                _row("52.212-5", "52", "2025-08-27"), _row("52.212-5", "52", "2026-03-13"),
+                _row("9903.201-5", "9903", "2014-10-17"), _row("9904.409", "9904", "2014-10-17"),
+            ], "meta": {"total_count": 4}}
+        return histories[params["part"]]
+
+    monkeypatch.setattr(srv, "_get_json", fake)
+    r = _run(srv.search_cfr("anything", title=48))
+    assert [(x["hierarchy"]["section"], x["starts_on"]) for x in r["results"]] == [("52.212-5", "2026-03-13")]
+    check = r["current_check"]
+    assert check["older_copies_dropped"] == 1
+    assert check["superseded"] == [{"section": "9903.201-5", "matched_text_from": "2014-10-17",
+                                    "current_version_from": "2026-10-01"}]
+    assert check["removed"][0]["section"] == "9904.409" and check["removed"][0]["removed_on"] == "2026-08-07"
+    # Every version is read; current_only=False skips the check entirely.
+    calls.clear()
+    r = _run(srv.search_cfr("anything", title=48, current_only=False))
+    assert len(r["results"]) == 4 and "current_check" not in r and len(calls) == 1
+
+
+def test_recent_changes_include_removals_and_page(monkeypatch):
+    pages = {
+        None: {"content_versions": [
+            {"identifier": "9904.407", "part": "9904", "date": "2026-10-01", "issue_date": "2026-10-01",
+             "substantive": True, "removed": True, "name": "9904.407   Standard."},
+            {"identifier": "9903.201-5", "part": "9903", "date": "2026-10-01", "issue_date": "2026-10-01",
+             "substantive": True, "removed": False, "name": "9903.201-5   Waiver."},
+        ], "meta": {"total_pages": "2"}},
+        "2": {"content_versions": [
+            {"identifier": "3052.225-71", "part": "3052", "date": "2026-09-18", "issue_date": "2026-09-18",
+             "substantive": True, "removed": False, "name": "3052.225-71   xxx"},
+            {"identifier": "52.212-5", "part": "52", "date": "2025-08-27", "issue_date": "2026-09-20",
+             "substantive": False, "removed": False, "name": "52.212-5   Terms."},
+        ], "meta": {"total_pages": "2"}},
+    }
+
+    async def fake(path, params=None, timeout=None):
+        assert path == "/api/versioner/v1/versions/title-48"
+        assert params["issue_date[gte]"] == "2026-09-10"
+        return pages[params.get("page")]
+
+    monkeypatch.setattr(srv, "_get_json", fake)
+    r = _run(srv.find_recent_changes("2026-09-10"))
+    assert r["total_count"] == 4
+    assert r["summary"] == {"amended": 2, "removed": 1, "re-issued, no text change": 1}
+    assert r["changes"][0]["identifier"] == "9904.407" or r["changes"][0]["issue_date"] == "2026-10-01"
+    assert any(c["identifier"] == "9904.407" and c["change"] == "removed" for c in r["changes"])
+    assert r["changes"][-1]["name"] == "3052.225-71 xxx"
+    far = _run(srv.find_recent_changes("2026-09-10", chapter=1))
+    assert [c["identifier"] for c in far["changes"]] == ["52.212-5"]
+    cas = _run(srv.find_recent_changes("2026-09-10", chapter="99", per_page=1, page=2))
+    assert cas["total_pages"] == 2 and len(cas["changes"]) == 1 and "page=3" not in cas.get("note", "")
+    with pytest.raises(ValueError, match="does not exist"):
+        _run(srv.find_recent_changes("2026-09-10", chapter="99", per_page=1, page=3))
