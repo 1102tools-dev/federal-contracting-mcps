@@ -1114,7 +1114,10 @@ async def vendor_rate_card(
 
     Auto-discovers the exact vendor name via suggest-contains, then pulls
     their rate records. Returns labor categories, rates, education levels,
-    experience requirements, SINs, and contract numbers.
+    experience requirements, SINs, contract numbers, contract end dates, and
+    worksite. A vendor often lists the same category twice at two prices,
+    one for work at the customer's site (Customer_Facility) and one at the
+    contractor's site (Contractor_Facility); check worksite before comparing.
 
     Pass a partial name (e.g., 'booz' for Booz Allen Hamilton). The tool
     finds the exact registered name automatically.
@@ -1187,6 +1190,11 @@ async def vendor_rate_card(
             "sin": src.get("sin"),
             "idv_piid": src.get("idv_piid"),
             "business_size": src.get("business_size"),
+            # A vendor often carries one title at two prices, one per site
+            # (Customer_Facility / Contractor_Facility / Virtual); without
+            # this the two rows look like duplicates at different prices.
+            "worksite": src.get("worksite"),
+            "contract_end": src.get("contract_end"),
         })
 
     hits_total = _safe_dict(data.get("hits")).get("total")
