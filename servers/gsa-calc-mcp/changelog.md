@@ -1,3 +1,11 @@
+## 1.0.15 — 2026-10-10
+
+- Preserve actionable guidance for expected caller errors under MCP 2.3, including
+  ordinary government-worksite research requests. Worksite filtering remains
+  unavailable upstream; remove that argument and inspect the disclosed site mix.
+- Add two actual stdio regressions for unsupported-worksite recovery; tool
+  identities, descriptions and schemas are unchanged.
+
 # Changelog
 
 ## 1.0.14
