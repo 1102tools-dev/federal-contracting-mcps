@@ -164,7 +164,7 @@ test("compare tools keep the caller's labels, in order, and collapse duplicates"
 
 test("list_common_metros keeps Python's key order for numeric-looking codes", async () => {
   const result = await call("list_common_metros", {});
-  assert.ok(result.content[0].text.startsWith('{\n  "metros": {\n    "0047900": "Washington DC",\n    "0042660": "Seattle",'));
+  assert.ok(result.content[0].text.startsWith('{\n  "metros": {\n    "0047900": "Washington-Arlington-Alexandria, DC-VA-MD-WV",\n    "0042660": "Seattle-Tacoma-Bellevue, WA",'));
 });
 
 test("igce_wage_benchmark: Python float formatting and annual-only warning", async () => {
@@ -289,7 +289,7 @@ test("HTTP edge: health, docs, origin, rate limit, methods, body limits, message
   assert.equal((await worker.fetch(new Request("https://bls-oews.1102tools.com/nope"), env())).status, 404);
   const response = await worker.fetch(post({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "list_common_metros", arguments: {}}}), env());
   const body = await response.text();
-  assert.ok(body.includes('"structuredContent":{"metros":{"0047900":"Washington DC","0042660":"Seattle"'), "numeric-looking keys keep their order");
+  assert.ok(body.includes('"structuredContent":{"metros":{"0047900":"Washington-Arlington-Alexandria, DC-VA-MD-WV","0042660":"Seattle-Tacoma-Bellevue, WA"'), "numeric-looking keys keep their order");
   assert.equal((await worker.fetch(post({jsonrpc: "2.0", method: "notifications/initialized"}), env())).status, 202);
   assert.equal((await worker.fetch(post({jsonrpc: "2.0", id: 1.5, method: "ping"}), env())).status, 202);
   assert.equal((await worker.fetch(post({jsonrpc: "2.0", id: 1, result: {}}), env())).status, 202);
@@ -421,6 +421,16 @@ test("BLS-4: a wageless IGCE says what BLS did publish", async () => {
   assert.match(unreleased, /employment \(70\)/);
   assert.match(unreleased, /Estimate not released\./);
   assert.match(unreleased, /scope='state'/);
+});
+
+test("BLS-5: starter lists use BLS's names and carry the govcon basics", async () => {
+  const metros = (await data("list_common_metros", {})).metros;
+  assert.deepEqual([metros["0026620"], metros["0047260"], metros["0041700"], metros["0017820"], metros["0019430"]],
+    ["Huntsville, AL", "Virginia Beach-Chesapeake-Norfolk, VA-NC", "San Antonio-New Braunfels, TX", "Colorado Springs, CO", "Dayton-Kettering-Beavercreek, OH"]);
+  assert.equal(metros["0047900"], "Washington-Arlington-Alexandria, DC-VA-MD-WV");
+  const socs = (await data("list_common_soc_codes", {})).soc_codes;
+  assert.equal(socs["151299"], "Computer Occupations, All Other");
+  assert.equal(socs["436014"], "Secretaries and Administrative Assistants, Except Legal, Medical, and Executive");
 });
 
 // ---------- Python formatting helpers ----------

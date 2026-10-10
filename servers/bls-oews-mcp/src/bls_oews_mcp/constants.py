@@ -63,45 +63,60 @@ RSE_DATATYPES: set[str] = {"02", "05"}
 # hourly mean while publishing annual figures.
 IGCE_DATATYPES = ["04", "11", "13", "15"]
 
-# Common SOC codes for federal IT/professional services
+# Common SOC codes for federal IT/professional services, with BLS's own
+# occupation titles (oe.occupation; tests check them against the bundled
+# release). 15-1299 is where SOC 2018 puts IT project managers and where
+# most federal IT specialists land.
 COMMON_SOC_CODES: dict[str, str] = {
     "111021": "General and Operations Managers",
     "113021": "Computer and Information Systems Managers",
+    "131081": "Logisticians",
     "131082": "Project Management Specialists",
     "131111": "Management Analysts",
+    "131161": "Market Research Analysts and Marketing Specialists",
     "132011": "Accountants and Auditors",
     "151211": "Computer Systems Analysts",
     "151212": "Information Security Analysts",
-    "151232": "Computer User Support Specialists (Help Desk)",
+    "151232": "Computer User Support Specialists",
     "151241": "Computer Network Architects",
     "151242": "Database Administrators",
+    "151243": "Database Architects",
     "151244": "Network and Computer Systems Administrators",
     "151251": "Computer Programmers",
     "151252": "Software Developers",
-    "151253": "Software Quality Assurance Analysts",
+    "151253": "Software Quality Assurance Analysts and Testers",
     "151254": "Web Developers",
+    "151299": "Computer Occupations, All Other",
     "152051": "Data Scientists",
+    "172141": "Mechanical Engineers",
     "273042": "Technical Writers",
-    "436014": "Secretaries and Administrative Assistants",
+    "436014": "Secretaries and Administrative Assistants, Except Legal, Medical, and Executive",
 }
 
-# Common metro MSA codes
+# Common metro MSA codes, with BLS's own area names (oe.area; tests check
+# them against the bundled release). The last five are the main defense and
+# federal-contracting metros outside the largest cities.
 COMMON_METROS: dict[str, str] = {
-    "0047900": "Washington DC",
-    "0042660": "Seattle",
-    "0012580": "Baltimore",
-    "0037980": "Philadelphia",
-    "0035620": "New York City",
-    "0031080": "Los Angeles",
-    "0041860": "San Francisco",
-    "0038060": "Phoenix",
-    "0016980": "Chicago",
-    "0012420": "Austin",
-    "0014460": "Boston",
-    "0019100": "Dallas",
-    "0026420": "Houston",
-    "0041740": "San Diego",
-    "0019820": "Detroit",
+    "0047900": "Washington-Arlington-Alexandria, DC-VA-MD-WV",
+    "0042660": "Seattle-Tacoma-Bellevue, WA",
+    "0012580": "Baltimore-Columbia-Towson, MD",
+    "0037980": "Philadelphia-Camden-Wilmington, PA-NJ-DE-MD",
+    "0035620": "New York-Newark-Jersey City, NY-NJ",
+    "0031080": "Los Angeles-Long Beach-Anaheim, CA",
+    "0041860": "San Francisco-Oakland-Fremont, CA",
+    "0038060": "Phoenix-Mesa-Chandler, AZ",
+    "0016980": "Chicago-Naperville-Elgin, IL-IN",
+    "0012420": "Austin-Round Rock-San Marcos, TX",
+    "0014460": "Boston-Cambridge-Newton, MA-NH",
+    "0019100": "Dallas-Fort Worth-Arlington, TX",
+    "0026420": "Houston-Pasadena-The Woodlands, TX",
+    "0041740": "San Diego-Chula Vista-Carlsbad, CA",
+    "0019820": "Detroit-Warren-Dearborn, MI",
+    "0026620": "Huntsville, AL",
+    "0047260": "Virginia Beach-Chesapeake-Norfolk, VA-NC",
+    "0041700": "San Antonio-New Braunfels, TX",
+    "0017820": "Colorado Springs, CO",
+    "0019430": "Dayton-Kettering-Beavercreek, OH",
 }
 
 # Every state/territory FIPS code OEWS publishes (50 states, DC, GU, PR, VI).

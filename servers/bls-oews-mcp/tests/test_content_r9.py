@@ -141,3 +141,30 @@ def test_bls4_unreleased_igce_points_to_a_wider_area():
     assert "employment (70)" in reason
     assert "Estimate not released." in reason
     assert "scope='state'" in reason
+
+
+# ---------------------------------------------------------------------------
+# BLS-5: starter lists use BLS's names and carry the govcon basics
+# ---------------------------------------------------------------------------
+
+def test_bls5_common_metros_are_bls_area_names_and_include_govcon_metros():
+    from bls_oews_mcp import snapshot
+
+    metros = _tool("list_common_metros")["metros"]
+    # oe.area: 26620 Huntsville, AL; 47260 Virginia Beach-Chesapeake-Norfolk,
+    # VA-NC; 41700 San Antonio-New Braunfels, TX; 17820 Colorado Springs, CO;
+    # 19430 Dayton-Kettering-Beavercreek, OH.
+    for code in ("0026620", "0047260", "0041700", "0017820", "0019430"):
+        assert code in metros
+    for code, name in metros.items():
+        assert name == snapshot.area_name(code), (code, name)
+
+
+def test_bls5_common_soc_codes_are_bls_titles_and_include_15_1299():
+    from bls_oews_mcp import snapshot
+
+    socs = _tool("list_common_soc_codes")["soc_codes"]
+    for code in ("151299", "151243", "172141", "131081", "131161"):
+        assert code in socs
+    for code, title in socs.items():
+        assert title == snapshot.occupation_name(code), (code, title)
