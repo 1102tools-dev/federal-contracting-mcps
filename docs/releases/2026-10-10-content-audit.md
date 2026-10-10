@@ -356,3 +356,22 @@ Independent actual official installed USA20 acceptance passed six original/follo
 eCFR actual official1.1.6 acceptance passed80CLI calls (four dedicated originals/recoveries plus76corpus calls),76public calls and all76exact shared answers. All192 comparisons passed against61retained primary captures; a separate fresh official title check confirmed nine snapshot metadata values unchanged. Fresh SDK2.3 measured338passed/118skipped/456collected. Missing-section404 answers remain expected source absence, with actionable recovery, not current-text retrieval. Independent GPD finaldocs review and CI38084244699 passed before docsPR149 merged; CALC finaldocsPR148 likewise passed independent GPD review and CI38083971643 before merge.
 
 Fresh actual production data verification passed with no Round4 reload required: GPD complete release `ba0994b637ca8ae7`, places `2dee3470caca1a82`,43,665rows and unchanged seven fiscal-year parts; SAM native mirror1.0.3 and BLSMay2025 bundle identities remain unchanged. The independent remote D1 check wrote zero rows. Source304 reuse is explicitly distinguished from a new completeCSV fetch. Evidence: `round4/final-data-verification-gpd.json`.
+
+
+### Round4 final version and execution inventory
+
+These counts report completed lanes separately from collection. Acquisition's255cases remain passive inventory, excluded from goal findings and future audits.
+
+| MCP | Actual published package | Public runtime source | Collected | Executed content and suite boundaries |
+|---|---|---|---:|---|
+| SAM.gov |1.0.14|Native1.0.3 at `0d87bdcf9d0c645428a57271736e4c35891bca53`|1,158|114native content questions/all4tools plus status,348raw-field and18semantic checks; freshPython784passed/374skipped. Nineteen keyedPython workflows unexecuted. Python release source `d6ea8fea87732e5d28945be9cbd2917c87c844c8`.|
+| USAspending |1.0.20|`2a93b7b706d818da647f9d56cacbf543f867fa79`|2,312|Published19 completed150CLI/150public/150retained-source comparisons and six guided workflows; actual20independent sixCLI/sixpublic plus threefocused regressions passed. Actual20fresh full suite measured1,078passed/855failed/379skipped; final full150-question owner replay remains pending. Frozen source1,933passed/379skipped is distinct from latestSDK execution.|
+| eCFR |1.1.6|`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`|456|80CLI/76public,192retained-source comparisons; fresh338passed/118skipped. Nine fresh title metadata checks separate from retained61sourcecaptures.|
+| Federal Register |1.0.14|`b379d69b3ac505d5f1f1ae255896acb2b5f0d866`|286|63validCLI/public questions across8tools,63primary rows and178DOTdeadline records. One caller-document mistake excluded; one page-view timestamp variation qualified.181passed/105skipped.|
+| Regulations.gov |2.0.6|`c0553538fca43e13a8c7db5a6ecd77a887303c32`|298|141public attempts/139successful plus two retained caller-ID404s recovered;107semantic checks,40sourcecomparison rows/35freshcaptures. Fresh179passed/119skipped; keyedCLI live source unavailable.|
+| GSA CALC+ |1.0.16|`4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`|438|152registered/152public/18actualstdio;1,742behavior and3,738qualifiedsource checks. Fresh317passed/121skipped;209registeredattempts retain budget waits and dynamic-source variation.|
+| GSA Per Diem |1.2.4|`7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336`|583|121CLI/public workflows across7tools;119officialnumeric checks,36estimates and26ZIPmemberships. Frozen316passed/267skipped; fresh300passed/16failed/267skipped, ordinary workflows unaffected.|
+| BLS OEWS |1.1.4|`5ba4a4bac4ecd098da1c48dcd09594d9e38fcf1f`|298|66CLI/66public across8tools,418wageobjects and31freshofficial numeric cells.297passed/one skip; flat-footnote403 unavailable.|
+| **Eight-server goal** | | |**5,829**|**Collected cases, not an all-passed fresh-suite total.**|
+| Passive Acquisition inventory |Excluded|Separate completed track|255|No Round4 audit or future dispatch.|
+| **Nine-package product inventory** | | |**6,084**|Independent canonical-source collection only.|
