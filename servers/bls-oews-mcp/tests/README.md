@@ -1,6 +1,6 @@
 # Test suite map
 
-276 collected tests. Files are named by the audit round or fix-wave that
+291 collected tests: 290 offline and 1 optional live parity check. Files are named by the audit round or fix-wave that
 produced them and are append-only history: each maps to a section of
 [../testing.md](../testing.md), which narrates what every round found and
 fixed. That traceability is deliberate; do not consolidate or rename rounds.
@@ -19,6 +19,7 @@ written against the live API (rounds 6 and 8) run offline on every test run.
 | `test_builder.py` | 1.1.0 `scripts/build_oews_db.py` on synthetic BLS files: pivot, determinism, schema-drift failures | 10 |
 | `test_directory_contract.py` | Directory rules: annotations, no instructions, no key language | 3 |
 | `test_http.py` | Hosted HTTP app: tool catalog, host/origin/size guards, `/health`, hosted startup check | 3 |
+| `test_content_r9.py` | Round 9 content findings BLS-1 to BLS-9: reference month and escalation, published hourly values, 25th/75th percentiles, employment/RSE warnings, unpublished-wage reasons, starter labels, industry guidance, comparison year/order and per-1,000 precision | 15 |
 | `test_live_parity.py` | Bundled values vs the live BLS v1 API on a fixed 25-series sample (`BLS_LIVE_TESTS=1`, no key, one request) | 1 |
 
 - `scenarios/` holds standalone scenario scripts (not pytest; retained for
