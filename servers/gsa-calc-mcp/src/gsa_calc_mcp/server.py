@@ -39,6 +39,10 @@ from .constants import (
     USER_AGENT,
 )
 
+class UserInputError(ValueError, ToolError):
+    """Expected user-input failure with recoverable guidance on MCP 2.x."""
+
+
 mcp = MCPServer("gsa-calc", version=__version__)
 
 
@@ -124,7 +128,7 @@ def _validate_no_control_chars(value: Any, *, field: str) -> Any:
     if value is None:
         return None
     if isinstance(value, str) and _CONTROL_CHARS_RE.search(value):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} contains control characters "
             f"(null byte / newline / tab / CR / backspace). These typically come "
             f"from copy-paste artifacts and cause silent zero-result queries. "
@@ -141,7 +145,7 @@ def _validate_waf_safe(value: str | None, *, field: str) -> str | None:
         value = str(value)
     for pattern, description in _WAF_PATTERNS:
         if pattern.search(value):
-            raise ValueError(
+            raise UserInputError(
                 f"{field}={value!r} contains characters that trigger GSA CALC+'s "
                 f"web application firewall ({description}). Remove the offending "
                 f"characters and try again (empirically: quotes, SQL keywords, "
@@ -155,9 +159,9 @@ def _validate_finite(value: float | int | None, *, field: str) -> float | int | 
     if value is None:
         return None
     if isinstance(value, bool):
-        raise ValueError(f"{field} must be a number, not a boolean. Got {value!r}.")
+        raise UserInputError(f"{field} must be a number, not a boolean. Got {value!r}.")
     if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be a finite number. Got {value!r}. "
             f"NaN/Inf reach the API URL-encoded and return HTTP 406."
         )
@@ -169,7 +173,7 @@ def _clamp_text_len(value: str | None, *, field: str, maximum: int = 500) -> str
     if value is None:
         return None
     if len(value) > maximum:
-        raise ValueError(
+        raise UserInputError(
             f"{field} exceeds {maximum} chars ({len(value)}). Very long strings "
             f"trigger HTTP 406 URI-too-long errors from GSA."
         )
@@ -186,9 +190,9 @@ def _strip_or_none(value: str | None) -> str | None:
 
 def _clamp(value: int, *, field: str, lo: int, hi: int) -> int:
     if value < lo:
-        raise ValueError(f"{field} must be >= {lo}. Got {value}.")
+        raise UserInputError(f"{field} must be >= {lo}. Got {value}.")
     if value > hi:
-        raise ValueError(
+        raise UserInputError(
             f"{field} exceeds maximum of {hi}. Got {value}. Paginate instead."
         )
     return value
@@ -203,7 +207,7 @@ _ES_MAX_WINDOW = 10_000
 
 def _validate_es_window(page: int, page_size: int) -> None:
     if page * page_size > _ES_MAX_WINDOW:
-        raise ValueError(
+        raise UserInputError(
             f"page ({page}) * page_size ({page_size}) = {page * page_size} exceeds "
             f"GSA CALC+'s 10,000-result Elasticsearch window. Narrow your search "
             f"with filters (education_level, sin, price_range) to get under 10k results, "
@@ -240,7 +244,7 @@ def _validate_ordering(value: str | None) -> str:
     if not s:
         return "current_price"
     if s not in ORDERING_FIELDS:
-        raise ValueError(
+        raise UserInputError(
             f"ordering={value!r} is not a valid field. "
             f"Valid: {', '.join(ORDERING_FIELDS)}."
         )
@@ -252,7 +256,7 @@ def _validate_sort(value: str) -> str:
         return "asc"
     s = value.strip().lower() if isinstance(value, str) else str(value).strip().lower()
     if s not in ("asc", "desc"):
-        raise ValueError(f"sort must be 'asc' or 'desc'. Got {value!r}.")
+        raise UserInputError(f"sort must be 'asc' or 'desc'. Got {value!r}.")
     return s
 
 
@@ -266,10 +270,10 @@ def _validate_education_level(value: str | None) -> str | None:
     parts = [p.strip() for p in s.split("|")]
     for p in parts:
         if not p:
-            raise ValueError(f"education_level {value!r} has an empty entry between pipes.")
+            raise UserInputError(f"education_level {value!r} has an empty entry between pipes.")
         if p not in EDUCATION_LEVELS:
             valid = ", ".join(sorted(EDUCATION_LEVELS.keys()))
-            raise ValueError(
+            raise UserInputError(
                 f"education_level entry {p!r} not valid. Valid codes: {valid}. "
                 f"Pipe-delimit for OR (e.g. 'BA|MA')."
             )
@@ -291,7 +295,7 @@ def _validate_worksite(value: str | None) -> None:
     s = value.strip() if isinstance(value, str) else str(value).strip()
     if not s:
         return None
-    raise ValueError(
+    raise UserInputError(
         "worksite filtering is not supported by the CALC+ v3 API; the filter "
         "is silently ignored upstream (every value returns unfiltered "
         "results). Remove the worksite argument. The underlying data does "
@@ -309,7 +313,7 @@ def _reject_bool_pre(value: Any) -> Any:
     'sin:0', silently producing zero-match queries.
     """
     if isinstance(value, bool):
-        raise ValueError(
+        raise UserInputError(
             f"Expected a string or int, not a boolean. Got {value!r}. "
             f"This usually means the caller passed the wrong argument type."
         )
@@ -326,7 +330,7 @@ def _validate_sin(value: Any) -> str | None:
     # Reject booleans explicitly: True/False coerce via int to "1"/"0" and
     # pass the alphanumeric regex, silently producing a zero-match query.
     if isinstance(value, bool):
-        raise ValueError(
+        raise UserInputError(
             f"sin={value!r} is a boolean, not a SIN. "
             f"Pass a string like '54151S' or an int like 541611."
         )
@@ -334,12 +338,12 @@ def _validate_sin(value: Any) -> str | None:
     if not s:
         return None
     if len(s) > 20:
-        raise ValueError(
+        raise UserInputError(
             f"sin={value!r} exceeds 20 chars ({len(s)}). Real SINs are <=10 chars "
             f"(e.g. '54151S', '541330ENG')."
         )
     if not re.match(r"^[A-Za-z0-9]+$", s):
-        raise ValueError(
+        raise UserInputError(
             f"sin={value!r} must be alphanumeric (e.g. '54151S', '541330ENG'). "
             f"No spaces or special characters."
         )
@@ -350,11 +354,11 @@ def _validate_experience_range(emin: int | None, emax: int | None) -> tuple[int 
     emin = _validate_finite(emin, field="experience_min")
     emax = _validate_finite(emax, field="experience_max")
     if emin is not None and emin < 0:
-        raise ValueError(f"experience_min must be >= 0. Got {emin}.")
+        raise UserInputError(f"experience_min must be >= 0. Got {emin}.")
     if emax is not None and emax < 0:
-        raise ValueError(f"experience_max must be >= 0. Got {emax}.")
+        raise UserInputError(f"experience_max must be >= 0. Got {emax}.")
     if emin is not None and emax is not None and emin > emax:
-        raise ValueError(
+        raise UserInputError(
             f"experience_min ({emin}) must be <= experience_max ({emax})."
         )
     return emin, emax
@@ -364,16 +368,16 @@ def _validate_price_range(pmin: float | None, pmax: float | None) -> tuple[float
     pmin = _validate_finite(pmin, field="price_min")
     pmax = _validate_finite(pmax, field="price_max")
     if pmin is not None and pmin < 0:
-        raise ValueError(f"price_min must be >= 0. Got {pmin}.")
+        raise UserInputError(f"price_min must be >= 0. Got {pmin}.")
     if pmax is not None and pmax <= 0:
         # price_max=0 builds price_range:0,0, which matches nothing and
         # returns a silent zero-result response. Reject locally.
-        raise ValueError(
+        raise UserInputError(
             f"price_max must be > 0. Got {pmax}. A zero or negative ceiling "
             f"matches no rates and returns silent empty results."
         )
     if pmin is not None and pmax is not None and pmin > pmax:
-        raise ValueError(
+        raise UserInputError(
             f"price_min (${pmin}) must be <= price_max (${pmax})."
         )
     return pmin, pmax
@@ -579,7 +583,7 @@ def _build_query_string(
     """Build the full query parameter string. All values URL-encoded."""
     # Filters param must be a list; protect against accidental string passage.
     if filters is not None and not isinstance(filters, list):
-        raise ValueError(
+        raise UserInputError(
             f"filters must be a list of 'field:value' strings. "
             f"Got {type(filters).__name__}."
         )
@@ -594,7 +598,7 @@ def _build_query_string(
         bool(suggest_field and suggest_term),
     ])
     if search_modes > 1:
-        raise ValueError(
+        raise UserInputError(
             "Only one search mode allowed per query: keyword, search (field+value), "
             "or suggest (field+term). Combining silently drops the lower-priority modes."
         )
@@ -827,7 +831,7 @@ async def keyword_search(
     _validate_no_control_chars(keyword, field="keyword")
     keyword = _strip_or_none(keyword)
     if keyword is None:
-        raise ValueError(
+        raise UserInputError(
             "keyword cannot be empty. For unfiltered browsing use filtered_browse() instead."
         )
     keyword = _clamp_text_len(keyword, field="keyword", maximum=500)
@@ -889,7 +893,7 @@ async def exact_search(
     _validate_no_control_chars(value, field="value")
     value = _strip_or_none(value)
     if value is None:
-        raise ValueError("value cannot be empty. Use suggest_contains() to discover valid values.")
+        raise UserInputError("value cannot be empty. Use suggest_contains() to discover valid values.")
     value = _clamp_text_len(value, field="value", maximum=500)
     value = _validate_waf_safe(value, field="value")
     page = _clamp(page, field="page", lo=1, hi=100_000)
@@ -939,7 +943,7 @@ async def suggest_contains(
     _validate_no_control_chars(term, field="term")
     term = _strip_or_none(term)
     if term is None or len(term) < 2:
-        raise ValueError(
+        raise UserInputError(
             "suggest_contains requires at least 2 non-whitespace characters."
         )
     term = _clamp_text_len(term, field="term", maximum=500)
@@ -1032,7 +1036,7 @@ async def filtered_browse(
     # omit all filters almost always meant to pass something. Require at
     # least one filter to prevent silent unbounded-default responses.
     if not filters:
-        raise ValueError(
+        raise UserInputError(
             "filtered_browse requires at least one filter. Typical filters: "
             "education_level='MA', experience_min=5, sin='54151S', "
             "business_size='S', price_min=50. For keyword search use keyword_search()."
@@ -1092,7 +1096,7 @@ async def igce_benchmark(
     _validate_no_control_chars(labor_category, field="labor_category")
     labor_category = _strip_or_none(labor_category)
     if labor_category is None:
-        raise ValueError("labor_category cannot be empty.")
+        raise UserInputError("labor_category cannot be empty.")
     labor_category = _clamp_text_len(labor_category, field="labor_category", maximum=500)
     labor_category = _validate_waf_safe(labor_category, field="labor_category")
     experience_min, experience_max = _validate_experience_range(experience_min, experience_max)
@@ -1168,14 +1172,14 @@ async def price_reasonableness_check(
     reasonableness or performance risk.
     """
     if not isinstance(proposed_rate, (int, float)) or isinstance(proposed_rate, bool):
-        raise ValueError("proposed_rate must be a positive number.")
+        raise UserInputError("proposed_rate must be a positive number.")
     if isinstance(proposed_rate, float) and (math.isnan(proposed_rate) or math.isinf(proposed_rate)):
-        raise ValueError(
+        raise UserInputError(
             f"proposed_rate must be a finite number. Got {proposed_rate!r}. "
             f"NaN comparisons fall through to 'above P75' / 'equal' silently."
         )
     if proposed_rate <= 0:
-        raise ValueError(f"proposed_rate must be > 0. Got {proposed_rate}.")
+        raise UserInputError(f"proposed_rate must be > 0. Got {proposed_rate}.")
 
     benchmark = await igce_benchmark(
         labor_category, education_level=education_level,
@@ -1334,7 +1338,7 @@ async def vendor_rate_card(
     _validate_no_control_chars(vendor_name, field="vendor_name")
     vendor_name = _strip_or_none(vendor_name)
     if vendor_name is None or len(vendor_name) < 2:
-        raise ValueError("vendor_name must be at least 2 non-whitespace characters.")
+        raise UserInputError("vendor_name must be at least 2 non-whitespace characters.")
     vendor_name = _clamp_text_len(vendor_name, field="vendor_name", maximum=500)
     vendor_name = _validate_waf_safe(vendor_name, field="vendor_name")
     page = _clamp(page, field="page", lo=1, hi=100_000)
@@ -1475,7 +1479,7 @@ async def sin_analysis(
     """
     sin_code = _validate_sin(sin_code)
     if sin_code is None:
-        raise ValueError("sin_code cannot be empty.")
+        raise UserInputError("sin_code cannot be empty.")
     page_size = _clamp(page_size, field="page_size", lo=1, hi=MAX_PAGE_SIZE)
 
     filters = [f"sin:{sin_code}"]
