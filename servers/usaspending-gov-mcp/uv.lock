@@ -940,7 +940,7 @@ wheels = [
 
 [[package]]
 name = "usaspending-gov-mcp"
-version = "1.0.19"
+version = "1.0.20"
 source = { editable = "." }
 dependencies = [
     { name = "filelock" },
