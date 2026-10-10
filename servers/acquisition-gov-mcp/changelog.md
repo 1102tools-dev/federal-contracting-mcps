@@ -2,9 +2,12 @@
 
 ## 1.0.10 — 2026-10-10
 
+- Recognize direct line-start effective-date sentences such as DoD’s “Effective February 1, 2026”, without accepting quoted or historical mid-sentence dates.
+- Bump snapshot parser format to 4 and make interrupted-load reuse require a current-parser doc ID; retry staged fetch errors even with a zero revalidation budget.
+
 - Recognize explicit GMT/UTC signing timestamps on standalone letterhead date lines. GSA's Part 19 supplement begins with `2/20/2026 | 11:48:46 GMT`; the older attached original must not supply its September 2025 issuance date.
 - Add six package regressions for current supplement, original-only ranges, narrative references and malformed timestamps; add Worker and Python/Worker parity cases. Tool definitions remain unchanged.
-- Verify 243 offline package cases, 11 Worker cases and 168 parity cases (159 identical, nine previously documented protocol differences, zero unexpected differences).
+- Verify 252 offline package cases, 12 Worker cases and 169 parity cases (160 identical, nine previously documented protocol differences, zero unexpected differences).
 - Upgrade hosted development tool Wrangler to 4.149.0, removing four high npm audit findings in its development-only dependency chain; Worker typecheck, tests and deployment dry run pass with zero reported vulnerabilities.
 
 ## 1.0.9 — 2026-10-10

@@ -40,7 +40,7 @@ sys.path.insert(0, str(ROOT / "servers/acquisition-gov-mcp/src"))  # the package
 from acquisition_gov_mcp import __version__, _html, _pdf, constants, server  # noqa: E402
 
 # Bump when the stored layout or derived data changes, so content is re-parsed.
-FORMAT = 3
+FORMAT = 4
 PARSER_VERSION = f"{__version__}+{FORMAT}"
 HTML = (("text/html",), constants.MAX_HTML_BYTES)
 PDF = (("application/pdf",), constants.MAX_PDF_BYTES)
@@ -699,9 +699,17 @@ class Loader:
 
         # Deviation PDFs: new ones, failed ones, and the least recently checked.
         cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=RESUME_HOURS)).replace(microsecond=0).isoformat()
-        done = {k for k, r in staged.items() if k.startswith("pdf:") and r["retrieved_at"] >= cutoff}
+        # A recently staged PDF is reusable only if this parser produced its
+        # derived data. A new parser must not resume by skipping old date
+        # matches merely because the upstream bytes were fetched recently.
+        # Error rows have no parsed document and are retried on resume.
+        done = {k for k, r in staged.items() if k.startswith("pdf:")
+                and r["retrieved_at"] >= cutoff and r["error"] is None
+                and r["doc"] == doc_id("pdf", r["content_sha256"])}
         wanted = [u for u in urls if f"pdf:{u}" not in done]
-        new = [u for u in wanted if f"pdf:{u}" not in previous_sources or previous_sources[f"pdf:{u}"]["error"]]
+        new = [u for u in wanted if f"pdf:{u}" not in previous_sources
+               or previous_sources[f"pdf:{u}"]["error"]
+               or staged.get(f"pdf:{u}", {}).get("error")]
         known = sorted((u for u in wanted if u not in set(new)), key=lambda u: previous_sources[f"pdf:{u}"]["retrieved_at"])
         fetch = new + (known if self.full else known[:self.revalidate])
         self.log(f"PDFs: {len(new)} new or failed, {len(fetch) - len(new)} rechecked, {len(done)} already staged")
