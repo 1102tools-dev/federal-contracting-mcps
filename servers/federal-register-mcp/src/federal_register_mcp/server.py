@@ -484,6 +484,84 @@ def _build_search_params(
 
 
 # ---------------------------------------------------------------------------
+# FAR Council documents
+# ---------------------------------------------------------------------------
+
+# The FAR Council (DoD, GSA, NASA) files every FAR document jointly under
+# those three agencies; OFPP was added to the tags only from about mid-2025,
+# and the API's "Federal Acquisition Regulation System" agency holds two
+# documents ever (2001, 2019). The API's agency filter is OR-only, so a FAR
+# Council search asks for NASA (a co-signer of every FAR document, with a
+# small volume of its own) and keeps the documents also filed by DoD and GSA.
+_FAR_COUNCIL_AGENCIES = frozenset({
+    "defense-department",
+    "general-services-administration",
+    "national-aeronautics-and-space-administration",
+})
+_FAR_COUNCIL_SCAN_AGENCY = "national-aeronautics-and-space-administration"
+_FAR_COUNCIL_SCAN_CAP = 500
+_EMPTY_FAR_SLUG = "federal-acquisition-regulation-system"
+_EMPTY_FAR_SLUG_NOTE = (
+    "The Federal Register agency 'federal-acquisition-regulation-system' holds "
+    "only 2 documents ever (2001, 2019). FAR rules and notices are filed jointly "
+    "under DoD, GSA and NASA (OFPP added only from about mid-2025). Use "
+    "far_council=True instead."
+)
+
+
+def _is_far_council_doc(doc: dict[str, Any]) -> bool:
+    slugs = {a.get("slug") for a in (doc.get("agencies") or []) if isinstance(a, dict)}
+    return _FAR_COUNCIL_AGENCIES <= slugs
+
+
+async def _far_council_search(
+    filters: dict[str, Any], *, per_page: int, page: int, order: str,
+) -> dict[str, Any]:
+    scanned: list[dict[str, Any]] = []
+    nasa_total = 0
+    for page_num in range(1, _FAR_COUNCIL_SCAN_CAP // 100 + 1):
+        qs = _build_search_params(
+            agencies=[_FAR_COUNCIL_SCAN_AGENCY], **filters,
+            per_page=100, page=page_num, order=order,
+        )
+        data = await _get(f"{BASE_URL}/documents.json?{qs}")
+        nasa_total = data.get("count", 0) or 0
+        page_results = data.get("results") or []
+        scanned.extend(page_results)
+        if len(page_results) < 100 or len(scanned) >= nasa_total:
+            break
+    matches = [d for d in scanned if _is_far_council_doc(d)]
+    complete = len(scanned) >= nasa_total
+    start = (page - 1) * per_page
+    result: dict[str, Any] = {
+        "description": (
+            "FAR Council documents: filed jointly by DoD, GSA and NASA "
+            f"(scanned {len(scanned)} of {nasa_total} NASA-filed documents matching the other filters)"
+        ),
+        "count": len(matches),
+        "total_pages": max(1, -(-len(matches) // per_page)),
+        "results": matches[start:start + per_page],
+        "far_council": {
+            "rule": "documents whose agencies include defense-department, "
+                    "general-services-administration and "
+                    "national-aeronautics-and-space-administration",
+            "nasa_documents": nasa_total,
+            "scanned": len(scanned),
+            "scan_cap": _FAR_COUNCIL_SCAN_CAP,
+            "complete": complete,
+        },
+    }
+    if not complete:
+        result["count_is_lower_bound"] = True
+        result["note"] = (
+            f"Only the first {len(scanned)} of {nasa_total} NASA-filed documents were "
+            "scanned, so count is a lower bound. Narrow with a publication date "
+            "range (one year is usually under 200 documents) for an exact count."
+        )
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Core tools
 # ---------------------------------------------------------------------------
 
@@ -507,6 +585,7 @@ async def search_documents(
     per_page: int = 20,
     page: int = 1,
     order: Literal["newest", "oldest", "relevance", "executive_order_number"] = "newest",
+    far_council: bool = False,
 ) -> dict[str, Any]:
     """Search Federal Register documents.
 
@@ -516,7 +595,17 @@ async def search_documents(
     Key parameters:
     - agencies: list of agency URL slugs (OR logic). Use list_agencies() to find slugs.
       Common: 'defense-department', 'general-services-administration',
-      'federal-procurement-policy-office', 'small-business-administration'
+      'small-business-administration', 'defense-acquisition-regulations-system'
+      (DFARS), 'federal-procurement-policy-office' (OFPP and the CAS Board)
+    - far_council: True for FAR rules, proposed rules and notices (the FAR
+      Council's output). There is no single FAR agency slug: FAR documents
+      are filed jointly under DoD, GSA and NASA, OFPP was added only from
+      about mid-2025 (so the OFPP slug misses earlier FAR rules and adds CAS
+      Board documents), and 'federal-acquisition-regulation-system' holds 2
+      documents ever. far_council=True keeps documents filed by all three of
+      DoD, GSA and NASA; count is exact when far_council.complete is true
+      (narrow by date if not). Cannot be combined with agencies. For FAR
+      clause changes only, cfr_title=48 + cfr_part='1-99' also works.
     - doc_types: PRORULE (proposed rule), RULE (final rule), NOTICE, PRESDOCU
     - term: full-text keyword search (strips stop words)
     - docket_id: docket identifier (token match). 'FAR Case 2023-008' = exact,
@@ -558,11 +647,17 @@ async def search_documents(
     _check_date_range(comment_date_gte, comment_date_lte, "comment_date")
     _check_date_range(effective_date_gte, effective_date_lte, "effective_date")
     cfr_title_str, cfr_part_str = _validate_cfr(cfr_title, cfr_part)
+    if far_council and agencies:
+        raise ValueError(
+            "far_council=True cannot be combined with agencies: it already "
+            "selects documents filed jointly by DoD, GSA and NASA. Drop agencies."
+        )
 
     # Require at least one real filter. An unfiltered search_documents() call
     # silently returned the Federal Register's 10,000-doc "most recent"
     # default as if those were search hits, which is very confusing UX.
     if not any([
+        far_council,
         agencies, doc_types, term, docket_id, regulation_id_number,
         pub_date_gte, pub_date_lte,
         comment_date_gte, comment_date_lte,
@@ -577,17 +672,26 @@ async def search_documents(
             "returns the Federal Register's 10,000-doc unfiltered default."
         )
 
-    qs = _build_search_params(
-        agencies=agencies, doc_types=doc_types, term=term,
+    filters: dict[str, Any] = dict(
+        doc_types=doc_types, term=term,
         docket_id=docket_id, regulation_id_number=regulation_id_number,
         pub_date_gte=pub_date_gte, pub_date_lte=pub_date_lte,
         comment_date_gte=comment_date_gte, comment_date_lte=comment_date_lte,
         effective_date_gte=effective_date_gte, effective_date_lte=effective_date_lte,
         correction=correction, significant=significant,
         cfr_title=cfr_title_str, cfr_part=cfr_part_str,
+    )
+    if far_council:
+        return await _far_council_search(filters, per_page=per_page, page=page, order=order)
+
+    qs = _build_search_params(
+        agencies=agencies, **filters,
         per_page=per_page, page=page, order=order,
     )
-    return await _get(f"{BASE_URL}/documents.json?{qs}")
+    data = await _get(f"{BASE_URL}/documents.json?{qs}")
+    if agencies and _EMPTY_FAR_SLUG in agencies and isinstance(data, dict):
+        data["note"] = _EMPTY_FAR_SLUG_NOTE
+    return data
 
 
 @mcp.tool(annotations={"title": "Get Document", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -662,6 +766,12 @@ async def get_facet_counts(
     At least one filter (agencies, doc_types, term, pub_date_gte/lte, or
     cfr_title) is required. An unfiltered facet query returns the entire
     all-time aggregate.
+
+    FAR Council counts: facets cannot express "filed by DoD AND GSA AND
+    NASA", and no single agency slug covers FAR documents (OFPP only from
+    about mid-2025; 'federal-acquisition-regulation-system' holds 2 documents
+    ever). Count FAR rules with search_documents(far_council=True,
+    doc_types=[...], pub_date_gte/lte=...) and read its count.
     """
     agencies = _reject_empty_list(agencies, "agencies")
     agencies = _reject_empty_strings_in_list(agencies, field="agencies")
@@ -706,7 +816,12 @@ async def get_facet_counts(
     url = f"{BASE_URL}/documents/facets/{facet}"
     if qs:
         url += f"?{qs}"
-    return await _get(url)
+    data = await _get(url)
+    if agencies and _EMPTY_FAR_SLUG in agencies and isinstance(data, dict):
+        # Facet answers are keyed by bucket name; "note" cannot collide with
+        # a document type, agency slug, topic or date bucket.
+        data["note"] = _EMPTY_FAR_SLUG_NOTE
+    return data
 
 
 @mcp.tool(annotations={"title": "Get Public Inspection", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -801,13 +916,21 @@ async def list_agencies(
 
     Use the 'slug' values with search_documents() and other tools.
     Common procurement slugs:
-    - federal-procurement-policy-office (OFPP)
     - defense-department (DoD)
     - general-services-administration (GSA)
-    - defense-acquisition-regulations-system (DARS/DFARS)
-    - small-business-administration (SBA)
     - national-aeronautics-and-space-administration (NASA)
+    - defense-acquisition-regulations-system (DARS/DFARS)
+    - federal-procurement-policy-office (OFPP and the CAS Board)
+    - small-business-administration (SBA)
     - veterans-affairs-department (VA)
+
+    The FAR has no single slug. FAR rules and notices are filed jointly
+    under DoD, GSA and NASA; OFPP was added only from about mid-2025, so
+    the OFPP slug misses earlier FAR rules. The agency named 'Federal
+    Acquisition Regulation System' (federal-acquisition-regulation-system)
+    holds 2 documents ever; it carries a note in these results. For FAR
+    documents use search_documents(far_council=True) or
+    open_comment_periods(far_council=True).
 
     Parameters:
     - query: optional case-insensitive substring match against name, short_name,
@@ -836,6 +959,10 @@ async def list_agencies(
     if not include_detail:
         slim_fields = ("id", "name", "short_name", "slug", "parent_id")
         results = [{k: a.get(k) for k in slim_fields} for a in results]
+    results = [
+        {**a, "note": _EMPTY_FAR_SLUG_NOTE} if a.get("slug") == _EMPTY_FAR_SLUG else a
+        for a in results
+    ]
 
     return {
         "total_agencies": len(data),
@@ -859,6 +986,7 @@ async def open_comment_periods(
     agencies: list[str] | None = None,
     term: str | None = None,
     limit: int = 50,
+    far_council: bool = False,
 ) -> dict[str, Any]:
     """Find documents with currently open comment periods, soonest deadline first.
 
@@ -874,13 +1002,19 @@ async def open_comment_periods(
     recently published document with an unusually short comment window
     can fall outside the scan in that oversubscribed case.
 
-    Default: searches all agencies. Pass agency slugs to narrow scope.
-    Common for procurement: ['federal-procurement-policy-office',
-    'defense-department', 'general-services-administration']
+    Default: searches all agencies. Pass agency slugs to narrow scope,
+    e.g. ['defense-acquisition-regulations-system'] for DFARS or
+    ['general-services-administration'] for GSA and GSAR.
 
     Parameters:
+    - far_council: True for open FAR proposed rules and FAR information
+      collections (documents filed jointly by DoD, GSA and NASA; there is no
+      single FAR agency slug and the OFPP tag only appears from about
+      mid-2025). Cannot be combined with agencies.
     - limit: max documents returned after sorting (default 50, max 100).
-      Unfiltered dumps across all agencies can approach 200KB.
+      Unfiltered dumps across all agencies can approach 200KB; several
+      broad agencies together (e.g. DoD + GSA) can pass 100KB, so lower
+      limit for those.
     """
     agencies = _reject_empty_list(agencies, "agencies")
     limit = _clamp(limit, field="limit", lo=1, hi=100)
@@ -899,6 +1033,7 @@ async def open_comment_periods(
             per_page=_OPEN_COMMENT_PAGE_SIZE,
             page=page_num,
             order="oldest",
+            far_council=far_council,
         )
         total_open = data.get("count", 0)
         page_results = data.get("results", [])
