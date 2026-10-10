@@ -502,3 +502,47 @@ metadata comment dates remain source limitations, with no controlling deadline
 claimed. Full corpus, coverage, source hashes, original identifier mistakes and
 recovery, badge before/after and verification are retained under
 `Artifacts/mcp-e2e-20261010/round4/regulations/`.
+
+
+## October 10, 2026: Round 5 general content audit (2.0.6)
+
+New ordinary and power-user questions covered all nine tools across EPA PFAS
+drinking water, FWS habitat, NOAA fisheries, NRC decommissioning, SEC climate
+disclosure, CFTC swaps, EERE furnace standards and Forest Service products.
+**133 actual public calls completed**, with **124 semantic assertions** and
+**51 selected source comparisons** against **46 fresh Federal Register JSON
+and five fresh XML captures**; all capture hashes were verified.
+
+Followups recovered named rulemaking cases from incidental full-text matches,
+separated the PFAS final rule from its correction, continued the polar-bear
+lifecycle through all eight returned documents, and preserved posted-feedback
+and attachment boundaries. Actual linked notices distinguish NRC comments
+(October 15) from hearing requests (November 16), EPA pesticide objections and
+hearing requests from ordinary comments, and FWS's requested information date
+from its continued acceptance of new information.
+
+The NOAA notice 2026-20019 specifies **4:30 p.m. Alaska time (8:30 p.m. Eastern)**
+on October 15, while Regulations.gov reports 11:59 p.m. Eastern. That provider
+clock discrepancy remains explicit: the app preserves the raw value, labels it
+source metadata with `controlling_deadline_established: false`, and links to
+the actual notice that recovered the earlier cutoff. It is not a clock-parity
+pass or a corrected raw timestamp. All **50 dated returned occurrences** retained
+this qualification. Two EPA agenda dates have no established controlling
+deadline; unlinked provider records remain unverified. No new P0–P3 product
+defect was confirmed within this completed source scope.
+
+Fresh official by-name PyPI 2.0.6 actual console startup, nine-tool catalog and
+no-key access status passed. A separate fresh installed-package regression
+lane using Python 3.14.3, MCP SDK 2.3.0 and pytest 9.1.1 passed **179**, skipped
+**119** optional checks and collected **298**. These regression results are
+separate from the public content campaign; no keyed local data parity is claimed.
+
+Twenty initial requests used an operator-chosen page size of three rather than
+the documented minimum of five; correct guidance and corrected requests are
+preserved as caller exclusions, outside the 133 valid calls. Direct keyed
+Regulations.gov parity remains unavailable. Historical quota429 and attachment403
+are not new Round5 probes; attachment references are not claims their contents
+were read. The corpus, source ledger, fresh hashes, caller exclusions and
+installed-package provenance are retained under
+`Artifacts/mcp-e2e-20261010/round5/regulations/`. This record changes no runtime
+behavior or package version.
