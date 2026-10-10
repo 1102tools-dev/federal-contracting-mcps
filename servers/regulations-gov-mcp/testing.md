@@ -462,3 +462,43 @@ P1, or P3 findings. Final evidence is under
 `Artifacts/mcp-e2e-20261010/round3/regulations/final-published-2.0.6/`; prior
 attempts remain in their original directories. This documentation update
 changes no package version or runtime behavior.
+
+
+## October 10, 2026: Round 4 general content audit (2.0.6)
+
+New ordinary and power-user questions covered all nine tools across Buy American,
+defense cybersecurity, WOSB certification, FTC noncompete removal, CFPB financial
+data rights, airline accessibility, SNAP employment/vacatur and NARA records.
+The actual public service completed **139 of 141 calls**. Two requests used an
+operator-expanded NARA docket identifier; their correct 404 guidance is retained,
+and the exact returned `NARA-20-0006` recovered the docket and lifecycle.
+
+**107 semantic content assertions** and **40 selected source comparisons** use
+**29 fresh Federal Register JSON and six fresh XML captures**, with every hash
+verified. Ten machine-date matches, nine exact records-schedule matches, two SBA
+extension reconciliations and two DFARS full-DATES reconciliations preserve the
+difference between comment and effective dates. Fifteen comparisons need no
+reported deadline comparison; two historical final-rule provider comment dates
+remain unverified. All 39 dated returned occurrences preserve provider-only
+provenance and an explicitly unestablished controlling date. The NARA records
+schedules were matched by exact DAA identifiers and docket to their own notice,
+not a later notice covering a different schedule set.
+
+The current README badge reported 295 rather than the independently collected
+298: one P3 documentation finding, corrected by PR138. No new P0, P1 or P2
+content defect was confirmed in this completed scope. No runtime or package
+version changed. Fresh official by-name PyPI 2.0.6 actual console startup,
+nine-tool catalog and no-key access status passed. Actual console, public and
+frozen catalogs agree on names, descriptions, schemas and annotations. The fresh
+installed-package regression suite passed **179**, skipped **119** optional live
+checks and collected **298**.
+
+Direct keyed Regulations.gov source/CLI parity remains unavailable without a
+local key; prior DEMO_KEY429 is historical, not a repeated Round4 probe.
+Attachment references were inspected but attachment contents were not read;
+prior403 is historical, not a new successful attachment check. Posted feedback
+cannot establish all comments received or withheld content. The two historical
+metadata comment dates remain source limitations, with no controlling deadline
+claimed. Full corpus, coverage, source hashes, original identifier mistakes and
+recovery, badge before/after and verification are retained under
+`Artifacts/mcp-e2e-20261010/round4/regulations/`.
