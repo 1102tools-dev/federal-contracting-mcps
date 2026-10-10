@@ -544,7 +544,8 @@ unconstrained dependency resolver and actual current **MCP 2.3.0** from
 all eight tools**, each through the installed registered-tool pipeline and a
 separate actual public HTTPS call. These are not 172 stdio calls. The public
 service retains release SHA `4efbd9fb5fe5ea1f55aeb1682f9e9f7f3cc2c78b`; installed
-modules, official wheel, reviewed source and all eight catalogs match.
+modules, official wheel and reviewed source match; all eight tool definitions
+in the installed/public/reviewed catalogs also match.
 
 New subjects cover industrial hygiene, cartography, paralegal work, biology,
 geology, mechanical engineering, economics, archives, photography and
