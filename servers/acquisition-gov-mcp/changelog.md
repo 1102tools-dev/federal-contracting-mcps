@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.9 — 2026-10-10
+
+- Agency deviation dates: "Issued" now counts only as a label at the start of a line. Mid-sentence it is almost always about another document, so about 154 deviations reported the date of a document they quote (most often OMB memo M-25-26, 2025-05-02, or an executive order) as their own. NASA PCD 25-48A (RFO Part 19) now reads 2026-02-20, its letterhead date.
+- When no date is labeled, the issuance date is the first date standing alone on its line (the memo letterhead), including dates in capitals or without a comma. Of 1,390 recorded deviation PDFs, 364 gain a date this way; 74 that only had a wrongly quoted date now report none, with the existing "dates not stated" warning.
+- The hosted Worker reads the same rule from the D1 snapshot (loader format 3; snapshots from before it still work).
+
 ## 1.0.8 — 2026-09-13
 
 - Replace repeated CSS-selector scans with one document walk and reuse full text when no heading is requested. Preserve extraction output, source guards, process isolation and the 40-second parser deadline.

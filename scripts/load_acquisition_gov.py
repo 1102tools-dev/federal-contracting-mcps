@@ -40,7 +40,7 @@ sys.path.insert(0, str(ROOT / "servers/acquisition-gov-mcp/src"))  # the package
 from acquisition_gov_mcp import __version__, _html, _pdf, constants, server  # noqa: E402
 
 # Bump when the stored layout or derived data changes, so content is re-parsed.
-FORMAT = 2
+FORMAT = 3
 PARSER_VERSION = f"{__version__}+{FORMAT}"
 HTML = (("text/html",), constants.MAX_HTML_BYTES)
 PDF = (("application/pdf",), constants.MAX_PDF_BYTES)
@@ -117,6 +117,9 @@ def labeled_dates(joined: str) -> dict:
                 if match:
                     matches.append([position, match.end(), _pdf._normalize_date(match.group(1))])
         found[label] = matches
+    # The letterhead fallback: every date alone on its line.
+    found["Standalone"] = [[m.start(), m.end(), _pdf._normalize_date(m.group(1))]
+                           for m in _pdf._STANDALONE_DATE.finditer(joined)]
     return found
 
 

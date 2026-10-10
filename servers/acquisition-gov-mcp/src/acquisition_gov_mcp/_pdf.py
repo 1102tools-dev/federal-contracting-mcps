@@ -18,8 +18,8 @@ def _normalize_date(raw: str | None) -> str | None:
     if not raw:
         return None
     text = " ".join(raw.replace("\xa0", " ").split()).strip(" .")
-    text = re.sub(r"\bSept\b", "Sep", text, flags=re.I)
-    for fmt in ("%B %d, %Y", "%b %d, %Y", "%m/%d/%Y", "%Y-%m-%d", "%d %B %Y", "%d %b %Y"):
+    text = re.sub(r"\bSept\b", "Sep", text, flags=re.I).replace(".", "") if text else text
+    for fmt in ("%B %d, %Y", "%b %d, %Y", "%m/%d/%Y", "%Y-%m-%d", "%d %B %Y", "%d %b %Y", "%B %d %Y", "%b %d %Y"):
         try:
             return datetime.strptime(text, fmt).date().isoformat()
         except ValueError:
@@ -27,9 +27,28 @@ def _normalize_date(raw: str | None) -> str | None:
     return None
 
 
+# Labels that only count at the start of a line. "Issued" mid-sentence is
+# usually about another document ("OMB memorandum M-25-26 issued on May 2,
+# 2025"), not this one.
+_LINE_START_LABELS = {"date", "issued"}
+_DATE_TEXT = (r"([A-Z][a-z]+\s+\d{1,2},\s+\d{4}|\d{1,2}\s+[A-Z][a-z]+\s+\d{4}"
+              r"|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})")
+# A date alone on its line, as in a memo's letterhead ("PCD 25-48A / February 20, 2026").
+_STANDALONE_DATE = re.compile(
+    r"^[ \t]*([A-Za-z]{3,9}\.?\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4}"
+    r"|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})[ \t]*$",
+    re.M,
+)
+
+
+def _standalone_date(text: str) -> str | None:
+    match = _STANDALONE_DATE.search(text)
+    return _normalize_date(match.group(1)) if match else None
+
+
 def _labeled_date(text: str, label: str) -> str | None:
     pattern = re.compile(
-        (r"^\s*" if label.casefold() == "date" else r"\b")
+        (r"^\s*" if label.casefold() in _LINE_START_LABELS else r"\b")
         + rf"{re.escape(label)}(?:\s+date)?(?:\s*[:\-]\s*|\s+on\s+)"
         r"([A-Z][a-z]+\s+\d{1,2},\s+\d{4}|\d{1,2}\s+[A-Z][a-z]+\s+\d{4}|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})",
         re.I | re.M,
@@ -50,7 +69,8 @@ def _extract_document_fields(page_texts: list[tuple[int, str]]) -> dict[str, Any
     if len(applicability_text) > 8192:
         applicability_text = applicability_text[:8160] + " [truncated]"
     return {
-        "issuance_date": _labeled_date(joined, "Issued") or _labeled_date(joined, "Date"),
+        "issuance_date": (_labeled_date(joined, "Issued") or _labeled_date(joined, "Date")
+                          or _standalone_date(joined)),
         "effective_date": _labeled_date(joined, "Effective"),
         "expiration_date": _labeled_date(joined, "Expiration") or _labeled_date(joined, "Expires"),
         "applicability_text": applicability_text or None,

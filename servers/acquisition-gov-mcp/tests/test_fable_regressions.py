@@ -341,3 +341,22 @@ async def test_undated_part_points_to_index_card_dates(monkeypatch):
  result=await s.get_rfo_part(1)
  assert result['issuance_date'] is result['updated_date'] is None
  assert any('list_rfo_parts' in w for w in result['warnings'])
+
+
+# 2026-10-10 eCFR bug hunt side finding: NASA PCD 25-48A (RFO Part 19) reported
+# the issuance date of the OMB memo it quotes, not its own letterhead date.
+NASA_PCD_PAGE_1 = (
+    "National Aeronautics and \nSpace Administration \nWashington, DC 20546 \n \n"
+    "Procurement Class Deviation \n \nPCD 25-48A \n \nFebruary 20, 2026 \n \n \n"
+    "REVISION TO CLASS DEVIATION FROM FEDERAL ACQUISITION REGULATION \n"
+    "The Office of Management and Budget (OMB) memorandum, M-25-26 issued on May 2, \n"
+    "2025, titled, Overhauling the Federal Acquisition Regulation, provided additional guidance \n"
+)
+
+
+def test_quoted_issued_on_date_is_not_the_documents_date():
+    from acquisition_gov_mcp import _pdf
+    fields = _pdf._extract_document_fields([(1, NASA_PCD_PAGE_1)])
+    assert fields["issuance_date"] == "2026-02-20"
+    assert _pdf._labeled_date("Issued: May 2, 2025", "Issued") == "2025-05-02"
+    assert _pdf._labeled_date("the memo issued on May 2, 2025", "Issued") is None
