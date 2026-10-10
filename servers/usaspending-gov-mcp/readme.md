@@ -1,6 +1,6 @@
 # usaspending-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,303](https://img.shields.io/badge/regression%20tests-2%2C303-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,306](https://img.shields.io/badge/regression%20tests-2%2C306-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*The 1.0.16 source validation collected 2,303 regression cases: 1,924 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
+*The 1.0.17 source validation collected 2,306 regression cases: 1,927 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats, cumulative FFATA period scope and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
 
 Published 1.0.16 verification also passed all 127 content-corpus questions and
 11 recipient/fiscal followups on both a fresh official PyPI installation and
@@ -185,6 +185,7 @@ Once configured, try:
 
 - **No authentication required.** USAspending.gov is a free, public API.
 - **Fiscal time groups.** Fiscal years run October through September; quarter 1 is October–December and month 1 is October. `new_awards_over_time` combines the source’s fiscal-quarter counts for annual fiscal-year results. A date window that covers only part of a fiscal year returns counts for that requested portion, not the entire year. Quarter and month results retain the source counts.
+- **FFATA period scope.** `spending_by_subaward_grouped` ranks cumulative reported subaward totals for matching primes. Its date filters do not trim those totals to subaward actions inside the requested period. For period-specific reports, pass a returned `award_generated_internal_id` to `search_subawards`, read every page and filter the records by `action_date`. Reported amounts can repeat cumulative values; their sum is not net new subcontract spending.
 - **Award type groups cannot be mixed.** The `award_type` parameter takes one of: `contracts`, `idvs`, `grants`, `loans`, `direct_payments`, `other`. Use separate calls for separate categories.
 - **Actionable error messages.** Common API errors (422 mixed award types, 400 sort field missing, 400 empty keywords) are translated into guidance for the calling LLM.
 - **Sort field auto-handling.** The USAspending API requires the sort field to appear in the fields array; this server adds it automatically.
@@ -203,9 +204,9 @@ MIT
 ## Regression tests
 
 Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
-package directory. The default lane passes 1,924 cases and skips 379 live
+package directory. The default lane passes 1,927 cases and skips 379 live
 cases. Set `USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts
-below include parametrized and live-gated cases collected for 1.0.16.
+below include parametrized and live-gated cases collected for 1.0.17.
 
 | Test file | Cases | Coverage |
 |---|---:|---|
@@ -226,4 +227,5 @@ below include parametrized and live-gated cases collected for 1.0.16.
 | [test_content_e2e_1014.py](tests/test_content_e2e_1014.py) | 36 | Full end-to-end audit guidance regressions |
 | [test_published_scope_1015.py](tests/test_published_scope_1015.py) | 2 | Published tool-selection scope guidance |
 | [test_new_awards_fiscal_year_1016.py](tests/test_new_awards_fiscal_year_1016.py) | 6 | Captured annual fiscal-year correction and unchanged quarter/month samples |
-| **Total** | **2,303** | **1,924 offline; 379 live-gated** |
+| [test_subaward_period_scope_1017.py](tests/test_subaward_period_scope_1017.py) | 3 | Cumulative FFATA scope and complete dated-report recovery |
+| **Total** | **2,306** | **1,927 offline; 379 live-gated** |

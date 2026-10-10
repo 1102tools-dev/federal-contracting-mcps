@@ -1,9 +1,9 @@
 # Test suite map
 
-Python 3.12 collection on 2026-10-10 for source package 1.0.16 found
-2,303 cases: 1,924 offline and 379 live-gated. The measured offline release
-lane passed 1,924 and skipped 379. Collection itself executes no tests or
-source requests; the separately recorded 127-question Round 2 audit is not
+Python 3.12 collection on 2026-10-10 for source package 1.0.17 found
+2,306 cases: 1,927 offline and 379 live-gated. The measured offline release
+lane passed 1,927 and skipped 379. Collection itself executes no tests or
+source requests; the separately recorded 130-question Round 3 audit is not
 added to these pytest counts.
 
 Files retain their audit-round and fix-wave history; see [../testing.md](../testing.md).
@@ -27,7 +27,8 @@ Files retain their audit-round and fix-wave history; see [../testing.md](../test
 | `test_tool_profiles.py` | Tool profile selection | 3 | 0 |
 | `test_v0_3_features.py` | v0.3 expansion (17 to 55 tools) | 1,244 | 75 |
 | `test_validation.py` | Foundational validation and live checks | 62 | 10 |
-| **Total** | | **2,303** | **379** |
+| `test_subaward_period_scope_1017.py` | Round 15 cumulative/dated FFATA scope | 3 | 0 |
+| **Total** | | **2,306** | **379** |
 
 Live tests need `USASPENDING_LIVE_TESTS=1` (the API is keyless), are paced
 1-2 s apart by `conftest.py`, and the minimal anchor set runs via
