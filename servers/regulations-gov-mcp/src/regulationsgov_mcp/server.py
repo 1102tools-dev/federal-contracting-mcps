@@ -1005,6 +1005,7 @@ async def search_comments(
     sort: str = "-postedDate",
     page_size: int = DEFAULT_PAGE_SIZE,
     page_number: int = 1,
+    include_organization: bool = False,
 ) -> dict[str, Any]:
     """Search public comments on Regulations.gov.
 
@@ -1019,6 +1020,12 @@ async def search_comments(
     not comments received; mass-mail duplicates and unposted comments are
     not in it, so the agency's received count can be much higher.
 
+    Search rows carry no organization (the API leaves it out), and many
+    titles are only "Comment on FR Doc # ...". For "who commented" questions
+    set include_organization=True (page_size up to 25): each row gets the
+    submitter's organization from its comment detail. Rows without one were
+    filed by individuals or the agency hid the field.
+
     Page size: 5-100; page_number 1-40. Comments sorted by '-postedDate' by
     default. For larger result sets, split the query into posted_date_ge/le
     windows. Most comment text is in attachments; get_comment_detail with
@@ -1026,6 +1033,14 @@ async def search_comments(
     """
     page_size = _validate_page_size(page_size)
     page_number = _validate_page_number(page_number)
+    if not isinstance(include_organization, bool):
+        raise ValueError("include_organization must be true or false.")
+    if include_organization and page_size > _ORG_LOOKUP_MAX_ROWS:
+        raise ValueError(
+            f"include_organization=True reads one comment detail per row, so "
+            f"page_size is capped at {_ORG_LOOKUP_MAX_ROWS} (got {page_size}). "
+            f"Lower page_size and page through."
+        )
     search_term = _validate_search_term(search_term, field="search_term")
     agency_id = _validate_agency_id(agency_id, field="agency_id")
     comment_on_id = _validate_comment_on_id(comment_on_id, field="comment_on_id")
@@ -1060,10 +1075,52 @@ async def search_comments(
         f"agency_id={agency_id!r}, docket_id={docket_id!r}, "
         f"comment_on_id={comment_on_id!r}"
     )
-    return _label_posted_count(_compact_listing(_flag_no_data(
+    response = _label_posted_count(_compact_listing(_flag_no_data(
         result, context=ctx, page_size=page_size, page_number=page_number,
         hints=("comment_on_id is the document's hex objectId, not its documentId",),
     )))
+    if response.get("data"):
+        if include_organization:
+            await _add_organizations(response)
+        else:
+            response["organization_note"] = (
+                "Search rows carry no organization. Repeat with "
+                "include_organization=True (page_size up to 25) or call "
+                "get_comment_detail before saying which groups commented."
+            )
+    return response
+
+
+_ORG_LOOKUP_MAX_ROWS = 25
+
+
+async def _add_organizations(response: dict[str, Any]) -> None:
+    """Fill attributes.organization on each row from its comment detail.
+
+    Details go through the same cache, pacing, and hourly budget as any
+    other call; a failed lookup is marked on the row instead of failing
+    the search."""
+    found = failed = 0
+    for row in _as_list(response.get("data")):
+        if not isinstance(row, dict) or not isinstance(row.get("id"), str):
+            continue
+        attrs = row.setdefault("attributes", {})
+        try:
+            comment_id = _validate_id(row["id"], field="comment_id")
+            detail = await _get(f"comments/{comment_id}", {})
+        except (ToolError, ValueError):
+            attrs["organizationLookupFailed"] = True
+            failed += 1
+            continue
+        org = _safe_dict(_safe_dict(detail.get("data")).get("attributes")).get("organization")
+        if isinstance(org, str) and org.strip():
+            attrs["organization"] = org.strip()
+            found += 1
+    response["organization_lookup"] = {
+        "rows_with_organization": found,
+        "lookups_failed": failed,
+        "note": "Rows without organization were filed by individuals or the agency hid the field.",
+    }
 
 
 @mcp.tool(annotations={"title": "Get Comment Detail", **_OPEN_WORLD})

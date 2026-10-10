@@ -245,3 +245,61 @@ def test_open_comment_periods_rows_carry_subtype(monkeypatch):
     gsar = rows["GSA-GSAR-2026-0563-0001"]
     assert gsar["subtype"] == "Notice of Proposed Rulemaking (NPRM)"
     assert gsar["fr_doc_num"] == "2026-19331"
+
+
+# ---------------------------------------------------------------------------
+# R2: organization on comment search rows
+# ---------------------------------------------------------------------------
+
+def _comment_rows():
+    # Search rows as the API returns them (dl/comments_on_0194.json shape:
+    # no organization attribute), for PSC's comment plus two others.
+    base = FIXTURE["comments_on_0194"]["data"][0]["attributes"]
+    rows = []
+    for cid in ("DARS-2020-0034-0276", "DARS-2020-0034-0230", "DARS-2020-0034-0231"):
+        rows.append({"id": cid, "type": "comments", "attributes": dict(base)})
+    return {"data": rows, "meta": {"totalElements": 3, "lastPage": True}}
+
+
+def test_comment_search_rows_lack_organization_at_the_source():
+    for row in FIXTURE["comments_on_0194"]["data"]:
+        assert "organization" not in row["attributes"]
+
+
+def test_search_comments_include_organization(monkeypatch):
+    calls = []
+
+    def route(path, params):
+        if path == "comments":
+            return _comment_rows()
+        if path == "comments/DARS-2020-0034-0276":
+            return FIXTURE["comment_DARS-2020-0034-0276"]  # organization: PSC
+        if path == "comments/DARS-2020-0034-0230":
+            return {"data": {"id": "DARS-2020-0034-0230", "attributes": {"organization": None}}}
+        raise srv.ToolError("HTTP 503: upstream")
+
+    _fake_get(monkeypatch, route, calls)
+    out = asyncio.run(srv.search_comments(comment_on_id="090000648664a1fa", page_size=5,
+                                          include_organization=True))
+    attrs = {r["id"]: r["attributes"] for r in out["data"]}
+    assert attrs["DARS-2020-0034-0276"]["organization"] == "Professional Services Council"
+    assert "organization" not in attrs["DARS-2020-0034-0230"]
+    assert attrs["DARS-2020-0034-0231"]["organizationLookupFailed"] is True
+    assert out["organization_lookup"]["rows_with_organization"] == 1
+    assert out["organization_lookup"]["lookups_failed"] == 1
+    assert [c[0] for c in calls[1:]] == [f"comments/{i}" for i in attrs]
+
+
+def test_search_comments_default_warns_about_missing_organization(monkeypatch):
+    calls = []
+    _fake_get(monkeypatch, lambda p, q: _comment_rows(), calls)
+    out = asyncio.run(srv.search_comments(docket_id="DARS-2020-0034"))
+    assert len(calls) == 1, "no detail lookups unless asked"
+    assert "include_organization=True" in out["organization_note"]
+
+
+def test_include_organization_caps_page_size(monkeypatch):
+    _fake_get(monkeypatch, lambda p, q: _comment_rows())
+    with pytest.raises(ValueError, match="capped at 25"):
+        asyncio.run(srv.search_comments(docket_id="DARS-2020-0034", page_size=50,
+                                        include_organization=True))
