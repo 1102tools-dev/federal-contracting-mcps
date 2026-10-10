@@ -328,3 +328,60 @@ def test_fr1_sub_agency_filter_does_not_widen_to_parent(monkeypatch):
     monkeypatch.setattr(srv, "_get", _pi_fake())
     data = _payload(asyncio.run(_call("get_public_inspection", agency_filter="army")))
     assert [d["document_number"] for d in data["documents"]] == ["2026-20785"]
+
+
+# ===========================================================================
+# FR-8: paging past page 50
+# ===========================================================================
+
+def test_fr8_page_past_50_is_refused_before_any_call(monkeypatch):
+    calls: list[str] = []
+
+    async def fake(url):
+        calls.append(url)
+        return {"count": 1682, "total_pages": 50, "results": [{"document_number": "2026-20176"}]}
+
+    monkeypatch.setattr(srv, "_get", fake)
+    asyncio.run(_call_expect_error(
+        "search_documents", "50-page",
+        agencies=["defense-acquisition-regulations-system"], page=51, per_page=5,
+    ))
+    assert calls == []
+
+
+def test_fr8_total_pages_is_computed_and_reachable_pages_flagged(monkeypatch):
+    async def fake(url):
+        return {"count": 1682, "total_pages": 50, "results": [{"document_number": "x"}] * 5}
+
+    monkeypatch.setattr(srv, "_get", fake)
+    data = _payload(asyncio.run(_call(
+        "search_documents", agencies=["defense-acquisition-regulations-system"], per_page=5,
+    )))
+    assert data["total_pages"] == 337
+    assert data["max_reachable_page"] == 50
+    assert "per_page=100" in data["paging_note"]
+
+
+def test_fr8_small_result_sets_carry_no_paging_note(monkeypatch):
+    async def fake(url):
+        return {"count": 1682, "total_pages": 17, "results": [{"document_number": "x"}] * 100}
+
+    monkeypatch.setattr(srv, "_get", fake)
+    data = _payload(asyncio.run(_call(
+        "search_documents", agencies=["defense-acquisition-regulations-system"], per_page=100,
+    )))
+    assert data["total_pages"] == 17
+    assert "max_reachable_page" not in data and "paging_note" not in data
+
+
+@live
+def test_live_fr8_page_51_refused_and_true_page_count():
+    asyncio.run(_call_expect_error(
+        "search_documents", "50-page",
+        agencies=["defense-acquisition-regulations-system"], page=51, per_page=5,
+    ))
+    data = _payload(asyncio.run(_call(
+        "search_documents", agencies=["defense-acquisition-regulations-system"], per_page=5,
+    )))
+    assert data["total_pages"] == -(-data["count"] // 5) > 50
+    assert data["max_reachable_page"] == 50

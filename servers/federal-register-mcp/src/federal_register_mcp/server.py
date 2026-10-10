@@ -504,6 +504,29 @@ def _drop_null_presidential_fields(data: Any) -> None:
                     del doc[key]
 
 
+# The API serves pages 1-50 only; any later page comes back as page 1.
+_MAX_API_PAGE = 50
+
+
+def _fix_paging(data: Any, *, per_page: int) -> None:
+    """Replace the API's total_pages (reported as at most 50) with the true
+    count and say how far paging can reach."""
+    if not isinstance(data, dict):
+        return
+    count = data.get("count")
+    if not isinstance(count, int) or count <= 0:
+        return
+    total_pages = -(-count // per_page)
+    data["total_pages"] = total_pages
+    if total_pages > _MAX_API_PAGE:
+        data["max_reachable_page"] = _MAX_API_PAGE
+        data["paging_note"] = (
+            f"Only pages 1-{_MAX_API_PAGE} can be read ({_MAX_API_PAGE * per_page:,} of "
+            f"{count:,} documents at per_page={per_page}). Use per_page=100 and/or "
+            f"narrower publication date ranges to reach the rest."
+        )
+
+
 # ---------------------------------------------------------------------------
 # FAR Council documents
 # ---------------------------------------------------------------------------
@@ -657,6 +680,12 @@ async def search_documents(
 
     Count caps at 10,000 for broad queries. Use date ranges for accurate counts.
     per_page capped at 100 to stay within MCP response size limits.
+
+    Paging: the Federal Register serves only pages 1-50 of any search (a
+    later page silently comes back as page 1), so page > 50 is refused.
+    total_pages is the true page count; when it passes 50,
+    max_reachable_page and paging_note say how to reach the rest (per_page=100
+    reaches 5,000 documents; split the publication date range beyond that).
     """
     agencies = _reject_empty_list(agencies, "agencies")
     agencies = _reject_empty_strings_in_list(agencies, field="agencies")
@@ -728,6 +757,13 @@ async def search_documents(
         data = await _far_council_search(filters, per_page=per_page, page=page, order=order)
         _drop_null_presidential_fields(data)
         return data
+    if page > _MAX_API_PAGE:
+        raise ValueError(
+            f"page={page} is past the Federal Register's 50-page limit: the API "
+            f"returns page 1 again for any later page. Use per_page=100 (pages "
+            f"1-50 then reach 5,000 documents) or split the publication date "
+            f"range into smaller searches."
+        )
 
     qs = _build_search_params(
         agencies=agencies, **filters,
@@ -737,6 +773,7 @@ async def search_documents(
     if agencies and _EMPTY_FAR_SLUG in agencies and isinstance(data, dict):
         data["note"] = _EMPTY_FAR_SLUG_NOTE
     _drop_null_presidential_fields(data)
+    _fix_paging(data, per_page=per_page)
     return data
 
 
