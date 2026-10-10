@@ -44,10 +44,10 @@ const NOTICES = [
   notice(8, {title: "Zero trust network upgrade", description: "Earlier version: zero trust.", solicitation_number: "sol-1", is_latest: 0, response_deadline: "2026-10-05T14:00:00-04:00", response_deadline_utc: "2026-10-05T18:00:00Z", posted_at: "2026-08-20 10:00:00", posted_date: "2026-08-20"}),
 ];
 
-function database(loaded = true) {
+function database(loaded = true, rows: Record<string, unknown>[] = NOTICES) {
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(schema);
-  for (const row of NOTICES) {
+  for (const row of rows) {
     const columns = Object.keys(row);
     sqlite.prepare(`INSERT INTO opportunities (${columns.join(", ")}) VALUES (${columns.map(() => "?").join(", ")})`).run(...(Object.values(row) as any[]));
   }
@@ -82,6 +82,37 @@ test("default search hides past deadlines and archived notices, soonest deadline
   assert.deepEqual(ids(await search({include_past_deadlines: true})), [3, 7, 2, 4, 1, 5]);
 });
 
+test("award notices and justifications are never dropped by the past-deadline filter", async () => {
+  // GSA MAS award notices carry a placeholder deadline equal to the award day
+  // (e.g. 2026-09-15T11:12:13-05:00); justifications have no real response deadline.
+  const gsa = {department: "GENERAL SERVICES ADMINISTRATION", sub_tier: "FEDERAL ACQUISITION SERVICE", office: "GSA/FAS ADMIN SVCS ACQUISITION BR(2", solicitation_number: "47QSMD20R0001"};
+  const rows = [
+    ...NOTICES,
+    notice(20, {...gsa, notice_type: "Award Notice", response_deadline: "2026-09-15T11:12:13-05:00", response_deadline_utc: "2026-09-15T16:12:13Z", award_number: "47QTCA26D0001", awardee: "Vendor A", award_amount: 475000, posted_date: "2026-09-15", posted_at: "2026-09-15 12:00:00"}),
+    notice(21, {notice_type: "Justification", response_deadline: "2026-09-10T12:00:00-04:00", response_deadline_utc: "2026-09-10T16:00:00Z"}),
+    notice(22, {notice_type: "Justification and Approval (J&A)", response_deadline: "2026-09-10T12:00:00-04:00", response_deadline_utc: "2026-09-10T16:00:00Z"}),
+  ];
+  const awards = database(true, rows);
+  const found = await searchOpportunities(awards, {}, NOW);
+  assert.deepEqual(ids(found).sort((a, b) => a - b), [1, 2, 4, 5, 7, 20, 21, 22], "past-deadline solicitation 3 stays out; award 20 and justifications 21, 22 stay in");
+  const byAgency = await summarizeOpportunities(awards, {group_by: "agency", notice_types: ["Award Notice"]}, NOW);
+  assert.deepEqual(byAgency.groups, [{value: "DEPT OF DEFENSE", count: 1}, {value: "GENERAL SERVICES ADMINISTRATION", count: 1}]);
+  const description = (TOOLS[0].inputSchema.properties as any).include_past_deadlines.description;
+  assert.match(description, /Award notices and justifications are always included/);
+});
+
+test("results say how many matches are award notices or justifications", async () => {
+  const result = await search({naics_codes: ["5415"]});
+  assert.equal(result.total_matches, 4);
+  assert.ok(result.notes.some((n: string) => n.startsWith("1 of the 4 matches is an award notice or justification")), JSON.stringify(result.notes));
+  const counts = await summarizeOpportunities(db, {group_by: "agency", naics_codes: ["5415"]}, NOW);
+  assert.ok(counts.notes.some((n: string) => n.startsWith("1 of the 4 matches")));
+  const typed = await search({naics_codes: ["5415"], notice_types: ["Solicitation"]});
+  assert.ok(!typed.notes.some((n: string) => /take no responses/.test(n)), "no note once notice_types is set");
+  const byType = await summarizeOpportunities(db, {group_by: "notice_type"}, NOW);
+  assert.ok(!byType.notes.some((n: string) => /take no responses/.test(n)), "no note when grouped by notice type");
+});
+
 test("only the latest version of an amended notice is shown unless asked", async () => {
   assert.deepEqual(ids(await search({keywords: "\"zero trust\""})), [1]);
   const all = await search({keywords: "\"zero trust\"", include_earlier_versions: true});
@@ -98,6 +129,15 @@ test("keyword search matches words, stems, and quoted phrases in title or descri
   assert.deepEqual(ids(await search({keywords: "bridge"})), [4]);
   assert.deepEqual(ids(await search({keywords: "zero trust", sort: "relevance"})), [1, 2]);
   await assert.rejects(search({keywords: "NOT OR"}), /no searchable words/, "operators alone are ignored");
+});
+
+test("agency description does not promise a command matches its field activities", async () => {
+  // agency="NAVSEA" matches only the NAVSEA HQ office; warfare centers post as NSWC/NUWC offices.
+  const description = (TOOLS[0].inputSchema.properties as any).agency.description;
+  assert.doesNotMatch(description, /e\.g\. [^.]*NAVSEA\./);
+  assert.match(description, /own office names/);
+  const navy = database(true, [notice(50, {office: "NAVSEA HQ"}), notice(51, {office: "NSWC DAHLGREN"})]);
+  assert.deepEqual(ids(await searchOpportunities(navy, {agency: "NSWC"}, NOW)), [51]);
 });
 
 test("filters combine: type with slash, NAICS prefix, set-aside, agency, state, solicitation", async () => {
@@ -178,14 +218,37 @@ test("get_opportunity returns full details, related notices, and handles misses"
   assert.equal(old.latest_version, false);
   assert.match(old.notes[0], /newer version/);
   const bySol = await getOpportunity(db, {solicitation_number: "SOL-1"}) as any;
-  assert.equal(bySol.notice_id, id(5), "most recently posted latest version");
-  assert.deepEqual(bySol.award, {number: "W91-26-C-0001", date: null, amount: 1250000, awardee: "Acme Corp"});
+  assert.equal(bySol.notice_id, id(1), "the current solicitation, not the newer award notice");
+  assert.deepEqual(bySol.related_notices[0], {notice_id: id(5), notice_type: "Award Notice", title: "Award of network upgrade", posted_date: "2026-09-26", response_deadline: null, award_number: "W91-26-C-0001", awardee: "Acme Corp", award_amount: 1250000, latest_version: true, link: `https://sam.gov/opp/${id(5)}/view`});
+  assert.equal(bySol.related_notices[1].awardee, undefined, "award fields only on award notices");
+  const award = await getOpportunity(db, {notice_id: id(5)}) as any;
+  assert.deepEqual(award.award, {number: "W91-26-C-0001", date: null, amount: 1250000, awardee: "Acme Corp"});
+  const awardsOnly = await getOpportunity(database(true, [notice(40, {notice_type: "Award Notice", award_number: "A1", awardee: "X"})]), {solicitation_number: "SOL-40"}) as any;
+  assert.equal(awardsOnly.notice_id, id(40), "an award notice when that is all there is");
   const miss = await getOpportunity(db, {notice_id: "f".repeat(32)}) as any;
   assert.equal(miss.found, false);
   assert.equal(miss.link, `https://sam.gov/opp/${"f".repeat(32)}/view`);
   await assert.rejects(getOpportunity(db, {notice_id: "abc"}), /32-character/);
   await assert.rejects(getOpportunity(db, {}), /Pass notice_id or solicitation_number/);
   await assert.rejects(getOpportunity(db, {id: "x"}), /Unknown argument/);
+});
+
+test("no award block on a solicitation whose awardee cell holds stray text", async () => {
+  // N6133127R0004 (open solicitation): the file's Awardee cell is the ZIP "32407-7001".
+  const stray = database(true, [notice(60, {awardee: "32407-7001"}), notice(61, {notice_type: "Award Notice", awardee: "Acme Corp"})]);
+  const found = await searchOpportunities(stray, {}, NOW);
+  assert.equal(found.results.find((r: any) => r.notice_id === id(60))?.award, undefined);
+  assert.deepEqual(found.results.find((r: any) => r.notice_id === id(61))?.award, {number: null, date: null, amount: null, awardee: "Acme Corp"});
+  assert.equal((await getOpportunity(stray, {notice_id: id(60)}) as any).award, null);
+});
+
+test("get_opportunity says when the deadline has no time zone", async () => {
+  // HC101326QA336: the file says 2026-10-12T16:00:00; sam.gov's API says America/Chicago.
+  const disa = database(true, [notice(30, {office_state: "IL", response_deadline: "2026-10-12T16:00:00", response_deadline_utc: "2026-10-12T21:00:00Z"})]);
+  const result = await getOpportunity(disa, {notice_id: id(30)}) as any;
+  assert.ok(result.notes.some((n: string) => n.startsWith("SAM.gov's file gives this response deadline without a time zone")), JSON.stringify(result.notes));
+  const withZone = await getOpportunity(db, {notice_id: id(1)}) as any;
+  assert.ok(!withZone.notes.some((n: string) => /without a time zone/.test(n)));
 });
 
 test("summarize_opportunities groups with the search filters", async () => {
@@ -195,6 +258,23 @@ test("summarize_opportunities groups with the search filters", async () => {
   const byMonth = await summarizeOpportunities(db, {group_by: "posted_month", top: 1, include_past_deadlines: true}, NOW);
   assert.deepEqual([byMonth.groups, byMonth.other_count, byMonth.distinct_values], [[{value: "2026-09", count: 5}], 1, 2]);
   await assert.rejects(summarizeOpportunities(db, {group_by: "vendor"}, NOW), /group_by must be one of/);
+});
+
+test("distinct_values counts the blank group, and the no-match note fits the flags", async () => {
+  const bySetAside = await summarizeOpportunities(db, {group_by: "set_aside", naics_codes: ["5415"]}, NOW);
+  assert.equal(bySetAside.distinct_values, bySetAside.groups.length, "(blank) and SBA");
+  const none = await search({keywords: "submarine", include_past_deadlines: true});
+  const note = none.notes.find((n: string) => n.startsWith("No active notices matched"));
+  assert.ok(note && !note.includes("include_past_deadlines"), note);
+  assert.match((await search({keywords: "submarine"})).notes.at(-1), /include_past_deadlines/);
+});
+
+test("posted_month groups come back in month order with a note on archiving", async () => {
+  const byMonth = await summarizeOpportunities(db, {group_by: "posted_month"}, NOW);
+  assert.deepEqual(byMonth.groups, [{value: "2026-08", count: 1}, {value: "2026-09", count: 4}]);
+  assert.ok(byMonth.notes.some((n: string) => /only notices still active/.test(n)), JSON.stringify(byMonth.notes));
+  const byAgency = await summarizeOpportunities(db, {group_by: "agency"}, NOW);
+  assert.ok(!byAgency.notes.some((n: string) => /only notices still active/.test(n)));
 });
 
 test("get_data_status reports freshness", async () => {

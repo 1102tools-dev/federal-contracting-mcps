@@ -58,6 +58,22 @@ COLUMNS = {
 FIELDS = [c for c in COLUMNS.values() if c] + ["posted_date", "response_deadline_utc", "is_latest"]
 
 EASTERN = ZoneInfo("America/New_York")
+# Contracting office state -> time zone, for deadlines published without one.
+# sam.gov's API carries the zone (responseTz); the file does not.
+OFFICE_ZONES = {
+    "America/New_York": {"CT", "DC", "DE", "FL", "GA", "IN", "KY", "MA", "MD", "ME", "MI", "NC", "NH", "NJ",
+                         "NY", "OH", "PA", "RI", "SC", "VA", "VT", "WV"},
+    "America/Chicago": {"AL", "AR", "IA", "IL", "KS", "LA", "MN", "MO", "MS", "ND", "NE", "OK", "SD", "TN",
+                        "TX", "WI"},
+    "America/Denver": {"CO", "ID", "MT", "NM", "UT", "WY"},
+    "America/Phoenix": {"AZ"},
+    "America/Los_Angeles": {"CA", "NV", "OR", "WA"},
+    "America/Anchorage": {"AK"},
+    "Pacific/Honolulu": {"HI"},
+    "America/Puerto_Rico": {"PR", "VI"},
+    "Pacific/Guam": {"GU", "MP"},
+    "Europe/Berlin": {"AE"},  # Armed Forces Europe; DISA/DITCO Europe deadlines are Europe/Berlin
+}
 UTF8_SEQUENCE = re.compile(rb"[\xc2-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf]{2}|[\xf0-\xf4][\x80-\xbf]{3}")
 MOJIBAKE = [("â€™", "’"), ("â€˜", "‘"), ("â€œ", "“"), ("â€?", "”"), ("â€“", "–"), ("â€”", "—"),
             ("â€¢", "•"), ("â€¦", "…"), ("Â§", "§"), ("Â°", "°"), ("Â®", "®"), ("Â ", " ")]
@@ -88,9 +104,20 @@ def fix_text(value):
     return text
 
 
-def utc_deadline(value):
-    """UTC timestamp for comparisons. Deadlines without an offset are read as
-    Eastern time, and date-only deadlines as the end of that day."""
+def office_zone(state):
+    """Time zone of a contracting office's state (most of the state, where it
+    has two), or None when unknown."""
+    for zone, states in OFFICE_ZONES.items():
+        if state in states:
+            return ZoneInfo(zone)
+    return None
+
+
+def utc_deadline(value, office_state=None):
+    """UTC timestamp for comparisons. The file drops the time zone from some
+    deadlines; those are read in the contracting office's time zone (Eastern
+    when the office state is unknown), and date-only deadlines as the end of
+    that day."""
     if not value:
         return None
     try:
@@ -100,7 +127,7 @@ def utc_deadline(value):
     if len(value) == 10:
         parsed = parsed.replace(hour=23, minute=59, second=59)
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=EASTERN)
+        parsed = parsed.replace(tzinfo=office_zone(office_state) or EASTERN)
     return parsed.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -139,17 +166,20 @@ def normalize(source):
     row["award_date"] = day(row["award_date"])
     row["award_amount"] = amount(row["award_amount"])
     row["set_aside_code"] = set_aside_code(row["set_aside_code"])
-    row["response_deadline_utc"] = utc_deadline(row["response_deadline"])
+    row["response_deadline_utc"] = utc_deadline(row["response_deadline"], row["office_state"])
     return row
 
 
 def version_key(row):
     """Rows sharing a key are versions of one notice. Versions share a
-    solicitation number and sub-tier; award notices must also share the award
-    number and awardee, since one solicitation can have thousands of awards."""
+    solicitation number, sub-tier, and notice type: offices often post a
+    solicitation, presolicitation, or special notice as separate current
+    notices under one number, and the file has no link between versions.
+    Award notices must also share the award number and awardee, since one
+    solicitation can have thousands of awards."""
     if not row["solicitation_number"]:
         return None
-    key = (row["solicitation_number"].upper(), row["sub_tier"])
+    key = (row["solicitation_number"].upper(), row["sub_tier"], row["notice_type"])
     if row["notice_type"] == "Award Notice":
         if not (row["award_number"] or row["awardee"]):
             return None

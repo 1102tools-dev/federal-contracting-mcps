@@ -100,6 +100,21 @@ def test_deadlines_convert_to_utc_with_eastern_default():
     assert loader.utc_deadline("TBD") is None
 
 
+def test_deadlines_without_an_offset_use_the_contracting_office_time_zone():
+    # HC101326QA336 (DISA, Scott AFB IL): sam.gov's API gives responseTz America/Chicago.
+    rows = [notice("1d5b93726acd4b6ab971f09a16948a67", ResponseDeadLine="2026-10-12T16:00:00", State="IL"),
+            notice("449ef17b" + "0" * 24, ResponseDeadLine="2026-10-16T08:00:00", State="CA"),
+            notice("fccafe1a" + "0" * 24, ResponseDeadLine="2026-11-05T10:00:00", State="AE"),
+            notice("df1edaa1" + "0" * 24, ResponseDeadLine="2026-11-21T21:00:00", State="PA"),
+            notice("e" * 32, ResponseDeadLine="2026-10-12T16:00:00", State=""),
+            notice("f" * 32, ResponseDeadLine="2026-10-12T16:00:00-04:00", State="IL")]
+    parsed, _ = loader.parse(csv_bytes(rows), TODAY.isoformat())
+    utc = {i[:8]: r["response_deadline_utc"] for i, r in parsed.items()}
+    assert utc == {"1d5b9372": "2026-10-12T21:00:00Z", "449ef17b": "2026-10-16T15:00:00Z",
+                   "fccafe1a": "2026-11-05T09:00:00Z", "df1edaa1": "2026-11-22T02:00:00Z",
+                   "e" * 8: "2026-10-12T20:00:00Z", "f" * 8: "2026-10-12T20:00:00Z"}
+
+
 def test_parse_skips_inactive_blank_and_past_archive_notices():
     rows = [
         notice("a" * 32, SetASideCode='["SBA"]', ResponseDeadLine="2026-10-01"),
@@ -132,6 +147,24 @@ def test_earlier_versions_are_flagged_but_separate_awards_are_not():
     parsed, _ = loader.parse(csv_bytes(rows), TODAY.isoformat())
     stale = sorted(i[0] for i, r in parsed.items() if not r["is_latest"])
     assert stale == ["a", "e"]
+
+
+def test_separate_notices_of_other_types_sharing_a_solicitation_number_stay_latest():
+    # Real cases from the 2026-10-10 file, all latest: true on sam.gov's API.
+    tomah = {"Sol#": "36C25227Q0035", "Sub-Tier": "VETERANS AFFAIRS, DEPARTMENT OF", "Office": "252-NETWORK CONTRACT OFFICE 12"}
+    wilmington = {"Sol#": "W912PM27BA002", "Sub-Tier": "DEPT OF THE ARMY", "Office": "W074 ENDIST WILMINGTON"}
+    rows = [
+        # The Tomah solicitation, then a separate presolicitation chain 25-29 minutes later.
+        notice("b3bbb65fa234403598d9cceb8f2dfb24", **tomah, Type="Solicitation", BaseType="Solicitation", PostedDate="2026-10-08 09:08:00"),
+        notice("7bd34e5ed23844f2aa2487540e9960de", **tomah, Type="Presolicitation", BaseType="Presolicitation", PostedDate="2026-10-08 09:33:30"),
+        notice("304e92aa89ac4dbd94107bfe42e95101", **tomah, Type="Presolicitation", BaseType="Presolicitation", PostedDate="2026-10-08 09:37:16"),
+        # A consolidation notice, then a presolicitation under the same number.
+        notice("60c3f2a8dc834bfb972cf0e1c54536b6", **wilmington, Type="Special Notice", BaseType="Special Notice", PostedDate="2026-10-05 14:21:00"),
+        notice("5b2b99c1e01246e4ac13b25f808c66cd", **wilmington, Type="Presolicitation", BaseType="Special Notice", PostedDate="2026-10-05 14:52:19"),
+    ]
+    parsed, _ = loader.parse(csv_bytes(rows), TODAY.isoformat())
+    latest = {i[:8] for i, r in parsed.items() if r["is_latest"]}
+    assert latest == {"b3bbb65f", "304e92aa", "60c3f2a8", "5b2b99c1"}  # 7bd34e5e is the earlier presolicitation
 
 
 def test_new_amendment_flips_the_previous_version(tmp_path, d1):

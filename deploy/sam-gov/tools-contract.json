@@ -78,7 +78,7 @@
         "agency": {
           "type": "string",
           "maxLength": 200,
-          "description": "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NAVSEA."
+          "description": "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NSWC Dahlgren. Field activities post under their own office names, so a command name matches only its headquarters office (NAVSEA matches NAVSEA HQ, not NSWC or NUWC offices)."
         },
         "place_of_performance_state": {
           "type": "string",
@@ -118,7 +118,7 @@
         "include_past_deadlines": {
           "type": "boolean",
           "default": false,
-          "description": "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Notices without a deadline, such as award notices, are always included."
+          "description": "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Award notices and justifications are always included, even when they list a past deadline, and so are notices with no deadline."
         },
         "include_earlier_versions": {
           "type": "boolean",
@@ -159,7 +159,7 @@
   },
   {
     "name": "get_opportunity",
-    "description": "Get one SAM.gov notice in full: description, response deadline, set-aside, NAICS and PSC codes, place of performance, contracting office, points of contact, award details for award notices, and the public sam.gov link. Also lists other active notices with the same solicitation number, such as earlier versions, amendments, or the award.\n\nPass the 32-character notice ID from search results, or a solicitation number (returns its most recently posted notice). Attachments are not retrieved; open the sam.gov link for them.",
+    "description": "Get one SAM.gov notice in full: description, response deadline, set-aside, NAICS and PSC codes, place of performance, contracting office, points of contact, award details for award notices, and the public sam.gov link. Also lists other active notices with the same solicitation number, such as earlier versions, amendments, or awards (with awardee and amount).\n\nPass the 32-character notice ID from search results, or a solicitation number (returns its most recently posted current notice, preferring the solicitation over award notices and justifications). Attachments are not retrieved; open the sam.gov link for them.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -278,7 +278,7 @@
         "agency": {
           "type": "string",
           "maxLength": 200,
-          "description": "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NAVSEA."
+          "description": "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NSWC Dahlgren. Field activities post under their own office names, so a command name matches only its headquarters office (NAVSEA matches NAVSEA HQ, not NSWC or NUWC offices)."
         },
         "place_of_performance_state": {
           "type": "string",
@@ -318,7 +318,7 @@
         "include_past_deadlines": {
           "type": "boolean",
           "default": false,
-          "description": "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Notices without a deadline, such as award notices, are always included."
+          "description": "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Award notices and justifications are always included, even when they list a past deadline, and so are notices with no deadline."
         },
         "include_earlier_versions": {
           "type": "boolean",
@@ -330,7 +330,7 @@
           "minimum": 1,
           "maximum": 100,
           "default": 25,
-          "description": "Number of groups to return, largest first."
+          "description": "Number of groups to return, largest first. For posted_month, the most recent months, in month order."
         }
       },
       "required": [

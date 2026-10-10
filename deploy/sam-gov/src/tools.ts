@@ -17,6 +17,9 @@ export const NOTICE_TYPES = [
   "Modification/Amendment/Cancel", "Consolidate/(Substantially) Bundle", "Sale of Surplus Property",
 ];
 
+/** Notice types nobody responds to; never dropped by the past-deadline filter. */
+const NO_RESPONSE_TYPES = ["Award Notice", "Justification", "Justification and Approval (J&A)"];
+
 export const SET_ASIDE_CODES = [
   "SBA", "SBP", "8A", "8AN", "HZC", "HZS", "SDVOSBC", "SDVOSBS", "WOSB", "WOSBSS", "EDWOSB",
   "EDWOSBSS", "VSA", "VSS", "ISBEE", "IEE", "BICiv", "LAS", "ESB", "NONE",
@@ -49,7 +52,7 @@ const FILTERS = {
   naics_codes: codeList("NAICS codes or prefixes (2 to 6 digits); a prefix such as 5415 matches every code under it."),
   psc_codes: codeList("Product and service codes or prefixes, e.g. D3 or R425."),
   set_aside_codes: {type: "array", items: {type: "string", enum: SET_ASIDE_CODES}, description: "SAM.gov set-aside codes, e.g. SBA (total small business), 8A, SDVOSBC, WOSB, HZC. NONE means the notice says no set-aside was used."},
-  agency: {type: "string", maxLength: 200, description: "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NAVSEA."},
+  agency: {type: "string", maxLength: 200, description: "Text matched against the department, sub-tier, and office names, e.g. Army, Veterans Affairs, NSWC Dahlgren. Field activities post under their own office names, so a command name matches only its headquarters office (NAVSEA matches NAVSEA HQ, not NSWC or NUWC offices)."},
   place_of_performance_state: {type: "string", pattern: "^[A-Za-z]{2}$", description: "Two-letter state code for the place of performance. Most notices leave the place of performance blank, so results also report how many more notices have a contracting office in that state (see office_state)."},
   office_state: {type: "string", pattern: "^[A-Za-z]{2}$", description: "Two-letter state code of the contracting office. Filled in on nearly every notice, but an office's state is not always where the work happens."},
   solicitation_number: {type: "string", maxLength: 100, description: "Exact solicitation number."},
@@ -57,7 +60,7 @@ const FILTERS = {
   posted_to: dateField("Latest posted date, YYYY-MM-DD."),
   deadline_from: dateField("Earliest response deadline date, YYYY-MM-DD, in the deadline's own time zone."),
   deadline_to: dateField("Latest response deadline date, YYYY-MM-DD."),
-  include_past_deadlines: {type: "boolean", default: false, description: "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Notices without a deadline, such as award notices, are always included."},
+  include_past_deadlines: {type: "boolean", default: false, description: "Include notices whose response deadline has already passed. SAM.gov keeps notices active for a while after the deadline; by default they are left out. Award notices and justifications are always included, even when they list a past deadline, and so are notices with no deadline."},
   include_earlier_versions: {type: "boolean", default: false, description: "Include earlier versions of amended notices. SAM.gov's file lists every version of a notice as its own row; by default only the latest version of each is included."},
 };
 
@@ -79,7 +82,7 @@ export const TOOLS = [
   },
   {
     name: "get_opportunity",
-    description: "Get one SAM.gov notice in full: description, response deadline, set-aside, NAICS and PSC codes, place of performance, contracting office, points of contact, award details for award notices, and the public sam.gov link. Also lists other active notices with the same solicitation number, such as earlier versions, amendments, or the award.\n\nPass the 32-character notice ID from search results, or a solicitation number (returns its most recently posted notice). Attachments are not retrieved; open the sam.gov link for them.",
+    description: "Get one SAM.gov notice in full: description, response deadline, set-aside, NAICS and PSC codes, place of performance, contracting office, points of contact, award details for award notices, and the public sam.gov link. Also lists other active notices with the same solicitation number, such as earlier versions, amendments, or awards (with awardee and amount).\n\nPass the 32-character notice ID from search results, or a solicitation number (returns its most recently posted current notice, preferring the solicitation over award notices and justifications). Attachments are not retrieved; open the sam.gov link for them.",
     inputSchema: {
       type: "object",
       properties: {
@@ -98,7 +101,7 @@ export const TOOLS = [
       properties: {
         group_by: {type: "string", enum: Object.keys(GROUPS), description: "Field to group counts by."},
         ...FILTERS,
-        top: {type: "integer", minimum: 1, maximum: 100, default: 25, description: "Number of groups to return, largest first."},
+        top: {type: "integer", minimum: 1, maximum: 100, default: 25, description: "Number of groups to return, largest first. For posted_month, the most recent months, in month order."},
       },
       required: ["group_by"],
       additionalProperties: false,
@@ -257,9 +260,11 @@ function buildQuery(args: Args, now: Date): Query {
     q.where.push("o.is_latest = 1");
   }
   if (!bool(args, "include_past_deadlines")) {
-    q.where.push("(o.response_deadline_utc IS NULL OR o.response_deadline_utc >= ?)");
-    q.params.push(now.toISOString().slice(0, 19) + "Z");
-    q.notes.push("Notices whose response deadline has passed are excluded; set include_past_deadlines to true to include them.");
+    // Award notices and justifications take no responses; a deadline on them
+    // (e.g. GSA's placeholder on schedule awards) is not one to filter on.
+    q.where.push(`(o.notice_type IN (${NO_RESPONSE_TYPES.map(() => "?").join(", ")}) OR o.response_deadline_utc IS NULL OR o.response_deadline_utc >= ?)`);
+    q.params.push(...NO_RESPONSE_TYPES, now.toISOString().slice(0, 19) + "Z");
+    q.notes.push("Notices whose response deadline has passed are excluded (award notices and justifications are kept); set include_past_deadlines to true to include them.");
   }
   return q;
 }
@@ -279,12 +284,30 @@ async function officeStateHint(db: Database, args: Args, now: Date): Promise<str
   return `${n} more matching notices leave the place of performance blank but have a contracting office in ${state}; set office_state to "${state}" (instead of place_of_performance_state) to include them. An office's state is not always where the work happens.`;
 }
 
+/** Without a notice type filter, results mix in award notices and
+ * justifications, which take no responses. Count them so answers can say so. */
+async function noResponseCount(db: Database, args: Args, q: Query): Promise<number> {
+  if (list(args, "notice_types", /./, "a SAM.gov notice type", NOTICE_TYPES).length) return 0;
+  const where = [...q.where, `o.notice_type IN (${NO_RESPONSE_TYPES.map(() => "?").join(", ")})`];
+  const {results} = await db.prepare(`SELECT COUNT(*) AS n FROM ${q.from} WHERE ${where.join(" AND ")}`).bind(...q.params, ...NO_RESPONSE_TYPES).all<{n: number}>();
+  return results[0]?.n ?? 0;
+}
+
+function noResponseNote(n: number, total: number): string | undefined {
+  if (!n) return undefined;
+  const verb = n === 1 ? "is an award notice or justification" : "are award notices or justifications";
+  return `${n} of the ${total} matches ${verb}, which take no responses; set notice_types (e.g. Solicitation, Combined Synopsis/Solicitation) to leave them out.`;
+}
+
 export function publicLink(noticeId: string): string {
   return `https://sam.gov/opp/${noticeId}/view`;
 }
 
 function award(row: Row) {
   if (!row.award_number && !row.awardee && row.award_amount === null && !row.award_date) return undefined;
+  // An awardee alone on a notice that is not an award or justification is
+  // stray text in the file (e.g. a ZIP code), not an award.
+  if (!NO_RESPONSE_TYPES.includes(row.notice_type) && !row.award_number && row.award_amount === null && !row.award_date) return undefined;
   return {number: row.award_number, date: row.award_date, amount: row.award_amount, awardee: row.awardee};
 }
 
@@ -346,17 +369,23 @@ export async function searchOpportunities(db: Database, args: Args, now = new Da
     throw new ToolError("sort must be deadline, newest, or relevance.");
   }
   const where = whereSql(q);
-  const [count, page, asOf, hint] = await Promise.all([
+  const [count, page, asOf, hint, noResponse] = await Promise.all([
     db.prepare(`SELECT COUNT(*) AS n FROM ${q.from}${where}`).bind(...q.params).all<{n: number}>(),
     db.prepare(`SELECT ${SUMMARY_COLUMNS} FROM ${q.from}${where} ORDER BY ${order} LIMIT ? OFFSET ?`).bind(...q.params, limit, offset).all(),
     dataAsOf(db),
     officeStateHint(db, args, now),
+    noResponseCount(db, args, q),
   ]);
   const total = count.results[0]?.n ?? 0;
   const results = page.results.map(summary);
   const notes = [...q.notes];
+  const typeNote = noResponseNote(noResponse, total);
+  if (typeNote) notes.push(typeNote);
   if (hint) notes.push(hint);
-  if (total === 0) notes.push("No active notices matched. Try fewer filters, a NAICS prefix, include_past_deadlines, or a wider date range. Archived notices are not searchable here.");
+  if (total === 0) {
+    const past = bool(args, "include_past_deadlines") ? "" : " include_past_deadlines,";
+    notes.push(`No active notices matched. Try fewer filters, a NAICS prefix,${past} or a wider date range. Archived notices are not searchable here.`);
+  }
   return {
     total_matches: total,
     returned: results.length,
@@ -378,7 +407,10 @@ export async function getOpportunity(db: Database, args: Args) {
     if (!NOTICE_ID.test(id)) throw new ToolError("notice_id must be the 32-character hexadecimal notice ID from SAM.gov.");
     rows = (await db.prepare("SELECT * FROM opportunities WHERE notice_id = ?").bind(id.toLowerCase()).all()).results;
   } else if (sol !== undefined) {
-    rows = (await db.prepare("SELECT * FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE ORDER BY is_latest DESC, posted_at DESC LIMIT 1").bind(sol).all()).results;
+    // Prefer the solicitation (or other current notice) over the award
+    // notices and justifications that share its number.
+    const awardFirst = `notice_type IN (${NO_RESPONSE_TYPES.map(() => "?").join(", ")})`;
+    rows = (await db.prepare(`SELECT * FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE ORDER BY is_latest DESC, ${awardFirst}, posted_at DESC LIMIT 1`).bind(sol, ...NO_RESPONSE_TYPES).all()).results;
   } else {
     throw new ToolError("Pass notice_id or solicitation_number.");
   }
@@ -396,16 +428,24 @@ export async function getOpportunity(db: Database, args: Args) {
   let relatedTotal = 0;
   if (row.solicitation_number) {
     const [page, count] = await Promise.all([
-      db.prepare("SELECT notice_id, notice_type, title, posted_date, response_deadline, is_latest FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE AND notice_id != ? ORDER BY is_latest DESC, posted_at DESC LIMIT 20")
+      db.prepare("SELECT notice_id, notice_type, title, posted_date, response_deadline, award_number, awardee, award_amount, is_latest FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE AND notice_id != ? ORDER BY is_latest DESC, posted_at DESC LIMIT 20")
         .bind(row.solicitation_number, row.notice_id).all<Row>(),
       db.prepare("SELECT COUNT(*) AS n FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE AND notice_id != ?")
         .bind(row.solicitation_number, row.notice_id).all<{n: number}>(),
     ]);
-    related = page.results.map(({is_latest, ...r}) => ({...r, latest_version: is_latest === 1, link: publicLink(r.notice_id)}));
+    related = page.results.map(({is_latest, award_number, awardee, award_amount, ...r}) => ({
+      ...r,
+      ...(r.notice_type === "Award Notice" ? {award_number, awardee, award_amount} : {}),
+      latest_version: is_latest === 1,
+      link: publicLink(r.notice_id),
+    }));
     relatedTotal = count.results[0]?.n ?? 0;
   }
   const notes = ["Attachments and amendment documents are not included; open the sam.gov link for them."];
   if (row.is_latest === 0) notes.unshift("A newer version of this notice exists; related_notices entries with latest_version true are current.");
+  if (/T\d{2}:\d{2}(:\d{2})?$/.test(row.response_deadline ?? "")) {
+    notes.push(`SAM.gov's file gives this response deadline without a time zone. It is most likely the contracting office's local time${row.office_state ? ` (office in ${row.office_state})` : ""}; confirm on the sam.gov page.`);
+  }
   if (relatedTotal > related.length) notes.push(`${relatedTotal} other notices share this solicitation number; ${related.length} are listed.`);
   const contact = (prefix: string) => {
     const c = {title: row[`${prefix}_title`], name: row[`${prefix}_name`], email: row[`${prefix}_email`], phone: row[`${prefix}_phone`], fax: row[`${prefix}_fax`]};
@@ -450,22 +490,27 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
   const q = buildQuery(args, now);
   const column = GROUPS[groupBy].startsWith("substr") ? "substr(o.posted_date, 1, 7)" : `o.${GROUPS[groupBy]}`;
   const where = whereSql(q);
-  const [groups, count, asOf, hint] = await Promise.all([
-    db.prepare(`SELECT ${column} AS value, COUNT(*) AS count FROM ${q.from}${where} GROUP BY value ORDER BY count DESC, value LIMIT ?`).bind(...q.params, top).all<{value: string | null; count: number}>(),
-    db.prepare(`SELECT COUNT(*) AS n, COUNT(DISTINCT ${column}) AS g FROM ${q.from}${where}`).bind(...q.params).all<{n: number; g: number}>(),
+  const byMonth = groupBy === "posted_month";
+  const [groups, count, asOf, hint, noResponse] = await Promise.all([
+    db.prepare(`SELECT ${column} AS value, COUNT(*) AS count FROM ${q.from}${where} GROUP BY value ORDER BY ${byMonth ? "value DESC" : "count DESC, value"} LIMIT ?`).bind(...q.params, top).all<{value: string | null; count: number}>(),
+    db.prepare(`SELECT COUNT(*) AS n, COUNT(DISTINCT ${column}) + MAX(${column} IS NULL) AS g FROM ${q.from}${where}`).bind(...q.params).all<{n: number; g: number}>(),
     dataAsOf(db),
     officeStateHint(db, args, now),
+    groupBy === "notice_type" ? 0 : noResponseCount(db, args, q),
   ]);
   const total = count.results[0]?.n ?? 0;
   const shown = groups.results.reduce((sum, g) => sum + g.count, 0);
+  const typeNote = noResponseNote(noResponse, total);
+  const rows = byMonth ? [...groups.results].reverse() : groups.results;
+  const monthNote = byMonth ? "Months are in order. Each month counts only notices still active today; SAM.gov archives notices over time, so earlier months look smaller and the counts are not a posting trend." : undefined;
   return {
     group_by: groupBy,
     total_matches: total,
     distinct_values: count.results[0]?.g ?? 0,
-    groups: groups.results.map(g => ({value: g.value ?? "(blank)", count: g.count})),
+    groups: rows.map(g => ({value: g.value ?? "(blank)", count: g.count})),
     other_count: total - shown,
     data_as_of: asOf,
-    notes: hint ? [...q.notes, hint] : q.notes,
+    notes: [...q.notes, ...[typeNote, monthNote, hint].filter((n): n is string => !!n)],
     source: SOURCE,
   };
 }
