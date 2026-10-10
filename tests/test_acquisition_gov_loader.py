@@ -197,3 +197,30 @@ def test_applicability_offsets_match_the_package():
     lines = [" ".join(text[a:b].split()) for a, b in found]
     expected = loader._pdf._extract_document_fields([(3, text)])["applicability_text"]
     assert "\n".join(f"Page 3: {line}" for line in lines) == expected
+
+
+def test_parser_version_change_reparses_identical_sources_on_full_reload(tmp_path, recording, monkeypatch):
+    """A patch parser must not reuse an old PDF's derived date matches."""
+    path = tmp_path / "d1.sqlite"
+    monkeypatch.setattr(loader, "PARSER_VERSION", "1.0.9+3")
+    run(loader.LocalD1(path), Fetcher(recording), full=True)
+    old = dict(rows(path, "SELECT key, doc FROM sources WHERE snapshot = 1 AND error IS NULL"))
+    monkeypatch.setattr(loader, "PARSER_VERSION", "1.0.10+3")
+    stats = run(loader.LocalD1(path), Fetcher(recording), full=True)
+    new = dict(rows(path, "SELECT key, doc FROM sources WHERE snapshot = 2 AND error IS NULL"))
+    assert old.keys() == new.keys()
+    assert all(new[key] != old[key] for key in old)
+    assert (stats["parsed"], stats["reused"], stats["carried_forward"]) == (8, 0, 0)
+
+
+def test_parser_version_change_incremental_reload_retains_unchecked_pdf(tmp_path, recording, monkeypatch):
+    """Document why release acceptance requires a full refresh, not the daily batch."""
+    path = tmp_path / "d1.sqlite"
+    monkeypatch.setattr(loader, "PARSER_VERSION", "1.0.9+3")
+    run(loader.LocalD1(path), Fetcher(recording), full=True)
+    old = dict(rows(path, "SELECT key, doc FROM sources WHERE snapshot = 1 AND key LIKE 'pdf:%'"))
+    monkeypatch.setattr(loader, "PARSER_VERSION", "1.0.10+3")
+    stats = run(loader.LocalD1(path), Fetcher(recording), revalidate=0)
+    new = dict(rows(path, "SELECT key, doc FROM sources WHERE snapshot = 2 AND key LIKE 'pdf:%'"))
+    assert new == old
+    assert stats["carried_forward"] == 2
