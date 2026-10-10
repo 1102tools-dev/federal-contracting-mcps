@@ -305,6 +305,9 @@ export function publicLink(noticeId: string): string {
 
 function award(row: Row) {
   if (!row.award_number && !row.awardee && row.award_amount === null && !row.award_date) return undefined;
+  // An awardee alone on a notice that is not an award or justification is
+  // stray text in the file (e.g. a ZIP code), not an award.
+  if (!NO_RESPONSE_TYPES.includes(row.notice_type) && !row.award_number && row.award_amount === null && !row.award_date) return undefined;
   return {number: row.award_number, date: row.award_date, amount: row.award_amount, awardee: row.awardee};
 }
 

@@ -233,6 +233,15 @@ test("get_opportunity returns full details, related notices, and handles misses"
   await assert.rejects(getOpportunity(db, {id: "x"}), /Unknown argument/);
 });
 
+test("no award block on a solicitation whose awardee cell holds stray text", async () => {
+  // N6133127R0004 (open solicitation): the file's Awardee cell is the ZIP "32407-7001".
+  const stray = database(true, [notice(60, {awardee: "32407-7001"}), notice(61, {notice_type: "Award Notice", awardee: "Acme Corp"})]);
+  const found = await searchOpportunities(stray, {}, NOW);
+  assert.equal(found.results.find((r: any) => r.notice_id === id(60))?.award, undefined);
+  assert.deepEqual(found.results.find((r: any) => r.notice_id === id(61))?.award, {number: null, date: null, amount: null, awardee: "Acme Corp"});
+  assert.equal((await getOpportunity(stray, {notice_id: id(60)}) as any).award, null);
+});
+
 test("get_opportunity says when the deadline has no time zone", async () => {
   // HC101326QA336: the file says 2026-10-12T16:00:00; sam.gov's API says America/Chicago.
   const disa = database(true, [notice(30, {office_state: "IL", response_deadline: "2026-10-12T16:00:00", response_deadline_utc: "2026-10-12T21:00:00Z"})]);
