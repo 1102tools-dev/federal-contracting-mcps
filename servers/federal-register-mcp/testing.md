@@ -2,13 +2,13 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the Federal Register API as 8 callable tools for rulemaking tracking, FAR case history, comment-period monitoring, and regulatory research since 1994. It was hardened across eight audit rounds, including the round 7 live anchors and round 8 content-test fixes: an initial hardening pass that fixed 17 findings, a retroactive deep audit that surfaced 12 more hidden bugs, a Hypothesis property-testing round, and a round 6 correctness audit against the live archive and the API's own OpenAPI spec that surfaced 12 further verified findings. Two signature findings, one per methodology era: a pydantic validation crash on every `list_agencies` call that was invisible to unit tests awaiting raw coroutines instead of invoking through the FastMCP pipeline, and a document-number validator that rejected the entire pre-2011 archive because prior rounds only ever tested junk inputs, never legacy-real ones. The MCP ships with 286 regression tests (181 offline plus 105 live-gated).
+This Model Context Protocol server exposes the Federal Register API as 8 callable tools for rulemaking tracking, FAR case history, comment-period monitoring, and regulatory research since 1994. It was hardened across nine audit rounds, including the round 7 live anchors and round 8 content-test fixes: an initial hardening pass that fixed 17 findings, a retroactive deep audit that surfaced 12 more hidden bugs, a Hypothesis property-testing round, and a round 6 correctness audit against the live archive and the API's own OpenAPI spec that surfaced 12 further verified findings. Two signature findings, one per methodology era: a pydantic validation crash on every `list_agencies` call that was invisible to unit tests awaiting raw coroutines instead of invoking through the FastMCP pipeline, and a document-number validator that rejected the entire pre-2011 archive because prior rounds only ever tested junk inputs, never legacy-real ones. The MCP ships with 286 regression tests (181 offline plus 105 live-gated).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 282 (177 offline, 105 live-gated) |
-| Audit rounds completed | 8 |
+| Total regression tests | 286 (181 offline, 105 live-gated) |
+| Audit rounds completed | 9 |
 | Historical items addressed through round 6 | 44 (17 initial, 1 cross-fix, 12 deep audit, 2 round 5, 12 round 6) |
 | Current release | 1.0.14 |
 | PyPI status | Published as `federal-register-mcp`, auto-publishes via Trusted Publisher on tag push |
@@ -108,7 +108,7 @@ Ten items in this class:
 
 ### Priority 3: Cleanup items
 
-Six items including a stale `USER_AGENT = "federal-register-mcp/0.1.1"`, misleading hardcoded "Verify the document_number" text in 404 messages for agency and facet endpoints, pre-1994 dates silently accepted (Federal Register did not exist before 1994), inconsistent `_strip_or_none` vs length-clamp vs WAF-style validation across tools, and the lack of a live-gated regression suite before 0.2.2. All resolved.
+Six items including a stale `USER_AGENT = "federal-register-mcp/0.1.1"`, misleading hardcoded "Verify the document_number" text in 404 messages for agency and facet endpoints, pre-1994 dates silently accepted (the API archive starts in 1994), inconsistent `_strip_or_none` vs length-clamp vs WAF-style validation across tools, and the lack of a live-gated regression suite before 0.2.2. All resolved.
 
 ### Helpers added (0.2.2)
 
@@ -181,7 +181,7 @@ This MCP is one of eight servers in the 1102tools federal-contracting MCP suite 
 ## What Was Not Tested
 
 - **Rate-limit behavior.** Federal Register does not document numeric limits. The MCP now applies a provisional 3-second cross-process gate to every request and honors `Retry-After` without automatic retries.
-- **Pre-1994 documents.** Federal Register did not exist before 1994. The MCP now warns on pre-1994 dates but does not predict which specific pre-1994 queries will return zero.
+- **Pre-1994 documents.** The API archive starts in 1994, so the MCP rejects earlier publication filters. The Federal Register itself began in 1936; earlier issues are available in [GovInfo’s digitized archive](https://www.govinfo.gov/features/digitized-federal-register-final).
 - **Historical agency reorganizations.** When an agency is merged or renamed, historical documents may appear under the old agency slug. The MCP passes through the Federal Register API's agency mapping but does not back-fill historical relationships.
 - **Public inspection queue timing.** The public-inspection queue changes throughout the day. The MCP returns the queue as of the call; real-time updates are not pushed.
 
