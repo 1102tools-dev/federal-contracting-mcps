@@ -600,6 +600,52 @@ async def _resolve_date(title_number: int) -> str:
     raise ValueError(f"Title {title_number} not found in eCFR titles list.")
 
 
+# eCFR's version history comes 1,000 versions to a page.
+_VERSION_PAGE = 1000
+# Read at most this many pages per question (25,000 versions); past that the
+# answer says it is incomplete and how to narrow it.
+_MAX_VERSION_PAGES = 25
+
+
+async def _all_versions(title_number: int, params: dict[str, str]) -> tuple[list[dict[str, Any]], dict[str, Any], bool]:
+    """Every version eCFR lists for these filters, reading all its pages.
+
+    Returns the versions, eCFR's meta from the first page, and whether every
+    page was read.
+    """
+    path = f"/api/versioner/v1/versions/title-{title_number}"
+    first = _safe_dict(await _get_json(path, params))
+    versions = [_safe_dict(v) for v in _as_list(first.get("content_versions"))]
+    meta = _safe_dict(first.get("meta"))
+    pages = _safe_int(meta.get("total_pages"), default=1) or 1
+    for page in range(2, min(pages, _MAX_VERSION_PAGES) + 1):
+        more = _safe_dict(await _get_json(path, {**params, "page": str(page)}))
+        versions.extend(_safe_dict(v) for v in _as_list(more.get("content_versions")))
+    return versions, meta, pages <= _MAX_VERSION_PAGES
+
+
+def _latest_versions(versions: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Each identifier's newest version (removed wins a tie: it ends the section)."""
+    latest: dict[str, dict[str, Any]] = {}
+    for v in versions:
+        ident = v.get("identifier")
+        if not ident:
+            continue
+        kept = latest.get(ident)
+        rank = (v.get("date") or "", bool(v.get("removed")), v.get("issue_date") or "")
+        if kept is None or rank > (kept.get("date") or "", bool(kept.get("removed")), kept.get("issue_date") or ""):
+            latest[ident] = v
+    return latest
+
+
+def _title48_chapter(part: Any) -> str | None:
+    """Title 48 chapter that owns a part: FAR parts 1-99, then part // 100."""
+    number = _safe_int(str(part).split(".")[0]) if part is not None else None
+    if number is None:
+        return None
+    return "1" if number < 100 else str(number // 100)
+
+
 # ---------------------------------------------------------------------------
 # Core tools
 # ---------------------------------------------------------------------------
@@ -905,9 +951,15 @@ async def search_cfr(
 
     Returns matching sections with excerpts, headings, scores, and hierarchy.
 
-    CRITICAL: Set current_only=True (default) to search only in-effect text.
-    Without it, search returns ALL historical versions including superseded,
-    so a section amended 5 times appears 5 times.
+    current_only=True (default) returns only text in effect now. eCFR's own
+    "current" index still lists some superseded and removed versions, so
+    each hit is checked against the section's version history: older
+    copies of a section are dropped, and hits whose text has since been
+    replaced or removed are dropped and listed under current_check
+    ('superseded' with the current version's date, 'removed' with the
+    removal date). Up to 10 parts per page are checked; any hit not
+    checked is marked. current_only=False returns every historical
+    version, so a section amended 5 times appears 5 times.
 
     Search caps at 10,000 total results. Use hierarchy filters (title,
     chapter, part) to narrow if you hit the cap.
@@ -974,7 +1026,107 @@ async def search_cfr(
     params["per_page"] = str(per_page)
     params["page"] = str(page)
 
-    return await _get_json("/api/search/v1/results", params)
+    data = await _get_json("/api/search/v1/results", params)
+    if not current_only:
+        return data
+    return await _only_current(data)
+
+
+# How many parts' version histories one search page may read.
+_CURRENT_CHECK_PARTS = 10
+
+
+async def _only_current(data: dict[str, Any]) -> dict[str, Any]:
+    """Drop search hits that are not the section's current text, and say which.
+
+    eCFR's search index leaves ends_on empty on many superseded and removed
+    versions, so date=current still returns them. The version history is
+    the authority: a hit is current only if it is the section's newest
+    version and that version is not a removal.
+    """
+    rows = [_safe_dict(r) for r in _as_list(data.get("results"))]
+    parts: list[tuple[str, str]] = []
+    for row in rows:
+        h = _safe_dict(row.get("hierarchy"))
+        key = (str(h.get("title") or ""), str(h.get("part") or ""))
+        if key[0] and key[1] and key not in parts:
+            parts.append(key)
+    latest: dict[tuple[str, str], dict[str, dict[str, Any]]] = {}
+    for title_s, part_s in parts[:_CURRENT_CHECK_PARTS]:
+        title_n = _safe_int(title_s)
+        if title_n is None:
+            continue
+        versions, _, _ = await _all_versions(title_n, {"part": part_s})
+        latest[(title_s, part_s)] = _latest_versions(versions)
+
+    kept: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    duplicates = 0
+    superseded: dict[str, dict[str, Any]] = {}
+    removed: dict[str, dict[str, Any]] = {}
+    unchecked = 0
+    current_ids: set[str] = set()
+    for row in rows:
+        h = _safe_dict(row.get("hierarchy"))
+        title_s, part_s = str(h.get("title") or ""), str(h.get("part") or "")
+        ident = h.get("section") or h.get("appendix")
+        history = latest.get((title_s, part_s))
+        newest = history.get(ident) if (history is not None and ident) else None
+        if newest is None:
+            row["current_check"] = "not checked"
+            unchecked += 1
+            kept.append(row)
+            continue
+        starts = row.get("starts_on") or ""
+        if newest.get("removed"):
+            removed.setdefault(ident, {"section": ident, "removed_on": newest.get("date"),
+                                       "matched_text_from": starts})
+            continue
+        if starts < (newest.get("date") or ""):
+            superseded.setdefault(ident, {"section": ident, "matched_text_from": starts,
+                                          "current_version_from": newest.get("date")})
+            continue
+        if (title_s, ident) in seen:
+            duplicates += 1
+            continue
+        seen.add((title_s, ident))
+        current_ids.add(ident)
+        kept.append(row)
+    # A section whose current version is also in the results was only a duplicate.
+    replaced = [v for k, v in superseded.items() if k not in current_ids]
+    duplicates += len(superseded) - len(replaced)
+
+    result = dict(data)
+    result["results"] = kept
+    check: dict[str, Any] = {
+        "hits_on_page": len(rows),
+        "kept": len(kept),
+        "older_copies_dropped": duplicates,
+    }
+    if replaced:
+        check["superseded"] = replaced
+    if removed:
+        check["removed"] = list(removed.values())
+    if unchecked:
+        check["not_checked"] = unchecked
+    notes = []
+    if replaced:
+        notes.append(
+            f"{len(replaced)} hit(s) matched text that has since been replaced; the current "
+            f"version (current_version_from) does not match this search. Read it with "
+            f"get_cfr_content before relying on the old wording."
+        )
+    if removed:
+        notes.append(f"{len(removed)} hit(s) are sections that have been removed (removed_on).")
+    if unchecked:
+        notes.append(
+            f"{unchecked} hit(s) could not be checked against the version history "
+            f"(marked current_check='not checked'); narrow the search to check them."
+        )
+    if notes:
+        check["note"] = " ".join(notes)
+    result["current_check"] = check
+    return result
 
 
 def _agency_refs_with_children(agency: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1488,15 +1640,20 @@ async def find_recent_changes(
     chapter: str | int | None = None,
     part: str | int | None = None,
     per_page: int = 100,
+    page: int = 1,
 ) -> dict[str, Any]:
-    """Find CFR sections that have been modified since a given date.
+    """Find CFR sections changed since a given date, removals included.
 
-    Uses the search API with last_modified_on_or_after filter to find
-    sections amended after the specified date. Returns section identifiers,
-    headings, and excerpts, most recently amended first.
+    Built on eCFR's version history: every version issued on or after
+    since_date, newest first. Each change says whether the section was
+    amended, removed (change='removed'), or re-issued with no text change
+    (substantive=false). 'summary' counts each kind. A section changed
+    twice appears twice.
 
-    since_date must be in YYYY-MM-DD format. Results are capped at 10,000
-    by the API. Use title/chapter/part filters to narrow if needed.
+    since_date must be in YYYY-MM-DD format. Filter with title (default 48),
+    chapter (Title 48: 1 = FAR, 2 = DFARS, 99 = CAS) or part. per_page
+    (default 100, max 5000) and page step through long lists; total_pages
+    says how many pages there are.
 
     Common pattern: find FAR changes since a specific date to check for
     regulatory updates that might affect ongoing acquisitions.
@@ -1508,20 +1665,84 @@ async def find_recent_changes(
     chapter = _validate_chapter(chapter, title_number=title)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     per_page = _clamp(per_page, field="per_page", lo=1, hi=SEARCH_MAX_PER_PAGE)
+    page = _clamp(page, field="page", lo=1, hi=10_000)
 
-    # Use a broad query that every section matches; eCFR requires a query term.
-    # Relevance ordering is meaningless for a wildcard query, so return the
-    # most recently amended sections first.
-    return await search_cfr(
-        query="*",
-        title=title,
-        chapter=chapter,
-        part=part,
-        current_only=True,
-        last_modified_after=since_date,
-        order="newest_first",
-        per_page=per_page,
-    )
+    params: dict[str, str] = {"issue_date[gte]": since_date}
+    if part:
+        params["part"] = part
+    versions, _, complete = await _all_versions(title, params)
+
+    if chapter:
+        # eCFR's version history ignores a chapter filter, so apply it here.
+        if title == 48:
+            versions = [v for v in versions if _title48_chapter(v.get("part")) == chapter]
+        else:
+            date = await _resolve_date(title)
+            tree = await _get_json(
+                f"/api/versioner/v1/structure/{date}/title-{title}.json",
+                {"chapter": chapter}, timeout=DEFAULT_TIMEOUT_STRUCTURE,
+            )
+            owned = {n["identifier"] for n in _walk_structure(tree, "part")}
+            versions = [v for v in versions if str(v.get("part")) in owned]
+
+    changes = []
+    for v in versions:
+        if v.get("removed"):
+            change = "removed"
+        elif v.get("substantive"):
+            change = "amended"
+        else:
+            change = "re-issued, no text change"
+        changes.append({
+            "identifier": v.get("identifier"),
+            "name": _clean_heading(v.get("name")),
+            "type": v.get("type"),
+            "part": v.get("part"),
+            "subpart": v.get("subpart"),
+            "change": change,
+            "amendment_date": v.get("amendment_date") or v.get("date"),
+            "issue_date": v.get("issue_date"),
+            "substantive": v.get("substantive"),
+            "removed": bool(v.get("removed")),
+        })
+    changes.sort(key=lambda c: (c["issue_date"] or "", c["amendment_date"] or ""), reverse=True)
+
+    total = len(changes)
+    total_pages = max(1, -(-total // per_page))
+    if page > total_pages:
+        raise ValueError(f"page={page} does not exist; there are {total_pages} page(s) of {per_page}.")
+    shown = changes[(page - 1) * per_page: page * per_page]
+    summary = {kind: sum(c["change"] == kind for c in changes)
+               for kind in ("amended", "removed", "re-issued, no text change")}
+    result: dict[str, Any] = {
+        "title": title,
+        "since_date": since_date,
+        "total_count": total,
+        "summary": summary,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": total_pages,
+        "changes": shown,
+    }
+    if chapter:
+        result["chapter"] = chapter
+    if part:
+        result["part"] = part
+    if not complete:
+        result["truncated"] = True
+        result["note"] = (
+            f"eCFR lists more than {_MAX_VERSION_PAGES * _VERSION_PAGE:,} versions for this "
+            f"filter; only the first {_MAX_VERSION_PAGES * _VERSION_PAGE:,} were read. Use a "
+            f"later since_date or a part filter."
+        )
+    elif page < total_pages:
+        result["note"] = f"Showing page {page} of {total_pages}; call again with page={page + 1} for more."
+    return result
+
+
+def _clean_heading(name: Any) -> Any:
+    """eCFR pads version names: '9904.409-62   Exemption.'."""
+    return " ".join(name.split()) if isinstance(name, str) else name
 
 
 # ---------------------------------------------------------------------------
