@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1
+
+- `compare_versions` rejects dates beyond the title's latest available snapshot before reading text. Previously comparing an existing section to today, while eCFR lagged a few days, falsely reported the section removed.
+- Structure, section-list, recent-change and ancestry subpart inputs reject explicit CFR title conflicts before stripping citation prefixes. `2 CFR 200` with the default Title 48 now explains how to select Title 2 instead of returning the wrong title.
+- `changes_only=True` also omits full texts when a section was added or removed.
+- Ten MCP-pipeline regressions cover unavailable snapshots, both add/remove paths, and six citation conflict fields. Tool metadata is unchanged.
+
 ## 1.1.0
 
 Fixes from the 2026-10-10 bug hunt. All 13 tools keep their names.

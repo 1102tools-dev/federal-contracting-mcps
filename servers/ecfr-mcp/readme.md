@@ -8,7 +8,7 @@ Free, open-source MCP server for the eCFR (Electronic Code of Federal Regulation
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through eight rounds of testing against the live eCFR API. 428 collected regression tests (310 offline, 118 live-gated), including a check that every piece of text in ten saved eCFR responses comes out exactly once and in order. Round 8 (1.1.0, October 2026) fixed 18 P2 and about 20 P3 findings from a six-agent bug hunt plus an everyday-questions pass. See [testing.md](testing.md) for the full testing record.*
+*Tested and hardened through eight rounds of testing against the live eCFR API. 438 collected regression tests (320 offline, 118 live-gated), including a check that every piece of text in ten saved eCFR responses comes out exactly once and in order. Round 8 (1.1.0, October 2026) fixed 18 P2 and about 20 P3 findings from a six-agent bug hunt plus an everyday-questions pass. See [testing.md](testing.md) for the full testing record.*
 
 ## Local or hosted
 
