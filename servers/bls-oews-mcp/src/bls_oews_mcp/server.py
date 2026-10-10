@@ -394,8 +394,11 @@ def _parse_value(value: Any, datatype: str, footnotes: list[str] | None = None) 
             n = float(stripped)
             return {"raw": raw, "formatted": f"{n:,.1f}%", "numeric": n, "suppressed": False}
         elif datatype in RATIO_DATATYPES:
+            # BLS publishes employment per 1,000 jobs (16) to 3 decimals and
+            # the location quotient (17) to 2.
             n = float(stripped)
-            return {"raw": raw, "formatted": f"{n:,.2f}", "numeric": n, "suppressed": False}
+            places = 3 if datatype == "16" else 2
+            return {"raw": raw, "formatted": f"{n:,.{places}f}", "numeric": n, "suppressed": False}
         elif datatype in HOURLY_DATATYPES:
             n = float(stripped)
             return {"raw": raw, "formatted": f"${n:,.2f}/hr", "numeric": n, "suppressed": False}

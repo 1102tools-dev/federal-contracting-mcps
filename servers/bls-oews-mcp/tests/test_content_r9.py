@@ -205,3 +205,14 @@ def test_bls8_compare_tools_carry_data_year_and_keep_order():
     assert [v["numeric"] for v in metros["metros"].values()] == [38.84, 32.19, 40.8]
     occupations = _tool("compare_occupations", occ_codes=["151252", "151212"])
     assert occupations["data_year"] == "2025"
+
+
+# ---------------------------------------------------------------------------
+# BLS-9: employment per 1,000 jobs keeps BLS's three decimals
+# ---------------------------------------------------------------------------
+
+def test_bls9_per_1000_shows_bls_three_decimals():
+    # Q21: Maryland infosec analysts. BLS dt16 = 3.131, dt17 = 2.55.
+    data = _tool("get_wage_data", occ_code="15-1212", scope="state", area_code="24", datatypes=["16", "17"])
+    assert data["wages"]["Employment per 1,000 Jobs"]["formatted"] == "3.131"
+    assert data["wages"]["Location Quotient"]["formatted"] == "2.55"

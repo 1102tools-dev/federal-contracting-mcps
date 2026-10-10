@@ -123,7 +123,7 @@ test("get_wage_data formats every datatype like the Python server", async () => 
     "Mean Wage RSE (%)": "1.0%", "Hourly 10th Percentile": "$46.37/hr", "Hourly 25th Percentile": "$59.48/hr", "Hourly Median": "$74.49/hr",
     "Hourly 75th Percentile": "$84.73/hr", "Hourly 90th Percentile": "$102.72/hr", "Annual 10th Percentile": "$96,450",
     "Annual 25th Percentile": "$123,720", "Annual Median": "$154,930", "Annual 75th Percentile": "$176,230", "Annual 90th Percentile": "$213,660",
-    "Employment per 1,000 Jobs": "22.02", "Location Quotient": "2.03",
+    "Employment per 1,000 Jobs": "22.020", "Location Quotient": "2.03",
   });
   // The text is pydantic_core.to_json(indent=2): floats keep ".0", ints do not.
   const text: string = result.content[0].text;
@@ -446,6 +446,12 @@ test("BLS-8: compare tools carry data_year at the top", async () => {
   assert.deepEqual(Object.keys(metros).slice(0, 4), ["occ_code", "occ_title", "datatype", "data_year"]);
   const occupations = await data("compare_occupations", {occ_codes: ["151252"]});
   assert.equal(occupations.data_year, "2025");
+});
+
+test("BLS-9: employment per 1,000 jobs keeps BLS's three decimals", async () => {
+  const wages = (await data("get_wage_data", {occ_code: "15-1212", scope: "state", area_code: "24", datatypes: ["16", "17"]})).wages;
+  assert.equal(wages["Employment per 1,000 Jobs"].formatted, "3.131");
+  assert.equal(wages["Location Quotient"].formatted, "2.55");
 });
 
 // ---------- Python formatting helpers ----------

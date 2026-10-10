@@ -466,7 +466,8 @@ function parseValue(raw: string, dt: string, notes: string[]): Map<string, Py> {
   if (n === undefined) return out(`[Unparseable: ${stripped}]`, null, false);
   if (COUNT.has(dt)) return out(group(intStr(Math.trunc(n))), Math.trunc(n), false);
   if (RSE.has(dt)) return out(`${group(fixed(n, 1))}%`, new PyFloat(n), false);
-  if (RATIO.has(dt)) return out(group(fixed(n, 2)), new PyFloat(n), false);
+  // BLS publishes employment per 1,000 jobs (16) to 3 decimals, the location quotient (17) to 2.
+  if (RATIO.has(dt)) return out(group(fixed(n, dt === "16" ? 3 : 2)), new PyFloat(n), false);
   if (HOURLY.has(dt)) return out(`$${group(fixed(n, 2))}/hr`, new PyFloat(n), false);
   return out(`$${group(intStr(Math.trunc(n)))}`, Math.trunc(n), false);
 }
