@@ -1153,8 +1153,13 @@ async def vendor_rate_card(
     Pass a partial name (e.g., 'booz' for Booz Allen Hamilton). The tool
     finds the exact registered name automatically.
 
-    Large vendors span many pages: Booz Allen Hamilton carries ~1,900 labor
-    categories. The default page_size is 100 (~23KB) because a 500-row page
+    total_rates counts rate rows, not titles: one title can have several
+    rows (worksite, contract, SIN). distinct_labor_categories is the number
+    of distinct titles (case-sensitive); when a vendor has more than 500 it
+    is null and distinct_labor_categories_min gives the floor.
+
+    Large vendors span many pages: Booz Allen Hamilton carries ~1,900 rate
+    rows (more than 500 distinct titles). The default page_size is 100 (~23KB) because a 500-row page
     for a vendor that size is ~114KB and overflows MCP client output limits.
     Rows are ordered by labor_category ascending by default, so a partial
     card is alphabet-biased; check has_more and keep calling with next_page
@@ -1243,9 +1248,18 @@ async def vendor_rate_card(
     end_row = (page - 1) * page_size + returned
     has_more = returned > 0 and end_row < total
 
+    # total is a row count: one title can have several rows (worksite,
+    # contract, SIN). Distinct titles come from the labor_category
+    # aggregation, which GSA caps at 500 buckets; past that, give a floor.
+    lc_agg = _safe_dict(_safe_dict(data.get("aggregations")).get("labor_category"))
+    lc_buckets = [b for b in _as_list(lc_agg.get("buckets")) if _safe_bucket_key(b) is not None]
+    lc_other = lc_agg.get("sum_other_doc_count")
+    lc_complete = bool(lc_buckets) and lc_other in (0, None)
+
     response: dict[str, Any] = {
         "vendor": exact_name,
-        "total_categories": total,
+        "total_rates": total,
+        "distinct_labor_categories": len(lc_buckets) if lc_complete else None,
         "page": page,
         "returned": returned,
         "returned_range": f"rows {start_row}-{end_row} of {total}" if returned else None,
@@ -1254,6 +1268,8 @@ async def vendor_rate_card(
         "rates": rates,
         "_stats": _extract_stats(data),
     }
+    if lc_buckets and not lc_complete:
+        response["distinct_labor_categories_min"] = len(lc_buckets)
     if has_more:
         response["_truncation_note"] = (
             f"Partial rate card: rows are ordered by {ordering} ({sort}), so "

@@ -173,3 +173,48 @@ def test_live_g2_help_desk_full_population_keeps_verdict():
     )))
     assert r["total_rates"] == api["aggregations"]["wage_stats"]["count"] > 1000
     assert r["analysis"]["iqr_position"] == "within IQR P25-P75 (typical)"
+
+
+# ---------------------------------------------------------------------------
+# G-6: vendor_rate_card counts rows as rows and reports distinct titles
+# ---------------------------------------------------------------------------
+
+def _card_with_titles(total: int, titles: list[tuple[str, int]], other: int) -> dict:
+    body = _booz_pair_response()
+    body["hits"]["total"] = {"value": total, "relation": "eq"}
+    body["aggregations"]["vendor_name"]["buckets"][0]["doc_count"] = total
+    body["aggregations"]["labor_category"] = {
+        "buckets": [{"key": k, "doc_count": c} for k, c in titles],
+        "sum_other_doc_count": other,
+    }
+    return body
+
+
+def test_g6_vendor_rate_card_row_count_and_distinct_titles(monkeypatch):
+    titles = [("ACQUISITION SPECIALIST, LEVEL I", 2), ("Program Manager", 2)]
+    monkeypatch.setattr(srv, "_get", _MockGet(_card_with_titles(4, titles, 0)))
+    r = _payload(asyncio.run(_call("vendor_rate_card", vendor_name="booz")))
+    assert "total_categories" not in r
+    assert r["total_rates"] == 4
+    assert r["distinct_labor_categories"] == 2
+
+
+def test_g6_distinct_titles_unknown_when_bucket_list_truncated(monkeypatch):
+    titles = [(f"Title {i}", 2) for i in range(500)]
+    monkeypatch.setattr(srv, "_get", _MockGet(_card_with_titles(1879, titles, 324)))
+    r = _payload(asyncio.run(_call("vendor_rate_card", vendor_name="booz")))
+    assert r["total_rates"] == 1879
+    assert r["distinct_labor_categories"] is None
+    assert r["distinct_labor_categories_min"] == 500
+
+
+@live
+def test_live_g6_vendor_rate_card_counts_match_api():
+    r = _payload(asyncio.run(_call("vendor_rate_card", vendor_name="Accenture", page_size=3)))
+    api = _api("search=vendor_name:" + r["vendor"].replace(" ", "+") + "&page=1&page_size=1&ordering=labor_category&sort=asc")
+    assert r["total_rates"] == api["hits"]["total"]["value"]
+    lc = api["aggregations"]["labor_category"]
+    if lc.get("sum_other_doc_count", 0) == 0:
+        assert r["distinct_labor_categories"] == len(lc["buckets"])
+    else:
+        assert r["distinct_labor_categories_min"] == len(lc["buckets"])

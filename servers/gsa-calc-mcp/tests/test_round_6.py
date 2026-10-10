@@ -357,7 +357,7 @@ def test_vendor_rate_card_partial_page_metadata(monkeypatch):
     mock = _MockGet(_rate_card_response(total=250, n_rows=100))
     monkeypatch.setattr(srv, "_get", mock)
     r = _payload(asyncio.run(_call("vendor_rate_card", vendor_name="booz")))
-    assert r["total_categories"] == 250
+    assert r["total_rates"] == 250
     assert r["page"] == 1
     assert r["returned"] == 100
     assert r["returned_range"] == "rows 1-100 of 250"
@@ -380,7 +380,7 @@ def test_vendor_rate_card_complete_card_no_note(monkeypatch):
     mock = _MockGet(_rate_card_response(total=50, n_rows=50))
     monkeypatch.setattr(srv, "_get", mock)
     r = _payload(asyncio.run(_call("vendor_rate_card", vendor_name="booz")))
-    assert r["total_categories"] == 50
+    assert r["total_rates"] == 50
     assert r["returned_range"] == "rows 1-50 of 50"
     assert r["has_more"] is False
     assert r["next_page"] is None
@@ -416,8 +416,8 @@ def test_live_vendor_rate_card_page2_differs_total_stable():
 
     r1, r2 = asyncio.run(_two_pages())
     assert r1["vendor"] == r2["vendor"] == _BAH
-    assert r1["total_categories"] == r2["total_categories"]
-    assert r1["total_categories"] > 1000, "BAH carried 1,886 categories at audit time"
+    assert r1["total_rates"] == r2["total_rates"]
+    assert r1["total_rates"] > 1000, "BAH carried 1,886 categories at audit time"
     assert r1["returned"] == r2["returned"] == 100
     assert r1["has_more"] is True and r1["next_page"] == 2
     assert "_truncation_note" in r1
