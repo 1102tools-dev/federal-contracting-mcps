@@ -53,6 +53,11 @@ from .constants import (
     USER_AGENT,
 )
 
+
+class UserInputError(ValueError, ToolError):
+    """Expected input guidance, visible to MCP clients across SDK versions."""
+
+
 mcp = MCPServer(
     "sam-gov",
     version=__version__,
@@ -86,11 +91,11 @@ def _coerce_str(value: Any, *, field: str) -> str | None:
     if value is None:
         return None
     if isinstance(value, bool):
-        raise ValueError(f"{field} must be a string or integer, not bool.")
+        raise UserInputError(f"{field} must be a string or integer, not bool.")
     if isinstance(value, (int, str)):
         s = str(value).strip()
         return s if s else None
-    raise ValueError(
+    raise UserInputError(
         f"{field} must be a string or integer. Got {type(value).__name__}: {value!r}."
     )
 
@@ -107,7 +112,7 @@ def _validate_date_mmddyyyy(
         return None
     if _MMDDYYYY_RANGE_RE.match(value):
         if not allow_range:
-            raise ValueError(
+            raise UserInputError(
                 f"{field} takes a single MM/DD/YYYY date, not a bracketed "
                 f"range. Got {value!r}. Use the matching _from/_to parameter "
                 f"pair to express a range."
@@ -118,7 +123,7 @@ def _validate_date_mmddyyyy(
         return value
     if not _MMDDYYYY_RE.match(value):
         range_hint = " or bracketed range [MM/DD/YYYY,MM/DD/YYYY]" if allow_range else ""
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be MM/DD/YYYY (e.g. '01/15/2026'){range_hint}. "
             f"Got {value!r}. ISO 8601 and YYYY-MM-DD are rejected."
         )
@@ -126,7 +131,7 @@ def _validate_date_mmddyyyy(
         mm, dd, yyyy = value.split("/")
         date(int(yyyy), int(mm), int(dd))
     except ValueError as exc:
-        raise ValueError(f"{field}={value!r} is not a valid calendar date: {exc}") from exc
+        raise UserInputError(f"{field}={value!r} is not a valid calendar date: {exc}") from exc
     return value
 
 
@@ -135,7 +140,7 @@ def _validate_date_yyyy_mm_dd(value: str | None, *, field: str) -> str | None:
     if value is None:
         return None
     if not _YYYY_MM_DD_RE.match(value):
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be yyyy-MM-dd (e.g. '2026-01-15'). Got {value!r}. "
             f"Note: Subaward APIs use ISO format, unlike Contract Awards/Opportunities "
             f"which use MM/DD/YYYY."
@@ -144,16 +149,16 @@ def _validate_date_yyyy_mm_dd(value: str | None, *, field: str) -> str | None:
         yyyy, mm, dd = value.split("-")
         date(int(yyyy), int(mm), int(dd))
     except ValueError as exc:
-        raise ValueError(f"{field}={value!r} is not a valid calendar date: {exc}") from exc
+        raise UserInputError(f"{field}={value!r} is not a valid calendar date: {exc}") from exc
     return value
 
 
 def _validate_uei(uei: str, *, field: str = "uei") -> str:
     if not uei or not uei.strip():
-        raise ValueError(f"{field} cannot be empty.")
+        raise UserInputError(f"{field} cannot be empty.")
     stripped = uei.strip().upper()
     if not _UEI_RE.match(stripped):
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be 12 uppercase alphanumeric characters. Got {uei!r}."
         )
     return stripped
@@ -161,10 +166,10 @@ def _validate_uei(uei: str, *, field: str = "uei") -> str:
 
 def _validate_cage(cage: str, *, field: str = "cage_code") -> str:
     if not cage or not cage.strip():
-        raise ValueError(f"{field} cannot be empty.")
+        raise UserInputError(f"{field} cannot be empty.")
     stripped = cage.strip().upper()
     if not _CAGE_RE.match(stripped):
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be 5 uppercase alphanumeric characters. Got {cage!r}."
         )
     return stripped
@@ -183,7 +188,7 @@ def _validate_fiscal_year(value: Any, *, field: str = "fiscal_year") -> str | No
     try:
         fy = int(str(value).strip())
     except (TypeError, ValueError) as exc:
-        raise ValueError(
+        raise UserInputError(
             f"{field} must be a year like 2026 (int or str). Got {value!r}."
         ) from exc
     current = _current_fiscal_year()
@@ -192,7 +197,7 @@ def _validate_fiscal_year(value: Any, *, field: str = "fiscal_year") -> str | No
     # years (e.g. 24) are accepted by the API but return an empty shape, so
     # require a real 4-digit year.
     if fy < 1970 or fy > current:
-        raise ValueError(
+        raise UserInputError(
             f"{field}={fy} is out of range. Use a 4-digit year; SAM.gov Contract "
             f"Awards data has been observed from FY1970 through FY{current} "
             f"(current fiscal year). Earlier years return empty results."
@@ -202,9 +207,9 @@ def _validate_fiscal_year(value: Any, *, field: str = "fiscal_year") -> str | No
 
 def _clamp(value: int, *, field: str, lo: int, hi: int) -> int:
     if value < lo:
-        raise ValueError(f"{field} must be >= {lo}. Got {value}.")
+        raise UserInputError(f"{field} must be >= {lo}. Got {value}.")
     if value > hi:
-        raise ValueError(
+        raise UserInputError(
             f"{field} exceeds maximum of {hi}. Got {value}. Paginate instead."
         )
     return value
@@ -314,7 +319,7 @@ def _validate_waf_safe(value: str | None, *, field: str) -> str | None:
         return None
     for pattern, description in _REJECT_PATTERNS:
         if pattern.search(value):
-            raise ValueError(
+            raise UserInputError(
                 f"{field}={value!r} contains {description}. "
                 f"Remove the offending character and retry."
             )
@@ -325,7 +330,7 @@ def _clamp_str_len(value: str | None, *, field: str, maximum: int) -> str | None
     if value is None:
         return None
     if len(value) > maximum:
-        raise ValueError(
+        raise UserInputError(
             f"{field} exceeds maximum length of {maximum} chars. "
             f"Got {len(value)}. Long strings trigger HTTP 414 on SAM.gov."
         )
@@ -347,7 +352,7 @@ def _validate_code_in_dict(
         return None
     if normalized not in valid_codes:
         sample = ", ".join(list(valid_codes.keys())[:8])
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} is not a valid code. "
             f"Valid codes include: {sample} (total {len(valid_codes)}). "
             f"See SAM.gov documentation for the full list."
@@ -376,13 +381,13 @@ def _validate_naics(value: Any, *, field: str = "naics_code", allow_operators: b
             if not p:
                 continue
             if not _NAICS_RE.match(p):
-                raise ValueError(
+                raise UserInputError(
                     f"{field}={value!r}: NAICS code {p!r} must be 2-6 digits. "
                     f"Use ~ for OR, ! for NOT (e.g. '541511~541512', '!541511')."
                 )
         return s
     if not _NAICS_RE.match(s):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} must be a 2-6 digit NAICS code (no operators)."
         )
     return s
@@ -401,7 +406,7 @@ def _validate_bracket_range(
     if not s:
         return None
     if not (s.startswith("[") and s.endswith("]") and "," in s):
-        raise ValueError(
+        raise UserInputError(
             f"{field}={value!r} must use bracket format '[min,max]' (e.g. '[1000,50000]')."
         )
     return s
@@ -794,14 +799,14 @@ async def search_entities(
 
     size = _clamp(size, field="size", lo=1, hi=ENTITY_MAX_SIZE)
     if page < 0:
-        raise ValueError(f"page must be >= 0. Got {page}.")
+        raise UserInputError(f"page must be >= 0. Got {page}.")
     primary_naics = _validate_naics(primary_naics, field="primary_naics")
     any_naics = _validate_naics(any_naics, field="any_naics")
     psc_code = _coerce_str(psc_code, field="psc_code")
     if state_code is not None:
         state_code = state_code.strip().upper()
         if not re.match(r"^[A-Z]{2}$", state_code):
-            raise ValueError(
+            raise UserInputError(
                 f"state_code must be 2-letter USPS (e.g. 'VA', 'CA'). Got {state_code!r}."
             )
     # business_type_code: self-selected types only. SBA certification codes
@@ -811,7 +816,7 @@ async def search_entities(
     if business_type_code:
         probe = business_type_code.strip().upper()
         if probe in SBA_BUSINESS_TYPE_CODES:
-            raise ValueError(
+            raise UserInputError(
                 f"business_type_code={business_type_code!r} is an SBA certification "
                 f"code ({SBA_BUSINESS_TYPE_CODES[probe]}). SAM.gov filters SBA "
                 f"certifications through a separate parameter; pass it as "
@@ -823,7 +828,7 @@ async def search_entities(
         # searches were impossible). Well-formed codes pass through.
         if not re.match(r"^[A-Z0-9]{2}$", probe):
             sample = ", ".join(list(BUSINESS_TYPE_CODES.keys())[:8])
-            raise ValueError(
+            raise UserInputError(
                 f"business_type_code={business_type_code!r} must be a "
                 f"2-character code from the SAM Functional Data Dictionary "
                 f"(e.g. {sample}, NB, A3)."
@@ -1067,7 +1072,7 @@ async def search_exclusions(
     """
     size = _clamp(size, field="size", lo=1, hi=EXCLUSION_MAX_SIZE)
     if page < 0:
-        raise ValueError(f"page must be >= 0. Got {page}.")
+        raise UserInputError(f"page must be >= 0. Got {page}.")
     activation_date_range = _validate_date_mmddyyyy(
         activation_date_range, field="activation_date_range"
     )
@@ -1103,7 +1108,7 @@ async def search_exclusions(
     if country:
         country_up = country.strip().upper()
         if not re.match(r"^[A-Z]{3}$", country_up):
-            raise ValueError(
+            raise UserInputError(
                 f"country must be 3-character ISO alpha-3 (USA, CAN, GBR). "
                 f"Got {country!r}."
             )
@@ -1185,7 +1190,7 @@ async def search_opportunities(
 
     limit = _clamp(limit, field="limit", lo=1, hi=OPPORTUNITY_MAX_LIMIT)
     if offset < 0:
-        raise ValueError(f"offset must be >= 0. Got {offset}.")
+        raise UserInputError(f"offset must be >= 0. Got {offset}.")
     posted_from = _validate_date_mmddyyyy(
         posted_from, field="posted_from", allow_range=False
     )
@@ -1206,12 +1211,12 @@ async def search_opportunities(
     pf = _parse_mmddyyyy(posted_from)
     pt = _parse_mmddyyyy(posted_to)
     if pf > pt:
-        raise ValueError(
+        raise UserInputError(
             f"posted_from ({posted_from}) is after posted_to ({posted_to}). "
             f"SAM.gov requires posted_from <= posted_to."
         )
     if (pt - pf).days > 364:
-        raise ValueError(
+        raise UserInputError(
             f"posted_from to posted_to range exceeds 364 days "
             f"({(pt - pf).days} days). SAM.gov hard-caps this range; "
             f"chain multiple calls with sequential date windows to cover longer periods."
@@ -1227,7 +1232,7 @@ async def search_opportunities(
     if state is not None:
         state = state.strip().upper()
         if not re.match(r"^[A-Z]{2}$", state):
-            raise ValueError(
+            raise UserInputError(
                 f"state must be 2-letter USPS (e.g. 'VA', 'CA'). Got {state!r}."
             )
     set_aside = _validate_code_in_dict(set_aside, field="set_aside", valid_codes=SET_ASIDE_CODES)
@@ -1297,7 +1302,7 @@ async def get_opportunity_description(notice_id: str) -> dict[str, Any]:
     HTML description. Pass the noticeId from the search results.
     """
     if not notice_id or not notice_id.strip():
-        raise ValueError("notice_id cannot be empty.")
+        raise UserInputError("notice_id cannot be empty.")
     params = {"noticeid": notice_id.strip()}
     return await _get(OPPORTUNITY_DESC_PATH, params)
 
@@ -1318,10 +1323,10 @@ async def lookup_psc_code(
     using them as filters in other searches.
     """
     if not code or not code.strip():
-        raise ValueError("code cannot be empty. PSC codes are 4 characters (e.g. 'R425').")
+        raise UserInputError("code cannot be empty. PSC codes are 4 characters (e.g. 'R425').")
     code = code.strip().upper()
     if len(code) < 2:
-        raise ValueError(
+        raise UserInputError(
             f"code must be at least 2 characters. Got {code!r}. "
             f"PSC codes are typically 4 characters (e.g. 'R425')."
         )
@@ -1345,12 +1350,12 @@ async def search_psc_free_text(
     plain-language descriptions like 'engineering' or 'application development'.
     """
     if not query or not query.strip():
-        raise ValueError(
+        raise UserInputError(
             "query cannot be empty. Pass at least 2 characters of search text."
         )
     query = _validate_waf_safe(query.strip(), field="query")
     if len(query) < 2:
-        raise ValueError(
+        raise UserInputError(
             f"query must be at least 2 characters. Got {query!r}."
         )
     query = _clamp_str_len(query, field="query", maximum=200)
@@ -1474,7 +1479,7 @@ async def search_contract_awards(
     """
     limit = _clamp(limit, field="limit", lo=1, hi=CONTRACT_AWARDS_MAX_LIMIT)
     if offset < 0:
-        raise ValueError(f"offset must be >= 0. Got {offset}.")
+        raise UserInputError(f"offset must be >= 0. Got {offset}.")
 
     # UEI / CAGE format validation (only when provided)
     if awardee_uei:
@@ -1583,13 +1588,13 @@ async def lookup_award_by_piid(
     modifications. Check totalRecords for the number of mods found.
     """
     if not piid or not piid.strip():
-        raise ValueError(
+        raise UserInputError(
             "piid cannot be empty. Pass a contract identifier like "
             "'GS-35F-0119Y', 'W912BV22P0112', or 'N0003925F7516'."
         )
     piid_clean = piid.strip()
     if any(c in piid_clean for c in ("\x00", "\n", "\r", "\t")):
-        raise ValueError(f"piid={piid!r} contains control characters.")
+        raise UserInputError(f"piid={piid!r} contains control characters.")
 
     params: dict[str, Any] = {
         "piid": piid_clean,
@@ -1655,7 +1660,7 @@ async def search_deleted_awards(
     """
     limit = _clamp(limit, field="limit", lo=1, hi=CONTRACT_AWARDS_MAX_LIMIT)
     if offset < 0:
-        raise ValueError(f"offset must be >= 0. Got {offset}.")
+        raise UserInputError(f"offset must be >= 0. Got {offset}.")
     contracting_department_code = _coerce_str(
         contracting_department_code, field="contracting_department_code"
     )
@@ -1886,7 +1891,7 @@ async def search_federal_organizations(
     """
     limit = _clamp(limit, field="limit", lo=1, hi=FH_MAX_LIMIT)
     if offset < 0:
-        raise ValueError(f"offset must be >= 0. Got {offset}.")
+        raise UserInputError(f"offset must be >= 0. Got {offset}.")
     fh_org_id = _coerce_str(fh_org_id, field="fh_org_id")
     agency_code = _coerce_str(agency_code, field="agency_code")
     cgac = _coerce_str(cgac, field="cgac")
@@ -1940,10 +1945,10 @@ async def get_organization_hierarchy(
     """
     limit = _clamp(limit, field="limit", lo=1, hi=FH_MAX_LIMIT)
     if offset < 0:
-        raise ValueError(f"offset must be >= 0. Got {offset}.")
+        raise UserInputError(f"offset must be >= 0. Got {offset}.")
     org_id = _coerce_str(fh_org_id, field="fh_org_id")
     if not org_id:
-        raise ValueError(
+        raise UserInputError(
             "fh_org_id cannot be empty. Use search_federal_organizations to "
             "find an org ID first."
         )
@@ -2030,7 +2035,7 @@ async def search_acquisition_subawards(
     """
     page_size = _clamp(page_size, field="page_size", lo=1, hi=SUBAWARD_MAX_PAGE_SIZE)
     if page_number < 0:
-        raise ValueError(f"page_number must be >= 0. Got {page_number}.")
+        raise UserInputError(f"page_number must be >= 0. Got {page_number}.")
     referenced_idv_agency_id = _coerce_str(
         referenced_idv_agency_id, field="referenced_idv_agency_id"
     )
@@ -2125,7 +2130,7 @@ async def search_assistance_subawards(
     """
     page_size = _clamp(page_size, field="page_size", lo=1, hi=SUBAWARD_MAX_PAGE_SIZE)
     if page_number < 0:
-        raise ValueError(f"page_number must be >= 0. Got {page_number}.")
+        raise UserInputError(f"page_number must be >= 0. Got {page_number}.")
     agency_code = _coerce_str(agency_code, field="agency_code")
     from_date = _validate_date_yyyy_mm_dd(from_date, field="from_date")
     to_date = _validate_date_yyyy_mm_dd(to_date, field="to_date")
@@ -2150,7 +2155,7 @@ async def search_assistance_subawards(
     if agency_code:
         ac = str(agency_code).strip()
         if not (ac.isdigit() and len(ac) == 4):
-            raise ValueError(
+            raise UserInputError(
                 f"agency_code must be a four-digit agency code (e.g. 9700 for "
                 f"DoD). Got {agency_code!r}. The Assistance Subawards API "
                 f"rejects 3-digit CGAC codes like 075."

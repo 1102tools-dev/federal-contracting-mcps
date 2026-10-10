@@ -2,28 +2,29 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes seven SAM.gov REST APIs (Entity Management v3, Exclusions v4, Opportunities v2, Contract Awards v1, Federal Hierarchy v1, Acquisition Subaward Reporting, Assistance Subaward Reporting) plus the PSC lookup as 20 callable tools. It was hardened across ten audit rounds, the tenth being a ~230-call paced live campaign against production. Live audits surfaced seven catastrophic P1 silent-wrong-data bugs mocks could never catch (apostrophe-rejecting WAF, typo'd-parameter silent drops, empty PIID acceptance, `entityName` vs `exclusionName`, and three Subaward parameter casings). Round 9 (1.0.2), an independent full-source re-audit, found the worst one yet by replaying the documented Entity API response shape through the real pipeline: `get_entity_reps_and_certs` read the wrong JSON key casings, so its default summary mode returned EMPTY clause lists for every entity, and eight prior rounds never noticed because their live assertions only checked `totalRecords`. This MCP is also where the `extra='forbid'` cross-fix pattern was invented and exported to the rest of the suite. The current local release 1.0.13 collects 1,155 regression cases (781 offline and 374 live-gated). The hosted opportunities edition is documented separately from this local package.
+This Model Context Protocol server exposes seven SAM.gov REST APIs (Entity Management v3, Exclusions v4, Opportunities v2, Contract Awards v1, Federal Hierarchy v1, Acquisition Subaward Reporting, Assistance Subaward Reporting) plus the PSC lookup as 20 callable tools. It was hardened across ten audit rounds, the tenth being a ~230-call paced live campaign against production. Live audits surfaced seven catastrophic P1 silent-wrong-data bugs mocks could never catch (apostrophe-rejecting WAF, typo'd-parameter silent drops, empty PIID acceptance, `entityName` vs `exclusionName`, and three Subaward parameter casings). Round 9 (1.0.2), an independent full-source re-audit, found the worst one yet by replaying the documented Entity API response shape through the real pipeline: `get_entity_reps_and_certs` read the wrong JSON key casings, so its default summary mode returned EMPTY clause lists for every entity, and eight prior rounds never noticed because their live assertions only checked `totalRecords`. This MCP is also where the `extra='forbid'` cross-fix pattern was invented and exported to the rest of the suite. The current local 1.0.14 candidate collects 1,158 regression cases (784 offline and 374 live-gated). The hosted opportunities edition is documented separately from this local package.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 20 |
-| Total regression tests | 1,155 (781 offline, 374 live-gated) |
-| Tests per tool | 57.75 collected cases per tool |
+| Total regression tests | 1,158 (784 offline, 374 live-gated) |
+| Tests per tool | 57.9 collected cases per tool |
 | Audit rounds completed | 10 |
 | Total items addressed | 77 across releases |
 | P1 silent-wrong-data bugs (live-audit-only) | 7 |
 | Round 9 findings | 13 (8 fixed in 1.0.2; all 5 pending items live-resolved in round 10) |
 | Round 10 findings | 10 (fixed/documented in 1.0.4 from a ~230-call paced live campaign) |
-| Current release | 1.0.13 |
+| Current candidate | 1.0.14 |
 | PyPI status | Published as `sam-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
-## Current regression inventory — local 1.0.13
+## Current regression inventory — local 1.0.14 candidate
 
-Collection on 2026-10-10 found 1,155 cases: 781 offline and 374 optional
+Collection on 2026-10-10 found 1,158 cases: 784 offline and 374 optional
 live-source cases. Collection does not execute tests or call SAM.gov. The
 ten audit rounds in the summary describe the historical local-package
 audits; the October hosted opportunities fixes do not change this local
-package version or local tool catalog.
+tool catalog. Round 4 changes only anticipated local input errors and the
+package version; the native mirror stays 1.0.3.
 
 A fresh isolated PyPI 1.0.13 installation completed actual stdio
 initialization and `tools/list` with 20 tools, without a SAM API key or
@@ -40,12 +41,67 @@ source request. The imported module came from installed site-packages.
 | [test_density_r5.py](tests/test_density_r5.py) | 367 |
 | [test_live_audit_r6.py](tests/test_live_audit_r6.py) | 235 |
 | [test_round_7.py](tests/test_round_7.py) | 133 |
+| [test_round4_recovery.py](tests/test_round4_recovery.py) | 3 |
 | [test_sba_business_type.py](tests/test_sba_business_type.py) | 15 |
 | [test_v0_4_features.py](tests/test_v0_4_features.py) | 278 |
 | [test_validation.py](tests/test_validation.py) | 81 |
 
 The release records below are historical evidence with their original
 versions, counts and dates. Their counts are not the current inventory.
+
+## October 10, 2026 round 4 — content audit and local 1.0.14 candidate
+
+The native mirror 1.0.3 at source `0d87bdcf9d0c645428a57271736e4c35891bca53`
+answered 114 new ordinary and power-user questions and followups plus status:
+53 searches, 50 full-notice/solicitation lookups and 11 summaries across all
+ten dimensions. New workflows covered food, hospitality, education, printing,
+water infrastructure, fire equipment, aviation, cyber, healthcare, agency and
+set-aside research, California/Hawaii/DC/overseas work, dates, older awards,
+all notice types, earlier versions, exact solicitation filters and paging.
+
+A fresh conditional request to the official daily CSV returned HTTP 304 with
+the retained ETag, Last-Modified and version ID. This confirms the retained
+212,081,646-byte CSV with SHA-256
+`0a35bf09b261259ea385ddf183d28e6bc2fe594521b3df054e1daa737e83bfa9`;
+it is not a newly transferred full CSV. All 114 independent SQL comparisons
+and 348 raw returned-row checks passed. Raw CSV counting independently confirms
+64,417 active unarchived rows and 9,197 excluded past-archive rows. Snapshot
+normalization/version flags and timezone inference remain shared, not independent
+proof of amendment parentage. Eighteen practical workflow interpretations and
+19 selected raw source records supplement numeric parity.
+
+One P2 affects the local package: fresh official PyPI 1.0.13 with MCP SDK 2.3
+hides anticipated date/code recovery behind generic tool errors. Actual no-key
+console originals reproduce ISO date reuse from the mirror into award research
+and reuse of three-digit hierarchy CGAC into assistance-subaward research.
+Official GSA API documentation requires award dates in MM/DD/YYYY and assistance
+agency codes as four-digit numbers. Validation occurs before API access;
+corrected keyed content workflows were not executed without a key.
+
+The 1.0.14 candidate uses `UserInputError(ValueError, ToolError)` only for
+anticipated validators. Actual installed candidate-wheel stdio preserves both
+repair messages. Two registered-tool tests fail before and pass after; a third
+ensures unexpected source ValueError remains distinct from user-input recovery.
+All 20 local tool names, descriptions, schemas and annotations are unchanged.
+The native catalog, code, loader, schema and data are unchanged.
+
+Candidate full suites under frozen SDK 2.0 and fresh SDK 2.3 each pass **784**,
+skip **374**, and collect **1,158**. The fresh 1.0.13 regression result (308 failed,
+473 passed, 374 skipped) counts regressions, not 308 product findings. Initial
+candidate runs exposed three legacy tests sending bogus keys to production;
+they now assert exact forwarding with an explicit local stub. Those checks are
+not live API parity. Worker tests pass 28 with zero skips; typecheck, exact
+catalog and version consistency checks pass separately.
+
+Source limits remain explicit: a cook-service notice's CSV deadline conflicts
+with its description; an IHS record's type says solicitation while its text
+says market research; a shared MAS solicitation groups independent awards and
+its raw amount is not verified obligations. Full returned text preserves these
+qualifications; amendments and attachments require the SAM.gov source link.
+Nineteen planned keyed local workflows remain unexecuted. No native defect was
+confirmed. Evidence is in `Artifacts/mcp-e2e-20261010/round4/sam-gov/`.
+Local 1.0.14 publication and after-release acceptance remain coordinator-owned
+and pending; candidate-wheel checks are not fresh published PyPI checks.
 
 ## October 10, 2026 round 3 — published opportunities mirror 1.0.3
 

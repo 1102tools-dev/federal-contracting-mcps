@@ -443,33 +443,30 @@ def test_search_opportunities_title_length():
 # those and still rejects null bytes / control characters.
 
 
-def test_search_entities_allows_apostrophe():
+def _assert_entity_name_forwarded(monkeypatch, name):
+    """Check literal forwarding without sending a bogus key to production."""
+    captured = []
+
+    async def captured_get(path, params):
+        captured.append(params)
+        return {"entityData": [], "totalRecords": 0}
+
+    monkeypatch.setattr(srv, "_get", captured_get)
+    asyncio.run(_call("search_entities", legal_business_name=name))
+    assert captured and captured[0]["legalBusinessName"] == name
+
+
+def test_search_entities_allows_apostrophe(monkeypatch):
     """Apostrophe in company name must not be rejected (McDonald's, O'Brien)."""
-    # Use the 'pre-network' path: a bogus key produces an auth error, but
-    # validators run first. We just assert it isn't blocked on validation.
-    try:
-        asyncio.run(_call("search_entities", legal_business_name="O'Brien Corp"))
-    except Exception as e:
-        msg = str(e).lower()
-        assert "firewall" not in msg
-        assert "single quote" not in msg
+    _assert_entity_name_forwarded(monkeypatch, "O'Brien Corp")
 
 
-def test_search_entities_allows_angle_brackets():
-    try:
-        asyncio.run(_call("search_entities", legal_business_name="<script>"))
-    except Exception as e:
-        msg = str(e).lower()
-        assert "firewall" not in msg
-        assert "angle bracket" not in msg
+def test_search_entities_allows_angle_brackets(monkeypatch):
+    _assert_entity_name_forwarded(monkeypatch, "<script>")
 
 
-def test_search_entities_allows_sql_keywords():
-    try:
-        asyncio.run(_call("search_entities", legal_business_name="DROP TABLE users"))
-    except Exception as e:
-        msg = str(e).lower()
-        assert "firewall" not in msg
+def test_search_entities_allows_sql_keywords(monkeypatch):
+    _assert_entity_name_forwarded(monkeypatch, "DROP TABLE users")
 
 
 def test_search_entities_rejects_null_byte():
