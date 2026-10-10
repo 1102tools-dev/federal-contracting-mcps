@@ -428,7 +428,8 @@ def test_every_2_101_definition_is_found_first_by_its_own_name():
 
     paragraphs = _parse("t48_2.101.xml")["paragraphs"]
     blocks = _definitions.index_definitions(paragraphs)
-    assert len(blocks) == 253
+    # 253 italic lead definitions plus the three numbered Surety types.
+    assert len(blocks) == 256
     for block in blocks:
         found = _definitions.find(paragraphs, block["term"])["definitions"]
         same_name = [d for d in found if d["term"] == block["term"]]
