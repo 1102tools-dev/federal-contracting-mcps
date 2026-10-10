@@ -13,7 +13,7 @@ never needs to process raw XML. Structure and metadata endpoints return JSON.
 
 from __future__ import annotations
 
-from ._errors import UserInputError
+from ._errors import SourceNotFoundError, UserInputError
 
 import asyncio
 import difflib
@@ -522,7 +522,8 @@ async def _fetch_json(path: str, params: dict[str, Any] | None, timeout: float) 
     except httpx.RequestError as e:
         raise RuntimeError(f"Network error calling eCFR: {e}") from e
     if r.status_code >= 400:
-        raise RuntimeError(_format_error(r.status_code, r.text) + _what_was_asked(r.status_code, path, params))
+        error_type = SourceNotFoundError if r.status_code == 404 else RuntimeError
+        raise error_type(_format_error(r.status_code, r.text) + _what_was_asked(r.status_code, path, params))
     try:
         r.json()
     except (ValueError, _json.JSONDecodeError) as e:
@@ -570,7 +571,8 @@ async def _get_xml_uncached(path: str, params: dict[str, Any] | None = None) -> 
     except httpx.RequestError as e:
         raise RuntimeError(f"Network error calling eCFR: {e}") from e
     if r.status_code >= 400:
-        raise RuntimeError(_format_error(r.status_code, r.text) + _what_was_asked(r.status_code, path, params))
+        error_type = SourceNotFoundError if r.status_code == 404 else RuntimeError
+        raise error_type(_format_error(r.status_code, r.text) + _what_was_asked(r.status_code, path, params))
     text = r.text
     if not isinstance(text, str):
         text = str(text)
@@ -839,7 +841,7 @@ async def get_cfr_content(
         xml_content = await _get_xml(path, params)
     except RuntimeError as e:
         if appendix and str(e).startswith("HTTP 404"):
-            raise RuntimeError(
+            raise SourceNotFoundError(
                 f"{e} Appendix names must be eCFR's full name, like 'Appendix II to Part 200' "
                 f"(with part='200') or 'Appendix A to Chapter 2' (with chapter='2'); "
                 f"list_sections_in_part lists a part's appendices."

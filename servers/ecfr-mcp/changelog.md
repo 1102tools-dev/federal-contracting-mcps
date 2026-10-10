@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.6
+
+- Expected missing-source HTTP 404 errors preserve actionable recovery guidance through fresh MCP SDK installations. Legacy section questions can proceed to history, available dated text and removal comparisons. Direct RuntimeError compatibility remains; unexpected failures keep their existing classification.
+- Five regressions cover XML/JSON expected errors, unexpected-error controls and a real stdio legacy-property recovery workflow using primary-source fixtures. Tool contracts remain unchanged.
+
 ## 1.1.5
 
 - Version history now sorts each section chronologically before pagination, preserving the advertised oldest-first timeline even when eCFR returns source records out of order. A saved Section 508 source fixture checks the original timeline and page followups.

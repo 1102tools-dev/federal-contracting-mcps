@@ -1,6 +1,6 @@
 # Test suite map
 
-451 collected tests (333 offline, 118 live-gated). Files are named by the audit round or fix-wave that
+456 collected tests (338 offline, 118 live-gated). Files are named by the audit round or fix-wave that
 produced them and are append-only history: each maps to a section of
 [../testing.md](../testing.md), which narrates what every round found and
 fixed. That traceability is deliberate; do not consolidate or rename rounds.
@@ -14,6 +14,7 @@ fixed. That traceability is deliberate; do not consolidate or rename rounds.
 | `test_real_xml_fixtures.py` | 1.1.0 (2026-10-10 bug hunt): ten real eCFR responses in `fixtures/ecfr_xml/`; every text node must come out exactly once, in order, under the right section; targeted checks per bug; pages add up to the whole answer; all 253 2.101 definitions found by name | 32 | offline |
 | `test_1_1_0.py` | 1.1.0 fix wave (2026-10-10 bug hunt, groups 1-6): every tool change, eCFR mocked | 67 | offline |
 | `test_e2e_20261010.py` | October 10 content/usability followups: unavailable snapshots, citation title preservation, changes-only, recovery parameters | 12 | offline |
+| `test_content_round4.py` | 1.1.6 missing-source guidance through real stdio, legacy history/dated-text/removal followups and unexpected-error controls | 5 | offline |
 | `test_content_round3.py` | 1.1.5 source-backed Section 508 chronological timeline/page followups and available 2016 snapshot comparison | 2 | offline |
 | `test_content_round2.py` | 1.1.3 ordinary content research: COR original/canonical/acronym definitions, executable grants-comparison followup, intersected correction scopes using primary-source fixtures | 7 | offline |
 | `test_sdk_error_recovery.py` | 1.1.2 delivery correction: real stdio errors retain actionable guidance, then corrected questions complete | 1 | offline |
@@ -37,3 +38,5 @@ runs via `pytest -m live_smoke`.
 The 1.1.4 reservation-contract correction collected 449 tests: both frozen SDK 2.0.0 and fresh candidate-wheel SDK 2.3.0 passed 331 offline cases with 118 live skips. Its new deterministic delay regression preserves permit accounting and the rolling budget; real concurrency and process-crash checks remain. The actual fresh PyPI 1.1.4 installation passed the same 331 offline cases with 118 live skips (15.47 seconds); its installed CLI completed 73 original/followup calls and the public service completed 70. Fifty rerun primary comparisons plus five corrected-original source checks passed. No new full 449-case live run is claimed.
 
 The 1.1.5 candidate collected 451 cases: both frozen SDK 2.0.0 and fresh candidate-wheel SDK 2.3.0 passed 333 with 118 explicit live skips. Two new source-fixture regressions fail against published 1.1.4 and pass after the fixes. The actual candidate CLI completed 80 calls and 83 primary-source comparisons passed; 72 of 73 shared corpus calls stayed exactly equal to the published service. No new full 451-case live-suite run is claimed.
+
+The 1.1.6 candidate collected 456 cases: frozen SDK 2.0.0 and freshly installed candidate-wheel SDK 2.3.0 each passed 338 with 118 explicit live skips. Three of five new cases fail against published 1.1.5; both unexpected-error controls already pass. All five pass after the correction. Actual published CLI/public new research corpora each completed 77 calls (76 valid after one caller-citation exclusion); 96 primary comparisons passed per surface. The candidate installed CLI completed the four affected recovery calls. No new full live-suite run or published 1.1.6 verification is claimed.
