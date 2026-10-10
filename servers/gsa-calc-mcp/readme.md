@@ -8,7 +8,7 @@ Free, open-source MCP server for the GSA CALC+ Labor Ceiling Rates API. Query aw
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through seven audit rounds and the 1.0.12 content-test fix wave against the GSA CALC+ API. 414 collected regression tests (293 offline, 121 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). The content fixes cover vendor worksites, low-sample price checks, comparison filters, title summaries and truncation. See [testing.md](testing.md) for the full testing record and the [test suite map](tests/README.md) for counts by file.*
+*Tested and hardened through seven audit rounds and the 1.0.13 workflow audit against the GSA CALC+ API. 433 collected regression tests (312 offline, 121 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). The content fixes cover vendor worksites, low-sample price checks, comparison filters, title summaries and truncation. See [testing.md](testing.md) for the full testing record and the [test suite map](tests/README.md) for counts by file.*
 
 ## Local or hosted
 
@@ -97,3 +97,12 @@ Always note sample size and remind users these are ceiling rates when presenting
 ## License
 
 MIT
+
+IGCE and price checks use GSA's keyword search across labor titles, vendor names
+and contract numbers. Check `population_scope`: a vendor-name match can pool
+unrelated labor categories. Price checks return `MIXED_SEARCH_FIELDS` without a
+verdict when off-title matches are found, and `UNVERIFIED_POPULATION` when the
+title list cannot establish the full population. For title-only rates, discover
+an exact title with `suggest_contains`, then call `exact_search` on
+`labor_category`. Suggestion totals marked
+`total_matching_records_is_lower_bound` mean **at least** that many records.

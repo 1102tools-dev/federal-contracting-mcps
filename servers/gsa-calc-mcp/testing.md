@@ -9,12 +9,12 @@ older live test or establish an official provider quota.
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The MCP ships with 414 regression tests (293 offline plus 121 live-gated).
+This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API as 8 callable tools for IGCE development, price reasonableness analysis, and federal labor market research. It was hardened across six audit rounds. The original 0.2.x audits surfaced 86 bugs total (74 in the initial full audit plus 12 in retroactive deep audits), including the signature `filtered_browse()` bug that returned 265,000 unfiltered records on a zero-argument call. Round 5 added a Hypothesis-driven offline property test suite (~25,000 random probes through every validator) plus 122 new live tests covering all 8 tools. Round 5 found zero new bugs and was read at the time as validating the depth of prior hardening. Round 6 (1.0.1) disproved that read: differential count assertions against the live API surfaced two high-severity silent-wrong-data bugs (the worksite filter is silently ignored upstream, and `experience_min` alone filtered as an exact match) plus four dead hardcoded SINs, none of which shape-only live tests could see. A third high-severity finding arrived from the guide field audit in the same wave: vendor_rate_card had no page parameter, so a large vendor's card truncated mid-alphabet while presenting as complete, and its 500-row default payload overflowed MCP client output limits. The MCP ships with 433 regression tests (312 offline plus 121 live-gated).
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 8 |
-| Total regression tests | 414 (293 offline, 121 live-gated) |
+| Total regression tests | 433 (312 offline, 121 live-gated) |
 | Tests per tool | 51.8 |
 | Audit rounds completed | 7 |
 | P1 crashes (shape-shift) found and fixed | 19 |
@@ -24,7 +24,7 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | Round 5 Hypothesis + live findings | 0 (shape-only assertions; see round 6 for what that missed) |
 | Round 6 differential-count findings | 3 high-severity (worksite ignored, experience_min exact-match, vendor_rate_card unpageable) + 4 dead hardcoded SINs + 1 validation gap |
 | Retroactive additional findings | 12 |
-| Current release | 1.0.12 |
+| Current release | 1.0.13 |
 | PyPI status | Published as `gsa-calc-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
@@ -229,3 +229,23 @@ contract checks, version validation for all nine packages, and all 64 release
 guard tests passed. The Worker type check passed and all six Worker tests passed.
 
 The README badge and test suite map were reconciled with pytest collection: 414 Python tests (293 offline, 121 live-gated). The saved Q1-Q30 findings gate also passed 43 comparisons against fresh GSA responses, with four explicit deferred rows for raw payload trimming and per-site/future-year statistics.
+
+
+## 1.0.13 workflow audit (2026-10-10)
+
+The full workflow audit covered all eight tools with 28 realistic question and follow-up cases against the hosted MCP transport and local MCP registry, preserving raw GSA response bodies. It verified exact-title/vendor/contract discovery, compound filters, education OR, experience half-ranges, vendor paging and worksite rows, active/retired SINs, low/no-data checks, and actionable validation errors.
+
+New confirmed findings: capped suggestion `hits.total` was displayed without its lower-bound relation; IGCE keyword searches also matched vendor/contract fields while claiming title-only matching, contaminating price verdicts (Systems Engineering returned Admin/IT Support titles); zero/missing variance produced a fabricated zero z-score, and a missing average fabricated dollar deltas from zero. Statistical edge cases were reproduced through the MCP pipeline with controlled upstream fixtures, not observed as a current live GSA outage.
+
+All 19 new regression cases failed on the original 1.0.12 source and pass after the fixes. Incomplete or approximate title aggregations also suppress price verdicts conservatively. The historical numerical and low-sample fixtures now explicitly supply complete title populations. Tool names, descriptions, schemas and annotations match the reviewed hosted contract without regeneration.
+
+The GSA API still has no supported title-substring-only statistics query. The benchmark therefore labels its pooled field scope and price checks suppress misleading or unverifiable judgments; use `suggest_contains` followed by `exact_search` on labor_category for title-only comparisons. Existing published docstrings are retained to preserve reviewed metadata; response notes and the README document the actual keyword scope.
+
+Validation completed under Python 3.12: **433 collected**, **312 passed / 121
+live-gated skipped** in the full offline suite; the content-fix suite with live
+access enabled passed **30 tests**, including **12 live government-source
+comparisons**. The 28-case question/follow-up replay passed local transport,
+source and expected-error checks; hosted baseline responses were preserved to
+show the actual pre-release behavior. Six Worker budget tests passed. Wheel
+build, all-nine version consistency and the eight-tool reviewed metadata
+contract passed. Live published 1.0.13 verification is a release-stage check.

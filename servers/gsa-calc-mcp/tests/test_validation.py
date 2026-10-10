@@ -707,7 +707,7 @@ def test_price_reasonableness_vs_median_unknown_when_missing():
     import gsa_calc_mcp.server as S
 
     async def fake(qs):
-        return {"hits": {"total": {"value": 50}}, "aggregations": {"wage_stats": {"count": 50, "avg": 100, "std_deviation": 20}, "histogram_percentiles": {"values": {"10.0": 50}}}}
+        return {"hits": {"total": {"value": 50}}, "aggregations": {"wage_stats": {"count": 50, "avg": 100, "std_deviation": 20}, "histogram_percentiles": {"values": {"10.0": 50}}, "labor_category": {"buckets": [{"key": "test", "doc_count": 50}], "sum_other_doc_count": 0}}}
 
     orig = S._get
     S._get = fake
