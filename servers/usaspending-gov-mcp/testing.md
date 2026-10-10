@@ -2,14 +2,14 @@
 
 ## Executive Summary
 
-This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across twelve audit rounds: the eleventh was a ~95-call paced live campaign, and the twelfth was the October 2026 content campaign. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. Release 1.0.13 collects 2,259 regression cases (1,880 offline and 379 live-gated).
+This Model Context Protocol server exposes the USASpending.gov REST API as 55 callable tools for federal contract, award, subaward, recipient, agency, and federal account research. It was hardened across thirteen audit rounds: the eleventh was a ~95-call paced live campaign, the twelfth was the October 2026 content campaign, and the thirteenth was the full end-to-end audit and description follow-up. v0.3 (round 9) tripled the API surface from 17 to 55 tools, adding FFATA subawards, recipient profile/children, agency depth (sub-agencies, federal accounts, object classes, program activities, obligations by award category), award detail rollups, transaction-level and geographic search, IDV depth, autocomplete helpers, reference data, and Treasury federal accounts. Round 10 (1.0.1) was a two-family semantic live audit that found 22 verified defects rounds 1-9 had missed, including one tool that had never worked at all; the methodology change behind it is documented in the Round 10 section. The current 1.0.15 source collects 2,297 regression cases (1,918 offline and 379 live-gated). Its measured offline lane passed 1,918 and skipped 379; collection does not execute those live tests. Actual published-package and hosted acceptance are separate records.
 
 | Metric | Value |
 |---|---|
 | MCP tools exposed | 55 |
-| Total regression tests | 2,259 (1,880 offline, 379 live-gated) |
-| Tests per tool | 39+ |
-| Audit rounds completed | 12 (eleven historical rounds plus October 2026 content campaign) |
+| Total regression tests | 2,297 (1,918 offline, 379 live-gated) |
+| Collected cases per tool | 41.76 (not a coverage percentage) |
+| Audit rounds completed | 13 (including the full end-to-end audit and description follow-up) |
 | Initial integration issues (round 1) | 28+ |
 | P1 silent-wrong-data bugs found and fixed | 11 (rounds 1-9) |
 | P2 validation gaps found and fixed | 7 (rounds 1-9) |
@@ -17,8 +17,8 @@ This Model Context Protocol server exposes the USASpending.gov REST API as 55 ca
 | Round 8 Hypothesis property tests findings | 0 |
 | Round 9 (v0.3) live audit findings | 1 (list_states JSON-array response shape) |
 | Round 10 (1.0.1) semantic audit findings | 22 (12 search family, 10 entity family), all fixed |
-| Release cycles | 15 (v0.1.2 through v1.0.3) |
-| Current release | 1.0.13 |
+| Historical release cycles through 1.0.3 | 15 (v0.1.2 through v1.0.3) |
+| Current source package | 1.0.15 |
 | PyPI status | Published as `usaspending-gov-mcp`, auto-publishes via Trusted Publisher on tag push |
 
 ## 1.0.3 Safety Release Verification
