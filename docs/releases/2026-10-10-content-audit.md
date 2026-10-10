@@ -180,7 +180,7 @@ Published package metadata, source provenance, primary-source answer checks, eig
 
 ## Content round 3 — reviewed source and measured acceptance
 
-Round 3 covered the same eight servers; Acquisition.gov remains excluded. All eight owners completed new ordinary-user and power-user content coverage and independent reviews. Ten new findings were confirmed: **P0=0, P1=0, P2=7, P3=3**. Source PRs [116](https://github.com/1102tools-dev/federal-contracting-mcps/pull/116), [117](https://github.com/1102tools-dev/federal-contracting-mcps/pull/117), [118](https://github.com/1102tools-dev/federal-contracting-mcps/pull/118), [119](https://github.com/1102tools-dev/federal-contracting-mcps/pull/119), [120](https://github.com/1102tools-dev/federal-contracting-mcps/pull/120) and [121](https://github.com/1102tools-dev/federal-contracting-mcps/pull/121) merged. Five scoped package releases use frozen source `7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336`; all five package, Cloudflare and automated registry workflows succeeded sequentially. The initial nine content fixes have published acceptance; the additional Regulations 2.0.6 correction and final documentation/website closure remain pending in this working draft.
+Round 3 covered the same eight servers; Acquisition.gov remains excluded. All eight owners completed new ordinary-user and power-user content coverage and independent reviews. Ten new findings were confirmed: **P0=0, P1=0, P2=7, P3=3**. Source PRs [116](https://github.com/1102tools-dev/federal-contracting-mcps/pull/116), [117](https://github.com/1102tools-dev/federal-contracting-mcps/pull/117), [118](https://github.com/1102tools-dev/federal-contracting-mcps/pull/118), [119](https://github.com/1102tools-dev/federal-contracting-mcps/pull/119), [120](https://github.com/1102tools-dev/federal-contracting-mcps/pull/120) and [121](https://github.com/1102tools-dev/federal-contracting-mcps/pull/121) merged. Five scoped package releases use frozen source `7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336`; all five package, Cloudflare and automated registry workflows succeeded sequentially. The initial nine content fixes have published acceptance; the additional Regulations 2.0.6 correction has also passed final acceptance; documentation/website closure remains pending in this working draft.
 
 | Server | New P0 / P1 / P2 / P3 | Corrected ordinary-user behavior | Final target |
 |---|---:|---|---|
@@ -191,13 +191,13 @@ Round 3 covered the same eight servers; Acquisition.gov remains excluded. All ei
 | GSA Per Diem | 0 / 0 / 1 / 1 | Correct UTF-8 county geography and accent normalization resolve Doña Ana/White Sands; registry setup guidance correctly permits bundled keyless city-plus-county workflows. | 1.2.4 |
 | eCFR | 0 / 0 / 2 / 1 | History groups by section and sorts dates before pagination; catalog explains older history; available pre-2017 text comparisons work, with source-specific unavailable-date recovery. | 1.1.5 |
 | Federal Register | 0 / 0 / 0 / 0 | No new defects in 54 realistic public/installed-CLI questions and current primary-source comparisons. | 1.0.14 unchanged |
-| Regulations.gov | 0 / 0 / 2 / 0 | Provider closing timestamps are qualified source metadata; users follow controlling notices, eligibility conditions and later extensions. Ordinary filter/date recovery guidance must also survive fresh MCP SDK installs. | 2.0.6 corrective release pending; 2.0.5 deadline correction live |
+| Regulations.gov | 0 / 0 / 2 / 0 | Provider closing timestamps are qualified source metadata; users follow controlling notices, eligibility conditions and later extensions. Ordinary filter/date recovery guidance must also survive fresh MCP SDK installs. | 2.0.6; original deadline and SDK recovery fixes verified live |
 
 The eCFR result supersedes any earlier universal 2017 snapshot floor claim: actual 36 CFR 1194.1 text exists for December 13, 2016. Older availability depends on the title and section. Regulations.gov's provider conflict remains a disclosed source limitation; the corrected application no longer presents the raw timestamp as an established controlling deadline. The OSHA notice's October 30, 2025 extension applies to timely NOITA filers. Direct credentialed provider checks remain unavailable under quota/key constraints; captured-provider adapter checks are not claimed as live keyed CLI calls.
 
 ### Independent regression inventory
 
-At frozen source `7e8c4132`, an independent coordinator collection measured **6,064 product package tests**, including Acquisition's 255, and **5,809 for the eight-server goal**. All nine collection commands exited successfully. These are collected tests, not an all-passed claim. Worker, loader, contract, parity, current-source and realistic-content checks are separate lanes.
+The initial frozen-source `7e8c4132` collection measured 6,064 product / 5,809 goal tests. After the corrective merge `c0553538`, a second independent collection measured **6,067 product package tests**, including Acquisition's 255, and **5,812 for the eight-server goal**. Both proof files remain immutable. All nine collection commands exited successfully. These are collected tests, not an all-passed claim. Worker, loader, contract, parity, current-source and realistic-content checks are separate lanes.
 
 | Server | Collected | Saved complete offline lane: passed / skipped | New content coverage |
 |---|---:|---:|---|
@@ -208,7 +208,7 @@ At frozen source `7e8c4132`, an independent coordinator collection measured **6,
 | GSA Per Diem | 583 | 316 / 267 | 101 realistic cases; 98 primary numeric checks after the two corrections, 18 ZIP memberships. Two no-key workflows are expected guidance, not successful API source calls. |
 | eCFR | 451 | 333 / 118 | 80 actual published CLI workflow occurrences and 75 public questions, 83 source checks per transport against 58 freshly recaptured primary sources; targeted source retries are retained separately. |
 | Federal Register | 286 | 181 / 105 | 54 actual fresh published CLI/public/source cases; four complete agency deadline sets and four inspected source texts. |
-| Regulations.gov | 295 | 176 / 119 (locked SDK 2.0; fresh 2.0.5 SDK 2.3: 138 passed / 38 failed / 119 skipped) | 115 public calls, 110 comparison rows and 70 primary captures (68 JSON plus two XML); four occurrences of one OSHA conflict qualified, with the linked controlling-notice workflow verified; two agenda dates unverified. |
+| Regulations.gov | 298 | 179 / 119 (actual fresh published 2.0.6, SDK 2.3) | 115 public calls, 110 comparison rows and 70 primary captures (68 JSON plus two XML); four occurrences of one OSHA conflict qualified, with the linked controlling-notice workflow verified; two agenda dates unverified. |
 
 Root version consistency passed for all nine packages after refreshing stale local editable installations; no runtime code change was needed for that local environment repair. All nine wheel/sdist builds and published-payload guards passed. The unchanged versions matched official PyPI payloads; five corrected versions were confirmed new. All 67 release guard regressions passed. Individual source PR CI and independent peer reviews passed before publication.
 
@@ -218,25 +218,25 @@ GSA Per Diem serves its public route from a native Worker and D1. A retained con
 
 SAM mirror 1.0.3 deployment `1b4b44a6-95eb-416e-992b-788d69afa06f` is live at source `0d87bdcf9d0c645428a57271736e4c35891bca53`: all 110 final realistic questions plus status passed against the fresh official CSV. Python 1.0.13, its data loader and schema are unchanged. Status retains 64,417 active notices / 46,083 latest versions and `2026-10-10T15:52:32Z` load time.
 
-**Round 3 closure remains pending** until the additional Regulations 2.0.6 corrective workflow, actual fresh published recovery checks, final mixed-SHA eight-server matrix and all-five Dell checks, registry metadata, published GitHub docs and website acceptance pass. The initial five sequential package workflows and their destination checks already passed. Round 4 is required because this round found new P2 issues, and will start only after those gates close. No manual directory republication is required for these compatible corrections; registry publication and unobserved client directory review remain distinct.
+**Round 3 closure remains pending** until final GitHub docs and website publication/acceptance pass. The additional Regulations 2.0.6 corrective workflow, actual fresh published recovery/content checks, final mixed-SHA eight-server matrix and all-five Dell checks, and registry metadata passed. The initial five sequential package workflows and their destination checks already passed. Round 4 is required because this round found new P2 issues, and will start only after those gates close. No manual directory republication is required for these compatible corrections; registry publication and unobserved client directory review remain distinct.
 
 
 ### Cumulative ledger through confirmed round-3 findings
 
-This table counts each confirmed finding once. The earlier 43 findings and nine initial round-3 fixes have final published acceptance; one additional Regulations SDK recovery finding awaits the 2.0.6 corrective release. Acquisition's separate five findings are excluded.
+This table counts each confirmed finding once. The earlier 43 findings and nine initial round-3 fixes have final published acceptance; the additional Regulations SDK recovery finding has also passed published 2.0.6 acceptance. Acquisition's separate five findings are excluded.
 
-| MCP / shared owner | P0 | P1 | P2 | P3 | Total confirmed |
-|---|---:|---:|---:|---:|---:|
-| SAM.gov | 0 | 0 | 2 | 4 | 6 |
-| USAspending | 0 | 0 | 6 | 3 | 9 |
-| eCFR | 0 | 1 | 7 | 3 | 11 |
-| Federal Register | 0 | 0 | 2 | 1 | 3 |
-| Regulations.gov | 0 | 0 | 5 | 0 | 5 |
-| GSA CALC+ | 0 | 1 | 3 | 1 | 5 |
-| GSA Per Diem | 0 | 0 | 3 | 5 | 8 |
-| BLS OEWS | 0 | 0 | 4 | 1 | 5 |
-| Shared documentation | 0 | 0 | 1 | 0 | 1 |
-| **Total** | **0** | **2** | **33** | **18** | **53** |
+| MCP / shared owner | P0 | P1 | P2 | P3 | Total confirmed | Fully fixed | Partially fixed | Unresolved |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| SAM.gov | 0 | 0 | 2 | 4 | 6 | 6 | 0 | 0 |
+| USAspending | 0 | 0 | 6 | 3 | 9 | 9 | 0 | 0 |
+| eCFR | 0 | 1 | 7 | 3 | 11 | 11 | 0 | 0 |
+| Federal Register | 0 | 0 | 2 | 1 | 3 | 3 | 0 | 0 |
+| Regulations.gov | 0 | 0 | 5 | 0 | 5 | 5 | 0 | 0 |
+| GSA CALC+ | 0 | 1 | 3 | 1 | 5 | 5 | 0 | 0 |
+| GSA Per Diem | 0 | 0 | 3 | 5 | 8 | 8 | 0 | 0 |
+| BLS OEWS | 0 | 0 | 4 | 1 | 5 | 5 | 0 | 0 |
+| Shared documentation | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 0 |
+| **Total** | 0 | 2 | 33 | 18 | 53 | 53 | 0 | 0 |
 
 
 ### Round-3 publication and actual backend acceptance
@@ -259,9 +259,9 @@ Root independently downloaded **16 actual official wheel/sdist artifacts for all
 
 Brief official simple-index propagation delays affected initial fresh by-name installs; bounded retries used only official PyPI and retained the failed attempts. No candidate wheel was substituted. Final content acceptance remains separate from these publication and routing gates.
 
-### Fresh-installed SDK recovery correction — release pending
+### Fresh-installed SDK recovery correction — published acceptance
 
-The actual published Regulations.gov 2.0.5 package installed with MCP SDK 2.3 returned generic errors for ordinary requests to include closed comment periods and reuse a document filter date in a docket search. Its fresh suite measured 138 passed, 38 failed and 119 skipped; the earlier locked-SDK 176 passed / 119 skipped result is not a fresh-SDK pass. PR129 preserves anticipated recovery guidance with a narrow compatible exception class. Two original regressions fail before the correction; corrected SDK 2.0 and 2.3 candidate lanes each measure 179 passed, 119 skipped and 298 collected. Actual console originals and captured-provider corrected followups passed; captured adapters are not keyed live provider calls. Independent merged-source collection now measures 6,067 product / 5,812 goal tests, with Regulations at 298; actual checkout provenance differs only in coordinator documentation. Evidence: `coordinator/round3-corrective-final-collection/collection.json`. Publication of 2.0.6 and final mixed-SHA destination acceptance remain pending. Existing tags and initial destination proofs remain immutable.
+The actual published Regulations.gov 2.0.5 package installed with MCP SDK 2.3 returned generic errors for ordinary requests to include closed comment periods and reuse a document filter date in a docket search. Its fresh suite measured 138 passed, 38 failed and 119 skipped; the earlier locked-SDK 176 passed / 119 skipped result is not a fresh-SDK pass. PR129 preserves anticipated recovery guidance with a narrow compatible exception class. Two original regressions fail before the correction; corrected SDK 2.0 and 2.3 candidate lanes each measure 179 passed, 119 skipped and 298 collected. Actual console originals and captured-provider corrected followups passed in both candidate and final published checks; captured adapters are not keyed live provider calls. Independent merged-source collection now measures 6,067 product / 5,812 goal tests, with Regulations at 298; actual checkout provenance differs only in coordinator documentation. Evidence: `coordinator/round3-corrective-final-collection/collection.json`. Publication of 2.0.6 and final mixed-SHA destination acceptance passed. Fresh official installed console originals and the resolved SDK 2.3 suite passed (179 passed, 119 skipped, 298 collected). Independent actual public recovery and conditional deadline workflows also passed. Full final public corpus replay passed all 115 calls across nine tools with 91 qualified dated records. Retained source hashes were checked and one returned primary notice fetched afresh; final documentation/website closure remains pending. Existing tags and initial destination proofs remain immutable.
 
 ### Published content acceptance and source boundaries
 
@@ -277,10 +277,12 @@ The initial nine corrections passed their final published questions and relevant
 | eCFR | 80 actual published CLI workflow occurrences and75 public questions;83 checks per transport against 58 freshly recaptured primary XML/JSON sources; six complete independently recomputed FAR definition blocks. | 75 semantic CLI/public matches include 74 exact matches and one FEMA search-score drift. Source 429/timeout attempts are retained; only the remaining workflows/sources were retried. Four-call unavailable-date guidance/history/available-compare recovery passed per transport; availability is title/section-specific. |
 | Federal Register | 54 actual fresh published CLI and54 public questions across all eight tools,54 primary comparisons, four complete agency deadline sets and four inspected original source texts. |181 offline passed / 105 skipped / 286 collected is distinct from this new content corpus. Discovery scan bounds, archive coverage and weekend Public Inspection behavior remain explicit. |
 
-Regulations.gov initial 2.0.5 accepted 115 public calls and 110 comparison rows from 70 primary captures: 76 machine matches, 22 records with no date, six extension reconciliations, four occurrences of one disclosed OSHA timestamp conflict and two EPA agenda dates whose controlling date was unverified. The controlling notice established the conditional October 30 deadline for timely NOITA filers. Source quota 429 and two PDF 403 responses remain unavailable checks. The additional fresh-SDK recovery correction is tracked separately above until 2.0.6 final acceptance.
+Regulations.gov initial 2.0.5 accepted 115 public calls and 110 comparison rows from 70 primary captures: 76 machine matches, 22 records with no date, six extension reconciliations, four occurrences of one disclosed OSHA timestamp conflict and two EPA agenda dates whose controlling date was unverified. The controlling notice established the conditional October 30 deadline for timely NOITA filers. Source quota 429 and two PDF 403 responses remain unavailable checks. The additional fresh-SDK recovery correction is tracked separately above with 2.0.6 final acceptance also passed.
 
 ### Corrective release identity and final destination matrix
 
 Regulations.gov [PR129](https://github.com/1102tools-dev/federal-contracting-mcps/pull/129) merged at `c0553538fca43e13a8c7db5a6ecd77a887303c32`. The single additional immutable tag `regulations-gov/v2.0.6` completed [workflow38078614558](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38078614558), publishing PyPI, Cloudflare deployment `74313844-eef7-4d96-bb20-bb653966bd06`, automated registry metadata and GitHub release. No initial tag was moved, no queued workflow canceled or replaced, and no additional data reload was applicable to this error-guidance-only change.
 
-Actual final checks use a per-service matrix: Regulations2.0.6 at `c0553538`, the other four initially updated services at `7e8c4132`, SAM mirror1.0.3 at `0d87bdcf`, BLS1.1.4 at `5ba4a4ba` and Federal Register1.0.14 at `b379d69b`. All eight public identities and112 exact tool definitions passed; all five configured public Dell takeovers and their actual HTTPS/SSH physical backends passed45 checks; all eight official package versions and16 downloaded artifact hashes/sizes/non-yanked states passed. Evidence: `coordinator/round3-corrective-final-expected.json`, `eight-server-round3-corrective-final-contracts.json`, `dell-round3-corrective-final-verified.json` and `round3-corrective-pypi-artifacts.json`. The initial2.0.5 proof files remain unchanged. These destination passes do not substitute for the still-running fresh installed package/content acceptance and pending website/docs publication.
+Actual final checks use a per-service matrix: Regulations2.0.6 at `c0553538`, the other four initially updated services at `7e8c4132`, SAM mirror1.0.3 at `0d87bdcf`, BLS1.1.4 at `5ba4a4ba` and Federal Register1.0.14 at `b379d69b`. All eight public identities and112 exact tool definitions passed; all five configured public Dell takeovers and their actual HTTPS/SSH physical backends passed45 checks; all eight official package versions and16 downloaded artifact hashes/sizes/non-yanked states passed. Evidence: `coordinator/round3-corrective-final-expected.json`, `eight-server-round3-corrective-final-contracts.json`, `dell-round3-corrective-final-verified.json` and `round3-corrective-pypi-artifacts.json`. The initial2.0.5 proof files remain unchanged. Fresh installed package and final 115-call content acceptance also passed. Website/docs publication remains the final round-closure gate.
+
+Final Regulations source seal confirms all110 semantic comparisons, 70 retained source hashes and the freshly returned controlling notice. The final owner evidence is `round3/regulations/final-published-2.0.6/summary.json`; independent SAM peer evidence verifies12 actual public recovery/deadline questions and a fresh official installed console. Docs-only PR130 publishes final acceptance without a further package bump.
