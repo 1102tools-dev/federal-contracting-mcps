@@ -180,7 +180,7 @@ Published package metadata, source provenance, primary-source answer checks, eig
 
 ## Content round 3 — reviewed source and measured acceptance
 
-Round 3 covered the same eight servers; Acquisition.gov remains excluded. All eight owners completed new ordinary-user and power-user content coverage and independent reviews. Nine new findings were confirmed: **P0=0, P1=0, P2=6, P3=3**. Source PRs [116](https://github.com/1102tools-dev/federal-contracting-mcps/pull/116), [117](https://github.com/1102tools-dev/federal-contracting-mcps/pull/117), [118](https://github.com/1102tools-dev/federal-contracting-mcps/pull/118), [119](https://github.com/1102tools-dev/federal-contracting-mcps/pull/119), [120](https://github.com/1102tools-dev/federal-contracting-mcps/pull/120) and [121](https://github.com/1102tools-dev/federal-contracting-mcps/pull/121) merged. Five scoped package releases use frozen source `7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336`; their publication acceptance is pending in this working draft.
+Round 3 covered the same eight servers; Acquisition.gov remains excluded. All eight owners completed new ordinary-user and power-user content coverage and independent reviews. Nine new findings were confirmed: **P0=0, P1=0, P2=6, P3=3**. Source PRs [116](https://github.com/1102tools-dev/federal-contracting-mcps/pull/116), [117](https://github.com/1102tools-dev/federal-contracting-mcps/pull/117), [118](https://github.com/1102tools-dev/federal-contracting-mcps/pull/118), [119](https://github.com/1102tools-dev/federal-contracting-mcps/pull/119), [120](https://github.com/1102tools-dev/federal-contracting-mcps/pull/120) and [121](https://github.com/1102tools-dev/federal-contracting-mcps/pull/121) merged. Five scoped package releases use frozen source `7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336`; all five package, Cloudflare and automated registry workflows succeeded sequentially. Final content and documentation acceptance remains pending in this working draft.
 
 | Server | New P0 / P1 / P2 / P3 | Corrected ordinary-user behavior | Final target |
 |---|---:|---|---|
@@ -237,3 +237,24 @@ This table counts each confirmed finding once. Its nine round-3 findings include
 | BLS OEWS | 0 | 0 | 4 | 1 | 5 |
 | Shared documentation | 0 | 0 | 1 | 0 | 1 |
 | **Total** | **0** | **2** | **32** | **18** | **52** |
+
+
+### Round-3 publication and actual backend acceptance
+
+All five scoped releases completed successfully at frozen source `7e8c4132d8b394e9a4ef7f2f57d1cc0a0d966336`, with no overlapping or replaced release runs:
+
+| Scoped tag | Successful workflow | Cloudflare Worker deployment UUID |
+|---|---|---|
+| gsa-perdiem/v1.2.4 | [38075460793](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38075460793) | `2f637dc9-eea4-43b7-9632-8e471fb406a4` |
+| gsa-calc/v1.0.15 | [38075712974](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38075712974) | `3fbb9010-0395-4560-8c47-13baf47a7743` |
+| ecfr/v1.1.5 | [38076027377](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38076027377) | `92925fb3-a4db-44c5-a2b5-b5202d88ad95` |
+| usaspending/v1.0.17 | [38076343015](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38076343015) | `6ab00396-e9e6-4951-96a2-059343201cb5` |
+| regulations-gov/v2.0.5 | [38076645801](https://github.com/1102tools-dev/federal-contracting-mcps/actions/runs/38076645801) | `3a91c410-cb7a-4214-a6f9-b48defda9924` |
+
+Root actual final acceptance passed for all eight public health/source/version identities, absence of unexpected server instructions, and all **112 exact tool definitions**. Unchanged Federal Register remains `b379d69b3ac505d5f1f1ae255896acb2b5f0d866` / 1.0.14; BLS remains `5ba4a4bac4ecd098da1c48dcd09594d9e38fcf1f` / 1.1.4; SAM retains its independent `0d87bdcf9d0c645428a57271736e4c35891bca53` / mirror 1.0.3. These are explicit per-service identities, not a single uniform SHA assertion. Evidence: `coordinator/eight-server-round3-final-contracts.json`.
+
+Root independently downloaded **16 actual official wheel/sdist artifacts for all eight goal packages** and verified published version, byte count, official SHA-256 and non-yanked status. Expected-version checkout provenance is distinct from an assertion that unchanged artifacts were rebuilt at the new release SHA. Evidence: `coordinator/round3-pypi-artifacts.json`.
+
+**All five configured Dell origins passed 45 actual checks.** USAspending 1.0.17, eCFR 1.1.5, CALC+ 1.0.15 and Regulations.gov 2.0.5 use the frozen new source SHA; unchanged Federal Register 1.0.14 uses `b379d69b3ac505d5f1f1ae255896acb2b5f0d866`. For each service, public GET health and POST initialization returned `x-1102tools-backend: origin`, the HTTPS origin reported the expected health identity, and SSH-authenticated direct physical-container health and initialization verified the matching SHA/version and no unexpected instructions. No backend conclusion relies solely on retained configuration. Evidence: `coordinator/dell-round3-final-verified.json`.
+
+Brief official simple-index propagation delays affected initial fresh by-name installs; bounded retries used only official PyPI and retained the failed attempts. No candidate wheel was substituted. Final content acceptance remains separate from these publication and routing gates.
