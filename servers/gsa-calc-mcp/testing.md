@@ -280,3 +280,58 @@ Validation: full Python 3.12 suite **312 passed / 121 live-gated skipped**;
 wheel build, all-nine version consistency and the regenerated eight-tool
 contract check passed. Independent internal peer review approved the two
 new descriptions and confirmed identical identities, schemas and annotations.
+
+
+## Round 2 content audit (2026-10-10): no new confirmed findings
+
+A fresh ordinary-user and power-user audit of published `gsa-calc-mcp` 1.0.14
+covered all eight tools with **123 question and follow-up cases**, run through
+the actual installed package's MCP registry and the public MCP endpoint. The
+corpus covered ten labor domains, combined education/experience/price/SIN and
+clearance filters, market segments, vendor discovery and card continuation,
+exact-title/vendor/contract followups, and qualified IGCE comparisons. Six
+illustrative annual-cost followups used exact qualified populations and an
+explicit 2,080-hour assumption; these are ceiling benchmarks, not prices paid
+or independent price-reasonableness determinations.
+
+The audit retained **152 GSA response captures plus four direct source-proof
+calls** and passed **2,521 source and workflow assertions**. Counts, averages,
+standard deviations, minimum/maximum values, requested filters, vendor row
+fields and proposal arithmetic agreed with primary source data. Mixed or
+unverified keyword populations continued to suppress misleading pricing
+verdicts. **No new P0, P1, P2 or P3 defect was confirmed**, so no runtime patch,
+version bump or new regression test was required.
+
+The package was installed by name from the official PyPI index into a fresh
+Python 3.12 environment. The installed console entrypoint completed MCP stdio
+startup, discovered all eight tools and correctly handled the original
+Systems Engineering comparison. Installed server bytes matched the official
+wheel and current source; installed and public descriptions, schemas and
+annotations matched the reviewed contract. Public health reported version
+1.0.14's release SHA `7754923b8c77e51022e2c561856fd6ccf4eab874`. The current
+regression collection remains **433 tests: 312 offline passed and 121 optional
+live-gated skipped** in the recorded full-suite verification. Content calls
+and audit assertions are separate from pytest collection; this audit does not
+claim a new full optional-live-suite run.
+
+Source limitations remain visible. Across equivalent installed/public calls,
+**228 scalar percentile values differed**, with a maximum difference of
+**$2.2511/hour**. Three fresh direct GSA repeats for SIN 541930 retained the
+same 325-rate population and identical wage statistics while P75 varied from
+$165.79 to $168.04. These are approximate upstream percentile estimates, not
+altered MCP values. Two vendor comparisons also differed under tied labor-title
+sorting: Leidos reordered the same rows, while a Booz Allen continuation
+shifted a tied row at a page boundary. A larger official 100-row card verified
+all local and public rows in the latter comparison. Partial-card and
+continuation warnings remained present. Zero unexpected content differences
+therefore does **not** mean all responses were identical.
+
+GSA's cross-field keyword population, suggestion/aggregation and result-window
+caps, and unsupported worksite filtering remain disclosed source limits.
+Worksite counts do not provide a supported per-site price aggregation. Exact
+search's current SIN/clearance filter availability and future stable tie-breaking
+pagination are potential enhancements, not new defects inferred from this
+corpus. Independent read-only peer review confirmed the source approximation
+and tied-row evidence and approved the zero-new-findings conclusion within
+this scope. Raw questions, responses, source URLs, checks and peer evidence
+are retained in the dated `Artifacts/mcp-e2e-20261010/round2/gsa-calc` audit record.
