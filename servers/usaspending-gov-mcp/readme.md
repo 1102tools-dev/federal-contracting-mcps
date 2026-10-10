@@ -10,10 +10,11 @@ No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
 *The 1.0.17 source validation collected 2,306 regression cases: 1,927 passed and 379 live-gated cases were skipped. The focused content suite covers fiscal defaults, annual new-award fiscal grouping, exact PIID lookup, date modes, pagination, DoD lag, recipient/File C caveats, cumulative FFATA period scope and aggregation filters. See [testing.md](testing.md) for the testing record and publication verification status.*
 
-Published 1.0.16 verification also passed all 127 content-corpus questions and
-11 recipient/fiscal followups on both a fresh official PyPI installation and
-the public deployment, with all 55 tool definitions matched. See
-[the publication record](testing.md#round-14-published-verification-1016-2026-10-10).
+Published 1.0.17 completed all 130 content questions on a fresh official
+PyPI installation and the public deployment, after one targeted timeout
+recovery in each lane. All 55 tool definitions matched; six guided followup
+calls recovered complete dated subaward reports. See
+[the publication record](testing.md#round-15-published-verification-1017-2026-10-10).
 
 ## Local or hosted
 
@@ -50,7 +51,7 @@ Exposes the USAspending.gov REST API as 55 MCP tools covering:
 
 **Subawards (FFATA)**
 - `search_subawards` - Subawards under a single prime
-- `spending_by_subaward_grouped` - Subaward search with full filter set
+- `spending_by_subaward_grouped` - Matching prime awards with cumulative reported subaward totals
 
 **Recipients**
 - `search_recipients` - Search recipients by keyword
