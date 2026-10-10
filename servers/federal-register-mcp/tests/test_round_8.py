@@ -385,3 +385,87 @@ def test_live_fr8_page_51_refused_and_true_page_count():
     )))
     assert data["total_pages"] == -(-data["count"] // 5) > 50
     assert data["max_reachable_page"] == 50
+
+
+# ===========================================================================
+# P3s: FR-9, FR-5, FR-6, FR-4
+# ===========================================================================
+
+def test_fr9_count_cap_is_flagged(monkeypatch):
+    async def fake(url):
+        return {"count": 10000, "total_pages": 50, "results": [{"document_number": "x"}] * 20}
+
+    monkeypatch.setattr(srv, "_get", fake)
+    data = _payload(asyncio.run(_call(
+        "search_documents", doc_types=["NOTICE"], pub_date_gte="2025-01-01", pub_date_lte="2025-12-31",
+    )))
+    assert data["count_capped"] is True
+    assert "get_facet_counts" in data["count_note"]
+
+
+def test_fr9_per_page_1_returns_one_document(monkeypatch):
+    # The API treats per_page=1 as 20; a "count only" call cost ~45 KB.
+    seen: list[str] = []
+
+    async def fake(url):
+        seen.append(url)
+        page = int(_qs(url)["page"][0])
+        return {"count": 7, "results": [{"document_number": f"p{page}-a"}, {"document_number": f"p{page}-b"}]}
+
+    monkeypatch.setattr(srv, "_get", fake)
+    first = _payload(asyncio.run(_call("search_documents", term="cyber", per_page=1)))
+    assert [d["document_number"] for d in first["results"]] == ["p1-a"]
+    assert first["total_pages"] == 7
+    third = _payload(asyncio.run(_call("search_documents", term="cyber", per_page=1, page=3)))
+    assert [d["document_number"] for d in third["results"]] == ["p2-a"]
+    assert _qs(seen[-1])["per_page"] == ["2"] and _qs(seen[-1])["page"] == ["2"]
+
+
+def test_fr9_zero_hits_still_have_results_key(monkeypatch):
+    async def fake(url):
+        return {"description": "x", "count": 0}
+
+    monkeypatch.setattr(srv, "_get", fake)
+    data = _payload(asyncio.run(_call("search_documents", term="nothing matches")))
+    assert data["results"] == []
+
+
+def test_fr5_batch_keeps_request_order_and_drops_image_metadata(monkeypatch):
+    async def fake(url):
+        return {"count": 3, "results": [
+            {"document_number": "2025-16412"},
+            {"document_number": "2024-30437", "images": {"a": 1}, "images_metadata": {"b": 2}},
+            {"document_number": "2024-31404"},
+        ]}
+
+    monkeypatch.setattr(srv, "_get", fake)
+    data = _payload(asyncio.run(_call(
+        "get_documents_batch", document_numbers=["2024-31404", "2025-16412", "2024-30437"],
+    )))
+    assert [d["document_number"] for d in data["results"]] == ["2024-31404", "2025-16412", "2024-30437"]
+    assert not {"images", "images_metadata"} & set(data["results"][2])
+
+
+def test_fr6_correction_docstring_names_agency_corrections():
+    text = _tool_description("search_documents")
+    assert "Correcting amendment" in text
+    assert "term='correction'" in text
+
+
+def test_fr4_case_history_marks_how_each_document_matched(monkeypatch):
+    async def fake(url):
+        q = _qs(url)
+        if "conditions[docket_id]" in q:
+            return {"count": 2, "results": [
+                {"document_number": "2023-21328", "publication_date": "2023-10-03"},
+                {"document_number": "2023-24025", "publication_date": "2023-11-01"},
+            ]}
+        return {"count": 2, "results": [
+            {"document_number": "2023-21327", "publication_date": "2023-10-03"},
+            {"document_number": "2023-24025", "publication_date": "2023-11-01"},
+        ]}
+
+    monkeypatch.setattr(srv, "_get", fake)
+    data = _payload(asyncio.run(_call("far_case_history", docket_id="FAR Case 2021-017")))
+    by = {d["document_number"]: d["matched_by"] for d in data["documents"]}
+    assert by == {"2023-21328": "docket", "2023-21327": "text", "2023-24025": "docket+text"}

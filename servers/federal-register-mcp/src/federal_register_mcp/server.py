@@ -506,6 +506,8 @@ def _drop_null_presidential_fields(data: Any) -> None:
 
 # The API serves pages 1-50 only; any later page comes back as page 1.
 _MAX_API_PAGE = 50
+# The API stops counting search hits here.
+_COUNT_CAP = 10_000
 
 
 def _fix_paging(data: Any, *, per_page: int) -> None:
@@ -661,7 +663,11 @@ async def search_documents(
     - pub_date_gte/lte: publication date range (YYYY-MM-DD)
     - comment_date_gte/lte: comment close date range
     - effective_date_gte/lte: effective date range
-    - correction: True for modern corrections (C1- prefix documents)
+    - correction: True finds only the Office of the Federal Register's own
+      correction notices (C1- prefix documents). Agency-issued corrections
+      ('Final rule; correction.', 'Correcting amendment.') are ordinary RULE
+      documents and are not flagged: search doc_types=['RULE'] with
+      term='correction' and check each document's action.
     - significant: True for EO 12866 significant rules only
     - cfr_title + cfr_part: documents affecting a CFR location, e.g.
       cfr_title=48, cfr_part='52' for FAR part 52 (part accepts ranges
@@ -678,7 +684,8 @@ async def search_documents(
     Order, Proclamation, Memorandum, ...), signing_date and
     presidential_document_number; other documents omit those keys.
 
-    Count caps at 10,000 for broad queries. Use date ranges for accurate counts.
+    Count caps at 10,000 for broad queries (count_capped=true says so); use
+    get_facet_counts for the true number, or narrower date ranges.
     per_page capped at 100 to stay within MCP response size limits.
 
     Paging: the Federal Register serves only pages 1-50 of any search (a
@@ -765,11 +772,29 @@ async def search_documents(
             f"range into smaller searches."
         )
 
+    # The API treats per_page=1 as 20. Ask for pages of 2 and keep the one
+    # document that page `page` of size 1 would hold.
+    wire_per_page, wire_page, pick = per_page, page, None
+    if per_page == 1:
+        wire_per_page, wire_page, pick = 2, (page + 1) // 2, (page - 1) % 2
+
     qs = _build_search_params(
         agencies=agencies, **filters,
-        per_page=per_page, page=page, order=order,
+        per_page=wire_per_page, page=wire_page, order=order,
     )
     data = await _get(f"{BASE_URL}/documents.json?{qs}")
+    if isinstance(data, dict):
+        if "results" not in data:
+            data["results"] = []  # zero-hit answers come back without the key
+        if pick is not None:
+            data["results"] = data["results"][pick:pick + 1]
+        if isinstance(data.get("count"), int) and data["count"] >= _COUNT_CAP:
+            data["count_capped"] = True
+            data["count_note"] = (
+                "The Federal Register stops counting search hits at 10,000, so the "
+                "true number is higher. get_facet_counts (facet='type' or 'yearly') "
+                "with the same filters gives the true number."
+            )
     if agencies and _EMPTY_FAR_SLUG in agencies and isinstance(data, dict):
         data["note"] = _EMPTY_FAR_SLUG_NOTE
     _drop_null_presidential_fields(data)
@@ -801,7 +826,9 @@ async def get_documents_batch(
 
     Pass a list of document numbers. More efficient than individual calls.
     Always returns {count, results, [errors]}; errors.not_found lists any
-    requested numbers the API could not locate.
+    requested numbers the API could not locate. Results come back in the
+    order requested. Image metadata (images, images_metadata) is left out
+    to keep batches small; get_document returns it.
     """
     if not document_numbers:
         raise ValueError("document_numbers list cannot be empty.")
@@ -817,7 +844,15 @@ async def get_documents_batch(
     # count/results wrapper. Normalize so callers can always iterate
     # data["results"].
     if isinstance(data, dict) and "results" not in data:
-        return {"count": 1, "results": [data]}
+        data = {"count": 1, "results": [data]}
+    if isinstance(data, dict) and isinstance(data.get("results"), list):
+        position = {n.upper(): i for i, n in reversed(list(enumerate(validated)))}
+        results = [d for d in data["results"] if isinstance(d, dict)]
+        for d in results:
+            d.pop("images", None)
+            d.pop("images_metadata", None)
+        results.sort(key=lambda d: position.get(str(d.get("document_number") or "").upper(), len(position)))
+        data["results"] = results
     return data
 
 
@@ -1203,6 +1238,11 @@ async def far_case_history(docket_id: str) -> dict[str, Any]:
     all 2023 cases (token '2023' matches '2023-008'), but a partial token
     like 'FAR Case 20' matches nothing. Be specific to avoid false positives.
 
+    Each document carries matched_by: 'docket' or 'docket+text' when its
+    docket ids name the case, 'text' when it only mentions the case in its
+    text (regulatory agendas, related or companion cases, FAC
+    introductions, public meetings). Read 'text' matches with care.
+
     Each underlying search returns at most 100 documents. truncated=True
     flags that one of the searches hit that cap (docket_matches and
     term_matches carry the API's full counts); narrow the docket_id if so.
@@ -1228,9 +1268,19 @@ async def far_case_history(docket_id: str) -> dict[str, Any]:
     term_results = term_data.get("results", []) or []
 
     merged: dict[str, dict[str, Any]] = {}
+    docket_numbers = {d.get("document_number") for d in docket_results}
+    term_numbers = {d.get("document_number") for d in term_results}
     for i, doc in enumerate(docket_results + term_results):
         key = doc.get("document_number") or f"_missing_number_{i}"
         if key not in merged:
+            number = doc.get("document_number")
+            in_docket = number is not None and number in docket_numbers
+            in_text = number is not None and number in term_numbers
+            doc["matched_by"] = (
+                "docket+text" if in_docket and in_text
+                else "docket" if in_docket or (number is None and i < len(docket_results))
+                else "text"
+            )
             merged[key] = doc
     documents = sorted(
         merged.values(), key=lambda d: d.get("publication_date") or "9999-99-99"
