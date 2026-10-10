@@ -7,7 +7,8 @@ annually per fiscal year (Oct 1 - Sep 30).
 
 ZIP, state, and M&IE lookups for bundled fiscal years are answered from
 GSA's published rate, ZIP, and M&IE files (see snapshot.py); no key is
-needed. City lookups call the GSA Per Diem API, which resolves city names
+needed. City requests with a supplied county for a bundled year also need
+no key or network call. City requests without a county call the GSA Per Diem API, which resolves city names
 to rate areas. That call requires PERDIEM_API_KEY (free at
 https://api.data.gov/signup/, 1,000 req/hr); without it city lookups return
 setup instructions and the bundled lookups keep working. Hosted deployments
@@ -352,10 +353,11 @@ def _live_access_mode() -> str:
 
 
 _KEY_MISSING = (
-    "City lookups call the GSA Per Diem API, which needs a free api.data.gov "
+    "This request uses the GSA Per Diem API, which needs a free api.data.gov "
     "key: register at https://api.data.gov/signup/, set PERDIEM_API_KEY, and "
     "restart the server. ZIP, state, and M&IE lookups for bundled fiscal "
-    "years work without a key."
+    "years work without a key. City lookups, estimates, and comparisons with "
+    "a supplied county for a bundled fiscal year also work without a key."
 )
 
 
@@ -368,8 +370,10 @@ def get_data_status() -> dict[str, Any]:
     """Report which fiscal years are bundled, their GSA source files, and which tools call the GSA API.
 
     ZIP, state, and M&IE lookups for bundled fiscal years are answered
-    from GSA's published files with no network call. City-based tools
-    resolve the city through the live GSA Per Diem API. Credential
+    from GSA's published files with no network call. City requests with a
+    supplied county for a bundled year also need no key or network call.
+    City-name requests without a county, and unbundled years, use the live
+    GSA Per Diem API. Credential
     presence is reported without revealing or validating any value.
     """
     years = snapshot.available_years()

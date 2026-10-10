@@ -2,9 +2,11 @@
 
 ## 1.2.3
 
+- Clarified keyless setup: bundled city-plus-county lookups, estimates and comparisons need no API key. README setup, data-status description and missing-key guidance now distinguish these from city-name/API and unbundled-year requests.
+
 - Corrected the published `estimate_travel_cost` description: add monthly lodging totals only and calculate M&IE once over the actual trip days, applying 75% only on departure and return. This matches the corrected runtime guidance from 1.2.2.
-- Updated the contract with the established Python 3.12 generator and reviewed its diff. Only this description changed; all seven tool names, input schemas, annotations and metadata identifiers remain unchanged. The existing MCP identity and endpoint are preserved, with no directory resubmission required by the user-authorized correction.
-- Actual Python and Worker `tools/list` regressions verify the guidance. Validation: 308 Python passed, 267 live-gated skipped (575 collected); 28 Worker passed; type checks and 1,368 parity calls with zero unexplained differences.
+- Updated the contract with the established Python 3.12 generator and reviewed its diff. Only the estimate and data-status descriptions changed; all seven tool names, input schemas, annotations and metadata identifiers remain unchanged. The existing MCP identity and endpoint are preserved, under [OpenAI continuous review](https://developers.openai.com/plugins/deploy/app-review#how-published-mcp-metadata-versions-work), without directory resubmission.
+- Actual Python and Worker `tools/list` regressions verify the guidance. Validation: 309 Python passed, 267 live-gated skipped (576 collected); 28 Worker passed; type checks and 1,368 parity calls with zero unexplained differences.
 
 ## 1.2.2
 

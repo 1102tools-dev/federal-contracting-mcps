@@ -121,6 +121,8 @@ test("published estimate description separates monthly lodging from trip M&IE", 
   assert.match(description, /Calculate M&IE once across the actual trip days/);
   assert.match(description, /Do not add[\s\S]*grand_total/);
   assert.doesNotMatch(description, /month's nights separately and add them/);
+  const status = out.result.tools.find((tool: any) => tool.name === "get_data_status").description;
+  assert.match(status, /supplied county for a bundled year also need no key or network call/);
 });
 
 test("tools/list serves exactly the reviewed contract, in the Python server's order", () => {

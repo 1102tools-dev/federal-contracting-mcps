@@ -126,7 +126,7 @@
       "readOnlyHint": true,
       "title": "Get Per Diem Data Status"
     },
-    "description": "Report which fiscal years are bundled, their GSA source files, and which tools call the GSA API.\n\n    ZIP, state, and M&IE lookups for bundled fiscal years are answered\n    from GSA's published files with no network call. City-based tools\n    resolve the city through the live GSA Per Diem API. Credential\n    presence is reported without revealing or validating any value.\n    ",
+    "description": "Report which fiscal years are bundled, their GSA source files, and which tools call the GSA API.\n\n    ZIP, state, and M&IE lookups for bundled fiscal years are answered\n    from GSA's published files with no network call. City requests with a\n    supplied county for a bundled year also need no key or network call.\n    City-name requests without a county, and unbundled years, use the live\n    GSA Per Diem API. Credential\n    presence is reported without revealing or validating any value.\n    ",
     "inputSchema": {
       "properties": {},
       "title": "get_data_statusArguments",

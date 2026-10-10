@@ -60,3 +60,24 @@ def test_published_description_does_not_add_independent_trip_mie():
     assert "Calculate M&IE once across the actual trip days" in description
     assert "Do not add" in description and "grand_total" in description
     assert "month's nights separately and add them" not in description
+
+
+def test_no_key_boston_county_lookup_estimate_and_comparison(monkeypatch):
+    monkeypatch.delenv("PERDIEM_API_KEY", raising=False)
+    async def no_network(*args, **kwargs):
+        raise AssertionError("A bundled city-plus-county request must not call the API")
+    monkeypatch.setattr(srv, "_get", no_network)
+    city = dict(city="Boston", state="MA", county="Suffolk", fiscal_year=2027)
+    lookup = asyncio.run(srv.lookup_city_perdiem(**city))
+    assert lookup["lodging_by_month"]["Nov"] == 213 and lookup["mie_daily"] == 92
+    estimate = asyncio.run(srv.estimate_travel_cost(**city, num_nights=4, travel_month="Nov"))
+    assert estimate["grand_total"] == 1266 and estimate["source"]["kind"] == "bundled_gsa_files"
+    comparison = asyncio.run(srv.compare_locations([
+        {"city": "Boston", "state": "MA", "county": "Suffolk"},
+        {"city": "Washington", "state": "DC", "county": "District of Columbia"},
+    ], 2027))
+    assert [row["max_daily_total"] for row in comparison["locations"]] == [457, 387]
+    tools = asyncio.run(srv.mcp.list_tools())
+    description = next(t.description for t in tools if t.name == "get_data_status")
+    assert "supplied county for a bundled year also need no key or network call" in description
+    assert "supplied county" in srv.get_data_status()["access_note"]
