@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.6
+
+- Preserve anticipated filter/date repair guidance with newer MCP SDKs using a ValueError/ToolError-compatible user-input error. Unexpected provider/programming exceptions are not reclassified.
+- Add three ordinary recovery regressions; installed-wheel suites on SDK 2.0.0 and 2.3.0 each pass 179 tests with 119 optional live checks skipped (298 collected). Catalog definitions remain unchanged.
+
 ## 2.0.5
 
 - Attribute displayed comment dates to Regulations.gov metadata, with an explicit unestablished controlling-deadline status and notice/docket verification links. Guide users through DATES, extensions, and conditional eligibility instead of treating a provider timestamp as definitive.
