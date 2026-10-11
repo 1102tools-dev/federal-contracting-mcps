@@ -1,7 +1,7 @@
 """CI-only experimental OCR check using the existing nightly loader and D1 shape.
 
 Temporarily installs an immutable parser candidate into the runner checkout, uses
-an isolated parsed-document namespace, runs the ordinary incremental loader, and
+an isolated parsed-document namespace, validates a staged ordinary incremental load without promotion, and
 restores every source file. Never use this wrapper on the Dell or for a release.
 """
 from __future__ import annotations
@@ -51,8 +51,18 @@ def _ocr_outlined_page(body, page_number, *, timeout):
 
 PRE_SWITCH = r'''
 
-# CI-only promotion guard, installed before the loader entry point runs.
-_ocr_check_original_switch = Loader.switch
+# CI-only staging guard. Never register a resumable production staging snapshot
+# and never call the production promotion method, including on successful OCR.
+def _ocr_check_setup(self):
+    self.db.execute([(WORKER_DIR / "schema.sql").read_text()])
+    meta = self.meta()
+    current = int(meta["current"]) if "current" in meta else None
+    staging = max([current or 0] + [row["id"] for row in self.db.query("SELECT id FROM snapshots")]) + 1
+    self.db.execute(inserts("snapshots", ["id", "started_at"], [[staging, self.now()]]))
+    self.generation = None
+    return current, staging
+
+Loader.setup = _ocr_check_setup
 
 def _ocr_check_switch(self, current, staging, started, pdfs):
     events = [json.loads(line) for line in Path(os.environ['ACQUISITION_OCR_METRICS']).read_text().splitlines() if line]
@@ -78,11 +88,16 @@ def _ocr_check_switch(self, current, staging, started, pdfs):
                 failures.append('GSA supplement page 2 must recover and store Required Use wording')
     if not any(url.endswith('/GSA_RFO_Deviation_Part-8_Supplement-1.pdf') for url in forced):
         failures.append('GSA supplement must be one of the forced sources')
-    guard = {'staging_snapshot': staging, 'prior_current': current, 'acceptance_passed': not failures, 'failures': failures}
+    stats = {'snapshot': staging, 'pdfs': pdfs, 'seconds': round(time.monotonic() - started, 1),
+             'requests': self.fetcher.requests, 'downloads': self.fetcher.downloads,
+             'conditional_checks': self.fetcher.checks, 'bytes': self.fetcher.bytes,
+             'parser_version': PARSER_VERSION, **self.counts}
+    guard = {'staging_snapshot': staging, 'prior_current': current, 'acceptance_passed': not failures,
+             'failures': failures, 'promoted': False, 'validated_at': self.now(), 'loader_stats': stats}
     Path(os.environ['ACQUISITION_OCR_METRICS']).with_name('pre-switch.json').write_text(json.dumps(guard, indent=2) + '\n')
     if failures:
         raise Abort('Experimental OCR did not pass; current snapshot unchanged: ' + '; '.join(failures))
-    return _ocr_check_original_switch(self, current, staging, started, pdfs)
+    raise Abort('Experimental staging validation passed; promotion is disabled; current snapshot unchanged.')
 
 Loader.switch = _ocr_check_switch
 '''
@@ -95,7 +110,7 @@ def main(argv=None):
     parser.add_argument('--revalidate-url', action='append', required=True)
     args = parser.parse_args(argv)
     if os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_REF') != 'refs/heads/main':
-        parser.error('This validation publishes from a GitHub Actions main-branch runner only.')
+        parser.error('This staging validation runs on a GitHub Actions main-branch runner only.')
     if args.candidate_commit != CANDIDATE:
         parser.error('Only the reviewed immutable experimental candidate is allowed.')
     if not (os.environ.get('CLOUDFLARE_D1_TOKEN') or os.environ.get('CLOUDFLARE_API_TOKEN')):
@@ -104,6 +119,8 @@ def main(argv=None):
     output.mkdir(parents=True, exist_ok=True)
     metrics = output / 'ocr-pages.jsonl'
     metrics.write_text('')
+    guard_path = metrics.with_name('pre-switch.json')
+    guard_path.unlink(missing_ok=True)
     pdf_path, constants_path = PACKAGE / '_pdf.py', PACKAGE / 'constants.py'
     loader_path = ROOT / 'scripts/load_acquisition_gov.py'
     paths = (pdf_path, constants_path, loader_path)
@@ -111,7 +128,7 @@ def main(argv=None):
     candidate = subprocess.check_output(['git', 'show', f'{CANDIDATE}:{pdf_path.relative_to(ROOT)}'], cwd=ROOT)
     candidate_hash = hashlib.sha256(candidate).hexdigest()
     loader_source = originals[loader_path].decode()
-    namespace = f'ocr-validation:{CANDIDATE}:{os.environ.get("GITHUB_RUN_ID", "unknown")}'
+    namespace = f'ocr-validation:{CANDIDATE}:{os.environ.get("GITHUB_RUN_ID", "unknown")}:{os.environ.get("GITHUB_RUN_ATTEMPT", "1")}'
     loader_source, replacements = re.subn(r'^(PARSER_VERSION\s*=.*)$',
                                          lambda match: match[1] + f' + {namespace!r}', loader_source, count=1, flags=re.M)
     if replacements != 1:
@@ -133,8 +150,8 @@ def main(argv=None):
             versions[distribution] = None
     receipt = dict(dependency_versions=versions, candidate_commit=CANDIDATE, candidate_pdf_sha256=candidate_hash,
                    parsed_namespace=namespace, forced_urls=args.revalidate_url,
-                   mode='normal incremental loader: 100 rechecks plus forced affected PDFs',
-                   full_reload=False, source_files_restored=False)
+                   mode='staging-only normal incremental loader: 100 rechecks plus forced affected PDFs',
+                   full_reload=False, promoted=False, source_files_restored=False)
     exit_code = 1
     try:
         pdf_path.write_bytes(candidate + INSTRUMENT.encode())
@@ -143,23 +160,35 @@ def main(argv=None):
         with (output / 'loader-status.json').open('w') as status:
             exit_code = subprocess.run(command, cwd=ROOT, env=env, stdout=status).returncode
         receipt['loader_exit_code'] = exit_code
-        if exit_code == 0:
-            receipt['loader_stats'] = json.loads((output / 'loader-status.json').read_text())
-            # Read the actual completed snapshot, not just the OCR callback result.
+        if not guard_path.exists():
+            raise RuntimeError('Loader did not reach the staged validation guard.')
+        guard = json.loads(guard_path.read_text())
+        receipt['staged_validation'] = guard
+        receipt['loader_stats'] = guard['loader_stats']
+        if not guard['acceptance_passed'] or guard['promoted'] or exit_code != 1:
+            raise RuntimeError('Staged validation failed or loader did not stop before promotion.')
+        exit_code = 0
+        if guard['acceptance_passed']:
+            # Read staging only. Production current must remain the prior snapshot.
             sys.path.insert(0, str(ROOT / 'scripts'))
             import load_acquisition_gov as loader
             token = env.get('CLOUDFLARE_D1_TOKEN') or env.get('CLOUDFLARE_API_TOKEN')
             db = loader.RemoteD1(loader.database_id(None), token)
             current = db.query("SELECT value FROM meta WHERE key='current'")[0]['value']
-            receipt['snapshot'] = current
+            receipt['current_snapshot'] = current
+            receipt['current_unchanged'] = str(current) == str(guard['prior_current'])
+            if not receipt['current_unchanged']:
+                raise RuntimeError('Production current changed during the staging-only experiment.')
+            staging = guard['staging_snapshot']
+            receipt['staging_snapshot'] = staging
             documents = []
             for url in args.revalidate_url:
-                rows = db.query('SELECT s.doc,s.error,s.content_sha256,s.retrieved_at,d.info FROM sources s LEFT JOIN docs d ON d.id=s.doc WHERE s.snapshot=? AND s.key=?', [current, 'pdf:' + url])
+                rows = db.query('SELECT s.doc,s.error,s.content_sha256,s.retrieved_at,d.info FROM sources s LEFT JOIN docs d ON d.id=s.doc WHERE s.snapshot=? AND s.key=?', [staging, 'pdf:' + url])
                 if len(rows) != 1:
-                    raise RuntimeError('Forced source absent from completed snapshot: ' + url)
+                    raise RuntimeError('Forced source absent from staged snapshot: ' + url)
                 row = rows[0]
                 if row['error'] or not row['doc']:
-                    raise RuntimeError('Forced source was not parsed into the completed snapshot: ' + url)
+                    raise RuntimeError('Forced source was not parsed into the staged snapshot: ' + url)
                 if row['doc'] != loader.doc_id('pdf', row['content_sha256']):
                     raise RuntimeError('Forced source reused a different parser namespace: ' + url)
                 pages = db.query('SELECT page,failure,body FROM pages WHERE doc=? ORDER BY page,seq', [row['doc']]) if row['doc'] else []
@@ -191,7 +220,7 @@ def main(argv=None):
             recovered = any(event.get('source_url') == (supplement or {}).get('url') and
                             event['page'] == 2 and event['outcome'] == 'recovered' and event.get('required_use')
                             for event in events)
-            gate = bool(supplement and recovered and not supplement['page2_failed']
+            gate = bool(receipt.get('current_unchanged') and not receipt['promoted'] and supplement and recovered and not supplement['page2_failed']
                         and supplement['page2_required_use'] and supplement['page2_mandatory']
                         and supplement['page2_hca'] and supplement['page2_ocr_notice']
                         and receipt.get('loader_stats', {}).get('forced_rechecks') == len(set(args.revalidate_url))
@@ -202,7 +231,11 @@ def main(argv=None):
                 exit_code = 1
         receipt['ocr_seconds'] = round(sum(event['seconds'] for event in events), 3)
         receipt['ocr_recovered_pages'] = sum(event['outcome'] == 'recovered' for event in events)
-        receipt['ocr_failed_pages'] = sum(event['outcome'] != 'recovered' for event in events)
+        receipt['ocr_attempt_failed_pages'] = sum(event['outcome'] != 'recovered' for event in events)
+        receipt['forced_document_unrecovered_pages'] = [
+            {'url': doc['url'], 'pages': doc['failed_pages']}
+            for doc in receipt.get('stored_forced_documents', []) if doc['failed_pages']
+        ]
         receipt['total_seconds'] = round(time.monotonic() - started, 3)
         (output / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
         print(json.dumps(receipt, indent=2))

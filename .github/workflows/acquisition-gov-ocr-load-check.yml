@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 
-# Shares the existing loader's lock; never publishes concurrently with nightly.
+# Shares the existing loader's lock; never stages concurrently with nightly.
 concurrency:
   group: acquisition-gov-load
   cancel-in-progress: false
@@ -27,7 +27,7 @@ jobs:
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
       - name: Check existing D1 credential
         run: test -n "$CLOUDFLARE_D1_TOKEN"
-      - name: Normal incremental load with experimental OCR on affected PDFs
+      - name: Staging-only incremental OCR validation; promotion disabled
         run: |
           uv run --frozen --python 3.12 --project servers/acquisition-gov-mcp \
             --with 'rapidocr==3.10.0' --with 'onnxruntime>=1.20,<2' --with 'pypdfium2>=4.30,<6' \
