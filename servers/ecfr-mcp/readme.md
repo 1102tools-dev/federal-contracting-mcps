@@ -1,6 +1,6 @@
 # ecfr-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 13](https://img.shields.io/badge/tools-13-007a59)](#what-it-does) [![regression tests: 464](https://img.shields.io/badge/regression%20tests-464-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 13](https://img.shields.io/badge/tools-13-007a59)](#what-it-does) [![regression tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/1102tools-dev/federal-contracting-mcps/main/badges/tests-ecfr-mcp.json)](testing.md)
 
 <!-- mcp-name: com.1102tools/ecfr-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the eCFR (Electronic Code of Federal Regulation
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*464 regression tests, including live checks against the eCFR API and a check that every piece of text in ten saved eCFR responses comes out exactly once and in order. The October 2026 releases were also checked with realistic contracting questions (clause lookups, FAR definitions, version history, recent changes). See [testing.md](testing.md).*
+*Regression tests, including live checks against the eCFR API and a check that every piece of text in ten saved eCFR responses comes out exactly once and in order. The October 2026 releases were also checked with realistic contracting questions (clause lookups, FAR definitions, version history, recent changes). See [testing.md](testing.md).*
 
 ## Local or hosted
 

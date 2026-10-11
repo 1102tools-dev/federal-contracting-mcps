@@ -1,6 +1,6 @@
 # federal-register-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 295](https://img.shields.io/badge/regression%20tests-295-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/1102tools-dev/federal-contracting-mcps/main/badges/tests-federal-register-mcp.json)](testing.md)
 
 <!-- mcp-name: com.1102tools/federal-register-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the Federal Register API. Proposed rules, final
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*295 regression tests, including live checks against the Federal Register API. The October 2026 releases were also checked with realistic contracting questions (comment deadlines, FAR case histories, FAR Council co-filings). See [testing.md](testing.md).*
+*Regression tests, including live checks against the Federal Register API. The October 2026 releases were also checked with realistic contracting questions (comment deadlines, FAR case histories, FAR Council co-filings). See [testing.md](testing.md).*
 
 ## Local or hosted
 

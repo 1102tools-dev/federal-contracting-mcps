@@ -1,6 +1,6 @@
 # sam-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 20](https://img.shields.io/badge/tools-20-007a59)](#what-it-does) [![regression tests: 1,158](https://img.shields.io/badge/regression%20tests-1%2C158-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 20](https://img.shields.io/badge/tools-20-007a59)](#what-it-does) [![regression tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/1102tools-dev/federal-contracting-mcps/main/badges/tests-sam-gov-mcp.json)](testing.md)
 
 <!-- mcp-name: com.1102tools/sam-gov-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for SAM.gov entity registration, exclusion/debarmen
 
 Two editions: **hosted**, with 4 keyless tools for contract opportunities, and **local**, the full 20 tools with a free SAM.gov key. See [Local or hosted](#local-or-hosted).
 
-*1,158 regression tests, including live checks against the SAM.gov APIs. The October 2026 releases were also checked with realistic contracting questions against official SAM.gov records. See [testing.md](testing.md).*
+*Regression tests, including live checks against the SAM.gov APIs. The October 2026 releases were also checked with realistic contracting questions against official SAM.gov records. See [testing.md](testing.md).*
 
 <a id="two-editions-hosted-or-full"></a>
 

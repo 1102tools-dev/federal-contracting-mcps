@@ -1,6 +1,6 @@
 # usaspending-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,322](https://img.shields.io/badge/regression%20tests-2%2C322-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/1102tools-dev/federal-contracting-mcps/main/badges/tests-usaspending-gov-mcp.json)](testing.md)
 
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*2,322 regression tests, including live checks against the USAspending API. The October 2026 releases were also checked with realistic contracting questions across all 55 tools (award histories, fiscal-year totals, subcontract reports, federal accounts). See [testing.md](testing.md).*
+*Regression tests, including live checks against the USAspending API. The October 2026 releases were also checked with realistic contracting questions across all 55 tools (award histories, fiscal-year totals, subcontract reports, federal accounts). See [testing.md](testing.md).*
 
 ## Local or hosted
 
@@ -205,29 +205,29 @@ Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
 package directory. Set `USASPENDING_LIVE_TESTS=1` to add the live checks
 against the public API (no key needed). See [testing.md](testing.md) for details.
 
-| Test file | Cases | Coverage |
-|---|---:|---|
-| [test_v0_3_features.py](tests/test_v0_3_features.py) | 1,244 | Tool shapes, filters and expanded API surface |
-| [test_density_r5.py](tests/test_density_r5.py) | 415 | Boundary and semantic regression density |
-| [test_live_audit_r6.py](tests/test_live_audit_r6.py) | 157 | Live endpoint audit |
-| [test_live_audit_r7.py](tests/test_live_audit_r7.py) | 104 | Live parameter and pagination audit |
-| [test_content_fixes_1013.py](tests/test_content_fixes_1013.py) | 75 | October content fixes; 71 offline, 4 live |
-| [test_round_8.py](tests/test_round_8.py) | 69 | Property and validation checks |
-| [test_entity_family_fixes.py](tests/test_entity_family_fixes.py) | 63 | Agency, recipient and award semantics |
-| [test_validation.py](tests/test_validation.py) | 62 | Input validation |
-| [test_search_family_fixes.py](tests/test_search_family_fixes.py) | 37 | Search and aggregation semantics |
-| [test_response_cache_hosted.py](tests/test_response_cache_hosted.py) | 10 | Hosted cache behavior |
-| [test_audit_r11.py](tests/test_audit_r11.py) | 9 | Paced audit anchors |
-| [test_throughput.py](tests/test_throughput.py) | 9 | Request throughput and pacing |
-| [test_tool_profiles.py](tests/test_tool_profiles.py) | 3 | Tool profile selection |
-| [test_http.py](tests/test_http.py) | 2 | HTTP handling |
-| [test_content_e2e_1014.py](tests/test_content_e2e_1014.py) | 36 | Full end-to-end audit guidance regressions |
-| [test_published_scope_1015.py](tests/test_published_scope_1015.py) | 2 | Published tool-selection scope guidance |
-| [test_new_awards_fiscal_year_1016.py](tests/test_new_awards_fiscal_year_1016.py) | 6 | Captured annual fiscal-year correction and unchanged quarter/month samples |
-| [test_subaward_period_scope_1017.py](tests/test_subaward_period_scope_1017.py) | 3 | Cumulative FFATA scope and complete dated-report recovery |
-| [test_federal_account_program_scope_1018.py](tests/test_federal_account_program_scope_1018.py) | 3 | Captured all-year program scope, complete list and single-year financial recovery |
-| [test_federal_account_available_fy_1020.py](tests/test_federal_account_available_fy_1020.py) | 3 | Current-FY source availability, supported recovery and unchanged 503 control |
-| [test_naics_current_retired_1021.py](tests/test_naics_current_retired_1021.py) | 3 | Actual retired rows versus active rows omitted by the requested limit |
-| [test_award_date_overlap_r6.py](tests/test_award_date_overlap_r6.py) | 3 | Award interval overlap versus complete dated-transaction recovery |
-| [test_sdk23_expected_guidance.py](tests/test_sdk23_expected_guidance.py) | 4 | Visible ordinary recovery hints, no pre-validation source requests, preserved source outputs and unexpected-fault masking |
+| Test file | Coverage |
+|---|---|
+| [test_v0_3_features.py](tests/test_v0_3_features.py) | Tool shapes, filters and expanded API surface |
+| [test_density_r5.py](tests/test_density_r5.py) | Boundary and semantic regression density |
+| [test_live_audit_r6.py](tests/test_live_audit_r6.py) | Live endpoint audit |
+| [test_live_audit_r7.py](tests/test_live_audit_r7.py) | Live parameter and pagination audit |
+| [test_content_fixes_1013.py](tests/test_content_fixes_1013.py) | October content fixes, offline and live |
+| [test_round_8.py](tests/test_round_8.py) | Property and validation checks |
+| [test_entity_family_fixes.py](tests/test_entity_family_fixes.py) | Agency, recipient and award semantics |
+| [test_validation.py](tests/test_validation.py) | Input validation |
+| [test_search_family_fixes.py](tests/test_search_family_fixes.py) | Search and aggregation semantics |
+| [test_response_cache_hosted.py](tests/test_response_cache_hosted.py) | Hosted cache behavior |
+| [test_audit_r11.py](tests/test_audit_r11.py) | Paced audit anchors |
+| [test_throughput.py](tests/test_throughput.py) | Request throughput and pacing |
+| [test_tool_profiles.py](tests/test_tool_profiles.py) | Tool profile selection |
+| [test_http.py](tests/test_http.py) | HTTP handling |
+| [test_content_e2e_1014.py](tests/test_content_e2e_1014.py) | Full end-to-end audit guidance regressions |
+| [test_published_scope_1015.py](tests/test_published_scope_1015.py) | Published tool-selection scope guidance |
+| [test_new_awards_fiscal_year_1016.py](tests/test_new_awards_fiscal_year_1016.py) | Captured annual fiscal-year correction and unchanged quarter/month samples |
+| [test_subaward_period_scope_1017.py](tests/test_subaward_period_scope_1017.py) | Cumulative FFATA scope and complete dated-report recovery |
+| [test_federal_account_program_scope_1018.py](tests/test_federal_account_program_scope_1018.py) | Captured all-year program scope, complete list and single-year financial recovery |
+| [test_federal_account_available_fy_1020.py](tests/test_federal_account_available_fy_1020.py) | Current-FY source availability, supported recovery and unchanged 503 control |
+| [test_naics_current_retired_1021.py](tests/test_naics_current_retired_1021.py) | Actual retired rows versus active rows omitted by the requested limit |
+| [test_award_date_overlap_r6.py](tests/test_award_date_overlap_r6.py) | Award interval overlap versus complete dated-transaction recovery |
+| [test_sdk23_expected_guidance.py](tests/test_sdk23_expected_guidance.py) | Visible ordinary recovery hints, no pre-validation source requests, preserved source outputs and unexpected-fault masking |
 | **Total** | **2,322** | **1,943 run by default; 379 live checks** |

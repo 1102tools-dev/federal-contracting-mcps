@@ -1,6 +1,6 @@
 # regulationsgov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 9](https://img.shields.io/badge/tools-9-007a59)](#what-it-does) [![regression tests: 298](https://img.shields.io/badge/regression%20tests-298-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 9](https://img.shields.io/badge/tools-9-007a59)](#what-it-does) [![regression tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/1102tools-dev/federal-contracting-mcps/main/badges/tests-regulations-gov-mcp.json)](testing.md)
 
 <!-- mcp-name: com.1102tools/regulations-gov-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the Regulations.gov API. Federal rulemaking doc
 
 Hosted: no key. Local: a free api.data.gov key. See [Local or hosted](#local-or-hosted).
 
-*298 regression tests, including live checks against the Regulations.gov API. The October 2026 releases were also checked with realistic rulemaking questions (open comment periods, comment deadlines, FAR case histories, posted comments). See [testing.md](testing.md).*
+*Regression tests, including live checks against the Regulations.gov API. The October 2026 releases were also checked with realistic rulemaking questions (open comment periods, comment deadlines, FAR case histories, posted comments). See [testing.md](testing.md).*
 
 ## Local or hosted
 

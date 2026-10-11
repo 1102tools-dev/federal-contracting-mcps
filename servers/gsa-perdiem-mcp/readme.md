@@ -1,6 +1,6 @@
 # gsa-perdiem-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 7](https://img.shields.io/badge/tools-7-007a59)](#what-it-does) [![regression tests: 588](https://img.shields.io/badge/regression%20tests-588-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 7](https://img.shields.io/badge/tools-7-007a59)](#what-it-does) [![regression tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/1102tools-dev/federal-contracting-mcps/main/badges/tests-gsa-perdiem-mcp.json)](testing.md)
 
 <!-- mcp-name: com.1102tools/gsa-perdiem-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the GSA Per Diem Rates API. Federal travel lodg
 
 ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network call: they are answered from GSA's published rate, ZIP, and M&IE files bundled in the package. For bundled fiscal years, city lookups, trip estimates and comparisons with a supplied `county` also work without a key or network call. City-name lookups without a county and lookups for unbundled years use the GSA Per Diem API and need a free api.data.gov key in `PERDIEM_API_KEY`. The hosted version needs no key for any lookup. See [Local or hosted](#local-or-hosted).
 
-*588 regression tests, and realistic contractor travel questions checked against GSA's published rates before release. See [testing.md](testing.md).*
+*Regression tests, and realistic contractor travel questions checked against GSA's published rates before release. See [testing.md](testing.md).*
 
 ## Local or hosted
 
