@@ -30,9 +30,9 @@ Free, open-source, read-only source tools for federal contracting research: oppo
 | BLS OEWS | [Testing](servers/bls-oews-mcp/testing.md) |
 | GSA Per Diem | [Testing](servers/gsa-perdiem-mcp/testing.md) |
 | eCFR | [Testing](servers/ecfr-mcp/testing.md) |
-| Acquisition.gov | [Testing](servers/acquisition-gov-mcp/testing.md) |
 | Federal Register | [Testing](servers/federal-register-mcp/testing.md) |
 | Regulations.gov | [Testing](servers/regulations-gov-mcp/testing.md) |
+| Acquisition.gov | [Testing](servers/acquisition-gov-mcp/testing.md) |
 
 Release details are in the [October 10, 2026 release record](docs/releases/2026-10-10-content-audit.md).
 
@@ -52,11 +52,11 @@ All nine are in the Claude directory and six are in ChatGPT as hosted installs. 
 | USAspending | [Setup guide](servers/usaspending-gov-mcp#installation) | [Add to Claude](https://claude.ai/directory/usaspending-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) |
 | GSA CALC+ | [Setup guide](servers/gsa-calc-mcp#installation) | [Add to Claude](https://claude.ai/directory/gsa-calc-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) |
 | BLS OEWS | [Setup guide](servers/bls-oews-mcp#installation) | [Add to Claude](https://claude.ai/directory/bls-oews-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ab872bf5360819186af0917c923e57e) |
-| GSA Per Diem | [Setup guide](servers/gsa-perdiem-mcp#installation) (key for city-only/API lookups or unbundled years) | [Add to Claude](https://claude.ai/directory/gsa-perdiem-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ab85f56d4ec8191970ab75fdeddd2f9) |
+| GSA Per Diem | [Setup guide](servers/gsa-perdiem-mcp#installation) (free key) | [Add to Claude](https://claude.ai/directory/gsa-perdiem-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ab85f56d4ec8191970ab75fdeddd2f9) |
 | eCFR | [Setup guide](servers/ecfr-mcp#installation) | [Add to Claude](https://claude.ai/directory/ecfr-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ef0341b04819192935fd4e5cd9b34) |
-| Acquisition.gov | [Setup guide](servers/acquisition-gov-mcp#install) | [Add to Claude](https://claude.ai/directory/acquisition-gov-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ab2757102e08191887f75cc506c2333) |
 | Federal Register | [Setup guide](servers/federal-register-mcp#installation) | [Add to Claude](https://claude.ai/directory/federal-register-by-1102tools) | In review |
 | Regulations.gov | [Setup guide](servers/regulations-gov-mcp#installation) (free key) | [Add to Claude](https://claude.ai/directory/regulations-gov-by-1102tools) | In review |
+| Acquisition.gov | [Setup guide](servers/acquisition-gov-mcp#install) | [Add to Claude](https://claude.ai/directory/acquisition-gov-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ab2757102e08191887f75cc506c2333) |
 
 | | Local | Hosted |
 |---|---|---|
@@ -119,9 +119,9 @@ After connecting, choose a [matching prompt](https://github.com/1102tools-dev/fe
 | Look up occupation and location wage data | [BLS OEWS](servers/bls-oews-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#bls-oews) |
 | Estimate lodging and meals for travel | [GSA Per Diem](servers/gsa-perdiem-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#gsa-per-diem) |
 | Read and compare codified FAR, DFARS, and CFR text | [eCFR](servers/ecfr-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#ecfr) |
-| Research FAR Overhaul model text and posted agency deviations | [Acquisition.gov](servers/acquisition-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#far-overhaul-and-agency-deviations) |
 | Follow proposed rules, final rules, and FAR cases | [Federal Register](servers/federal-register-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#federal-register) |
 | Explore rulemaking dockets and public comments | [Regulations.gov](servers/regulations-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#regulationsgov) |
+| Research FAR Overhaul model text and posted agency deviations | [Acquisition.gov](servers/acquisition-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#far-overhaul-and-agency-deviations) |
 
 ## Use the sources together
 
