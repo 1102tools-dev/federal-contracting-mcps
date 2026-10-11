@@ -268,6 +268,10 @@ async def test_http_owns_real_parser_process_lifetime(monkeypatch,fixtures,kind,
   else:
    task.cancel()
    with pytest.raises(asyncio.CancelledError):await task
+ # SDK 2.3 can answer the timeout just before the child is reaped; allow a moment.
+ for _ in range(20):
+  if children and children[0].returncode is not None:break
+  await asyncio.sleep(.1)
  assert len(children)==1 and children[0].returncode is not None and app.active==0
 
 @pytest.mark.p0

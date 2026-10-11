@@ -19,6 +19,7 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 import httpx
 from mcp.server import MCPServer
 
+from ._errors import UserInputError
 from ._html import (
     _source_id, _validated_url, _validate_html_body, _main_content, _text_lines, _validate_heading, _validate_chunk_inputs, _extract_section, _chunk, _part_from_card, _agency_name, _parse_index, _parse_html_document
 )
@@ -77,9 +78,9 @@ def _validate_part(part: int | str) -> int:
     try:
         value = int(str(part).strip())
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"part must be an integer from 1 through 53. Got {part!r}.") from exc
+        raise UserInputError(f"part must be an integer from 1 through 53. Got {part!r}.") from exc
     if not 1 <= value <= 53:
-        raise ValueError(f"part must be from 1 through 53. Got {value}.")
+        raise UserInputError(f"part must be from 1 through 53. Got {value}.")
     return value
 
 
@@ -87,11 +88,11 @@ def _validate_date(value: str | None, field: str) -> str | None:
     if value is None:
         return None
     if not _ISO_DATE_RE.fullmatch(value.strip()):
-        raise ValueError(f"{field} must use YYYY-MM-DD format. Got {value!r}.")
+        raise UserInputError(f"{field} must use YYYY-MM-DD format. Got {value!r}.")
     try:
         date.fromisoformat(value.strip())
     except ValueError as exc:
-        raise ValueError(f"{field} is not a valid calendar date: {value!r}.") from exc
+        raise UserInputError(f"{field} is not a valid calendar date: {value!r}.") from exc
     return value.strip()
 
 
@@ -431,9 +432,9 @@ async def list_rfo_agency_deviations(
 ) -> dict[str, Any]:
     """List official agency-deviation links discovered through the RFO index."""
     if not (agency and agency.strip()) and part is None:
-        raise ValueError("At least one filter is required: agency or part.")
+        raise UserInputError("At least one filter is required: agency or part.")
     if not 1 <= limit <= 250:
-        raise ValueError("limit must be between 1 and 250.")
+        raise UserInputError("limit must be between 1 and 250.")
     wanted_part = _validate_part(part) if part is not None else None
     agency_filter = " ".join(agency.split()).casefold() if agency and agency.strip() else None
     parts, source_url, digest, retrieved = await _index()
@@ -478,9 +479,9 @@ async def get_rfo_agency_deviation(
 ) -> dict[str, Any]:
     """Resolve an indexed source ID and return page-numbered official PDF text."""
     if not re.fullmatch(r"agency-deviation-[a-f0-9]{20}", source_id):
-        raise ValueError("source_id must come from list_rfo_agency_deviations.")
+        raise UserInputError("source_id must come from list_rfo_agency_deviations.")
     if page_start < 1 or (page_end is not None and (page_end < page_start or page_end - page_start + 1 > MAX_PDF_PAGES)):
-        raise ValueError(f"page_start/page_end must select 1 through {MAX_PDF_PAGES} pages in increasing order.")
+        raise UserInputError(f"page_start/page_end must select 1 through {MAX_PDF_PAGES} pages in increasing order.")
     parts, _, _, index_retrieved = await _index()
     discovered = [
         deviation
@@ -489,7 +490,7 @@ async def get_rfo_agency_deviation(
         if deviation["source_id"] == source_id
     ]
     if not discovered:
-        raise ValueError("source_id is not present in the current official RFO index.")
+        raise UserInputError("source_id is not present in the current official RFO index.")
     target = discovered[0] | {
         "far_parts": sorted({part for item in discovered for part in item["far_parts"]})
     }
@@ -541,7 +542,7 @@ async def get_rfo_guidance(
     _validate_chunk_inputs(cursor, DEFAULT_MAX_CHARACTERS)
     heading = _validate_heading(heading)
     if resource not in GUIDANCE_URLS:
-        raise ValueError("resource must be faq, policy_and_guidance, or deviation_guidance.")
+        raise UserInputError("resource must be faq, policy_and_guidance, or deviation_guidance.")
     url = GUIDANCE_URLS[resource]
     if resource == "deviation_guidance":
         body, _, final_url = await _fetch_bytes(
@@ -554,7 +555,7 @@ async def get_rfo_guidance(
             lines = text.splitlines()
             indices = [i for i, line in enumerate(lines) if heading.casefold() in " ".join(line.split()).casefold()]
             if not indices:
-                raise ValueError(f"heading {heading!r} was not found in the guidance PDF.")
+                raise UserInputError(f"heading {heading!r} was not found in the guidance PDF.")
             text = "\n".join(lines[indices[0]:])
         page = _chunk(text, cursor, DEFAULT_MAX_CHARACTERS)
         return {

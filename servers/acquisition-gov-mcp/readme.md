@@ -22,7 +22,7 @@ This server reports source content and metadata. It does **not** decide which ru
 ## Install
 
 ```bash
-uvx acquisition-gov-mcp==1.0.10
+uvx acquisition-gov-mcp==1.0.11
 ```
 
 The server uses stdio and requires no credentials.

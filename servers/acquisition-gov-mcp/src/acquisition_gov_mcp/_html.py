@@ -6,6 +6,7 @@ from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urljoin, urlsplit, urlunsplit
 from bs4 import BeautifulSoup, Tag, NavigableString, CData
+from ._errors import UserInputError
 from ._pdf import _labeled_date
 from .constants import ALLOWED_HOSTS, MAX_HTML_BYTES, MAX_OUTPUT_CHARACTERS, RFO_INDEX_URL, DEFAULT_MAX_CHARACTERS
 _PART_RE = re.compile(r"(?:FAR\s*)?Part\s*[-:]?\s*(\d{1,2})", re.I)
@@ -76,14 +77,14 @@ def _validate_heading(section: str | None) -> str | None:
     if section is None:
         return None
     if not section.strip() or len(section) > 500:
-        raise ValueError("section/heading must contain 1 through 500 nonblank characters.")
+        raise UserInputError("section/heading must contain 1 through 500 nonblank characters.")
     return " ".join(section.split())
 
 def _validate_chunk_inputs(cursor: str | None, maximum: int) -> None:
     if not 1_000 <= maximum <= MAX_OUTPUT_CHARACTERS:
-        raise ValueError(f"max_characters must be between 1000 and {MAX_OUTPUT_CHARACTERS}.")
+        raise UserInputError(f"max_characters must be between 1000 and {MAX_OUTPUT_CHARACTERS}.")
     if cursor is not None and (not re.fullmatch(r"[0-9]{1,9}", cursor)):
-        raise ValueError("cursor must be the numeric cursor returned by a prior call.")
+        raise UserInputError("cursor must be the numeric cursor returned by a prior call.")
 
 def _extract_section(node: Tag | BeautifulSoup, section: str | None) -> str:
     section = _validate_heading(section)
@@ -100,9 +101,9 @@ def _extract_section(node: Tag | BeautifulSoup, section: str | None) -> str:
     exact = [h for h in headings if " ".join(h.get_text(" ", strip=True).split()).casefold() == needle]
     candidates = exact or [h for h in headings if matches(h)]
     if not candidates:
-        raise ValueError(f"section {section!r} was not found in the official source.")
+        raise UserInputError(f"section {section!r} was not found in the official source.")
     if len(candidates) > 1:
-        raise ValueError(f"section {section!r} matches multiple headings; use a more specific heading.")
+        raise UserInputError(f"section {section!r} matches multiple headings; use a more specific heading.")
     heading = candidates[0]
     level = int(heading.name[1])
     lines: list[str] = []
@@ -126,11 +127,11 @@ def _chunk(text: str, cursor: str | None, maximum: int) -> dict[str, Any]:
     if cursor is None:
         start = 0
     elif not cursor.isdigit():
-        raise ValueError("cursor must be the numeric cursor returned by a prior call.")
+        raise UserInputError("cursor must be the numeric cursor returned by a prior call.")
     else:
         start = int(cursor)
     if start < 0 or start > len(text):
-        raise ValueError(f"cursor is outside the source text (length {len(text)}).")
+        raise UserInputError(f"cursor is outside the source text (length {len(text)}).")
     end = min(len(text), start + maximum)
     return {
         "content": text[start:end],

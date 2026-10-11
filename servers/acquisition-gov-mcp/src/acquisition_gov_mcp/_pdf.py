@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 from typing import Any
 from pypdf import PdfReader
+from ._errors import UserInputError
 from .constants import MAX_PDF_PAGES, MAX_PDF_TEXT_CHARACTERS, MAX_PDF_PAGE_STREAM_BYTES
 
 class PdfPageRangeError(ValueError):
@@ -108,9 +109,9 @@ def _read_pdf(
         raise PdfPageRangeError(f"page_start must be between 1 and {total}; this PDF has {total} page(s).", total)
     end = min(total, page_end if page_end is not None else min(total, page_start + 9))
     if end < page_start:
-        raise ValueError("page_end must be greater than or equal to page_start.")
+        raise UserInputError("page_end must be greater than or equal to page_start.")
     if end - page_start + 1 > MAX_PDF_PAGES:
-        raise ValueError(f"A single call may retrieve at most {MAX_PDF_PAGES} pages.")
+        raise UserInputError(f"A single call may retrieve at most {MAX_PDF_PAGES} pages.")
     pages: list[tuple[int, str]] = []
     empty = 0
     extracted = 0
