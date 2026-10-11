@@ -349,8 +349,12 @@ def load(db, kind, path, metadata, allow_small=False, prepared=None):
             for index,batch in enumerate(chunks(stage_statements(local_path,kind,suffix)),1):
                 print(f'{kind}: importing chunk {index} ({sum(len(s.encode()) for s in batch)} bytes)', file=sys.stderr,flush=True)
                 db.execute_file(batch)
-            print(f'{kind}: building staged indexes',file=sys.stderr,flush=True)
-            db.execute_file([s for s in stage_schema if s.startswith('CREATE INDEX')])
+            indexes = [s for s in stage_schema if s.startswith('CREATE INDEX')]
+            for index,statement in enumerate(indexes,1):
+                # Bound each D1 import while old and staged copies coexist.
+                # A combined full-entity index import failed backend polling.
+                print(f'{kind}: building staged index {index}/{len(indexes)}',file=sys.stderr,flush=True)
+                db.execute_file([statement])
             staged_count = db.query(f'SELECT COUNT(*) AS n FROM {kind}{suffix}')[0]['n']
             if staged_count != count:
                 raise ValueError('Staged count differs from validated count')

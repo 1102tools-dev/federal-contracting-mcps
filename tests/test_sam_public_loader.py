@@ -58,6 +58,40 @@ class Safety(unittest.TestCase):
         with self.assertRaises(ValueError):
             loader.validate_count('exclusions',59,100,allow_small=True)
         loader.validate_count('exclusions',60,100,allow_small=True)
+    def test_load_builds_each_staged_index_in_a_separate_import(self):
+        original = self.db.execute_file
+        built = []
+        def bounded_import(statements):
+            indexes = [s for s in statements if s.startswith('CREATE INDEX') and '_stage_' in s]
+            if indexes:
+                self.assertEqual(len(statements),1,'D1 index imports must be bounded individually')
+                built.extend(indexes)
+            original(statements)
+        with patch.object(loader,'prepare',side_effect=self.prepare), patch.object(self.db,'execute_file',side_effect=bounded_import):
+            result = loader.load(self.db,'exclusions',self.path,self.metadata,True)
+        self.assertEqual(len(built),6)
+        self.assertEqual(result['row_count'],1)
+        self.assertEqual(self.db.query('SELECT exclusion_id FROM exclusions'),[{'exclusion_id':'new'}])
+        self.assertEqual(self.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%stage%'"),[])
+    def test_middle_staged_index_failure_preserves_previous_data_and_status(self):
+        self.db.db.execute("INSERT INTO extract_status (kind,file_name,file_date,source_url,loaded_at,row_count,sha256,database_bytes,load_seconds) VALUES ('exclusions','previous.zip','2026-10-09','public','then',1,'hash',1,1)")
+        self.db.db.commit()
+        previous_status = self.db.query('SELECT * FROM extract_status')
+        original = self.db.execute_file
+        built = []
+        def fail_middle_index(statements):
+            if any(s.startswith('CREATE INDEX') and '_stage_' in s for s in statements):
+                built.extend(statements)
+                if len(built)==3:
+                    raise RuntimeError('simulated D1 index import polling failure')
+            original(statements)
+        with patch.object(loader,'prepare',side_effect=self.prepare), patch.object(self.db,'execute_file',side_effect=fail_middle_index):
+            with self.assertRaisesRegex(RuntimeError,'index import polling failure'):
+                loader.load(self.db,'exclusions',self.path,self.metadata,True)
+        self.assertEqual(len(built),3)
+        self.assertEqual(self.db.query('SELECT exclusion_id FROM exclusions'),[{'exclusion_id':'old'}])
+        self.assertEqual(self.db.query('SELECT * FROM extract_status'),previous_status)
+        self.assertEqual(self.db.query("SELECT name FROM sqlite_master WHERE name LIKE '%stage%'"),[])
     def test_actual_small_load_retains_previous_rows_and_status(self):
         self.db.db.executemany('INSERT INTO exclusions (exclusion_id) VALUES (?)',[(f'old{i}',) for i in range(99)])
         self.db.db.execute("INSERT INTO extract_status (kind,file_name,file_date,source_url,loaded_at,row_count,sha256,database_bytes,load_seconds) VALUES ('exclusions','previous.zip','2026-10-09','public','then',100,'hash',1,1)")
