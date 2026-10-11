@@ -191,7 +191,20 @@ class D1:
         if result.returncode:
             # Keep CLI output to one readable error; raw imports can contain data.
             diagnostic = subprocess.CalledProcessError(result.returncode,result.args,output=result.stdout,stderr=result.stderr)
-            raise RuntimeError(f'D1 execute failed (exit {result.returncode}); active data retained if promotion has not completed') from diagnostic
+            output = re.sub(r'\x1b\[[0-9;]*m','',result.stderr+'\n'+result.stdout)
+            match = re.search(r'\[ERROR\][ \t]*([^\n]*)',output)
+            detail = match[1].strip() if match else ''
+            if match and not detail:
+                tail = output[match.end():].lstrip('\n ')
+                detail = tail.split('\n',1)[0].strip() if tail else ''
+            # Never echo SQL, request payloads, stack traces, or auth headers.
+            if re.search(r'\b(?:INSERT|UPDATE|DELETE|SELECT|CREATE|ALTER|DROP|Authorization|Bearer)\b|https?://|[{}]|Logs were written|^at ',detail,re.I):
+                detail = ''
+            code = re.search(r'\[code:\s*\d+\]',output)
+            detail = detail[:300] or 'Cloudflare provided no readable error detail'
+            if code and code[0] not in detail:
+                detail += ' '+code[0]
+            raise RuntimeError(f'D1 execute failed (exit {result.returncode}): {detail}') from diagnostic
         return result.stdout
 
     def query(self, sql):
@@ -355,17 +368,21 @@ def load(db, kind, path, metadata, allow_small=False, prepared=None):
             raise ValueError('Insufficient D1 capacity for live plus staged copy')
         suffix = '_stage_' + uuid.uuid4().hex[:12]
         tables = [kind] + (['entity_naics','entity_business_types'] if kind == 'entities' else [])
+        phase = 'creating empty staging tables'
         try:
             stage_schema = table_sql(kind,suffix)
             db.execute_file([s for s in stage_schema if not s.startswith('CREATE INDEX')])
             indexes = [s for s in stage_schema if s.startswith('CREATE INDEX')]
             for index,statement in enumerate(indexes,1):
                 # Create indexes on empty staging tables, before indexed uploads.
-                print(f'{kind}: building staged index {index}/{len(indexes)}',file=sys.stderr,flush=True)
+                phase = f'creating empty-stage index {index}/{len(indexes)}'
+                print(f'{kind}: {phase}: {statement}',file=sys.stderr,flush=True)
                 db.execute_file([statement])
             for index,batch in enumerate(chunks(stage_statements(local_path,kind,suffix)),1):
+                phase = f'uploading indexed chunk {index}'
                 print(f'{kind}: importing indexed chunk {index} ({sum(len(s.encode()) for s in batch)} bytes)', file=sys.stderr,flush=True)
                 db.execute_file(batch)
+            phase = 'checking staged row counts'
             staged_count = db.query(f'SELECT COUNT(*) AS n FROM {kind}{suffix}')[0]['n']
             if staged_count != count:
                 raise ValueError('Staged count differs from validated count')
@@ -378,8 +395,10 @@ def load(db, kind, path, metadata, allow_small=False, prepared=None):
             peak_bytes = db.size()
             status = dict(kind=kind,**metadata,loaded_at=dt.datetime.now(dt.timezone.utc).isoformat(),row_count=count,sha256=file_sha256(path),database_bytes=size,load_seconds=round(time.monotonic()-start,3))
             status.update(source_rows=int(audit.get('source_rows',count)), rejected_rows=int(audit.get('rejected_rows',0)), opted_out_rows=int(audit.get('opted_out_rows',0)),duplicate_rows=int(audit.get('duplicate_rows',0)))
+            phase = 'atomic promotion'
             db.atomic(promotion_sql(kind,suffix,status))
         except BaseException as failure:
+            failure.add_note(f'{kind}: failed while {phase}')
             try:
                 db.execute_file([f'DROP TABLE IF EXISTS {table}{suffix};' for table in tables])
             except Exception:
@@ -431,16 +450,18 @@ def main(argv=None):
     print(json.dumps(output,indent=2))
 
 
+def readable_error(failure):
+    message = '; '.join([str(failure),*getattr(failure,'__notes__',[])])
+    for secret in [os.environ.get('CLOUDFLARE_API_TOKEN'),os.environ.get('CLOUDFLARE_D1_TOKEN')]:
+        if secret:
+            message = message.replace(secret,'[redacted]')
+    message = re.sub(r'\x1b\[[0-9;]*m','',message)
+    return 'SAM public load failed: ' + ' '.join(message.split())[:1500]
+
+
 if __name__ == '__main__':
     try:
         main()
     except Exception as failure:
-        message = str(failure)
-        for secret in [os.environ.get('CLOUDFLARE_API_TOKEN'),os.environ.get('CLOUDFLARE_D1_TOKEN')]:
-            if secret:
-                message = message.replace(secret,'[redacted]')
-        message = re.sub(r'\x1b\[[0-9;]*m','',message)
-        message = ' '.join(message.split())[:1000]
-        notes = '; '.join(getattr(failure,'__notes__',[]))
-        print('SAM public load failed: ' + message + ('; '+notes if notes else ''),file=sys.stderr)
+        print(readable_error(failure),file=sys.stderr)
         sys.exit(1)

@@ -1,5 +1,6 @@
 """Safety checks for separate public SAM D1 staging and atomic promotion."""
 import json
+import os
 from pathlib import Path
 import sqlite3
 import subprocess
@@ -109,7 +110,7 @@ class Safety(unittest.TestCase):
         with patch.object(loader,'prepare',side_effect=self.prepare), patch.object(self.db,'execute_file',side_effect=interrupted):
             with self.assertRaisesRegex(RuntimeError,'original indexed upload failed') as caught:
                 loader.load(self.db,'exclusions',self.path,self.metadata,True)
-        self.assertIn('Stage cleanup also failed',caught.exception.__notes__[0])
+        self.assertTrue(any('Stage cleanup also failed' in note for note in caught.exception.__notes__))
         self.assertEqual(self.db.query('SELECT exclusion_id FROM exclusions'),[{'exclusion_id':'old'}])
         with patch.object(self.db,'execute_file') as writes:
             with self.assertRaisesRegex(ValueError,'leftover tables'):
@@ -146,6 +147,23 @@ class Safety(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,'D1 execute failed') as caught:
                 loader.D1('remote','sam-gov-entities').run('--command','SELECT 1')
         self.assertEqual(caught.exception.__cause__.stderr,'private stderr')
+        self.assertNotIn('private',str(caught.exception))
+    def test_readable_error_redacts_credentials_and_collapses_lines_with_notes(self):
+        failure=RuntimeError('backend\n failed token-secret')
+        failure.add_note('entities: failed while uploading indexed chunk 3')
+        failure.add_note('Stage cleanup also failed')
+        with patch.dict(os.environ,{'CLOUDFLARE_API_TOKEN':'token-secret'}):
+            text=loader.readable_error(failure)
+        self.assertNotIn('token-secret',text)
+        self.assertNotIn('\n',text)
+        self.assertIn('[redacted]',text)
+        self.assertIn('chunk 3',text)
+        self.assertIn('Stage cleanup also failed',text)
+    def test_known_backend_error_code_is_retained_without_request_payload(self):
+        response=subprocess.CompletedProcess(['wrangler'],1,'','[ERROR] Database operation rejected [code: 7500]\nrequest sql=INSERT private')
+        with patch.object(loader.subprocess,'run',return_value=response):
+            with self.assertRaisesRegex(RuntimeError,'Database operation rejected.*7500') as caught:
+                loader.D1('remote','sam-gov-entities').run('--command','SELECT 1')
         self.assertNotIn('private',str(caught.exception))
     def test_middle_staged_index_failure_preserves_previous_data_and_status(self):
         self.db.db.execute("INSERT INTO extract_status (kind,file_name,file_date,source_url,loaded_at,row_count,sha256,database_bytes,load_seconds) VALUES ('exclusions','previous.zip','2026-10-09','public','then',1,'hash',1,1)")
