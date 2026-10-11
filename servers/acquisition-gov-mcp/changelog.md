@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.11 — 2026-10-11
+
+- Keep input-correction messages (for example "part must be from 1 through 53") visible on MCP SDK 2.3, which otherwise replaces them with a generic "Error executing tool". Answers are unchanged.
+
 ## 1.0.10 — 2026-10-10
 
 - Recognize direct line-start effective-date sentences such as DoD’s “Effective February 1, 2026”, without accepting quoted or historical mid-sentence dates.
