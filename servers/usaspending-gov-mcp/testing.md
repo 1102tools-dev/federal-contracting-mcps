@@ -1275,3 +1275,65 @@ install logs, `published23-provenance-payload.json`,
 `published23-console-parity.json`, `full-published23-latest.xml`,
 `published23-full-suite-reconciliation.json` and `peer-ecfr-published23.json`.
 Final publication-documentation peer and CI are separate pending gates.
+
+
+## Final Round 7 federal-contracting content audit — October 10, 2026
+
+A new uncached official PyPI by-name installation of **1.0.23**, Python 3.12.13
+and MCP SDK 2.3.0, verifies the eight runtime modules against publication source
+`ac050ab90808dda721ed4c58df09e5c79f6b16af`. Its actual console and the public
+origin service expose identical **55-tool catalogs**. The final corpus contains
+**151 recorded three-lane attempts**, including **two excluded collector mistakes**,
+**149 valid attempts**, and **142 distinct argument combinations: 132 new and
+10 prior reference/control combinations**. Every distinct combination finishes
+with successful primary-path, console and public responses and source parity.
+There are **150 retained fresh official response bodies**. No new P0–P3 product
+defect was confirmed; no runtime, schema, version or regression-test change is made.
+
+The acquisition workflows cover DHS IT suppliers and codes, competition, pricing
+and set-asides; VA construction and financial accounts; GSA-awarded/VA-funded
+procurements; NOAA engineering; CACI parent/child identities; NASA vehicles and
+a DHS order's actual child-bearing SEWP parent; obligations, deobligations,
+subcontract reports, geography and reporting definitions. Source detail verifies
+NAICS 541519/236220, competition A, pricing J and the separate awarding/funding
+agencies. Fiscal year/quarter/month crossfoots are exact for DHS FY2024
+(**$23,604,370,475.80**), VA July–December 2023 (**$40,305,225,872.89**) and
+CACI signing events (**101**); NOAA annual/quarter engineering obligations
+crossfoot at **$133,853,727.27**.
+
+Complete DHS Accenture history retrieves **59 unique actions**, netting to the
+**$370,125,532.06** lifetime award obligation; its **two FY2024 actions** instead
+net **–$1,273,743.03**. Complete prime-subcontract paging retrieves **711 reports
+over eight pages**, with **one** locally retained FY2024-dated report. Reported
+amounts are not asserted net-new fiscal subcontract spending. File C funding,
+account outlays, cumulative awards and transaction windows remain distinct.
+Geographic state/district sums crossfoot to the filtered **$2,093,007,568.27**
+market, while county and recipient-state source sums differ; no unsupported
+missing-location cause or complete census is claimed. Vehicle values do not
+establish a legal ceiling or remaining capacity.
+
+The initial attempts retain **five local failures across four aggregation
+questions**. Public origin responses succeed throughout; bounded exact-question
+recoveries subsequently succeed in all three lanes with identical financial
+answers. CLI tracebacks establish `httpx.ReadTimeout`; initial primary failures
+have no response or preserved underlying cause. This remains an intermittent
+responsiveness limitation, without a confirmed persistent product defect or
+gateway/cache/quota attribution. Two calls incorrectly supplied date fields to
+`search_subawards` and are excluded: the actual catalog supports prime paging
+and local action-date filtering. General Administration discovery returned
+Justice account **015-0132 / ID 4001**, so it receives no VA evidence credit. A
+separate discovered VA **036-0160 / ID 4663** chain verifies FY2023/FY2024
+snapshots. Object-class amounts are cumulative and paged; program codes/names
+are all-year/nonfinancial with the requested FY disclosed as unapplied.
+
+The full-suite **1,943 passed / 379 skipped / 2,322 collected**, with all former
+855 failed IDs executed and passing, is the retained actual published SDK
+campaign execution above. It is **not a new Round 7 suite run**; unchanged
+runtime/test Python bytes justify that provenance. The default/non-gated suite
+includes existing unmocked source controls and is neither wholly offline nor
+the skipped live-gated suite. Final Round 7 evidence is
+`Artifacts/mcp-e2e-20261010/round7/usaspending`: `audit-summary.json`,
+`capability-map.json`, the six corpus files, `semantic-review.json`,
+`timeout-assessment.json`, raw response indexes and the separate evidence seal.
+Exact final documentation peer, CI, merge and served-document receipts are
+separate completion gates. This is the last content round.

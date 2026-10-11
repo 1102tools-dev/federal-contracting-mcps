@@ -58,3 +58,20 @@ Reproduce collection without enabling live checks:
 ```bash
 USASPENDING_LIVE_TESTS=0 uv run --project servers/usaspending-gov-mcp pytest --collect-only -q servers/usaspending-gov-mcp/tests
 ```
+
+
+### Final Round 7 provenance
+
+The final contracting content audit uses a fresh official 1.0.23 / MCP 2.3.0
+installation and the public service: 132 new plus 10 prior reference/control
+argument combinations across all 55 tools, with all distinct combinations
+finishing source/console/public parity. Its 151 attempt records preserve two
+excluded collector mistakes and five local request failures with successful
+bounded recoveries; 150 fresh official response bodies are retained.
+
+No regression tests or runtime bytes change in this round. The current 1,943
+passed / 379 skipped / 2,322 collected is the retained actual published SDK
+campaign full default/non-gated execution, **not a newly executed Round 7
+suite**. All 855 former failed IDs executed and passed there. Existing unmocked
+source controls mean that lane is not wholly offline; the 379 live-gated cases
+remain skipped. See `testing.md` for task/source limitations and provenance.
