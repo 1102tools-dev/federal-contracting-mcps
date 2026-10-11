@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
+USER_AGENT = "1102tools-sam-native-release-verification/1.0"
 TOOL_NAMES = {
     "search_opportunities", "get_opportunity", "get_data_status",
     "search_entities", "search_exclusions", "summarize_opportunities",
@@ -25,7 +26,7 @@ def release_version(ref, source):
 
 
 def request(url, payload=None):
-    headers = {"Accept": "application/json, text/event-stream"}
+    headers = {"Accept": "application/json, text/event-stream", "User-Agent": USER_AGENT}
     data = None
     if payload is not None:
         headers["Content-Type"] = "application/json"
