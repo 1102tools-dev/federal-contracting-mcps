@@ -1428,6 +1428,16 @@ async def vendor_rate_card(
 ) -> dict[str, Any]:
     """Get ceiling rates for a specific vendor, one page at a time.
 
+    For a complete vendor card or a role-specific subset (for example,
+    project managers), fetch every page: while has_more is true, call this
+    tool again with page=next_page and the same vendor_name, page_size,
+    ordering, and sort. Stop only when has_more is false, then combine the
+    pages and match the requested roles client-side.
+    If you stop early, say clearly that the results are partial, report
+    the fetched returned_range against total_rates, and explain that later
+    pages may contain additional matching roles or rates. Do not claim a role is absent
+    or present a complete role-specific rate range from a partial card.
+
     Auto-discovers the exact vendor name via suggest-contains, then pulls
     their rate records. Returns labor categories, rates, education levels,
     experience requirements, SINs, contract numbers, contract end dates, and
@@ -1448,8 +1458,7 @@ async def vendor_rate_card(
     rows (more than 500 distinct titles). The default page_size is 100 (~23KB) because a 500-row page
     for a vendor that size is ~114KB and overflows MCP client output limits.
     Rows are ordered by labor_category ascending by default, so a partial
-    card is alphabet-biased; check has_more and keep calling with next_page
-    until it is false before treating the card as complete.
+    card is alphabet-biased and may omit all requested roles on page 1.
 
     There is no server-side way to intersect a vendor with a labor-category
     keyword (the v3 API ignores vendor_name and labor_category as filter
