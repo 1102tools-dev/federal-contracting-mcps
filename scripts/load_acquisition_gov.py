@@ -40,7 +40,7 @@ sys.path.insert(0, str(ROOT / "servers/acquisition-gov-mcp/src"))  # the package
 from acquisition_gov_mcp import __version__, _html, _pdf, constants, server  # noqa: E402
 
 # Bump when the stored layout or derived data changes, so content is re-parsed.
-FORMAT = 4
+FORMAT = 5
 PARSER_VERSION = f"{__version__}+{FORMAT}"
 HTML = (("text/html",), constants.MAX_HTML_BYTES)
 PDF = (("application/pdf",), constants.MAX_PDF_BYTES)
@@ -112,6 +112,9 @@ def labeled_dates(joined: str) -> dict:
             start = hit.start()
             while start > 0 and joined[start - 1].isspace():
                 start -= 1
+            line_start = joined.rfind("\n", 0, hit.start()) + 1
+            if re.fullmatch(r"[ \t]*\d+[.)]\s*", joined[line_start:hit.start()]):
+                start = line_start
             for position in range(start, hit.start() + 1):
                 match = pattern.match(joined, position)
                 if match:
@@ -120,6 +123,8 @@ def labeled_dates(joined: str) -> dict:
     # The letterhead fallback: every date alone on its line.
     found["Standalone"] = [[m.start(), m.end(), _pdf._normalize_date(m.group(1))]
                            for m in _pdf._STANDALONE_DATE.finditer(joined)]
+    found["EffectiveRelative"] = [[m.start(), m.end(), "relative"]
+                                  for m in _pdf._EFFECTIVE_RELATIVE.finditer(joined)]
     return found
 
 
@@ -128,13 +133,7 @@ def applicability(page: int, text: str) -> list:
 
     Offsets, not text: a long matching line would not fit beside the page in one row.
     """
-    lines, offset = [], 0
-    for line in text.splitlines(keepends=True):
-        content = line.splitlines()[0] if line.splitlines() else ""
-        if _pdf._extract_document_fields([(page, content)])["applicability_text"] is not None:
-            lines.append([offset, offset + len(content)])
-        offset += len(line)
-    return lines
+    return [list(span) for span in _pdf._applicability_spans(text)]
 
 
 def parse_pdf(body: bytes) -> dict:

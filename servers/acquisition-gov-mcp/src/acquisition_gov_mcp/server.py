@@ -330,7 +330,9 @@ def _matching_agency_names(parts, query):
     needle = normalize(query)
     if not needle:
         return set()
-    direct = {name for name in names if needle in normalize(name)}
+    # Match whole normalized words/phrases: "State" must not match "States".
+    # Partial agency names still work, and explicit acronym aliases expand below.
+    direct = {name for name in names if f" {needle} " in f" {normalize(name)} "}
     def acronym(name):
         match = re.search(r"(?:\(([A-Z][A-Z0-9]{1,9})\)|(?:^|\s)([A-Z][A-Z0-9]{1,9}))$", name)
         return (match.group(1) or match.group(2)) if match else None

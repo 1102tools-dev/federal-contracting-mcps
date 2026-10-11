@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.12 — 2026-10-10
+
+- Fix FAR-prefixed section lookup, agency-name matching, DOE PDF extraction, and HHS/NASA deviation dates and applicability.
+
 ## 1.0.11 — 2026-10-11
 
 - Keep input-correction messages (for example "part must be from 1 through 53") visible on MCP SDK 2.3, which otherwise replaces them with a generic "Error executing tool". Answers are unchanged.

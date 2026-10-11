@@ -253,3 +253,47 @@ test("explicit effective-date sentence is returned only in its selected range", 
   const other = await data("get_rfo_agency_deviation", {source_id, page_start: 1, page_end: 1});
   assert.equal(other.effective_date, null);
 });
+
+// Three affected official PDFs saved as three-page excerpts, for bounded regressions.
+for (const name of ["doe-part19", "hhs-amendment3", "nasa-part13"]) {
+  test(`saved ${name} PDF: loader and Worker match Python for selected ranges`, async () => {
+    const project = join(ROOT, "servers/acquisition-gov-mcp");
+    const python = process.env.ACQ_PYTHON ?? join(project, ".venv/bin/python");
+    const recording = JSON.parse(execFileSync(python, [join(ROOT, "deploy/acquisition-gov/test/content_round_pdf.py"), name], {encoding: "utf8"}));
+    const {sqlite, db: sampleDb} = copy();
+    sqlite.exec(recording.sql);
+    sqlite.prepare("UPDATE sources SET doc = 'content-round-sample' WHERE key = ?").run(`pdf:${UPLOADS}/NASA_RFO_Deviation_Part-10.pdf`);
+    const source = (await data("list_rfo_agency_deviations", {part: 10}, sampleDb)).results[2];
+    for (const range of recording.ranges) {
+      const actual = await data("get_rfo_agency_deviation", {source_id: source.source_id, page_start: range.start, page_end: range.end}, sampleDb);
+      const [text, status, warnings, fields, total, end] = range.expected;
+      assert.equal(actual.page_numbered_text, text);
+      assert.equal(actual.text_extraction_status, status);
+      assert.deepEqual(actual.warnings, warnings);
+      for (const [key, value] of Object.entries(fields)) assert.equal(actual[key], value, key);
+      assert.equal(actual.total_pages, total);
+      assert.equal(actual.page_end, end);
+    }
+    sqlite.close();
+  });
+}
+
+test("audit section phrasing FAR 10.001 resolves the exact section", async () => {
+  for (const section of ["FAR 10.001", "Section 10.001", "§ 10.001"]) {
+    assert.equal((await data("get_rfo_part", {part: 10, section})).content,
+      "10.001 Policy\nThis is fixture model text, not codified FAR text.");
+  }
+  assert.match(await errorText("get_rfo_part", {part: 10, section: "FAR 10.0010"}), /was not found/);
+});
+
+test("audit State filter excludes United States Treasury token", async () => {
+  const {sqlite, db: stateDb} = copy();
+  const doc = sqlite.prepare("SELECT doc FROM sources WHERE key = 'index' AND snapshot = (SELECT value FROM meta WHERE key = 'current')").get()!.doc as string;
+  const info = JSON.parse(sqlite.prepare("SELECT info FROM docs WHERE id = ?").get(doc)!.info as string);
+  info.agencies = [["Department of State (DOS)", "department of state dos", "dos"],
+    ["United States Department of Treasury", "united states department of treasury", null]];
+  sqlite.prepare("UPDATE docs SET info = ? WHERE id = ?").run(JSON.stringify(info), doc);
+  sqlite.prepare("UPDATE index_deviations SET agency = CASE WHEN agency LIKE '%Aeronautics%' THEN 'Department of State (DOS)' ELSE 'United States Department of Treasury' END WHERE doc = ?").run(doc);
+  assert.equal((await data("list_rfo_agency_deviations", {agency: "State"}, stateDb)).count, 1);
+  sqlite.close();
+});

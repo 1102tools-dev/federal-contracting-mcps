@@ -1,0 +1,35 @@
+{
+  "doe-part19": {
+    "official_sha256": "e7ea7f94ca11a92069e6c9bd041e11e75577f58152fb3a3f1e3b8b3a54d8f675",
+    "pages": [
+      1,
+      2,
+      3
+    ],
+    "audit_saved_file": "cfd2c1b5288ebc1c.pdf",
+    "official_source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/DOE_RFO_Deviation_Part-19.pdf",
+    "saved_excerpt_sha256": "510e1fb0a342ef3ba1d5cb69b6e4c29f75c6dd60bd0f09a634d29e0211079c8c"
+  },
+  "hhs-amendment3": {
+    "official_sha256": "38cecb5fdfc50a6a0a164fddff41dff7503ca465b12495b66e2538d6e1e7796d",
+    "pages": [
+      1,
+      2,
+      3
+    ],
+    "audit_saved_file": "9b121fb25939cf96.pdf",
+    "official_source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/HHS_RFO_Deviation_Part-13-14-15-16-19-22-23-25-32-37-41-42-47-53.pdf",
+    "saved_excerpt_sha256": "d61586629635cde113a293fb27487924dcf2f4ec361000586fbe81fd69565978"
+  },
+  "nasa-part13": {
+    "official_sha256": "6fd25afec64c3f0a72779361c87ad12c45d325ab3420e0bca82ce298f10ad119",
+    "pages": [
+      1,
+      2,
+      3
+    ],
+    "audit_saved_file": "a317ec337b16aee9.pdf",
+    "official_source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/NASA_RFO_Deviation_Part-13.pdf",
+    "saved_excerpt_sha256": "6d8c89750ee3ca175f640d0c52e1ce4562b3e676456df5dabd82b72997007e04"
+  }
+}

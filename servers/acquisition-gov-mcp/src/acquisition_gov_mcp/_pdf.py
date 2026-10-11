@@ -8,6 +8,10 @@ from pypdf import PdfReader
 from ._errors import UserInputError
 from .constants import MAX_PDF_PAGES, MAX_PDF_TEXT_CHARACTERS, MAX_PDF_PAGE_STREAM_BYTES
 
+class UnreadableFontEncoding(ValueError):
+    """PDF text consists of unresolved font glyph identifiers."""
+
+
 class PdfPageRangeError(ValueError):
     """A valid PDF whose requested range is outside its actual page count."""
     def __init__(self, message: str, total_pages: int):
@@ -58,7 +62,7 @@ def _labeled_date(text: str, label: str) -> str | None:
         # "Effective February 1, 2026, contracting officers shall use...".
         # A bare label must begin its line; a quoted or historical mid-sentence
         # "was effective ..." must not become this document's metadata.
-        prefix = rf"(?:{prefix}|^[ \t]*{re.escape(label)}\s+)"
+        prefix = rf"^[ \t]*(?:\d+[.)]\s*)?{re.escape(label)}(?:\s+date)?(?:\s*[:\-]\s*|\s+on\s+|\s+)"
     pattern = re.compile(
         prefix + _DATE_TEXT,
         re.I | re.M,
@@ -67,21 +71,51 @@ def _labeled_date(text: str, label: str) -> str | None:
     return _normalize_date(match.group(1)) if match else None
 
 
+# Relative dates require an explicit operative label, never a historical sentence.
+_EFFECTIVE_RELATIVE = re.compile(
+    r"^[ \t]*(?:\d+[.)]\s*)?effective(?:\s+date)?\s*:\s*"
+    r"(?:immediately\b|(?:this\s+(?:PCD|deviation|CD)\s+is\s+)?effective\s+as\s+dated\b|as\s+dated\b)",
+    re.I | re.M,
+)
+
+
+def _applicability_spans(text: str) -> list[tuple[int, int]]:
+    """Matching lines, plus the scope paragraph after a standalone heading."""
+    lines = text.splitlines(keepends=True)
+    spans, offset = [], 0
+    for i, line in enumerate(lines):
+        content = line.rstrip("\r\n")
+        cleaned = " ".join(content.split())
+        if re.search(r"\b(applicability|applies to|applicable to)\b", cleaned, re.I):
+            end = offset + len(content)
+            if re.fullmatch(r"(?:\d+[.)]\s*)?APPLICABILITY\s*:?", cleaned, re.I):
+                tail = end + len(line) - len(content)
+                # Bounded to one paragraph; stop at the next numbered heading.
+                for following in lines[i + 1:i + 13]:
+                    if not following.strip() or re.match(r"\s*\d+[.)]\s+[A-Z][A-Z /&-]+:", following):
+                        break
+                    end = tail + len(following.rstrip("\r\n"))
+                    tail += len(following)
+            spans.append((offset, end))
+        offset += len(line)
+    return spans
+
+
 def _extract_document_fields(page_texts: list[tuple[int, str]]) -> dict[str, Any]:
     joined = "\n".join(text for _, text in page_texts)
-    applicability: list[str] = []
-    for page, text in page_texts:
-        for line in text.splitlines():
-            cleaned = " ".join(line.split())
-            if re.search(r"\b(applicability|applies to|applicable to)\b", cleaned, re.I):
-                applicability.append(f"Page {page}: {cleaned}")
+    applicability = [f"Page {page}: {' '.join(text[start:end].split())}"
+                     for page, text in page_texts for start, end in _applicability_spans(text)]
     applicability_text = "\n".join(applicability[:12])
     if len(applicability_text) > 8192:
         applicability_text = applicability_text[:8160] + " [truncated]"
+    issuance = (_labeled_date(joined, "Issued") or _labeled_date(joined, "Date")
+                or _standalone_date(joined))
+    effective = _labeled_date(joined, "Effective")
+    if _EFFECTIVE_RELATIVE.search(joined):
+        effective = issuance
     return {
-        "issuance_date": (_labeled_date(joined, "Issued") or _labeled_date(joined, "Date")
-                          or _standalone_date(joined)),
-        "effective_date": _labeled_date(joined, "Effective"),
+        "issuance_date": issuance,
+        "effective_date": effective,
         "expiration_date": _labeled_date(joined, "Expiration") or _labeled_date(joined, "Expires"),
         "applicability_text": applicability_text or None,
     }
@@ -122,9 +156,14 @@ def _read_pdf(
             if contents is not None and len(contents.get_data()) > MAX_PDF_PAGE_STREAM_BYTES:
                 raise RuntimeError("decoded page content exceeds the parser limit")
             text = page.extract_text() or ""
+            glyphs = re.findall(r"/(?:i?\d+)(?=/|\s|$)", text)
+            if len(glyphs) >= 20 and text.count("/i255") >= 10 and sum(map(len, glyphs)) > len(text) * 0.5:
+                raise UnreadableFontEncoding("unresolved glyph identifiers")
         except Exception as exc:
             warnings.append(f"Page {number} extraction failed: {type(exc).__name__}.")
             text = ""
+            if isinstance(exc, UnreadableFontEncoding):
+                warnings.append(f"Page {number} has unreadable font encoding; consult the official PDF for its text.")
         cleaned = text.strip()
         remaining = MAX_PDF_TEXT_CHARACTERS - extracted
         if len(cleaned) > remaining:

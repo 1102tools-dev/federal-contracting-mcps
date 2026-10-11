@@ -150,7 +150,7 @@ async function htmlDocument(db: Database, key: string, heading: string | null, c
     window = chunkWindow(length, cursor, maximum);
     content = streamText(rows.results, window[0], window[1]);
   } else {
-    const needle = casefold(heading);
+    const needle = casefold(heading).replace(/^(?:(?:far|section)\s+|§\s*)?(\d{1,2}\.\d{3}(?:-\d+)?)$/, "$1");
     const pattern = new RegExp(`(?<![${WORD}.])${escapeRegex(needle)}(?![${WORD}.])`, "u");
     const exact = headings.results.filter(h => h.key === needle);
     const candidates = exact.length ? exact : headings.results.filter(h => pattern.test(h.key));
@@ -196,7 +196,7 @@ function matchingAgencyNames(agencies: Index["agencies"], query: string | null):
   if (!query) return new Set();
   const needle = casefold(query).replace(/[^a-z0-9]+/g, " ").trim();
   if (!needle) return new Set();
-  const direct = agencies.filter(([, normalized]) => normalized.includes(needle));
+  const direct = agencies.filter(([, normalized]) => (` ${normalized} `).includes(` ${needle} `));
   const aliases = new Set(direct.map(([, , acronym]) => acronym).filter(a => a !== null));
   return new Set([...direct.map(([name]) => name), ...agencies.filter(([, , acronym]) => acronym !== null && aliases.has(acronym)).map(([name]) => name)]);
 }
@@ -309,6 +309,23 @@ async function listRfoAgencyDeviations(db: Database, args: Args): Promise<Py> {
 // Python's \b around the applicability phrases, for a page cut by the text cap.
 const APPLICABILITY = new RegExp(`(?<![${WORD}])(?:applicability|applies to|applicable to)(?![${WORD}])`, "iu");
 
+function applicabilityLines(text: string): string[] {
+  const lines = splitlines(text);
+  const found: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    let cleaned = squash(lines[i]);
+    if (!APPLICABILITY.test(cleaned)) continue;
+    if (/^(?:\d+[.)]\s*)?APPLICABILITY\s*:?$/i.test(cleaned)) {
+      for (const following of lines.slice(i + 1, i + 13)) {
+        if (!strip(following) || /^\s*\d+[.)]\s+[A-Z][A-Z /&-]+:/.test(following)) break;
+        cleaned += " " + squash(following);
+      }
+    }
+    found.push(cleaned);
+  }
+  return found;
+}
+
 interface Page {number: number; text: string; start: number; applicability: string[]}
 type Stored = {text: string; start: number; failure: string | null; overCap: boolean; applicability: [number, number][]};
 type Read = [text: string, status: string, warnings: string[], fields: Record<string, Py>, total: number, end: number];
@@ -328,9 +345,10 @@ function documentFields(pages: Page[], dates: Record<string, [number, number, st
     const match = (dates[label] ?? []).find(([start, end]) => start >= from && end <= to);
     return match ? match[2] : null;
   };
+  const issuance = labeled("Issued") ?? labeled("Date") ?? labeled("Standalone");
   return {
-    issuance_date: labeled("Issued") ?? labeled("Date") ?? labeled("Standalone"),
-    effective_date: labeled("Effective"),
+    issuance_date: issuance,
+    effective_date: labeled("EffectiveRelative") ? issuance : labeled("Effective"),
     expiration_date: labeled("Expiration") ?? labeled("Expires"),
     applicability_text: applicability || null,
   };
@@ -357,13 +375,14 @@ function readPdf(info: Record<string, any>, rows: Row[], pageStart: PyInt, pageE
     const page = stored.get(number);
     if (!page) throw new Error(`page ${number} is missing from the stored PDF`);
     if (page.failure) warnings.push(`Page ${number} extraction failed: ${page.failure}.`);
+    if (page.failure === "UnreadableFontEncoding") warnings.push(`Page ${number} has unreadable font encoding; consult the official PDF for its text.`);
     let cleaned = page.text;
     let applicability = page.applicability.map(([from, to]) => squash(cpSlice(page.text, from, to)));
     const remaining = MAX_PDF_TEXT_CHARACTERS - extracted;
     // A page over the cap on its own was stored cut at the cap.
     if (page.overCap || cpLen(cleaned) > remaining) {
       cleaned = cpSlice(cleaned, 0, remaining);
-      applicability = splitlines(cleaned).map(squash).filter(line => APPLICABILITY.test(line));
+      applicability = applicabilityLines(cleaned);
       warnings.push(`Extracted text reached the ${MAX_PDF_TEXT_CHARACTERS}-character parser limit; request a smaller page range.`);
     }
     extracted += cpLen(cleaned);

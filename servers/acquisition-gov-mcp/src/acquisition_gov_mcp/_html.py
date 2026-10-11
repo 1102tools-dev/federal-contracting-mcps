@@ -94,6 +94,11 @@ def _extract_section(node: Tag | BeautifulSoup, section: str | None) -> str:
             raise RuntimeError("The official HTML source contains no extractable content.")
         return text
     needle = section.casefold()
+    # Only a complete section-number query is eligible for prefix removal.
+    # Keep descriptive headings intact and retain the numeric token boundaries.
+    numbered = re.fullmatch(r"(?:(?:far|section)\s+|§\s*)?(\d{1,2}\.\d{3}(?:-\d+)?)", needle)
+    if numbered:
+        needle = numbered.group(1)
     headings = list(node.find_all(re.compile(r"^h[1-6]$")))
     def matches(h):
         text = " ".join(h.get_text(" ", strip=True).split()).casefold()
