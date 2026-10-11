@@ -6,9 +6,9 @@ failed staging/import/promotion. Never targets the opportunities database.
 
 Run only one loader per database (the Actions workflow enforces this). After a
 hard runner termination, orphan stage tables can remain. With no loader active,
-inspect sqlite_master and remove only table names matching the selected kind's
-strict *_stage_[0-9a-f]{12} family. Never delete stable tables or *_previous.
-The capacity guard includes orphan bytes and refuses unsafe two-copy loads.
+inspect sqlite_master and remove only verified leftover staging tables.
+Never delete stable tables or *_previous without inspecting their generation.
+Every reload refuses leftover controlled stage/previous tables before any write.
 """
 import argparse
 import datetime as dt
@@ -32,7 +32,7 @@ WORKER_DIR = ROOT / 'deploy/sam-gov'
 MIN_KEEP_RATIO = 0.6
 MIN_ROWS = {'entities': 100000, 'exclusions': 10000}
 MAX_DATABASE_BYTES = 10_000_000_000
-CHUNK_BYTES = 40_000_000
+CHUNK_BYTES = 8_000_000
 MAX_STATEMENT_BYTES = 90_000
 BASE = 'https://sam.gov/api/prod/fileextractservices/v1/api/'
 DOMAINS = {'entities': 'Entity Registration/Public V2', 'exclusions': 'Exclusions/Public V2'}
@@ -187,7 +187,11 @@ class D1:
         self.target, self.database = target, database
 
     def run(self, *args):
-        result = subprocess.run(['npx','--no-install','wrangler','d1','execute',self.database,f'--{self.target}','--yes',*args],cwd=WORKER_DIR,text=True,check=True,stdout=subprocess.PIPE)
+        result = subprocess.run(['npx','--no-install','wrangler','d1','execute',self.database,f'--{self.target}','--yes',*args],cwd=WORKER_DIR,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        if result.returncode:
+            # Keep CLI output to one readable error; raw imports can contain data.
+            diagnostic = subprocess.CalledProcessError(result.returncode,result.args,output=result.stdout,stderr=result.stderr)
+            raise RuntimeError(f'D1 execute failed (exit {result.returncode}); active data retained if promotion has not completed') from diagnostic
         return result.stdout
 
     def query(self, sql):
@@ -294,7 +298,15 @@ def file_sha256(path):
         return hashlib.file_digest(source,'sha256').hexdigest()
 
 
+def refuse_leftovers(db):
+    pattern = re.compile(r'^(?:entities|entity_naics|entity_business_types|exclusions)_(?:stage_[0-9a-f]{12}|previous(?:_[0-9a-f]{12})?)$')
+    names = sorted(row['name'] for row in db.query("SELECT name FROM sqlite_master WHERE type='table'") if pattern.fullmatch(row['name']))
+    if names:
+        raise ValueError('Reload refused: leftover tables require inspected cleanup: ' + ', '.join(names))
+
+
 def load(db, kind, path, metadata, allow_small=False, prepared=None):
+    refuse_leftovers(db)
     start = time.monotonic()
     if getattr(db,'target',None) == 'remote' and kind == 'exclusions' and not zipfile.is_zipfile(path):
         raise ValueError('Remote exclusions require intact source ZIP; standalone CSV has no full-file count trailer')
@@ -346,15 +358,14 @@ def load(db, kind, path, metadata, allow_small=False, prepared=None):
         try:
             stage_schema = table_sql(kind,suffix)
             db.execute_file([s for s in stage_schema if not s.startswith('CREATE INDEX')])
-            for index,batch in enumerate(chunks(stage_statements(local_path,kind,suffix)),1):
-                print(f'{kind}: importing chunk {index} ({sum(len(s.encode()) for s in batch)} bytes)', file=sys.stderr,flush=True)
-                db.execute_file(batch)
             indexes = [s for s in stage_schema if s.startswith('CREATE INDEX')]
             for index,statement in enumerate(indexes,1):
-                # Bound each D1 import while old and staged copies coexist.
-                # A combined full-entity index import failed backend polling.
+                # Create indexes on empty staging tables, before indexed uploads.
                 print(f'{kind}: building staged index {index}/{len(indexes)}',file=sys.stderr,flush=True)
                 db.execute_file([statement])
+            for index,batch in enumerate(chunks(stage_statements(local_path,kind,suffix)),1):
+                print(f'{kind}: importing indexed chunk {index} ({sum(len(s.encode()) for s in batch)} bytes)', file=sys.stderr,flush=True)
+                db.execute_file(batch)
             staged_count = db.query(f'SELECT COUNT(*) AS n FROM {kind}{suffix}')[0]['n']
             if staged_count != count:
                 raise ValueError('Staged count differs from validated count')
@@ -368,8 +379,11 @@ def load(db, kind, path, metadata, allow_small=False, prepared=None):
             status = dict(kind=kind,**metadata,loaded_at=dt.datetime.now(dt.timezone.utc).isoformat(),row_count=count,sha256=file_sha256(path),database_bytes=size,load_seconds=round(time.monotonic()-start,3))
             status.update(source_rows=int(audit.get('source_rows',count)), rejected_rows=int(audit.get('rejected_rows',0)), opted_out_rows=int(audit.get('opted_out_rows',0)),duplicate_rows=int(audit.get('duplicate_rows',0)))
             db.atomic(promotion_sql(kind,suffix,status))
-        except BaseException:
-            db.execute_file([f'DROP TABLE IF EXISTS {table}{suffix};' for table in tables])
+        except BaseException as failure:
+            try:
+                db.execute_file([f'DROP TABLE IF EXISTS {table}{suffix};' for table in tables])
+            except Exception:
+                failure.add_note('Stage cleanup also failed; the next reload will refuse leftover tables')
             raise
         status['database_bytes'] = db.size()
         status['load_seconds'] = round(time.monotonic()-start,3)
@@ -401,6 +415,7 @@ def main(argv=None):
     if args.target == 'remote' and args.file and not re.fullmatch(PATTERNS[args.kind],args.file_name or args.file.name,re.I):
         parser.error('Remote local-file loads require the expected public ZIP filename (use --file-name for extracted entities)')
     db = D1(args.target,args.database)
+    refuse_leftovers(db)
     db.execute_file([STATUS_SQL])
     output = []
     for kind in ['entities','exclusions'] if args.kind == 'all' else [args.kind]:
@@ -417,4 +432,15 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as failure:
+        message = str(failure)
+        for secret in [os.environ.get('CLOUDFLARE_API_TOKEN'),os.environ.get('CLOUDFLARE_D1_TOKEN')]:
+            if secret:
+                message = message.replace(secret,'[redacted]')
+        message = re.sub(r'\x1b\[[0-9;]*m','',message)
+        message = ' '.join(message.split())[:1000]
+        notes = '; '.join(getattr(failure,'__notes__',[]))
+        print('SAM public load failed: ' + message + ('; '+notes if notes else ''),file=sys.stderr)
+        sys.exit(1)

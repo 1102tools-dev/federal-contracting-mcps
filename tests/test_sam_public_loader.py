@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import sqlite3
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -66,6 +67,10 @@ class Safety(unittest.TestCase):
             if indexes:
                 self.assertEqual(len(statements),1,'D1 index imports must be bounded individually')
                 built.extend(indexes)
+            if any(s.startswith('INSERT INTO exclusions_stage') for s in statements):
+                self.assertEqual(len(built),6,'All staging indexes must precede row uploads')
+                table = self.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'exclusions_stage_%'")[0]['name']
+                self.assertEqual(self.db.query(f'SELECT COUNT(*) n FROM {table}')[0]['n'],0)
             original(statements)
         with patch.object(loader,'prepare',side_effect=self.prepare), patch.object(self.db,'execute_file',side_effect=bounded_import):
             result = loader.load(self.db,'exclusions',self.path,self.metadata,True)
@@ -73,6 +78,75 @@ class Safety(unittest.TestCase):
         self.assertEqual(result['row_count'],1)
         self.assertEqual(self.db.query('SELECT exclusion_id FROM exclusions'),[{'exclusion_id':'new'}])
         self.assertEqual(self.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%stage%'"),[])
+        self.assertEqual(len(self.db.query("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='exclusions' AND sql IS NOT NULL")),6)
+        self.assertEqual(self.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%previous%'"),[])
+    def test_leftover_tables_refuse_all_writes_for_either_kind(self):
+        for table in ['entities','entity_naics','entity_business_types','exclusions']:
+            for suffix in ['_stage_123456abcdef','_previous','_previous_123456abcdef']:
+                name=table+suffix
+                self.db.db.execute(f'CREATE TABLE {name} (id TEXT)')
+                for kind in ['entities','exclusions']:
+                    with self.subTest(name=name,kind=kind), patch.object(self.db,'execute_file') as writes:
+                        with self.assertRaisesRegex(ValueError,name):
+                            loader.load(self.db,kind,self.path,self.metadata,True)
+                        writes.assert_not_called()
+                        self.assertEqual(self.db.query('SELECT exclusion_id FROM exclusions'),[{'exclusion_id':'old'}])
+                self.db.db.execute(f'DROP TABLE {name}')
+    def test_main_leftover_guard_precedes_status_write(self):
+        self.db.db.execute('CREATE TABLE entities_previous (id TEXT)')
+        with patch.object(loader,'D1',return_value=self.db), patch.object(self.db,'execute_file') as writes:
+            with self.assertRaisesRegex(ValueError,'entities_previous'):
+                loader.main(['--local','--kind','exclusions'])
+            writes.assert_not_called()
+    def test_cleanup_failure_preserves_original_error_and_blocks_next_load(self):
+        original=self.db.execute_file
+        def interrupted(statements):
+            if any(s.startswith('INSERT INTO exclusions_stage') for s in statements):
+                raise RuntimeError('original indexed upload failed')
+            if any(s.startswith('DROP TABLE IF EXISTS exclusions_stage') for s in statements):
+                raise RuntimeError('secondary cleanup error')
+            original(statements)
+        with patch.object(loader,'prepare',side_effect=self.prepare), patch.object(self.db,'execute_file',side_effect=interrupted):
+            with self.assertRaisesRegex(RuntimeError,'original indexed upload failed') as caught:
+                loader.load(self.db,'exclusions',self.path,self.metadata,True)
+        self.assertIn('Stage cleanup also failed',caught.exception.__notes__[0])
+        self.assertEqual(self.db.query('SELECT exclusion_id FROM exclusions'),[{'exclusion_id':'old'}])
+        with patch.object(self.db,'execute_file') as writes:
+            with self.assertRaisesRegex(ValueError,'leftover tables'):
+                loader.load(self.db,'exclusions',self.path,self.metadata,True)
+            writes.assert_not_called()
+    def test_indexed_chunks_have_smaller_bound(self):
+        self.assertLessEqual(loader.CHUNK_BYTES,8_000_000)
+        statements=['X'*80_000]*120
+        batches=list(loader.chunks(iter(statements)))
+        self.assertGreater(len(batches),1)
+        self.assertTrue(all(sum(len(s.encode())+1 for s in batch)<=loader.CHUNK_BYTES for batch in batches))
+    def test_entity_indexes_and_child_indexes_precede_first_upload(self):
+        original=self.db.execute_file
+        started=False
+        def check_upload(statements):
+            nonlocal started
+            if any(s.startswith('INSERT INTO entities_stage') for s in statements):
+                started=True
+                tables=self.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%stage%'")
+                for table in tables:
+                    self.assertEqual(self.db.query(f"SELECT COUNT(*) n FROM {table['name']}")[0]['n'],0)
+                indexes=self.db.query("SELECT name FROM sqlite_master WHERE type='index' AND sql IS NOT NULL AND tbl_name LIKE '%stage%'")
+                self.assertEqual(len(indexes),10)
+            original(statements)
+        row=dict(uei='DJFGWZADMU16',cage_code='5QRC1',legal_business_name='CITY',naics_codes=['541611'],business_type_codes=['A2'],sba_business_type_codes=[])
+        with patch('sam_entity_extract.iter_rows',return_value=iter([row])),patch.object(self.db,'execute_file',side_effect=check_upload):
+            loader.load(self.db,'entities',self.path,self.metadata,True)
+        self.assertTrue(started)
+        self.assertEqual(self.db.query('SELECT COUNT(*) n FROM entity_naics')[0]['n'],1)
+        self.assertEqual(self.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%previous%'"),[])
+    def test_backend_failure_keeps_diagnostic_cause_out_of_readable_error(self):
+        response=subprocess.CompletedProcess(['wrangler'],1,'private stdout','private stderr')
+        with patch.object(loader.subprocess,'run',return_value=response):
+            with self.assertRaisesRegex(RuntimeError,'D1 execute failed') as caught:
+                loader.D1('remote','sam-gov-entities').run('--command','SELECT 1')
+        self.assertEqual(caught.exception.__cause__.stderr,'private stderr')
+        self.assertNotIn('private',str(caught.exception))
     def test_middle_staged_index_failure_preserves_previous_data_and_status(self):
         self.db.db.execute("INSERT INTO extract_status (kind,file_name,file_date,source_url,loaded_at,row_count,sha256,database_bytes,load_seconds) VALUES ('exclusions','previous.zip','2026-10-09','public','then',1,'hash',1,1)")
         self.db.db.commit()
