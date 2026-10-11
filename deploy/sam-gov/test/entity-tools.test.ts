@@ -62,10 +62,10 @@ test("local shared filters combine and distinguish primary from any NAICS", asyn
   assert.equal((await searchEntities(db, {registration_status: "E", legal_business_name: "Alpha"})).totalRecords, 1);
 });
 
-test("name partial matching treats SQL wildcard characters literally", async () => {
+test("name matching removes punctuation without interpreting SQL wildcards", async () => {
   const {db} = database();
   assert.equal((await searchEntities(db, {legal_business_name: "100%"})).totalRecords, 1);
-  assert.equal((await searchEntities(db, {legal_business_name: "Alpha_"})).totalRecords, 1);
+  assert.equal((await searchEntities(db, {legal_business_name: "Alpha_"})).totalRecords, 2);
   assert.equal((await searchEntities(db, {legal_business_name: "' OR 1=1 --"})).totalRecords, 0);
 });
 

@@ -1,3 +1,4 @@
+import {namePredicate, possibleNameMatches} from "./name-matching.ts";
 import type {Database} from "./public-types.ts";
 import {ToolError} from "./public-types.ts";
 import {BUSINESS, SBA, COMMON_BUSINESS_CODES} from "./entity-business-codes.ts";
@@ -17,7 +18,7 @@ export const ENTITY_TOOL = {
     type: "object", properties: {
       uei: {type: "string", pattern: "^[A-Za-z0-9]{12}$", description: "Exact 12-character UEI."},
       cage_code: {type: "string", pattern: "^[A-Za-z0-9]{5}$", description: "Exact 5-character CAGE code."},
-      legal_business_name: stringField("Partial legal business name match; no relevance ranking."),
+      legal_business_name: stringField("Partial legal or DBA name; punctuation, spacing, ampersands and common company suffixes are normalized. Zero results include separately labeled possible name matches; names alone do not confirm identity."),
       primary_naics: {anyOf: [{type: "string", pattern: "^[0-9]{2,6}$"}, {type: "integer"}], description: "Designated primary NAICS, 2-6 digits."},
       any_naics: {anyOf: [{type: "string", pattern: "^[0-9]{2,6}$"}, {type: "integer"}], description: "Any listed NAICS, 2-6 digits."},
       state_code: {type: "string", pattern: "^[A-Za-z]{2}$", description: "Physical address state, 2-letter USPS code."},
@@ -111,7 +112,7 @@ export async function searchEntities(db: Database, args: Args) {
   if (args.cage_code !== undefined && !cage) throw new ToolError("cage_code cannot be empty.");
   exact("e.uei", uei); exact("e.cage_code", cage);
   const name = text(args, "legal_business_name");
-  if (name) {where.push("instr(lower(e.legal_business_name), lower(?)) > 0"); params.push(name);}
+  const nameFilter = name ? namePredicate(["e.legal_business_name", "e.dba_name"], name) : undefined;
   exact("e.primary_naics", naics(args, "primary_naics"));
   const anyNaics = naics(args, "any_naics");
   if (anyNaics) {where.push("e.entity_id IN (SELECT entity_id FROM entity_naics WHERE code = ?)"); params.push(anyNaics);}
@@ -133,6 +134,9 @@ export async function searchEntities(db: Database, args: Args) {
   if (!Array.isArray(requested) || requested.some(s => typeof s !== "string" || !["entityRegistration", "coreData", "assertions", "All"].includes(s))) throw new ToolError("include_sections supports only public entityRegistration, coreData, assertions, or All.");
   const sections = new Set<string>(requested.includes("All") ? ["entityRegistration", "coreData", "assertions"] : requested as string[]);
   // One SQL statement gives rows, total and provenance the same snapshot during swaps.
+  const baseWhere = [...where];
+  const baseParams = [...params];
+  if (nameFilter) {where.push(nameFilter.sql); params.push(...nameFilter.values);}
   const clause = " WHERE " + [...where, "NOT EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='entities' AND state='applying')"].join(" AND ");
   const columns = ["entity_id", "uei", "cage_code", "legal_business_name", "dba_name", "registration_status",
     "purpose_of_registration", "registration_date", "activation_date", "expiration_date", "last_update_date",
@@ -140,12 +144,25 @@ export async function searchEntities(db: Database, args: Args) {
     "city", "state", "zip_code", "country", "primary_naics", "entity_structure", "entity_url",
     "naics_codes_json", "business_type_codes_json", "sba_business_type_codes_json", "record_json"];
   const projection = columns.map(column => `'${column}', ${column}`).join(", ");
-  const {results} = await db.prepare(`WITH matches AS NOT MATERIALIZED (SELECT e.* FROM entities e${clause}),
+  let queryParams = params;
+  let matching = `matches AS NOT MATERIALIZED (SELECT e.* FROM entities e${clause})`;
+  if (name) {
+    const legal = namePredicate(["e.legal_business_name"], name), dba = namePredicate(["e.dba_name"], name);
+    const stable = "NOT EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='entities' AND state='applying')";
+    const legalClause = [...baseWhere, legal.sql, stable].join(" AND ");
+    const dbaClause = [...baseWhere, "e.dba_name IS NOT NULL", "e.dba_name <> ''", dba.sql, stable].join(" AND ");
+    matching = `matched_keys AS MATERIALIZED (
+      SELECT e.rowid AS matched_rowid FROM entities e WHERE ${legalClause}
+      UNION SELECT e.rowid AS matched_rowid FROM entities e ${uei || cage ? "" : "INDEXED BY entities_dba_name"} WHERE ${dbaClause}),
+      matches AS NOT MATERIALIZED (SELECT e.* FROM entities e WHERE e.rowid IN (SELECT matched_rowid FROM matched_keys))`;
+    queryParams = [...baseParams, ...legal.values, ...baseParams, ...dba.values];
+  }
+  const {results} = await db.prepare(`WITH ${matching},
     selected AS (SELECT * FROM matches ORDER BY legal_business_name COLLATE NOCASE, uei, entity_id LIMIT ? OFFSET ?)
     SELECT (SELECT COUNT(*) FROM matches) AS total_records,
     (SELECT json_group_array(json_object(${projection})) FROM selected) AS records,
     EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='entities' AND state='applying') AS refreshing,
-    s.* FROM extract_status s WHERE s.kind = 'entities'`).bind(...params, size, page * size).all<Row>();
+    s.* FROM extract_status s WHERE s.kind = 'entities'`).bind(...queryParams, size, page * size).all<Row>();
   const snapshot = results[0];
   if (snapshot?.refreshing) throw new ToolError("SAM.gov public entity data is refreshing. Retry later; confirm current registration on SAM.gov.");
   const quarantined = Number(snapshot?.quarantined_rows ?? snapshot?.rejected_rows ?? 0);
@@ -157,5 +174,10 @@ export async function searchEntities(db: Database, args: Args) {
   };
   if (!snapshot?.file_date) return {status: "not_loaded", totalRecords: 0, entityData: [], page, size, ...provenance};
   const rows: Row[] = JSON.parse(snapshot.records);
-  return {totalRecords: snapshot.total_records, entityData: rows.map(row => entity(row, sections)), page, size, ...provenance};
+  const possible = name && snapshot.total_records === 0 ? await possibleNameMatches(db, {
+    table: "entities", kind: "entities", columns: ["legal_business_name", "dba_name"],
+    projection: ["entity_id", "uei", "cage_code", "legal_business_name", "dba_name", "state", "city", "zip_code", "address_line_1"],
+    where: baseWhere.map(w => w.replaceAll("e.", "")), values: baseParams, query: name, snapshot,
+  }) : {};
+  return {...possible, totalRecords: snapshot.total_records, entityData: rows.map(row => entity(row, sections)), page, size, ...provenance};
 }

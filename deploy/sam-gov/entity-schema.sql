@@ -8,6 +8,7 @@ CREATE INDEX IF NOT EXISTS entities_3 ON entities (state);
 CREATE INDEX IF NOT EXISTS entities_4 ON entities (primary_naics);
 CREATE INDEX IF NOT EXISTS entities_7 ON entity_naics (code);
 CREATE INDEX IF NOT EXISTS entities_8 ON entity_business_types (code,kind);
+CREATE INDEX IF NOT EXISTS entities_dba_name ON entities (dba_name, registration_status, entity_id) WHERE dba_name IS NOT NULL AND dba_name<>'';
 CREATE INDEX IF NOT EXISTS entities_status_name ON entities (registration_status, legal_business_name COLLATE NOCASE, uei, entity_id);
 CREATE TABLE IF NOT EXISTS exclusions (exclusion_id TEXT PRIMARY KEY NOT NULL, uei TEXT, cage_code TEXT, name TEXT, first_name TEXT, middle_name TEXT, last_name TEXT, suffix TEXT, classification TEXT, exclusion_type TEXT, exclusion_program TEXT, excluding_agency_code TEXT, excluding_agency_name TEXT, record_status TEXT, activation_date TEXT, termination_date TEXT, creation_date TEXT, last_update_date TEXT, address_line_1 TEXT, address_line_2 TEXT, city TEXT, state TEXT, zip_code TEXT, country TEXT, description TEXT, record_json TEXT);
 CREATE INDEX IF NOT EXISTS exclusions_0 ON exclusions (uei);
