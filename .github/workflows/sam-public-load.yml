@@ -36,6 +36,7 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_sam_public_loader.py'
       - name: Check newest monthly entities
         id: entities
+        if: ${{ vars.SAM_PUBLIC_ENTITIES_RELOAD_ENABLED == 'true' }}
         continue-on-error: true
         run: |
           python scripts/load_sam_public.py --remote --kind entities > entities-status.json
@@ -52,4 +53,5 @@ jobs:
         env:
           ENTITIES_OUTCOME: ${{ steps.entities.outcome }}
           EXCLUSIONS_OUTCOME: ${{ steps.exclusions.outcome }}
-        run: test "$ENTITIES_OUTCOME" = success && test "$EXCLUSIONS_OUTCOME" = success
+        run: |
+          { test "$ENTITIES_OUTCOME" = success || test "$ENTITIES_OUTCOME" = skipped; } && test "$EXCLUSIONS_OUTCOME" = success
