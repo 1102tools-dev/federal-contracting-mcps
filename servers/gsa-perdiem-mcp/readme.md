@@ -82,9 +82,9 @@ Use the configuration below as the server definition and adapt its placement to 
 }
 ```
 
-The server defaults `FEDERAL_API_MIN_INTERVAL_SECONDS` to `4` for keyed
-requests. The explicit value above documents the intended policy
-and can be changed when you have a documented reason. Per Diem and
+The server defaults `FEDERAL_API_MIN_INTERVAL_SECONDS` to `0.6` for keyed
+requests and caps them at 950 per hour. The example above sets a slower
+`4`; either works. Per Diem and
 Regulations.gov processes using the same `api.data.gov` key share the gate.
 
 **No-key setup** (bundled ZIP, state, M&IE, and city-plus-county lookups, estimates and comparisons work):

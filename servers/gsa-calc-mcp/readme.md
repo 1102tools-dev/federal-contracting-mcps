@@ -39,7 +39,7 @@ Exposes the GSA CALC+ API as 8 MCP tools:
 
 ## No authentication required
 
-The GSA CALC+ API is public. GSA does not publish a numeric limit for this endpoint. The MCP applies a provisional 3-second cross-process anti-burst interval by default.
+The GSA CALC+ API is public. GSA does not publish a numeric limit for this endpoint. The MCP paces itself: at most 500 requests per rolling hour, 0.6 seconds between starts and two in flight.
 
 ## Installation
 

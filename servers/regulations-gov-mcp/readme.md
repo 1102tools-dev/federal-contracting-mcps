@@ -37,6 +37,9 @@ Exposes the Regulations.gov API plus a credential-readiness check as 9 MCP tools
 - `open_comment_periods` - Currently open comment periods across procurement agencies
 - `far_case_history` - Summary of a FAR/DFARS rulemaking case with its documents, paged
 
+**Setup**
+- `get_access_status` - Check whether an API key is configured, without revealing it
+
 ## API key (required)
 
 This server calls `api.regulations.gov`, which requires an api.data.gov key:
