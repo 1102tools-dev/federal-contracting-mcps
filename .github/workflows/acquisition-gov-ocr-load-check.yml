@@ -1,0 +1,50 @@
+name: Acquisition.gov experimental OCR load check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Shares the existing loader's lock; never publishes concurrently with nightly.
+concurrency:
+  group: acquisition-gov-load
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: sam-data-load
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 846d3e41e48446abcd3570c0959f9fb5
+      CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - name: Check existing D1 credential
+        run: test -n "$CLOUDFLARE_D1_TOKEN"
+      - name: Normal incremental load with experimental OCR on affected PDFs
+        run: |
+          uv run --frozen --python 3.12 --project servers/acquisition-gov-mcp \
+            --with 'rapidocr==3.10.0' --with 'onnxruntime>=1.20,<2' --with 'pypdfium2>=4.30,<6' \
+            python scripts/check_acquisition_gov_ocr_load.py \
+            --output "$RUNNER_TEMP/acquisition-ocr-check" \
+            --revalidate-url 'https://www.acquisition.gov/sites/default/files/page_file_uploads/GSA_RFO_Deviation_Part-8_Supplement-1.pdf' \
+            --revalidate-url 'https://www.acquisition.gov/sites/default/files/page_file_uploads/GSA_RFO_FSS-Ordering-Procedures_538.pdf' \
+            --revalidate-url 'https://www.acquisition.gov/sites/default/files/page_file_uploads/NASA_RFO_Deviation_Part-39.pdf'
+      - name: Report timings and stored outcomes
+        if: always()
+        run: |
+          if test -f "$RUNNER_TEMP/acquisition-ocr-check/receipt.json"; then
+            { echo '```json'; cat "$RUNNER_TEMP/acquisition-ocr-check/receipt.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: acquisition-gov-ocr-load-check
+          path: ${{ runner.temp }}/acquisition-ocr-check/
+          if-no-files-found: warn
