@@ -134,4 +134,15 @@ class Incremental(unittest.TestCase):
         self.assertNotIn('entity_id=',sql[0].split(' WHERE ')[0])
 
 
+    def test_exclusions_daily_budget_accumulates_across_runs(self):
+        rows=[{'exclusion_id':'SAM0001','name':'Example','record_json':{'entityName':'Example'}}]
+        self.seed('exclusions',rows)
+        self.run_load('exclusions',[dict(rows[0],name='First')])
+        first=self.db.query('SELECT units FROM public_daily_budget')[0]['units']
+        self.run_load('exclusions',[dict(rows[0],name='Second')])
+        second=self.db.query('SELECT units FROM public_daily_budget')[0]['units']
+        self.assertGreater(first,0)
+        self.assertGreater(second,first)
+
+
 if __name__=='__main__':unittest.main()
