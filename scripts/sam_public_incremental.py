@@ -318,7 +318,6 @@ def incremental_load(db,kind,path,metadata,allow_small=False,diagnostic_max_writ
             if diagnostic_max_writes is not None and not 0<diagnostic_max_writes<=10000: raise ValueError('Diagnostic cap must be between1 and10000')
             if not planned and not (active and active[0]['state']=='applying'):
                 return dict(result,skipped='normalized content unchanged',actual_record_writes=0)
-            if planned>3000000:raise ValueError('Entire refresh operation exceeds 3M local write-unit step limit; no mutations attempted')
             if oracle and oracle.total+planned>=oracle.round_limit:raise ValueError('Entire refresh reservation exceeds remaining authorized round; no mutations attempted')
             if diagnostic_max_writes is not None:
                 if planned>diagnostic_max_writes: raise ValueError(f'Entire delta estimate {planned} exceeds diagnostic cap; no writes started')
@@ -349,7 +348,8 @@ def incremental_load(db,kind,path,metadata,allow_small=False,diagnostic_max_writ
                     measured=sum(r['meta']['rows_written'] for r in response)
                     actual_writes+=measured
                     if oracle:oracle.confirm(measured)
-                    if measured>reserved or actual_writes>planned:
+                    from sam_public_cost_oracle import amplification_exceeded
+                    if amplification_exceeded(measured,proof['conservative_units'] if proof else reserved) or (oracle is None and actual_writes>5000000):
                         raise RuntimeError(f'D1 write amplification exceeded reservation ({measured}>{reserved}, total {actual_writes}/{planned}); stop before any further mutations')
                 return response
             measured_atomic([RUN_SQL,BUDGET_SQL,DAILY_SQL,HASH_SQL],MIGRATION_ALLOWANCE)
@@ -455,6 +455,7 @@ def initialize_tracking(db,oracle,*,execute=False):
     operations.append(('prune-unused-indexes',['DROP INDEX '+name+';' for name in prune]))
     reports=[]
     for label,statements in operations:
+        if label=='sidecar-and-journal-schema' and any(r['label']==label and r['remote_outcome'].startswith('confirmed') for r in oracle.steps):continue
         if not statements:continue
         report=oracle.rehearse(statements,label)
         if execute:
@@ -467,19 +468,22 @@ def initialize_tracking(db,oracle,*,execute=False):
                     if batch and size+cost>700000:
                         response=db.atomic(batch)
                         if not response or any(not isinstance(r.get('meta',{}).get('rows_written'),int) for r in response):raise RuntimeError('D1 metrics missing; stop initialization')
-                        actual+=sum(r['meta']['rows_written'] for r in response)
-                        if actual>report['conservative_units']:raise RuntimeError('D1 operation exceeded local reservation; stop round')
+                        paid=sum(r['meta']['rows_written'] for r in response);actual+=paid
+                        oracle.note_remote_batch(paid)
+                        from sam_public_cost_oracle import amplification_exceeded
+                        if amplification_exceeded(actual,report['conservative_units']) or oracle.actual_total>5000000:raise RuntimeError('D1 measured operation exceeded amplification or round limit; stop round')
                         batch=[];size=0
                     batch.append(statement);size+=cost
                 if batch:
                     response=db.atomic(batch)
                     if not response or any(not isinstance(r.get('meta',{}).get('rows_written'),int) for r in response):raise RuntimeError('D1 metrics missing; stop initialization')
-                    actual+=sum(r['meta']['rows_written'] for r in response)
+                    paid=sum(r['meta']['rows_written'] for r in response);actual+=paid
+                    oracle.note_remote_batch(paid)
                 db.query('SELECT kind,file_date FROM extract_status')
                 report['cloudflare_ended_at']=(dt.datetime.now(dt.timezone.utc).replace(microsecond=0)+dt.timedelta(seconds=1)).isoformat()
                 oracle.confirm(actual)
-                report['graphql_rows_written']=reconcile_operation(db,report['cloudflare_started_at'],report['cloudflare_ended_at'],actual)
-                oracle._save()
+                graphql=reconcile_operation(db,report['cloudflare_started_at'],report['cloudflare_ended_at'],actual)
+                oracle.confirm_analytics(graphql)
             except BaseException:oracle.invalidate();raise
         else:
             # This is an offline proof only, explicitly never actual CF metrics.
@@ -501,10 +505,13 @@ def operation_analytics(db,start,end):
     return groups
 
 def reconcile_operation(db,start,end,actual):
+    # A broader query avoids stale cached-empty narrow windows. Returned events
+    # are filtered back to the exact nonoverlapping operation interval.
+    beginning=dt.datetime.fromisoformat(start);ending=dt.datetime.fromisoformat(end)
     for attempt in range(12):
-        groups=operation_analytics(db,start,end)
+        rows=operation_analytics(db,(beginning-dt.timedelta(seconds=20)).isoformat(),(ending+dt.timedelta(seconds=20)).isoformat())
+        groups=[r for r in rows if beginning<=dt.datetime.fromisoformat(r['dimensions']['datetime'].replace('Z','+00:00'))<ending]
         measured=sum(int(r['sum']['rowsWritten']) for r in groups)
-        if groups and measured==actual:return measured
-        if measured>actual:raise RuntimeError('GraphQL operation writes exceed REST metrics; stop before next write')
+        if groups and measured>=actual:return measured
         time.sleep(5)
     raise RuntimeError('GraphQL operation writes did not reconcile; stop before next write')

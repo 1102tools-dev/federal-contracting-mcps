@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '45 10 * * *'
   workflow_dispatch:
+    inputs:
+      credential_check_only:
+        description: Test existing analytics and D1 credential without loading data
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -37,22 +42,25 @@ jobs:
           python -m unittest discover -s tests -p 'test_sam_public_loader.py'
           python -m unittest discover -s tests -p 'test_sam_public_incremental.py'
           python -m unittest discover -s tests -p 'test_sam_public_cost.py'
+      - name: Verify read-only account budget access
+        run: |
+          python -c "import sys; sys.path.insert(0,'scripts'); from sam_public_incremental import billing_period,account_month_written; period=billing_period(); print('Billing period:',period); print('Account written rows:',account_month_written(period))"
       - name: Check newest monthly entities
         id: entities
-        if: ${{ vars.SAM_PUBLIC_ENTITIES_RELOAD_ENABLED == 'true' }}
+        if: ${{ vars.SAM_PUBLIC_ENTITIES_RELOAD_ENABLED == 'true' && !inputs.credential_check_only }}
         continue-on-error: true
         run: |
           python scripts/load_sam_public.py --remote --kind entities --cost-report-directory entities-cost-report > entities-status.json
           { echo '### Entities'; echo '```json'; cat entities-status.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Load newest daily exclusions
         id: exclusions
-        if: always()
+        if: always() && !inputs.credential_check_only
         continue-on-error: true
         run: |
           python scripts/load_sam_public.py --remote --kind exclusions --cost-report-directory exclusions-cost-report > exclusions-status.json
           { echo '### Exclusions'; echo '```json'; cat exclusions-status.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Require both loads to succeed
-        if: always()
+        if: always() && !inputs.credential_check_only
         env:
           ENTITIES_OUTCOME: ${{ steps.entities.outcome }}
           EXCLUSIONS_OUTCOME: ${{ steps.exclusions.outcome }}
