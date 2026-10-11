@@ -29,9 +29,6 @@ dependencies = [
     "mcp>=2,<3",
     "platformdirs>=4",
     "pypdf>=5,<7",
-    "pypdfium2>=4.30,<6",
-    "rapidocr>=3.10,<4",
-    "onnxruntime>=1.20,<2",
 ]
 
 [project.urls]

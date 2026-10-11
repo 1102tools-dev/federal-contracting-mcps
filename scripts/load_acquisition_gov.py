@@ -161,9 +161,9 @@ def parse_pdf(body: bytes, source_url: str | None = None) -> dict:
         # flags. Preserve recovery disclosure in the already-visible page body
         # and suppress incomplete rule fragments when outlined words are lost.
         if any("contains outlined text that could not be recovered" in w for w in warnings):
-            failure = "OutlinedTextRecoveryError"
             link = f"Read the official PDF: {source_url}" if source_url else "Open the official PDF using the source_url link in this tool response."
-            text = f"[Parser notice: Important words drawn as outlines could not be extracted on page {number}; rules may be missing. {link}]"
+            failure = f"Important words drawn as outlines could not be extracted; rules may be missing. {link}"
+            text = ""
         else:
             notices = [w for w in warnings if "text was recovered with OCR" in w]
             if notices:
@@ -790,10 +790,11 @@ def agency_table(parts: list) -> list:
 
 
 class Loader:
-    def __init__(self, db, fetcher: Fetcher, revalidate: int = 100, full: bool = False, log=print, now=None, reparse: bool = False):
+    def __init__(self, db, fetcher: Fetcher, revalidate: int = 100, full: bool = False, log=print, now=None, reparse: bool = False, revalidate_urls: tuple[str, ...] = ()):
         self.db, self.fetcher, self.revalidate, self.full, self.log = db, fetcher, revalidate, full, log
         self.now = now or (lambda: dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat())
         self.reparse = reparse or fetcher.reparse
+        self.revalidate_urls = tuple(dict.fromkeys(revalidate_urls))
         self.generation = None
         self.parsers = asyncio.Semaphore(2)
         self.pending: list[asyncio.Task] = []
@@ -882,6 +883,9 @@ class Loader:
             raise Abort(f"Index not parseable; stopping without switching snapshots: {info['error']}")
         deviations = self.db.query("SELECT url FROM index_deviations WHERE doc = ? ORDER BY seq", [index_row["doc"]])
         urls = list(dict.fromkeys(r["url"] for r in deviations))
+        unknown_forced = set(self.revalidate_urls) - set(urls)
+        if unknown_forced:
+            raise Abort(f"Forced recheck URL is not in the current official index: {sorted(unknown_forced)[0]}")
         old_count = sum(1 for k in previous_sources if k.startswith("pdf:"))
         if old_count and len(urls) < MIN_KEEP_RATIO * old_count:
             raise Abort(f"The index lists {len(urls)} deviation PDFs but the current snapshot has {old_count}; stopping.")
@@ -905,12 +909,17 @@ class Loader:
         done = {k for k, r in staged.items() if not self.reparse and k.startswith("pdf:")
                 and r["retrieved_at"] >= cutoff and r["error"] is None
                 and r["doc"] == doc_id("pdf", r["content_sha256"])}
+        done -= {f"pdf:{url}" for url in self.revalidate_urls}
         wanted = [u for u in urls if f"pdf:{u}" not in done]
         new = [u for u in wanted if f"pdf:{u}" not in previous_sources
                or previous_sources[f"pdf:{u}"]["error"]
                or staged.get(f"pdf:{u}", {}).get("error")]
         known = sorted((u for u in wanted if u not in set(new)), key=lambda u: previous_sources[f"pdf:{u}"]["retrieved_at"])
-        fetch = new + (known if self.full or self.reparse else known[:self.revalidate])
+        forced = [url for url in known if url in self.revalidate_urls]
+        ordinary = [url for url in known if url not in self.revalidate_urls]
+        fetch = new + (known if self.full or self.reparse else forced + ordinary[:self.revalidate])
+        if self.revalidate_urls:
+            self.counts["forced_rechecks"] = len(forced) + sum(url in self.revalidate_urls for url in new)
         self.log(f"PDFs: {len(new)} new or failed, {len(fetch) - len(new)} rechecked, {len(done)} already staged")
         for i, url in enumerate(fetch, 1):
             fetched = await self.fetcher.fetch(url, PDF)
@@ -1012,6 +1021,7 @@ def main(argv=None):
     parser.add_argument("--record", type=Path, help="also save every raw response here")
     parser.add_argument("--replay", type=Path, help="use responses saved by --record; no network")
     parser.add_argument("--revalidate", type=int, default=100, help="also recheck this many least recently fetched PDFs")
+    parser.add_argument("--revalidate-url", action="append", default=[], help="also force this indexed PDF through download and parsing; repeat for selected validation samples")
     parser.add_argument("--full", action="store_true", help="recheck every PDF (an opt-in raw cache skips unchanged validator-backed bodies)")
     parser.add_argument("--raw-cache", type=Path, help="opt-in local raw response cache (recording format); serving cache is unchanged")
     parser.add_argument("--reparse", action="store_true", help="force extraction of every stored raw resource, without upstream network")
@@ -1043,7 +1053,7 @@ def main(argv=None):
     fetcher = Fetcher(Recorder(args.record) if args.record else None, Recorder(args.replay) if args.replay else None,
                       raw_cache=Recorder(args.raw_cache) if args.raw_cache else None, reparse=args.reparse)
     fetcher.allow_missing = args.allow_missing
-    stats = asyncio.run(Loader(db, fetcher, revalidate=args.revalidate, full=args.full or bool(args.replay), reparse=args.reparse,
+    stats = asyncio.run(Loader(db, fetcher, revalidate=args.revalidate, full=args.full or bool(args.replay), reparse=args.reparse, revalidate_urls=tuple(args.revalidate_url),
                                log=lambda m: print(m, file=sys.stderr, flush=True)).run())
     print(json.dumps(stats, indent=2))
 

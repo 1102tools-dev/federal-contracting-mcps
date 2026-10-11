@@ -2,7 +2,7 @@
 
 ## 1.0.14 — 2026-10-11
 
-- Recover outlined PDF text and use current revision dates instead of superseded cover dates.
+- Use current PDF revision dates and warn with the official PDF link when outlined text cannot be extracted.
 
 ## 1.0.13 — 2026-10-10
 

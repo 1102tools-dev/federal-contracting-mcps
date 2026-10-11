@@ -31,18 +31,14 @@ def test_snapshot_date_clusters_do_not_cross_a_page_boundary():
     assert dates[1][0] == len(cover) + 1
 
 
-def test_snapshot_discloses_ocr_recovery_in_visible_page_body(monkeypatch):
-    warning = ('Page 1 text was recovered with OCR because visible letters are drawn as outlines. '
-               'OCR may include struck-through or superseded wording; check additions and deletions in the official PDF before relying on quotations.')
-
-    def recovered(body, start, end):
-        return ['[Page 1]\nOFPP-designated “Required Use” contracts mandatory.', 'complete', [warning], {}, 1, 1]
-
-    monkeypatch.setattr(loader, 'read_pdf', recovered)
-    page = loader.parse_pdf(b'saved fixture')['pages'][0]
-    assert page['failure'] is None
-    assert page['text'].startswith(f'[Parser notice: {warning}]\n')
-    assert 'OFPP-designated “Required Use” contracts mandatory.' in page['text']
+def test_saved_gsa_incomplete_rules_are_replaced_with_explanation_and_official_link():
+    source_url = 'https://www.acquisition.gov/sites/default/files/page_file_uploads/GSA_RFO_Deviation_Part-8_Supplement-1.pdf'
+    parsed = loader.parse_pdf((FIXTURES / 'gsa-part8-supplement1.pdf').read_bytes(), source_url=source_url)
+    assert len(parsed['pages']) == 2
+    for page in parsed['pages']:
+        assert 'Important words drawn as outlines could not be extracted' in page['failure']
+        assert f'Read the official PDF: {source_url}' in page['failure']
+        assert page['text'] == '', 'empty extraction makes the existing Worker report an incomplete status'
 
 
 @pytest.mark.parametrize('source_url', [None, 'https://www.acquisition.gov/sites/default/files/page_file_uploads/GSA_RFO_Deviation_Part-8_Supplement-1.pdf'])
@@ -54,14 +50,13 @@ def test_snapshot_missing_outlined_words_explain_failure_and_link_to_official_pd
 
     monkeypatch.setattr(loader, 'read_pdf', missing)
     page = loader.parse_pdf(b'saved fixture', source_url=source_url)['pages'][0]
-    assert page['failure'] == 'OutlinedTextRecoveryError'
-    assert 'Important words drawn as outlines could not be extracted on page 1' in page['text']
-    assert 'rules may be missing' in page['text']
-    assert 'Makes the use of OFPP-' not in page['text']
+    assert 'Important words drawn as outlines could not be extracted' in page['failure']
+    assert 'rules may be missing' in page['failure']
+    assert page['text'] == '', 'the malformed rule fragment must not be served'
     if source_url:
-        assert f'Read the official PDF: {source_url}' in page['text']
+        assert f'Read the official PDF: {source_url}' in page['failure']
     else:
-        assert 'source_url link in this tool response' in page['text']
+        assert 'source_url link in this tool response' in page['failure']
 
 
 def test_snapshot_storage_supplies_final_pdf_url_to_failure_notice(tmp_path, monkeypatch):
@@ -87,6 +82,6 @@ def test_snapshot_storage_supplies_final_pdf_url_to_failure_notice(tmp_path, mon
     row = asyncio.run(instance.store(snapshot, 'pdf:posted-link', fetched, 'agency-deviation', 'pdf'))
     page = db.query('SELECT body,failure FROM pages WHERE doc=?', [row['doc']])[0]
     assert row['doc'] == loader.doc_id('pdf', fetched['sha256']), 'the explanatory URL must not change content identity'
-    assert page['failure'] == 'OutlinedTextRecoveryError'
-    assert f'Read the official PDF: {final_url}' in page['body']
-    assert 'Incomplete contract rule.' not in page['body']
+    assert 'Important words drawn as outlines could not be extracted' in page['failure']
+    assert f'Read the official PDF: {final_url}' in page['failure']
+    assert page['body'] == '', 'only the explanatory failure warning may reach the hosted response'
