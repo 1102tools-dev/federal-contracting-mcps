@@ -1,6 +1,6 @@
 # gsa-calc-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 443](https://img.shields.io/badge/regression%20tests-443-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![tested](https://img.shields.io/badge/tested-testing%20record-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/gsa-calc-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the GSA CALC+ Labor Ceiling Rates API. Query aw
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*443 regression tests, including live checks against the GSA CALC+ API. The October 2026 releases were also checked with realistic pricing questions (IGCE benchmarks, price checks, vendor rate cards, exact-title lookups). See [testing.md](testing.md).*
+*Regression tests, including live checks against the GSA CALC+ API. The October 2026 releases were also checked with realistic pricing questions (IGCE benchmarks, price checks, vendor rate cards, exact-title lookups). See [testing.md](testing.md).*
 
 ## Local or hosted
 

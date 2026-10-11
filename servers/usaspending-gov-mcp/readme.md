@@ -1,6 +1,6 @@
 # usaspending-gov-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![regression tests: 2,322](https://img.shields.io/badge/regression%20tests-2%2C322-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 55](https://img.shields.io/badge/tools-55-007a59)](#what-it-does) [![tested](https://img.shields.io/badge/tested-testing%20record-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
@@ -8,7 +8,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*2,322 regression tests, including live checks against the USAspending API. The October 2026 releases were also checked with realistic contracting questions across all 55 tools (award histories, fiscal-year totals, subcontract reports, federal accounts). See [testing.md](testing.md).*
+*Regression tests, including live checks against the USAspending API. The October 2026 releases were also checked with realistic contracting questions across all 55 tools (award histories, fiscal-year totals, subcontract reports, federal accounts). See [testing.md](testing.md).*
 
 ## Local or hosted
 

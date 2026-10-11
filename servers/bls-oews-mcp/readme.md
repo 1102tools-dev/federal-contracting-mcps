@@ -1,6 +1,6 @@
 # bls-oews-mcp
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![regression tests: 298](https://img.shields.io/badge/regression%20tests-298-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 8](https://img.shields.io/badge/tools-8-007a59)](#what-it-does) [![tested](https://img.shields.io/badge/tested-testing%20record-007a59)](testing.md)
 
 <!-- mcp-name: com.1102tools/bls-oews-mcp -->
 
@@ -10,7 +10,7 @@ No API key and no daily limit. The package bundles the current OEWS release (May
 
 When BLS publishes no number for a wage measure, answers keep the BLS footnote that explains why and suggest the published hourly or annual alternative. Top-coded wages keep BLS's published lower bound; the server does not invent an exact wage or annualize hourly-only occupations.
 
-*298 regression tests, and realistic contracting wage questions checked against BLS source values before release. See [testing.md](testing.md).*
+*Regression tests, and realistic contracting wage questions checked against BLS source values before release. See [testing.md](testing.md).*
 
 ## Local or hosted
 
