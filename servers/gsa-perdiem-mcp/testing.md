@@ -27,7 +27,7 @@ MCP_LIVE_TESTS=1 PERDIEM_API_KEY=your-key uv run pytest         # add live tests
 MCP_LIVE_TESTS=1 PERDIEM_API_KEY=your-key uv run pytest -m live_smoke   # small one-call-per-test live set
 ```
 
-The offline suite ignores any `PERDIEM_API_KEY` in your shell, so it runs the same as CI. Live tests are paced automatically. A free api.data.gov key allows 1,000 requests per hour. See [tests/README.md](tests/README.md) for what each test file covers.
+The offline suite ignores any `PERDIEM_API_KEY` in your shell, so it runs the same as CI. Live tests are paced automatically. See [tests/README.md](tests/README.md) for what each test file covers.
 
 ## Known limits
 
@@ -38,7 +38,7 @@ The offline suite ignores any `PERDIEM_API_KEY` in your shell, so it runs the sa
 - **Split trips.** Each estimate assumes its own departure and return. For trips crossing months or fiscal years, add monthly lodging totals and calculate M&IE once over the actual travel days.
 - **Multi-row API answers.** When the GSA API returns several rate areas for a city, the server prefers the county that mentions the query and lists the rest as `other_candidates`; GSA does not document that ordering.
 - **Fiscal year rollover.** October 1 behavior is tested in principle but has not been checked live across a real fiscal-year change.
-- **Rate limits.** Keyed requests wait at least 4 seconds apart by default, shared with Regulations.gov when both use the same key, and `Retry-After` is honored without automatic retries.
+- **Rate limits.** A free api.data.gov key allows 1,000 requests per hour. The server spaces keyed requests (0.6 seconds by default, set with `FEDERAL_API_MIN_INTERVAL_SECONDS`), caps itself at 950 upstream calls per rolling hour, shares the api.data.gov pacing bucket with Regulations.gov when both use the same key, and honors `Retry-After` without automatic retries.
 
 ## History
 
