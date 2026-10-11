@@ -80,6 +80,13 @@ class CostTests(unittest.TestCase):
   self.oracle.db.executescript("CREATE TABLE entities(entity_id TEXT PRIMARY KEY);CREATE TABLE exclusions(exclusion_id TEXT PRIMARY KEY);")
   self.oracle.steps=[{'label':'sidecar-and-journal-schema','remote_outcome':'confirmed','sql_sha256':'wrong'}]
   with self.assertRaisesRegex(ValueError,'regenerated SQL differs'):initialize_tracking(None,self.oracle)
+ def test_confirmed_round_reopen_preserves_both_counters(self):
+  self.oracle.rehearse(["INSERT INTO hashes VALUES('entities','one','digest');"],'seed');self.oracle.confirm(2);self.oracle.confirm_analytics(2)
+  reopened=CostOracle.open_confirmed_round(self.path,self.base/'report')
+  try:self.assertEqual((reopened.total,reopened.actual_total),(2,2))
+  finally:reopened.close()
+  self.oracle.mark_graphql_pending()
+  with self.assertRaisesRegex(ValueError,'not fully reconciled'):CostOracle.open_confirmed_round(self.path,self.base/'report')
  def test_confirmation_requires_measured_bound(self):
   self.oracle.rehearse(["INSERT INTO hashes VALUES('entities','one','digest');"],'seed')
   with self.assertRaisesRegex(ValueError,'exceeded'):self.oracle.confirm(100003)

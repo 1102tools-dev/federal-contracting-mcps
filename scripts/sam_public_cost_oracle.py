@@ -103,6 +103,15 @@ class CostOracle:
     def mark_graphql_pending(self):
         self.steps[-1]['graphql_pending']=True
         self._save()
+    @classmethod
+    def open_confirmed_round(cls,snapshot_path,report_directory):
+        """Reopen a fully reconciled round without changing either counter."""
+        directory=Path(report_directory);saved=json.loads((directory/'local-cost-report.json').read_text())
+        if saved.get('diverged') or not saved['steps'] or any(not step['remote_outcome'].startswith('confirmed') or step.get('graphql_pending') for step in saved['steps']):raise ValueError('Round is not fully reconciled')
+        actual=sum(step.get('actual_budget_rows_written',step.get('actual_rows_written',0)) for step in saved['steps'])
+        if actual!=saved['actual_round_units'] or actual>ROUND_LIMIT:raise ValueError('Round actual ledger differs or exceeds limit')
+        obj=cls.__new__(cls);obj.db=sqlite3.connect(snapshot_path);obj.db.row_factory=sqlite3.Row;obj.directory=directory;obj.round_limit=ROUND_LIMIT;obj.steps=saved['steps'];obj.pending=False;obj.diverged=False;obj.actual_total=actual;obj.total=saved['round_units']
+        return obj
     def close(self):self.db.close()
     def indexes(self,table):
         result=[]
