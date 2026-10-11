@@ -82,7 +82,8 @@ export async function handleMessage(message: Message, env: Env): Promise<object 
         if (error instanceof ToolError) {
           return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify({error: error.message})}], structuredContent: {error: error.message}, isError: true}};
         }
-        console.log(JSON.stringify({event: "tool_failed", tool: name, reason: error instanceof Error ? error.message.slice(0, 200) : "unknown"}));
+        // Error type only: messages can echo request text.
+        console.log(JSON.stringify({event: "tool_failed", tool: name, error: error instanceof Error ? error.name : "unknown"}));
         const message = "SAM.gov opportunities data is temporarily unavailable. Try again shortly.";
         return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify({error: message})}], structuredContent: {error: message}, isError: true}};
       }
