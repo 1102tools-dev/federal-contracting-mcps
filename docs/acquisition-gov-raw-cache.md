@@ -49,3 +49,13 @@ ssh govnode 'journalctl -u acquisition-gov-raw-sync.service -n 30 --no-pager'
 ```
 
 The status file records `finished_at`, `index_count`, `cached_count`, `added`, `changed`, `removed`, and `errors`. A healthy unchanged run has `changed=0` and `errors=0`. A failed run returns a nonzero service exit status; inspect the journal and status file before running the Mac publisher. The sync command and units are operational scripts outside the Python package, so they do not require another PyPI release.
+
+To rebuild this setup from the tracked files, use the existing seeded cache and isolated `work` layout described above; its virtual environment must already contain the 1.0.13 loader dependencies. From a checkout of this repository on the Mac, copy only the sync script and unit templates:
+
+```sh
+scp scripts/sync_acquisition_gov_raw_cache.py govnode:/var/lib/acquisition-gov-raw/work/scripts/
+scp deploy/acquisition-gov/cache-sync/acquisition-gov-raw-sync.service deploy/acquisition-gov/cache-sync/acquisition-gov-raw-sync.timer govnode:/tmp/
+ssh govnode 'sudo install -m 0644 /tmp/acquisition-gov-raw-sync.service /etc/systemd/system/acquisition-gov-raw-sync.service && sudo install -m 0644 /tmp/acquisition-gov-raw-sync.timer /etc/systemd/system/acquisition-gov-raw-sync.timer && sudo systemctl daemon-reload && sudo systemctl enable --now acquisition-gov-raw-sync.timer'
+```
+
+The cache and isolated source files must be owned by `james`, matching the service's `User` and `Group`. The service writes only beneath `/var/lib/acquisition-gov-raw`, including its separate pacing directory. No credentials, serving configuration, or Cloudflare token are copied by these commands. Install while no seed or sync is running, and use the timer/status checks above to verify the resulting schedule.
