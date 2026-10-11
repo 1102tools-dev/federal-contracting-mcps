@@ -432,7 +432,7 @@ def initialize_tracking(db,oracle,*,execute=False):
         local_indexes=[dict(r) for r in source.execute("SELECT name,tbl_name,sql FROM sqlite_master WHERE type='index' AND tbl_name IN ('entities','exclusions','entity_naics','entity_business_types') ORDER BY name")]
         if local_indexes!=db.query("SELECT name,tbl_name,sql FROM sqlite_master WHERE type='index' AND tbl_name IN ('entities','exclusions','entity_naics','entity_business_types') ORDER BY name"):
             raise ValueError('Initialization baseline indexes differ from D1; no writes attempted')
-        if table_exists(db,'public_record_hashes') and db.query('SELECT COUNT(*) n FROM public_record_hashes')[0]['n']:
+        if table_exists(db,'public_record_hashes') and db.query('SELECT COUNT(*) n FROM public_record_hashes')[0]['n'] and not any(r['label']=='entities-hash-seed' and r['remote_outcome']=='confirmed' for r in oracle.steps):
             raise ValueError('Hash tracking already contains rows; initialization cannot be repeated')
     for kind,key in [('entities','entity_id'),('exclusions','exclusion_id')]:
         source.row_factory=sqlite3.Row
@@ -455,7 +455,11 @@ def initialize_tracking(db,oracle,*,execute=False):
     operations.append(('prune-unused-indexes',['DROP INDEX '+name+';' for name in prune]))
     reports=[]
     for label,statements in operations:
-        if label=='sidecar-and-journal-schema' and any(r['label']==label and r['remote_outcome'].startswith('confirmed') for r in oracle.steps):continue
+        completed=[r for r in oracle.steps if r['label']==label and r['remote_outcome'].startswith('confirmed')]
+        if completed:
+            regenerated=hashlib.sha256(('\n'.join(statements)+'\n').encode()).hexdigest()
+            if completed[0].get('graphql_pending') or regenerated!=completed[0]['sql_sha256']:raise ValueError('Completed operation proof is pending or regenerated SQL differs; no writes attempted')
+            continue
         if not statements:continue
         report=oracle.rehearse(statements,label)
         if execute:
@@ -482,9 +486,12 @@ def initialize_tracking(db,oracle,*,execute=False):
                 db.query('SELECT kind,file_date FROM extract_status')
                 report['cloudflare_ended_at']=(dt.datetime.now(dt.timezone.utc).replace(microsecond=0)+dt.timedelta(seconds=1)).isoformat()
                 oracle.confirm(actual)
+                oracle.mark_graphql_pending()
                 graphql=reconcile_operation(db,report['cloudflare_started_at'],report['cloudflare_ended_at'],actual)
                 oracle.confirm_analytics(graphql)
-            except BaseException:oracle.invalidate();raise
+            except BaseException:
+                if oracle.pending:oracle.invalidate()
+                raise
         else:
             # This is an offline proof only, explicitly never actual CF metrics.
             oracle.steps[-1]['remote_outcome']='offline rehearsal only';oracle.pending=False;oracle._save()
@@ -508,8 +515,8 @@ def reconcile_operation(db,start,end,actual):
     # A broader query avoids stale cached-empty narrow windows. Returned events
     # are filtered back to the exact nonoverlapping operation interval.
     beginning=dt.datetime.fromisoformat(start);ending=dt.datetime.fromisoformat(end)
-    for attempt in range(12):
-        rows=operation_analytics(db,(beginning-dt.timedelta(seconds=20)).isoformat(),(ending+dt.timedelta(seconds=20)).isoformat())
+    for attempt in range(180):
+        rows=operation_analytics(db,(beginning-dt.timedelta(seconds=20)).isoformat(),(max(ending,dt.datetime.now(dt.timezone.utc))+dt.timedelta(seconds=20+attempt)).isoformat())
         groups=[r for r in rows if beginning<=dt.datetime.fromisoformat(r['dimensions']['datetime'].replace('Z','+00:00'))<ending]
         measured=sum(int(r['sum']['rowsWritten']) for r in groups)
         if groups and measured>=actual:return measured

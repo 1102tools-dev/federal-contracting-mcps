@@ -67,6 +67,42 @@ class CostOracle:
             (directory/'catalog-reconciliation.json').write_text(json.dumps({'original_local_units':8,'measured_provider_catalog_overhead':4,'consumed_round_units':12,'original_sql_sha256':expected,'proof_path':str(proof_path),'analytics_path':str(analytics_path),'public_record_dml_submitted':False,'remote_record_digest_comparison_claimed':False},indent=2)+'\n')
             return obj
         except BaseException:obj.db.close();raise
+    @classmethod
+    def resume_seed_reconciliation(cls,snapshot_path,report_directory,proof_path,analytics_path):
+        """Continue only after the acknowledged entity seed's delayed analytics."""
+        import datetime as dt
+        directory=Path(report_directory);saved=json.loads((directory/'local-cost-report.json').read_text())
+        proof=json.loads(Path(proof_path).read_text());events=json.loads(Path(analytics_path).read_text())
+        if len(saved['steps'])!=2 or saved['steps'][0]['label']!='sidecar-and-journal-schema':raise ValueError('Unexpected stopped seed round')
+        step=saved['steps'][1]
+        sql=(directory/'exact-statements.sql').read_text()
+        from sam_public_incremental import RUN_SQL,BUDGET_SQL,DAILY_SQL,HASH_SQL
+        prefix='\n'.join([RUN_SQL,BUDGET_SQL,DAILY_SQL,HASH_SQL])+'\n'
+        if not sql.startswith(prefix) or hashlib.sha256(sql[len(prefix):].encode()).hexdigest()!=step['sql_sha256'] or step['label']!='entities-hash-seed' or step.get('actual_rows_written')!=step['conservative_units']:
+            raise ValueError('Acknowledged entity seed SQL or cost differs')
+        start=dt.datetime.fromisoformat(step['cloudflare_started_at']);end=dt.datetime.fromisoformat(step['cloudflare_ended_at'])
+        measured=sum(e['sum']['rowsWritten'] for e in events)
+        if not events or measured!=step['actual_rows_written'] or any(not start<=dt.datetime.fromisoformat(e['dimensions']['datetime'].replace('Z','+00:00'))<end for e in events):raise ValueError('Entity seed analytics not reconciled')
+        integrity=proof['hash_integrity'];count=proof['counts']['entities']
+        if integrity!={'entity_hash_rows':count,'entity_hash_mismatch':0,'entity_hash_missing':0,'entity_hash_orphans':0,'exclusion_hash_rows':0}:raise ValueError('Entity tracking integrity differs')
+        obj=cls.__new__(cls);obj.db=sqlite3.connect(snapshot_path);obj.db.row_factory=sqlite3.Row;obj.directory=directory;obj.round_limit=ROUND_LIMIT;obj.steps=saved['steps'];obj.pending=False;obj.diverged=False
+        try:
+            for table,count in proof['counts'].items():
+                if obj.db.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]!=count:raise ValueError('Recovered seed counts differ')
+            auxiliary=[dict(r) for r in obj.db.execute("SELECT name,sql FROM sqlite_master WHERE type='table' AND name LIKE 'public_%' ORDER BY name")]
+            if auxiliary!=proof['tables']:raise ValueError('Recovered auxiliary schemas differ')
+            if [dict(r) for r in obj.db.execute('SELECT * FROM extract_status ORDER BY kind')]!=proof['extract_status']:raise ValueError('Recovered source metadata differs')
+            indexes=[dict(r) for r in obj.db.execute("SELECT name,tbl_name,sql FROM sqlite_master WHERE type='index' AND tbl_name IN ('entities','exclusions','entity_naics','entity_business_types') ORDER BY name")]
+            if indexes!=proof['indexes'] or proof['leftovers']:raise ValueError('Recovered indexes differ')
+            step['remote_outcome']='confirmed';step['graphql_pending']=False;step['graphql_rows_written']=measured;step['actual_budget_rows_written']=measured
+            obj.actual_total=12+measured;obj.total=saved['round_units']
+            if saved['actual_round_units']!=obj.actual_total:raise ValueError('Recovery cannot reset actual round ledger')
+            obj._save();return obj
+        except BaseException:obj.db.close();raise
+
+    def mark_graphql_pending(self):
+        self.steps[-1]['graphql_pending']=True
+        self._save()
     def close(self):self.db.close()
     def indexes(self,table):
         result=[]
@@ -78,7 +114,7 @@ class CostOracle:
             result.append(set(columns))
         return result
     def rehearse(self,statements,label,step_limit=STEP_LIMIT):
-        if self.pending or self.diverged:
+        if self.pending or self.diverged or (self.steps and self.steps[-1].get('graphql_pending')):
             raise ValueError('Oracle has an unconfirmed or divergent remote operation; reconcile before reuse')
         native=index_units=ddl_units=replace_units=0
         sql='\n'.join(statements)+'\n'
@@ -164,7 +200,7 @@ class CostOracle:
         if self.pending or self.diverged or not isinstance(graphql_rows_written,int):raise ValueError('Analytics cannot confirm this oracle operation')
         step=self.steps[-1];previous=step.get('actual_budget_rows_written',step['actual_rows_written'])
         self.actual_total+=graphql_rows_written-previous
-        step['graphql_rows_written']=graphql_rows_written;step['actual_budget_rows_written']=graphql_rows_written
+        step['graphql_rows_written']=graphql_rows_written;step['actual_budget_rows_written']=graphql_rows_written;step['graphql_pending']=False
         if amplification_exceeded(graphql_rows_written,step['conservative_units']) or self.actual_total>self.round_limit:
             self.invalidate();raise ValueError('Measured write amplification or round limit exceeded')
         self._save()

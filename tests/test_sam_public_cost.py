@@ -71,6 +71,15 @@ class CostTests(unittest.TestCase):
   self.oracle.confirm_analytics(3);self.assertEqual(self.oracle.actual_total,3)
   self.assertEqual(self.oracle.steps[-1]['actual_rows_written'],2)
   self.assertEqual(self.oracle.steps[-1]['graphql_rows_written'],3)
+ def test_pending_analytics_blocks_next_rehearsal_until_confirmed(self):
+  self.oracle.rehearse(["INSERT INTO hashes VALUES('entities','one','digest');"],'seed');self.oracle.confirm(2);self.oracle.mark_graphql_pending()
+  with self.assertRaisesRegex(ValueError,'unconfirmed'):self.oracle.rehearse(['DROP INDEX names;'],'drop')
+  self.oracle.confirm_analytics(2)
+  self.assertFalse(self.oracle.steps[-1]['graphql_pending']);self.oracle.rehearse(['DROP INDEX names;'],'drop')
+ def test_regenerated_completed_sql_mismatch_refused(self):
+  self.oracle.db.executescript("CREATE TABLE entities(entity_id TEXT PRIMARY KEY);CREATE TABLE exclusions(exclusion_id TEXT PRIMARY KEY);")
+  self.oracle.steps=[{'label':'sidecar-and-journal-schema','remote_outcome':'confirmed','sql_sha256':'wrong'}]
+  with self.assertRaisesRegex(ValueError,'regenerated SQL differs'):initialize_tracking(None,self.oracle)
  def test_confirmation_requires_measured_bound(self):
   self.oracle.rehearse(["INSERT INTO hashes VALUES('entities','one','digest');"],'seed')
   with self.assertRaisesRegex(ValueError,'exceeded'):self.oracle.confirm(100003)
