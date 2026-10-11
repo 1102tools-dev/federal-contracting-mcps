@@ -1,6 +1,6 @@
 import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
-import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited } from "../../shared/edge";
+import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited, explainCapacity } from "../../shared/edge";
 
 export class FederalRegister extends Container {
   defaultPort = 8080;
@@ -50,7 +50,7 @@ export default {
       const response = await originFirst(env, url.pathname, {method: request.method, headers, body},
         () => fetchWithRetry(() => backend.fetch(forwarded())));
       logToolCall("federal-register", body, response, started, request.headers.get("User-Agent"));
-      return response;
+      return explainCapacity(response, body, "Federal Register");
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
       return Response.json({error: "Federal Register service temporarily unavailable."}, {status: 503, headers: {"Retry-After": "15"}});
