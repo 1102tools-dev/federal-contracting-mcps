@@ -6,7 +6,7 @@
 
 Free, open-source MCP server for SAM.gov entity registration, exclusion/debarment, contract opportunity, contract award, federal hierarchy, and FFATA subaward data.
 
-Two editions: **hosted**, with 4 keyless tools for contract opportunities, and **local**, the full 20 tools with a free SAM.gov key. See [Local or hosted](#local-or-hosted).
+Two editions: **hosted**, with 6 keyless tools for contract opportunities, public entity registrations, and exclusions, and **local**, the full 20 tools with a free SAM.gov key. See [Local or hosted](#local-or-hosted).
 
 *Regression tests, including live checks against the SAM.gov APIs. The October 2026 releases were also checked with realistic contracting questions against official SAM.gov records. See [testing.md](testing.md).*
 
@@ -20,9 +20,9 @@ SAM.gov comes in two editions. Hosted is the only one with no key.
 |---|---|---|
 | Install | On your computer. Give your AI this page's link and ask it to set it up, or start at [Installation](#installation) | Add from the Claude directory (ChatGPT coming soon) |
 | API key | Free SAM.gov key, which expires every 90 days | None |
-| Tools | 20 | 4 |
-| Covers | Opportunities plus entity registrations, SBA certifications, exclusions, reps and certs, integrity records, contract award records, the federal hierarchy, and subawards | Contract opportunities, award notices, and justifications |
-| Data | Live SAM.gov APIs, within your key's daily limit | SAM.gov's public contract opportunities file, refreshed daily |
+| Tools | 20 | 6 |
+| Covers | Opportunities plus entity registrations, SBA certifications, exclusions, reps and certs, integrity records, contract award records, the federal hierarchy, and subawards | Contract opportunities, award notices, justifications, public entity registrations and business/SBA certification codes, and exclusions |
+| Data | Live SAM.gov APIs, within your key's daily limit | SAM.gov's public files: opportunities and exclusions daily, entity registrations monthly; source file names and dates accompany results |
 | Works in | Claude or ChatGPT desktop apps and other AI apps, on a desktop or laptop | Claude or ChatGPT on web, desktop, and phone |
 | Updates | Manual. Local installs don't update themselves. Ask your AI to update them | Automatic. Always runs the latest release |
 
@@ -32,22 +32,26 @@ SAM.gov comes in two editions. Hosted is the only one with no key.
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#catching-opportunities)
 
-### Hosted edition: 4 tools, no key
+### Hosted edition: 6 tools, no key
 
-The hosted edition is for finding and reading contract opportunities. It serves the contract opportunities file that SAM.gov publishes for public download, so it needs no API key and no local setup.
+The hosted edition finds and reads contract opportunities, public entity registrations, and exclusions. It serves copies of the files that SAM.gov publishes for public download, so it needs no API key and no local setup. Opportunities and exclusions are published daily; public entity registrations are published monthly. The service checks daily for newer files.
 
 | Tool | What it does |
 |---|---|
 | `search_opportunities` | Search notices by keyword (titles and full descriptions), NAICS, PSC, set-aside, notice type, agency, state, and posted or response dates. Award notices and justifications are notice types. |
 | `get_opportunity` | The full notice: description, contacts, award details, and the sam.gov link |
 | `summarize_opportunities` | Counts by agency, NAICS, set-aside, or notice type |
-| `get_data_status` | The date of the file behind every answer, and how many notices it holds |
+| `search_entities` | Look up a public registration by UEI or CAGE, or search by name, NAICS, state, business type / SBA certification code, and active registration status |
+| `search_exclusions` | Check public exclusions by UEI, CAGE, or name |
+| `get_data_status` | Source file names and dates, load times, and row counts for opportunities, entities, and exclusions |
 
 Older notices can appear when they remain active, including notices posted in earlier fiscal years. This is not a complete historical archive; archived notices and attachments are not included (results link to the notice on sam.gov). Pair it with the [USAspending MCP](../usaspending-gov-mcp) for broader award history.
 
+Every entity and exclusion answer includes its source file name and date. Entities that opted out of public display are not included in the hosted public mirror; a missing result does not establish that an entity is unregistered. Confirm current registration status on SAM.gov before relying on a registration result. Exclusion results are a dated public-file check; verify material findings on SAM.gov.
+
 ### Local full edition: when you need more
 
-Use the full edition when you need to look up a company: registrations, UEI and CAGE codes, SBA certification dates, exclusions, reps and certs, integrity records (FAPIIS), or SAM.gov's contract award records, federal hierarchy, and subawards.
+Use the full edition for live API registration and exclusion lookups, detailed SBA certification dates, reps and certs, integrity records (FAPIIS), or SAM.gov's contract award records, federal hierarchy, and subawards. The hosted edition covers only fields in the public files.
 
 The full edition is local only. Give your AI this page's link and ask it to set it up, or start at [Installation](#installation). It needs your own free SAM.gov key, and that key's daily limit applies; see [Authentication](#authentication).
 

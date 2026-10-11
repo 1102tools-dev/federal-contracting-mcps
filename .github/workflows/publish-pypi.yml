@@ -15,6 +15,8 @@ on:
       # v1.2.3 releases everything; gsa-perdiem/v1.1.0 releases one service.
       - 'v*'
       - '*/v*'
+      # Native SAM Worker has its own release gate; no Python/container release.
+      - '!sam-gov-hosted/v*'
   workflow_dispatch:
     inputs:
       services:
