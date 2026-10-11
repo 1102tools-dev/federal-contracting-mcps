@@ -1,0 +1,53 @@
+name: Release load scheduler Worker
+
+on:
+  push:
+    tags: ['1102tools-scheduler/v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mcp-production-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: cloudflare-production
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - name: Require release tag on reviewed main
+        shell: bash
+        run: |
+          [[ "$GITHUB_REF" =~ ^refs/tags/1102tools-scheduler/v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Verify scheduler
+        working-directory: deploy/scheduler
+        run: |
+          npm ci --ignore-scripts
+          npm run check
+          npm test
+          npm run dry-run
+      - name: Deploy scheduler
+        working-directory: deploy/scheduler
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
+          npm run deploy
+      - name: Publish scheduler release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes 'Scheduled-only Cloudflare Worker dispatching existing SAM, Acquisition.gov and hosted-health workflows. Existing workflow schedules remain as backup.'
