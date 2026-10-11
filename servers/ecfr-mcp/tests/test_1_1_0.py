@@ -196,7 +196,7 @@ def test_whole_words_only(mock_xml):
     assert r["definition_count"] == 0
     assert all("Unallowable" not in " ".join(m["context"]) for m in r["matches"])
     assert "Unallowable cost" in r["did_you_mean"]
-    assert "does not define" in r["note"]
+    assert "No matching definition was found" in r["note"]
     assert len(calls.calls) == 1
 
 

@@ -2096,24 +2096,24 @@ async def find_far_definition(
     result["defined_elsewhere"] = elsewhere
     if any(e.get("definition") and e.get("chapter") == "2" for e in elsewhere):
         result["note"] = (
-            f"The FAR does not define '{found['query']}'; the DFARS (Title 48 chapter 2) "
-            f"does: see defined_elsewhere (section, heading and the definition text)."
+            f"No matching FAR definition was found for '{found['query']}'; the DFARS (Title 48 chapter 2) "
+            f"defines it: see defined_elsewhere (section, heading and the definition text)."
         )
     elif any(e.get("definition") for e in elsewhere):
         result["note"] = (
-            f"FAR 2.101 does not define '{found['query']}'. It is defined elsewhere in the "
+            f"No matching FAR 2.101 definition was found for '{found['query']}'. It is defined elsewhere in the "
             f"FAR: see defined_elsewhere (section, heading and the definition text)."
         )
     elif elsewhere:
         result["note"] = (
-            f"FAR 2.101 does not define '{found['query']}'. These FAR sections use the "
+            f"No matching FAR 2.101 definition was found for '{found['query']}'. These FAR sections use the "
             f"phrase near 'means' but no definition paragraph was confirmed; read them "
             f"with lookup_far_clause."
         )
     else:
         result["note"] = (
-            f"FAR 2.101 does not define '{found['query']}', and no other FAR (chapter 1) "
-            f"or DFARS (chapter 2) section defines it with 'means'. For another agency "
+            f"No matching definition was found for '{found['query']}' in FAR 2.101 or the searched "
+            f"FAR (chapter 1) and DFARS (chapter 2) sections. For another agency "
             f"supplement, try search_cfr with query='\"{found['query']}\" means', title=48 "
             f"and that chapter." + (
                 f" Close 2.101 terms: {', '.join(found['did_you_mean'])}."

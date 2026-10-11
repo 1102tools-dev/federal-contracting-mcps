@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.0.18 — 2026-10-10
+
+Suggestion counts now show GSA’s reported count uncertainty and remain approximate when its error bound is unknown.
+
 ## 1.0.17 — 2026-10-10
 
 Exact searches for titles containing a colon now return that title's own rates. GSA's exact search cut such titles off at the colon and could return unrelated rows; when the full title can't be confirmed, the answer says so and suggests a recovery search instead of guessing.

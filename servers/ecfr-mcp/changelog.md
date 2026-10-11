@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.1.9
+
+Common COTS names and unique definition-name prefixes return complete FAR 2.101 definitions; unsuccessful lookups describe search results without claiming a term is undefined.
+
 ## 1.1.8
 
 Scientific notation split across superscripts in regulation tables is kept: the 40 CFR 141.61 dioxin limit now reads `3 × 10^−8 mg/l` instead of a footnote. Genuine footnotes and ordinal text are unchanged.
