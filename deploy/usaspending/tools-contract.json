@@ -176,7 +176,7 @@
       "readOnlyHint": true,
       "title": "Autocomplete PSC"
     },
-    "description": "Autocomplete lookup for Product/Service Codes (PSC).\n\n    Works best with code prefixes ('R499', 'D3', 'AJ') or keywords\n    ('professional', 'application'). Returns matching PSC entries with\n    code and description.\n\n    Minimum 2 characters required. Single-character queries return first-N\n    alphabetical results from the upstream API (useless for matching) and\n    empty strings return HTTP 400.\n    ",
+    "description": "Autocomplete lookup for Product/Service Codes (PSC).\n\n    Use exact four-character codes ('R499', 'D302') or description keywords\n    ('professional', 'application'). Returns matching PSC entries with\n    code and description. Two-character families such as 'D3' can return\n    no autocomplete matches even when their descendant codes exist.\n    For partial PSC families or prefix expansion, use get_psc_filter_tree()\n    instead: path='Service/D/D3/' lists the D3 descendants; start with\n    path='Service/A/' to discover and drill into an AJ family.\n\n    Minimum 2 characters required. Single-character queries return first-N\n    alphabetical results from the upstream API (useless for matching) and\n    empty strings return HTTP 400.\n    ",
     "inputSchema": {
       "properties": {
         "limit": {

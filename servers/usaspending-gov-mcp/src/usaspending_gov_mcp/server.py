@@ -1521,9 +1521,13 @@ async def lookup_piid(piid: str, limit: int = 5) -> dict[str, Any]:
 async def autocomplete_psc(search_text: str, limit: int = 10) -> dict[str, Any]:
     """Autocomplete lookup for Product/Service Codes (PSC).
 
-    Works best with code prefixes ('R499', 'D3', 'AJ') or keywords
+    Use exact four-character codes ('R499', 'D302') or description keywords
     ('professional', 'application'). Returns matching PSC entries with
-    code and description.
+    code and description. Two-character families such as 'D3' can return
+    no autocomplete matches even when their descendant codes exist.
+    For partial PSC families or prefix expansion, use get_psc_filter_tree()
+    instead: path='Service/D/D3/' lists the D3 descendants; start with
+    path='Service/A/' to discover and drill into an AJ family.
 
     Minimum 2 characters required. Single-character queries return first-N
     alphabetical results from the upstream API (useless for matching) and
