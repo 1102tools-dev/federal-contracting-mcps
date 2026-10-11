@@ -14,7 +14,7 @@ export function nameWords(value: string): string[] {
 }
 export function normalizedName(value: string): string {return nameWords(value).join("");}
 
-function compactSQL(column: string, query: string): string {
+export function compactSQL(column: string, query: string): string {
   const operations: ((value: string) => string)[] = [];
   const replace = (from: string, to: string) => operations.push(value => `replace(${value}, ${quote(from)}, ${quote(to)})`);
   for (const c of new Set(query.toLowerCase())) if (c.charCodeAt(0) > 127 && c.toUpperCase() !== c) replace(c.toUpperCase(), c);
@@ -73,7 +73,7 @@ export async function possibleNameMatches(db: Database, options: {
   const key = normalizedName(query), words = nameWords(query);
   // Bounded candidate exploration, not a second exact/identity determination.
   const anchors = [...new Set([key.slice(0, 2), key.slice(-2), ...words.filter(w => w.length >= 3).map(w => w.slice(0, 3))])].filter(a => a.length >= 2);
-  if (!anchors.length) return {possibleMatches: [], possibleMatchNote: "No close candidates found. No match is not a clearance; verify identifiers and current SAM.gov status."};
+  if (!anchors.length) return {possibleMatches: [], possibleMatchCandidatesTruncated: false, possibleMatchNote: "No close candidates found. No match is not a clearance; verify identifiers and current SAM.gov status."};
   const coarse = columns.flatMap(column => anchors.map(() => `instr(lower(replace(coalesce(${column}, ''), '&', 'and')), ?) > 0`)).join(" OR ");
   const prefix = [...key].slice(0, 3).join("");
   const priority = `max(${columns.map(column => `CASE WHEN lower(replace(coalesce(${column}, ''), '&', 'and')) GLOB ? THEN 1000 ELSE 0 END`).join(", ")}) + max(${columns.map(column => `CASE WHEN lower(replace(coalesce(${column}, ''), '&', 'and')) GLOB ? THEN 100 ELSE 0 END`).join(", ")})`;
@@ -108,5 +108,5 @@ export async function possibleNameMatches(db: Database, options: {
       uei: row.uei ?? null, cage_code: row.cage_code ?? null, state: row.state ?? null, city: row.city ?? null, zip_code: row.zip_code ?? null, address_line_1: row.address_line_1 ?? null,
       ...(table === "exclusions" ? {exclusion_id: row.exclusion_id, classification: row.classification} : {entity_id: row.entity_id})};
   }).filter(row => row.similarity >= 0.65).sort((a, b) => b.similarity - a.similarity || a.matched_name.localeCompare(b.matched_name)).slice(0, 5);
-  return {possibleMatches: ranked, possibleMatchNote: "Possible matches, not confirmed. Bounded close-name suggestions are not an exhaustive search or an identity, exclusion, registration or eligibility determination. Compare identifiers and addresses; confirm current status on SAM.gov.", possibleMatchCandidatesTruncated: candidates.length === 501};
+  return {possibleMatches: ranked, possibleMatchNote: "Possible matches, not confirmed. Bounded close-name suggestions are not an exhaustive search or an identity, exclusion, registration or eligibility determination. Compare identifiers and addresses; confirm current status on SAM.gov.", possibleMatchCandidatesTruncated: ranked.length > 0 && candidates.length === 501};
 }

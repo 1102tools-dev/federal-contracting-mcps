@@ -1,4 +1,4 @@
-name: SAM.gov opportunities nightly load
+name: SAM.gov opportunities two-hour check
 
 # Mirrors SAM.gov's public daily ContractOpportunitiesFullCSV.csv into the D1
 # database behind the hosted SAM.gov MCP (sam.1102tools.com). Only changed
@@ -11,7 +11,7 @@ name: SAM.gov opportunities nightly load
 
 on:
   schedule:
-    - cron: '15 10 * * *'
+    - cron: '15 */2 * * *'
   workflow_dispatch:
 
 permissions:

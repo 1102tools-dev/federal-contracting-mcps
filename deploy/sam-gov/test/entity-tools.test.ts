@@ -110,7 +110,9 @@ test("active registration with a past 8(a) exit date is not presented as current
   sqlite.prepare("UPDATE entities SET record_json=? WHERE uei=?").run(JSON.stringify(record), "ABCDEFGHIJK1");
   sqlite.prepare("INSERT INTO entity_business_types VALUES (?,?,?)").run("ABCDEFGHIJK1-record", "A6", "sba");
   const result = await searchEntities(db, {uei: "ABCDEFGHIJK1", sba_business_type_code: "A6"});
-  assert.deepEqual(result.entityData[0], record);
+  assert.equal(result.entityData[0].coreData.businessTypes.sbaBusinessTypeList[0].lapsed, true);
+  assert.equal(result.entityData[0].sbaCertificationStatus[0].lapsed, true);
+  assert.equal(result.entityData[0].coreData.businessTypes.sbaBusinessTypeList[0].certificationExitDate, "2021-01-03");
   assert.match(result.notes.join(" "), /not that an SBA certification is current/);
   assert.match(result.notes.join(" "), /certificationExitDate/);
   assert.match(result.notes.join(" "), /confirm current certification with SBA/);

@@ -5,7 +5,7 @@ import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
 import {test} from "node:test";
 import worker, {handleMessage} from "../src/index.ts";
-import {ftsQuery, getDataStatus, getOpportunity, searchOpportunities, summarizeOpportunities, TOOLS, ToolError} from "../src/tools.ts";
+import {ftsQuery, getDataStatus, getOpportunity, searchOpportunities, summarizeOpportunities, TOOLS, ToolError, HANDLERS} from "../src/tools.ts";
 
 const NOW = new Date("2026-09-27T12:00:00Z");
 const schema = readFileSync(new URL("../schema.sql", import.meta.url), "utf8");
@@ -216,8 +216,8 @@ test("place-of-performance searches point to notices with an office in that stat
   const counts = await summarizeOpportunities(db, {group_by: "office_state", place_of_performance_state: "MD"}, NOW);
   assert.deepEqual(counts.groups, [{value: "MD", count: 1}]);
   assert.match(counts.notes.at(-1), /^3 more/);
-  assert.equal((await summarizeOpportunities(db, {group_by: "notice_type", place_of_performance_state: "VA"}, NOW)).notes.length, 1, "no hint when nothing more matches");
-  assert.equal((await search({place_of_performance_state: "MD", office_state: "MD"})).notes.length, 1);
+  assert.ok(!(await summarizeOpportunities(db, {group_by: "notice_type", place_of_performance_state: "VA"}, NOW)).notes.some((note: string) => /more matching notices/.test(note)), "no hint when nothing more matches");
+  assert.ok(!(await search({place_of_performance_state: "MD", office_state: "MD"})).notes.some((note: string) => /more matching notices/.test(note)));
 });
 
 test("zero matches explain what to try", async () => {
@@ -304,7 +304,7 @@ test("posted_month groups come back in month order with a note on archiving", as
 
 test("get_data_status reports freshness", async () => {
   const current = await getDataStatus(db, {}, NOW) as any;
-  assert.deepEqual([current.status, current.file_age_days, current.active_notices, current.api_key_required], ["current", 1, 7, false]);
+  assert.deepEqual([current.status, current.file_age_days, current.active_notices, current.api_key_required], ["stale", 1, 7, false]);
   assert.equal((await getDataStatus(db, {}, new Date("2026-10-01T12:00:00Z")) as any).status, "stale");
   assert.equal((await getDataStatus(database(false), {}, NOW) as any).status, "not_loaded");
   await assert.rejects(getDataStatus(db, {x: 1}, NOW), /Unknown argument/);
@@ -396,4 +396,81 @@ test("new tools use the separate database and existing data status reports both 
   assert.equal(status.structuredContent.exclusions.row_count, 1);
   assert.equal((await call("search_opportunities", {keywords: "bridge"})).structuredContent.total_matches, 1);
   sqlite.close();
+});
+
+
+test("opportunity source freshness uses an exact 30-hour boundary", async () => {
+  const boundary = new Date("2026-09-27T06:00:00Z");
+  const current: any = await getDataStatus(db, {}, boundary);
+  assert.equal(current.stale, false);
+  assert.equal(current.status, "current");
+  assert.equal(current.file_age_hours, 30);
+  assert.equal(current.stale_after_hours, 30);
+  const expired: any = await getDataStatus(db, {}, new Date(boundary.getTime() + 1));
+  assert.equal(expired.stale, true);
+  assert.equal(expired.status, "stale");
+  assert.ok(expired.notes.some((note: string) => /stale/i.test(note)));
+});
+
+test("every opportunity result includes source-file freshness and stale warnings", async () => {
+  const results = [
+    await searchOpportunities(db, {}, NOW),
+    await searchOpportunities(db, {keywords: "absentword"}, NOW),
+    await getOpportunity(db, {notice_id: id(1)}, NOW),
+    await getOpportunity(db, {notice_id: id(999)}, NOW),
+    await summarizeOpportunities(db, {group_by: "agency"}, NOW),
+    await summarizeOpportunities(db, {group_by: "agency", keywords: "absentword"}, NOW),
+  ];
+  for (const result of results) {
+    assert.equal(result.stale, true);
+    assert.equal(result.file_age_hours, 36);
+    assert.equal(result.stale_after_hours, 30);
+    assert.ok(result.notes.some((note: string) => /stale/i.test(note)), JSON.stringify(result));
+  }
+});
+
+test("recent ingestion does not make an old opportunities source current", async () => {
+  const sqlite = new DatabaseSync(":memory:");
+  sqlite.exec(schema);
+  for (const [key, value] of Object.entries({file_date: "2026-09-20", loaded_at: NOW.toISOString()})) {
+    sqlite.prepare("INSERT INTO load_status (key,value) VALUES (?,?)").run(key, JSON.stringify(value));
+  }
+  const result: any = await getDataStatus(d1(sqlite), {}, NOW);
+  assert.equal(result.stale, true);
+  assert.equal(result.loaded_at, NOW.toISOString());
+  assert.ok(result.file_age_hours > 30);
+  assert.match(result.refresh, /every two hours/);
+  assert.match(result.refresh, /newer public file/);
+  sqlite.close();
+});
+
+test("missing opportunities source dates flag unavailable freshness on no-match results", async () => {
+  const empty = database(false, []);
+  for (const result of [await searchOpportunities(empty, {}, NOW), await getOpportunity(empty, {notice_id: id(999)}, NOW), await summarizeOpportunities(empty, {group_by: "agency"}, NOW)]) {
+    assert.equal(result.stale, true);
+    assert.equal(result.file_age_hours, null);
+    assert.ok(result.notes.some((note: string) => /unavailable/i.test(note)));
+  }
+});
+
+
+test("combined data status reports a stale exclusion file even when other files are current", async () => {
+  const currentDate = new Date().toISOString().slice(0, 10);
+  const opportunitySqlite = new DatabaseSync(":memory:");
+  opportunitySqlite.exec(schema);
+  opportunitySqlite.prepare("INSERT INTO load_status(key,value) VALUES ('file_date',?)").run(JSON.stringify(currentDate));
+  const publicSqlite = new DatabaseSync(":memory:");
+  publicSqlite.exec(readFileSync(new URL("../entity-schema.sql", import.meta.url), "utf8"));
+  for (const [kind, fileDate] of [["entities",currentDate],["exclusions","2020-01-01"]]) {
+    publicSqlite.prepare("INSERT INTO extract_status(kind,file_name,file_date,source_url,loaded_at,row_count,sha256,database_bytes,load_seconds) VALUES (?,?,?,?,?,?,?,?,?)")
+      .run(kind,kind+".ZIP",fileDate,"https://sam.gov/public",new Date().toISOString(),1,"hash",1000,1);
+  }
+  const result: any = await HANDLERS.get_data_status(d1(opportunitySqlite), {}, d1(publicSqlite));
+  assert.equal(result.stale, true);
+  assert.equal(result.status, "stale");
+  assert.equal(result.entities.stale, false);
+  assert.equal(result.exclusions.stale, true);
+  assert.ok(result.notes.some((note: string) => /exclusions/i.test(note) && /stale/i.test(note)));
+  opportunitySqlite.close();
+  publicSqlite.close();
 });
