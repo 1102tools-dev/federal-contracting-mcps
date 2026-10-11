@@ -20,11 +20,6 @@
       "binding": "ENTITY_DB",
       "database_name": "sam-gov-entities",
       "database_id": "18a226be-201f-46de-99b9-db65dd5edea7"
-    },
-    {
-      "binding": "STAGING_ENTITY_DB",
-      "database_name": "sam-gov-entities-staging",
-      "database_id": "15ab105a-86b9-41e3-822b-b87bced8132d"
     }
   ],
   "ratelimits": [

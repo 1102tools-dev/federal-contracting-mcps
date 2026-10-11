@@ -49,6 +49,8 @@ Older notices can appear when they remain active, including notices posted in ea
 
 Every entity and exclusion answer includes its source file name and date. Entities that opted out of public display are not included in the hosted public mirror; a missing result does not establish that an entity is unregistered. Confirm current registration status on SAM.gov before relying on a registration result. Exclusion results are a dated public-file check; verify material findings on SAM.gov.
 
+An active registration does not establish current SBA certification. Public 8(a) codes can remain after the recorded certification exit date; check `certificationExitDate` and confirm current certification with SBA.
+
 ### Local full edition: when you need more
 
 Use the full edition for live API registration and exclusion lookups, detailed SBA certification dates, reps and certs, integrity records (FAPIIS), or SAM.gov's contract award records, federal hierarchy, and subawards. The hosted edition covers only fields in the public files.

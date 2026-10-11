@@ -55,6 +55,21 @@ test("name partial matching treats SQL wildcard characters literally", async () 
   assert.equal((await searchEntities(db, {legal_business_name: "' OR 1=1 --"})).totalRecords, 0);
 });
 
+test("literal entity names fit the input contract without D1's 50-byte LIKE limit", async () => {
+  const {db, sqlite} = database();
+  // Enforce the documented D1 limit in the real SQLite test backend.
+  sqlite.function("like", {varargs: true}, (pattern: any) => {
+    assert.ok(Buffer.byteLength(String(pattern)) <= 50, "D1 LIKE pattern exceeds 50 bytes");
+    return 0;
+  });
+  for (const name of ["Long Legal Company Name ".repeat(4) + "100%_\\LLC", "A".repeat(200), "é".repeat(30) + " ASCII_%\\LLC"]) {
+    sqlite.prepare("UPDATE entities SET legal_business_name=? WHERE uei=?").run(name, "ABCDEFGHIJK1");
+    const result = await searchEntities(db, {legal_business_name: name.toLowerCase()});
+    assert.equal(result.totalRecords, 1);
+    assert.equal(result.entityData[0].entityRegistration.ueiSAM, "ABCDEFGHIJK1");
+  }
+});
+
 test("source metadata and both caveats accompany no matches and unloaded responses", async () => {
   const result = await searchEntities(database().db, {uei: "XXXXXXXXXXXX"});
   assert.equal(result.file_name, "SAM_PUBLIC_UTF-8_MONTHLY_V2_20261001.ZIP");
@@ -73,6 +88,18 @@ test("public record JSON preserves every shared field and filters sections", asy
   sqlite.prepare("UPDATE entities SET record_json=? WHERE uei=?").run(JSON.stringify(record), "ABCDEFGHIJK1");
   assert.deepEqual((await searchEntities(db, {uei: "ABCDEFGHIJK1", include_sections: ["All"]})).entityData[0], record);
   assert.deepEqual((await searchEntities(db, {uei: "ABCDEFGHIJK1", include_sections: ["assertions"]})).entityData[0], {entityRegistration: record.entityRegistration, assertions: record.assertions});
+});
+
+test("active registration with a past 8(a) exit date is not presented as current certification", async () => {
+  const {db, sqlite} = database();
+  const record = {entityRegistration: {ueiSAM: "ABCDEFGHIJK1", registrationStatus: "Active"}, coreData: {businessTypes: {sbaBusinessTypeList: [{sbaBusinessTypeCode: "A6", certificationExitDate: "2021-01-03"}]}}};
+  sqlite.prepare("UPDATE entities SET record_json=? WHERE uei=?").run(JSON.stringify(record), "ABCDEFGHIJK1");
+  sqlite.prepare("INSERT INTO entity_business_types VALUES (?,?,?)").run("ABCDEFGHIJK1-record", "A6", "sba");
+  const result = await searchEntities(db, {uei: "ABCDEFGHIJK1", sba_business_type_code: "A6"});
+  assert.deepEqual(result.entityData[0], record);
+  assert.match(result.notes.join(" "), /not that an SBA certification is current/);
+  assert.match(result.notes.join(" "), /certificationExitDate/);
+  assert.match(result.notes.join(" "), /confirm current certification with SBA/);
 });
 
 test("paging is stable, SQL bounds results and identifier/NAICS/state filters use indexes", async () => {
