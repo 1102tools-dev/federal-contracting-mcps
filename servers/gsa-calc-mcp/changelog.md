@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.0.19 — 2026-10-10
+
+Vendor rate card guidance now requires every page for complete or role-specific answers, or explicit partial-result disclosure when pagination stops early.
+
 ## 1.0.18 — 2026-10-10
 
 Suggestion counts now show GSA’s reported count uncertainty and remain approximate when its error bound is unknown.
