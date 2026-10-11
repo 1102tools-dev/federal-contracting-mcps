@@ -30,6 +30,10 @@ on:
       - 'shared/response_cache.py'
       - 'tests/test_response_cache.py'
       - 'servers/**'
+  schedule:
+    # Weekly, so a new MCP SDK release is caught even without a PR.
+    - cron: '23 12 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -65,3 +69,39 @@ jobs:
             uv build "$project" --out-dir "$dist"
             uv run --with packaging python scripts/check_published_version.py "$project" --dist "$dist"
           done
+
+  newest-mcp-sdk:
+    # uv.lock pins the SDK, but a fresh `uvx` install gets the newest one.
+    # Run each package's offline tests against the newest SDK too.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Acquisition.gov still loses its error hints on SDK 2.3 (21 tests);
+    # remove this once its content round ships the fix.
+    continue-on-error: ${{ matrix.server == 'acquisition-gov-mcp' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        server: [acquisition-gov-mcp, bls-oews-mcp, ecfr-mcp, federal-register-mcp, gsa-calc-mcp, gsa-perdiem-mcp, regulations-gov-mcp, sam-gov-mcp, usaspending-gov-mcp]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - name: Run offline tests with the newest MCP SDK
+        working-directory: servers/${{ matrix.server }}
+        env:
+          FEDERAL_API_MIN_INTERVAL_SECONDS: '0'
+          MCP_LIVE_TESTS: '0'
+          BLS_LIVE_TESTS: '0'
+          ECFR_LIVE_TESTS: '0'
+          FR_LIVE_TESTS: '0'
+          GSA_CALC_LIVE_TESTS: '0'
+          REGULATIONS_LIVE_TESTS: '0'
+          SAM_LIVE_TESTS: '0'
+          USASPENDING_LIVE_TESTS: '0'
+          ACQUISITION_GOV_LIVE_TESTS: '0'
+        run: |
+          uv lock --upgrade-package mcp
+          uv run python -c "import importlib.metadata as m; print('mcp', m.version('mcp'))"
+          uv run pytest -q
