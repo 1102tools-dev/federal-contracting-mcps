@@ -17,6 +17,71 @@ This Model Context Protocol server exposes BLS Occupational Employment and Wage 
 | Content correction version | 1.1.4 (bundled May 2025 OEWS release; release gates recorded below) |
 | PyPI status | Published as `bls-oews-mcp`, auto-publishes via Trusted Publisher on tag push |
 
+## 1.1.4 final realistic content audit, round 7 (2026-10-10)
+
+The final bounded content round found **zero new P0, P1 or P2 defects** and
+no new P3 observations. No runtime, data, version or tool metadata changed.
+Actual fresh by-name official PyPI 1.1.4, installed without cache in an
+isolated environment with MCP 2.3.0, and the public service each executed
+**84 new questions and useful follow-ups across all eight tools**. The first
+74 questions and ten additional source-derived follow-ups are saved
+separately. Eighty-two successful payloads match exactly across transports;
+two expected historical-year/national-ratio requests return visible scope
+explanations and their successful May 2025/Indiana recoveries follow.
+The public runtime reports version 1.1.4 and source
+`5ba4a4bac4ecd098da1c48dcd09594d9e38fcf1f`.
+
+New market research, training, finance, network support, architecture,
+mechanical engineering, environmental science, planning, legal, security,
+customer support, production planning and transportation-inspection tasks
+cover six states, five metros and eight national industry contexts. All
+**485 wage/benchmark objects per surface** reconcile to the authoritative
+bundled source and IGCE arithmetic. **46 selected fresh official BLS API
+cells and their footnotes** match in three successful requests; this sample
+is separate from the full bundle comparisons and is not a new entire-data
+transfer. Twenty caller-composed role/locality/industry/recovery workflows
+use captured tool answers; they are not twenty additional tool calls.
+
+Criminal-justice postsecondary teaching publishes annual wages only:
+source footnote 4 explains the missing hourly measures, and the IGCE hourly
+equivalent is explicitly disclosed as annual/2080. The entertainers-and-
+performers occupation publishes hourly wages only: its successful hourly
+follow-up and IGCE retain published hourly values without fabricating an
+annual salary. Other tested teaching/music occupations publish both
+periods, as their actual source cells show. No new top-coded cell appeared
+in this corpus; existing top-code regressions are verification rather than
+new primary-source content comparisons.
+
+Official BLS concepts and technical notes were freshly read through the
+web reader. SOC classification follows work performed; industry/ownership,
+OMB 23-01 geographic definitions, straight-time wages, part-time employment
+and self-employment exclusions bound the interpretation. Direct flat-
+footnote download returned HTTP 403, retained as unavailable; fresh API
+responses supplied the actual publication footnotes. Historical trends,
+current contractor quotes and unsupported scope combinations are not
+claimed. Caller burden multipliers are scenarios, and May 2025 wages need
+appropriate escalation to the performance period.
+
+Frozen MCP 2.0 / Python 3.12 and fresh published MCP 2.3 / Python 3.14 full
+suites each measured **297 passed / 1 optional live parity skipped / 298
+collected**. Worker tests passed 31; TypeScript and the production Python
+3.12 eight-tool metadata check passed. Python/Worker parity measured
+227 cases: 216 identical, 11 documented transport differences, zero
+unexpected. These existing regression cases are distinct from the new
+content questions. Public eight-tool definitions match exactly; the fresh
+Python 3.14 CLI has equivalent description text after whitespace
+normalization, with names, schemas and annotations exact. Seven Python
+module payloads match fresh official wheel/sdist, installed package and
+current source; both official archive hashes match PyPI digests. Source
+wheel/sdist build passed. Fresh installation stdout was observed but its
+complete log was not retained; installed provenance and fresh official
+archive/digest checks are saved independently.
+
+Evidence: `Artifacts/mcp-e2e-20261010/round7/bls-oews`, including separate
+actual stdio/public corpora, follow-up answers, 46 primary cells, semantic
+checks, composed workflows, coverage, test logs and package provenance.
+This is the final content round; no subsequent BLS content audit is implied.
+
 ## 1.1.4 realistic content audit, round 6 (2026-10-10)
 
 No new P0, P1, P2 or P3 findings in the completed new scope; no runtime,

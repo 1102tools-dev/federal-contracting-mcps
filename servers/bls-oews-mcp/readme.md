@@ -31,6 +31,8 @@ The sixth content round found **zero new P0–P3 defects** in 71 new questions a
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#bls-oews)
 
+The final seventh content round found **zero new P0–P2 defects** and no new P3 observations in 84 new acquisition wage questions and follow-ups across all eight tools. Fresh official PyPI 1.1.4 stdio and public service calls each completed 84 calls: 82 successful answer payloads match exactly, and two expected scope limitations provide actionable recovery guidance. All 485 wage/benchmark objects per surface reconcile to the bundled May 2025 source; 46 selected fresh BLS API cells and footnotes match independently. Twenty caller-composed workflows distinguish base wages, user burden assumptions and actual contractor prices. Both Python dependency lanes measured 297 passed / one optional skip / 298 collected. Flat-footnote HTTP 403 and unavailable historical years remain explicit; no new top-coded cell appeared in this corpus. See the final Round 7 record in [testing.md](testing.md).
+
 ## What it does
 
 Answers OEWS questions from the bundled release through 8 MCP tools:
