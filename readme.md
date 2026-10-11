@@ -11,13 +11,11 @@ Free, open-source, read-only source tools for federal contracting research: oppo
 ## Why these MCPs
 
 - **Free.** MIT-licensed, with no subscription and no credits. Hosted installs need no account or API key.
-- **Tested.** 6,121 collected package regression tests across 9 servers and 133 tools. Optional live-source tests are included in collection; they do not all run in every release. Dated testing records distinguish executed checks, skips, content comparisons, and corrected defects, with up to nineteen documented audit rounds per server.
+- **Tested.** 6,121 regression tests across 9 servers and 133 tools, plus realistic contracting questions checked against the government sources for the October 2026 releases. Some live-source tests are optional and do not run on every release.
 - **Listed.** All 9 servers are in the Claude directory and 6 are in the ChatGPT directory, with the rest in review for ChatGPT. Hosted installs need no user API key.
 - **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
 
-Collected package tests include optional live-source tests; a skipped live test is not counted as a passing check. The current per-server records are:
-
-| Server | Collected regression tests | Testing record |
+| Server | Regression tests | Testing record |
 |---|---:|---|
 | SAM.gov | 1,158 | [Testing](servers/sam-gov-mcp/testing.md) |
 | USAspending | 2,322 | [Testing](servers/usaspending-gov-mcp/testing.md) |
@@ -29,7 +27,7 @@ Collected package tests include optional live-source tests; a skipped live test 
 | Federal Register | 295 | [Testing](servers/federal-register-mcp/testing.md) |
 | Regulations.gov | 298 | [Testing](servers/regulations-gov-mcp/testing.md) |
 
-The sequential content goal covers eight servers and **5,866 collected tests**; Acquisition.gov's 255 tests remain part of the product total on a separate track. See the [dated audit and release record](docs/releases/2026-10-10-content-audit.md) for findings, published-version acceptance, source limitations and destination evidence.
+Release details are in the [October 10, 2026 release record](docs/releases/2026-10-10-content-audit.md).
 
 See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
 
@@ -55,9 +53,9 @@ All nine are in the Claude directory and six are in ChatGPT as hosted installs. 
 
 | | Local | Hosted |
 |---|---|---|
-| **Why use it** | Your own full rate limits, so you skip any congestion on hosted. It uses government-source data, including bundled snapshots where supported | Convenience. One click, no keys, and it works in Claude or ChatGPT anywhere |
+| **Why use it** | Your own full rate limits, so you skip any congestion on hosted. It uses government-source data, including bundled snapshots where supported | Convenience. No setup or keys, and it works in Claude or ChatGPT anywhere |
 | **Works in** | Claude or ChatGPT desktop apps and other AI apps, on a desktop or laptop | Claude or ChatGPT on web, desktop, and phone |
-| **Setup** | Ask your AI to set it up or walk you through it, using the setup guide. Free keys for SAM.gov and Regulations.gov; Per Diem city-only/API and unbundled-year lookups also require a key | One click. No keys |
+| **Setup** | Ask your AI to set it up or walk you through it, using the setup guide. Free keys for SAM.gov and Regulations.gov; Per Diem city-only/API and unbundled-year lookups also require a key | Add it from the Claude or ChatGPT directory. No keys |
 | **Rate limits** | Your own, in full | Pooled across all users. Your lookups stay private |
 | **Relies on** | Government-source data, including bundled snapshots where supported | Government-source data, bundled snapshots where supported, and Cloudflare |
 | **SAM.gov** | Full edition: 20 tools, free key | 4 tools, no key |
