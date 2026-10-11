@@ -1012,11 +1012,21 @@ async def suggest_contains(
     # records under values that were left off the list.
     other = field_agg.get("sum_other_doc_count")
     other_records = other if isinstance(other, int) and not isinstance(other, bool) and other > 0 else 0
+    raw_error_bound = field_agg.get("doc_count_error_upper_bound")
+    error_bound = (
+        raw_error_bound
+        if isinstance(raw_error_bound, int) and not isinstance(raw_error_bound, bool)
+        else None
+    )
+    counts_are_approximate = error_bound != 0
     suggestions: list[dict[str, Any]] = []
     for b in buckets:
         pair = _safe_bucket_key(b)
         if pair is not None:
-            suggestions.append({"value": pair[0], "count": pair[1]})
+            suggestions.append({
+                "value": pair[0], "count": pair[1],
+                "count_is_approximate": counts_are_approximate,
+            })
 
     hits = _safe_dict(data.get("hits"))
     total_obj = hits.get("total")
@@ -1031,6 +1041,8 @@ async def suggest_contains(
         "field": field,
         "search_term": term,
         "suggestions": suggestions,
+        "counts_are_approximate": counts_are_approximate,
+        "doc_count_error_upper_bound": error_bound,
         "total_matching_records": total,
         "total_matching_records_is_lower_bound": (
             isinstance(total_obj, dict) and total_obj.get("relation") == "gte"
@@ -1038,12 +1050,26 @@ async def suggest_contains(
         "truncated": other_records > 0,
         "other_records": other_records,
     }
+    count_notes = []
+    if counts_are_approximate:
+        if error_bound is not None and error_bound > 0:
+            count_notes.append(
+                f"Suggestion counts are approximate: GSA reports that each count "
+                f"may undercount by up to {error_bound} records."
+            )
+        else:
+            count_notes.append(
+                "Suggestion counts are approximate: GSA does not provide a "
+                "known upper bound on their count error."
+            )
     if result["total_matching_records_is_lower_bound"]:
-        result["_count_note"] = (
+        count_notes.append(
             f"GSA reports at least {total} matching records, not an exact total. "
             "Its suggestion response caps hits.total and omits wage_stats. "
             "Narrow the term or use keyword_search/exact_search for full statistics."
         )
+    if count_notes:
+        result["_count_note"] = " ".join(count_notes)
     return result
 
 

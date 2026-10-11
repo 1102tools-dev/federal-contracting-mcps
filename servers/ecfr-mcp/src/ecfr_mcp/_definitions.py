@@ -9,7 +9,8 @@ those blocks by name, including the variants people type: the name without
 its acronym ("service-disabled veteran-owned small business concern"), the
 acronym form ("SDVOSB concern", "COTS"), other italic names in the lead
 ("*Contract clause* or *clause*"), plurals, hyphen and spacing variants,
-and a trailing "means". Mentions are matched on whole words only.
+and a trailing "means". Common COTS aliases and unique whole-word prefixes
+also identify a complete definition. Mentions are matched on whole words only.
 """
 
 from __future__ import annotations
@@ -29,6 +30,13 @@ ACRONYMS = {
     "SAT": "simplified acquisition threshold",
     "MPT": "micro-purchase threshold",
     "UEI": "unique entity identifier",
+}
+# Common COTS wording omits "commercially available" from the official name.
+# Explicit aliases avoid fuzzy matching unrelated names such as allowable and
+# unallowable cost.
+ALIASES = {
+    "commercial off-the-shelf": "commercially available off-the-shelf item",
+    "commercial off-the-shelf item": "commercially available off-the-shelf item",
 }
 _QUERY_NOISE = re.compile(
     r"^(?:what\s+is\s+|define\s+|definition\s+of\s+|the\s+definition\s+of\s+|the\s+term\s+|the\s+|an?\s+)+",
@@ -167,6 +175,26 @@ def find(paragraphs: list[str], term: str) -> dict[str, Any]:
         for n, block in enumerate(blocks):
             if key(expanded) in block["keys"]:
                 how[n] = f"acronym {upper}"
+    if not how:
+        alias = next((target for name, target in ALIASES.items()
+                      if key(singular(name)) in wanted), None)
+        if alias:
+            for n, block in enumerate(blocks):
+                if key(alias) in block["keys"]:
+                    how[n] = "common name"
+    if not how:
+        # Accept omitted trailing words only when the whole-word prefix names
+        # exactly one definition. Ambiguous prefixes remain suggestions.
+        words = re.findall(r"[a-z0-9&]+", query.lower())
+        prefixes = set()
+        if len(words) >= 2:
+            for n, block in enumerate(blocks):
+                for name in block["names"]:
+                    name_words = re.findall(r"[a-z0-9&]+", name.lower())
+                    if len(name_words) > len(words) and name_words[:len(words)] == words:
+                        prefixes.add(n)
+        if len(prefixes) == 1:
+            how[prefixes.pop()] = "unique name prefix"
     rank = {"name": 0, "other name": 1}
     found = sorted(how, key=lambda n: (rank.get(how[n], 2), len(blocks[n]["term"])))
     # Cross-references ("Procurement (see “acquisition”)") bring the target along.
