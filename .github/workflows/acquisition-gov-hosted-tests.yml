@@ -15,7 +15,10 @@ on:
       - 'deploy/acquisition-gov/**'
       - 'deploy/shared/**'
       - 'scripts/load_acquisition_gov.py'
+      - 'scripts/push_acquisition_gov_snapshot.py'
       - 'tests/test_acquisition_gov_loader.py'
+      - 'tests/test_acquisition_gov_snapshot_push.py'
+      - 'tests/test_acquisition_gov_raw_cache_integrity.py'
       - 'servers/acquisition-gov-mcp/src/**'
       - 'servers/acquisition-gov-mcp/tests/fixtures/**'
       - 'servers/acquisition-gov-mcp/pyproject.toml'
@@ -28,7 +31,10 @@ on:
       - 'deploy/acquisition-gov/**'
       - 'deploy/shared/**'
       - 'scripts/load_acquisition_gov.py'
+      - 'scripts/push_acquisition_gov_snapshot.py'
       - 'tests/test_acquisition_gov_loader.py'
+      - 'tests/test_acquisition_gov_snapshot_push.py'
+      - 'tests/test_acquisition_gov_raw_cache_integrity.py'
       - 'servers/acquisition-gov-mcp/src/**'
       - 'servers/acquisition-gov-mcp/tests/fixtures/**'
       - 'servers/acquisition-gov-mcp/pyproject.toml'
@@ -53,7 +59,7 @@ jobs:
         with:
           node-version: '24'
       - name: Loader
-        run: $PY --with pytest pytest -q tests/test_acquisition_gov_loader.py
+        run: $PY --with pytest pytest -q tests/test_acquisition_gov_loader.py tests/test_acquisition_gov_snapshot_push.py tests/test_acquisition_gov_raw_cache_integrity.py
       - name: Fixture snapshot
         run: |
           $PY python deploy/acquisition-gov/test/fixture_recording.py "$RUNNER_TEMP/rec"

@@ -20,6 +20,8 @@ rollback; older ones and unreferenced content are deleted.
     ... --local deploy/acquisition-gov/.wrangler/acquisition-gov.sqlite
     ... --record DIR   also save every raw response (parity fixtures)
     ... --replay DIR   rebuild from saved responses; no network
+    ... --raw-cache DIR   opt-in local raw cache for reload testing
+    ... --raw-cache DIR --reparse   force offline extraction from stored responses
 
 Remote mode uses the D1 HTTP API with CLOUDFLARE_D1_TOKEN (or CLOUDFLARE_API_TOKEN)
 and the database id from --database-id, ACQUISITION_GOV_D1_DATABASE_ID, or
@@ -27,6 +29,9 @@ deploy/acquisition-gov/wrangler.jsonc.
 """
 from __future__ import annotations
 
+import shutil, tempfile
+import httpx
+from urllib.parse import urljoin
 import argparse, asyncio, datetime as dt, hashlib, json, os, re, sqlite3, sys, time, urllib.error, urllib.request
 from pathlib import Path
 
@@ -298,6 +303,12 @@ def fatal(message: str) -> bool:
             or message.startswith("Acquisition.gov returned HTTP 403"))
 
 
+def unavailable(result: dict | None) -> bool:
+    """Only an origin's explicit 404/410 is a durable recorded absence."""
+    return bool(result and not result.get("transient")
+                and re.match(r"^Acquisition\.gov returned HTTP (?:404|410)\b", result.get("error", "")))
+
+
 def transient(message: str) -> bool:
     return (message.startswith(("Network error calling", "System curl"))
             or any(message.startswith(f"Acquisition.gov returned HTTP {code}") for code in range(500, 600)))
@@ -319,11 +330,23 @@ class Recorder:
     def save(self, url: str, kind, result: dict):
         entry = {k: v for k, v in result.items() if k not in ("body", "parsed")}
         if "body" in result:
+            if hashlib.sha256(result["body"]).hexdigest() != result.get("sha256"):
+                raise Abort(f"Raw response hash mismatch for {url}")
             body = self.path / "bodies" / result["sha256"]
-            if not body.exists():
-                partial = body.with_suffix(".partial")
-                partial.write_bytes(result["body"])
-                os.replace(partial, body)
+            try:
+                valid = (body.stat().st_size == len(result["body"])
+                         and hashlib.sha256(body.read_bytes()).hexdigest() == result["sha256"])
+            except OSError:
+                valid = False
+            if not valid:
+                # A verified incoming recording can repair a damaged raw cache.
+                with tempfile.NamedTemporaryFile(dir=body.parent, prefix=body.name + ".", suffix=".partial", delete=False) as saved:
+                    partial = Path(saved.name)
+                    saved.write(result["body"])
+                try:
+                    os.replace(partial, body)
+                finally:
+                    partial.unlink(missing_ok=True)
         self.entries[self.key(url, kind)] = entry
         manifest = self.path / "manifest.json"
         partial = manifest.with_suffix(".partial")
@@ -340,20 +363,100 @@ class Recorder:
         if entry is None:
             return None
         result = dict(entry)
+        if result.get("url") != url:
+            raise Abort(f"Corrupt raw cache metadata for {url}: URL mismatch")
         if "sha256" in entry:
-            result["body"] = (self.path / "bodies" / entry["sha256"]).read_bytes()
+            sha = entry["sha256"]
+            try:
+                if not re.fullmatch(r"[a-f0-9]{64}", sha):
+                    raise ValueError("invalid hash")
+                path = self.path / "bodies" / sha
+                if path.stat().st_size > kind[1]:
+                    raise ValueError("body exceeds allowed size")
+                body = path.read_bytes()
+                if hashlib.sha256(body).hexdigest() != sha:
+                    raise ValueError("body hash mismatch")
+                if entry.get("url") != url or entry.get("content_type") not in kind[0]:
+                    raise ValueError("metadata mismatch")
+                server._validated_url(entry["final_url"])
+            except (OSError, ValueError, KeyError) as exc:
+                raise Abort(f"Corrupt raw cache for {url}: {exc}") from exc
+            result["body"] = body
         return result
 
 
+async def _conditional_curl_once(url: str, *, max_bytes: int, headers: dict) -> tuple[httpx.Response, bytes]:
+    """One HTTPS fetch, with a streaming body bound independent of curl version."""
+    url = server._validated_url(url)
+    executable = shutil.which("curl")
+    if not executable:
+        raise RuntimeError("System curl fallback is unavailable.")
+    with tempfile.TemporaryDirectory(prefix="acquisition-gov-mcp-") as temporary:
+        headers_path = Path(temporary) / "headers"
+        process = await asyncio.create_subprocess_exec(
+            executable, "--disable", "--silent", "--show-error", "--proto", "=https",
+            "--max-time", str(int(constants.DEFAULT_TIMEOUT)), "--max-filesize", str(max_bytes),
+            "--max-redirs", "0", "--header", f"User-Agent: {USER_AGENT}",
+            "--header", "Accept: text/html,application/pdf", "--header", "Accept-Encoding: identity",
+            *[arg for k, v in headers.items() for arg in ("--header", f"{k}: {v}")],
+            "--dump-header", str(headers_path), "--output", "-",
+            "--write-out", "%{stderr}\nSTATUS:%{http_code}\nTYPE:%{content_type}\nREDIRECT:%{redirect_url}\n", url,
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        async def bounded_read(stream, limit):
+            chunks = []
+            size = 0
+            while chunk := await stream.read(65536):
+                size += len(chunk)
+                if size > limit:
+                    raise RuntimeError(f"Acquisition.gov curl response exceeds the {limit}-byte limit.")
+                chunks.append(chunk)
+            return b"".join(chunks)
+        tasks = [asyncio.create_task(bounded_read(process.stdout, max_bytes)),
+                 asyncio.create_task(bounded_read(process.stderr, 8192)),
+                 asyncio.create_task(process.wait())]
+        try:
+            try:
+                body, errors, _ = await asyncio.wait_for(asyncio.gather(*tasks), constants.DEFAULT_TIMEOUT + 2)
+            except asyncio.TimeoutError as exc:
+                raise RuntimeError("System curl timed out calling Acquisition.gov.") from exc
+            if process.returncode:
+                raise RuntimeError(f"System curl could not retrieve Acquisition.gov: exit {process.returncode}; {errors.decode('utf-8', 'replace').strip()[:300]}")
+            metadata = dict(line.split(":", 1) for line in errors.decode("utf-8", "replace").splitlines() if ":" in line)
+            if not {"STATUS", "TYPE", "REDIRECT"}.issubset(metadata):
+                raise RuntimeError("System curl returned incomplete response metadata.")
+            status = int(metadata["STATUS"])
+            raw_headers = headers_path.read_text(encoding="iso-8859-1")
+            blocks = [block for block in re.split(r"\r?\n\r?\n", raw_headers) if block.strip()]
+            lines = blocks[-1].splitlines() if blocks else []
+            headers = dict((k.strip(), v.strip()) for line in lines[1:] if ":" in line for k, v in [line.split(":", 1)])
+            normalized = httpx.Headers(headers)
+            if metadata["TYPE"] and "content-type" not in normalized:
+                normalized["content-type"] = metadata["TYPE"]
+            if metadata["REDIRECT"] and "location" not in normalized:
+                normalized["location"] = metadata["REDIRECT"]
+            return httpx.Response(status, headers=normalized, content=body), body
+        finally:
+            if process.returncode is None:
+                process.kill()
+            await process.wait()
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+
 class Fetcher:
-    """Fetches the way the tools did, through the package's _fetch_bytes (pacing, redirects, limits)."""
+    """Normal package fetches, or opt-in paced conditional requests and offline raw replay."""
 
     def __init__(self, recorder: Recorder | None = None, replay: Recorder | None = None, retry_pause: float = 30.0,
-                 max_cooldown: float = 0.0, log=print):
+                 max_cooldown: float = 0.0, log=print, raw_cache: Recorder | None = None, reparse: bool = False):
         self.recorder, self.replay, self.retry_pause = recorder, replay, retry_pause
         self.max_cooldown, self.log = max_cooldown, log
         self.allow_missing = False
-        self.requests = self.bytes = 0
+        self.requests = self.bytes = self.downloads = self.checks = self.cache_bytes = 0
+        self.raw_cache = raw_cache
+        self.reparse = reparse
         self.cache: dict[tuple, dict] = {}
         server.USER_AGENT = USER_AGENT
 
@@ -368,22 +471,36 @@ class Fetcher:
                 if self.allow_missing:
                     return None
                 raise Abort(f"{url} is not in the replayed recording")
+        elif self.reparse:
+            if self.raw_cache is None:
+                raise Abort("Re-parse requires a local raw response cache")
+            result = self.raw_cache.load(url, kind)
+            permanent_error = unavailable(result)
+            if result is None or ("body" not in result and not permanent_error):
+                raise Abort(f"{url} has no complete raw cached copy; import a recording or run a full reload first")
+            # Unposted resources can truthfully remain recorded unavailable offline.
+            # They have no document to extract; transient failures are incomplete.
+            if "body" in result:
+                self.cache_bytes += len(result["body"])
         else:
             result = await self._fetch(url, kind)
-        if "body" in result:
-            self.bytes += len(result["body"])
+        if result is not None and "body" in result:
+            if self.replay:
+                self.bytes += len(result["body"])
+        if self.raw_cache and not self.reparse and result is not None and ("body" in result or unavailable(result)):
+            # Guard failures and temporary outages never replace verified raw data.
+            self.raw_cache.save(url, kind, result)
         if self.recorder:
             self.recorder.save(url, kind, result)
         self.cache[key] = result
         return result
 
     async def _fetch(self, url: str, kind) -> dict:
-        allowed, max_bytes = kind
         attempt = waits = 0
         while attempt < 2:
-            self.requests += 1
             try:
-                body, content_type, final_url = await server._fetch_bytes(url, allowed_types=allowed, max_bytes=max_bytes)
+                cached = self.raw_cache.load(url, kind) if self.raw_cache else None
+                result = await self._download(url, kind, cached if cached and "body" in cached else None)
             except (RuntimeError, ValueError) as exc:
                 message = str(exc)
                 cooldown = re.search(r"cooldown remains active for approximately (\d+) seconds", message)
@@ -403,9 +520,72 @@ class Fetcher:
                     await asyncio.sleep(self.retry_pause)
                     continue
                 return {"url": url, "error": message, "transient": transient(message), "fetched_at": server._now()}
+            return result
+        raise AssertionError("unreachable")
+
+
+    async def _download(self, url: str, kind, cached=None) -> dict:
+        """Bounded conditional requests using the same allowlist and three-second pacer."""
+        allowed, max_bytes = kind
+        if self.raw_cache is None:
+            self.requests += 1
+            body, content_type, final_url = await server._fetch_bytes(url, allowed_types=allowed, max_bytes=max_bytes)
+            self.downloads += 1
+            self.bytes += len(body)
             return {"url": url, "final_url": final_url, "content_type": content_type, "body": body,
                     "sha256": hashlib.sha256(body).hexdigest(), "fetched_at": server._now()}
-        raise AssertionError("unreachable")
+        # Cached HTML is refreshed normally; cached PDFs use origin validators.
+        headers = {}
+        if cached and kind == PDF:
+            if cached.get("etag"):
+                headers["If-None-Match"] = cached["etag"]
+            if cached.get("last_modified"):
+                headers["If-Modified-Since"] = cached["last_modified"]
+        current = server._validated_url(url)
+        for redirect in range(constants.MAX_REDIRECTS + 1):
+            self.requests += 1
+            async with server._pacer.request_slot() as pacing:
+                if shutil.which("curl"):
+                    response, body = await _conditional_curl_once(current, max_bytes=max_bytes, headers=headers)
+                else:
+                    try:
+                        async with server._get_client().stream("GET", current, headers=headers) as response:
+                            body = await server._bounded_httpx_body(response, max_bytes=max_bytes)
+                    except httpx.RequestError as exc:
+                        raise RuntimeError(f"Network error calling Acquisition.gov: {exc}") from exc
+                pacing.observe_response(response)
+                pacing.raise_if_rate_limited(response, service="Acquisition.gov")
+            if response.status_code in server._REDIRECTS:
+                location = response.headers.get("location")
+                if not location or redirect >= constants.MAX_REDIRECTS:
+                    raise RuntimeError("Acquisition.gov exceeded the redirect limit or omitted Location.")
+                current = server._validated_url(urljoin(current, location))
+                # Validators belong to the original cached final resource only.
+                if cached and current != cached["final_url"]:
+                    headers = {}
+                continue
+            if response.status_code == 304:
+                if not cached or not headers or current != cached["final_url"]:
+                    raise RuntimeError("Acquisition.gov returned an unexpected HTTP 304.")
+                self.checks += 1
+                self.cache_bytes += len(cached["body"])
+                result = dict(cached, fetched_at=server._now())
+                result["etag"] = response.headers.get("etag", cached.get("etag"))
+                result["last_modified"] = response.headers.get("last-modified", cached.get("last_modified"))
+                return result
+            if not 200 <= response.status_code < 300:
+                raise RuntimeError(f"Acquisition.gov returned HTTP {response.status_code}: {body[:500].decode('utf-8', 'replace')}")
+            content_type = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+            if content_type not in allowed:
+                raise RuntimeError(f"Unexpected Content-Type {content_type!r} from Acquisition.gov.")
+            if response.headers.get("content-encoding", "identity").strip().lower() not in ("", "identity"):
+                raise RuntimeError("Unexpected compressed Acquisition.gov response; identity encoding is required.")
+            self.downloads += 1
+            self.bytes += len(body)
+            return {"url": url, "final_url": current, "content_type": content_type, "body": body,
+                    "sha256": hashlib.sha256(body).hexdigest(), "fetched_at": server._now(),
+                    "etag": response.headers.get("etag"), "last_modified": response.headers.get("last-modified")}
+        raise RuntimeError("Acquisition.gov exceeded the redirect limit.")
 
 
 # ---------- D1 ----------
@@ -597,9 +777,11 @@ def agency_table(parts: list) -> list:
 
 
 class Loader:
-    def __init__(self, db, fetcher: Fetcher, revalidate: int = 100, full: bool = False, log=print, now=None):
+    def __init__(self, db, fetcher: Fetcher, revalidate: int = 100, full: bool = False, log=print, now=None, reparse: bool = False):
         self.db, self.fetcher, self.revalidate, self.full, self.log = db, fetcher, revalidate, full, log
         self.now = now or (lambda: dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat())
+        self.reparse = reparse or fetcher.reparse
+        self.generation = None
         self.parsers = asyncio.Semaphore(2)
         self.pending: list[asyncio.Task] = []
         self.stored: set[str] = set()  # source keys this run wrote fresh rows for
@@ -610,14 +792,16 @@ class Loader:
 
     def setup(self) -> tuple[int | None, int]:
         self.db.execute([(WORKER_DIR / "schema.sql").read_text()])
+        self.fetcher.reparse = self.reparse or self.fetcher.reparse
         meta = self.meta()
         current = int(meta["current"]) if "current" in meta else None
         staging = int(meta["staging"]) if "staging" in meta else None
-        if staging is None or staging == current:
+        if self.reparse or staging is None or staging == current:
             staging = max([current or 0] + [r["id"] for r in self.db.query("SELECT id FROM snapshots")]) + 1
             self.db.execute([f"DELETE FROM sources WHERE snapshot = {staging};",
                              *inserts("snapshots", ["id", "started_at"], [[staging, self.now()]]),
                              *inserts("meta", ["key", "value"], [["staging", str(staging)]])])
+        self.generation = f"reparse:{staging}:{time.time_ns()}" if self.reparse else None
         return current, staging
 
     def existing_docs(self, ids: list[str]) -> set[str]:
@@ -641,7 +825,7 @@ class Loader:
             if parse_kind:
                 if parse_kind == "index":
                     inputs["final_url"] = fetched["final_url"]
-                row["doc"] = doc_id(parse_kind, fetched["sha256"], **inputs)
+                row["doc"] = doc_id(parse_kind, fetched["sha256"], **inputs, **({"generation": self.generation} if self.generation else {}))
                 if row["doc"] not in self.existing_docs([row["doc"]]):
                     async with self.parsers:
                         parsed = await parse(parse_kind, fetched["body"], **inputs)
@@ -702,7 +886,7 @@ class Loader:
         # derived data. A new parser must not resume by skipping old date
         # matches merely because the upstream bytes were fetched recently.
         # Error rows have no parsed document and are retried on resume.
-        done = {k for k, r in staged.items() if k.startswith("pdf:")
+        done = {k for k, r in staged.items() if not self.reparse and k.startswith("pdf:")
                 and r["retrieved_at"] >= cutoff and r["error"] is None
                 and r["doc"] == doc_id("pdf", r["content_sha256"])}
         wanted = [u for u in urls if f"pdf:{u}" not in done]
@@ -710,7 +894,7 @@ class Loader:
                or previous_sources[f"pdf:{u}"]["error"]
                or staged.get(f"pdf:{u}", {}).get("error")]
         known = sorted((u for u in wanted if u not in set(new)), key=lambda u: previous_sources[f"pdf:{u}"]["retrieved_at"])
-        fetch = new + (known if self.full else known[:self.revalidate])
+        fetch = new + (known if self.full or self.reparse else known[:self.revalidate])
         self.log(f"PDFs: {len(new)} new or failed, {len(fetch) - len(new)} rechecked, {len(done)} already staged")
         for i, url in enumerate(fetch, 1):
             fetched = await self.fetcher.fetch(url, PDF)
@@ -752,7 +936,9 @@ class Loader:
 
     def switch(self, current: int | None, staging: int, started: float, pdfs: int) -> dict:
         stats = {"snapshot": staging, "completed_at": self.now(), "parser_version": PARSER_VERSION, "pdfs": pdfs,
-                 "requests": self.fetcher.requests, "bytes": self.fetcher.bytes, "seconds": round(time.monotonic() - started, 1), **self.counts}
+                 "requests": self.fetcher.requests, "bytes": self.fetcher.bytes,
+                 "downloads": self.fetcher.downloads, "conditional_checks": self.fetcher.checks, "cache_bytes": self.fetcher.cache_bytes,
+                 "mode": "reparse" if self.reparse else "reload", "seconds": round(time.monotonic() - started, 1), **self.counts}
         statements = [f"UPDATE snapshots SET completed_at = {quote(stats['completed_at'])}, stats = {quote(json.dumps(stats))} WHERE id = {staging};"]
         statements += inserts("meta", ["key", "value"], [["current", str(staging)]] + ([["previous", str(current)]] if current else []))
         statements.append("DELETE FROM meta WHERE key = 'staging';")
@@ -810,13 +996,19 @@ def main(argv=None):
     parser.add_argument("--record", type=Path, help="also save every raw response here")
     parser.add_argument("--replay", type=Path, help="use responses saved by --record; no network")
     parser.add_argument("--revalidate", type=int, default=100, help="also recheck this many least recently fetched PDFs")
-    parser.add_argument("--full", action="store_true", help="refetch every PDF")
+    parser.add_argument("--full", action="store_true", help="recheck every PDF (an opt-in raw cache skips unchanged validator-backed bodies)")
+    parser.add_argument("--raw-cache", type=Path, help="opt-in local raw response cache (recording format); serving cache is unchanged")
+    parser.add_argument("--reparse", action="store_true", help="force extraction of every stored raw resource, without upstream network")
     parser.add_argument("--allow-missing", action="store_true", help="with --replay: leave out PDFs a partial recording lacks")
     parser.add_argument("--record-only", action="store_true", help="with --record: fetch everything into the recording, resuming; no database")
     parser.add_argument("--parse-worker", nargs=2, metavar=("KIND", "ARGS"), help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.parse_worker:
         return parse_worker(args.parse_worker[0], json.loads(args.parse_worker[1]))
+    if args.reparse and not args.raw_cache:
+        raise SystemExit("--reparse needs --raw-cache DIR.")
+    if args.reparse and (args.replay or args.record_only or args.allow_missing):
+        raise SystemExit("--reparse cannot be combined with --replay, --record-only, or --allow-missing.")
     if args.record_only:
         if not args.record:
             raise SystemExit("--record-only needs --record DIR.")
@@ -832,9 +1024,10 @@ def main(argv=None):
         db = LocalD1(args.local)
     else:
         raise SystemExit("Pass --remote or --local PATH.")
-    fetcher = Fetcher(Recorder(args.record) if args.record else None, Recorder(args.replay) if args.replay else None)
+    fetcher = Fetcher(Recorder(args.record) if args.record else None, Recorder(args.replay) if args.replay else None,
+                      raw_cache=Recorder(args.raw_cache) if args.raw_cache else None, reparse=args.reparse)
     fetcher.allow_missing = args.allow_missing
-    stats = asyncio.run(Loader(db, fetcher, revalidate=args.revalidate, full=args.full or bool(args.replay),
+    stats = asyncio.run(Loader(db, fetcher, revalidate=args.revalidate, full=args.full or bool(args.replay), reparse=args.reparse,
                                log=lambda m: print(m, file=sys.stderr, flush=True)).run())
     print(json.dumps(stats, indent=2))
 

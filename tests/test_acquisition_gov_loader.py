@@ -7,6 +7,7 @@ acquisition-gov-mcp package's dependencies (the loader parses with it):
     uv run --frozen --python 3.12 --project servers/acquisition-gov-mcp --with pytest pytest -q tests/test_acquisition_gov_loader.py
 """
 import asyncio
+import hashlib
 import importlib.util
 import json
 import sqlite3
@@ -43,8 +44,8 @@ class Fetcher(loader.Fetcher):
     the recording as the site would: recorded errors raise, and overrides map a
     URL to an exception or to replacement bytes. Records what was requested."""
 
-    def __init__(self, recording, overrides=None):
-        super().__init__(retry_pause=0, log=lambda message: None)
+    def __init__(self, recording, overrides=None, **kwargs):
+        super().__init__(retry_pause=0, log=lambda message: None, **kwargs)
         self.recording = loader.Recorder(recording)
         self.overrides = overrides or {}
         self.asked = []
@@ -65,6 +66,16 @@ class Fetcher(loader.Fetcher):
             return await super()._fetch(url, kind)
         finally:
             loader.server._fetch_bytes = real
+
+    async def _download(self, url, kind, cached=None):
+        # Fixture transport is offline; production conditional transport is
+        # exercised separately below with real response status and headers.
+        self.requests += 1
+        body, content_type, final_url = await loader.server._fetch_bytes(url, allowed_types=kind[0], max_bytes=kind[1])
+        self.downloads += 1
+        self.bytes += len(body)
+        return {'url': url, 'final_url': final_url, 'content_type': content_type,
+                'body': body, 'sha256': hashlib.sha256(body).hexdigest(), 'fetched_at': loader.server._now()}
 
 
 def run(db, fetcher, **options):
@@ -255,3 +266,166 @@ def test_staged_fetch_error_is_retried_on_resume(tmp_path, recording):
     run(db, fetcher, revalidate=0)
     assert NASA in fetcher.asked
     assert rows(path, 'SELECT error FROM sources WHERE snapshot=2 AND key=?', f'pdf:{NASA}') == [(None,)]
+
+
+@pytest.fixture
+def compact_parts(monkeypatch):
+    # Only the two successful model pages from this saved fixture; no live site.
+    monkeypatch.setattr(loader, 'PARTS', (10, 12))
+
+
+def test_raw_cache_preserves_pdf_bytes_url_and_hash(tmp_path, recording, compact_parts):
+    """The durable cache must survive a fresh process, including guidance PDFs."""
+    path = tmp_path / 'd1.sqlite'
+    cache_path = tmp_path / 'raw-cache'
+    run(loader.LocalD1(path), Fetcher(recording, raw_cache=loader.Recorder(cache_path)))
+    cache = loader.Recorder(cache_path)
+    saved = loader.Recorder(recording)
+    pdf_urls = [GSA, NASA, *[url for url in loader.constants.GUIDANCE_URLS.values() if url.endswith('.pdf')]]
+    for url in pdf_urls:
+        expected = saved.load(url, loader.PDF)
+        actual = cache.load(url, loader.PDF)
+        assert actual['url'] == url
+        assert actual['body'] == expected['body']
+        assert actual['sha256'] == hashlib.sha256(expected['body']).hexdigest()
+    manifest = json.loads((cache_path / 'manifest.json').read_text())
+    assert manifest[cache.key(GSA, loader.PDF)]['sha256'] == cache.load(GSA, loader.PDF)['sha256']
+    assert (cache_path / 'bodies' / cache.load(GSA, loader.PDF)['sha256']).read_bytes() == cache.load(GSA, loader.PDF)['body']
+
+
+def test_reparse_forces_extraction_without_network_or_mutating_live_docs(tmp_path, recording, monkeypatch, compact_parts):
+    path = tmp_path / 'd1.sqlite'
+    cache_path = tmp_path / 'raw-cache'
+    run(loader.LocalD1(path), Fetcher(recording, raw_cache=loader.Recorder(cache_path)))
+    original_sources = rows(path, 'SELECT key, doc FROM sources WHERE snapshot=1 AND error IS NULL ORDER BY key')
+    original_pages = rows(path, 'SELECT * FROM pages ORDER BY doc,page,seq')
+    parsed_kinds = []
+    real_parse = loader.parse
+
+    async def counted_parse(kind, body, **inputs):
+        parsed_kinds.append(kind)
+        return await real_parse(kind, body, **inputs)
+
+    class Offline(loader.Fetcher):
+        async def _fetch(self, *args, **kwargs):
+            raise AssertionError('reparse attempted a network fetch')
+
+        async def _download(self, *args, **kwargs):
+            raise AssertionError('reparse attempted a download')
+
+    monkeypatch.setattr(loader, 'parse', counted_parse)
+    stats = run(loader.LocalD1(path), Offline(raw_cache=loader.Recorder(cache_path)), reparse=True)
+    reparsed_sources = rows(path, 'SELECT key, doc FROM sources WHERE snapshot=2 AND error IS NULL ORDER BY key')
+    assert [key for key, _ in reparsed_sources] == [key for key, _ in original_sources]
+    assert all(old_doc != new_doc for (_, old_doc), (_, new_doc) in zip(original_sources, reparsed_sources))
+    assert len(parsed_kinds) == 8 and 'pdf' in parsed_kinds and 'guidance_pdf' in parsed_kinds
+    assert stats['requests'] == stats['downloads'] == 0
+    assert rows(path, 'SELECT key, doc FROM sources WHERE snapshot=1 AND error IS NULL ORDER BY key') == original_sources
+    old_docs = {doc for _, doc in original_sources}
+    assert [row for row in rows(path, 'SELECT * FROM pages ORDER BY doc,page,seq') if row[0] in old_docs] == original_pages
+
+
+@pytest.mark.parametrize('corrupt', [False, True], ids=['missing', 'corrupt'])
+def test_reparse_bad_raw_cache_aborts_without_download_or_switch(tmp_path, recording, corrupt, compact_parts):
+    path = tmp_path / 'd1.sqlite'
+    cache_path = tmp_path / 'raw-cache'
+    run(loader.LocalD1(path), Fetcher(recording, raw_cache=loader.Recorder(cache_path)))
+    sha = loader.Recorder(cache_path).load(NASA, loader.PDF)['sha256']
+    body_path = cache_path / 'bodies' / sha
+    if corrupt:
+        body_path.write_bytes(b'broken PDF')
+    else:
+        body_path.unlink()
+
+    class Offline(loader.Fetcher):
+        async def _fetch(self, *args, **kwargs):
+            raise AssertionError('missing or corrupt cache must never fall back to network')
+
+    with pytest.raises(loader.Abort):
+        run(loader.LocalD1(path), Offline(raw_cache=loader.Recorder(cache_path)), reparse=True)
+    assert meta(path)['current'] == '1'
+
+
+def test_conditional_pdf_reload_downloads_only_new_or_changed_and_keeps_pacing(tmp_path, monkeypatch):
+    """Real fetch logic and pacer, with a fake origin and clock instead of waits."""
+    new_url = f'{fixture.UPLOADS}/NEW_RFO_Deviation_Part-10.pdf'
+    bodies = {GSA: fixture.pdf([['Original GSA']]), NASA: fixture.pdf([['Original NASA']])}
+    versions = {GSA: 'gsa-1', NASA: 'nasa-1'}
+    now = [1_800_000_000.0]
+    requests = []
+
+    async def sleep(seconds):
+        now[0] += seconds
+
+    pacer = loader.server.FederalApiPacer(
+        bucket='www.acquisition.gov', default_interval=3.0,
+        environment={'FEDERAL_API_MIN_INTERVAL_SECONDS': '3'},
+        pacing_dir=tmp_path / 'pacing', clock=lambda: now[0], sleep=sleep,
+    )
+    monkeypatch.setattr(loader.server, '_pacer', pacer)
+    monkeypatch.setattr(loader.shutil, 'which', lambda executable: '/fixture/curl')
+
+    async def origin(url, *, max_bytes, headers):
+        requests.append((url, now[0], dict(headers)))
+        etag = f'"{versions[url]}"'
+        response_headers = {'etag': etag, 'last-modified': 'Wed, 01 Oct 2025 12:00:00 GMT'}
+        if headers.get('If-None-Match') == etag:
+            return loader.httpx.Response(304, headers=response_headers), b''
+        response_headers['content-type'] = 'application/pdf'
+        assert len(bodies[url]) < max_bytes
+        return loader.httpx.Response(200, headers=response_headers), bodies[url]
+
+    monkeypatch.setattr(loader, '_conditional_curl_once', origin)
+    cache_path = tmp_path / 'raw-cache'
+
+    async def reload(urls):
+        fetcher = loader.Fetcher(raw_cache=loader.Recorder(cache_path), retry_pause=0, log=lambda _: None)
+        results = {url: await fetcher.fetch(url, loader.PDF) for url in urls}
+        return fetcher, results
+
+    first, _ = asyncio.run(reload([GSA, NASA]))
+    assert (first.downloads, first.checks) == (2, 0)
+    unchanged, _ = asyncio.run(reload([GSA, NASA]))
+    assert (unchanged.downloads, unchanged.checks, unchanged.bytes) == (0, 2, 0)
+    bodies[NASA] = fixture.pdf([['Changed NASA']])
+    versions[NASA] = 'nasa-2'
+    bodies[new_url] = fixture.pdf([['New agency']])
+    versions[new_url] = 'new-1'
+    changed, results = asyncio.run(reload([GSA, NASA, new_url]))
+    assert (changed.downloads, changed.checks) == (2, 1)
+    assert results[NASA]['body'] == bodies[NASA]
+    assert results[new_url]['body'] == bodies[new_url]
+    assert results[NASA]['sha256'] == hashlib.sha256(bodies[NASA]).hexdigest()
+    assert all(later[1] - earlier[1] >= 3 for earlier, later in zip(requests, requests[1:]))
+    assert requests[2][2] == {'If-None-Match': '"gsa-1"', 'If-Modified-Since': 'Wed, 01 Oct 2025 12:00:00 GMT'}
+    assert requests[-1][2] == {}, 'a new URL must not inherit another PDF’s validators'
+
+
+@pytest.mark.parametrize('transient_error', [False, True], ids=['unposted-404', 'incomplete-503'])
+def test_reparse_preserves_unposted_resources_but_aborts_on_transient_cache(tmp_path, recording, monkeypatch, transient_error):
+    """Unposted FAR parts have truthful error rows and no PDF/body to extract."""
+    monkeypatch.setattr(loader, 'PARTS', (10, 12, 20, 21))
+    path = tmp_path / 'd1.sqlite'
+    cache_path = tmp_path / 'raw-cache'
+    run(loader.LocalD1(path), Fetcher(recording, raw_cache=loader.Recorder(cache_path)))
+    unposted = rows(path, "SELECT key,error,doc FROM sources WHERE snapshot=1 AND key IN ('part:20','part:21') ORDER BY key")
+    assert len(unposted) == 2 and all('HTTP 404' in error and doc is None for _, error, doc in unposted)
+    cache = loader.Recorder(cache_path)
+    if transient_error:
+        url = f'{loader.constants.RFO_INDEX_URL}/far-overhaul-part-20'
+        cache.save(url, loader.HTML, {'url': url, 'error': 'Acquisition.gov returned HTTP 503: busy',
+                                    'transient': True, 'fetched_at': loader.server._now()})
+
+    class Offline(loader.Fetcher):
+        async def _fetch(self, *args, **kwargs):
+            raise AssertionError('offline cached error attempted a fetch')
+
+    if transient_error:
+        with pytest.raises(loader.Abort, match='no complete raw cached copy'):
+            run(loader.LocalD1(path), Offline(raw_cache=cache), reparse=True)
+        assert meta(path)['current'] == '1'
+    else:
+        stats = run(loader.LocalD1(path), Offline(raw_cache=cache), reparse=True)
+        assert stats['requests'] == stats['downloads'] == 0
+        assert stats['fetch_errors'] == 2 and stats['parsed'] == 8
+        assert rows(path, "SELECT key,error,doc FROM sources WHERE snapshot=2 AND key IN ('part:20','part:21') ORDER BY key") == unposted
