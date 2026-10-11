@@ -281,10 +281,19 @@ def code_sets(value,path=''):
     result={}
     if isinstance(value,dict):
         for key,item in value.items(): result.update(code_sets(item,f'{path}.{key}' if path else key))
-    elif isinstance(value,list) and value and all(isinstance(item,dict) for item in value):
-        key=next((key for key in ('naicsCode','businessTypeCode','sbaBusinessTypeCode') if all(key in item for item in value)),None)
-        if key: result[path]=sorted({str(item[key]).upper() for item in value})
+    elif isinstance(value,list):
+        name=path.rsplit('.',1)[-1]
+        key={'naicsList':'naicsCode','businessTypeList':'businessTypeCode','sbaBusinessTypeList':'sbaBusinessTypeCode'}.get(name)
+        if key:
+            result[path]=sorted({str(item[key]).upper() for item in value if isinstance(item,dict) and item.get(key) not in (None,'')})
     return result
+
+
+def code_differences(public,live):
+    source_sets,live_sets=code_sets(public),code_sets(live)
+    return [{'field':field,'public':source_sets.get(field,[]),'live':live_sets.get(field,[]),
+             'classification':'API enrichment' if set(source_sets.get(field,[]))<=set(live_sets.get(field,[])) else 'source/live code-set difference'}
+            for field in sorted(set(source_sets)|set(live_sets)) if source_sets.get(field,[])!=live_sets.get(field,[])]
 
 
 def existing_key(path):
@@ -382,18 +391,17 @@ async def live_comparison(replay,entity_file,exclusion_file,key,output_path=None
                 raw_common=sorted(set(raw_expected)&set(raw_actual))
                 raw_mismatch=[{'field':field,'public':raw_expected[field],'live':raw_actual[field]} for field in raw_common if raw_expected[field]!=raw_actual[field]]
                 raw_matched=len(raw_common)-len(raw_mismatch)
-                source_sets,live_sets=code_sets(hosted_item['record']),code_sets(candidate)
-                code_differences=[{'field':field,'public':source_sets[field],'live':live_sets[field],'classification':'API enrichment' if set(source_sets[field])<=set(live_sets[field]) else 'source/live code-set difference'} for field in sorted(set(source_sets)&set(live_sets)) if source_sets[field]!=live_sets[field]]
+                code_changes=code_differences(hosted_item['record'],candidate)
                 missing=sorted(set(expected)-set(actual))
                 record={'kind':kind,'identifier':(identifier or row.get('exclusion_id')),'live_totalRecords':response.get('totalRecords'),'public_fixture_records_for_identifier':source_count,'identity_strategy':identity_strategy,
                         'source_file':item['source_file'],'file_date':item['file_date'],
-                        'matched_fields':matched,'mismatches':mismatch,'raw_matched_fields':raw_matched,'raw_mismatches':raw_mismatch,'code_set_differences':code_differences,'public_only_fields':missing,
+                        'matched_fields':matched,'mismatches':mismatch,'raw_matched_fields':raw_matched,'raw_mismatches':raw_mismatch,'code_set_differences':code_changes,'public_only_fields':missing,
                         'shared_public_baseline':{field:raw_actual[field] for field in raw_common},
                         'live_public_baseline':public_baseline(hosted_item['record'],candidate),
                         'hosted_public_baseline':hosted_item['record'],'hosted_query':hosted_item['query'],'hosted_totalRecords':hosted_item['totalRecords']}
                 identity=(kind,identifier) if kind=='entities' else (kind,identifier or row['name'],row.get('cage_code'),row.get('excluding_agency_code'),row.get('exclusion_program'),row.get('exclusion_type'),row.get('activation_date'),row.get('termination_date'),row.get('record_status'))
                 record['duplicate_selected_identity']=identity in selected_identities
-                record['selected_for_strict_parity']=not mismatch and not record['duplicate_selected_identity'] and all(change['classification']=='API enrichment' for change in code_differences)
+                record['selected_for_strict_parity']=not mismatch and not record['duplicate_selected_identity'] and all(change['classification']=='API enrichment' for change in code_changes)
                 if record['selected_for_strict_parity']:
                     report['selected_records'][kind]+=1
                     selected_identities.add(identity)

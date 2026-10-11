@@ -358,6 +358,9 @@ def load(db, kind, path, metadata, allow_small=False, prepared=None):
                 actual = db.query(f'SELECT COUNT(*) AS n FROM {table}{suffix}')[0]['n']
                 if actual != expected:
                     raise ValueError(f'{table} staged count {actual} differs from validated {expected}')
+            # Observe D1 while the complete old and staged copies coexist.
+            # These diagnostics are output-only, not extract_status columns.
+            peak_bytes = db.size()
             status = dict(kind=kind,**metadata,loaded_at=dt.datetime.now(dt.timezone.utc).isoformat(),row_count=count,sha256=file_sha256(path),database_bytes=size,load_seconds=round(time.monotonic()-start,3))
             status.update(source_rows=int(audit.get('source_rows',count)), rejected_rows=int(audit.get('rejected_rows',0)), opted_out_rows=int(audit.get('opted_out_rows',0)),duplicate_rows=int(audit.get('duplicate_rows',0)))
             db.atomic(promotion_sql(kind,suffix,status))
@@ -367,6 +370,10 @@ def load(db, kind, path, metadata, allow_small=False, prepared=None):
         status['database_bytes'] = db.size()
         status['load_seconds'] = round(time.monotonic()-start,3)
         db.atomic([f"UPDATE extract_status SET database_bytes={status['database_bytes']}, load_seconds={status['load_seconds']} WHERE kind={quote(kind)};"])
+        status.update(existing_database_bytes=existing_bytes, prepared_database_bytes=size,
+                      peak_database_bytes=peak_bytes, database_limit_bytes=MAX_DATABASE_BYTES,
+                      peak_headroom_bytes=MAX_DATABASE_BYTES-peak_bytes,
+                      peak_headroom_percent=round(100*(MAX_DATABASE_BYTES-peak_bytes)/MAX_DATABASE_BYTES,3))
         return status
 
 

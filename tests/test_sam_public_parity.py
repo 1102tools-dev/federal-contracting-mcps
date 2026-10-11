@@ -62,6 +62,16 @@ class PublicParityTests(unittest.TestCase):
             self.assertEqual(response['record']['publicExtract']['samNumber'],source['exclusion_id'])
             self.assertTrue(response['file_name'])
 
+    def test_nonempty_source_codes_cannot_match_missing_or_empty_live_lists(self):
+        for name,key,code in [('naicsList','naicsCode','541512'),('businessTypeList','businessTypeCode','LJ'),('sbaBusinessTypeList','sbaBusinessTypeCode','A6')]:
+            source={name:[{key:code}]}
+            for live in [{name:[]},{},{name:[{key:None}]}]:
+                changes=module.code_differences(source,live)
+                self.assertEqual(len(changes),1)
+                self.assertEqual(changes[0]['classification'],'source/live code-set difference')
+                self.assertEqual(changes[0]['live'],[])
+            self.assertEqual(module.code_differences(source,{name:[{key:code}]}),[])
+
     def test_nested_public_baseline_preserves_codes_and_excludes_other_fields(self):
         expected={'businessTypeList':[{'businessTypeCode':'A5'},{'businessTypeCode':'LJ'}]}
         actual={'businessTypeList':[{'businessTypeCode':'A5','privateExtra':'excluded'},{'businessTypeCode':'F'},{'businessTypeCode':'LJ'}],'privateSection':'excluded'}

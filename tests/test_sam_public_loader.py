@@ -109,6 +109,26 @@ class Safety(unittest.TestCase):
                 loader.load(self.db,'exclusions',self.path,self.metadata,True)
         self.assertEqual(self.db.query('SELECT exclusion_id FROM exclusions'),[{'exclusion_id':'old'}])
         self.assertEqual(self.db.query("SELECT name FROM sqlite_master WHERE name LIKE '%stage%'"),[])
+    def test_peak_size_observed_before_promotion_with_both_copies(self):
+        observations=[]
+        def size():
+            stable=self.db.query('SELECT exclusion_id FROM exclusions')[0]['exclusion_id']
+            stages=self.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'exclusions_stage_%'")
+            observations.append((stable,bool(stages)))
+            return 3_000_000_000 if stages else 1_000_000_000
+        with patch.object(loader,'prepare',side_effect=self.prepare), patch.object(self.db,'size',side_effect=size):
+            result=loader.load(self.db,'exclusions',self.path,self.metadata,True)
+        self.assertEqual(observations,[('old',False),('old',True),('new',False)])
+        self.assertEqual(result['existing_database_bytes'],1_000_000_000)
+        self.assertEqual(result['peak_database_bytes'],3_000_000_000)
+        self.assertEqual(result['database_bytes'],1_000_000_000)
+        self.assertEqual(result['peak_headroom_bytes'],loader.MAX_DATABASE_BYTES-3_000_000_000)
+        self.assertEqual(result['peak_headroom_percent'],70.0)
+        self.assertEqual(result['database_limit_bytes'],10_000_000_000)
+        self.assertGreater(result['prepared_database_bytes'],0)
+        columns={row['name'] for row in self.db.query('PRAGMA table_info(extract_status)')}
+        self.assertNotIn('peak_database_bytes',columns)
+
     def test_success_promotes_data_and_status(self):
         with patch.object(loader,'prepare',side_effect=self.prepare):
             status = loader.load(self.db,'exclusions',self.path,self.metadata,True)
