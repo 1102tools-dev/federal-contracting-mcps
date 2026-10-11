@@ -1,7 +1,7 @@
 import { HourlyBudget, readBoundedBody, BodyTimeoutError } from "./hourly-budget";
 import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
-import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit } from "../../shared/edge";
+import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited } from "../../shared/edge";
 
 export class GSACalc extends Container {
   defaultPort = 8080;
@@ -52,7 +52,7 @@ export default {
     const origin = request.headers.get("Origin");
     if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
     if (!await withinLimit(request, env)) {
-      return new Response("Request limit reached; retry later.", {status: 429, headers: {"Retry-After": "60"}});
+      return rateLimited(request, "GSA CALC+", 10);
     }
     if (url.pathname === "/mcp" && request.method !== "POST") {
       return new Response("Use POST for stateless MCP requests.", {status: 405, headers: {Allow: "POST"}});
