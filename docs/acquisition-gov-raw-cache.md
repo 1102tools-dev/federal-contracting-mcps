@@ -6,7 +6,7 @@ From this repository on the Mac, run:
 uv run --frozen --project servers/acquisition-gov-mcp python scripts/reparse_and_publish_acquisition_gov.py
 ```
 
-The Mac needs the existing `govnode` SSH connection and `CLOUDFLARE_D1_TOKEN` or `CLOUDFLARE_API_TOKEN` in its environment. The Dell needs the seeded raw cache at `/var/lib/acquisition-gov-raw`, the isolated source checkout at `/var/lib/acquisition-gov-raw/work`, and `/usr/local/bin/uv`. Do not run this during another load or publication.
+The Mac needs the existing `govnode` SSH connection and `CLOUDFLARE_D1_TOKEN` or `CLOUDFLARE_API_TOKEN` in its environment. The Dell needs the seeded raw cache at `/var/lib/acquisition-gov-raw`, the isolated source copy at `/var/lib/acquisition-gov-raw/work`, and `/usr/local/bin/uv`. Do not run this during another load or publication.
 
 This command re-extracts every cached resource offline on the Dell, checks that requests and downloads are both zero, and makes a consistent parsed SQLite backup. It copies only that parsed snapshot and timing statistics to the Mac. The existing Mac publisher verifies the uploaded rows before switching the current D1 snapshot. A failed parse or transfer stops before publishing; a failed upload leaves the prior hosted snapshot serving.
 
@@ -18,7 +18,7 @@ This workflow leaves `/opt/mcp-origin`, its compose configuration and containers
 
 ## Nightly raw-cache synchronization
 
-On `govnode`, `acquisition-gov-raw-sync.timer` starts `acquisition-gov-raw-sync.service` every night at 03:30 `America/Chicago`, including daylight-saving changes. The Dell's system timezone remains `Etc/UTC`; the timer explicitly names the user's local timezone. `Persistent=true` catches up a missed run after the timer starts again. The service runs as `james`, who owns `/var/lib/acquisition-gov-raw`, using the isolated checkout and virtual environment beneath its `work` directory. The unit templates are in `deploy/acquisition-gov/cache-sync/`.
+On `govnode`, `acquisition-gov-raw-sync.timer` starts `acquisition-gov-raw-sync.service` every night at 03:30 `America/Chicago`, including daylight-saving changes. The Dell's system timezone remains `Etc/UTC`; the timer explicitly names the user's local timezone. `Persistent=true` catches up a missed run after the timer starts again. The service runs as `james`, who owns `/var/lib/acquisition-gov-raw`, using the isolated source copy and virtual environment beneath its `work` directory. The unit templates are in `deploy/acquisition-gov/cache-sync/`.
 
 The standalone sync command reuses the 1.0.13 loader's downloader and three-second request spacing. It refreshes the FAR Overhaul index and uses conditional requests to retain unchanged PDFs, downloading only new or changed bodies when the origin supports validators. Without validators, downloaded bytes are compared by SHA-256. This nightly operation does not extract PDF text, create a parsed snapshot, or publish to D1. Cloudflare credentials remain on the Mac. Re-parse and publish still use the Mac command above.
 
@@ -48,12 +48,15 @@ ssh govnode 'systemctl list-timers acquisition-gov-raw-sync.timer --no-pager'
 ssh govnode 'journalctl -u acquisition-gov-raw-sync.service -n 30 --no-pager'
 ```
 
-The status file records `finished_at`, `index_count`, `cached_count`, `added`, `changed`, `removed`, and `errors`. A healthy unchanged run has `changed=0` and `errors=0`. A failed run returns a nonzero service exit status; inspect the journal and status file before running the Mac publisher. The sync command and units are operational scripts outside the Python package, so they do not require another PyPI release.
+The status file records `finished_at`, `index_count`, `cached_count`, `added`, `changed`, `removed`, and `errors`. `expected_unavailable` counts every indexed PDF with a recorded non-transient origin HTTP 404/410, even when a limited sample checked none of those URLs. `unavailable_details` lists their URL, HTTP status, reason and `checked_at` time; these links are retried on the next full sync. `checked_unavailable` counts only unavailable indexed PDFs checked in this run. `missing_count` and `missing_details` separately identify unverified, transient or unrecorded resources. The index count equals cached PDFs plus expected unavailable links plus missing resources.
+
+The Dell `work` folder is a source copy, not a Git checkout. `work/SOURCE_COMMIT` records the exact committed sync script revision, which each run includes as `source_commit` in its status. `work/SOURCE_COMMITS.json` additionally identifies the loader revision and deployed component hashes; these components can have different revisions. An absent or malformed marker yields `source_commit=null`, never a guessed revision. A healthy unchanged run has `changed=0` and `errors=0`. A failed run returns a nonzero service exit status; inspect the journal and status file before running the Mac publisher. The sync command and units are operational scripts outside the Python package, so they do not require another PyPI release.
 
 To rebuild this setup from the tracked files, use the existing seeded cache and isolated `work` layout described above; its virtual environment must already contain the 1.0.13 loader dependencies. From a checkout of this repository on the Mac, copy only the sync script and unit templates:
 
 ```sh
 scp scripts/sync_acquisition_gov_raw_cache.py govnode:/var/lib/acquisition-gov-raw/work/scripts/
+git log -1 --format=%H -- scripts/sync_acquisition_gov_raw_cache.py | ssh govnode 'cat > /var/lib/acquisition-gov-raw/work/SOURCE_COMMIT' 
 scp deploy/acquisition-gov/cache-sync/acquisition-gov-raw-sync.service deploy/acquisition-gov/cache-sync/acquisition-gov-raw-sync.timer govnode:/tmp/
 ssh govnode 'sudo install -m 0644 /tmp/acquisition-gov-raw-sync.service /etc/systemd/system/acquisition-gov-raw-sync.service && sudo install -m 0644 /tmp/acquisition-gov-raw-sync.timer /etc/systemd/system/acquisition-gov-raw-sync.timer && sudo systemctl daemon-reload && sudo systemctl enable --now acquisition-gov-raw-sync.timer'
 ```

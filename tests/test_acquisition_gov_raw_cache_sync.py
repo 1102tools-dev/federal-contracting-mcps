@@ -197,3 +197,69 @@ def test_network_fetches_do_not_hold_mutation_lock(monkeypatch,tmp_path):
     monkeypatch.setattr(syncer,'mutation',tracked)
     status=run(cache,fetch)
     assert status['errors']==0 and commits==2 # PDF then archive/index/baseline
+
+
+def test_limited_status_counts_all_twelve_known_absent_pdfs(monkeypatch, tmp_path):
+    urls = [BASE + str(i).zfill(3) + '.pdf' for i in range(40)]
+    cache, fetch = setup(monkeypatch, tmp_path, urls, urls)
+    for i, url in enumerate(urls[-12:]):
+        code = 404 if i % 2 else 410
+        cache.save(url, loader.PDF, dict(url=url, error=f'Acquisition.gov returned HTTP {code}: gone', fetched_at='checked'))
+    status = asyncio.run(syncer.sync(cache, fetcher=fetch, limit=25, log=lambda _: None))
+    assert status['errors'] == 0 and status['checked_unavailable'] == 0
+    assert status['expected_unavailable'] == 12 and status['cached_count'] == 28
+    assert status['cached_count'] + status['expected_unavailable'] + status['missing_count'] == 40
+    assert {item['url'] for item in status['unavailable_details']} == set(urls[-12:])
+    assert all(item['status'] in {404, 410} and item['checked_at'] == 'checked' for item in status['unavailable_details'])
+
+
+def test_missing_and_transient_are_not_expected_unavailable(monkeypatch, tmp_path):
+    urls = [BASE + str(i) + '.pdf' for i in range(4)]
+    cache, fetch = setup(monkeypatch, tmp_path, urls, urls)
+    cache.entries.pop(cache.key(urls[1], loader.PDF))
+    cache.save(urls[2], loader.PDF, dict(url=urls[2], error='Acquisition.gov returned HTTP 503: retry', transient=True))
+    cache.save(urls[3], loader.PDF, dict(url=urls[3], error='Acquisition.gov returned HTTP 404: unverified', transient=True))
+    status = asyncio.run(syncer.sync(cache, fetcher=fetch, limit=1, log=lambda _: None))
+    assert status['expected_unavailable'] == 0 and status['missing_count'] == 3
+    assert status['cached_count'] == 1
+    assert {row['url'] for row in status['missing_details']} == set(urls[1:])
+
+
+def test_recovered_pdf_clears_recorded_absence(monkeypatch, tmp_path):
+    url = BASE + 'recovered.pdf'
+    cache, fetch = setup(monkeypatch, tmp_path, [url], [url])
+    cache.save(url, loader.PDF, dict(url=url, error='Acquisition.gov returned HTTP 404: gone', fetched_at='old'))
+    status = run(cache, fetch)
+    assert status['added'] == 1 and status['expected_unavailable'] == 0
+    assert status['cached_count'] == 1 and status['unavailable_details'] == []
+
+
+def test_deployed_commit_marker_validated_and_written_to_status(monkeypatch, tmp_path):
+    assert syncer.source_commit(tmp_path) is None
+    marker = tmp_path / 'SOURCE_COMMIT'
+    for invalid in ['main', 'abc123', 'a' * 40 + '\nextra', '../secret']:
+        marker.write_text(invalid)
+        assert syncer.source_commit(tmp_path) is None
+    revision = '0123456789abcdef' * 2 + '01234567'
+    marker.write_text(revision + '\n')
+    assert syncer.source_commit(tmp_path) == revision
+    monkeypatch.setattr(syncer, 'source_commit', lambda: revision)
+    url = BASE + 'one.pdf'
+    cache, fetch = setup(monkeypatch, tmp_path / 'cache', [url], [url])
+    status = run(cache, fetch)
+    assert status['source_commit'] == revision
+    assert json.loads((cache.path / '_sync-status.json').read_text())['source_commit'] == revision
+
+
+def test_failed_index_refresh_keeps_previous_count_and_accounting(monkeypatch, tmp_path):
+    urls = [BASE + str(i) + '.pdf' for i in range(3)]
+    cache, fetch = setup(monkeypatch, tmp_path, urls, urls)
+    cache.save(urls[-1], loader.PDF, dict(url=urls[-1], error='Acquisition.gov returned HTTP 404: gone', fetched_at='old'))
+    async def failed(url, kind):
+        fetch.requests += 1
+        return dict(url=url, error='Acquisition.gov returned HTTP 503: retry', transient=True)
+    fetch._fetch = failed
+    status = run(cache, fetch)
+    assert status['errors'] == 1 and status['index_count'] == 3
+    assert status['cached_count'] == 2 and status['expected_unavailable'] == 1
+    assert status['missing_count'] == 0 and status['removed'] == 0

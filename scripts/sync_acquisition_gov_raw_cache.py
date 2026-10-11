@@ -12,6 +12,7 @@ import fcntl
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import tempfile
 
@@ -36,6 +37,41 @@ def atomic_json(path: Path, value):
 def index_urls(result):
     parts = loader._html._parse_index(result['body'], result['final_url'])
     return sorted({d['source_url'] for p in parts for d in p['agency_deviations']})
+
+
+def source_commit(root=None):
+    """Read the deployed sync revision; an unmarked copy is explicitly unknown."""
+    marker = (root or Path(__file__).resolve().parents[1]) / 'SOURCE_COMMIT'
+    try:
+        revision = marker.read_text().strip()
+    except OSError:
+        return None
+    return revision if re.fullmatch(r'[a-f0-9]{40}', revision) else None
+
+
+def cache_accounting(cache, active):
+    """Count all indexed PDFs, regardless of the sample checked during this run.
+
+    Durable absence requires a recorded origin 404/410; unverified and transient
+    failures are separate, never silently represented as dead links.
+    """
+    cached = 0
+    unavailable = []
+    missing = []
+    for url in sorted(active):
+        entry = cache.entries.get(cache.key(url, loader.PDF))
+        if entry and entry.get('sha256'):
+            if (cache.path / 'bodies' / entry['sha256']).is_file():
+                cached += 1
+                continue
+        if loader.unavailable(entry):
+            unavailable.append(dict(url=url, status=int(re.search(r'HTTP (404|410)\b', entry['error']).group(1)),
+                                    reason=entry['error'], checked_at=entry.get('fetched_at')))
+        else:
+            missing.append(dict(url=url, reason=(entry or {}).get('error', 'No recorded PDF body'),
+                                checked_at=(entry or {}).get('fetched_at')))
+    return dict(cached_count=cached, expected_unavailable=len(unavailable),
+                unavailable_details=unavailable, missing_count=len(missing), missing_details=missing)
 
 
 def archive_removed(cache, urls):
@@ -80,7 +116,7 @@ async def sync(cache, *, fetcher=None, log=print, limit=None):
     fetcher = fetcher or loader.Fetcher(raw_cache=cache, log=log)
     status = dict(finished_at=None, index_count=0, cached_count=0, added=0, changed=0, removed=0, errors=0,
                   expected_unavailable=0, error_details=[], mode='limited' if limit is not None else 'full',
-                  limit=limit, checked_count=0)
+                  limit=limit, checked_count=0, checked_unavailable=0, source_commit=source_commit())
     active = set()
     try:
         old_index = cache.load(loader.constants.RFO_INDEX_URL, loader.HTML)
@@ -96,6 +132,7 @@ async def sync(cache, *, fetcher=None, log=print, limit=None):
         else:
             previous_count = len(previous)
         active = previous
+        status['index_count'] = len(previous)
         # Do not save a redesigned/failed index over the last usable offline index.
         index = await fetcher._fetch(loader.constants.RFO_INDEX_URL, loader.HTML)
         if 'body' not in index:
@@ -130,7 +167,8 @@ async def sync(cache, *, fetcher=None, log=print, limit=None):
                 # failure. Retry them each night so newly posted bytes are discovered.
                 with mutation(cache):
                     cache.save(url, kind, result)
-                status['expected_unavailable'] += 1
+                if kind == loader.PDF and url in active:
+                    status['checked_unavailable'] += 1
             else:
                 status['errors'] += 1
                 status['error_details'].append({'url': url, 'error': result.get('error', 'no body')})
@@ -151,7 +189,7 @@ async def sync(cache, *, fetcher=None, log=print, limit=None):
         status['error_details'].append({'error': str(exc)})
     finally:
         status['finished_at'] = loader.server._now()
-        status['cached_count'] = sum(1 for url in active if 'sha256' in cache.entries.get(cache.key(url, loader.PDF), {}))
+        status.update(cache_accounting(cache, active))
         status['requests'] = fetcher.requests
         status['downloads'] = fetcher.downloads
         status['conditional_checks'] = fetcher.checks
