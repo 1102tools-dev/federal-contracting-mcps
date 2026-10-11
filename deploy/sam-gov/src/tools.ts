@@ -110,7 +110,7 @@ export const TOOLS = [
   },
   {
     name: "get_data_status",
-    description: "Report source file names and dates, load times and row counts for public opportunities, entity registrations and exclusions. Includes opportunity counts by type and last-load changes. Use it to judge how current results are.",
+    description: "Report source file names and dates, load times, row counts and coverage limitations for public opportunities, entity registrations and exclusions. Includes opportunity counts by type and last-load changes. Use it to judge how current results are.",
     inputSchema: {type: "object", properties: {}, additionalProperties: false},
     annotations: {title: "Get Data Status", ...READ_ONLY},
   },
