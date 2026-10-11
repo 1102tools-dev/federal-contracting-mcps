@@ -1,7 +1,12 @@
 // Run: node --test deploy/shared/edge.test.ts
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity} from "./edge.ts";
+import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL} from "./edge.ts";
+
+// Tests never reach openai.com: the live AI-platform list download fails unless a test mocks it.
+const networkFetch = globalThis.fetch;
+globalThis.fetch = (async (input: any, init?: any) => String(input?.url ?? input) === OPENAI_RANGES_URL
+  ? new Response("offline in tests", {status: 503}) : networkFetch(input, init)) as typeof fetch;
 
 const HEADERS = {
   "content-type": "application/json",
@@ -357,4 +362,28 @@ test("a busy or timed-out backend answer is reworded for the AI", async () => {
   assert.match((await late.json() as any).error.message, /at capacity/);
   const fine = Response.json({ok: true});
   assert.equal(explainCapacity(fine, body, "eCFR"), fine);
+});
+
+test("OpenAI's live connector list extends the built-in ranges, and failures keep the built-in list", async () => {
+  const realFetch = globalThis.fetch;
+  const prefixes = [{ipv4Prefix: "203.0.113.0/24"}, ...Array.from({length: 60}, (_, i) => ({ipv4Prefix: `198.51.${i}.0/24`}))];
+  let calls = 0;
+  try {
+    resetLiveRanges();
+    globalThis.fetch = (async (url: string) => (calls++, assert.equal(String(url), OPENAI_RANGES_URL), Response.json({prefixes}))) as any;
+    assert.equal(await isAiPlatformLive("203.0.113.9"), true);
+    assert.equal(await isAiPlatformLive("8.8.8.8"), false);
+    assert.equal(await isAiPlatformLive("160.79.106.12"), true);
+    assert.equal(calls, 1, "the list is fetched once, then reused");
+    resetLiveRanges();
+    globalThis.fetch = (async () => { throw new Error("offline"); }) as any;
+    assert.equal(await isAiPlatformLive("203.0.113.9"), false);
+    assert.equal(await isAiPlatformLive("160.79.106.12"), true, "built-in ranges still apply");
+    resetLiveRanges();
+    globalThis.fetch = (async () => Response.json({prefixes: [{ipv4Prefix: "203.0.113.0/24"}]})) as any;
+    assert.equal(await isAiPlatformLive("203.0.113.9"), false, "a suspiciously short list is ignored");
+  } finally {
+    globalThis.fetch = realFetch;
+    resetLiveRanges();
+  }
 });

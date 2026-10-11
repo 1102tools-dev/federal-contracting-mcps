@@ -437,12 +437,65 @@ function ipv4(address: string): number | null {
   return value;
 }
 
-const PARSED_RANGES = AI_PLATFORM_RANGES.map(range => {
+function parseRange(range: string): readonly [number, number] | null {
   const [base, bits] = range.split("/");
-  const size = 2 ** (32 - Number(bits));
-  const start = Math.floor(ipv4(base)! / size) * size;
+  const value = ipv4(base);
+  const width = Number(bits);
+  if (value === null || !Number.isInteger(width) || width < 8 || width > 32) return null;
+  const size = 2 ** (32 - width);
+  const start = Math.floor(value / size) * size;
   return [start, start + size] as const;
-});
+}
+
+const PARSED_RANGES = AI_PLATFORM_RANGES.map(range => parseRange(range)!);
+
+// OpenAI's published ChatGPT connector list, read live so new ranges count without
+// a redeploy. Cloudflare caches the download for a day; any failure, or a list that
+// looks wrong (under 50 ranges), keeps the built-in ranges above.
+export const OPENAI_RANGES_URL = "https://openai.com/chatgpt-connectors.json";
+const DAY_MS = 24 * 60 * 60 * 1000;
+const RETRY_MS = 60 * 60 * 1000;
+let liveRanges: (readonly [number, number])[] = [];
+let nextRefresh = 0;
+let refreshing: Promise<void> | null = null;
+
+async function refreshLiveRanges(): Promise<void> {
+  nextRefresh = Date.now() + RETRY_MS;
+  try {
+    const response = await fetch(OPENAI_RANGES_URL, {
+      headers: {"User-Agent": "1102tools-edge (+https://1102tools.com)"},
+      signal: AbortSignal.timeout(1500),
+      cf: {cacheTtl: 86400, cacheEverything: true},
+    } as RequestInit);
+    if (!response.ok) return;
+    const data = await response.json() as {prefixes?: {ipv4Prefix?: unknown}[]};
+    const parsed = (data.prefixes ?? []).flatMap(p => typeof p.ipv4Prefix === "string" ? [parseRange(p.ipv4Prefix)] : [])
+      .filter((r): r is readonly [number, number] => r !== null);
+    if (parsed.length >= 50) {
+      liveRanges = parsed;
+      nextRefresh = Date.now() + DAY_MS;
+    }
+  } catch {}
+}
+
+/** Test hook: forget the live list. */
+export function resetLiveRanges(): void {
+  liveRanges = [];
+  nextRefresh = 0;
+  refreshing = null;
+}
+
+/** True for a built-in range, or one in OpenAI's live connector list. */
+export async function isAiPlatformLive(address: string): Promise<boolean> {
+  if (isAiPlatform(address)) return true;
+  const value = ipv4(address);
+  if (value === null) return false;
+  if (Date.now() >= nextRefresh) {
+    refreshing ??= refreshLiveRanges().finally(() => { refreshing = null; });
+    await refreshing;
+  }
+  return liveRanges.some(([start, end]) => value >= start && value < end);
+}
 
 /** True for an IPv4 address inside a published Anthropic or OpenAI range. */
 export function isAiPlatform(address: string): boolean {
@@ -453,7 +506,7 @@ export function isAiPlatform(address: string): boolean {
 /** Whether this request is within its address's per-minute limit. */
 export async function withinLimit(request: Request, env: {REQUEST_LIMITER: Limiter; AI_LIMITER?: Limiter}): Promise<boolean> {
   const key = request.headers.get("CF-Connecting-IP") || "unknown";
-  const limiter = env.AI_LIMITER && isAiPlatform(key) ? env.AI_LIMITER : env.REQUEST_LIMITER;
+  const limiter = env.AI_LIMITER && await isAiPlatformLive(key) ? env.AI_LIMITER : env.REQUEST_LIMITER;
   return (await limiter.limit({key})).success;
 }
 
@@ -482,7 +535,7 @@ function rpcOf(text: string | null): {id: unknown; method: string} {
 /** The answer for a request over its address's per-minute limit. */
 export async function rateLimited(request: Request, service: string, perMinute: number): Promise<Response> {
   const key = request.headers.get("CF-Connecting-IP") || "unknown";
-  const message = isAiPlatform(key)
+  const message = await isAiPlatformLive(key)
     ? `The hosted ${service} server is at capacity right now. Wait a minute and try again, or ${LOCAL_INSTALL}`
     : `You've reached the hosted ${service} limit of ${perMinute} calls a minute. Wait a minute and try again, or ${LOCAL_INSTALL}`;
   // Only small bodies are read; the normal body limit is enforced after this check.
