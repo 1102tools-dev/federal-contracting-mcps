@@ -60,6 +60,8 @@ test("UEI and CAGE checks preserve shared fields and include active and expired 
   assert.match(result.file_name, /^SAM_Exclusions_Public_Extract_V2_/);
   assert.equal(result.file_date, "2026-10-11");
   assert.match(result.notes.join(" "), /not a live SAM.gov clearance check/);
+  assert.match(result.notes.join(" "), /inactive or terminated historical records may be absent/);
+  assert.doesNotMatch(EXCLUSION_TOOL.description, /Includes active and inactive/);
 });
 
 test("name filters combine, paginate deterministically, and treat wildcards literally", async () => {
@@ -94,6 +96,10 @@ test("data status reports both file dates, row counts and availability", async (
   assert.equal(status.entities.row_count, 25);
   assert.equal(status.exclusions.row_count, 4);
   assert.equal(status.exclusions.file_date, "2026-10-11");
+  assert.match(status.entities.notes.join(" "), /opted out/);
+  assert.match(status.entities.notes.join(" "), /certification exit date/);
+  assert.match(status.exclusions.notes.join(" "), /not a complete exclusion history/);
+  assert.match(status.exclusions.notes.join(" "), /Confirm current exclusion status on SAM.gov/);
   const unloaded = await getPublicDataStatus(database(false).db);
   assert.equal(unloaded.entities.available, false);
   assert.equal(unloaded.exclusions.available, false);

@@ -347,7 +347,7 @@
   },
   {
     "name": "get_data_status",
-    "description": "Report source file names and dates, load times and row counts for public opportunities, entity registrations and exclusions. Includes opportunity counts by type and last-load changes. Use it to judge how current results are.",
+    "description": "Report source file names and dates, load times, row counts and coverage limitations for public opportunities, entity registrations and exclusions. Includes opportunity counts by type and last-load changes. Use it to judge how current results are.",
     "inputSchema": {
       "type": "object",
       "properties": {},
@@ -482,7 +482,7 @@
   },
   {
     "name": "search_exclusions",
-    "description": "Check SAM.gov public exclusion/debarment records by UEI, CAGE, or name. Filters combine. Includes active and inactive/expired records from the daily public extract. Every result identifies the source file and date. No matches in the extract is not a live clearance or eligibility determination; confirm current status on SAM.gov.",
+    "description": "Check SAM.gov public exclusion/debarment records by UEI, CAGE, or name. Filters combine. Searches the dated public extract, which is not a complete exclusion history; inactive or terminated historical records may be absent. Every result identifies the source file and date. No matches in the extract is not a live clearance or eligibility determination; confirm current status on SAM.gov.",
     "inputSchema": {
       "type": "object",
       "properties": {

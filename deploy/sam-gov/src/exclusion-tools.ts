@@ -1,4 +1,5 @@
 import {ToolError, type Database} from "./public-types.ts";
+import {ENTITY_CAVEATS} from "./entity-tools.ts";
 
 type Args = Record<string, unknown>;
 type Row = Record<string, any>;
@@ -6,12 +7,12 @@ type Row = Record<string, any>;
 const CAVEATS = [
   "Results come from the SAM.gov public exclusions extract, not a live SAM.gov clearance check. Confirm current exclusion status on SAM.gov before relying on these results.",
   "No matches means no matching records in this public file; it does not establish eligibility or responsibility. Names can match different people or organizations; compare identifiers and addresses.",
-  "Both active and inactive/expired records are included. Check exclusionActions.listOfActions[].recordStatus and the activation and termination dates; an exclusion record alone does not establish that an exclusion is currently in effect.",
+  "This public snapshot is not a complete exclusion history; inactive or terminated historical records may be absent. Check exclusionActions.listOfActions[].recordStatus and the activation and termination dates for any returned record; an exclusion record alone does not establish that an exclusion is currently in effect.",
 ];
 
 export const EXCLUSION_TOOL = {
   name: "search_exclusions",
-  description: "Check SAM.gov public exclusion/debarment records by UEI, CAGE, or name. Filters combine. Includes active and inactive/expired records from the daily public extract. Every result identifies the source file and date. No matches in the extract is not a live clearance or eligibility determination; confirm current status on SAM.gov.",
+  description: "Check SAM.gov public exclusion/debarment records by UEI, CAGE, or name. Filters combine. Searches the dated public extract, which is not a complete exclusion history; inactive or terminated historical records may be absent. Every result identifies the source file and date. No matches in the extract is not a live clearance or eligibility determination; confirm current status on SAM.gov.",
   inputSchema: {
     type: "object",
     properties: {
@@ -69,7 +70,10 @@ export async function getPublicDataStatus(db: Database) {
   const rows = (await db.prepare("SELECT s.*, EXISTS(SELECT 1 FROM public_refresh_runs r WHERE r.kind=s.kind AND r.state='applying') AS refreshing FROM extract_status s WHERE kind IN ('entities', 'exclusions') ORDER BY kind").bind().all<Row>()).results;
   const status = (kind: string) => {
     const row = rows.find(row => row.kind === kind);
-    return row ? {...row, available: !row.refreshing, ...(row.refreshing ? {status: "refreshing", notes: ["Public data is refreshing; retry later. The listed source describes the last completed refresh."]} : {})} : {available: false, kind, file_name: null, file_date: null, row_count: 0};
+    const quarantined = Number(row?.quarantined_rows ?? row?.rejected_rows ?? 0);
+    const notes = kind === "entities" ? [...ENTITY_CAVEATS, ...(quarantined > 0 ? [`${quarantined} malformed source rows were quarantined and excluded from this hosted mirror; coverage is incomplete.`] : [])] : [...CAVEATS];
+    if (row?.refreshing) notes.push("Public data is refreshing; retry later. The listed source describes the last completed refresh.");
+    return row ? {...row, available: !row.refreshing, notes, ...(row.refreshing ? {status: "refreshing"} : {})} : {available: false, kind, file_name: null, file_date: null, row_count: 0, notes};
   };
   return {entities: status("entities"), exclusions: status("exclusions")};
 }

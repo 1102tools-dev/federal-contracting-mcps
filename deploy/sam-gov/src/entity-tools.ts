@@ -14,7 +14,7 @@ const BUSINESS: Record<string, string> = {
   A8: "Non-Profit Organization", LJ: "Limited Liability Company", MF: "Manufacturer of Goods",
   OY: "Black American Owned", PI: "Hispanic American Owned", QF: "Service-Disabled Veteran-Owned Business", XS: "Subchapter S Corporation",
 };
-const CAVEATS = [
+export const ENTITY_CAVEATS = [
   "Entities who opted out of public display are not included in the hosted public mirror. No match does not establish that an entity is unregistered.",
   "Confirm current registration status on SAM.gov before relying on this monthly public extract.",
   "Active means the registration is active in this file, not that an SBA certification is current. SBA codes can remain after an 8(a) certification exit date; check certificationExitDate and confirm current certification with SBA before relying on it.",
@@ -163,7 +163,7 @@ export async function searchEntities(db: Database, args: Args) {
     source: "SAM.gov public Entity Registration monthly V2 extract",
     file_name: snapshot?.file_name ?? null, file_date: snapshot?.file_date ?? null,
     source_url: snapshot?.source_url ?? null,
-    notes: [...CAVEATS, ...(quarantined > 0 ? [`${quarantined} malformed source rows were quarantined and excluded from this hosted mirror; coverage is incomplete.`] : [])],
+    notes: [...ENTITY_CAVEATS, ...(quarantined > 0 ? [`${quarantined} malformed source rows were quarantined and excluded from this hosted mirror; coverage is incomplete.`] : [])],
   };
   if (!snapshot?.file_date) return {status: "not_loaded", totalRecords: 0, entityData: [], page, size, ...provenance};
   const rows: Row[] = JSON.parse(snapshot.records);
