@@ -53,11 +53,12 @@ All nine are in the Claude directory and six are in ChatGPT as hosted installs. 
 
 | | Local | Hosted |
 |---|---|---|
-| **Why use it** | Your own full rate limits, so you skip any congestion on hosted. It uses government-source data, including bundled snapshots where supported | Convenience. No setup or keys, and it works in Claude or ChatGPT anywhere |
+| **Why use it** | Your own full rate limits, so you skip any congestion on hosted. It uses government-source data, including bundled snapshots where supported | Always up to date. No setup or keys, and it works in Claude or ChatGPT anywhere |
 | **Works in** | Claude or ChatGPT desktop apps and other AI apps, on a desktop or laptop | Claude or ChatGPT on web, desktop, and phone |
-| **Setup** | Ask your AI to set it up or walk you through it, using the setup guide. Free keys for SAM.gov and Regulations.gov; Per Diem city-only/API and unbundled-year lookups also require a key | Add it from the Claude or ChatGPT directory. No keys |
+| **Setup** | Ask your AI to set it up or walk you through it, using the setup guide. Free keys for SAM.gov, Regulations.gov, and some Per Diem lookups | Add it from the Claude or ChatGPT directory. No keys |
 | **Rate limits** | Your own, in full | Pooled across all users. Your lookups stay private |
 | **Relies on** | Government-source data, including bundled snapshots where supported | Government-source data, bundled snapshots where supported, and Cloudflare |
+| **Updates** | Manual. It keeps the version from first install, including bundled data, until you ask your AI to update it | Automatic. Always runs the latest release |
 | **SAM.gov** | Full edition: 20 tools, free key | 4 tools, no key |
 
 **Use hosted if** you're on your phone, your work computer blocks installs, or you want SAM.gov opportunity search without a key.

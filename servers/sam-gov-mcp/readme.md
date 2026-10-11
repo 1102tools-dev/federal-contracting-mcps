@@ -24,6 +24,7 @@ SAM.gov comes in two editions. Hosted is the only one with no key.
 | Covers | Opportunities plus entity registrations, SBA certifications, exclusions, reps and certs, integrity records, contract award records, the federal hierarchy, and subawards | Contract opportunities, award notices, and justifications |
 | Data | Live SAM.gov APIs, within your key's daily limit | SAM.gov's public contract opportunities file, refreshed daily |
 | Works in | Claude or ChatGPT desktop apps and other AI apps, on a desktop or laptop | Claude or ChatGPT on web, desktop, and phone |
+| Updates | Manual. It keeps the version from first install, including bundled data, until you ask your AI to update it | Automatic. Always runs the latest release |
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|
