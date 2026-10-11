@@ -16,7 +16,7 @@ No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 |---|---|---|
 | [Local setup](#installation) | [Install](https://claude.ai/directory/federal-register-by-1102tools) | Coming soon |
 
-- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. It doesn't update itself: ask your AI to update it (for example with `@latest`) when you want the newest fixes. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
+- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. It doesn't update itself, so ask your AI to update it. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
 - **Hosted** is always up to date, needs no setup or keys, and works in Claude or ChatGPT anywhere.
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#federal-register)
