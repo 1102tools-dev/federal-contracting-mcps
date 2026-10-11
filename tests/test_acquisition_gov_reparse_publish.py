@@ -1,4 +1,6 @@
 """Offline orchestration regressions; never contact Dell or Cloudflare."""
+import ast
+import fcntl
 import json
 from pathlib import Path
 import sqlite3
@@ -129,8 +131,45 @@ def test_remote_parse_failure_never_creates_publishable_backup(tmp_path, monkeyp
     directory = tmp_path / "output" / ("fast-" + ID)
     assert not (directory / "snapshot.sqlite").exists()
     assert not (directory / "stats.json").exists()
+    with (tmp_path / "_cache.lock").open("a+") as competitor:
+        fcntl.flock(competitor.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
 
 
 def test_rejects_shell_options_in_host(tmp_path):
     with pytest.raises(ValueError):
         fast.run(host="-oProxyCommand=bad", output=tmp_path, environment={"CLOUDFLARE_API_TOKEN": "secret"})
+
+
+def test_shared_cache_lock_protects_parse_and_backup_then_releases(tmp_path, monkeypatch):
+    monkeypatch.setattr(fast, "REMOTE_ROOT", str(tmp_path))
+    program = fast.remote_program(ID)
+    tree = ast.parse(program)
+    locked = next(node for node in tree.body if isinstance(node, ast.With)
+                  and any(isinstance(item.optional_vars, ast.Name) and item.optional_vars.id == "cache_lock"
+                          for item in node.items))
+    calls = [node for node in ast.walk(locked) if isinstance(node, ast.Call)
+             and isinstance(node.func, ast.Attribute)]
+    flock = next(node for node in calls if node.func.attr == "flock")
+    parse = next(node for node in calls if node.func.attr == "run")
+    backup = next(node for node in calls if node.func.attr == "backup")
+    assert flock.lineno < parse.lineno < backup.lineno
+    assert isinstance(flock.args[1], ast.Attribute) and flock.args[1].attr == "LOCK_SH"
+
+    def check_shared_lock():
+        with (tmp_path / "_cache.lock").open("a+") as competitor:
+            with pytest.raises(BlockingIOError):
+                fcntl.flock(competitor.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # Another offline reader can proceed concurrently.
+            fcntl.flock(competitor.fileno(), fcntl.LOCK_SH | fcntl.LOCK_NB)
+
+    def parse_stub(command, **kwargs):
+        check_shared_lock()
+        path = Path(command[command.index("--local") + 1])
+        with sqlite3.connect(path) as db:
+            db.execute("CREATE TABLE parsed (value TEXT)")
+        return SimpleNamespace(stdout=json.dumps(STATS))
+
+    monkeypatch.setattr(subprocess, "run", parse_stub)
+    exec(compile(program, "remote-program", "exec"), {})
+    with (tmp_path / "_cache.lock").open("a+") as competitor:
+        fcntl.flock(competitor.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)

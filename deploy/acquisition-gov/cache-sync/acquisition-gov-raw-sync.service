@@ -1,0 +1,25 @@
+[Unit]
+Description=Synchronize the isolated Acquisition.gov raw-file cache
+Wants=network-online.target
+After=network-online.target
+ConditionPathIsDirectory=/var/lib/acquisition-gov-raw
+
+[Service]
+Type=oneshot
+User=james
+Group=james
+WorkingDirectory=/var/lib/acquisition-gov-raw/work
+ExecStart=/var/lib/acquisition-gov-raw/work/servers/acquisition-gov-mcp/.venv/bin/python /var/lib/acquisition-gov-raw/work/scripts/sync_acquisition_gov_raw_cache.py --raw-cache /var/lib/acquisition-gov-raw
+TimeoutStartSec=3h
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+UMask=0022
+Environment=PYTHONUNBUFFERED=1
+Environment=FEDERAL_API_PACING_DIR=/var/lib/acquisition-gov-raw/pacing
+UnsetEnvironment=CLOUDFLARE_API_TOKEN CLOUDFLARE_D1_TOKEN CF_API_TOKEN
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/acquisition-gov-raw

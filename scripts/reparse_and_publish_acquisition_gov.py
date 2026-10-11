@@ -28,23 +28,27 @@ def remote_program(run_id):
     """Only fixed paths and a locally generated ID enter the remote program."""
     if not re.fullmatch(r"[0-9a-f]{32}", run_id):
         raise ValueError("Invalid run ID")
-    return f'''import json, os, pathlib, sqlite3, subprocess
+    return f'''import fcntl, json, os, pathlib, sqlite3, subprocess
 root = pathlib.Path({REMOTE_ROOT!r})
 output = root / "output" / {('fast-' + run_id)!r}
 output.mkdir(parents=True, exist_ok=False)
 environment = {{k: v for k, v in os.environ.items() if not k.upper().startswith("CLOUDFLARE")}}
-result = subprocess.run([
-    "nice", "-n", "10", "/usr/local/bin/uv", "run", "--frozen", "--python", "3.12",
-    "--project", "servers/acquisition-gov-mcp", "python", "scripts/load_acquisition_gov.py",
-    "--raw-cache", str(root), "--local", str(output / "working.sqlite"), "--reparse"
-], cwd=root / "work", env=environment, check=True, stdout=subprocess.PIPE, text=True)
-stats = json.loads(result.stdout)
-if stats.get("mode") != "reparse" or stats.get("requests") != 0 or stats.get("downloads") != 0:
-    raise RuntimeError("Expected an offline re-parse with zero requests and downloads")
-with sqlite3.connect((output / "working.sqlite").resolve().as_uri() + "?mode=ro", uri=True) as source:
-    with sqlite3.connect(output / "snapshot.sqlite") as target:
-        source.backup(target)
-(output / "stats.json").write_text(json.dumps(stats, indent=2) + "\\n")
+with (root / "_cache.lock").open("a+") as cache_lock:
+    # Sync takes this lock exclusively only while mutating cached resources.
+    # Hold a shared view through extraction and the consistent SQLite backup.
+    fcntl.flock(cache_lock.fileno(), fcntl.LOCK_SH)
+    result = subprocess.run([
+        "nice", "-n", "10", "/usr/local/bin/uv", "run", "--frozen", "--python", "3.12",
+        "--project", "servers/acquisition-gov-mcp", "python", "scripts/load_acquisition_gov.py",
+        "--raw-cache", str(root), "--local", str(output / "working.sqlite"), "--reparse"
+    ], cwd=root / "work", env=environment, check=True, stdout=subprocess.PIPE, text=True)
+    stats = json.loads(result.stdout)
+    if stats.get("mode") != "reparse" or stats.get("requests") != 0 or stats.get("downloads") != 0:
+        raise RuntimeError("Expected an offline re-parse with zero requests and downloads")
+    with sqlite3.connect((output / "working.sqlite").resolve().as_uri() + "?mode=ro", uri=True) as source:
+        with sqlite3.connect(output / "snapshot.sqlite") as target:
+            source.backup(target)
+    (output / "stats.json").write_text(json.dumps(stats, indent=2) + "\\n")
 print(json.dumps({{"snapshot": str(output / "snapshot.sqlite"), "stats": str(output / "stats.json"), "reparse": stats}}))
 '''
 

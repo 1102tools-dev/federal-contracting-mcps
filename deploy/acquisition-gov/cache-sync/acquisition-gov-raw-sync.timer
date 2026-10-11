@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightly Acquisition.gov raw-file cache synchronization
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 America/Chicago
+Persistent=true
+AccuracySec=1s
+Unit=acquisition-gov-raw-sync.service
+
+[Install]
+WantedBy=timers.target
