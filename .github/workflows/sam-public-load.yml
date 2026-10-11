@@ -38,13 +38,15 @@ jobs:
       - name: Install wrangler
         run: npm ci --prefix deploy/sam-gov --ignore-scripts
       - name: Validate safety tests
+        id: safety
         run: |
           python -m unittest discover -s tests -p 'test_sam_public_loader.py'
           python -m unittest discover -s tests -p 'test_sam_public_incremental.py'
           python -m unittest discover -s tests -p 'test_sam_public_cost.py'
       - name: Verify read-only account budget access
+        id: budget_probe
         run: |
-          python -c "import sys; sys.path.insert(0,'scripts'); from sam_public_incremental import billing_period,account_month_written; period=billing_period(); print('Billing period:',period); print('Account written rows:',account_month_written(period))"
+          python -c "import sys; sys.path.insert(0,'scripts'); from sam_public_incremental import billing_period,account_month_written; from load_sam_public import D1; print('D1 read access:',D1('remote','sam-gov-entities').query('SELECT 1 AS readable')[0]['readable']); period=billing_period(); print('Billing period:',period); print('Account written rows:',account_month_written(period))"
       - name: Check newest monthly entities
         id: entities
         if: ${{ vars.SAM_PUBLIC_ENTITIES_RELOAD_ENABLED == 'true' && !inputs.credential_check_only }}
@@ -54,7 +56,7 @@ jobs:
           { echo '### Entities'; echo '```json'; cat entities-status.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Load newest daily exclusions
         id: exclusions
-        if: always() && !inputs.credential_check_only
+        if: always() && !inputs.credential_check_only && steps.safety.outcome == 'success' && steps.budget_probe.outcome == 'success'
         continue-on-error: true
         run: |
           python scripts/load_sam_public.py --remote --kind exclusions --cost-report-directory exclusions-cost-report > exclusions-status.json
