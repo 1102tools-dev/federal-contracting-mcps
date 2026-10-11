@@ -31,11 +31,21 @@ def test_snapshot_date_clusters_do_not_cross_a_page_boundary():
     assert dates[1][0] == len(cover) + 1
 
 
+def test_snapshot_adjacent_dates_choose_latest_value_before_worker_first_match_selection():
+    text = 'PCD Revision A\nMarch 13, 2026\nJuly 11, 2025\nAugust 20, 2025\nPURPOSE: Revised deviation.'
+    dates = loader.labeled_dates(text, [{'start': 0, 'text': text}])['Standalone']
+    assert len(dates) == 1
+    start, end, date = dates[0]
+    assert date == '2026-03-13'
+    assert text[start:end].strip() == 'March 13, 2026'
+
+
 def test_saved_gsa_incomplete_rules_are_replaced_with_explanation_and_official_link():
     source_url = 'https://www.acquisition.gov/sites/default/files/page_file_uploads/GSA_RFO_Deviation_Part-8_Supplement-1.pdf'
     parsed = loader.parse_pdf((FIXTURES / 'gsa-part8-supplement1.pdf').read_bytes(), source_url=source_url)
     assert len(parsed['pages']) == 2
-    for page in parsed['pages']:
+    assert parsed['pages'][1]['failure'], 'the audited Required Use replacement words are missing on page 2'
+    for page in (page for page in parsed['pages'] if page['failure']):
         assert 'Important words drawn as outlines could not be extracted' in page['failure']
         assert f'Read the official PDF: {source_url}' in page['failure']
         assert page['text'] == '', 'empty extraction makes the existing Worker report an incomplete status'

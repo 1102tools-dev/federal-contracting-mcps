@@ -51,13 +51,16 @@ _STANDALONE_DATE = re.compile(
 
 
 def _standalone_date_matches(text: str) -> list[re.Match]:
-    """Return the current date of each adjacent date cluster on this page."""
+    """Return the latest valid date of each adjacent date cluster on this page."""
     selected = []
+    previous = None
     for match in _STANDALONE_DATE.finditer(text):
-        if selected and not text[selected[-1].end():match.start()].strip():
-            selected[-1] = match
+        if previous is not None and not text[previous.end():match.start()].strip():
+            if (_normalize_date(match.group(1)) or "") > (_normalize_date(selected[-1].group(1)) or ""):
+                selected[-1] = match
         else:
             selected.append(match)
+        previous = match
     return selected
 
 
@@ -133,28 +136,77 @@ def _extract_document_fields(page_texts: list[tuple[int, str]]) -> dict[str, Any
     }
 
 
-def _has_outlined_text(page, reader) -> bool:
-    """Recognize dense runs of small curved filled shapes used as letter outlines.
+def _has_outlined_text(page, reader, extracted_text: str | None = None) -> bool:
+    """Recognize aligned runs of outlined letters in the document body.
 
-    Dense glyph-sized curves can contain rule-changing words omitted from plain
-    extraction. Warn and withhold fragments instead of presenting them as rules.
+    Tiny curves alone also describe seals and logos. Follow graphics transforms,
+    then require consecutive glyph-sized shapes along substantial text lines.
+    Compact emblems, repeated shapes, and page banners do not qualify. Withhold
+    a page only when substantial outlined lettering accompanies sparse text;
+    a small omitted phrase must not discard an otherwise usable page.
     """
-    contours, curved, coordinates = 0, False, []
+    matrix = (1., 0., 0., 1., 0., 0.)
+    stack, coordinates, glyphs = [], [], []
+    curved = False
+    bounds = getattr(page, "mediabox", None)
+    bottom, top = (float(bounds.bottom), float(bounds.top)) if bounds is not None else (None, None)
     for operands, operator in ContentStream(page.get_contents(), reader).operations:
-        if operator in (b'm', b'l', b'c', b'v', b'y'):
-            coordinates.extend(float(value) for value in operands)
-        if operator in (b'c', b'v', b'y'):
-            curved = True
-        if operator in (b'f', b'f*', b'B', b'B*'):
-            if curved and coordinates and 2 < max(max(coordinates[::2]) - min(coordinates[::2]),
-                                                     max(coordinates[1::2]) - min(coordinates[1::2])) < 30:
-                contours += 1
-                if contours >= 50:
-                    return True
+        if operator == b'q':
+            stack.append(matrix)
+        elif operator == b'Q':
+            matrix = stack.pop() if stack else (1., 0., 0., 1., 0., 0.)
+        elif operator == b'cm':
+            a, b, c, d, e, f = map(float, operands)
+            A, B, C, D, E, F = matrix
+            matrix = (A*a + C*b, B*a + D*b, A*c + C*d, B*c + D*d,
+                      A*e + C*f + E, B*e + D*f + F)
+        elif operator in (b'm', b'l', b'c', b'v', b'y'):
+            a, b, c, d, e, f = matrix
+            for i in range(0, len(operands), 2):
+                x, y = float(operands[i]), float(operands[i + 1])
+                coordinates.append((a*x + c*y + e, b*x + d*y + f))
+            curved |= operator in (b'c', b'v', b'y')
+        elif operator in (b'f', b'f*', b'B', b'B*', b'n', b'S', b's'):
+            if curved and coordinates and operator in (b'f', b'f*', b'B', b'B*'):
+                x0, x1 = min(x for x, _ in coordinates), max(x for x, _ in coordinates)
+                y0, y1 = min(y for _, y in coordinates), max(y for _, y in coordinates)
+                width, height = x1 - x0, y1 - y0
+                in_body = bottom is None or bottom + (top - bottom) * .1 < y0 < bottom + (top - bottom) * .85
+                if in_body and .5 < width < 22 and 3 < height < 18 and .1 < width / height < 4:
+                    glyphs.append((x0, y0, x1, y1))
             curved, coordinates = False, []
-        elif operator in (b'n', b'S', b's'):
-            curved, coordinates = False, []
-    return False
+    rows = []
+    for glyph in sorted(glyphs, key=lambda box: box[1]):
+        if rows and glyph[1] - rows[-1][0][1] < 3:
+            rows[-1].append(glyph)
+        else:
+            rows.append([glyph])
+    substantial = []
+    long_line = False
+    for row in rows:
+        runs = []
+        for glyph in sorted(set(row)):
+            if runs and glyph[0] - max(box[2] for box in runs[-1]) <= 18:
+                runs[-1].append(glyph)
+            else:
+                runs.append([glyph])
+        for run in runs:
+            span = max(box[2] for box in run) - min(box[0] for box in run)
+            if len(run) >= 40 and span >= 160:
+                long_line = True
+            if len(run) >= 15 and span >= 80:
+                substantial.append(len(run))
+    missing_glyphs = sum(substantial)
+    if not (long_line or len(substantial) >= 2 and missing_glyphs >= 50):
+        return False
+    if extracted_text is None:
+        extracted_text = page.extract_text() or ""
+    readable = len("".join(extracted_text.split()))
+    # Curved glyphs are a conservative estimate of omitted lettering. Requiring
+    # at least one outlined glyph per four readable characters avoids classifying
+    # an otherwise substantial extraction as unusable because of a small graphic
+    # or a short outlined phrase.
+    return missing_glyphs >= max(50, readable / 4)
 
 
 def _read_pdf(

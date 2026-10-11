@@ -1,0 +1,29 @@
+{
+  "dos-part1-letterhead": {
+    "official_source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/DOS_RFO_Deviation_Part-1.pdf",
+    "official_sha256": "eed2072b829e52595ea8a16a34b7707057cd72f80cc9fa2e48003d3994d79dbd",
+    "pages": [
+      1
+    ],
+    "saved_excerpt_sha256": "eb711b910fe72a25314c6ff1c991c235a7ed58cd8725ab38e4652d0e15e449ea",
+    "extraction": "pypdf PdfWriter one original page with resources preserved; no OCR"
+  },
+  "cftc-part12-supplement1-page3": {
+    "official_source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/CFTC_RFO_Deviation_Part-12-Supplement-1.pdf",
+    "official_sha256": "ab52fd8046120e6bdc968ed897801a0f015e65e99d198e01fe0d65d258c72dfb",
+    "pages": [
+      3
+    ],
+    "saved_excerpt_sha256": "2740912777d1616c537d077d2b998bc7cee8df727e72288f71a079a80e55a2b7",
+    "extraction": "pypdf PdfWriter one original page with resources preserved; no OCR"
+  },
+  "doi-part5-page2": {
+    "official_source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/DOI_RFO_Deviation_Part-5.pdf",
+    "official_sha256": "151c077229f95866e7cce00cc2ade4d506c765619773bf6d5eafeecb2910f4a9",
+    "pages": [
+      2
+    ],
+    "saved_excerpt_sha256": "9394632e355c9f843eefcf886fbbcfcb7ab3e6e182b127b93119db1ac12ebb98",
+    "extraction": "pypdf PdfWriter one original page with resources preserved; no OCR"
+  }
+}
