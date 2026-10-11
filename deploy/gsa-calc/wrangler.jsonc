@@ -39,7 +39,7 @@
       "name": "REQUEST_LIMITER",
       "namespace_id": "110260",
       "simple": {
-        "limit": 120,
+        "limit": 10,
         "period": 60
       }
     },
@@ -91,7 +91,7 @@
           "name": "REQUEST_LIMITER",
           "namespace_id": "110260",
           "simple": {
-            "limit": 120,
+            "limit": 10,
             "period": 60
           }
         },

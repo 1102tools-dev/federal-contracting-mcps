@@ -1,7 +1,7 @@
 // Run: node --test deploy/shared/edge.test.ts
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit} from "./edge.ts";
+import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited} from "./edge.ts";
 
 const HEADERS = {
   "content-type": "application/json",
@@ -323,4 +323,23 @@ test("the D1 wrapper logs answered tools/call requests only", async () => {
   assert.equal(lines.length, 1);
   assert.deepEqual({...JSON.parse(lines[0]), ms: 0}, {event: "tool_call", service: "sam-gov", tool: "search_opportunities", client: "chatgpt", backend: null, status: 200, ms: 0});
   assert.ok(!lines[0].includes("secret"));
+});
+
+test("an address over its limit gets a message the AI can relay", async () => {
+  const call = (ip: string, body: unknown) => new Request("https://x.1102tools.com/mcp", {method: "POST",
+    headers: {"CF-Connecting-IP": ip, "Content-Type": "application/json"}, body: JSON.stringify(body)});
+  const tool = await rateLimited(call("8.8.8.8", {jsonrpc: "2.0", id: 7, method: "tools/call", params: {name: "x"}}), "USAspending", 20);
+  assert.equal(tool.status, 200);
+  assert.equal(tool.headers.get("Retry-After"), "60");
+  const result = await tool.json() as any;
+  assert.equal(result.id, 7);
+  assert.equal(result.result.isError, true);
+  assert.match(result.result.content[0].text, /limit of 20 calls a minute.*install USAspending locally.*#local-or-hosted/);
+  const other = await rateLimited(call("8.8.8.8", {jsonrpc: "2.0", id: 1, method: "tools/list"}), "eCFR", 20);
+  assert.equal(other.status, 429);
+  assert.match((await other.json() as any).error.message, /eCFR limit of 20 calls a minute/);
+  const ai = await rateLimited(call("160.79.106.12", {jsonrpc: "2.0", id: 2, method: "tools/call"}), "GSA CALC+", 10);
+  assert.match((await ai.json() as any).result.content[0].text, /busy right now/);
+  const garbled = await rateLimited(new Request("https://x.1102tools.com/mcp", {method: "POST", body: "not json"}), "eCFR", 20);
+  assert.equal(garbled.status, 429);
 });

@@ -456,3 +456,29 @@ export async function withinLimit(request: Request, env: {REQUEST_LIMITER: Limit
   const limiter = env.AI_LIMITER && isAiPlatform(key) ? env.AI_LIMITER : env.REQUEST_LIMITER;
   return (await limiter.limit({key})).success;
 }
+
+/** The answer for a request over its address's per-minute limit, worded so the AI
+ * can relay it: a tool call gets a readable tool error, anything else a JSON-RPC error. */
+export async function rateLimited(request: Request, service: string, perMinute: number): Promise<Response> {
+  const key = request.headers.get("CF-Connecting-IP") || "unknown";
+  const message = isAiPlatform(key)
+    ? `The hosted ${service} server is busy right now. Wait a minute and try again.`
+    : `You've reached the hosted ${service} limit of ${perMinute} calls a minute. Wait a minute and try again, or install ${service} locally for no shared limit: https://1102tools.com/#local-or-hosted`;
+  let id: unknown = null;
+  let method = "";
+  // Only small bodies are read; the normal body limit is enforced after this check.
+  if (Number(request.headers.get("Content-Length") || "0") <= 65536) {
+    try {
+      const body = await request.clone().json() as {id?: unknown; method?: unknown};
+      if (body && typeof body === "object" && !Array.isArray(body)) {
+        id = body.id ?? null;
+        method = typeof body.method === "string" ? body.method : "";
+      }
+    } catch {}
+  }
+  const headers = {"Content-Type": "application/json", "Retry-After": "60"};
+  if (method === "tools/call" && id !== null) {
+    return new Response(JSON.stringify({jsonrpc: "2.0", id, result: {content: [{type: "text", text: message}], isError: true}}), {status: 200, headers});
+  }
+  return new Response(JSON.stringify({jsonrpc: "2.0", id, error: {code: -32000, message}}), {status: 429, headers});
+}
