@@ -11,7 +11,7 @@ Free, open-source, read-only source tools for federal contracting research: oppo
 ## Why these MCPs
 
 - **Free.** MIT-licensed, with no subscription and no credits. Hosted installs need no account or API key.
-- **Tested.** 6,121 collected package regression tests across 9 servers and 133 tools. Optional live-source tests are included in collection; they do not all run in every release. Dated testing records distinguish executed checks, skips, content comparisons, and corrected defects, with up to eighteen documented audit rounds per server.
+- **Tested.** 6,121 collected package regression tests across 9 servers and 133 tools. Optional live-source tests are included in collection; they do not all run in every release. Dated testing records distinguish executed checks, skips, content comparisons, and corrected defects, with up to nineteen documented audit rounds per server.
 - **Listed.** All 9 servers are in the Claude directory and 6 are in the ChatGPT directory, with the rest in review for ChatGPT. Hosted installs need no user API key.
 - **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
 

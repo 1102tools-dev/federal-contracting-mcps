@@ -1,14 +1,14 @@
 # October 10, 2026 MCP content audit and release record
 
-## Current summary — Round 6 closed; SDK corrections published
+## Final release summary
 
-Eight supported servers completed Round 6 using ordinary and power-user questions checked against authoritative sources. Acquisition.gov remains excluded. Round 6 closed with **71 distinct findings fixed and live verified**. The subsequent SDK 2.3 campaign corrected **three additional grouped defects**, bringing the cumulative total to **74: 0 P0, 2 P1, 44 P2 and 28 P3**. All 74 corrections have passed their applicable published content checks; SDK website publication is verified; final coordinator-documentation closure is still in progress. Earlier totals include historical tooling and shared documentation corrections identified below.
+All eight supported servers completed the final federal-contracting audit and independent review with **no new confirmed P0–P3 findings**. The cumulative ledger remains **74 distinct findings fully fixed and verified in published destinations: 0 P0, 2 P1, 44 P2 and 28 P3**, with no partial or unresolved confirmed findings. Historical tooling and shared documentation corrections are included; this is not a count of ordinary content defects alone. Acquisition.gov is excluded.
 
-Round 6 corrected USAspending date-scope explanations and test records, CALC exact-title population guidance, eCFR scientific-notation rendering, and Federal Register comment-period recovery. The SDK campaign restores specific ordinary-input recovery messages in the local Federal Register and Per Diem packages (P2 each), and USAspending (P3). Its **931 previously failing assertions are not 931 bugs**: expected-input regressions and strict unexpected-fault masking checks now pass. Successful financial and rate answers remain unchanged.
+Corrections addressed misleading date and population scopes, scientific-notation rendering, rate calculations, discovery descriptions and actionable recovery guidance. The closed SDK campaign added three grouped findings: local Federal Register and Per Diem recovery messages (P2 each), and USAspending recovery context (P3). Its **931 affected assertions are not 931 bugs**. The three scoped releases ran serially with thirteen successful jobs each. No new runtime release is required by the final content round.
 
 | MCP | Current published version |
 |---|---|
-| SAM.gov | Python 1.0.14; hosted mirror 1.0.4 |
+| SAM.gov | Python 1.0.14; native mirror 1.0.4 |
 | USAspending | 1.0.23 |
 | GSA CALC+ | 1.0.17 |
 | BLS OEWS | 1.1.4 |
@@ -17,11 +17,13 @@ Round 6 corrected USAspending date-scope explanations and test records, CALC exa
 | Federal Register | 1.0.16 |
 | Regulations.gov | 2.0.6 |
 
-All three SDK releases completed serially with **13 successful jobs each**. Fresh official PyPI installations with SDK 2.3 passed **2,454 tests**, skipped **751**, and collected **3,205** across the three updated packages; all 855 prior USAspending failed IDs were executed and passed. Its default suite includes incidental source calls, and these results do not establish that every optional live-source test passed. The separate repository inventory is **6,121 collected cases**, including **5,866** for the eight supported servers and 255 passive Acquisition cases. Collection is not execution. Current public identity/112-tool checks, all-five Dell/45 backend checks, all 16 official wheel/sdist downloads, and the three new Cloudflare production identities passed. Per Diem's production data remained complete and unchanged; no reload was needed.
+The historical SDK campaign's freshly installed published packages recorded **2,454 passed, 751 skipped and 3,205 collected** across three packages; all 855 prior USAspending failed IDs executed and passed. Final-round inventory independently confirms **6,121 product cases**, including **5,866 for the eight supported servers** and 255 passive Acquisition cases. Collection is not execution; skips are not passes. Default suites can include incidental source calls and do not establish complete optional-live coverage. All eight final-round documentation PRs are independently reviewed and merged.
 
-Known limits include SAM's active-only feed and credentialed Python access; USAspending reporting lag and award/action-date distinctions; CALC capped or approximate aggregations; BLS May 2025/top-coded data; Per Diem CONUS/geography limits; eCFR snapshot/history lag; Federal Register source-date omissions and bounded scans; and Regulations.gov credentials, quota and attachment access. Skipped or unavailable source checks are not passes. Compatible corrections require no manual directory republication. Detailed historical evidence remains below.
+Fresh final destination acceptance passed eight public services/112 tools, all five Dell origins/45 checks and sixteen official PyPI artifacts. Production Cloudflare identities match released sources. Per Diem's read-only D1 check confirms unchanged complete data, 43,665 places and zero writes. All eight independent reviews confirm unchanged runtime scope. Website source and deployment updates are published through Pages `cb97d213`; all 49 assets, two configuration files, four copy checks and actual browser verification pass. Final coordinator documentation and external evidence closure are verified separately.
 
-**Remaining sequence:** finish SDK coordinator-documentation and evidence closure, then run **exactly one final federal-contracting content round**, fix and release its confirmed P0–P2 findings, and stop. No further round follows it. At completion, this opening will be replaced with the final one-page findings, fixes, versions and limitations summary.
+Known limits include SAM's active-only retained feed and unexecuted keyed Python workflows; USAspending reporting lag, award/action-date populations and cumulative subaward reports; CALC capped or approximate aggregations; BLS May 2025 wages and selected source cells; Per Diem geography and contractor allowability; eCFR snapshot/history and procurement applicability; Federal Register bounded scans and source dates; and Regulations.gov credentials, quota and attachments. Conditional HTTP 304 is not a fresh full download. Unavailable checks are not passes. Compatible corrections require no manual directory republication.
+
+**The final authorized content round is complete.** No new runtime correction or data reload was required. No Round 8 follows. Detailed historical records and final owner evidence remain below.
 
 ## Historical round records
 
@@ -817,3 +819,62 @@ Round 6’s 65-proof sealed history is preserved. The SDK preservation receipt v
 Primary saved receipts (paths relative to `Artifacts/mcp-e2e-20261010/`): coordinator/sdk23-campaign-state.json; coordinator/sdk23-release-concurrency-peer.json; coordinator/sdk23-deployment-identities.json; coordinator/sdk23-final-public-matrix.json; coordinator/sdk23-final-dell.json; coordinator/sdk23-final-pypi-artifacts.json; coordinator/sdk23-final-destinations-peer.json; coordinator/sdk23-final-collection-peer-sam.json; coordinator/sdk23-gpd-data-readonly-acceptance.json; coordinator/sdk23-r6-seal-preservation.json; sdk23/usaspending/final-published-summary.json; sdk23/federal-register/final-published16/FINAL-PUBLISHED.json; sdk23/gsa-perdiem/final-published-acceptance-1.2.5.json; and each owner current-github-docs.json.
 
 This section records reviewed evidence and explicit remaining publication/closure gates. The coordinator owns final publication and closure.
+
+
+## Final Round 7 content and publication record
+
+Exactly one final federal-contracting content round was dispatched after independent SDK closure. Acquisition.gov was excluded. All eight completed owner audits found no new confirmed P0–P3 issues and passed independent content/source review, exact-head CI and documentation merge. The completed USAspending source/recovery review supersedes its earlier in-progress checkpoints. Final destination applicability, collection, ledger and data acceptance passed; final coordinator-document publication and external immutable closure are recorded separately. No subsequent content round is authorized.
+
+### Cumulative closed baseline
+
+The independently reconstructed ledger below contains **74 distinct campaign findings**, all fully fixed and live verified. It includes tooling and shared documentation findings; historical pre-campaign server totals are not added. Reopened CALC and residual USAspending website-count findings are counted once. The completed Round 7 adds zero confirmed findings; the cumulative ledger remains unchanged.
+
+| MCP / owner | P0 | P1 | P2 | P3 | Fully fixed / live verified | Partial | Unresolved confirmed |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| SAM.gov | 0 | 0 | 3 | 5 | 8 | 0 | 0 |
+| USAspending | 0 | 0 | 9 | 9 | 18 | 0 | 0 |
+| eCFR | 0 | 1 | 10 | 3 | 14 | 0 | 0 |
+| Federal Register | 0 | 0 | 3 | 2 | 5 | 0 | 0 |
+| Regulations.gov | 0 | 0 | 5 | 1 | 6 | 0 | 0 |
+| GSA CALC+ | 0 | 1 | 5 | 2 | 8 | 0 | 0 |
+| GSA Per Diem | 0 | 0 | 4 | 5 | 9 | 0 | 0 |
+| BLS OEWS | 0 | 0 | 4 | 1 | 5 | 0 | 0 |
+| Shared documentation | 0 | 0 | 1 | 0 | 1 | 0 | 0 |
+| **Total** | **0** | **2** | **44** | **28** | **74** | **0** | **0** |
+
+### Final-round completed owner coverage
+
+Counts distinguish new inputs, controls, attempts and caller-composed workflows. Parsed installed tool invocations are not relabeled console calls; unavailable keyed checks and optional skips are not passes.
+
+| MCP | Completed content and source evidence | Measured published-package lane | Reviewed documentation |
+|---|---|---|---|
+| SAM.gov | 136 new task steps / 128 new requests; 171 public/SQL comparisons, 484 raw row fields; source HTTP304 validates retained bytes | 784 passed / 374 skipped / 1,158 collected; 19 keyed Python data workflows unexecuted | [PR187](https://github.com/1102tools-dev/federal-contracting-mcps/pull/187) |
+| USAspending | 142 distinct combinations across all 55 tools: 132 new / ten controls; 151 attempts per lane / 149 valid / two excluded; 150 raw official captures; all latest distinct three-lane/source comparisons pass | Retained actual SDK campaign execution: 1,943 passed / 379 skipped / 2,322 collected; no new Round 7 full-suite execution | [PR193](https://github.com/1102tools-dev/federal-contracting-mcps/pull/193) |
+| GSA CALC+ | 154 new installed-registered/public pairs plus 25 actual console calls; 7,356 qualified checks; source percentiles/buckets/cutoff ties disclosed | 322 passed / 121 skipped / 443 collected | [PR188](https://github.com/1102tools-dev/federal-contracting-mcps/pull/188) |
+| BLS OEWS | 84 console / 84 public calls; 485 numeric objects per surface; 46 selected fresh API cell observations in three requests | 297 passed / one skipped / 298 collected; fresh SDK2.3 full suite used Python3.14, separate fresh Python3.12 install/catalog/module/control proof | [PR186](https://github.com/1102tools-dev/federal-contracting-mcps/pull/186) |
+| GSA Per Diem | 143 paired cases / 138 unique inputs; 145 console attempts; 48 raw-source estimates, 34 ZIP memberships and 85 county assignments | 321 passed / 267 skipped / 588 collected in each fresh SDK2.3 and frozen SDK2.0 lane | [PR189](https://github.com/1102tools-dev/federal-contracting-mcps/pull/189) |
+| eCFR | 72 console / 72 public calls, all exact; 59 new / 13 controls; 70 fresh primary captures, 234 broad + 242 supplemental checks | 346 passed / 118 skipped / 464 collected; entire corrected harness run, earlier failures preserved separately | [PR192](https://github.com/1102tools-dev/federal-contracting-mcps/pull/192) |
+| Federal Register | 75 new / five prior inputs; 83 attempts each surface; 80 substantive / 78 exact, two explicit UTC `as_of` differences; 88 raw JSON captures / 81 URLs | 190 passed / 105 skipped / 295 collected in both SDK lanes | [PR190](https://github.com/1102tools-dev/federal-contracting-mcps/pull/190) |
+| Regulations.gov | 129 public calls / 113 new combinations / 15 controls / one caller exclusion; 93 occurrences / 35 primary notices; four actual keyed console continuations | 179 passed / 119 skipped / 298 collected; wider public corpus is not keyed local parity | [PR191](https://github.com/1102tools-dev/federal-contracting-mcps/pull/191) |
+
+### USAspending attempt, recovery and source reconciliation
+
+The actual fresh official published 1.0.23 package uses SDK 2.3.0 and immutable source `ac050ab90808dda721ed4c58df09e5c79f6b16af`. Across registered installed tools, actual installed console and public lanes, each recorded 151 attempts. Two unsupported-date-field collector calls are explicitly excluded, leaving 149 valid attempts and 142 distinct combinations: 132 new inputs and ten retained controls across all 55 tools. The 150 raw official response captures have independently verified hashes. Initial successful attempt counts differ (146 primary, 147 console and 149 public); they are not presented as 151 clean first-attempt passes. All distinct combinations' latest three-lane answers and primary-source comparisons pass after four exact aggregation recoveries.
+
+Five initially failed local attempts across four aggregation questions remain retained. CLI traces establish ReadTimeout; causes of other initial failures remain unconfirmed. Exact recovery succeeds without a persistent product defect, invented gateway/cache/quota cause or new finding. Two excluded collector calls supplied unsupported subaward date fields; complete prime paging and local action-date filtering provide the legitimate date-scope followup. The corpus preserves mistaken account discovery and question assumptions without crediting them as VA or annual-object-class evidence; actual VA account and explicit fiscal snapshots are separately checked.
+
+Lifetime award obligations, action-window obligations, File C amounts and account outlays remain distinct; outlays are not supplier payments. Subaward amounts are cumulative reports. Vehicle options and descendant orders do not establish legal ceilings or remaining capacity. Financial totals can include nonprocurement spending; object-class pages are cumulative, program-code lists are nonfinancial/all-year and requested fiscal year is not applied there. The default financial detail can refer to FY2027 with null amounts; compared amounts use explicit FY2023/2024 snapshots. No unsupported missing-location explanation is asserted for geographic population differences.
+
+The reported 1,943 passed / 379 skipped / 2,322 collected suite is the retained actual official published SDK-correction execution, not a new Round 7 run. All 855 previously failing IDs executed and passed in that historical run; incidental source controls do not make the skipped live-gated tests passes. The independent peer approved exact PR193 head `e481d4d7f18d95e3f77f7fa5aac19ec16fda8415`, actual CI38098439386 succeeded, and only three USAspending documentation files changed. Evidence: `round7/usaspending/audit-summary.json`, `checkpoint.json`, `peer-sam-final.json`, raw responses and owner seal; `sdk23/usaspending/full-published23-latest.xml` is the historical suite lane.
+
+### Final integration and destination acceptance
+
+All eight owner PRs186–193 above are merged documentation-only changes. USAspending PR193 merged at `223e37f`; no owner runtime, test, version or data change was needed. The independent current release check finds no new Round 7 runtime tags or publisher runs; global `mcp-production-release` concurrency and `cancel-in-progress: false` remain intact. All eight conclusions are accepted and require no new runtime release; historical SDK jobs are not new Round 7 jobs.
+
+Independent fresh final snapshots passed eight public services/112 tool definitions/40 checks, all five Dell origins/45 checks and sixteen official PyPI archive size/hash/non-yanked checks. Dell proof distinguishes public HTTPS GET/POST with backend headers, direct-origin HTTPS GET health and authenticated SSH-local HTTP health/initialize. Docker image config IDs are verified; independent OCI distribution manifests are not claimed. Fresh production Worker deployment IDs remain distinct from Worker-version IDs and match immutable runtime SHAs. The final USAspending review and unchanged runtime/test tree resolve the snapshot scope condition; the additive destination-scope peer qualification is retained separately.
+
+The independent collection inventory confirms 6,121 product / 5,866 eight-server cases, with 255 passive Acquisition cases and zero test executions inferred. Its actual seal contains 29 files; an earlier message's count of 35 was corrected without changing the seal. Protected runtime/test/fixture/data/lock blobs remain equal to SDK publication source. Selected SAM/BLS/GPD data-source reconciliation passed independent review: SAM retained raw-source conditional validation, BLS selected API observations, and fresh GPD three-statement SELECT-only acceptance with all eight parts complete and 43,665 places. No corrective reload is needed for those completed scopes. Broader source freshness and unavailable keyed/attachment checks are not asserted.
+
+Website source PR10 merged at `f495a06` after review, preserving all 57 prompts, 25 protected source assets, the passive Acquisition entry, directory/navigation links and the exact 28-word impersonal summary. Eight audit-count increments are accepted; package versions and 6,121 / 5,866 collected inventory remain unchanged. Deployment PR12 merged at `119580b8ef3596214581274c002a6e785837d860` after 125 independent checks and both CI runs passed. Actual Pages publication `cb97d213` passed 49 public-asset checks, two deployment-configuration checks, all four copy checks and actual browser verification, including all eight versions/audit counts and the distinct SAM editions. The final nineteen served shared/owner files and external immutable closure receipts are retained in coordinator evidence after this documentation merge.
+
+Evidence paths relative to `Artifacts/mcp-e2e-20261010/`: `coordinator/round7-owner-acceptance-index.json`, `coordinator/round7-merged-pr-identities.json`, `coordinator/round7-baseline-ledger-peer-release-scope.json`, `coordinator/round7-final-collection-peer.json`, `coordinator/round7-data-source-peer.json`, `coordinator/round7-deployment-identities-cloudflare.json`, `coordinator/round7-release-concurrency-final.json`, `coordinator/round7-final-collection-acceptance.json`, `coordinator/round7-final-ledger-acceptance.json`, `coordinator/round7-final-destinations-peer.json`, `coordinator/round7-destination-scope-acceptance.json`, `coordinator/round7-destination-scope-peer-bls.json`, `coordinator/round7-final-site-pages.log`, `coordinator/round7-final-site-public-assets.json`, `coordinator/round7-final-site-public-copy.json`, `coordinator/round7-final-site-browser.json`, and each owner summary/independent peer/served-document receipt. Prior 35 SDK and 65 Round 6 sealed proofs remain byte-identical.
