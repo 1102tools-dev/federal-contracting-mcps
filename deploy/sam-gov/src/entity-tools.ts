@@ -17,11 +17,12 @@ const BUSINESS: Record<string, string> = {
 const CAVEATS = [
   "Entities who opted out of public display are not included in the hosted public mirror. No match does not establish that an entity is unregistered.",
   "Confirm current registration status on SAM.gov before relying on this monthly public extract.",
+  "Active means the registration is active in this file, not that an SBA certification is current. SBA codes can remain after an 8(a) certification exit date; check certificationExitDate and confirm current certification with SBA before relying on it.",
 ];
 const stringField = (description: string, maxLength = 200) => ({type: "string", maxLength, description});
 export const ENTITY_TOOL = {
   name: "search_entities",
-  description: "Look up SAM.gov entities by UEI or CAGE, or search the monthly public entity extract. All search filters combine. primary_naics matches the designated primary code; any_naics matches any listed code. Business types are self-selected; SBA certifications use sba_business_type_code (XX=HUBZone, A6=8(a)). Search defaults to Active; identifier lookups include any registration status unless explicitly filtered. Returns API-style public entity fields, up to 10 records per page. Entities who opted out of public display are not included in the hosted public mirror. Confirm current registration status on SAM.gov before relying on results.",
+  description: "Look up SAM.gov entities by UEI or CAGE, or search the monthly public entity extract. All search filters combine. primary_naics matches the designated primary code; any_naics matches any listed code. Business types are self-selected; SBA source codes use sba_business_type_code (XX=HUBZone, A6=8(a)) and can remain after a certification exit date. Active registration does not establish current SBA certification; check certificationExitDate and confirm with SBA. Search defaults to Active; identifier lookups include any registration status unless explicitly filtered. Returns API-style public entity fields, up to 10 records per page. Entities who opted out of public display are not included in the hosted public mirror. Confirm current registration status on SAM.gov before relying on results.",
   inputSchema: {
     type: "object", properties: {
       uei: {type: "string", pattern: "^[A-Za-z0-9]{12}$", description: "Exact 12-character UEI."},
@@ -31,7 +32,7 @@ export const ENTITY_TOOL = {
       any_naics: {anyOf: [{type: "string", pattern: "^[0-9]{2,6}$"}, {type: "integer"}], description: "Any listed NAICS, 2-6 digits."},
       state_code: {type: "string", pattern: "^[A-Za-z]{2}$", description: "Physical address state, 2-letter USPS code."},
       business_type_code: stringField("Self-selected 2-character SAM business type, e.g. QF (SDVOSB), A2, 8W, NB, A3.", 2),
-      sba_business_type_code: {type: "string", enum: Object.keys(SBA), description: "SBA certification code; XX=HUBZone, A6=8(a), A9=certified WOSB."},
+      sba_business_type_code: {type: "string", enum: Object.keys(SBA), description: "Monthly public SBA source code, not proof of current certification; XX=HUBZone, A6=8(a), A9=certified WOSB. Check certificationExitDate."},
       registration_status: {type: "string", enum: ["A", "E"], description: "A=Active (search default), E=expired (displayed as Inactive)."},
       purpose_of_registration: {type: "string", enum: ["Z1", "Z2", "Z3", "Z4", "Z5"]},
       include_sections: {type: "array", items: {type: "string", enum: ["entityRegistration", "coreData", "assertions", "All"]}, description: "Public sections only. Defaults to entityRegistration + coreData; entityRegistration is always included."},

@@ -362,7 +362,7 @@
   },
   {
     "name": "search_entities",
-    "description": "Look up SAM.gov entities by UEI or CAGE, or search the monthly public entity extract. All search filters combine. primary_naics matches the designated primary code; any_naics matches any listed code. Business types are self-selected; SBA certifications use sba_business_type_code (XX=HUBZone, A6=8(a)). Search defaults to Active; identifier lookups include any registration status unless explicitly filtered. Returns API-style public entity fields, up to 10 records per page. Entities who opted out of public display are not included in the hosted public mirror. Confirm current registration status on SAM.gov before relying on results.",
+    "description": "Look up SAM.gov entities by UEI or CAGE, or search the monthly public entity extract. All search filters combine. primary_naics matches the designated primary code; any_naics matches any listed code. Business types are self-selected; SBA source codes use sba_business_type_code (XX=HUBZone, A6=8(a)) and can remain after a certification exit date. Active registration does not establish current SBA certification; check certificationExitDate and confirm with SBA. Search defaults to Active; identifier lookups include any registration status unless explicitly filtered. Returns API-style public entity fields, up to 10 records per page. Entities who opted out of public display are not included in the hosted public mirror. Confirm current registration status on SAM.gov before relying on results.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -425,7 +425,7 @@
             "A9",
             "A0"
           ],
-          "description": "SBA certification code; XX=HUBZone, A6=8(a), A9=certified WOSB."
+          "description": "Monthly public SBA source code, not proof of current certification; XX=HUBZone, A6=8(a), A9=certified WOSB. Check certificationExitDate."
         },
         "registration_status": {
           "type": "string",

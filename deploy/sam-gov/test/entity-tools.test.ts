@@ -75,6 +75,18 @@ test("public record JSON preserves every shared field and filters sections", asy
   assert.deepEqual((await searchEntities(db, {uei: "ABCDEFGHIJK1", include_sections: ["assertions"]})).entityData[0], {entityRegistration: record.entityRegistration, assertions: record.assertions});
 });
 
+test("active registration with a past 8(a) exit date is not presented as current certification", async () => {
+  const {db, sqlite} = database();
+  const record = {entityRegistration: {ueiSAM: "ABCDEFGHIJK1", registrationStatus: "Active"}, coreData: {businessTypes: {sbaBusinessTypeList: [{sbaBusinessTypeCode: "A6", certificationExitDate: "2021-01-03"}]}}};
+  sqlite.prepare("UPDATE entities SET record_json=? WHERE uei=?").run(JSON.stringify(record), "ABCDEFGHIJK1");
+  sqlite.prepare("INSERT INTO entity_business_types VALUES (?,?,?)").run("ABCDEFGHIJK1-record", "A6", "sba");
+  const result = await searchEntities(db, {uei: "ABCDEFGHIJK1", sba_business_type_code: "A6"});
+  assert.deepEqual(result.entityData[0], record);
+  assert.match(result.notes.join(" "), /not that an SBA certification is current/);
+  assert.match(result.notes.join(" "), /certificationExitDate/);
+  assert.match(result.notes.join(" "), /confirm current certification with SBA/);
+});
+
 test("paging is stable, SQL bounds results and identifier/NAICS/state filters use indexes", async () => {
   const {db, sqlite, queries} = database();
   const a = await searchEntities(db, {size: 1, page: 0});
