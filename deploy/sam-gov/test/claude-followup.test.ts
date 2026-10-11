@@ -103,8 +103,8 @@ test("zero matches lead with dated non-clearance summary and untruncated empty c
   sqlite.close();
 });
 
-test("date-only freshness marks stale only after exact 30-hour or 40-day boundary", () => {
-  for (const kind of ["opportunities", "exclusions"] as const) {
+test("date-only freshness marks stale only after each dataset boundary", () => {
+  for (const kind of ["opportunities"] as const) {
     const at = dataFreshness(kind, "2026-10-10", new Date("2026-10-11T06:00:00Z"));
     assert.equal(at.stale, false);
     assert.equal(at.file_age_hours, 30);
@@ -134,4 +134,17 @@ test("recent load time cannot freshen an old source file in either search respon
     assert.match(result.summary, /2026-08-01/);
   }
   sqlite.close();
+});
+
+
+test("Oct 11 exclusions remain current at Oct 12 09:00 UTC and stale at 13:00 UTC", () => {
+  const current = dataFreshness("exclusions", "2026-10-11", new Date("2026-10-12T09:00:00Z"));
+  assert.equal(current.stale, false);
+  assert.equal(current.file_age_hours, 33);
+  assert.equal(current.stale_after_hours, 36);
+  assert.equal(dataFreshness("exclusions", "2026-10-11", new Date("2026-10-12T12:00:00Z")).stale, false);
+  const stale = dataFreshness("exclusions", "2026-10-11", new Date("2026-10-12T13:00:00Z"));
+  assert.equal(stale.stale, true);
+  assert.equal(stale.file_age_hours, 37);
+  assert.match(stale.notes[0], /36 hours/);
 });
