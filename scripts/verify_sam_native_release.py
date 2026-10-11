@@ -99,8 +99,8 @@ def verify(base, sha, version, contract):
     verify_provenance(exclusions, status["exclusions"])
     assert exclusions["excludedEntity"], "Exclusion search returned no real records"
     candidates = [row["exclusionIdentification"] for row in exclusions["excludedEntity"]]
-    identification, field = next(((record, key) for record in candidates
-                                  for key in ("ueiSAM", "cageCode", "entityName") if record.get(key)), (None, None))
+    identification, field = next(((record, key) for key in ("ueiSAM", "cageCode", "entityName")
+                                  for record in candidates if record.get(key)), (None, None))
     assert field and identification, "Real exclusion sample has no searchable identifier"
     argument = {"ueiSAM": "uei", "cageCode": "cage_code", "entityName": "entity_name"}[field]
     exclusion = call(base, "search_exclusions", {argument: identification[field]})
