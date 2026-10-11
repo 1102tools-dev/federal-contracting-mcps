@@ -362,7 +362,7 @@
   },
   {
     "name": "search_entities",
-    "description": "Look up SAM.gov entities by UEI or CAGE, or search the monthly public entity extract. All search filters combine. primary_naics matches the designated primary code; any_naics matches any listed code. Business types are self-selected; SBA source codes use sba_business_type_code (XX=HUBZone, A6=8(a)) and can remain after a certification exit date. Active registration does not establish current SBA certification; check certificationExitDate and confirm with SBA. Search defaults to Active; identifier lookups include any registration status unless explicitly filtered. Returns API-style public entity fields, up to 10 records per page. Entities who opted out of public display are not included in the hosted public mirror. Confirm current registration status on SAM.gov before relying on results.",
+    "description": "Answer SAM registration and socioeconomic questions: women-owned/WOSB/EDWOSB, veteran-owned/SDVOSB, HUBZone, 8(a), and small business. Search the monthly public extract by UEI, CAGE, name, NAICS and state; filters combine. any_naics includes secondary codes. Search defaults Active; UEI/CAGE includes inactive. Use the labeled business or SBA code filters below. For NAICS-specific small-business status, request assertions or All and check sbaSmallBusiness; 2X means for-profit, not small. Codes and active registration do not prove current SBA certification; check certificationExitDate and confirm SBA/SAM.gov status. Public-display opt-outs are excluded. Up to 10 records/page.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -413,7 +413,7 @@
         "business_type_code": {
           "type": "string",
           "maxLength": 2,
-          "description": "Self-selected 2-character SAM business type, e.g. QF (SDVOSB), A2, 8W, NB, A3."
+          "description": "SAM business-type codes; ownership is generally self-selected, not SBA certification. Common codes: A2=Woman-Owned Business; 8W=Women-Owned Small Business; A5=Veteran-Owned Business; QF=Service-Disabled Veteran-Owned Business; 23=Minority-Owned Business; 27=Self Certified Small Disadvantaged Business; 8C=Women-Owned Small Business (WOSB) Joint Venture eligible under the WOSB Program; 8D=Economically Disadvantaged Women-Owned Small Business (EDWOSB) Joint Venture; JV=Service-Disabled Veteran-Owned Business Joint Venture; JX=Self-Certified HUBZone Joint Venture; JS=Small Business Joint Venture; FR=Asian-Pacific American Owned; QZ=Subcontinent Asian (Asian-Indian) American Owned; OY=Black American Owned; PI=Hispanic American Owned; NB=Native American Owned; OW=American Indian Owned; 05=Alaskan Native Corporation Owned Firm; 8U=Native Hawaiian Organization Owned Firm; 1B=Tribally Owned Firm; 1E=Indian Economic Enterprise; 1S=Indian Small Business Economic Enterprise; XY=Indian Tribe (Federally Recognized); HK=Community Development Corporation Owned Firm; HQ=DOT Certified DBE; A7=AbilityOne Non-Profit Agency; 1D=Small Agricultural Cooperative; A8=Non-Profit Organization; H2=Community Development Corporation; HB=Historically Black College or University; 1A=Minority Institution; HS=Tribal College; GW=Hispanic Servicing Institution. Other official 2-character business codes are accepted."
         },
         "sba_business_type_code": {
           "type": "string",
@@ -425,7 +425,7 @@
             "A9",
             "A0"
           ],
-          "description": "Monthly public SBA source code, not proof of current certification; XX=HUBZone, A6=8(a), A9=certified WOSB. Check certificationExitDate."
+          "description": "SBA source codes: A6=SBA Certified 8(a) Program Participant; JT=SBA Certified 8(a) Joint Venture; XX=SBA Certified HUBZone Firm; A4=SBA Certified Small Disadvantaged Business (No longer Active); A9=SBA-Certified Women-Owned Small Business; A0=SBA-Certified Economically Disadvantaged Women-Owned Small Business. A4 is retired. These are monthly source codes, not proof of current certification; check certificationExitDate and confirm with SBA."
         },
         "registration_status": {
           "type": "string",

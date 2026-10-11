@@ -1,19 +1,9 @@
 import type {Database} from "./public-types.ts";
 import {ToolError} from "./public-types.ts";
+import {BUSINESS, SBA, COMMON_BUSINESS_CODES} from "./entity-business-codes.ts";
 
 type Args = Record<string, unknown>;
 type Row = Record<string, any>;
-const SBA: Record<string, string> = {
-  A6: "SBA Certified 8(a) Program Participant", JT: "SBA Certified 8(a) Joint Venture",
-  XX: "SBA Certified HUBZone Firm", A4: "SBA Certified Small Disadvantaged Business",
-  A9: "SBA-Certified Women-Owned Small Business", A0: "SBA-Certified Economically Disadvantaged Women-Owned Small Business",
-};
-const BUSINESS: Record<string, string> = {
-  "23": "Minority-Owned Business", "27": "Self Certified Small Disadvantaged Business", "2X": "For Profit Organization",
-  "8W": "Women-Owned Small Business", A2: "Women-Owned Business", A5: "Veteran-Owned Business",
-  A8: "Non-Profit Organization", LJ: "Limited Liability Company", MF: "Manufacturer of Goods",
-  OY: "Black American Owned", PI: "Hispanic American Owned", QF: "Service-Disabled Veteran-Owned Business", XS: "Subchapter S Corporation",
-};
 export const ENTITY_CAVEATS = [
   "Entities who opted out of public display are not included in the hosted public mirror. No match does not establish that an entity is unregistered.",
   "Confirm current registration status on SAM.gov before relying on this monthly public extract.",
@@ -22,7 +12,7 @@ export const ENTITY_CAVEATS = [
 const stringField = (description: string, maxLength = 200) => ({type: "string", maxLength, description});
 export const ENTITY_TOOL = {
   name: "search_entities",
-  description: "Look up SAM.gov entities by UEI or CAGE, or search the monthly public entity extract. All search filters combine. primary_naics matches the designated primary code; any_naics matches any listed code. Business types are self-selected; SBA source codes use sba_business_type_code (XX=HUBZone, A6=8(a)) and can remain after a certification exit date. Active registration does not establish current SBA certification; check certificationExitDate and confirm with SBA. Search defaults to Active; identifier lookups include any registration status unless explicitly filtered. Returns API-style public entity fields, up to 10 records per page. Entities who opted out of public display are not included in the hosted public mirror. Confirm current registration status on SAM.gov before relying on results.",
+  description: "Answer SAM registration and socioeconomic questions: women-owned/WOSB/EDWOSB, veteran-owned/SDVOSB, HUBZone, 8(a), and small business. Search the monthly public extract by UEI, CAGE, name, NAICS and state; filters combine. any_naics includes secondary codes. Search defaults Active; UEI/CAGE includes inactive. Use the labeled business or SBA code filters below. For NAICS-specific small-business status, request assertions or All and check sbaSmallBusiness; 2X means for-profit, not small. Codes and active registration do not prove current SBA certification; check certificationExitDate and confirm SBA/SAM.gov status. Public-display opt-outs are excluded. Up to 10 records/page.",
   inputSchema: {
     type: "object", properties: {
       uei: {type: "string", pattern: "^[A-Za-z0-9]{12}$", description: "Exact 12-character UEI."},
@@ -31,8 +21,8 @@ export const ENTITY_TOOL = {
       primary_naics: {anyOf: [{type: "string", pattern: "^[0-9]{2,6}$"}, {type: "integer"}], description: "Designated primary NAICS, 2-6 digits."},
       any_naics: {anyOf: [{type: "string", pattern: "^[0-9]{2,6}$"}, {type: "integer"}], description: "Any listed NAICS, 2-6 digits."},
       state_code: {type: "string", pattern: "^[A-Za-z]{2}$", description: "Physical address state, 2-letter USPS code."},
-      business_type_code: stringField("Self-selected 2-character SAM business type, e.g. QF (SDVOSB), A2, 8W, NB, A3.", 2),
-      sba_business_type_code: {type: "string", enum: Object.keys(SBA), description: "Monthly public SBA source code, not proof of current certification; XX=HUBZone, A6=8(a), A9=certified WOSB. Check certificationExitDate."},
+      business_type_code: stringField("SAM business-type codes; ownership is generally self-selected, not SBA certification. Common codes: " + COMMON_BUSINESS_CODES.map(code => `${code}=${BUSINESS[code]}`).join("; ") + ". Other official 2-character business codes are accepted.", 2),
+      sba_business_type_code: {type: "string", enum: Object.keys(SBA), description: "SBA source codes: " + Object.entries(SBA).map(([code, label]) => `${code}=${label}`).join("; ") + ". A4 is retired. These are monthly source codes, not proof of current certification; check certificationExitDate and confirm with SBA."},
       registration_status: {type: "string", enum: ["A", "E"], description: "A=Active (search default), E=expired (displayed as Inactive)."},
       purpose_of_registration: {type: "string", enum: ["Z1", "Z2", "Z3", "Z4", "Z5"]},
       include_sections: {type: "array", items: {type: "string", enum: ["entityRegistration", "coreData", "assertions", "All"]}, description: "Public sections only. Defaults to entityRegistration + coreData; entityRegistration is always included."},

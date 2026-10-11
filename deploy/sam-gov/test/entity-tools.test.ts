@@ -31,6 +31,20 @@ test("entity tool has directory title, read-only metadata and bounded paging", (
   assert.equal(ENTITY_TOOL.inputSchema.properties.size.maximum, 10);
 });
 
+test("socioeconomic questions can map plain language to the correct labeled filters", () => {
+  const fields = ENTITY_TOOL.inputSchema.properties;
+  assert.match(fields.business_type_code.description, /8W=Women-Owned Small Business/);
+  assert.match(fields.business_type_code.description, /A2=Woman-Owned Business/);
+  assert.match(fields.business_type_code.description, /QF=Service-Disabled Veteran-Owned Business/);
+  assert.match(fields.business_type_code.description, /NB=Native American Owned/);
+  assert.match(fields.sba_business_type_code.description, /A9=SBA-Certified Women-Owned Small Business/);
+  assert.match(fields.sba_business_type_code.description, /A0=SBA-Certified Economically Disadvantaged Women-Owned Small Business/);
+  assert.match(fields.sba_business_type_code.description, /XX=SBA Certified HUBZone Firm/);
+  assert.match(fields.sba_business_type_code.description, /A4=.*No longer Active/);
+  assert.match(ENTITY_TOOL.description, /registration and socioeconomic questions/);
+  assert.match(ENTITY_TOOL.description, /sbaSmallBusiness; 2X means for-profit, not small/);
+});
+
 test("search defaults Active, but UEI/CAGE lookups retain expired registrations", async () => {
   const {db} = database();
   assert.equal((await searchEntities(db, {})).totalRecords, 2);
