@@ -15,7 +15,7 @@ This server reports source content and metadata. It does **not** decide which ru
 | [Local setup](#install) | [Install](https://claude.ai/directory/acquisition-gov-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6ab2757102e08191887f75cc506c2333) |
 
 - **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
-- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
+- **Hosted** needs no setup or keys and works in Claude or ChatGPT anywhere.
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#far-overhaul-and-agency-deviations)
 
