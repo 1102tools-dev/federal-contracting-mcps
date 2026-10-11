@@ -1,5 +1,6 @@
 """Native release gate regressions, isolated from live SAM and Cloudflare."""
 import copy
+import io
 import importlib.util
 from pathlib import Path
 
@@ -10,6 +11,21 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("sam_native_release", ROOT / "scripts/verify_sam_native_release.py")
 gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
+
+
+@pytest.mark.parametrize("payload", [None, {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}])
+def test_health_and_rpc_requests_identify_native_verification_client(monkeypatch, payload):
+    observed = []
+
+    def urlopen(request, timeout):
+        observed.append(request)
+        return io.BytesIO(b'{"status":"ok"}')
+
+    monkeypatch.setattr(gate, "urlopen", urlopen)
+    url = "https://sam.1102tools.com/health" if payload is None else "https://sam.1102tools.com/mcp"
+    assert gate.request(url, payload) == {"status": "ok"}
+    assert observed[0].get_header("User-agent") == "1102tools-sam-native-release-verification/1.0"
+    assert observed[0].get_method() == ("GET" if payload is None else "POST")
 
 
 def tools():
