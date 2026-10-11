@@ -1,3 +1,4 @@
+import {dataFreshness} from "./data-freshness.ts";
 import {ENTITY_TOOL, searchEntities} from "./entity-tools.ts";
 import {EXCLUSION_TOOL, searchExclusions, getPublicDataStatus} from "./exclusion-tools.ts";
 
@@ -384,7 +385,8 @@ export async function searchOpportunities(db: Database, args: Args, now = new Da
   ]);
   const total = count.results[0]?.n ?? 0;
   const results = page.results.map(summary);
-  const notes = [...q.notes];
+  const {notes: freshnessNotes, ...freshness} = dataFreshness("opportunities", asOf, now);
+  const notes = [...q.notes, ...freshnessNotes];
   const typeNote = noResponseNote(noResponse, total);
   if (typeNote) notes.push(typeNote);
   if (hint) notes.push(hint);
@@ -398,13 +400,14 @@ export async function searchOpportunities(db: Database, args: Args, now = new Da
     offset,
     next_offset: offset + results.length < total ? offset + results.length : null,
     data_as_of: asOf,
+    ...freshness,
     results,
     notes,
     source: SOURCE,
   };
 }
 
-export async function getOpportunity(db: Database, args: Args) {
+export async function getOpportunity(db: Database, args: Args, now = new Date()) {
   unknownKeys(args, ["notice_id", "solicitation_number"]);
   const id = str(args, "notice_id", 32);
   const sol = str(args, "solicitation_number", 100);
@@ -421,10 +424,13 @@ export async function getOpportunity(db: Database, args: Args) {
     throw new ToolError("Pass notice_id or solicitation_number.");
   }
   const asOf = await dataAsOf(db);
+  const {notes: freshnessNotes, ...freshness} = dataFreshness("opportunities", asOf, now);
   if (!rows.length) {
     return {
       found: false,
       data_as_of: asOf,
+      ...freshness,
+      notes: freshnessNotes,
       message: "No active notice matches. It may be archived, removed, or newer than the latest daily file. Check sam.gov directly.",
       ...(id ? {link: publicLink(id.toLowerCase())} : {}),
     };
@@ -447,7 +453,7 @@ export async function getOpportunity(db: Database, args: Args) {
     }));
     relatedTotal = count.results[0]?.n ?? 0;
   }
-  const notes = ["Attachments and amendment documents are not included; open the sam.gov link for them."];
+  const notes = ["Attachments and amendment documents are not included; open the sam.gov link for them.", ...freshnessNotes];
   if (row.is_latest === 0) notes.unshift("A newer version of this notice exists; related_notices entries with latest_version true are current.");
   if (/T\d{2}:\d{2}(:\d{2})?$/.test(row.response_deadline ?? "")) {
     notes.push(`SAM.gov's file gives this response deadline without a time zone. It is most likely the contracting office's local time${row.office_state ? ` (office in ${row.office_state})` : ""}; confirm on the sam.gov page.`);
@@ -460,6 +466,7 @@ export async function getOpportunity(db: Database, args: Args) {
   return {
     found: true,
     data_as_of: asOf,
+    ...freshness,
     notice_id: row.notice_id,
     title: row.title,
     solicitation_number: row.solicitation_number,
@@ -508,6 +515,7 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
   const shown = groups.results.reduce((sum, g) => sum + g.count, 0);
   const typeNote = noResponseNote(noResponse, total);
   const rows = byMonth ? [...groups.results].reverse() : groups.results;
+  const {notes: freshnessNotes, ...freshness} = dataFreshness("opportunities", asOf, now);
   const monthNote = byMonth ? "Months are in order. Each month counts only notices still active today; SAM.gov archives notices over time, so earlier months look smaller and the counts are not a posting trend." : undefined;
   return {
     group_by: groupBy,
@@ -516,7 +524,8 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
     groups: rows.map(g => ({value: g.value ?? "(blank)", count: g.count})),
     other_count: total - shown,
     data_as_of: asOf,
-    notes: [...q.notes, ...[typeNote, monthNote, hint].filter((n): n is string => !!n)],
+    ...freshness,
+    notes: [...q.notes, ...freshnessNotes, ...[typeNote, monthNote, hint].filter((n): n is string => !!n)],
     source: SOURCE,
   };
 }
@@ -524,12 +533,14 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
 export async function getDataStatus(db: Database, _args: Args, now = new Date()) {
   unknownKeys(_args, []);
   const s = await status(db);
+  const freshness = dataFreshness("opportunities", s.file_date ?? null, now);
   if (!s.file_date) {
-    return {status: "not_loaded", api_key_required: false, message: "The opportunities database has not been loaded yet.", source: SOURCE};
+    return {...freshness, status: "not_loaded", api_key_required: false, message: "The opportunities database has not been loaded yet.", source: SOURCE};
   }
   const ageDays = Math.floor((now.getTime() - Date.parse(s.file_date + "T00:00:00Z")) / 86400000);
   return {
-    status: ageDays > 2 ? "stale" : "current",
+    ...freshness,
+    status: freshness.stale ? "stale" : "current",
     api_key_required: false,
     file_date: s.file_date,
     file_age_days: ageDays,
@@ -538,7 +549,7 @@ export async function getDataStatus(db: Database, _args: Args, now = new Date())
     latest_versions: s.latest_versions,
     by_notice_type: s.by_notice_type,
     last_load: {added: s.added, updated: s.updated, removed: s.removed, skipped_past_archive_date: s.skipped_past_archive_date},
-    refresh: "Nightly. SAM.gov publishes the file once a day; notices posted since then appear after the next load.",
+    refresh: "Checks every two hours and loads only when a newer public file is available. SAM.gov publishes the opportunities file daily; notices posted since then appear after the next new-file load.",
     coverage: "Active notices only, including notices posted in earlier fiscal years that remain active. This is not a complete historical archive; archived notices and attachments are not included. active_notices counts every listed version of amended notices; latest_versions and by_notice_type count only the latest version of each.",
     source: SOURCE,
     source_url: s.source_url,
@@ -547,9 +558,16 @@ export async function getDataStatus(db: Database, _args: Args, now = new Date())
 
 export const HANDLERS: Record<string, (db: Database, args: Args, entityDb?: Database) => Promise<unknown>> = {
   search_opportunities: (db, args) => searchOpportunities(db, args),
-  get_opportunity: getOpportunity,
+  get_opportunity: (db, args) => getOpportunity(db, args),
   summarize_opportunities: (db, args) => summarizeOpportunities(db, args),
-  get_data_status: async (db, args, entityDb) => ({...await getDataStatus(db, args), ...await getPublicDataStatus(entityDb!)}),
-  search_entities: searchEntities,
-  search_exclusions: searchExclusions,
+  get_data_status: async (db, args, entityDb) => {
+    const [opportunities, publicFiles] = await Promise.all([getDataStatus(db, args), getPublicDataStatus(entityDb!)]);
+    const staleFiles = [publicFiles.entities, publicFiles.exclusions].filter(file => file.stale);
+    const stale = opportunities.stale || staleFiles.length > 0;
+    return {...opportunities, ...publicFiles, stale,
+      status: stale ? "stale" : opportunities.status,
+      notes: [...opportunities.notes, ...staleFiles.flatMap(file => file.notes ?? [])]};
+  },
+  search_entities: (db, args) => searchEntities(db, args),
+  search_exclusions: (db, args) => searchExclusions(db, args),
 };

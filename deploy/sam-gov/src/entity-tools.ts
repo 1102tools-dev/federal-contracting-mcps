@@ -1,4 +1,5 @@
-import {namePredicate, possibleNameMatches} from "./name-matching.ts";
+import {dataFreshness, noMatchSummary} from "./data-freshness.ts";
+import {compactSQL, normalizedName, namePredicate, possibleNameMatches} from "./name-matching.ts";
 import type {Database} from "./public-types.ts";
 import {ToolError} from "./public-types.ts";
 import {BUSINESS, SBA, COMMON_BUSINESS_CODES} from "./entity-business-codes.ts";
@@ -61,7 +62,7 @@ function codes(row: Row, key: string): string[] {
   if (!Array.isArray(parsed) || parsed.some(v => typeof v !== "string")) throw new ToolError("The public entity extract contains invalid code data.");
   return parsed;
 }
-function entity(row: Row, sections: Set<string>): Row {
+function entity(row: Row, sections: Set<string>, now: Date): Row {
   const raw = row.record_json ? (typeof row.record_json === "string" ? JSON.parse(row.record_json) : row.record_json) : {};
   const value: Row = {
     entityRegistration: raw.entityRegistration ?? {
@@ -83,6 +84,11 @@ function entity(row: Row, sections: Set<string>): Row {
   if (sections.has("assertions")) value.assertions = raw.assertions ?? {
     goodsAndServices: {primaryNaics: row.primary_naics, naicsList: codes(row, "naics_codes_json").map(code => ({naicsCode: code, isPrimary: code === row.primary_naics ? "Y" : "N"}))},
   };
+  const certifications = raw.coreData?.businessTypes?.sbaBusinessTypeList ?? value.coreData?.businessTypes?.sbaBusinessTypeList ?? [];
+  const statuses = certifications.map((item: Row) => ({...item, lapsed: certificationLapsed(item.certificationExitDate, now)}));
+  if (value.coreData?.businessTypes) value.coreData.businessTypes.sbaBusinessTypeList = statuses;
+  // Status remains visible when callers request sections without coreData.
+  if (statuses.length) value.sbaCertificationStatus = statuses.map((item: Row) => ({sbaBusinessTypeCode: item.sbaBusinessTypeCode, certificationExitDate: item.certificationExitDate ?? null, lapsed: item.lapsed}));
   // Older public imports used an extract-specific alias for the API field.
   // record_json is freshly parsed above; normalize only that key, preserving flags.
   const naicsList = value.assertions?.goodsAndServices?.naicsList;
@@ -97,7 +103,13 @@ function entity(row: Row, sections: Set<string>): Row {
   return value;
 }
 
-export async function searchEntities(db: Database, args: Args) {
+export function certificationLapsed(exit: unknown, now: Date): boolean | null {
+  if (typeof exit !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(exit.slice(0, 10))) return null;
+  const date = exit.slice(0, 10), parsed = Date.parse(date + "T00:00:00Z");
+  if (!Number.isFinite(parsed) || new Date(parsed).toISOString().slice(0, 10) !== date) return null;
+  return date < now.toISOString().slice(0, 10);
+}
+export async function searchEntities(db: Database, args: Args, now = new Date()) {
   if (!db || typeof db.prepare !== "function") throw new ToolError("SAM.gov public entity data is unavailable; confirm registration status on SAM.gov.");
   const allowed = Object.keys(ENTITY_TOOL.inputSchema.properties);
   const extra = Object.keys(args).filter(k => !allowed.includes(k));
@@ -151,33 +163,48 @@ export async function searchEntities(db: Database, args: Args) {
     const stable = "NOT EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='entities' AND state='applying')";
     const legalClause = [...baseWhere, legal.sql, stable].join(" AND ");
     const dbaClause = [...baseWhere, "e.dba_name IS NOT NULL", "e.dba_name <> ''", dba.sql, stable].join(" AND ");
-    matching = `matched_keys AS MATERIALIZED (
-      SELECT e.rowid AS matched_rowid FROM entities e WHERE ${legalClause}
-      UNION SELECT e.rowid AS matched_rowid FROM entities e ${uei || cage ? "" : "INDEXED BY entities_dba_name"} WHERE ${dbaClause}),
-      matches AS NOT MATERIALIZED (SELECT e.* FROM entities e WHERE e.rowid IN (SELECT matched_rowid FROM matched_keys))`;
-    queryParams = [...baseParams, ...legal.values, ...baseParams, ...dba.values];
+    matching = `name_keys AS MATERIALIZED (
+      SELECT e.rowid AS matched_rowid, CASE WHEN ${compactSQL("e.legal_business_name", name)} = ? THEN 0 ELSE 3 END AS name_rank FROM entities e WHERE ${legalClause}
+      UNION ALL SELECT e.rowid AS matched_rowid, CASE WHEN ${compactSQL("e.dba_name", name)} = ? THEN 1 ELSE 2 END AS name_rank FROM entities e ${uei || cage ? "" : "INDEXED BY entities_dba_name"} WHERE ${dbaClause}),
+      matched_keys AS MATERIALIZED (SELECT matched_rowid, min(name_rank) AS name_rank FROM name_keys GROUP BY matched_rowid),
+      matches AS NOT MATERIALIZED (SELECT e.*, k.name_rank FROM entities e JOIN matched_keys k ON e.rowid=k.matched_rowid)`;
+    queryParams = [normalizedName(name), ...baseParams, ...legal.values, normalizedName(name), ...baseParams, ...dba.values];
   }
+  const order: string[] = [];
+  const sortParams: unknown[] = [];
+  if (sba) {
+    const entries = "json_each(coalesce(json_extract(record_json, '$.coreData.businessTypes.sbaBusinessTypeList'), '[]'))";
+    const code = "json_extract(value, '$.sbaBusinessTypeCode') = ?";
+    const exit = "substr(json_extract(value, '$.certificationExitDate'), 1, 10)";
+    const valid = `length(${exit})=10 AND ${exit} GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' AND date(${exit}, '+0 days')=${exit}`;
+    order.push(`CASE WHEN EXISTS(SELECT 1 FROM ${entries} WHERE ${code} AND ${valid} AND ${exit} >= ?) THEN 0 WHEN EXISTS(SELECT 1 FROM ${entries} WHERE ${code} AND ${valid} AND ${exit} < ?) THEN 2 ELSE 1 END`);
+    sortParams.push(sba, now.toISOString().slice(0,10), sba, now.toISOString().slice(0,10));
+  }
+  if (name) order.push("name_rank");
+  order.push("legal_business_name COLLATE NOCASE", "uei", "entity_id");
   const {results} = await db.prepare(`WITH ${matching},
-    selected AS (SELECT * FROM matches ORDER BY legal_business_name COLLATE NOCASE, uei, entity_id LIMIT ? OFFSET ?)
+    selected AS (SELECT * FROM matches ORDER BY ${order.join(", ")} LIMIT ? OFFSET ?)
     SELECT (SELECT COUNT(*) FROM matches) AS total_records,
     (SELECT json_group_array(json_object(${projection})) FROM selected) AS records,
     EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='entities' AND state='applying') AS refreshing,
-    s.* FROM extract_status s WHERE s.kind = 'entities'`).bind(...queryParams, size, page * size).all<Row>();
+    s.* FROM extract_status s WHERE s.kind = 'entities'`).bind(...queryParams, ...sortParams, size, page * size).all<Row>();
   const snapshot = results[0];
   if (snapshot?.refreshing) throw new ToolError("SAM.gov public entity data is refreshing. Retry later; confirm current registration on SAM.gov.");
   const quarantined = Number(snapshot?.quarantined_rows ?? snapshot?.rejected_rows ?? 0);
+  const freshness = dataFreshness("entities", snapshot?.file_date, now);
   const provenance = {
+    ...freshness,
     source: "SAM.gov public Entity Registration monthly V2 extract",
     file_name: snapshot?.file_name ?? null, file_date: snapshot?.file_date ?? null,
     source_url: snapshot?.source_url ?? null,
-    notes: [...ENTITY_CAVEATS, ...(quarantined > 0 ? [`${quarantined} malformed source rows were quarantined and excluded from this hosted mirror; coverage is incomplete.`] : [])],
+    notes: [...freshness.notes, ...ENTITY_CAVEATS, ...(quarantined > 0 ? [`${quarantined} malformed source rows were quarantined and excluded from this hosted mirror; coverage is incomplete.`] : [])],
   };
-  if (!snapshot?.file_date) return {status: "not_loaded", totalRecords: 0, entityData: [], page, size, ...provenance};
+  if (!snapshot?.file_date) return {summary: noMatchSummary(null), status: "not_loaded", totalRecords: 0, entityData: [], page, size, ...provenance};
   const rows: Row[] = JSON.parse(snapshot.records);
   const possible = name && snapshot.total_records === 0 ? await possibleNameMatches(db, {
     table: "entities", kind: "entities", columns: ["legal_business_name", "dba_name"],
     projection: ["entity_id", "uei", "cage_code", "legal_business_name", "dba_name", "state", "city", "zip_code", "address_line_1"],
     where: baseWhere.map(w => w.replaceAll("e.", "")), values: baseParams, query: name, snapshot,
   }) : {};
-  return {...possible, totalRecords: snapshot.total_records, entityData: rows.map(row => entity(row, sections)), page, size, ...provenance};
+  return {...(snapshot.total_records === 0 ? {summary: noMatchSummary(snapshot.file_date)} : {}), ...possible, totalRecords: snapshot.total_records, entityData: rows.map(row => entity(row, sections, now)), page, size, ...provenance};
 }

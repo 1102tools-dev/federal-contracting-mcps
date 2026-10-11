@@ -1,3 +1,4 @@
+import {dataFreshness, noMatchSummary} from "./data-freshness.ts";
 import {namePredicate, possibleNameMatches} from "./name-matching.ts";
 import {ToolError, type Database} from "./public-types.ts";
 import {ENTITY_CAVEATS} from "./entity-tools.ts";
@@ -67,14 +68,15 @@ function choice(args: Args, key: string, allowed: string[]): string | undefined 
 }
 
 /** Both datasets are in the separate public extract database. */
-export async function getPublicDataStatus(db: Database) {
+export async function getPublicDataStatus(db: Database, now = new Date()) {
   const rows = (await db.prepare("SELECT s.*, EXISTS(SELECT 1 FROM public_refresh_runs r WHERE r.kind=s.kind AND r.state='applying') AS refreshing FROM extract_status s WHERE kind IN ('entities', 'exclusions') ORDER BY kind").bind().all<Row>()).results;
   const status = (kind: string) => {
     const row = rows.find(row => row.kind === kind);
     const quarantined = Number(row?.quarantined_rows ?? row?.rejected_rows ?? 0);
-    const notes = kind === "entities" ? [...ENTITY_CAVEATS, ...(quarantined > 0 ? [`${quarantined} malformed source rows were quarantined and excluded from this hosted mirror; coverage is incomplete.`] : [])] : [...CAVEATS];
+    const freshness = dataFreshness(kind as "entities" | "exclusions", row?.file_date, now);
+    const notes = [...freshness.notes, ...(kind === "entities" ? [...ENTITY_CAVEATS, ...(quarantined > 0 ? [`${quarantined} malformed source rows were quarantined and excluded from this hosted mirror; coverage is incomplete.`] : [])] : [...CAVEATS])];
     if (row?.refreshing) notes.push("Public data is refreshing; retry later. The listed source describes the last completed refresh.");
-    return row ? {...row, available: !row.refreshing, notes, ...(row.refreshing ? {status: "refreshing"} : {})} : {available: false, kind, file_name: null, file_date: null, row_count: 0, notes};
+    return row ? {...row, ...freshness, available: !row.refreshing, notes, ...(row.refreshing ? {status: "refreshing"} : {})} : {...freshness, available: false, kind, file_name: null, file_date: null, row_count: 0, notes};
   };
   return {entities: status("entities"), exclusions: status("exclusions")};
 }
@@ -108,7 +110,7 @@ function record(row: Row) {
   };
 }
 
-export async function searchExclusions(db: Database | undefined, args: Args) {
+export async function searchExclusions(db: Database | undefined, args: Args, now = new Date()) {
   if (!db) throw new ToolError("SAM.gov public exclusions database is not configured; no exclusion determination can be made.");
   for (const key of Object.keys(args)) {
     if (!Object.hasOwn(EXCLUSION_TOOL.inputSchema.properties, key)) throw new ToolError(`Unknown argument: ${key}.`);
@@ -164,8 +166,11 @@ export async function searchExclusions(db: Database | undefined, args: Args) {
     projection: ["exclusion_id", "uei", "cage_code", "name", "first_name", "middle_name", "last_name", "classification", "state", "city", "zip_code", "address_line_1"],
     where: baseWhere, values: baseValues, query: name, snapshot: result,
   }) : {};
+  const freshness = dataFreshness("exclusions", result.file_date, now);
   return {
+    ...(result.total_records === 0 ? {summary: noMatchSummary(result.file_date)} : {}),
     ...possible,
+    ...freshness,
     totalRecords: result.total_records,
     excludedEntity: JSON.parse(result.records).map((item: {row: Row}) => record(item.row)),
     page, size,
@@ -173,6 +178,6 @@ export async function searchExclusions(db: Database | undefined, args: Args) {
     source: "SAM.gov public Exclusions/Public V2 extract",
     file_name: result.file_name, file_date: result.file_date, data_as_of: result.file_date,
     loaded_at: result.loaded_at,
-    notes: CAVEATS,
+    notes: [...freshness.notes, ...CAVEATS],
   };
 }
