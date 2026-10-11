@@ -159,8 +159,13 @@ def index_columns(db,tables,ignore=()):
             name=index['name']
             if not re.fullmatch(r'[A-Za-z0-9_]+',name): raise ValueError('Unexpected index name')
             columns=db.query(f'PRAGMA index_info({name})')
-            if index.get('partial') or any(r['name'] is None for r in columns):
+            from sam_public_cost_oracle import DBA_INDEX_NAME,known_dba_partial_index
+            if any(r['name'] is None for r in columns):
                 raise ValueError('Unmodeled partial/expression index writes; refusing incremental mutations')
+            if index.get('partial') or name==DBA_INDEX_NAME:
+                sql=db.query(f"SELECT sql FROM sqlite_master WHERE type='index' AND name='{name}'")[0]['sql']
+                if not index.get('partial') or not known_dba_partial_index(name,table,[r['name'] for r in columns],sql):
+                    raise ValueError('Unmodeled partial/expression index writes; refusing incremental mutations')
             result[table].append({r['name'] for r in columns})
     return result
 

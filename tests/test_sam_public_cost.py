@@ -5,6 +5,9 @@ from sam_public_cost_oracle import CostOracle,amplification_exceeded
 from sam_public_incremental import initialize_tracking
 from unittest.mock import patch
 class CostTests(unittest.TestCase):
+ def dba_fixture(self):
+  self.oracle.db.executescript("CREATE TABLE entities(entity_id TEXT PRIMARY KEY,dba_name TEXT,registration_status TEXT,notes TEXT);INSERT INTO entities VALUES('a',NULL,'A','old'),('b','','A','old'),('c','DBA One','A','old'),('d','DBA Two','A','old');")
+  return "CREATE INDEX entities_dba_name ON entities(dba_name,registration_status,entity_id) WHERE dba_name IS NOT NULL AND dba_name<>'';"
  def setUp(self):
   self.tmp=tempfile.TemporaryDirectory();self.base=Path(self.tmp.name);self.path=self.base/'db.sqlite'
   db=sqlite3.connect(self.path);db.executescript('CREATE TABLE hashes(kind TEXT,record_key TEXT,hash TEXT,PRIMARY KEY(kind,record_key));CREATE TABLE records(id INTEGER PRIMARY KEY,name TEXT);CREATE INDEX names ON records(name);INSERT INTO records VALUES(1,"old");');db.close()
@@ -90,4 +93,28 @@ class CostTests(unittest.TestCase):
  def test_confirmation_requires_measured_bound(self):
   self.oracle.rehearse(["INSERT INTO hashes VALUES('entities','one','digest');"],'seed')
   with self.assertRaisesRegex(ValueError,'exceeded'):self.oracle.confirm(100003)
+ def test_known_dba_partial_create_and_drop_count_only_members(self):
+  sql=self.dba_fixture()
+  created=self.oracle.rehearse([sql],'create-dba')
+  self.assertEqual(created['ddl_entry_reservation'],3)
+  self.oracle.confirm(3)
+  dropped=self.oracle.rehearse(['DROP INDEX entities_dba_name;'],'drop-dba')
+  self.assertEqual(dropped['ddl_entry_reservation'],3)
+ def test_known_dba_partial_membership_and_indexed_updates(self):
+  self.oracle.db.execute(self.dba_fixture());self.oracle.db.commit()
+  for assignment,expected in [("dba_name='DBA New'",3),("dba_name=NULL",3),("registration_status='I'",3),("notes='new'",1)]:
+   with self.subTest(assignment=assignment):
+    report=self.oracle.rehearse([f"UPDATE entities SET {assignment} WHERE entity_id='a';"],'update-dba')
+    self.assertEqual(report['conservative_units'],expected)
+    self.oracle.confirm(expected)
+  report=self.oracle.rehearse(["INSERT INTO entities VALUES('e',NULL,'A','old');"],'nonmember-insert')
+  self.assertEqual(report['conservative_units'],3);self.oracle.confirm(3)
+  report=self.oracle.rehearse(["DELETE FROM entities WHERE entity_id='e';"],'nonmember-delete')
+  self.assertEqual(report['conservative_units'],3)
+ def test_unknown_partial_and_expression_index_rejected(self):
+  self.dba_fixture()
+  for sql in ["CREATE INDEX other_partial ON entities(dba_name) WHERE dba_name IS NOT NULL;", "CREATE INDEX entities_dba_name ON entities(dba_name,registration_status,entity_id) WHERE dba_name IS NOT NULL;", "CREATE INDEX name_expression ON entities(lower(dba_name));"]:
+   with self.subTest(sql=sql),self.assertRaisesRegex(ValueError,'partial|expression'):
+    self.oracle.rehearse([sql],'unknown-index')
+  self.assertEqual(self.oracle.db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND sql IS NOT NULL").fetchone()[0],1)
 if __name__=='__main__':unittest.main()

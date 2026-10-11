@@ -12,6 +12,21 @@ import sqlite3
 
 STEP_LIMIT=None
 ROUND_LIMIT=5_000_000
+DBA_INDEX_NAME='entities_dba_name'
+DBA_INDEX_COLUMNS=('dba_name','registration_status','entity_id')
+DBA_INDEX_PREDICATE="dba_name IS NOT NULL AND dba_name<>''"
+
+
+def known_dba_partial_index(name,table,columns,sql):
+    """Accept only the reviewed DBA index, including its exact predicate."""
+    if name!=DBA_INDEX_NAME or table!='entities' or tuple(columns)!=DBA_INDEX_COLUMNS:
+        return False
+    def identifier(value):return '(?:'+value+'|"'+value+'")'
+    pattern=(r'CREATE\s+INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?'+identifier(DBA_INDEX_NAME)+
+        r'\s+ON\s+'+identifier('entities')+r'\s*\(\s*'+
+        r'\s*,\s*'.join(map(identifier,DBA_INDEX_COLUMNS))+r'\s*\)\s+WHERE\s+'+
+        identifier('dba_name')+r'\s+IS\s+NOT\s+NULL\s+AND\s+'+identifier('dba_name')+r"\s*<>\s*''\s*;?\s*")
+    return bool(re.fullmatch(pattern,sql or '',re.I))
 
 def amplification_exceeded(actual,local):
     return actual-local>100000 and actual*5>local*6
@@ -117,9 +132,12 @@ class CostOracle:
         result=[]
         for index in self.db.execute(f'PRAGMA index_list({table})'):
             name=index[1]
-            if index[4]:raise ValueError('Oracle does not support partial indexes')
             columns=[r[2] for r in self.db.execute(f'PRAGMA index_info({name})')]
             if None in columns:raise ValueError('Oracle does not support expression indexes')
+            sql=self.db.execute("SELECT sql FROM sqlite_master WHERE type='index' AND name=?",(name,)).fetchone()[0]
+            if index[4] or name==DBA_INDEX_NAME:
+                if not index[4] or not known_dba_partial_index(name,table,columns,sql):
+                    raise ValueError('Oracle does not support unrecognized partial indexes')
             result.append(set(columns))
         return result
     def rehearse(self,statements,label,step_limit=STEP_LIMIT):
@@ -145,18 +163,27 @@ class CostOracle:
                     if 'OR REPLACE' in operation.upper():replacement=True
                 drop=re.match(r'DROP INDEX ([A-Za-z0-9_]+)',text,re.I)
                 if drop:
-                    table=self.db.execute('SELECT tbl_name FROM sqlite_master WHERE type=\'index\' AND name=?',(drop[1],)).fetchone()
-                    if table:ddl_units+=self.db.execute(f'SELECT COUNT(*) FROM {table[0]}').fetchone()[0]+1
+                    entry=self.db.execute('SELECT tbl_name,sql FROM sqlite_master WHERE type=\'index\' AND name=?',(drop[1],)).fetchone()
+                    if entry:
+                        self.indexes(entry[0])
+                        predicate=' WHERE '+DBA_INDEX_PREDICATE if known_dba_partial_index(drop[1],entry[0],DBA_INDEX_COLUMNS,entry[1]) else ''
+                        ddl_units+=self.db.execute(f'SELECT COUNT(*) FROM {entry[0]}'+predicate).fetchone()[0]+1
                 create_index=re.match(r'CREATE INDEX(?: IF NOT EXISTS)? ([A-Za-z0-9_]+) ON ([A-Za-z0-9_]+)',text,re.I)
                 if create_index:
                     exists=self.db.execute('SELECT1 FROM sqlite_master WHERE name=?'.replace('SELECT1','SELECT 1'),(create_index[1],)).fetchone()
-                    if not exists:ddl_units+=self.db.execute(f'SELECT COUNT(*) FROM {create_index[2]}').fetchone()[0]+1
+                    known=known_dba_partial_index(create_index[1],create_index[2],DBA_INDEX_COLUMNS,text)
+                    if (re.search(r'\bWHERE\b',text,re.I) or create_index[1]==DBA_INDEX_NAME) and not known:
+                        raise ValueError('Oracle does not support unrecognized partial indexes')
+                    if not exists:
+                        predicate=' WHERE '+DBA_INDEX_PREDICATE if known else ''
+                        ddl_units+=self.db.execute(f'SELECT COUNT(*) FROM {create_index[2]}'+predicate).fetchone()[0]+1
                 if re.match(r'CREATE TABLE|ALTER TABLE',text,re.I):ddl_units+=2
                 if re.match(r'DROP TABLE',text,re.I):
                     table=re.search(r'DROP TABLE(?: IF EXISTS)? ([A-Za-z0-9_]+)',text,re.I)[1]
                     if self.db.execute("SELECT1 FROM sqlite_master WHERE type='table' AND name=?".replace('SELECT1','SELECT 1'),(table,)).fetchone():
                         ddl_units+=self.db.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]*(1+len(self.indexes(table)))+1
                 self.db.execute(statement)
+                if create_index:self.indexes(create_index[2])
                 affected=self.db.total_changes-before;native+=affected
                 if dml:
                     if operation.upper()=='UPDATE':index_units+=affected*2*sum(bool(changed&columns) for columns in indexes)

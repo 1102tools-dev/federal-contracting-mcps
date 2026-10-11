@@ -133,6 +133,27 @@ class Incremental(unittest.TestCase):
         self.assertEqual(len(sql),2)
         self.assertNotIn('entity_id=',sql[0].split(' WHERE ')[0])
 
+    def test_known_dba_partial_index_membership_costs_are_conservative(self):
+        self.db.db.execute("CREATE INDEX entities_dba_name ON entities(dba_name,registration_status,entity_id) WHERE dba_name IS NOT NULL AND dba_name<>''")
+        indexes=incremental.index_columns(self.db,['entities','entity_naics','entity_business_types'])
+        self.assertIn({'dba_name','registration_status','entity_id'},indexes['entities'])
+        fields=loader.ENTITY_FIELDS
+        old={f:None for f in fields};old.update(entity_id='stable',naics_codes_json='[]',business_type_codes_json='[]',sba_business_type_codes_json='[]')
+        for changes,expected in [({'dba_name':'DBA'},5),({'registration_status':'A'},9),({'registration_date':'2026-10-11'},3)]:
+            with self.subTest(changes=changes):
+                _,units=incremental.record_delta('entities',old,dict(old,**changes),fields,indexes,'hash')
+                self.assertEqual(units,expected)
+        _,units=incremental.record_delta('entities',dict(old,dba_name='DBA'),old,fields,indexes,'hash')
+        self.assertEqual(units,5)
+
+    def test_other_partial_or_expression_indexes_are_refused(self):
+        for sql in ["CREATE INDEX other_partial ON entities(dba_name) WHERE dba_name IS NOT NULL", "CREATE INDEX entities_dba_name ON entities(dba_name,registration_status,entity_id) WHERE dba_name IS NOT NULL", "CREATE INDEX expression_name ON entities(lower(dba_name))"]:
+            with self.subTest(sql=sql):
+                self.db.db.execute(sql)
+                with self.assertRaisesRegex(ValueError,'partial/expression'):
+                    incremental.index_columns(self.db,['entities'])
+                name=sql.split()[2];self.db.db.execute('DROP INDEX '+name)
+
 
     def test_exclusions_daily_budget_accumulates_across_runs(self):
         rows=[{'exclusion_id':'SAM0001','name':'Example','record_json':{'entityName':'Example'}}]

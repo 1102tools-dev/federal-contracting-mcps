@@ -1,3 +1,4 @@
+import {namePredicate, possibleNameMatches} from "./name-matching.ts";
 import {ToolError, type Database} from "./public-types.ts";
 import {ENTITY_CAVEATS} from "./entity-tools.ts";
 
@@ -18,7 +19,7 @@ export const EXCLUSION_TOOL = {
     properties: {
       uei: {type: "string", pattern: "^[A-Za-z0-9]{12}$", description: "12-character Unique Entity ID; exact match."},
       cage_code: {type: "string", pattern: "^[A-Za-z0-9]{5}$", description: "5-character CAGE; exact match."},
-      entity_name: {type: "string", maxLength: 200, description: "Firm or full individual name; case-insensitive literal substring match."},
+      entity_name: {type: "string", maxLength: 200, description: "Partial firm or individual name; punctuation, spacing, ampersands and common company suffixes are normalized, including first/middle/last names. Zero results include separately labeled possible name matches; names alone do not confirm identity."},
       classification: {type: "string", enum: ["Firm", "Individual", "Vessel", "Special Entity Designation"]},
       exclusion_program: {type: "string", enum: ["Reciprocal", "NonProcurement", "Procurement"]},
       excluding_agency_code: {type: "string", maxLength: 100},
@@ -134,11 +135,14 @@ export async function searchExclusions(db: Database | undefined, args: Args) {
       values.push(column === "state" && indexedState ? value.toUpperCase() : value);
     }
   }
+  const baseWhere = [...predicates], baseValues = [...values];
   if (name) {
-    predicates.push("instr(lower(name), lower(?)) > 0");
-    values.push(name);
+    const filter = namePredicate(["name", "coalesce(first_name, '') || ' ' || coalesce(middle_name, '') || ' ' || coalesce(last_name, '')", "coalesce(first_name, '') || ' ' || coalesce(last_name, '')"], name);
+    predicates.push(filter.sql); values.push(...filter.values);
   }
-  const result = (await db.prepare(`WITH matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE ${predicates.join(" AND ") || "1=1"} AND NOT EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='exclusions' AND state='applying')),
+  const clause = `${predicates.join(" AND ") || "1=1"} AND NOT EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='exclusions' AND state='applying')`;
+  const matching = name ? `matched_keys AS MATERIALIZED (SELECT rowid AS matched_rowid FROM exclusions WHERE ${clause}), matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE rowid IN (SELECT matched_rowid FROM matched_keys))` : `matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE ${clause})`;
+  const result = (await db.prepare(`WITH ${matching},
     selected AS (SELECT * FROM matches ORDER BY name COLLATE NOCASE, exclusion_id LIMIT ? OFFSET ?)
     SELECT (SELECT json_group_array(json_object('row', json_object(
       'exclusion_id', exclusion_id, 'uei', uei, 'cage_code', cage_code, 'name', name,
@@ -155,7 +159,13 @@ export async function searchExclusions(db: Database | undefined, args: Args) {
     s.* FROM extract_status s WHERE kind = 'exclusions'`).bind(...values, size, page * size).all<Row>()).results[0];
   if (result?.refreshing) throw new ToolError("SAM.gov public exclusions data is refreshing. Retry later; no exclusion determination can be made.");
   if (!result) throw new ToolError("SAM.gov public exclusions data has not been loaded yet; no exclusion determination can be made.");
+  const possible = name && result.total_records === 0 ? await possibleNameMatches(db, {
+    table: "exclusions", kind: "exclusions", columns: ["name", "coalesce(first_name, '') || ' ' || coalesce(middle_name, '') || ' ' || coalesce(last_name, '')"],
+    projection: ["exclusion_id", "uei", "cage_code", "name", "first_name", "middle_name", "last_name", "classification", "state", "city", "zip_code", "address_line_1"],
+    where: baseWhere, values: baseValues, query: name, snapshot: result,
+  }) : {};
   return {
+    ...possible,
     totalRecords: result.total_records,
     excludedEntity: JSON.parse(result.records).map((item: {row: Row}) => record(item.row)),
     page, size,

@@ -379,7 +379,7 @@
         "legal_business_name": {
           "type": "string",
           "maxLength": 200,
-          "description": "Partial legal business name match; no relevance ranking."
+          "description": "Partial legal or DBA name; punctuation, spacing, ampersands and common company suffixes are normalized. Zero results include separately labeled possible name matches; names alone do not confirm identity."
         },
         "primary_naics": {
           "anyOf": [
@@ -499,7 +499,7 @@
         "entity_name": {
           "type": "string",
           "maxLength": 200,
-          "description": "Firm or full individual name; case-insensitive literal substring match."
+          "description": "Partial firm or individual name; punctuation, spacing, ampersands and common company suffixes are normalized, including first/middle/last names. Zero results include separately labeled possible name matches; names alone do not confirm identity."
         },
         "classification": {
           "type": "string",

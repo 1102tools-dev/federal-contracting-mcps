@@ -64,14 +64,14 @@ test("UEI and CAGE checks preserve shared fields and include active and expired 
   assert.doesNotMatch(EXCLUSION_TOOL.description, /Includes active and inactive/);
 });
 
-test("name filters combine, paginate deterministically, and treat wildcards literally", async () => {
+test("name filters combine, paginate deterministically, and reject punctuation-only names", async () => {
   const {db} = database();
   assert.equal((await searchExclusions(db, {})).totalRecords, 4);
   const result = await searchExclusions(db, {entity_name: "acme", country: "usa", size: 1, page: 1});
   assert.equal(result.totalRecords, 2);
   assert.equal(result.excludedEntity.length, 1);
   assert.equal(result.excludedEntity[0].exclusionActions.listOfActions[0].recordStatus, "Inactive");
-  assert.equal((await searchExclusions(db, {entity_name: "%_"})).totalRecords, 1);
+  await assert.rejects(searchExclusions(db, {entity_name: "%_"}), /meaningful name/);
   assert.equal((await searchExclusions(db, {uei: "TESTUEI00001", cage_code: "ZZZZZ"})).totalRecords, 0);
 });
 
