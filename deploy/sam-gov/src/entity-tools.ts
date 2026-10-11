@@ -143,7 +143,7 @@ export async function searchEntities(db: Database, args: Args) {
   if (!Array.isArray(requested) || requested.some(s => typeof s !== "string" || !["entityRegistration", "coreData", "assertions", "All"].includes(s))) throw new ToolError("include_sections supports only public entityRegistration, coreData, assertions, or All.");
   const sections = new Set<string>(requested.includes("All") ? ["entityRegistration", "coreData", "assertions"] : requested as string[]);
   // One SQL statement gives rows, total and provenance the same snapshot during swaps.
-  const clause = where.length ? " WHERE " + where.join(" AND ") : "";
+  const clause = " WHERE " + [...where, "NOT EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='entities' AND state='applying')"].join(" AND ");
   const columns = ["entity_id", "uei", "cage_code", "legal_business_name", "dba_name", "registration_status",
     "purpose_of_registration", "registration_date", "activation_date", "expiration_date", "last_update_date",
     "uei_status", "exclusion_status_flag", "public_display_flag", "address_line_1", "address_line_2",
@@ -154,8 +154,10 @@ export async function searchEntities(db: Database, args: Args) {
     selected AS (SELECT * FROM matches ORDER BY legal_business_name COLLATE NOCASE, uei, entity_id LIMIT ? OFFSET ?)
     SELECT (SELECT COUNT(*) FROM matches) AS total_records,
     (SELECT json_group_array(json_object(${projection})) FROM selected) AS records,
+    EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='entities' AND state='applying') AS refreshing,
     s.* FROM extract_status s WHERE s.kind = 'entities'`).bind(...params, size, page * size).all<Row>();
   const snapshot = results[0];
+  if (snapshot?.refreshing) throw new ToolError("SAM.gov public entity data is refreshing. Retry later; confirm current registration on SAM.gov.");
   const quarantined = Number(snapshot?.quarantined_rows ?? snapshot?.rejected_rows ?? 0);
   const provenance = {
     source: "SAM.gov public Entity Registration monthly V2 extract",

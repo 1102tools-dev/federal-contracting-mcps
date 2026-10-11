@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: '24'
       - name: Loader
-        run: uv run --python 3.12 --with pytest --with pyyaml --with 'mcp>=2.0.0a1,<3' --with httpx --with filelock --with platformdirs --prerelease allow pytest -q tests/test_sam_loader.py tests/test_sam_entity_extract.py tests/test_sam_exclusion_extract.py tests/test_sam_public_loader.py tests/test_sam_public_parity.py tests/test_sam_native_release.py
+        run: uv run --python 3.12 --with pytest --with pyyaml --with 'mcp>=2.0.0a1,<3' --with httpx --with filelock --with platformdirs --prerelease allow pytest -q tests/test_sam_loader.py tests/test_sam_entity_extract.py tests/test_sam_exclusion_extract.py tests/test_sam_public_loader.py tests/test_sam_public_incremental.py tests/test_sam_public_cost.py tests/test_sam_public_parity.py tests/test_sam_native_release.py
       - name: Worker typecheck, tools, and contract
         working-directory: deploy/sam-gov
         run: |

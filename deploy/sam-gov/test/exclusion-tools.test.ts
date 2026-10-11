@@ -33,7 +33,7 @@ function database(loaded = true) {
     }
     return {results: sqlite.prepare(sql).all(...values as any[]) as any[]};
   }})})};
-  return {db, native, plans};
+  return {db, sqlite, native, plans};
 }
 
 test("exclusion tool title and annotations declare read-only public search", () => {
@@ -120,4 +120,27 @@ test("identifier lookups use ingestion indexes", async () => {
   plans.length = 0;
   await searchExclusions(db, {cage_code: "a1b2c"});
   assert.ok(plans.some(plan => /USING (?:COVERING )?INDEX exclusions_1/.test(plan)), plans.join("\n"));
+});
+
+test("unfinished incremental exclusions refresh hides partial records until completion", async () => {
+ const {db, sqlite} = database();
+ sqlite.exec("INSERT INTO public_refresh_runs VALUES ('exclusions','applying','target','parser','{}',3,100,10,'2026-10','now','now','owner','later')");
+ await assert.rejects(() => searchExclusions(db, {}), /refreshing/);
+ const during = await getPublicDataStatus(db);
+ assert.equal(during.exclusions.available, false);
+ assert.equal(during.exclusions.status, "refreshing");
+ assert.equal(during.entities.available, true);
+ sqlite.exec("UPDATE public_refresh_runs SET state='complete'");
+ assert.ok(await searchExclusions(db, {}));
+ sqlite.close();
+});
+
+test("explicit US two-letter state filters seek the existing index and preserve case-insensitive input", async () => {
+ const {db, sqlite, plans} = database();
+ const result = await searchExclusions(db, {state_province: "md", country: "usa"});
+ assert.equal(result.totalRecords, 2);
+ assert.ok(plans.some(plan => plan.includes("exclusions_3")));
+ sqlite.prepare("UPDATE exclusions SET state='Ontario' WHERE exclusion_id='3'").run();
+ assert.equal((await searchExclusions(db, {state_province: "ontario", country: "CAN"})).totalRecords, 1);
+ sqlite.close();
 });

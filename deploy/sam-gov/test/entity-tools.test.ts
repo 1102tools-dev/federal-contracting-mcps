@@ -199,3 +199,12 @@ test("legacy cached NAICS aliases normalize to the official API key without chan
   assert.doesNotMatch(JSON.stringify(result), /naicsSmallBusinessIndicator/);
   assert.match((sqlite.prepare("SELECT record_json FROM entities WHERE uei=?").get("ABCDEFGHIJK1") as any).record_json, /naicsSmallBusinessIndicator/);
 });
+
+test("unfinished incremental entities refresh hides partial records until completion", async () => {
+ const {db, sqlite} = database();
+ sqlite.exec("INSERT INTO public_refresh_runs VALUES ('entities','applying','target','parser','{}',3,100,10,'2026-10','now','now','owner','later')");
+ await assert.rejects(() => searchEntities(db, {}), /refreshing/);
+ sqlite.exec("UPDATE public_refresh_runs SET state='complete'");
+ assert.ok(await searchEntities(db, {}));
+ sqlite.close();
+});

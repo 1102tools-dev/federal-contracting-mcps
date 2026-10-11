@@ -4,11 +4,8 @@ CREATE TABLE IF NOT EXISTS entity_naics (entity_id TEXT NOT NULL, code TEXT NOT 
 CREATE TABLE IF NOT EXISTS entity_business_types (entity_id TEXT NOT NULL, code TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('business','sba')), PRIMARY KEY(entity_id,code,kind));
 CREATE INDEX IF NOT EXISTS entities_0 ON entities (uei);
 CREATE INDEX IF NOT EXISTS entities_1 ON entities (cage_code);
-CREATE INDEX IF NOT EXISTS entities_2 ON entities (legal_business_name COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS entities_3 ON entities (state);
 CREATE INDEX IF NOT EXISTS entities_4 ON entities (primary_naics);
-CREATE INDEX IF NOT EXISTS entities_5 ON entities (registration_status);
-CREATE INDEX IF NOT EXISTS entities_6 ON entities (expiration_date);
 CREATE INDEX IF NOT EXISTS entities_7 ON entity_naics (code);
 CREATE INDEX IF NOT EXISTS entities_8 ON entity_business_types (code,kind);
 CREATE INDEX IF NOT EXISTS entities_status_name ON entities (registration_status, legal_business_name COLLATE NOCASE, uei, entity_id);
@@ -18,9 +15,25 @@ CREATE INDEX IF NOT EXISTS exclusions_1 ON exclusions (cage_code);
 CREATE INDEX IF NOT EXISTS exclusions_2 ON exclusions (name COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS exclusions_3 ON exclusions (state);
 CREATE INDEX IF NOT EXISTS exclusions_4 ON exclusions (record_status);
-CREATE INDEX IF NOT EXISTS exclusions_5 ON exclusions (activation_date);
 CREATE TABLE IF NOT EXISTS extract_status (
 kind TEXT PRIMARY KEY, file_name TEXT NOT NULL, file_date TEXT NOT NULL,
 source_url TEXT NOT NULL, loaded_at TEXT NOT NULL, row_count INTEGER NOT NULL,
 sha256 TEXT NOT NULL, database_bytes INTEGER NOT NULL, load_seconds REAL NOT NULL,
 source_rows INTEGER NOT NULL DEFAULT 0, rejected_rows INTEGER NOT NULL DEFAULT 0, opted_out_rows INTEGER NOT NULL DEFAULT 0, duplicate_rows INTEGER NOT NULL DEFAULT 0);
+
+-- Incremental refresh journal. Incomplete generations are not served.
+CREATE TABLE IF NOT EXISTS public_refresh_runs (
+ kind TEXT PRIMARY KEY CHECK(kind IN ('entities','exclusions')),
+ state TEXT NOT NULL CHECK(state IN ('applying','complete')),
+ target_sha TEXT NOT NULL, parser_sha TEXT NOT NULL, target_metadata_json TEXT NOT NULL,
+ base_row_count INTEGER NOT NULL, planned_write_units INTEGER NOT NULL,
+ committed_write_units INTEGER NOT NULL DEFAULT 0, budget_month TEXT NOT NULL,
+ started_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+ owner_token TEXT NOT NULL, owner_expires_at TEXT NOT NULL
+);
+
+-- Change tracking stays separate; public record tables are not rewritten.
+CREATE TABLE IF NOT EXISTS public_record_hashes (
+ kind TEXT NOT NULL, record_key TEXT NOT NULL, content_hash TEXT NOT NULL,
+ PRIMARY KEY(kind,record_key)
+);
