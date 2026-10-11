@@ -36,7 +36,7 @@ The default upstream pacing above is the same code in both installation methods.
 | Limit or resource | Local process / stdio installation | 1102tools hosted endpoint, including ChatGPT plugins |
 | --- | --- | --- |
 | Upstream budget and concurrency | Shared by processes using the same pacing directory and pacing identity; independent installations do not share that local counter | Shared by all users of that particular hosted MCP, regardless of their incoming IP addresses |
-| Cloudflare entrance limit | Does not apply to a local process calling the data source directly | 600 HTTP requests per 60 seconds for Claude and ChatGPT addresses (Anthropic's and OpenAI's published outbound ranges) and 120 for every other address, per incoming IP seen by Cloudflare, per Cloudflare location, per MCP service |
+| Cloudflare entrance limit | Does not apply to a local process calling the data source directly | 600 HTTP requests per 60 seconds for Claude and ChatGPT addresses (Anthropic's and OpenAI's published outbound ranges) for every other address 20 (USAspending, eCFR, Federal Register) or 10 (GSA CALC+, Regulations.gov), per incoming IP seen by Cloudflare, per Cloudflare location, per MCP service. Over the limit, a tool call returns a readable error with the local-install link |
 | Hosted backend admission | Does not apply to stdio | 16 processing slots plus 32 FIFO waiting slots: 48 accepted HTTP requests across this service's users |
 | Hosted total request deadline | Does not apply to stdio; the package/client's own timeouts still apply | 55 seconds including upload, queue wait and processing; startup/network time may add latency |
 | Hosted request-body limit | Does not apply to stdio | 65,536 bytes (64 KiB) |
@@ -47,7 +47,7 @@ The four services in the first table have separate hosted budgets, concurrency s
 
 ### Shared IP addresses: two different parts of the request path
 
-1. **AI client to Cloudflare:** the entrance counter (600 a minute for Claude and ChatGPT addresses, 120 for others) uses the calling IP visible to Cloudflare. If several people share that IP and reach the same Cloudflare location, they share that entrance counter for the same MCP. For a cloud AI service, the calling IP may belong to that service rather than the user's phone or computer. Different incoming IPs still share the hosted backend's upstream budget.
+1. **AI client to Cloudflare:** the entrance counter (600 a minute for Claude and ChatGPT addresses; 20 for others on USAspending, eCFR and Federal Register, 10 on GSA CALC+ and Regulations.gov) uses the calling IP visible to Cloudflare. If several people share that IP and reach the same Cloudflare location, they share that entrance counter for the same MCP. For a cloud AI service, the calling IP may belong to that service rather than the user's phone or computer. Different incoming IPs still share the hosted backend's upstream budget.
 2. **MCP to the government data source:** hosted requests leave through the hosting infrastructure. The data provider may impose additional limits on that outbound traffic. Local users also may share an outbound address through an office, home router or VPN. Separate local pacing files do not create separate agency allowances.
 
 Cloudflare's entrance limit is approximate and location-specific. It is an additional admission check, not a dedicated allowance for each person. [Cloudflare rate-limiting documentation](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
@@ -89,7 +89,7 @@ Pacing identities incorporate the API bucket and credential where applicable. GS
 
 ### Acquisition.gov hosted limits
 
-The Acquisition.gov hosted endpoint answers from a daily copy of Acquisition.gov stored in Cloudflare D1, so hosted requests make no upstream call and share no upstream gate. Its entrance limit matches the other hosted servers: **600 HTTP requests per 60 seconds** for Claude and ChatGPT addresses and **120** for every other address, per incoming IP and Cloudflare location. The local package still calls Acquisition.gov one request at a time, with a three-second completion delay.
+The Acquisition.gov hosted endpoint answers from a daily copy of Acquisition.gov stored in Cloudflare D1, so hosted requests make no upstream call and share no upstream gate. Its entrance limit is **600 HTTP requests per 60 seconds** for Claude and ChatGPT addresses and **120** for every other address (it has no shared upstream budget to protect), per incoming IP and Cloudflare location. The local package still calls Acquisition.gov one request at a time, with a three-second completion delay.
 
 ## Configuration and evidence
 
