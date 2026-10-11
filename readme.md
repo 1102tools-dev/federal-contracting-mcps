@@ -107,9 +107,11 @@ All nine are in the Claude directory and six are in ChatGPT as hosted installs. 
 
 If your app says it can't find `uvx`, use its full path instead: run `which uvx` on macOS or `where uvx` on Windows.
 
-After connecting, choose a [matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) and replace the bracketed details. If a prompt lists more than one MCP, connect each one.
+## Start with a question
 
-## Match the work to the source
+1. Pick a request from the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts). Each one names the MCPs it needs.
+2. Connect those MCPs, local or hosted, from the table above.
+3. Fill in the bracketed details, such as `[AGENCY]` or `[COMPANY]`, and send it. Ask for source links and dates.
 
 | What you want to do | MCP to connect | Matching prompts |
 |---|---|---|
@@ -122,12 +124,6 @@ After connecting, choose a [matching prompt](https://github.com/1102tools-dev/fe
 | Follow proposed rules, final rules, and FAR cases | [Federal Register](servers/federal-register-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#federal-register) |
 | Explore rulemaking dockets and public comments | [Regulations.gov](servers/regulations-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#regulationsgov) |
 | Research FAR Overhaul model text and posted agency deviations | [Acquisition.gov](servers/acquisition-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#far-overhaul-and-agency-deviations) |
-
-## Use the sources together
-
-- **Competitors and teaming:** combine USAspending award records with SAM.gov entity and exclusion records from its local full edition.
-- **Pricing inputs:** compare BLS wages, CALC+ ceiling rates, and GSA travel rates while keeping their different pricing bases clear.
-- **Regulations and policy:** use eCFR for codified text, Federal Register and Regulations.gov for rulemaking, and Acquisition.gov for FAR Overhaul model text and posted deviations.
 
 Results reflect government-source data and retrieval time or the bundled snapshot release. Check source and as-of metadata; bundled data does not make a fresh upstream request on every lookup. Check dates, completeness, identity matches, and reported limitations. The MCPs provide evidence; they do not make a contracting or procurement-specific applicability decision.
 
