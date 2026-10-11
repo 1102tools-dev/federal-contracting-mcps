@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.0.24
+
+PSC autocomplete now directs partial families such as D3 to the hierarchy tool instead of suggesting unsupported prefix matches.
+
 ## 1.0.23
 
 Input mistakes (for example, a bad recipient UEI, an unsupported page, or a missing date window) again return a specific message saying how to fix the request under MCP SDK 2.3, instead of a generic error. Unexpected failures stay masked. Tools and answers are unchanged.
