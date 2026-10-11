@@ -103,7 +103,7 @@ def labeled_date_patterns() -> dict:
         _pdf.re = real
 
 
-def labeled_dates(joined: str) -> dict:
+def labeled_dates(joined: str, pages: list[dict] | None = None) -> dict:
     """Every position where each labeled-date pattern matches the full joined text.
 
     _labeled_date over the pages a call selects returns the first match that
@@ -125,9 +125,11 @@ def labeled_dates(joined: str) -> dict:
                 if match:
                     matches.append([position, match.end(), _pdf._normalize_date(match.group(1))])
         found[label] = matches
-    # The letterhead fallback: every date alone on its line.
-    found["Standalone"] = [[m.start(), m.end(), _pdf._normalize_date(m.group(1))]
-                           for m in _pdf._STANDALONE_DATE.finditer(joined)]
+    # Keep only the current date in adjacent letterhead-date clusters, and
+    # never merge a cover date with an attachment on the following page.
+    page_texts = [(page["start"], page["text"]) for page in pages] if pages is not None else [(0, joined)]
+    found["Standalone"] = [[offset + m.start(), offset + m.end(), _pdf._normalize_date(m.group(1))]
+                           for offset, text in page_texts for m in _pdf._standalone_date_matches(text)]
     found["EffectiveRelative"] = [[m.start(), m.end(), "relative"]
                                   for m in _pdf._EFFECTIVE_RELATIVE.finditer(joined)]
     return found
@@ -141,7 +143,7 @@ def applicability(page: int, text: str) -> list:
     return [list(span) for span in _pdf._applicability_spans(text)]
 
 
-def parse_pdf(body: bytes) -> dict:
+def parse_pdf(body: bytes, source_url: str | None = None) -> dict:
     """Agency deviation PDF: each page as _read_pdf extracts it, for any page range."""
     first = read_pdf(body, 1, 1)
     if first[4] == 0:
@@ -155,12 +157,23 @@ def parse_pdf(body: bytes) -> dict:
         text = text[len(prefix):]
         failure = next((m.group(1) for w in warnings if (m := re.fullmatch(rf"Page {number} extraction failed: (\w+)\.", w))), None)
         over_cap = any("parser limit" in w for w in warnings)
+        # The existing Worker reconstructs PDF warnings from page failure
+        # flags. Preserve recovery disclosure in the already-visible page body
+        # and suppress incomplete rule fragments when outlined words are lost.
+        if any("contains outlined text that could not be recovered" in w for w in warnings):
+            failure = "OutlinedTextRecoveryError"
+            link = f"Read the official PDF: {source_url}" if source_url else "Open the official PDF using the source_url link in this tool response."
+            text = f"[Parser notice: Important words drawn as outlines could not be extracted on page {number}; rules may be missing. {link}]"
+        else:
+            notices = [w for w in warnings if "text was recovered with OCR" in w]
+            if notices:
+                text = "\n".join(f"[Parser notice: {notice}]" for notice in notices) + "\n" + text
         pages.append({"page": number, "start": offset, "text": text, "failure": failure, "over_cap": over_cap,
                       "applicability": applicability(number, text)})
         offset += len(text) + 1
     joined = "\n".join(p["text"] for p in pages)
     window = max(sum(len(p["text"]) for p in pages[i:i + constants.MAX_PDF_PAGES]) for i in range(len(pages)))
-    return {"kind": "pdf", "info": {"total_pages": total, "dates": labeled_dates(joined), "max_window_characters": window},
+    return {"kind": "pdf", "info": {"total_pages": total, "dates": labeled_dates(joined, pages), "max_window_characters": window},
             "pages": pages}
 
 
@@ -273,7 +286,7 @@ def parse_worker(kind: str, arguments: dict) -> None:
     elif kind == "guidance_pdf":
         result = parse_guidance_pdf(body)
     else:
-        result = parse_pdf(body)
+        result = parse_pdf(body, source_url=arguments.get("source_url"))
     sys.stdout.write(json.dumps(result, ensure_ascii=False))
 
 
@@ -828,7 +841,10 @@ class Loader:
                 row["doc"] = doc_id(parse_kind, fetched["sha256"], **inputs, **({"generation": self.generation} if self.generation else {}))
                 if row["doc"] not in self.existing_docs([row["doc"]]):
                     async with self.parsers:
-                        parsed = await parse(parse_kind, fetched["body"], **inputs)
+                        parse_arguments = dict(inputs)
+                        if parse_kind == "pdf":
+                            parse_arguments["source_url"] = fetched["final_url"]
+                        parsed = await parse(parse_kind, fetched["body"], **parse_arguments)
                     self.db.execute(doc_statements(row["doc"], parsed))
                     self.counts["parsed"] += 1
                     fetched["parsed"] = parsed

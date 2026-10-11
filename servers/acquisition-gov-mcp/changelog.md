@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.14 — 2026-10-11
+
+- Recover outlined PDF text and use current revision dates instead of superseded cover dates.
+
 ## 1.0.13 — 2026-10-10
 
 - Add a separate raw-file test cache, conditional PDF downloads, offline re-parsing, and parsed-snapshot publishing without changing serving caches.

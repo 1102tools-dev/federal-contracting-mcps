@@ -1,3 +1,3 @@
 FROM python:3.12-slim
-RUN pip install --no-cache-dir acquisition-gov-mcp==1.0.13
+RUN pip install --no-cache-dir acquisition-gov-mcp==1.0.14
 CMD ["acquisition-gov-mcp"]

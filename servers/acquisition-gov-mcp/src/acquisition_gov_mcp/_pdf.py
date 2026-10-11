@@ -2,11 +2,15 @@
 from __future__ import annotations
 import io
 import re
+import os
+import sys
+import time
 from datetime import datetime
 from typing import Any
 from pypdf import PdfReader
+from pypdf.generic import ContentStream
 from ._errors import UserInputError
-from .constants import MAX_PDF_PAGES, MAX_PDF_TEXT_CHARACTERS, MAX_PDF_PAGE_STREAM_BYTES
+from .constants import MAX_PDF_PAGES, MAX_PDF_TEXT_CHARACTERS, MAX_PDF_PAGE_STREAM_BYTES, MAX_PDF_OCR_MEMORY_BYTES
 
 class UnreadableFontEncoding(ValueError):
     """PDF text consists of unresolved font glyph identifiers."""
@@ -49,9 +53,20 @@ _STANDALONE_DATE = re.compile(
 )
 
 
+def _standalone_date_matches(text: str) -> list[re.Match]:
+    """Return the current date of each adjacent date cluster on this page."""
+    selected = []
+    for match in _STANDALONE_DATE.finditer(text):
+        if selected and not text[selected[-1].end():match.start()].strip():
+            selected[-1] = match
+        else:
+            selected.append(match)
+    return selected
+
+
 def _standalone_date(text: str) -> str | None:
-    match = _STANDALONE_DATE.search(text)
-    return _normalize_date(match.group(1)) if match else None
+    matches = _standalone_date_matches(text)
+    return _normalize_date(matches[0].group(1)) if matches else None
 
 
 def _labeled_date(text: str, label: str) -> str | None:
@@ -109,7 +124,7 @@ def _extract_document_fields(page_texts: list[tuple[int, str]]) -> dict[str, Any
     if len(applicability_text) > 8192:
         applicability_text = applicability_text[:8160] + " [truncated]"
     issuance = (_labeled_date(joined, "Issued") or _labeled_date(joined, "Date")
-                or _standalone_date(joined))
+                or next((date for _, text in page_texts if (date := _standalone_date(text))), None))
     effective = _labeled_date(joined, "Effective")
     if _EFFECTIVE_RELATIVE.search(joined):
         effective = issuance
@@ -121,9 +136,108 @@ def _extract_document_fields(page_texts: list[tuple[int, str]]) -> dict[str, Any
     }
 
 
+def _has_outlined_text(page, reader) -> bool:
+    """Recognize dense runs of small curved filled shapes used as letter outlines.
+
+    This is a recovery trigger, not an assertion that an arbitrary vector graphic
+    contains words. OCR must actually recover text before replacing extraction.
+    """
+    contours, curved, coordinates = 0, False, []
+    for operands, operator in ContentStream(page.get_contents(), reader).operations:
+        if operator in (b'm', b'l', b'c', b'v', b'y'):
+            coordinates.extend(float(value) for value in operands)
+        if operator in (b'c', b'v', b'y'):
+            curved = True
+        if operator in (b'f', b'f*', b'B', b'B*'):
+            if curved and coordinates and 2 < max(max(coordinates[::2]) - min(coordinates[::2]),
+                                                     max(coordinates[1::2]) - min(coordinates[1::2])) < 30:
+                contours += 1
+                if contours >= 50:
+                    return True
+            curved, coordinates = False, []
+        elif operator in (b'n', b'S', b's'):
+            curved, coordinates = False, []
+    return False
+
+
+_OCR_ENGINE = None
+_OCR_DOCUMENT_BODY = None
+_OCR_DOCUMENT_PAGES = 0
+_OCR_DOCUMENT_DEADLINE = None
+
+
+def _ocr_outlined_page(body: bytes, page_number: int, *, timeout: float) -> str:
+    """Recover one rendered page locally using packaged, offline OCR models.
+
+    Imports and model loading are lazy: ordinary PDFs never initialize OCR. The
+    caller's isolated worker supplies the hard memory, CPU and wall-time bounds.
+    """
+    global _OCR_ENGINE
+    started = time.monotonic()
+    if timeout <= 0:
+        raise TimeoutError('OCR page budget exceeded')
+    # Raise only this isolated process's soft limit when outlined text requires
+    # OCR; keep the normal parser's lower allowance for ordinary documents.
+    if sys.platform == 'linux':
+        import resource
+        memory_soft, memory_hard = resource.getrlimit(resource.RLIMIT_AS)
+        if memory_hard != resource.RLIM_INFINITY and memory_soft < MAX_PDF_OCR_MEMORY_BYTES <= memory_hard:
+            resource.setrlimit(resource.RLIMIT_AS, (MAX_PDF_OCR_MEMORY_BYTES, memory_hard))
+        cpu_soft, cpu_hard = resource.getrlimit(resource.RLIMIT_CPU)
+        if cpu_hard != resource.RLIM_INFINITY and cpu_soft < 50 <= cpu_hard:
+            resource.setrlimit(resource.RLIMIT_CPU, (50, cpu_hard))
+    for name in ('OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'OMP_NUM_THREADS'):
+        os.environ[name] = '1'
+    import pypdfium2 as pdfium
+    from rapidocr import RapidOCR
+    import cv2
+    cv2.setNumThreads(1)
+    from rapidocr.utils.download_file import DownloadFile
+    from unittest.mock import patch
+    document = pdfium.PdfDocument(body)
+    page = bitmap = None
+    try:
+        page = document[page_number - 1]
+        width, height = page.get_size()
+        if not width or not height:
+            raise ValueError('Invalid PDF page dimensions')
+        bitmap = page.render(scale=min(3, 1600 / max(width, height)))
+        # Models are initialized lazily during inference as well as construction.
+        # Never let absent/corrupt bundled models turn offline parsing into HTTP.
+        with patch.object(DownloadFile, '_make_http_request',
+                          side_effect=RuntimeError('Offline OCR model unavailable; downloads are disabled')):
+            if _OCR_ENGINE is None:
+                _OCR_ENGINE = RapidOCR(params={'Global.log_level': 'critical',
+                                               'EngineConfig.onnxruntime.intra_op_num_threads': 2,
+                                               'EngineConfig.onnxruntime.inter_op_num_threads': 1})
+            if time.monotonic() - started >= timeout:
+                raise TimeoutError('OCR page budget exceeded')
+            result = _OCR_ENGINE(bitmap.to_numpy())
+        recovered = "\n".join(result.txts or ()).strip()
+        if time.monotonic() - started > timeout:
+            raise TimeoutError('OCR page budget exceeded')
+        if not recovered:
+            raise RuntimeError('OCR returned no text')
+        return recovered[:MAX_PDF_TEXT_CHARACTERS + 1]
+    finally:
+        if bitmap is not None:
+            bitmap.close()
+        if page is not None:
+            page.close()
+        document.close()
+
+
 def _read_pdf(
     body: bytes, *, page_start: int, page_end: int | None
 ) -> tuple[str, str, list[str], dict[str, Any], int, int]:
+    global _OCR_DOCUMENT_BODY, _OCR_DOCUMENT_PAGES, _OCR_DOCUMENT_DEADLINE
+    # The loader examines individual pages of the same bytes object. Share its
+    # OCR budget across those calls; a new document resets it. Holding only the
+    # latest body avoids identity reuse and does not retain a document history.
+    if body is not _OCR_DOCUMENT_BODY:
+        _OCR_DOCUMENT_BODY = body
+        _OCR_DOCUMENT_PAGES = 0
+        _OCR_DOCUMENT_DEADLINE = None
     warnings: list[str] = []
     try:
         reader = PdfReader(io.BytesIO(body))
@@ -149,6 +263,7 @@ def _read_pdf(
     pages: list[tuple[int, str]] = []
     empty = 0
     extracted = 0
+    outlined_missing = False
     for number in range(page_start, end + 1):
         try:
             page = reader.pages[number - 1]
@@ -156,6 +271,21 @@ def _read_pdf(
             if contents is not None and len(contents.get_data()) > MAX_PDF_PAGE_STREAM_BYTES:
                 raise RuntimeError("decoded page content exceeds the parser limit")
             text = page.extract_text() or ""
+            if _has_outlined_text(page, reader):
+                try:
+                    if _OCR_DOCUMENT_DEADLINE is None:
+                        _OCR_DOCUMENT_DEADLINE = time.monotonic() + 20
+                    if _OCR_DOCUMENT_PAGES >= 4 or time.monotonic() >= _OCR_DOCUMENT_DEADLINE:
+                        raise TimeoutError('OCR request budget exceeded')
+                    _OCR_DOCUMENT_PAGES += 1
+                    recovered = _ocr_outlined_page(body, number, timeout=min(8, _OCR_DOCUMENT_DEADLINE - time.monotonic()))
+                    if time.monotonic() > _OCR_DOCUMENT_DEADLINE:
+                        raise TimeoutError('OCR request budget exceeded')
+                    text = recovered
+                    warnings.append(f"Page {number} text was recovered with OCR because visible letters are drawn as outlines. OCR may include struck-through or superseded wording; check additions and deletions in the official PDF before relying on quotations.")
+                except Exception:
+                    outlined_missing = True
+                    warnings.append(f"Page {number} contains outlined text that could not be recovered; important words may be missing. Consult the official PDF.")
             glyphs = re.findall(r"/(?:i?\d+)(?=/|\s|$)", text)
             if len(glyphs) >= 20 and text.count("/i255") >= 10 and sum(map(len, glyphs)) > len(text) * 0.5:
                 raise UnreadableFontEncoding("unresolved glyph identifiers")
@@ -181,7 +311,7 @@ def _read_pdf(
     if empty == len(pages):
         status = "unextractable"
         warnings.append("Selected pages contain no extractable text and may be scanned images.")
-    elif empty or any("parser limit" in warning for warning in warnings):
+    elif empty or outlined_missing or any("parser limit" in warning for warning in warnings):
         status = "partial"
         warnings.append(f"{empty} selected page(s) contained no extractable text.")
     else:

@@ -1,7 +1,7 @@
 """Private, isolated PDF parser entry point. No network or tool execution."""
 import json
 import sys
-from .constants import MAX_PDF_BYTES, MAX_PDF_WORKER_BYTES, MAX_PDF_WORKER_MEMORY_BYTES
+from .constants import MAX_PDF_BYTES, MAX_PDF_WORKER_BYTES, MAX_PDF_WORKER_MEMORY_BYTES, MAX_PDF_OCR_MEMORY_BYTES
 
 
 def main():
@@ -9,8 +9,8 @@ def main():
     # a parent-enforced deadline and explicit content/output bounds.
     if sys.platform == "linux":
         import resource
-        resource.setrlimit(resource.RLIMIT_AS, (MAX_PDF_WORKER_MEMORY_BYTES, MAX_PDF_WORKER_MEMORY_BYTES))
-        resource.setrlimit(resource.RLIMIT_CPU, (8, 8))
+        resource.setrlimit(resource.RLIMIT_AS, (MAX_PDF_WORKER_MEMORY_BYTES, MAX_PDF_OCR_MEMORY_BYTES))
+        resource.setrlimit(resource.RLIMIT_CPU, (8, 50))
     from ._pdf import _read_pdf, PdfPageRangeError
     body = sys.stdin.buffer.read(MAX_PDF_BYTES + 1)
     if len(body) > MAX_PDF_BYTES:

@@ -1,0 +1,20 @@
+{
+  "gsa-part8-supplement1": {
+    "official_source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/GSA_RFO_Deviation_Part-8_Supplement-1.pdf",
+    "official_sha256": "de876f1f8c42cade837e309d7c19f5acc0381b4f872853433c072fb53e192cad",
+    "pages": [
+      1,
+      2
+    ],
+    "saved_excerpt_sha256": "498ecd13b6e8e0e7c3142769d597b1339cb836d9c0da966df4b51ad4d149d30e"
+  },
+  "nasa-part39-revisiona": {
+    "official_source_url": "https://www.acquisition.gov/sites/default/files/page_file_uploads/NASA_RFO_Deviation_Part-39.pdf",
+    "official_sha256": "e3b765c5071d43dfcfb4ef506ed00380e1f20c5505b59c4b6c925c7013f39db2",
+    "pages": [
+      1,
+      2
+    ],
+    "saved_excerpt_sha256": "613e4e84e09362c764c929883d1ac24123df515c536bcd0bc6ec23e2aa28ebad"
+  }
+}

@@ -52,7 +52,7 @@ The status file records `finished_at`, `index_count`, `cached_count`, `added`, `
 
 The Dell `work` folder is a source copy, not a Git checkout. `work/SOURCE_COMMIT` records the exact committed sync script revision, which each run includes as `source_commit` in its status. `work/SOURCE_COMMITS.json` additionally identifies the loader revision and deployed component hashes; these components can have different revisions. An absent or malformed marker yields `source_commit=null`, never a guessed revision. A healthy unchanged run has `changed=0` and `errors=0`. A failed run returns a nonzero service exit status; inspect the journal and status file before running the Mac publisher. The sync command and units are operational scripts outside the Python package, so they do not require another PyPI release.
 
-To rebuild this setup from the tracked files, use the existing seeded cache and isolated `work` layout described above; its virtual environment must already contain the 1.0.13 loader dependencies. From a checkout of this repository on the Mac, copy only the sync script and unit templates:
+To rebuild this setup from the tracked files, use the existing seeded cache and isolated `work` layout described above; its virtual environment must contain the dependencies pinned by the deployed package’s `uv.lock` (`uv sync --frozen --project servers/acquisition-gov-mcp`). From a checkout of this repository on the Mac, copy only the sync script and unit templates:
 
 ```sh
 scp scripts/sync_acquisition_gov_raw_cache.py govnode:/var/lib/acquisition-gov-raw/work/scripts/
@@ -62,3 +62,5 @@ ssh govnode 'sudo install -m 0644 /tmp/acquisition-gov-raw-sync.service /etc/sys
 ```
 
 The cache and isolated source files must be owned by `james`, matching the service's `User` and `Group`. The service writes only beneath `/var/lib/acquisition-gov-raw`, including its separate pacing directory. No credentials, serving configuration, or Cloudflare token are copied by these commands. Install while no seed or sync is running, and use the timer/status checks above to verify the resulting schedule.
+
+The current PDF parser loads bundled OCR models only when it detects letters drawn as vector outlines. This also works in the unchanged nightly GitHub loader because its existing frozen dependency install includes the models. OCR output warns that struck-through wording may remain; consult the official PDF when distinguishing amendments. Ordinary PDF extraction does not initialize OCR.
