@@ -16,7 +16,7 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | MCP tools exposed | 8 |
 | Total regression tests | 443 (322 offline, 121 live-gated) |
 | Tests per tool | 55.4 |
-| Audit rounds completed | 12 |
+| Audit rounds completed | 13 |
 | P1 crashes (shape-shift) found and fixed | 19 |
 | P1 silent-wrong-data bugs found and fixed | 33 (30 in 0.2.x, 3 in round 6) |
 | P2 validation gaps found and fixed | 20 (19 in 0.2.x, 1 in round 6) |
@@ -26,6 +26,77 @@ This Model Context Protocol server exposes the GSA CALC+ Labor Ceiling Rates API
 | Retroactive additional findings | 12 |
 | Current release | 1.0.17 |
 | PyPI status | Published as `gsa-calc-mcp`, auto-publishes via Trusted Publisher on tag push |
+
+## Final federal-contracting content round (October 10, 2026)
+
+Fresh uncached official by-name `gsa-calc-mcp==1.0.17`, Python 3.12.13 and MCP
+2.3.0 matched the official wheel, all installed Python modules, the published
+`881bad8f1e46f67dbd6bfe4fab95636b7cccb8dd` source and all eight tool definitions
+in the installed/public/reviewed catalogs. This final audit used 154 new
+ordinary/power-user registered-tool questions on both installed and public
+surfaces, with 25 separate actual console-entrypoint stdio calls across all
+eight tools. The 154 registered calls are not 154 stdio calls. No new P0, P1,
+P2 or P3 product finding was confirmed; no runtime version changed.
+
+Ten new acquisition-support labor families covered Acquisition Specialist,
+Aerospace Engineer, Configuration Manager, Reliability Engineer, Systems
+Architect, Test Engineer, Program Scheduler, Contracts Administrator, Cost
+Analyst and Training Specialist. Six new vendor terms covered Amentum, Parsons,
+Noblis, KBR, Alion and SRC. Discovery, exact grade/title recovery, education and
+experience qualifiers, junior/lead proposals, observed row exclusions,
+contracts, SINs, clearance/business-size segments, partial-card continuation
+and complete manageable cards were checked. Ten caller-composed lead/support
+ceiling budgets used actual rate rows; they are calculations, not extra tool
+calls or evidence of paid prices or comparable duties/worksites.
+
+| Tool | New registered questions per installed/public surface | Separate actual stdio calls |
+|---|---:|---:|
+| suggest_contains | 20 | 2 |
+| exact_search | 41 | 4 |
+| igce_benchmark | 20 | 2 |
+| price_reasonableness_check | 20 | 3 |
+| keyword_search | 19 | 3 |
+| vendor_rate_card | 15 | 4 |
+| sin_analysis | 8 | 2 |
+| filtered_browse | 11 | 5 |
+| Total | 154 | 25 |
+
+All 7,356 source/workflow assertions passed: 4,973 data/comparison checks,
+626 composed-workflow checks and 1,757 population-scope/behavior checks.
+Evidence retains 169 parsed, unaugmented primary responses associated with
+the registered corpus and four additional bounded direct-primary captures.
+These are parsed captures, not retained raw transport-byte hashes. The console
+log separately records 29 primary GETs. The persisted 500/hour policy and
+returned retry behavior were preserved; no budget reset or override was used.
+
+Source qualifications remain explicit. There were 118 installed/public
+percentile-value differences, with a maximum $4.0074996948/hour difference.
+Two fresh identical-query repeats of that worst case preserved the installed
+primary percentile and did not reproduce the original public value; no cause
+or identical-percentile claim follows. A complete 54-row qualified Cost Analyst
+follow-up had the same installed/public row multiset, count, mean and standard
+deviation. Its caller-computed exact row median was $111.435, distinct from the
+provider histogram median $115.2799988. Provider percentile statistics were
+preserved, not replaced by caller calculations.
+
+Two discovery buckets varied by at most two rows against the source's declared
+error bound of five; both public-only Training Specialist tail titles were
+independently confirmed by exact primary queries. An Amentum 11-row descending
+card cutoff exposed two legitimate titles at the same $278.5207 ceiling. Both
+row projections were verified in an expanded 100-row primary response; the
+full 579-row card remains partial. No identical-order or full-inventory claim
+is made. The complete Parsons and Noblis cards contain 32 and 91 rows,
+respectively. Unsupported worksite/SIN/clearance filtering in particular
+comparison tools, low samples, source result windows and ceiling-versus-paid
+price limitations remain in the existing discovery/recovery guidance.
+
+The full suite against the actual installed published package passed **322**
+tests with **121** optional-live tests skipped (**443 collected**), under MCP
+2.3.0. The skipped tests were not executed. An initial collection attempt lacked
+the declared Hypothesis dev dependency; that setup log was retained separately,
+the dependency was installed and the successful complete run was measured.
+This final content audit does not start another round. Detailed evidence is
+retained in `Artifacts/mcp-e2e-20261010/round7/gsa-calc/` outside the package.
 
 ## 1.0.3 Safety Release Verification
 
