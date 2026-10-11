@@ -9,8 +9,10 @@ the companies for firewall allowlists:
   (one fixed range, written below; it "will not change without notice")
 - OpenAI ChatGPT connectors: https://openai.com/chatgpt-connectors.json
 
-An address the lists miss simply keeps the normal limit, so a stale list is
-harmless. Run, review the diff, then deploy the Workers:
+The Workers also read OpenAI's list live (cached a day, see isAiPlatformLive in
+edge.ts), so this built-in copy is only the fallback. An address the lists miss
+simply keeps the normal limit. To refresh the fallback, run, review the diff,
+then deploy the Workers:
 
     python3 scripts/refresh_ai_platform_ranges.py
 """
