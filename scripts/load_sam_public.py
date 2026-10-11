@@ -1,8 +1,10 @@
 """Load keyless SAM public entities/exclusions into their own D1 database.
 
-Complete source validation happens in SQLite before D1 writes. Remote tables are
-staged, checked, and promoted with one atomic D1 batch; old tables survive any
-failed staging/import/promotion. Never targets the opportunities database.
+Complete source validation and exact SQL cost rehearsal happen locally before
+remote incremental writes. Bounded record transactions preserve registration
+identity and update only changed rows and memberships. An unfinished generation
+is hidden until resumed and verified. Never targets the opportunities database.
+The historical full-copy loader remains available for local safety fixtures only.
 
 Run only one loader per database (the Actions workflow enforces this). After a
 hard runner termination, orphan stage tables can remain. With no loader active,
@@ -166,6 +168,9 @@ def prepare(kind, path, local_path, audit=None):
                         db.execute('INSERT INTO entity_business_types VALUES (?,?,?)', (row['entity_id'],code,group))
             if isinstance(row.get('record_json'), (dict,list)):
                 row['record_json'] = json.dumps(row['record_json'], ensure_ascii=False, separators=(',',':'))
+            state=row.get('state') or ''
+            if row.get('country')=='USA' and len(state)==2 and state.isascii() and state.isalpha():
+                row['state']=state.upper()
             values = [row.get(f) for f in fields]
             statement = f'INSERT INTO {kind} ({",".join(fields)}) VALUES ({",".join(quote(v) for v in values)});'
             if len(statement.encode()) > MAX_STATEMENT_BYTES:
@@ -208,6 +213,8 @@ class D1:
         return result.stdout
 
     def query(self, sql):
+        if self.target=='remote':
+            return self.api({'sql':sql})[0]['results']
         output = json.loads(self.run('--json','--command',sql))
         return output[0]['results']
 
@@ -252,6 +259,7 @@ class D1:
         result = self.api({'sql':'\n'.join(statements)})
         if any(not r.get('success',True) for r in result):
             raise RuntimeError('Atomic promotion rejected')
+        return result
 
 
 def stage_statements(local_path, kind, suffix):
@@ -319,6 +327,10 @@ def refuse_leftovers(db):
 
 
 def load(db, kind, path, metadata, allow_small=False, prepared=None):
+    if getattr(db,'target',None)=='remote' and kind=='exclusions' and not zipfile.is_zipfile(path):
+        raise ValueError('Remote exclusions require intact source ZIP')
+    if getattr(db,'target',None)=='remote':
+        raise ValueError('Full-copy remote reloads are disabled; use incremental public loader')
     refuse_leftovers(db)
     start = time.monotonic()
     if getattr(db,'target',None) == 'remote' and kind == 'exclusions' and not zipfile.is_zipfile(path):
@@ -450,6 +462,8 @@ def main(argv=None):
     parser.add_argument('--file-name')
     parser.add_argument('--allow-small',action='store_true')
     parser.add_argument('--force',action='store_true')
+    parser.add_argument('--cost-report-directory',type=Path)
+    parser.add_argument('--local-production-snapshot',type=Path)
     args = parser.parse_args(argv)
     if args.allow_small and args.target != 'local':
         parser.error('--allow-small is restricted to local fixtures')
@@ -459,18 +473,28 @@ def main(argv=None):
         parser.error('Remote local-file loads require the expected public ZIP filename (use --file-name for extracted entities)')
     db = D1(args.target,args.database)
     refuse_leftovers(db)
-    db.execute_file([STATUS_SQL])
-    output = []
-    for kind in ['entities','exclusions'] if args.kind == 'all' else [args.kind]:
-        metadata = {'file_name':args.file_name or args.file.name,'file_date':args.file_date,'source_url': BASE + 'download/' + urllib.parse.quote(DOMAINS[kind],safe='/') + '/' + urllib.parse.quote(args.file_name or args.file.name) + '?privacy=Public'} if args.file else newest(kind)
-        current = db.query(f"SELECT file_name,file_date FROM extract_status WHERE kind={quote(kind)}")
-        if not args.force and current and (metadata['file_date'],metadata['file_name']) <= (current[0]['file_date'],current[0]['file_name']):
-            output.append({'kind':kind,'skipped':'source unchanged','file_name':metadata['file_name']}); continue
-        with tempfile.TemporaryDirectory(prefix='sam-download-') as directory:
-            path = args.file or Path(directory) / metadata['file_name']
-            if not args.file:
-                download(metadata,path)
-            output.append(load(db,kind,path,metadata,args.allow_small))
+    output = [];oracle=None
+    snapshot_directory=tempfile.TemporaryDirectory(prefix='sam-production-snapshot-')
+    try:
+        for kind in ['entities','exclusions'] if args.kind == 'all' else [args.kind]:
+            metadata = {'file_name':args.file_name or args.file.name,'file_date':args.file_date,'source_url': BASE + 'download/' + urllib.parse.quote(DOMAINS[kind],safe='/') + '/' + urllib.parse.quote(args.file_name or args.file.name) + '?privacy=Public'} if args.file else newest(kind)
+            current = db.query(f"SELECT file_name,file_date FROM extract_status WHERE kind={quote(kind)}")
+            if not args.force and current and (metadata['file_date'],metadata['file_name']) <= (current[0]['file_date'],current[0]['file_name']):
+                output.append({'kind':kind,'skipped':'source unchanged','file_name':metadata['file_name']}); continue
+            with tempfile.TemporaryDirectory(prefix='sam-download-') as directory:
+                path = args.file or Path(directory) / metadata['file_name']
+                if not args.file:
+                    download(metadata,path)
+                from sam_public_incremental import incremental_load
+                if args.target=='remote' and oracle is None:
+                    from sam_public_cost_oracle import CostOracle,export_snapshot
+                    report=args.cost_report_directory or Path.home()/'.cache'/'1102tools'/'sam-public-cost'/(dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S')+'-'+os.urandom(6).hex())
+                    snapshot=args.local_production_snapshot or export_snapshot(db,Path(snapshot_directory.name)/'production.sqlite')
+                    oracle=CostOracle(snapshot,report)
+                output.append(incremental_load(db,kind,path,metadata,args.allow_small,oracle=oracle))
+    finally:
+        if oracle:oracle.close()
+        snapshot_directory.cleanup()
     print(json.dumps(output,indent=2))
 
 

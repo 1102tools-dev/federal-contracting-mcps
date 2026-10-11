@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '45 10 * * *'
   workflow_dispatch:
+    inputs:
+      credential_check_only:
+        description: Test existing analytics and D1 credential without loading data
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -33,25 +38,43 @@ jobs:
       - name: Install wrangler
         run: npm ci --prefix deploy/sam-gov --ignore-scripts
       - name: Validate safety tests
-        run: python -m unittest discover -s tests -p 'test_sam_public_loader.py'
+        id: safety
+        run: |
+          python -m unittest discover -s tests -p 'test_sam_public_loader.py'
+          python -m unittest discover -s tests -p 'test_sam_public_incremental.py'
+          python -m unittest discover -s tests -p 'test_sam_public_cost.py'
+      - name: Verify read-only account budget access
+        id: budget_probe
+        run: |
+          python -c "import sys; sys.path.insert(0,'scripts'); from sam_public_incremental import billing_period,account_month_written; from load_sam_public import D1; print('D1 read access:',D1('remote','sam-gov-entities').query('SELECT 1 AS readable')[0]['readable']); period=billing_period(); print('Billing period:',period); print('Account written rows:',account_month_written(period))"
       - name: Check newest monthly entities
         id: entities
-        if: ${{ vars.SAM_PUBLIC_ENTITIES_RELOAD_ENABLED == 'true' }}
+        if: ${{ vars.SAM_PUBLIC_ENTITIES_RELOAD_ENABLED == 'true' && !inputs.credential_check_only }}
         continue-on-error: true
         run: |
-          python scripts/load_sam_public.py --remote --kind entities > entities-status.json
+          python scripts/load_sam_public.py --remote --kind entities --cost-report-directory entities-cost-report > entities-status.json
           { echo '### Entities'; echo '```json'; cat entities-status.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Load newest daily exclusions
         id: exclusions
-        if: always()
+        if: always() && !inputs.credential_check_only && steps.safety.outcome == 'success' && steps.budget_probe.outcome == 'success'
         continue-on-error: true
         run: |
-          python scripts/load_sam_public.py --remote --kind exclusions > exclusions-status.json
+          python scripts/load_sam_public.py --remote --kind exclusions --cost-report-directory exclusions-cost-report > exclusions-status.json
           { echo '### Exclusions'; echo '```json'; cat exclusions-status.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Require both loads to succeed
-        if: always()
+        if: always() && !inputs.credential_check_only
         env:
           ENTITIES_OUTCOME: ${{ steps.entities.outcome }}
           EXCLUSIONS_OUTCOME: ${{ steps.exclusions.outcome }}
         run: |
           { test "$ENTITIES_OUTCOME" = success || test "$ENTITIES_OUTCOME" = skipped; } && test "$EXCLUSIONS_OUTCOME" = success
+      - name: Retain local cost proofs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sam-public-cost-proofs
+          path: |
+            entities-cost-report/
+            exclusions-cost-report/
+            entities-status.json
+            exclusions-status.json

@@ -66,10 +66,10 @@ function choice(args: Args, key: string, allowed: string[]): string | undefined 
 
 /** Both datasets are in the separate public extract database. */
 export async function getPublicDataStatus(db: Database) {
-  const rows = (await db.prepare("SELECT * FROM extract_status WHERE kind IN ('entities', 'exclusions') ORDER BY kind").bind().all<Row>()).results;
+  const rows = (await db.prepare("SELECT s.*, EXISTS(SELECT 1 FROM public_refresh_runs r WHERE r.kind=s.kind AND r.state='applying') AS refreshing FROM extract_status s WHERE kind IN ('entities', 'exclusions') ORDER BY kind").bind().all<Row>()).results;
   const status = (kind: string) => {
     const row = rows.find(row => row.kind === kind);
-    return row ? {available: true, ...row} : {available: false, kind, file_name: null, file_date: null, row_count: 0};
+    return row ? {...row, available: !row.refreshing, ...(row.refreshing ? {status: "refreshing", notes: ["Public data is refreshing; retry later. The listed source describes the last completed refresh."]} : {})} : {available: false, kind, file_name: null, file_date: null, row_count: 0};
   };
   return {entities: status("entities"), exclusions: status("exclusions")};
 }
@@ -117,6 +117,7 @@ export async function searchExclusions(db: Database | undefined, args: Args) {
   const state = text(args, "state_province", 100);
   const country = text(args, "country")?.toUpperCase();
   if (country && !/^[A-Z]{3}$/.test(country)) throw new ToolError("country must be 3-character ISO alpha-3 (USA, CAN, GBR).");
+  const indexedState = country === "USA" && !!state && /^[A-Za-z]{2}$/.test(state);
   const page = integer(args, "page", 0, 0, 100000);
   const size = integer(args, "size", 10, 1, 100);
   // One statement snapshots rows and metadata together, even across a loader swap.
@@ -125,15 +126,15 @@ export async function searchExclusions(db: Database | undefined, args: Args) {
   for (const [column, value] of [["uei", uei], ["cage_code", cage], ["classification", classification], ["exclusion_program", program], ["excluding_agency_code", agency], ["state", state], ["country", country]]) {
     if (value) {
       // Identifiers are normalized uppercase at ingestion; use their binary indexes.
-      predicates.push(`${column} = ?${column === "uei" || column === "cage_code" ? "" : " COLLATE NOCASE"}`);
-      values.push(value);
+      predicates.push(`${column} = ?${column === "uei" || column === "cage_code" || (column === "state" && indexedState) ? "" : " COLLATE NOCASE"}`);
+      values.push(column === "state" && indexedState ? value.toUpperCase() : value);
     }
   }
   if (name) {
     predicates.push("instr(lower(name), lower(?)) > 0");
     values.push(name);
   }
-  const result = (await db.prepare(`WITH matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE ${predicates.join(" AND ") || "1=1"}),
+  const result = (await db.prepare(`WITH matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE ${predicates.join(" AND ") || "1=1"} AND NOT EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='exclusions' AND state='applying')),
     selected AS (SELECT * FROM matches ORDER BY name COLLATE NOCASE, exclusion_id LIMIT ? OFFSET ?)
     SELECT (SELECT json_group_array(json_object('row', json_object(
       'exclusion_id', exclusion_id, 'uei', uei, 'cage_code', cage_code, 'name', name,
@@ -146,7 +147,9 @@ export async function searchExclusions(db: Database | undefined, args: Args) {
       'zip_code', zip_code, 'country', country, 'description', description, 'record_json', record_json))) FROM selected) AS records,
     (SELECT COUNT(*) FROM matches) AS total_records,
     (SELECT COUNT(*) FROM matches WHERE record_status = 'Active' COLLATE NOCASE) AS active_records,
+    EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='exclusions' AND state='applying') AS refreshing,
     s.* FROM extract_status s WHERE kind = 'exclusions'`).bind(...values, size, page * size).all<Row>()).results[0];
+  if (result?.refreshing) throw new ToolError("SAM.gov public exclusions data is refreshing. Retry later; no exclusion determination can be made.");
   if (!result) throw new ToolError("SAM.gov public exclusions data has not been loaded yet; no exclusion determination can be made.");
   return {
     totalRecords: result.total_records,

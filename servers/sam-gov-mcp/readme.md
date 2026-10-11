@@ -34,7 +34,7 @@ SAM.gov comes in two editions. Hosted is the only one with no key.
 
 ### Hosted edition: 6 tools, no key
 
-The hosted edition finds and reads contract opportunities, public entity registrations, and exclusions. It serves copies of the files that SAM.gov publishes for public download, so it needs no API key and no local setup. Opportunities and exclusions are published daily; public entity registrations are published monthly. The service checks daily for newer files.
+The hosted edition finds and reads contract opportunities, public entity registrations, and exclusions. It serves copies of the files that SAM.gov publishes for public download, so it needs no API key and no local setup. Opportunities and exclusions are published daily; public entity registrations are published monthly. The service checks for newer files when refreshes are enabled and within its operating budget. The date shown in each result identifies the file actually loaded; publication does not guarantee an immediate refresh. During an unfinished refresh, the affected public tool reports that data is refreshing and asks you to retry.
 
 | Tool | What it does |
 |---|---|
