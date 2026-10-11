@@ -2,7 +2,9 @@ name: SAM.gov public entities and exclusions daily check
 
 on:
   schedule:
-    - cron: '45 10 * * *'
+    - cron: '15 */4 * * *'
+    # Exclusions posted around 09:40 UTC in the 14-day public-file sample.
+    - cron: '10 10 * * *'
   workflow_dispatch:
     inputs:
       credential_check_only:

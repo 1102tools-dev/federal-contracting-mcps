@@ -326,22 +326,36 @@ def main(argv=None):
         raw, file_date = args.csv.read_bytes(), args.file_date or today
     else:
         raw, file_date = download()
-    rows, skipped = parse(raw, today)
+    source_sha = hashlib.sha256(raw).hexdigest()
+    db = D1(args.target)
+    initialized = bool(db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='load_status'"))
+    existing_status = {r['key']: json.loads(r['value']) for r in db.query('SELECT key,value FROM load_status')} if initialized else {}
+    if existing_status.get('source_sha256') == source_sha:
+        print(json.dumps({'skipped': 'source unchanged', 'file_date': existing_status.get('file_date'),
+                          'added': 0, 'updated': 0, 'removed': 0, 'actual_rows_written': 0}, indent=2))
+        return
+    # A snapshot is filtered using its source date, so an unchanged file does
+    # not become a different write plan merely because another day passed.
+    rows, skipped = parse(raw, file_date)
     if len(rows) < MIN_ROWS and not args.allow_small:
         raise SystemExit(f"Only {len(rows)} active notices in the file; refusing to load.")
 
-    db = D1(args.target)
-    db.execute_file([(WORKER_DIR / "schema.sql").read_text()])
+    if not initialized:
+        db.execute_file([(WORKER_DIR / "schema.sql").read_text()])
     existing = db.existing_hashes()
     if existing and len(rows) < MIN_KEEP_RATIO * len(existing) and not args.allow_small:
         raise SystemExit(f"File has {len(rows)} notices but the database has {len(existing)}; refusing to load.")
 
     statements, counts = plan(rows, existing)
+    if not statements and existing_status.get('file_date') == file_date:
+        print(json.dumps({'skipped': 'normalized content unchanged', 'file_date': file_date,
+                          **counts, 'actual_rows_written': 0}, indent=2))
+        return
     types = {}
     for row in rows.values():
         if row["is_latest"]:
             types[row["notice_type"] or "Unknown"] = types.get(row["notice_type"] or "Unknown", 0) + 1
-    status = {"file_date": file_date, "loaded_at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    status = {"source_sha256": source_sha, "file_date": file_date, "loaded_at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
               "source_url": SOURCE_URL, "notices": len(rows),
               "latest_versions": sum(r["is_latest"] for r in rows.values()), "skipped_past_archive_date": skipped,
               "by_notice_type": dict(sorted(types.items(), key=lambda kv: -kv[1])), **counts}

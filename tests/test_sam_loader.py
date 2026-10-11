@@ -192,8 +192,11 @@ def test_load_mirrors_file_adds_updates_and_deletes(tmp_path, d1):
     assert d1.query("SELECT notice_id FROM opportunities_fts JOIN opportunities o ON o.rowid = opportunities_fts.rowid "
                     "WHERE opportunities_fts MATCH '\"zero trust\"'") == [{"notice_id": "a" * 32}]
 
+    previous_status = status(d1)
+    previous_changes = d1.db.total_changes
     load(tmp_path, first, "--allow-small")
-    assert {k: status(d1)[k] for k in ("added", "updated", "removed")} == {"added": 0, "updated": 0, "removed": 0}
+    assert status(d1) == previous_status
+    assert d1.db.total_changes == previous_changes
 
     second = [notice("a" * 32, Description="cloud migration"), notice("b" * 32), notice("d" * 32)]
     load(tmp_path, second, "--allow-small")
@@ -222,3 +225,13 @@ def test_chunks_split_statements_by_size(monkeypatch):
     monkeypatch.setattr(loader, "SQL_CHUNK_BYTES", 10)
     assert list(loader.chunks(["aaaa", "bbbb", "cccc"])) == [["aaaa", "bbbb"], ["cccc"]]
     assert list(loader.chunks([])) == []
+
+
+def test_same_file_without_legacy_source_hash_writes_zero(tmp_path, d1):
+    rows = [notice("a" * 32)]
+    load(tmp_path, rows, "--allow-small")
+    d1.db.execute("DELETE FROM load_status WHERE key='source_sha256'")
+    d1.db.commit()
+    before = d1.db.total_changes
+    load(tmp_path, rows, "--allow-small")
+    assert d1.db.total_changes == before
