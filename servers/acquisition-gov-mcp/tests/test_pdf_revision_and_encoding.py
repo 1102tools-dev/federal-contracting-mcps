@@ -142,3 +142,29 @@ def test_dense_compact_vector_logo_is_not_treated_as_a_row_of_missing_words(monk
     Stream.operations = operations
     monkeypatch.setattr(_pdf, 'ContentStream', lambda contents, reader: Stream())
     assert _pdf._has_outlined_text(Page(), object()) is False
+
+
+@pytest.mark.p2
+@pytest.mark.parametrize('readable_characters,withhold', [(180, True), (181, False)])
+def test_whole_page_withholding_requires_at_least_twenty_five_percent_missing_glyphs(monkeypatch, readable_characters, withhold):
+    operations = []
+    for letter in range(60):
+        left = letter * 6
+        operations.extend([([left, 100], b'm'),
+                           ([left + 2, 104, left + 6, 108, left + 9, 110], b'c'), ([], b'f')])
+
+    class Page:
+        def get_contents(self):
+            return b'content'
+
+        def extract_text(self):
+            return 'a' * readable_characters
+
+    class Stream:
+        pass
+
+    Stream.operations = operations
+    monkeypatch.setattr(_pdf, 'ContentStream', lambda contents, reader: Stream())
+    # Sixty missing glyphs out of 240 total characters reaches 25%; one more
+    # readable character must preserve the mostly readable page instead.
+    assert _pdf._has_outlined_text(Page(), object()) is withhold

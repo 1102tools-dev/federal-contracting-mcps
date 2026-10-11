@@ -203,10 +203,11 @@ def _has_outlined_text(page, reader, extracted_text: str | None = None) -> bool:
         extracted_text = page.extract_text() or ""
     readable = len("".join(extracted_text.split()))
     # Curved glyphs are a conservative estimate of omitted lettering. Requiring
-    # at least one outlined glyph per four readable characters avoids classifying
+    # at least one outlined glyph per three readable characters (25% of the
+    # combined estimate) avoids classifying
     # an otherwise substantial extraction as unusable because of a small graphic
     # or a short outlined phrase.
-    return missing_glyphs >= max(50, readable / 4)
+    return missing_glyphs >= max(50, readable / 3)
 
 
 def _read_pdf(
