@@ -37,7 +37,6 @@ HASH_SQL = '''CREATE TABLE IF NOT EXISTS public_record_hashes (
 kind TEXT NOT NULL CHECK(kind IN ('entities','exclusions')),
 record_key TEXT NOT NULL, content_hash TEXT NOT NULL,
 PRIMARY KEY(kind,record_key));'''
-ACCOUNT_LIMIT = 45_000_000
 MANIFEST_ROWS = 1000
 RESPONSE_BUDGET = 80_000
 BATCH_BYTES = 65_000
@@ -321,8 +320,6 @@ def incremental_load(db,kind,path,metadata,allow_small=False,diagnostic_max_writ
             if oracle and oracle.total+planned>=oracle.round_limit:raise ValueError('Entire refresh reservation exceeds remaining authorized round; no mutations attempted')
             if diagnostic_max_writes is not None:
                 if planned>diagnostic_max_writes: raise ValueError(f'Entire delta estimate {planned} exceeds diagnostic cap; no writes started')
-            elif not authorized_round and account+planned>ACCOUNT_LIMIT:
-                raise ValueError(f'Account monthly write budget exceeded: {account}+{planned}>{ACCOUNT_LIMIT}; no writes started')
             ledger=db.query(f'SELECT * FROM public_write_budget WHERE period={quote(month)}') if table_exists(db,'public_write_budget') else []
             entity_used=ledger[0]['entity_units'] if ledger else 0;excl_used=ledger[0]['exclusion_units'] if ledger else 0
             daily=db.query(f'SELECT units FROM public_daily_budget WHERE day={quote(day)}') if table_exists(db,'public_daily_budget') else []
