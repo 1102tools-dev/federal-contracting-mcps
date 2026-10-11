@@ -1,0 +1,55 @@
+name: SAM.gov public entities and exclusions daily check
+
+on:
+  schedule:
+    - cron: '45 10 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sam-public-load
+  cancel-in-progress: false
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: sam-data-load
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 846d3e41e48446abcd3570c0959f9fb5
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Check credential
+        run: test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Add CLOUDFLARE_D1_TOKEN to sam-data-load'; exit 1; }
+      - name: Install wrangler
+        run: npm ci --prefix deploy/sam-gov --ignore-scripts
+      - name: Validate safety tests
+        run: python -m unittest discover -s tests -p 'test_sam_public_loader.py'
+      - name: Check newest monthly entities
+        id: entities
+        continue-on-error: true
+        run: |
+          python scripts/load_sam_public.py --remote --kind entities > entities-status.json
+          { echo '### Entities'; echo '```json'; cat entities-status.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Load newest daily exclusions
+        id: exclusions
+        if: always()
+        continue-on-error: true
+        run: |
+          python scripts/load_sam_public.py --remote --kind exclusions > exclusions-status.json
+          { echo '### Exclusions'; echo '```json'; cat exclusions-status.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Require both loads to succeed
+        if: always()
+        env:
+          ENTITIES_OUTCOME: ${{ steps.entities.outcome }}
+          EXCLUSIONS_OUTCOME: ${{ steps.exclusions.outcome }}
+        run: test "$ENTITIES_OUTCOME" = success && test "$EXCLUSIONS_OUTCOME" = success

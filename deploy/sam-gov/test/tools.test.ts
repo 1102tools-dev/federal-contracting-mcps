@@ -87,8 +87,8 @@ test("relevance paging breaks equal scores and dates by notice ID", async () => 
   assert.deepEqual(ids(await page(2)), [93]);
 });
 
-test("tool list is the four hosted tools, all read-only", () => {
-  assert.deepEqual(TOOLS.map(t => t.name), ["search_opportunities", "get_opportunity", "summarize_opportunities", "get_data_status"]);
+test("tool list contains the hosted tools, all read-only", () => {
+  assert.deepEqual(TOOLS.map(t => t.name), ["search_opportunities", "get_opportunity", "summarize_opportunities", "get_data_status", "search_entities", "search_exclusions"]);
   for (const tool of TOOLS) assert.equal(tool.annotations.readOnlyHint, true);
 });
 
@@ -349,11 +349,11 @@ test("JSON-RPC methods, notifications, and tool errors", async () => {
   assert.equal(init.result.serverInfo.name, "sam-gov");
   assert.equal(await handleMessage({jsonrpc: "2.0", method: "notifications/initialized"}, env()), null);
   const list = await handleMessage({jsonrpc: "2.0", id: 2, method: "tools/list"}, env()) as any;
-  assert.equal(list.result.tools.length, 4);
+  assert.equal(list.result.tools.length, TOOLS.length);
   const bad = await handleMessage({jsonrpc: "2.0", id: 3, method: "tools/call", params: {name: "search_opportunities", arguments: {sort: "relevance"}}}, env()) as any;
   assert.equal(bad.result.isError, true);
   assert.match(bad.result.structuredContent.error, /needs keywords/);
-  const unknown = await handleMessage({jsonrpc: "2.0", id: 4, method: "tools/call", params: {name: "search_entities"}}, env()) as any;
+  const unknown = await handleMessage({jsonrpc: "2.0", id: 4, method: "tools/call", params: {name: "nonexistent_tool"}}, env()) as any;
   assert.equal(unknown.result.isError, true);
   const missing = await handleMessage({jsonrpc: "2.0", id: 5, method: "resources/list"}, env()) as any;
   assert.equal(missing.error.code, -32601);
@@ -363,7 +363,7 @@ test("JSON-RPC methods, notifications, and tool errors", async () => {
 
 test("HTTP edge: health, docs, origin, rate limit, methods, body limits", async () => {
   const health = await worker.fetch(new Request("https://sam.1102tools.com/health"), env() as any);
-  assert.deepEqual(await health.json(), {status: "ok", tools: 4, release_sha: "abc123"});
+  assert.deepEqual(await health.json(), {status: "ok", tools: TOOLS.length, release_sha: "abc123"});
   assert.equal((await worker.fetch(new Request("https://sam.1102tools.com/privacy"), env() as any)).status, 200);
   assert.equal((await worker.fetch(new Request("https://sam.1102tools.com/nope"), env() as any)).status, 404);
   const call = await worker.fetch(post({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "search_opportunities", arguments: {keywords: "bridge"}}}), env() as any);
@@ -375,4 +375,25 @@ test("HTTP edge: health, docs, origin, rate limit, methods, body limits", async 
   assert.equal((await worker.fetch(post("{"), env() as any)).status, 400);
   assert.equal((await worker.fetch(post([{jsonrpc: "2.0", id: 1, method: "ping"}]), env() as any)).status, 400);
   assert.equal((await worker.fetch(post("x".repeat(70000)), env() as any)).status, 413);
+});
+
+test("new tools use the separate database and existing data status reports both files", async () => {
+  const sqlite = new DatabaseSync(":memory:");
+  sqlite.exec(readFileSync(new URL("../entity-schema.sql", import.meta.url), "utf8"));
+  sqlite.prepare("INSERT INTO entities (entity_id,uei,cage_code,legal_business_name,registration_status,public_display_flag) VALUES (?,?,?,?,?,?)").run("entity1", "ABCDEF123456", "123AB", "Public Entity", "Active", "Y");
+  sqlite.prepare("INSERT INTO exclusions (exclusion_id,uei,cage_code,name,record_status) VALUES (?,?,?,?,?)").run("exclusion1", "ABCDEF123456", "123AB", "Public Entity", "Active");
+  for (const kind of ["entities", "exclusions"]) sqlite.prepare("INSERT INTO extract_status (kind,file_name,file_date,source_url,loaded_at,row_count,sha256,database_bytes,load_seconds) VALUES (?,?,?,?,?,?,?,?,?)").run(kind, kind + ".ZIP", "2026-10-10", "https://sam.gov/public", "2026-10-11T00:00:00Z", 1, "hash", 1000, 1);
+  const separate = {...env(), ENTITY_DB: d1(sqlite)};
+  const call = async (name: string, args: Record<string, unknown> = {}) => (await handleMessage({jsonrpc: "2.0", id: 9, method: "tools/call", params: {name, arguments: args}}, separate) as any).result;
+  const entities = await call("search_entities", {uei: "ABCDEF123456"});
+  assert.equal(entities.structuredContent.entityData[0].entityRegistration.cageCode, "123AB");
+  const exclusions = await call("search_exclusions", {cage_code: "123AB"});
+  assert.equal(exclusions.structuredContent.excludedEntity[0].exclusionIdentification.ueiSAM, "ABCDEF123456");
+  const status = await call("get_data_status");
+  assert.equal(status.isError, undefined);
+  assert.equal(status.structuredContent.active_notices, 7);
+  assert.equal(status.structuredContent.entities.file_name, "entities.ZIP");
+  assert.equal(status.structuredContent.exclusions.row_count, 1);
+  assert.equal((await call("search_opportunities", {keywords: "bridge"})).structuredContent.total_matches, 1);
+  sqlite.close();
 });

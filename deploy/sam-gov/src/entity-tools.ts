@@ -1,0 +1,168 @@
+import type {Database} from "./public-types.ts";
+import {ToolError} from "./public-types.ts";
+
+type Args = Record<string, unknown>;
+type Row = Record<string, any>;
+const SBA: Record<string, string> = {
+  A6: "SBA Certified 8(a) Program Participant", JT: "SBA Certified 8(a) Joint Venture",
+  XX: "SBA Certified HUBZone Firm", A4: "SBA Certified Small Disadvantaged Business",
+  A9: "SBA-Certified Women-Owned Small Business", A0: "SBA-Certified Economically Disadvantaged Women-Owned Small Business",
+};
+const BUSINESS: Record<string, string> = {
+  "23": "Minority-Owned Business", "27": "Self Certified Small Disadvantaged Business", "2X": "For Profit Organization",
+  "8W": "Women-Owned Small Business", A2: "Women-Owned Business", A5: "Veteran-Owned Business",
+  A8: "Non-Profit Organization", LJ: "Limited Liability Company", MF: "Manufacturer of Goods",
+  OY: "Black American Owned", PI: "Hispanic American Owned", QF: "Service-Disabled Veteran-Owned Business", XS: "Subchapter S Corporation",
+};
+const CAVEATS = [
+  "Entities who opted out of public display are not included in the hosted public mirror. No match does not establish that an entity is unregistered.",
+  "Confirm current registration status on SAM.gov before relying on this monthly public extract.",
+];
+const stringField = (description: string, maxLength = 200) => ({type: "string", maxLength, description});
+export const ENTITY_TOOL = {
+  name: "search_entities",
+  description: "Look up SAM.gov entities by UEI or CAGE, or search the monthly public entity extract. All search filters combine. primary_naics matches the designated primary code; any_naics matches any listed code. Business types are self-selected; SBA certifications use sba_business_type_code (XX=HUBZone, A6=8(a)). Search defaults to Active; identifier lookups include any registration status unless explicitly filtered. Returns API-style public entity fields, up to 10 records per page. Entities who opted out of public display are not included in the hosted public mirror. Confirm current registration status on SAM.gov before relying on results.",
+  inputSchema: {
+    type: "object", properties: {
+      uei: {type: "string", pattern: "^[A-Za-z0-9]{12}$", description: "Exact 12-character UEI."},
+      cage_code: {type: "string", pattern: "^[A-Za-z0-9]{5}$", description: "Exact 5-character CAGE code."},
+      legal_business_name: stringField("Partial legal business name match; no relevance ranking."),
+      primary_naics: {anyOf: [{type: "string", pattern: "^[0-9]{2,6}$"}, {type: "integer"}], description: "Designated primary NAICS, 2-6 digits."},
+      any_naics: {anyOf: [{type: "string", pattern: "^[0-9]{2,6}$"}, {type: "integer"}], description: "Any listed NAICS, 2-6 digits."},
+      state_code: {type: "string", pattern: "^[A-Za-z]{2}$", description: "Physical address state, 2-letter USPS code."},
+      business_type_code: stringField("Self-selected 2-character SAM business type, e.g. QF (SDVOSB), A2, 8W, NB, A3.", 2),
+      sba_business_type_code: {type: "string", enum: Object.keys(SBA), description: "SBA certification code; XX=HUBZone, A6=8(a), A9=certified WOSB."},
+      registration_status: {type: "string", enum: ["A", "E"], description: "A=Active (search default), E=expired (displayed as Inactive)."},
+      purpose_of_registration: {type: "string", enum: ["Z1", "Z2", "Z3", "Z4", "Z5"]},
+      include_sections: {type: "array", items: {type: "string", enum: ["entityRegistration", "coreData", "assertions", "All"]}, description: "Public sections only. Defaults to entityRegistration + coreData; entityRegistration is always included."},
+      page: {type: "integer", minimum: 0, maximum: 1000, default: 0},
+      size: {type: "integer", minimum: 1, maximum: 10, default: 10},
+    }, additionalProperties: false,
+  },
+  annotations: {title: "Search Entities", readOnlyHint: true, destructiveHint: false, openWorldHint: false},
+};
+
+function text(args: Args, key: string, max = 200): string | undefined {
+  const value = args[key];
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "string") throw new ToolError(`${key} must be a string.`);
+  if (value.length > max) throw new ToolError(`${key} exceeds maximum length of ${max} chars. Got ${value.length}.`);
+  if (/[\x00-\x1f\x7f]/.test(value)) throw new ToolError(`${key} contains control characters. Remove the offending character and retry.`);
+  return value.trim() || undefined;
+}
+function integer(args: Args, key: string, fallback: number, min: number, max: number): number {
+  const n = args[key] ?? fallback;
+  if (typeof n !== "number" || !Number.isInteger(n) || n < min || n > max) throw new ToolError(`${key} must be a whole number from ${min} to ${max}. Paginate instead.`);
+  return n;
+}
+function naics(args: Args, key: string): string | undefined {
+  const value = args[key];
+  if (value === undefined || value === null || value === "") return undefined;
+  const result = typeof value === "number" && Number.isInteger(value) ? String(value) : text(args, key, 6);
+  if (!result || !/^\d{2,6}$/.test(result)) throw new ToolError(`${key}=${JSON.stringify(value)} must be a 2-6 digit NAICS code (no operators).`);
+  return result;
+}
+function codes(row: Row, key: string): string[] {
+  const value = row[key];
+  if (!value) return [];
+  const parsed = typeof value === "string" ? JSON.parse(value) : value;
+  if (!Array.isArray(parsed) || parsed.some(v => typeof v !== "string")) throw new ToolError("The public entity extract contains invalid code data.");
+  return parsed;
+}
+function entity(row: Row, sections: Set<string>): Row {
+  const raw = row.record_json ? (typeof row.record_json === "string" ? JSON.parse(row.record_json) : row.record_json) : {};
+  const value: Row = {
+    entityRegistration: raw.entityRegistration ?? {
+      ueiSAM: row.uei, cageCode: row.cage_code, legalBusinessName: row.legal_business_name,
+      dbaName: row.dba_name, registrationStatus: row.registration_status === "A" ? "Active" : row.registration_status === "E" ? "Inactive" : row.registration_status,
+      purposeOfRegistrationCode: row.purpose_of_registration, registrationDate: row.registration_date,
+      activationDate: row.activation_date, registrationExpirationDate: row.expiration_date,
+      lastUpdateDate: row.last_update_date, ueiStatus: row.uei_status,
+      exclusionStatusFlag: row.exclusion_status_flag, publicDisplayFlag: row.public_display_flag,
+    },
+  };
+  if (sections.has("coreData")) value.coreData = raw.coreData ?? {
+    physicalAddress: {addressLine1: row.address_line_1, addressLine2: row.address_line_2, city: row.city, stateOrProvinceCode: row.state, zipCode: row.zip_code, countryCode: row.country},
+    businessTypes: {
+      businessTypeList: codes(row, "business_type_codes_json").map(code => ({businessTypeCode: code, ...(BUSINESS[code] ? {businessTypeDesc: BUSINESS[code]} : {})})),
+      sbaBusinessTypeList: codes(row, "sba_business_type_codes_json").map(code => ({sbaBusinessTypeCode: code, ...(SBA[code] ? {sbaBusinessTypeDesc: SBA[code]} : {})})),
+    },
+  };
+  if (sections.has("assertions")) value.assertions = raw.assertions ?? {
+    goodsAndServices: {primaryNaics: row.primary_naics, naicsList: codes(row, "naics_codes_json").map(code => ({naicsCode: code, isPrimary: code === row.primary_naics ? "Y" : "N"}))},
+  };
+  // Older public imports used an extract-specific alias for the API field.
+  // record_json is freshly parsed above; normalize only that key, preserving flags.
+  const naicsList = value.assertions?.goodsAndServices?.naicsList;
+  if (Array.isArray(naicsList)) for (const entry of naicsList) {
+    if (entry && typeof entry === "object" && Object.hasOwn(entry, "naicsSmallBusinessIndicator")) {
+      if (!Object.hasOwn(entry, "sbaSmallBusiness") && ["Y", "N"].includes(entry.naicsSmallBusinessIndicator)) {
+        entry.sbaSmallBusiness = entry.naicsSmallBusinessIndicator;
+      }
+      delete entry.naicsSmallBusinessIndicator;
+    }
+  }
+  return value;
+}
+
+export async function searchEntities(db: Database, args: Args) {
+  if (!db || typeof db.prepare !== "function") throw new ToolError("SAM.gov public entity data is unavailable; confirm registration status on SAM.gov.");
+  const allowed = Object.keys(ENTITY_TOOL.inputSchema.properties);
+  const extra = Object.keys(args).filter(k => !allowed.includes(k));
+  if (extra.length) throw new ToolError(`Unknown argument${extra.length > 1 ? "s" : ""}: ${extra.join(", ")}. Allowed: ${allowed.join(", ")}.`);
+  const page = integer(args, "page", 0, 0, 1000), size = integer(args, "size", 10, 1, 10);
+  const where: string[] = [], params: unknown[] = [];
+  const exact = (column: string, value: string | undefined) => {if (value !== undefined) {where.push(`${column} = ?`); params.push(value);}};
+  const uei = text(args, "uei", 12)?.toUpperCase(), cage = text(args, "cage_code", 5)?.toUpperCase();
+  if (uei && !/^[A-Z0-9]{12}$/.test(uei)) throw new ToolError(`uei must be 12 uppercase alphanumeric characters. Got ${JSON.stringify(args.uei)}.`);
+  if (cage && !/^[A-Z0-9]{5}$/.test(cage)) throw new ToolError(`cage_code must be 5 uppercase alphanumeric characters. Got ${JSON.stringify(args.cage_code)}.`);
+  if (args.uei !== undefined && !uei) throw new ToolError("uei cannot be empty.");
+  if (args.cage_code !== undefined && !cage) throw new ToolError("cage_code cannot be empty.");
+  exact("e.uei", uei); exact("e.cage_code", cage);
+  const name = text(args, "legal_business_name");
+  if (name) {where.push("e.legal_business_name LIKE ? ESCAPE '\\' COLLATE NOCASE"); params.push("%" + name.replace(/[\\%_]/g, "\\$&") + "%");}
+  exact("e.primary_naics", naics(args, "primary_naics"));
+  const anyNaics = naics(args, "any_naics");
+  if (anyNaics) {where.push("e.entity_id IN (SELECT entity_id FROM entity_naics WHERE code = ?)"); params.push(anyNaics);}
+  const state = text(args, "state_code", 2)?.toUpperCase();
+  if (state && !/^[A-Z]{2}$/.test(state)) throw new ToolError(`state_code must be 2-letter USPS (e.g. 'VA', 'CA'). Got ${JSON.stringify(args.state_code)}.`);
+  exact("e.state", state);
+  const business = text(args, "business_type_code", 2)?.toUpperCase(), sba = text(args, "sba_business_type_code", 2)?.toUpperCase();
+  if (business && Object.hasOwn(SBA, business)) throw new ToolError(`business_type_code=${JSON.stringify(args.business_type_code)} is an SBA certification code (${SBA[business]}). SAM.gov filters SBA certifications through a separate parameter; pass it as sba_business_type_code instead.`);
+  if (business && !/^[A-Z0-9]{2}$/.test(business)) throw new ToolError("business_type_code must be a 2-character code from the SAM Functional Data Dictionary (e.g. QF, A2, 8W, NB, A3).");
+  if (sba && !Object.hasOwn(SBA, sba)) throw new ToolError(`sba_business_type_code must be one of: ${Object.keys(SBA).join(", ")}.`);
+  for (const [kind, code] of [["business", business], ["sba", sba]]) if (code) {where.push("e.entity_id IN (SELECT entity_id FROM entity_business_types WHERE kind = ? AND code = ?)"); params.push(kind, code);}
+  const status = text(args, "registration_status", 1) ?? (uei || cage ? undefined : "A");
+  if (status && status !== "A" && status !== "E") throw new ToolError("registration_status must be A (Active) or E (expired, displayed as Inactive).");
+  if (status) {where.push("e.registration_status = ?"); params.push(status === "A" ? "Active" : "Inactive");}
+  const purpose = text(args, "purpose_of_registration", 2);
+  if (purpose && !/^Z[1-5]$/.test(purpose)) throw new ToolError("purpose_of_registration must be one of: Z1, Z2, Z3, Z4, Z5.");
+  exact("e.purpose_of_registration", purpose);
+  const requested = args.include_sections ?? ["entityRegistration", "coreData"];
+  if (!Array.isArray(requested) || requested.some(s => typeof s !== "string" || !["entityRegistration", "coreData", "assertions", "All"].includes(s))) throw new ToolError("include_sections supports only public entityRegistration, coreData, assertions, or All.");
+  const sections = new Set<string>(requested.includes("All") ? ["entityRegistration", "coreData", "assertions"] : requested as string[]);
+  // One SQL statement gives rows, total and provenance the same snapshot during swaps.
+  const clause = where.length ? " WHERE " + where.join(" AND ") : "";
+  const columns = ["entity_id", "uei", "cage_code", "legal_business_name", "dba_name", "registration_status",
+    "purpose_of_registration", "registration_date", "activation_date", "expiration_date", "last_update_date",
+    "uei_status", "exclusion_status_flag", "public_display_flag", "address_line_1", "address_line_2",
+    "city", "state", "zip_code", "country", "primary_naics", "entity_structure", "entity_url",
+    "naics_codes_json", "business_type_codes_json", "sba_business_type_codes_json", "record_json"];
+  const projection = columns.map(column => `'${column}', ${column}`).join(", ");
+  const {results} = await db.prepare(`WITH matches AS NOT MATERIALIZED (SELECT e.* FROM entities e${clause}),
+    selected AS (SELECT * FROM matches ORDER BY legal_business_name COLLATE NOCASE, uei, entity_id LIMIT ? OFFSET ?)
+    SELECT (SELECT COUNT(*) FROM matches) AS total_records,
+    (SELECT json_group_array(json_object(${projection})) FROM selected) AS records,
+    s.* FROM extract_status s WHERE s.kind = 'entities'`).bind(...params, size, page * size).all<Row>();
+  const snapshot = results[0];
+  const quarantined = Number(snapshot?.quarantined_rows ?? snapshot?.rejected_rows ?? 0);
+  const provenance = {
+    source: "SAM.gov public Entity Registration monthly V2 extract",
+    file_name: snapshot?.file_name ?? null, file_date: snapshot?.file_date ?? null,
+    source_url: snapshot?.source_url ?? null,
+    notes: [...CAVEATS, ...(quarantined > 0 ? [`${quarantined} malformed source rows were quarantined and excluded from this hosted mirror; coverage is incomplete.`] : [])],
+  };
+  if (!snapshot?.file_date) return {status: "not_loaded", totalRecords: 0, entityData: [], page, size, ...provenance};
+  const rows: Row[] = JSON.parse(snapshot.records);
+  return {totalRecords: snapshot.total_records, entityData: rows.map(row => entity(row, sections)), page, size, ...provenance};
+}

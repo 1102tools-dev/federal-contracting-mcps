@@ -237,7 +237,7 @@ def test_cloudflare_guard_matches_release_plan_tag_shapes():
 def test_release_workflow_accepts_scoped_tags():
     workflow = yaml.safe_load((ROOT / ".github/workflows/publish-pypi.yml").read_text())
     trigger = workflow.get("on") or workflow.get(True)
-    assert set(trigger["push"]["tags"]) == {"v*", "*/v*"}
+    assert trigger["push"]["tags"] == ["v*", "*/v*", "!sam-gov-hosted/v*"]
     assert "startsWith(github.ref, 'refs/tags/')" in workflow["jobs"]["release"]["if"]
     assert workflow["concurrency"] == {"group": "mcp-production-release", "cancel-in-progress": False}
 

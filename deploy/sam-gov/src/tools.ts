@@ -1,15 +1,15 @@
-// The four hosted SAM.gov tools. Every answer comes from the D1 mirror of
-// SAM.gov's public contract opportunities file (see schema.sql and
-// scripts/load_sam_opportunities.py); no SAM.gov API key is used.
+import {ENTITY_TOOL, searchEntities} from "./entity-tools.ts";
+import {EXCLUSION_TOOL, searchExclusions, getPublicDataStatus} from "./exclusion-tools.ts";
 
-export interface Database {
-  prepare(sql: string): {bind(...values: unknown[]): {all<T = Record<string, unknown>>(): Promise<{results: T[]}>}};
-}
+// Hosted SAM.gov tools query separate D1 mirrors of public opportunities,
+// entity registrations and exclusions. No SAM.gov API key is used.
+
+import {ToolError, type Database} from "./public-types.ts";
+export {ToolError, type Database} from "./public-types.ts";
 
 type Row = Record<string, any>;
 type Args = Record<string, unknown>;
 
-export class ToolError extends Error {}
 
 export const NOTICE_TYPES = [
   "Solicitation", "Combined Synopsis/Solicitation", "Presolicitation", "Sources Sought",
@@ -110,10 +110,12 @@ export const TOOLS = [
   },
   {
     name: "get_data_status",
-    description: "Report the date of the SAM.gov file behind every answer, when it was loaded, how many active notices it holds by type, and what changed in the last nightly load. Use it to judge how current results are.",
+    description: "Report source file names and dates, load times and row counts for public opportunities, entity registrations and exclusions. Includes opportunity counts by type and last-load changes. Use it to judge how current results are.",
     inputSchema: {type: "object", properties: {}, additionalProperties: false},
     annotations: {title: "Get Data Status", ...READ_ONLY},
   },
+  ENTITY_TOOL,
+  EXCLUSION_TOOL,
 ];
 
 // ---------- argument helpers ----------
@@ -543,9 +545,11 @@ export async function getDataStatus(db: Database, _args: Args, now = new Date())
   };
 }
 
-export const HANDLERS: Record<string, (db: Database, args: Args) => Promise<unknown>> = {
-  search_opportunities: searchOpportunities,
+export const HANDLERS: Record<string, (db: Database, args: Args, entityDb?: Database) => Promise<unknown>> = {
+  search_opportunities: (db, args) => searchOpportunities(db, args),
   get_opportunity: getOpportunity,
-  summarize_opportunities: summarizeOpportunities,
-  get_data_status: getDataStatus,
+  summarize_opportunities: (db, args) => summarizeOpportunities(db, args),
+  get_data_status: async (db, args, entityDb) => ({...await getDataStatus(db, args), ...await getPublicDataStatus(entityDb!)}),
+  search_entities: searchEntities,
+  search_exclusions: searchExclusions,
 };

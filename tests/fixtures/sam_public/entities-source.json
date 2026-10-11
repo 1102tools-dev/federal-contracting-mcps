@@ -1,0 +1,11 @@
+{
+  "source_file": "SAM_PUBLIC_UTF-8_MONTHLY_V2_20261005.ZIP",
+  "file_date": "2026-10-05",
+  "source_url": "https://sam.gov/api/prod/fileextractservices/v1/api/download/Entity%20Registration/Public%20V2/SAM_PUBLIC_UTF-8_MONTHLY_V2_20261005.ZIP?privacy=Public",
+  "layout_url": "https://open.gsa.gov/api/sam-entity-extracts-api/v1/SAM_Entity_Management_Public_V2_Extract_Layout.pdf",
+  "slice": "First 35 valid opt-in rows; row data unchanged, header/trailer count adjusted to 35. No NPDY rows.",
+  "additional_slices": {
+    "entities-sba.dat": "Three real opt-in rows with dated SBA certifications; header/trailer counts adjusted.",
+    "entities-extra.dat": "100 distinct real visible UEIs; active registration, source initial registration date equals activation date in 2026; header/trailer count adjusted. Selected to probe stable recent registrations against live API, drift still reported."
+  }
+}

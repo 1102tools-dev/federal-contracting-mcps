@@ -9,12 +9,22 @@
   "account_id": "846d3e41e48446abcd3570c0959f9fb5",
   "workers_dev": true,
   // Worker only, no container: tools query D1 directly. The nightly loader
-  // (scripts/load_sam_opportunities.py) is the only writer.
+  // is scheduled separately for opportunities and public entities/exclusions.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "sam-gov-opportunities",
       "database_id": "8875076f-cbb2-4ce8-9ea1-b152323fbbb0"
+    },
+    {
+      "binding": "ENTITY_DB",
+      "database_name": "sam-gov-entities",
+      "database_id": "18a226be-201f-46de-99b9-db65dd5edea7"
+    },
+    {
+      "binding": "STAGING_ENTITY_DB",
+      "database_name": "sam-gov-entities-staging",
+      "database_id": "15ab105a-86b9-41e3-822b-b87bced8132d"
     }
   ],
   "ratelimits": [
@@ -56,6 +66,11 @@
           "binding": "DB",
           "database_name": "sam-gov-opportunities",
           "database_id": "8875076f-cbb2-4ce8-9ea1-b152323fbbb0"
+        },
+        {
+          "binding": "ENTITY_DB",
+          "database_name": "sam-gov-entities",
+          "database_id": "18a226be-201f-46de-99b9-db65dd5edea7"
         }
       ],
       "ratelimits": [
