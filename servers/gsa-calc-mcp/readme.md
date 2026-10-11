@@ -8,7 +8,7 @@ Free, open-source MCP server for the GSA CALC+ Labor Ceiling Rates API. Query aw
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through thirteen audit rounds and the 1.0.14 workflow audit and discovery-description correction against the GSA CALC+ API. 443 collected regression tests (322 offline, 121 live-gated) covering 49 P1 bugs (19 crashes, 30 silent-wrong-data), 19 P2 validation gaps, 12 retroactive deep-audit findings, and the round-6 differential-count fixes (dead worksite filter, experience-range semantics, rate-card paging). The content fixes cover vendor worksites, low-sample price checks, comparison filters, title summaries and truncation. The 1.0.15 recovery correction preserves actionable unsupported-worksite guidance in fresh MCP 2.3 clients. The published 1.0.16 correction exposes exact-title scope and withholds grade-specific high/low verdicts when pooled titles differ. Final installed/public verification completed 152 new content workflows, with separate actual console checks. The next content audit completed 172 new installed/public workflows and 22 separate console calls, with no new runtime defect. The published 1.0.17 release preserves source-discovered colon titles through verified literal keyword recovery; the new content audit completed 154 registered/public workflows and 25 separate actual console calls on each baseline/candidate surface. Candidate source-adapter replay is a separate lane. Final fresh official by-name 1.0.17 verification passed all 154 registered/public workflows and 25 actual console calls, with 322 passed / 121 optional-live skipped / 443 collected under MCP 2.3.0. Source percentile and bounded-bucket variations remain qualified. The final federal-contracting audit added 154 new registered installed/public questions across all eight tools, 25 separate actual stdio calls and 7,356 passing source/workflow assertions, with no new product finding. Approximate percentile differences, bounded discovery buckets and tied card cutoffs remain qualified. See [testing.md](testing.md) for the full testing record and the [test suite map](tests/README.md) for counts by file.*
+*443 regression tests, including live checks against the GSA CALC+ API. The October 2026 releases were also checked with realistic pricing questions (IGCE benchmarks, price checks, vendor rate cards, exact-title lookups). See [testing.md](testing.md).*
 
 ## Local or hosted
 
@@ -17,7 +17,7 @@ No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 | [Local setup](#installation) | [Install](https://claude.ai/directory/gsa-calc-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) |
 
 - **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
-- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
+- **Hosted** needs no setup or keys and works in Claude or ChatGPT anywhere.
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#gsa-calc)
 
@@ -94,9 +94,7 @@ CALC+ data represents the maximum hourly rate a contractor can charge under thei
 
 Always note sample size and remind users these are ceiling rates when presenting analysis.
 
-## License
-
-MIT
+## Keyword searches pool titles, vendors and contracts
 
 IGCE and price checks use GSA's keyword search across labor titles, vendor names
 and contract numbers. Check `population_scope`: a vendor-name match can pool
@@ -106,3 +104,7 @@ title list cannot establish the full population. For title-only rates, discover
 an exact title with `suggest_contains`, then call `exact_search` on
 `labor_category`. Suggestion totals marked
 `total_matching_records_is_lower_bound` mean **at least** that many records.
+
+## License
+
+MIT
