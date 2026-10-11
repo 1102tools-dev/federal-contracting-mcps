@@ -1,6 +1,6 @@
 # Acquisition.gov MCP
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![tested](https://img.shields.io/badge/tested-testing%20record-007a59)](testing.md)
+[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![tools: 5](https://img.shields.io/badge/tools-5-007a59)](#) [![regression tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/1102tools-dev/federal-contracting-mcps/main/badges/tests-acquisition-gov-mcp.json)](testing.md)
 
 <!-- mcp-name: com.1102tools/acquisition-gov-mcp -->
 
@@ -50,4 +50,4 @@ Every retrieved source includes a canonical URL, UTC retrieval time, SHA-256 con
 - Duplicate and conflicting index entries are returned with warnings instead of silently resolved.
 - Scanned, encrypted, and malformed PDFs return explicit extraction status and metadata where possible.
 
-*Regression tests cover parser isolation, cancellation, real stdio and HTTP checks, and each tool's answers. See [testing.md](testing.md).*
+*Regression tests, covering parser isolation, cancellation, real stdio and HTTP checks, and each tool's answers. See [testing.md](testing.md).*
