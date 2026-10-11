@@ -1,351 +1,43 @@
-# Federal Register MCP: Testing Record
+# Federal Register MCP: Testing
 
-## Final contracting content round 7 (2026-10-10; published 1.0.16)
+295 regression tests: 190 run offline on every release, and 105 call the live Federal Register API when you turn them on.
 
-The explicitly final content round found **zero new P0/P1/P2 defects**, and no confirmed new P3 product issue. A new contracting corpus completed **75 genuinely new tool inputs across all eight tools**, plus **five exact-input prior controls excluded from new coverage**. Actual fresh official PyPI 1.0.16 CLI and public execution completed **83 calls each / 80 distinct inputs**. Two repeats completed primary comparisons after harness errors; one same-input detail was reused in a separate workflow. All 80 distinct answers match in substance: **78 exactly**, with two OFPP answers differing only in explicit `as_of` (local October 10 versus public October 11 after UTC midnight). Their documents, counts, deadlines, order and verification notes are exactly equal, and complete captured source sets have no deadline between those cutoffs. No all-80-exact claim is made.
+## What is tested
 
-Coverage includes procurement software/technical-data rights, payment discovery, acquisition-threshold inflation, DFARS sustainability/domestic goods/stockpiling, SBA HUBZone and size standards, contractor affirmative-action and wage publications, and contractor accounting standards. Followups narrow incidental full-text mentions by agency/stage/CFR location, use discovered RINs, continue a page, read full details and requested-order batches, and trace **seven new FAR/DFARS case docket/quoted-text unions** with exact match provenance. Two jointly filed FAR Council source sets pass. Four facets, four agency full-field/parent comparisons and three current public-inspection filter sets pass. Six complete source-indexed queues match: GSA 17, DARS 6, SBA 1, WHD 1, OFPP 12 and the narrower OFPP Cost Accounting query 3. These overlapping agency-wide counts are not a distinct total of contracting opportunities.
+All 8 tools, called through the MCP pipeline the way Claude or ChatGPT calls them (`mcp.call_tool`), not by calling the Python functions directly. That matters: an early `list_agencies` crash only showed up through the pipeline.
 
-Primary evidence retains **88 successful raw HTTP JSON captures / 81 distinct URLs**, **seven raw publication-text files**, and **four retained fresh peer Round 7 files** (two JSON/two XML) with original source/time/hash receipts. Shared RFO sources are not credited as own fresh requests. Crossed owner requests for the SBA extension JSON are disclosed; XML/text are separate representations. **Thirteen publication-semantic checks** distinguish technical-data January 17, 2025, DFARS greenhouse-gas May 7, 2026 and threshold October 1, 2025 effective dates; EO 13658 wage-rate applicability January 6, 2027; and submission routes/deadlines. GSA's October 13 collection comments go to Reginfo, DARS October 16 comments identify the OMB control number, and SBA's extension closes November 20. RFO October 19 dates are proposal comment deadlines, with no effective date. These facts do not establish present legal enforceability or universal contractor wage coverage.
+- **Input checks.** Document numbers (including pre-2011 forms such as `E9-12940`), `YYYY-MM-DD` dates, reversed date ranges, empty or whitespace-only filters, overlong terms, and page limits. Bad input gets a specific message saying how to fix it.
+- **Right answers, not just valid ones.** Live tests compare tool output with direct Federal Register API calls: search filters (agency, type, docket, RIN, CFR title/part), document and batch lookups, facet counts, public inspection, open comment periods, and FAR/DFARS case history.
+- **Open comment periods.** Results are sorted by deadline, and each answer says whether every matching document was scanned (`complete`) or the list was shortened (`truncated`).
+- **FAR case history.** Combines docket and quoted-text matches and labels where each match came from.
+- **Shape and size.** Large responses are trimmed by default; HTML error pages are never passed through.
+- **Hosted service.** Tool catalog, request guards, response cache timing, and shared request pacing.
 
-The official by-name uncached installation used Python 3.12.13/MCP 2.3.0 and no direct-URL substitute. All eight installed modules match runtime release source `cde5b0bc87c937b13483f26296fe0e944f24aff5`; both official wheel/sdist downloads match published sizes/SHA256 and are not yanked. The actual fresh published suite passed **190 / 0 failed / 105 optional live skips / 295 collected**, in 13.25 seconds. The isolated frozen Python 3.12.13/MCP 2.0 source suite independently passed **190 / 0 failed / 105 skipped / 295 collected**, in 13.80 seconds. All eight contract definitions remain unchanged. No new full live-gated suite, runtime edit or package version bump is claimed.
+Realistic contracting questions (FAR Council co-filings, comment deadlines, case histories, agency queues) were also checked against the official API before release. Those results are in the [October 10, 2026 release record](../../docs/releases/2026-10-10-content-audit.md).
 
-Two initial primary comparisons assumed zero-result searches had a `results` field; their failed harness attempts and successful completion replays remain preserved. Two proposed-rule checks initially used search filter enum `PRORULE` instead of the detailed source label `Proposed Rule`; retained source checks were corrected without extra tool calls, preserving the initial corpus. Exact-input comparison with prior rounds excludes five controls rather than crediting them as new questions. SBA docket search `SBA-2026-0199` returns zero consistently with the primary API; the source-driven RIN 3245-AI67 followup recovers the actual proposal. Related case text matches remain marked `text`; agency queues include non-contracting documents. The 500-document scan, 100-result return and case-search caps, source metadata/DATES divergence, 1994 archive floor and changing public inspection remain explicit limits. There is no further content round. Evidence: `Artifacts/mcp-e2e-20261010/round7/federal-register`.
+## How to run the tests
 
-## Actual published SDK 2.3 acceptance (2026-10-10; 1.0.16)
+From `servers/federal-register-mcp`:
 
-Release workflow 38094950025 completed all 13 jobs successfully at source `cde5b0bc87c937b13483f26296fe0e944f24aff5`. An uncached official by-name PyPI installation succeeded on its first attempt with Python 3.12.13 and MCP 2.3.0; no local wheel or direct-URL substitute was used. Both official wheel/sdist downloads matched their published sizes and SHA256 and were not yanked. All eight installed modules and all 16 wheel/sdist module payloads matched that explicit release source.
+```sh
+uv run pytest                                  # offline suite
+FR_LIVE_TESTS=1 uv run pytest                  # add live tests (no API key needed)
+FR_LIVE_TESTS=1 uv run pytest -m live_smoke    # small one-call-per-test live set
+```
 
-Three actual console originals—FAR part without title, a section supplied as a part, and page 51—now return the specific corrective guidance. Three actual valid recoveries succeed. All six answers exactly match six contemporaneous public calls. CLI/public catalogs match all eight reviewed definitions. Public HTTPS GET health and POST initialize/catalog show the current release SHA/version and `X-1102tools-Backend: origin`; the configured origin HTTPS GET health confirms the same SHA. This receipt does not claim origin HTTPS POST or a new SSH physical-container check.
+Live tests are paced automatically. See [tests/README.md](tests/README.md) for what each test file covers.
 
-The actual installed official-package SDK 2.3 full suite passed **190 / 0 failed / 105 optional live skips / 295 collected**, in 13.02 seconds. The retained frozen SDK 2.0 source result **190 passed / 105 skipped / 295 collected** is separate, not a new published frozen run. The original 60 guidance failures are resolved; unknown-fault masking and specific-message assertions remain intact. No full live-gated suite or new broad content round is claimed.
+## Known limits
 
-Two destination-check harness assumptions were corrected and their first logs preserved: the contract is a list rather than an object with a `tools` key, and the actual routing header is `X-1102tools-Backend`, not an assumed `x-backend-origin`. Neither is a product failure. Independent eCFR fresh official CLI/public sampling also passed. Evidence: `Artifacts/mcp-e2e-20261010/sdk23/federal-register/final-published16` and the separate immutable candidate/peer receipts. The candidate record below remains historical.
+- **Archive starts in 1994.** Earlier publication filters are rejected. Older issues are in [GovInfo's digitized archive](https://www.govinfo.gov/features/digitized-federal-register-final).
+- **Open-comment scan.** `open_comment_periods` scans up to 500 documents. When `complete` is false, an unscanned document could close sooner; narrow by agency or keyword, or use `search_documents` with `comment_date_gte`/`comment_date_lte`.
+- **Indexed deadlines can lag.** A reopening notice can list a later deadline in its DATES section than the indexed close date. Check the document before relying on a deadline.
+- **Page limit.** Pages above 50 are rejected because the API cannot reach them.
+- **Rate limits.** The Federal Register does not publish numeric limits. The server paces its own requests and honors `Retry-After` without automatic retries.
+- **Agency reorganizations.** Older documents can appear under an agency's former name; the server passes through the API's agency mapping.
+- **Public inspection changes during the day.** Results reflect the queue at the time of the call.
+- **Dates are not legal conclusions.** Effective dates and comment deadlines come from the published documents; they do not establish whether a rule applies to a given contract.
 
-## Targeted SDK 2.3 guidance correction (2026-10-10; candidate 1.0.16)
+## History
 
-This separate, authorized correction follows completed content round 6; it is not another broad content audit. The retained actual published 1.0.15 SDK 2.3 suite had 124 passed, 60 failed and 105 live-gated skipped out of 289 collected. The 60 exact failed IDs comprise 52 validation-file, six historical round-6 and two historical round-8 assertions across seven tools. They represent one common guidance problem, not 60 independently discovered defects.
-
-**FR-SDK-001, P2:** Actual fresh installed 1.0.15 console calls for FAR part 52 without a CFR title, clause 52.212-4 supplied as a part, and page 51 return only `Error executing tool search_documents` under SDK 2.3. Each deliberately raised validation message contains supported corrective guidance, but the SDK classifies plain tool-body `ValueError` as an unexpected crash and masks it. The current public 1.0.15 service retains useful messages; it is not credited with this local SDK failure. All three actual valid-neighbor console/public followups succeed. The authoritative installed SDK contract directs tools to raise `ToolError` for anticipated failures and preserves generic masking for other exceptions.
-
-Candidate 1.0.16 changes only 25 explicit input-validation raise sites to a private exception inheriting `ValueError` and `ToolError`. Direct validator callers retain `ValueError` compatibility, while supported SDKs recognize deliberate correction guidance. No broad catch, wrapper, new source-error translation, signature change or metadata change is introduced. Existing HTTP/network `RuntimeError`, parser and programming exceptions keep SDK handling. SDK 2.0 predates generic crash masking; its historical behavior is retained rather than falsely claimed to match SDK 2.3 masking.
-
-Six new behavioral regressions include three original→supported-recovery cases, direct-helper compatibility and two unknown-source-fault controls. The three recovery tests fail before while the three controls pass. Every rejection prevents provider calls, preserves its exact corrective text and is anticipated; recovery fixtures are parsed successful actual published 1.0.15 console answers, not raw primary transport bytes. The corrected calls retain requested CFR/date/page wire filters and returned document identities. The unexpected `ValueError` and `RuntimeError` controls remain `UnexpectedToolError` with generic client text under SDK 2.3. Two existing whitespace normalization controls now fail on unexpected success. All prior specific guidance assertions remain intact.
-
-The affected lane measured **63 failed / 73 passed / 23 skipped** before (60 retained failures plus three new ordinary regressions), then **136 passed / 23 skipped** after. The full frozen production lane (Python 3.12.13/MCP 2.0) measured **190 passed / 105 skipped** in 13.34 seconds; the fresh installed candidate wheel lane (Python 3.12.13/MCP 2.3) measured **190 passed / 105 skipped** in 12.96 seconds. Both have zero failures; separate collection measured **295 tests**. All 60 previously failing IDs are covered by the passing affected lane; live skips remain explicit, and no new full live suite is claimed.
-
-Actual installed candidate 1.0.16 console replay completes the same six ordinary originals/followups: three errors retain their specific recovery guidance and three valid calls succeed. All eight tool definitions remain exact, and build/new-version PyPI guard, synchronized owned version surfaces and installed-wheel/source parity pass. This is candidate evidence; official publication and actual 1.0.16 public/installed acceptance remain pending root release. Existing 500-scan/100-return, 1994-archive, source deadline and legal-effect limitations remain unchanged. Evidence: `Artifacts/mcp-e2e-20261010/sdk23/federal-register`. All sealed round-6 artifacts remain unchanged; the one final content round has not started.
-
-
-## Actual published round 6 acceptance (2026-10-10; 1.0.15)
-
-A fresh uncached official PyPI **1.0.15** installation (Python 3.12.13, MCP 2.3.0) completed **72 actual stdio CLI calls and 72 public calls across all eight tools**, comprising 71 genuinely new questions and one prior control excluded from new coverage. All 72 answers matched exactly and in substance, with no errors. This is actual published acceptance at release source **881bad8f1e46f67dbd6bfe4fab95636b7cccb8dd**, distinct from the candidate record below.
-
-The original Coast Guard question still reports zero source-indexed open periods, now with deadline-source qualification and a recovery path. Docket search returns three publications; full reopening detail 2026-19895 exposes **October 29, 2026** DATES despite August 24 indexed metadata. The P3 scope/recovery correction is accepted in the published package and public service. The upstream metadata exclusion remains a source limitation; no complete legal-deadline crawler or invented corrected metadata is claimed.
-
-All eight installed runtime modules match the release source bytes. Official wheel and source downloads match both PyPI sizes and SHA-256 digests and are not yanked. Public health identifies the exact release source, initialization reports 1.0.15, and both eight-tool catalogs match the release contract. Reconciliation against the retained candidate/primary evidence preserves all stable fields: page-view metadata remains volatile, and one CLIA detail has only a later `regulations_dot_gov_info.checked_regulationsdotgov_at` timestamp beyond that. Original replay records retain these differences. The 73 parsed primary captures, four raw publication texts, one raw complete-docket JSON and four peer raw JSON/XML captures are retained evidence, not falsely described as fresh recaptures.
-
-The actual published SDK 2.3 suite measured **124 passed / 60 failed / 105 live-gated skipped / 289 collected** in 15.23 seconds. Every failing node ID matches the previously recorded candidate/prior legacy negative/error-expectation set; they remain failures, separate from the successful ordinary content lane. The unchanged-source frozen candidate result **184 passed / 105 skipped / 289 collected** (Python 3.14.3/MCP 2.0) is retained rather than claimed as a new post-publication run. No new full live suite is claimed. One new P3 is fully fixed and accepted; zero partial or unresolved product findings. Root website/full-round closure remains separate. Evidence: `Artifacts/mcp-e2e-20261010/round6/federal-register/final-published15`; no Round 7 audit has started.
-
-## Content research round 6 (2026-10-10; published 1.0.14, candidate 1.0.15)
-
-The completed corpus has **71 genuinely new ordinary/power-user questions across all eight tools**, plus one prior transportation public-inspection control excluded from new coverage. All **72 valid actual fresh official PyPI 1.0.14 stdio and public answers matched exactly**. Seventy-three retained question records include one excluded source-harness attempt: the official zero-result JSON omitted `results`, which the harness indexed unconditionally; the successful tool answer and corrected source comparison are preserved. A separate initial public HTTP 403 from a request without the audit user agent is retained and excluded; the corrected request succeeded. One reused harness caption said artificial intelligence while its actual arguments/source evaluated renewable-fuel facets; inventory corrects the caption without crediting an AI task.
-
-New coverage includes PHMSA hazardous-material shipping, FRA railroad safety, FMCSA driver requirements, CPSC consumer products, EEOC employment rules, FWS endangered species, Social Security benefits, Postal rules, DEA controlled substances and CMS Medicare/CLIA. Followups cover publication stages, effective/comment windows, discovered RINs and CFR scopes, endangered-species continuation, four new FAR/DFARS histories, and fire-prevention proclamations/foster-care executive orders including exact EO14379 recovery. Complete PHMSA/FRA/Postal/SSA comment scans match **3/12/1/0 indexed records**; three discovered earliest deadlines match full details. Four independent docket/quoted-text unions and three exact public-inspection filter sets passed.
-
-**FR-R6-001, P3:** “Which Coast Guard streamlined-inspection guidance comment periods are still open?” Actual published 1.0.14 CLI/public returns `total_open: 0`, `complete: true`, no verification guidance. Its description claims currently open periods and a true government-wide count. Official reopening notice **2026-19895** has indexed `comments_close_on=2026-08-24` but publication DATES says submissions are accepted through **October 29, 2026**; original notice 2026-17216 closed September 23. Existing docket search `USCG-2026-0041` returns three records, and full detail exposes the reopening DATES. The upstream metadata exclusion remains a source limitation; the application’s scope/exhaustiveness overclaim and missing zero-result recovery are corrected.
-
-Candidate 1.0.15 explains source-indexed counts/scan completeness in the description and always returns `deadline_source` and `deadline_verification_note`, including zero results. It guides docket/subject search, full DATES/linked publication and later-extension checks. It preserves raw zero, dates, ordering, limits and existing scan/lower-bound fields; it does not invent a corrected controlling date or claim a complete deadline crawler. Only one tool description changes; all eight names, input/output schemas and annotations remain unchanged. No manual directory republication is required; actual client propagation has not been observed.
-
-Two real-source guidance regressions failed before while an accurate-source control passed; all three pass after, along with four retained scan/limit/lower-bound regressions. The installed candidate wheel completed all **72 actual CLI originals/followups**: 69 corpus calls and the three-step maritime recovery. The 69-call replay preserved every substantive prior field; four open-comment answers intentionally add verification fields. Candidate recovery still reports zero indexed records, then finds the notice and October 29 DATES through the supported tools. This is candidate evidence, not published 1.0.15 acceptance.
-
-Primary evidence includes **73 parsed official API captures**, **four raw publication-text files**, a separately saved fresh raw JSON complete maritime-docket response, and **four retained fresh Round 6 peer raw JSON/XML captures** for the original and reopening notices, with owner/request-time/hash receipts. The shared captures are not duplicate FR requests. Metadata/text checks distinguish PHMSA effective October 28 from voluntary September 28 compliance, DEA November 9 effectiveness from October 9 publication, CLIA December 7 comments, and FWS October 5 findings without inventing an effective date. Batch comparisons omit the documented `images`/`images_metadata` fields and compare every remaining field by document number. Parsed JSON request windows are bounded by process logs rather than falsely claiming exact per-request timestamps. Publication dates/text do not adjudicate present legal force.
-
-The actual candidate frozen **Python 3.14.3/MCP 2.0** lane (`PYTHONPATH=src uv run --frozen pytest -q`) measured **184 passed / 105 live-gated skipped / 289 collected** in 12.53 seconds. The separate installed candidate **Python 3.12.13/MCP 2.3** full lane measured **124 passed / 60 failed / 105 skipped / 289 collected** in 15.23 seconds; the 60 retained legacy negative/error-expectation failures remain distinct from passing ordinary calls. Initial test-harness source-import and missing-Hypothesis errors are retained and excluded from product failures. The earlier actual published Round 5 SDK 2.3 result **121/60 failed/105/286** remains historical, not a new full baseline run. No new full live-suite run or generic SDK negative campaign is claimed.
-
-Wheel/sdist builds, scoped version/payload parity, new-version PyPI guard, eight-definition contract, Worker type check and bundle dry-run pass. The 500-document scan, 100-result limit, 1994 API archive floor, text-only case companions and upstream deadline/indexing limitations remain explicit. **New findings P0=0/P1=0/P2=0/P3=1; fixed in candidate, zero partial or unresolved product findings.** Root publication and actual published/live 1.0.15 acceptance remain pending. Evidence: `Artifacts/mcp-e2e-20261010/round6/federal-register`; no Round 7 audit has started.
-
-## Content research round 5 (2026-10-10; published 1.0.14)
-
-A new ordinary and power-user corpus found **zero new P0, P1, P2 or P3 content defects** in **71 public questions across all eight tools**. A fresh uncached official PyPI 1.0.14 installation with Python 3.12.13 and MCP SDK 2.3.0 completed the same **71 actual stdio CLI calls**. All 71 answers matched in substance; 69 were exactly equal. Two details differed only in changing source page-view statistics. No corpus question was excluded or unexecuted.
-
-New coverage included EPA PFAS drinking water, NRC advanced reactors, FCC broadband, Interior offshore leasing, VA claims, Treasury tax reporting, HUD housing, DHS visa fees, State passport/public information, FDA medical devices, FTC non-compete clauses, SEC climate disclosures, CFTC derivatives, FDIC deposits and CFPB financial data. Followups narrowed publication stage, effective/comment dates, CFR title/part and discovered RINs, continued EPA paging, read selected details/batches and traced four new FAR/DFARS cases. Complete EPA/NRC/FCC/VA comment scans matched the official 41/22/43/19 records (125 total); all four soonest deadlines were verified in their full publications.
-
-Primary comparisons retained **75 parsed official API captures** and **three original raw text files**: EPA drinking-water limits, FTC non-compete clauses and SEC climate disclosures. Four complete docket/quoted-text unions with match provenance and three exact current public-inspection filter sets passed. Source batch order differs, so records were compared by document number; the tool's documented omission of image metadata and dynamic page views were qualified. Publication text/dates do not establish current legal enforceability outside this source.
-
-The frozen MCP 2.0 suite passed **181 with 105 live-gated skips (286 collected)** in 13.29 seconds. The separate actual published-package MCP 2.3 lane measured **121 passed, 60 failed and 105 skipped (286 collected)** in 14.98 seconds. Its 60 failures are existing validation/error-expectation tests (52 validation, six round-6 and two round-8 cases), distinct from the successful ordinary content calls. Failed node IDs/logs remain an unresolved test-lane compatibility observation, not an all-tests-pass claim or 60 content findings. No broad invalid-input or SDK remediation audit was performed. The historical 286-test full live run remains historical; no new full live-suite run is claimed.
-
-All eight installed runtime modules matched current source, both official PyPI wheel/sdist downloads matched official byte sizes/SHA256 and were not yanked, and the eight tool definitions remained unchanged. The 500-document comment scan, 100-result return limit, 1994 archive floor, text-only case companions and changing public-inspection/page-view data remain source bounds. No runtime, package version or listing change was needed. Evidence: `Artifacts/mcp-e2e-20261010/round5/federal-register`.
-
-## Content research round 4 (2026-10-10; published 1.0.14)
-
-A new corpus found **zero new P0, P1, P2 or P3 defects** in **63 valid public questions across all eight tools**. Sixty-four attempts include one excluded audit selection that requested an unrelated agriculture document; the correct school-meal publication was then read. Every valid question completed a primary-source comparison. Coverage included Defense cybersecurity and Buy American rules, SBA size and 8(a) research, Commerce export corrections, Labor salary rules, HHS grants, Transportation infrastructure, DOJ accessibility and its later compliance-date extension, Energy efficiency, Agriculture school meals, the 1994 archive and presidential workforce/steel actions. Useful followups narrowed type, CFR location, effective/comment dates and discovered RINs, completed pages and read selected rules and their original texts.
-
-A fresh uncached official PyPI 1.0.14 installation with MCP SDK 2.3.0 completed **63 actual stdio CLI calls**. All 63 answers matched public answers in substance; 62 were exactly equal. One detail differed only in the source's page-view update timestamp, with the same count and substantive document fields. Four independent case-history docket/quoted-text unions and three exact current public-inspection filter sets passed. Two joint FAR Council agency sets passed. Transportation's complete 178-record source scan was read across both pages, sorted by actual comment dates and compared with the tool's disclosed 100-result cap. Four original texts were inspected: DOJ web accessibility, Labor salary thresholds, Agriculture meal patterns and the 2026 accessibility compliance extension.
-
-The source harness initially compared Transportation's capped deadline list with only its first source page, then omitted comment dates in the API's default field projection. Both assumptions were corrected through complete source paging and explicit date fields; they are not product findings. The unrelated agriculture selection and its initial text are retained but excluded. No unavailable source check is credited as a pass.
-
-The current offline suite passed **181 tests with 105 live-gated skips**, with **286 collected**, in 13.18 seconds. Wheel/sdist builds, the unchanged eight-tool contract, all eight installed source-module hashes, and both actual official PyPI artifact hashes/sizes/non-yanked states passed. No runtime change, version bump or new regression test was needed; no new full 286-case live suite is claimed.
-
-This is a sampled content result. Workflow scans remain bounded at 500, deadline return caps remain explicit, and the API archive starts in 1994. Full-text keyword matches can include companion mentions; precise filters and case provenance help narrow them. Weekend public inspection is a current prepublication snapshot. Publication dates and inspected rule text do not establish legal status outside the Federal Register, and mutable page-view metadata can differ within cache windows. Evidence: `Artifacts/mcp-e2e-20261010/round4/federal-register`.
-
-## Content research round 3 (2026-10-10; published 1.0.14)
-
-A new corpus of **54 public calls across all eight tools** found **zero new P0, P1, P2 or P3 defects**. All 54 valid calls completed primary-source comparisons; no content-call mistakes or unavailable source checks were counted as passes. Coverage included VA acquisition and information-security rules, EPA PFAS drinking-water standards, HUD housing, NRC licensing, Treasury sanctions, FEMA disaster notices, SBA disaster loans, tariffs and proclamations, significant proposals, 2009 commercial acquisition rules, case/FAC histories, agency discovery, public inspection, deadline monitoring, facets, document details and batch followups. Broad full-text queries were refined with CFR, type, date and exact executive-order-number followups.
-
-Four agency deadline sets were checked in full: EPA 41 documents, NRC 22, VA 19 and HUD 22, each with correct source counts, identities and deadline order. Seven additional independent checks verified four complete docket-plus-quoted-text case unions and their match provenance, and three exact public-inspection agency/keyword sets. Four original source texts were captured with hashes and checked for effective dates, obligations or executive-order identity: VA 2023-00586, PFAS 2024-07773, Brazil tariff order 2025-21417 and legacy FAR document E9-532. Every primary API comparison retains its source URL, response capture and hash.
-
-Separate delivery checks freshly installed official PyPI `federal-register-mcp==1.0.14` without a package cache, using MCP SDK 2.3.0, and invoked its actual installed stdio CLI. All **54 CLI answers equaled their public counterparts**. Both eight-tool catalogs matched the reviewed contract. Source wheel/sdist builds and official published-wheel payload parity passed. Current Python 3.12 offline validation passed **181 tests with 105 explicit live-gated skips; 286 collected**, in 13.52 seconds. No new full 286-case live run is claimed; the earlier full live result remains historical evidence below. No runtime edits, new tests, package bump or republishing were needed.
-
-This conclusion covers the inspected corpus. Government-wide comment scans remain bounded at 500 with incomplete-scan or lower-bound disclosure; the four narrower agency sets above were complete. The API archive begins in 1994, and earlier issues require GovInfo. Full-text keyword searches can return related mentions, and case-history text matches can include companion publications; refinement and match provenance remain important. Public inspection reflects the current business-day queue, including the October 10 weekend snapshot. The four inspected original texts do not establish universal full-text coverage. Evidence is retained under `Artifacts/mcp-e2e-20261010/round3/federal-register`.
-
-## Content research round 2 (2026-10-10; published 1.0.14)
-
-This round tested ordinary-user and power-user research on the actual public service and the published package across all eight tools. It found **zero new P0, P1, P2 or P3 defects** in the completed corpus. Fifty public tool attempts produced 49 valid calls and 45 completed source-comparison rows. One caller mistake (`slim=False` instead of `include_detail`) was excluded. Four initial source-harness issues were corrected and rerun: two comparisons omitted the official API's explicit newest-first order, and two zero-result responses caused the harness to assume a missing `results` key. These are retained as audit-method errors, not server findings.
-
-Coverage included DFARS cybersecurity rules, SBA size standards and 13 CFR 121, Labor effective dates, GSA/GSAR comment deadlines, OFR corrections, significant rules, procurement executive orders and proclamations, the 1995 archive and pagination, FAR/DFARS/GSAR case and FAC histories, public-inspection agency descendants and keywords, type/month/agency/topic facets, and single-document and batch followups. Eleven independent semantic checks passed, including case-history source unions, match provenance, public-inspection filtering and deadline completeness. Two additional FAR Council comparisons used official agency records to verify joint DoD/GSA/NASA filings. Four official full-text documents were saved and checked: 2025-17359, 2025-06839, 2026-19546 and 2026-19331.
-
-Separate delivery checks freshly installed the official PyPI `federal-register-mcp==1.0.14` package with MCP SDK 2.3.0 and invoked its actual stdio CLI. All **45 installed CLI answers equaled the corresponding public answers**; both catalogs exposed the same eight tool definitions. Source wheel/sdist builds and published-wheel payload parity passed. No runtime edits, version bump or new regression tests were needed. The unchanged suite contains **286 collected tests**; the earlier 1.0.14 offline run passed 181 with 105 live-gated skips, and its earlier full live run passed all 286 in 234.86 seconds. Those are historical results, not a new full-suite run in this content round.
-
-The zero-new-findings result is bounded by this corpus. Broad government-wide and FAR comment scans remain capped at 500 documents and disclose incomplete scans or lower-bound counts; narrower deadline and agency followups were checked. The API archive begins in 1994, while earlier Federal Register issues require GovInfo. Case-history text matches can include related or companion mentions, with match provenance disclosed; docket and RIN followups were retained. Upstream publication timing and pagination remain source constraints. An independent peer review reconciled the public, installed-CLI and primary-source evidence without identifying a new defect.
-
-## Executive Summary
-
-This Model Context Protocol server exposes the Federal Register API as 8 callable tools for rulemaking tracking, FAR case history, comment-period monitoring, and regulatory research since 1994. It was hardened across nine audit rounds, including the round 7 live anchors and round 8 content-test fixes: an initial hardening pass that fixed 17 findings, a retroactive deep audit that surfaced 12 more hidden bugs, a Hypothesis property-testing round, and a round 6 correctness audit against the live archive and the API's own OpenAPI spec that surfaced 12 further verified findings. Two signature findings, one per methodology era: a pydantic validation crash on every `list_agencies` call that was invisible to unit tests awaiting raw coroutines instead of invoking through the FastMCP pipeline, and a document-number validator that rejected the entire pre-2011 archive because prior rounds only ever tested junk inputs, never legacy-real ones. The MCP ships with 286 regression tests (181 offline plus 105 live-gated).
-
-| Metric | Value |
-|---|---|
-| MCP tools exposed | 8 |
-| Total regression tests | 286 (181 offline, 105 live-gated) |
-| Audit rounds completed | 9 |
-| Historical items addressed through round 6 | 44 (17 initial, 1 cross-fix, 12 deep audit, 2 round 5, 12 round 6) |
-| Current release | 1.0.14 |
-| PyPI status | Published as `federal-register-mcp`, auto-publishes via Trusted Publisher on tag push |
-
-## 1.0.3 Safety Release Verification
-
-The complete offline suite passed 132 tests with 100 live tests gated. Shared
-pacing tests additionally verified cross-process serialization, override
-validation, keyless-service protection, and `Retry-After` handling. No federal
-API was called.
-
-## What Was Tested
-
-The MCP exposes 8 tools covering the Federal Register API surface. Testing covered all of them end-to-end.
-
-**Core:** `search_documents`, `get_document`, `get_documents_batch`, `get_facet_counts`
-
-**Reference:** `list_agencies`, `get_public_inspection`, `open_comment_periods`
-
-**Workflow:** `far_case_history`
-
-Each tool was exercised for argument validation, input sanitization, date format checking, empty-input detection (empty strings, empty arrays, whitespace-only), payload size bounds, response-shape guarantees, error translation (including stripping HTML from 404 bodies), and real-world data handling against the live public Federal Register API.
-
-## How It Was Tested
-
-### Testing discipline
-
-Prior unit tests in v0.1.x awaited raw coroutines directly, which bypassed the FastMCP tool pipeline and its pydantic return validation. This was the failure mode that hid the `list_agencies` crash: FastMCP validates every tool's return against its type annotation, but the 0.1.1 smoke test awaited the raw coroutine and never triggered the validation layer. The hardening program switched to invoking tools through `mcp.call_tool(name, kwargs)` the way a real MCP client does. That change surfaced the pydantic crash that had been present since v0.1.
-
-### Audit rounds
-
-| Release | Context | Findings |
-|---|---|---|
-| 0.1.1 | Initial release with unit tests | Smoke test said OK (wrong) |
-| 0.2.0 | First real hardening pass through `mcp.call_tool` pipeline | 17 findings fixed (list_agencies crash, payload bombs, basic validation) |
-| 0.2.1 | Cross-MCP `extra='forbid'` back-port from sam-gov-mcp 0.3.1 | 1 cross-fix applied |
-| 0.2.2 | Retroactive deep audit with live-gated suite | 12 additional findings including `far_case_history` docket matching, `get_documents_batch` empty arrays, `get_facet_counts` validation gaps |
-| 0.2.6 | Round 5: Hypothesis property punishment (500 examples per property) plus 100+ live calls | 2 P2 None-handling crashes fixed |
-| 1.0.0 | MCP Python SDK v2 migration, no tool behavior change | Suite re-verified against SDK 2.0 |
-| 1.0.1 | Round 6: correctness audit, contract diff against the API's own OpenAPI spec plus ~60 live probes through `mcp.call_tool` | 12 verified findings fixed (pre-2011 archive lockout, open_comment_periods missing the soonest deadlines, FAC partial history, CFR filters absent) |
-
-### Live audit status
-
-The repository includes 105 live-gated regression tests executable via `FR_LIVE_TESTS=1 pytest` covering real document search, single-document fetch (modern and legacy pre-2011 numbers), batch fetch, facet counts, agency listing, public inspection queue, open comment periods, FAR case history (including the FAC 2025-06 completeness check), and CFR title/part filtering. Federal Register is a free, public API with no authentication requirement.
-
-## Issues Found and Fixed
-
-### Priority 1: Crashes and silent wrong data
-
-Fourteen items in this class across initial hardening and deep audit.
-
-**Crashes:**
-
-| Issue | Fix |
-|---|---|
-| **`list_agencies` pydantic crash on every call.** The return type was declared `dict[str, Any]` but the API returns a bare list of 470 agencies. FastMCP validates returns against pydantic schemas and threw a `DictModel` validation error on every call. Prior unit tests missed this because they awaited the raw coroutine and bypassed the validation layer. | Return type changed to `list[dict[str, Any]]` with optional slim-mode field set. Regression test invokes via `mcp.call_tool` to exercise the full pipeline. |
-
-**Payload bombs (known at shipping, fixed in 0.2.0):**
-
-| Issue | Fix |
-|---|---|
-| `get_public_inspection` returned a 170KB payload on unfiltered calls. | Slim-mode field set by default; `include_detail=True` opt-in for full payload. |
-| `open_comment_periods` returned 188KB with a hardcoded `per_page=100`. | `per_page` bounded and slim-mode applied. |
-| `list_agencies` returned a 700KB dump of all 470 agencies with full descriptions. | Slim fields by default plus optional `query` filter and `include_detail` flag. |
-| `search_documents` allowed `per_page=1000`. A single response of roughly 2MB could blow the MCP token cap. | Lowered to `per_page <= 100` with documented guidance. |
-
-**Silent wrong data from deep audit (0.2.2):**
-
-| Issue | Fix |
-|---|---|
-| **`far_case_history(docket_id="x")` returned 65 unrelated documents** via 1-character docket match across all dockets. | Minimum 3-character docket_id enforced. (Round 6 correction to this record: upstream docket matching is token-based, not substring, and no prefix-match logic was ever shipped; the earlier version of this row claimed one was.) |
-| **`get_documents_batch` with empty entries `["", "", ""]` sent `,,` to the API** which returned all 10,000 documents. | Empty and whitespace-only entries rejected; at-least-one-non-empty enforced. |
-| **`search_documents` with a 10,000-character term triggered an HTTP 414 URI Too Large** and the raw HTML response body leaked to the caller. | Term length capped at 500 characters; `_clean_error_body` helper strips HTML from error responses. |
-| **`get_facet_counts` accepted any string as a date.** `"2026/01/01"` was silently ignored (filter dropped) and the tool returned unfiltered data. | Date format enforced as `YYYY-MM-DD` with actionable error. |
-| **`get_facet_counts agencies=[]` silently ignored the filter** and returned the full agency aggregate. | Empty-list rejected; at-least-one-filter enforced. |
-| **`get_facet_counts` reversed date range (`gte > lte`) silently returned `{}`** instead of an error. | Reversed ranges raise actionable error. |
-| **`get_facet_counts` with no filters returned the entire all-time aggregate dataset.** | At-least-one-filter guard enforced. |
-| **`search_documents docket_id=" "` (whitespace-only) was treated as the "All Documents" filter.** | Whitespace stripped and empty-after-strip rejected. |
-| **`search_documents term=" "` had the same problem** and returned everything. | Same whitespace handling applied. |
-
-### Priority 2: Validation gaps
-
-Ten items in this class:
-
-| Issue | Fix |
-|---|---|
-| `search_documents` reversed date ranges silently returned 0 documents. | Reversed ranges raise actionable error. |
-| `search_documents` bad date formats silently passed through (YYYY-MM-DD validator missing). | Validator added. |
-| `search_documents agencies=[]` and `doc_types=[]` silently ignored. | Empty-list rejected. |
-| `search_documents per_page` and `page` were unbounded. | Clamped. |
-| 404 responses leaked raw `<html xmlns...>` body to the caller. | `_clean_error_body` helper strips HTML. |
-| `search_documents docket_id` and `regulation_id_number` accepted arbitrarily long strings (future 414 risk). | Length-clamped. |
-| `get_facet_counts` had parallel validation gaps as `search_documents`. | Same validators applied. |
-| `list_agencies query=""` returned all 470 agencies (fine), but `query=" "` returned 0 (inconsistent). | Whitespace stripped; empty-after-strip returns all. |
-| `get_public_inspection keyword_filter=""` matched everything. | Empty-after-strip treated as "no filter" with clear output flag. |
-| `get_document` accepted `#`, `?`, `&`, `%` in document numbers and produced confusing 404s. | `_validate_doc_number` helper enforces valid shape. |
-
-### Priority 3: Cleanup items
-
-Six items including a stale `USER_AGENT = "federal-register-mcp/0.1.1"`, misleading hardcoded "Verify the document_number" text in 404 messages for agency and facet endpoints, pre-1994 dates silently accepted (the API archive starts in 1994), inconsistent `_strip_or_none` vs length-clamp vs WAF-style validation across tools, and the lack of a live-gated regression suite before 0.2.2. All resolved.
-
-### Helpers added (0.2.2)
-
-The 0.2.2 deep audit introduced a consistent set of input and response helpers reused across all 8 tools: `_strip_or_none`, `_require_min_length`, `_clamp_str_len`, `_validate_doc_number`, `_warn_pre_fr_date`, `_clean_error_body`. Extended date validation, empty-list rejection, and page/per_page clamps were propagated into `get_facet_counts`. The `per_page` cap was lowered from 1000 to 100.
-
-### Round 5 (0.2.6): Hypothesis property punishment
-
-500-example property tests over every validator plus 100+ live calls. Two P2 None-handling crashes fixed (`_validate_doc_number` on None input, `_clean_error_body` on non-string bodies).
-
-### Round 6 (1.0.1): correctness audit against the live archive
-
-A fresh audit with a different question: not "does the server reject bad input" but "does it return the right answers for real input". Method: diff the exposed parameter surface against the API's own OpenAPI spec (`/api/v1/documentation.json`), then verify tool output against direct API calls, all through `mcp.call_tool`. Twelve verified findings, every one carrying a live repro:
-
-| Finding | Fix |
-|---|---|
-| **`get_document`/`get_documents_batch` rejected the entire pre-2011 archive.** The document-number pattern accepted only modern 'YYYY-NNNNN'; the live archive serves 'E9-12940', 'X94-70302', 'Z9-10645', and 2-digit-year forms back to 1994, all verified retrievable upstream while the tools refused them. | Loose URL-safe shape check covering every live-verified family; the API's 404 decides unknown numbers. |
-| **`open_comment_periods` missed the soonest-closing deadlines entirely.** It fetched the `limit` most recently PUBLISHED documents; documents closing the same day (published months earlier) never appeared while the docstring promised soonest-first. | Scans up to 500 open documents oldest-published first, sorts by close date, returns the first `limit`. |
-| **`open_comment_periods` reported the page size as `total_open`** (5 claimed, 985 real). | Reports the API's true count plus `scanned` and `returned`. |
-| **`open_comment_periods` excluded RULE-type documents** (41 interim/direct final rules had open periods at audit time). | RULE added to the type filter. |
-| **`far_case_history` returned a partial set on partial docket hits.** The term fallback fired only on zero: 'FAC 2025-06' returned 1 of 4 documents. | Always runs docket AND quoted-term searches, merges deduped by document number. |
-| **`far_case_history` silently truncated at 100** ('FAR Case' matched 1625). | `truncated` flag plus `docket_matches`/`term_matches` counts. |
-| **`get_documents_batch` N=1 collapsed to the bare document** (no count/results wrapper). | Wrapped client-side as `{"count": 1, "results": [doc]}`. |
-| **`get_facet_counts` doc_types was an unvalidated string list**; `["rule"]` silently returned `{}` (reads as "zero documents") while `["RULE"]` showed 153. | Same PRORULE/RULE/NOTICE/PRESDOCU literal as `search_documents`. |
-| **Pre-1994 guard was asymmetric**: lte dates slipped through silently. | Both sides raise in both tools. |
-| **PI parent-agency filters matched nothing** (PI documents carry only the filing sub-agency; matching was slug-only). | Matches slug, name, and raw name with a hyphens-as-spaces fallback; docstring caveat. |
-| **CFR location filters absent** despite being documented upstream (48 CFR part 52 alone covers 1086 documents). | `cfr_title`/`cfr_part` added to `search_documents` and `get_facet_counts`. |
-| **Facet families daily/weekly/monthly/quarterly/yearly unavailable** though live-verified working. | Facet literal extended. |
-
-**Methodology lesson.** Rounds 1 through 5 tested junk inputs exhaustively (control characters, empty strings, reversed ranges) but never legacy-real inputs: the document-number validator that round 4 shipped as a fix is what locked out 17 years of archive. And output risk was framed entirely as payload size (the slim-mode pattern) while result correctness went unchecked: `open_comment_periods` could pass every existing test and still miss every deadline closing this week. Round 6's rule: for each tool, verify at least one known-real answer end-to-end against the upstream API before hardening inputs.
-
-## Test Coverage
-
-The repo ships 286 collected regression tests (181 offline, 105 live-gated). The 1.0.13 offline lane passed; all 30 round 8 tests also passed with the live gate enabled.
-
-| File | Purpose | Test count |
-|---|---|---|
-| `tests/test_validation.py` | Main regression suite covering rounds 1 through 4 findings, plus live-gated integration tests | 77 |
-| `tests/test_round_5.py` | Round 5 Hypothesis property punishment plus extensive live audit | 105 |
-| `tests/test_round_6.py` | Round 6 correctness findings: legacy document numbers, batch shape, FAR/FAC dual query, open-comment scanning, CFR filters, PI agency matching, plus live confirmations | 46 |
-| `tests/test_audit_r7.py` | Round 7 live contract anchors | 4 |
-| `tests/test_round_8.py` | 1.0.13 content-test fixes, including direct API comparisons | 30 |
-| `tests/test_http.py` | Hosted HTTP catalog and guards | 2 |
-| `tests/test_response_cache_hosted.py` | Hosted cache behavior and invalidation | 9 |
-| `tests/test_throughput.py` | Shared pacing, serialization, and budgets | 9 |
-| `tests/scenarios/stress_test.py` | Round 1 scenarios (retained for reproducibility) | N/A (scenario script) |
-
-Regression tests invoke tools through the FastMCP registry (`mcp.call_tool`). This is the discipline that surfaced the `list_agencies` pydantic crash. An autouse fixture resets the shared httpx client between tests.
-
-## Release History
-
-| Version | Focus | Outcome |
-|---|---|---|
-| 0.1.1 | Initial release with unit tests awaiting raw coroutines; smoke test reported OK but missed the `list_agencies` crash | Baseline (with latent bug) |
-| 0.2.0 | First real hardening pass through `mcp.call_tool` pipeline: 17 findings fixed including the pydantic crash and payload bombs | List-agencies crash fixed; payload-bomb slim-mode pattern introduced |
-| 0.2.1 | Cross-MCP `extra='forbid'` back-port from sam-gov-mcp 0.3.1 | +1 regression test |
-| 0.2.2 | Retroactive deep audit with live-gated suite: 12 additional findings fixed | `far_case_history` docket matching, empty-array batch, facet-count validation gaps resolved |
-| 0.2.6 | Round 5 Hypothesis property punishment plus 100+ live tests | 2 P2 None-handling bugs fixed |
-| 1.0.0 | MCP Python SDK v2 migration; versions and USER_AGENT synchronized | Suite re-verified on SDK 2.0, no tool behavior change |
-| 1.0.1 | Round 6 correctness audit: 12 verified findings fixed; suite grown to 228 tests (132 offline, 96 live-gated) | Pre-2011 archive restored, open-comment and FAR/FAC results made complete and truthful, CFR filters added |
-
-## Cross-MCP Context
-
-This MCP is one of eight servers in the 1102tools federal-contracting MCP suite (`bls-oews-mcp`, `ecfr-mcp`, `gsa-calc-mcp`, `gsa-perdiem-mcp`, `regulationsgov-mcp`, `sam-gov-mcp`, `usaspending-gov-mcp`, and this one). All eight were hardened under the same playbook. Patterns reused or confirmed here:
-
-- **"Raw coroutine vs MCP pipeline" testing discipline** was most clearly demonstrated here. The `list_agencies` pydantic crash was present on every call since v0.1 but was invisible to tests that awaited the raw coroutine. Only invoking through `mcp.call_tool` triggered the FastMCP return validation.
-- **Payload-bomb slim-mode pattern** (`include_detail=False` by default, opt-in for full payload) was applied here to `list_agencies`, `get_public_inspection`, and `open_comment_periods`, and reused across the suite.
-- **`extra='forbid'` cross-fix** back-ported from sam-gov-mcp 0.3.1 in 0.2.1.
-- **`_clean_error_body` helper** to strip HTML from 404 responses was codified here and reused in other MCPs that face similar raw-HTML leaks.
-
-## What Was Not Tested
-
-- **Rate-limit behavior.** Federal Register does not document numeric limits. The MCP now applies a provisional 3-second cross-process gate to every request and honors `Retry-After` without automatic retries.
-- **Pre-1994 documents.** The API archive starts in 1994, so the MCP rejects earlier publication filters. The Federal Register itself began in 1936; earlier issues are available in [GovInfo’s digitized archive](https://www.govinfo.gov/features/digitized-federal-register-final).
-- **Historical agency reorganizations.** When an agency is merged or renamed, historical documents may appear under the old agency slug. The MCP passes through the Federal Register API's agency mapping but does not back-fill historical relationships.
-- **Public inspection queue timing.** The public-inspection queue changes throughout the day. The MCP returns the queue as of the call; real-time updates are not pushed.
-
-## Verification
-
-All testing artifacts are in the repository. The methodology and fixes are reviewable commit-by-commit in git history. The regression test suite runs via `pytest` in the repo root and can be re-executed by anyone. The live suite runs with `FR_LIVE_TESTS=1 pytest` and requires no API key (Federal Register is a free, public API).
-
----
-
-**Testing Methodology**
-
-Evaluators: James Jenrette, 1102tools, with Claude Code Opus 4.7 (1M context, max effort, Claude Max 20x subscription) during the hardening playbook execution.
-
-Testing spanned six rounds from initial hardening (17 findings including the pydantic crash and payload bombs) through cross-MCP `extra='forbid'` application, a retroactive deep audit (12 additional findings), Hypothesis property punishment (round 5), and a round 6 correctness audit against the live archive and the API's own OpenAPI spec (12 verified findings). The live regression suite runs against the production Federal Register API when enabled with `FR_LIVE_TESTS=1`.
-
-Test count: 286 collected regression tests (181 offline, 105 live-gated). Historical items addressed through round 6: 44. Current version: 1.0.14. PyPI: `federal-register-mcp`.
-
-Source: github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/federal-register-mcp. License: MIT.
-
-
-## Round 7 (2026-08-18): suite-wide live verification (super-cycle)
-
-The full live-gated suite ran wholesale against production for the first time
-(historically prevented by key quotas): 228 passed (full live pass, 1m22s). No new server
-defects. Added `tests/test_audit_r7.py`: 4
-one-call-per-test live contract anchors re-stamping this server's headline
-fixes against production (all verified green on landing), a suite-wide pacing
-conftest with a `live_smoke` marker, and a per-test client reset so batched
-live runs cannot hit the cached-AsyncClient/closed-event-loop trap.
-
-## RC5 pacing remediation (2026-08-22)
-
-Version 1.0.4 carries the suite-wide asynchronous pacing-lock correction. The full offline lane passed (132 tests; 100 live-gated tests skipped), including deterministic same-process concurrency coverage. The published PyPI wheel was then installed in an isolated cache and completed MCP startup and `tools/list` with 8 tools.
-
-## 1.0.13 content-test verification (2026-10-10)
-
-FAR Council co-filing, presidential filters and fields, public inspection
-agency descendants, page limits, capped counts, batch order, correction
-guidance, and case-history match provenance.
-
-The full Python 3.12 offline suite passed 177 tests with 105 live-gated
-tests skipped. All 30 tests in `test_round_8.py` passed with the live flag
-enabled, including 5 comparisons against the government API. All 19 findings
-repro gates passed against the live government API. Hosted tool
-contract checks, version validation for all nine packages, and all 64 release
-guard tests passed. The Worker type check passed; this Worker has no npm test script.
-
-## 1.0.14 content audit (2026-10-10)
-
-The broad government-wide open-comment call reported 1,040 matching documents and scanned 500. Its first 100 results reached October 15 but omitted document 2026-19904 closing October 13, confirmed by a deadline-window search against the official Federal Register API. The existing docstring disclosed the scan limit, but the returned answer lacked an explicit completeness indicator and warning; it also dropped FAR Council lower-bound metadata. Answers now carry `complete`, `truncated`, an incomplete-scan note, and the underlying FAR metadata when applicable. The scan limit remains a documented source-coverage limitation; deadline-window searches provide the follow-up route.
-
-Four new MCP-pipeline regressions all failed against 1.0.13 and passed after the fix. Python 3.12 offline validation: **181 passed, 105 live-gated skipped; 286 collected**. The source hosted contract check confirmed all eight published tool definitions are unchanged. Source distribution and wheel builds succeeded. A reproducible 12-question scenario in `tests/scenarios/content_audit_20261010.py` exercises every tool and retains full answers for comparison.
-
-The full live suite identified an old smoke-test assertion that parsed every date in JSON, mixing publication and closing dates. It now checks `comments_close_on` and `as_of` directly. This is a test defect, not a server deadline-sort defect. The evidence directory records the original run and corrected reruns.
-
-Final Python 3.12 full live-gated rerun: **286 passed in 234.86 seconds**, including every official API comparison and the corrected smoke assertion. All 12 realistic workflows passed. The installed wheel’s eight tool definitions matched the hosted baseline.
-
-The deployment dev-toolchain audit reported four high-severity package entries through Wrangler 4.129.1 (Wrangler, Miniflare, Undici, Sharp). Wrangler was upgraded to 4.149.0; the frozen npm audit reports **zero vulnerabilities**, type generation and TypeScript check pass, and Worker bundle dry-run passes with `--containers-rollout=none`. Full container dry-run requires a local Docker CLI, unavailable on this host; CI remains the container-image gate. No npm test script is declared for this Worker.
+Earlier audit rounds and fixes are in this file's git history and in [changelog.md](changelog.md).

@@ -8,15 +8,7 @@ Free, open-source MCP server for the Federal Register API. Proposed rules, final
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Tested and hardened through nine audit rounds and integration testing against the live Federal Register API. 295 collected regression tests (190 offline, 105 live-gated) covering the `list_agencies` pydantic crash that hit every call, payload bombs, silent-wrong-data docket matches, the pre-2011 archive lockout, and open-comment results that missed the soonest deadlines, FAR Council agency mapping, presidential filters, parent-agency public inspection, and page limits. See [testing.md](testing.md) for the full testing record.*
-
-The targeted SDK 2.3 correction is published and accepted in 1.0.16. Ordinary CFR and paging errors now retain actionable recovery guidance; unexpected faults remain masked under SDK 2.3. A fresh official PyPI installation passed 190 tests with 105 optional live skips (295 collected), and three actual console/public originals plus three valid recoveries matched exactly. The retained frozen SDK 2.0 source suite also passed 190 with 105 skips. See [the published SDK correction record](testing.md#actual-published-sdk-23-acceptance-2026-10-10-1016).
-
-The final October 10, 2026 contracting content round found zero new P0–P2 defects in 75 genuinely new inputs across all eight tools, with five prior controls kept separate. A fresh official PyPI 1.0.16 CLI and the public service completed 83 calls each, covering 80 distinct inputs: 78 answers matched exactly; two differed only in the explicit local/public `as_of` date across UTC midnight, with identical documents, deadlines and counts. Seven case unions, complete source-indexed queues, effective-date and submission-instruction followups passed. Both fresh SDK 2.3 and frozen SDK 2.0 suites passed 190 with 105 optional live skips (295 collected). See [the final contracting record](testing.md#final-contracting-content-round-7-2026-10-10-published-1016) for source limits and comparison qualifications.
-
-The October 10, 2026 content research round 3 found zero new defects in 54 ordinary and power-user calls across all eight tools. All 54 public answers matched primary-source comparisons, and all 54 answers from a fresh official PyPI 1.0.14 CLI installation matched the public service. The current offline suite passed 181 tests with 105 live-gated skips; no new full live-suite run is claimed. See [the round 3 record](testing.md#content-research-round-3-2026-10-10-published-1014) for coverage and source limits.
-
-The October 10, 2026 content research round 4 found zero new defects in 63 valid public questions across all eight tools. A fresh official PyPI 1.0.14 stdio CLI matched all 63 answers in substance (62 exactly; one source page-view timestamp differed). Current verification passed 181 offline tests with 105 live skips, distinct from the new content corpus. See [the round 4 record](testing.md#content-research-round-4-2026-10-10-published-1014) for source comparisons, corrected audit selections and coverage limits.
+*295 regression tests, including live checks against the Federal Register API. The October 2026 releases were also checked with realistic contracting questions (comment deadlines, FAR case histories, FAR Council co-filings). See [testing.md](testing.md).*
 
 ## Local or hosted
 
@@ -25,13 +17,9 @@ The October 10, 2026 content research round 4 found zero new defects in 63 valid
 | [Local setup](#installation) | [Install](https://claude.ai/directory/federal-register-by-1102tools) | Coming soon |
 
 - **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
-- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
+- **Hosted** needs no setup or keys and works in Claude or ChatGPT anywhere.
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#federal-register)
-
-The October 10, 2026 content research round 5 found zero new content defects in 71 ordinary questions across all eight tools. A fresh official PyPI 1.0.14 stdio CLI matched all 71 public answers in substance (69 exactly; two dynamic page-view differences). Complete EPA/NRC/FCC/VA comment scans and deadline-to-document followups passed. Frozen tests passed 181 with 105 skips; the separate MCP 2.3 published-package lane retained 60 legacy validation/error-expectation failures (121 passed, 105 skipped). See [the round 5 record](testing.md#content-research-round-5-2026-10-10-published-1014) for primary evidence, source bounds and execution distinctions.
-
-The October 10, 2026 content research round 6 completed 71 genuinely new questions across all eight tools, plus one prior control excluded from new coverage. Actual fresh official PyPI 1.0.15 and public acceptance completed 72 CLI and 72 public calls, all exactly equal. The P3 comment-source scope/recovery correction is published and accepted: zero indexed results now guide docket/detail verification, recovering the Coast Guard October 29 DATES deadline while preserving August 24 metadata. All eight runtime modules and catalogs match release source 881bad8f; both official artifact size/hash checks pass. The actual published SDK 2.3 suite measured 124 passed/60 failed/105 skipped out of 289; the same 60 legacy negatives remain separate from passing ordinary content. The retained frozen candidate result is 184 passed/105 skipped, not a new published run. See [the actual published record](testing.md#actual-published-round-6-acceptance-2026-10-10-1015).
 
 ## What it does
 

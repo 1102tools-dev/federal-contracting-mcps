@@ -1,10 +1,9 @@
 # Test suite map
 
 295 collected tests (190 offline, 105 live-gated), counted by pytest collection
-including parametrized cases. Files are named by the audit round or fix-wave that
-produced them and are append-only history: each maps to a section of
-[../testing.md](../testing.md), which narrates what every round found and
-fixed. That traceability is deliberate; do not consolidate or rename rounds.
+including parametrized cases. Files are named by the audit round or fix release
+that produced them; keep those names so each test traces back to its fix in
+git history. [../testing.md](../testing.md) explains how to run them.
 
 | File | Origin and purpose | Tests | Live |
 |---|---|---|---|
@@ -20,7 +19,7 @@ fixed. That traceability is deliberate; do not consolidate or rename rounds.
 | `test_response_cache_hosted.py` | Hosted response caching, expiry, and issue-date invalidation | 9 | 0 |
 | `test_throughput.py` | Shared pacing, cross-process serialization, and budgets | 9 | 0 |
 
-Live tests need `FR_LIVE_TESTS=1; keyless API`, are paced automatically by `conftest.py` (which
+Live tests need `FR_LIVE_TESTS=1` (no API key), are paced automatically by `conftest.py` (which
 also resets the cached async client per test so batched live runs cannot hit
 the closed-event-loop trap), and the minimal one-call-per-test anchor set
 runs via `pytest -m live_smoke`.
