@@ -121,7 +121,7 @@ export async function searchEntities(db: Database, args: Args) {
   if (args.cage_code !== undefined && !cage) throw new ToolError("cage_code cannot be empty.");
   exact("e.uei", uei); exact("e.cage_code", cage);
   const name = text(args, "legal_business_name");
-  if (name) {where.push("e.legal_business_name LIKE ? ESCAPE '\\' COLLATE NOCASE"); params.push("%" + name.replace(/[\\%_]/g, "\\$&") + "%");}
+  if (name) {where.push("instr(lower(e.legal_business_name), lower(?)) > 0"); params.push(name);}
   exact("e.primary_naics", naics(args, "primary_naics"));
   const anyNaics = naics(args, "any_naics");
   if (anyNaics) {where.push("e.entity_id IN (SELECT entity_id FROM entity_naics WHERE code = ?)"); params.push(anyNaics);}

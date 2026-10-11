@@ -55,6 +55,21 @@ test("name partial matching treats SQL wildcard characters literally", async () 
   assert.equal((await searchEntities(db, {legal_business_name: "' OR 1=1 --"})).totalRecords, 0);
 });
 
+test("literal entity names fit the input contract without D1's 50-byte LIKE limit", async () => {
+  const {db, sqlite} = database();
+  // Enforce the documented D1 limit in the real SQLite test backend.
+  sqlite.function("like", {varargs: true}, (pattern: any) => {
+    assert.ok(Buffer.byteLength(String(pattern)) <= 50, "D1 LIKE pattern exceeds 50 bytes");
+    return 0;
+  });
+  for (const name of ["Long Legal Company Name ".repeat(4) + "100%_\\LLC", "A".repeat(200), "é".repeat(30) + " ASCII_%\\LLC"]) {
+    sqlite.prepare("UPDATE entities SET legal_business_name=? WHERE uei=?").run(name, "ABCDEFGHIJK1");
+    const result = await searchEntities(db, {legal_business_name: name.toLowerCase()});
+    assert.equal(result.totalRecords, 1);
+    assert.equal(result.entityData[0].entityRegistration.ueiSAM, "ABCDEFGHIJK1");
+  }
+});
+
 test("source metadata and both caveats accompany no matches and unloaded responses", async () => {
   const result = await searchEntities(database().db, {uei: "XXXXXXXXXXXX"});
   assert.equal(result.file_name, "SAM_PUBLIC_UTF-8_MONTHLY_V2_20261001.ZIP");
