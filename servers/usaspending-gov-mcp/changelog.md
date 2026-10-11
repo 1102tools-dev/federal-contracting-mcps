@@ -1,856 +1,135 @@
 # Changelog
 
+Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
+
 ## 1.0.23
 
-- Preserve specific expected user-input recovery messages on supported MCP SDKs using an explicit input-error marker compatible with direct ValueError callers and client-visible ToolError handling. Recipient UEI, supported pagination and required date-window originals retain their existing guidance; unknown source/parser/programming failures keep their existing SDK masking.
-- Correct retained operational test expectations to assert strict SDK wrappers and original causal status/detail/cleaning, without claiming internal causes are client-visible recovery hints. Names, schemas, annotations, descriptions, financial payloads and source queries remain unchanged.
-- Add captured ordinary-workflow regressions and unexpected-fault masking controls. Both measured Python 3.12.13 full lanes (frozen MCP 2.0.0 and installed candidate-wheel MCP 2.3.0) give 1,943 passed / 379 skipped / 2,322 collected, with all 855 prior failed IDs passing. Publication and actual published-package acceptance remain pending coordinator review and release.
+Input mistakes (for example, a bad recipient UEI, an unsupported page, or a missing date window) again return a specific message saying how to fix the request under MCP SDK 2.3, instead of a generic error. Unexpected failures stay masked. Tools and answers are unchanged.
 
 ## 1.0.22
 
-- Explain default award-date windows as source interval overlap rather than proof of an action inside the window. Preserve returned award rows, counts, amounts and existing DoD reporting notes; guide actual dated transaction pagination and distinct-award recovery.
-- Correct the four date-scope tool descriptions, distinguishing award filters from transaction obligation aggregates. Existing names, schemas, annotations and hosted identity remain unchanged.
-- Add three official-source regressions: published 1.0.21 gives two failures and one unchanged control pass; candidate correction passes all three. Frozen Python 3.12 / MCP 2.0 suite: 1,939 passed, 379 skipped. Installed candidate MCP 2.3 suite: 1,084 passed, 855 retained legacy negative-expectation failures, 379 skipped; all 855 failed IDs match published 1.0.21. Publication and broad Round 6 closure remain pending.
+Award-date answers now explain that a default date window matches awards active during it, not proof of an action inside the window, and point you to transaction search for actual dated activity. Four tool descriptions are corrected to match.
 
 ## 1.0.21
 
-- Correct NAICS discovery guidance: count actual retired source rows separately from current matches omitted by the requested result limit. Explain larger-limit recovery without misclassifying current codes as retired.
-- Preserve source code/name/order, existing retirement filtering, unexpected errors and all 55 tool definitions. Captured construction taxonomy reproduces ten omitted current codes and zero retired codes; a genuine retired research-code control preserves three excluded historical codes.
-- Publication remains pending the full Round 5 content audit, independent review and root serial release.
+NAICS lookups now count genuinely retired codes separately from current codes left out only by your result limit, and suggest raising the limit to see the rest.
 
 ## 1.0.20
 
-- Preserve the official available-year explanation for a normal explicit fiscal-year federal-account request rejected by the source, and guide omission of the unavailable year plus checking returned `fy`. Use a purposeful tool error so supported MCP SDK2.3 clients receive this explanation.
-- Match only the actual source HTTP400 available-year response and a requested year outside its dynamically returned range. Preserve other errors, financial values and all55 tool definitions.
-- Add three captured-primary regressions: the SDK2.3 source-message check fails before, recovery/503 controls pass before, all three pass after on SDK2.0 and SDK2.3. Frozen source suite: 1,933 passed, 379 skipped, 2,312 collected. The separate published1.0.19/latestSDK full lane remains 1,075 passed, 855 failed, 379 skipped; no blanket SDK expectation repair is claimed.
+When you ask for a federal-account fiscal year the source does not have yet, the answer keeps USAspending's explanation of available years and suggests dropping the year and checking the returned `fy`.
 
 ## 1.0.19
 
-- Carry the four reviewed 1.0.18 content corrections into a new release version after the immutable 1.0.18 release attempt stopped at an offline throughput timing test; publication and deployment were skipped.
-- Content runtime and all 55 tool definitions remain unchanged from reviewed 1.0.18. Release remains gated on a separately reviewed test-only repair of reservation timing versus later body entry; the exact failed-run timing cause remains unknown.
+Republishes the 1.0.18 content corrections under a new version after the 1.0.18 release stopped on a test timing issue. No tool changes from 1.0.18.
 
 ## 1.0.18
 
-- Disclose that federal-account program activities span all reported years, contain no dollar amounts and do not apply a requested fiscal year.
-- Retrieve program-list pages internally, up to 2,000 records, with explicit completeness; preserve source codes, names and types and existing tool arguments.
-- Correct catalog guidance for agency budgetary resources (no mandatory/discretionary split) and federal-account default FY (latest available, not necessarily current).
-- Add three captured-source regressions: two fail before, all three pass corrected, with unchanged single-year account financial amounts. Full suite: 1,930 passed, 379 skipped (2,309 collected).
+Federal-account program lists now say they span all reported years, carry no dollar amounts and ignore a requested fiscal year, and the tool fetches the full list (up to 2,000 records) with a completeness flag. Descriptions now note that agency budgetary resources have no mandatory/discretionary split and that account listings default to the latest available fiscal year.
 
 ## 1.0.17
 
-- Clarify grouped FFATA totals as cumulative reported subawards for matching primes, not fiscal-period subaward rankings; add a requested-window scope note and dated-report recovery guidance.
-- Preserve all source counts, amounts, ratios, prime IDs and pagination. Keep existing tool names, schemas and hosted identity.
-- Add three captured-API regressions: one scope-warning failure before correction, two unaffected source/recovery passes, all three pass corrected. Full suite: 1,927 passed, 379 skipped (2,306 collected).
+Grouped subcontract (FFATA) totals are labeled as cumulative reported subawards for matching primes, not period rankings, with guidance for getting dated reports.
 
 ## 1.0.16
 
-- Correct annual recipient new-award counts to federal fiscal years by summing disjoint, correctly labeled upstream fiscal quarters; preserve quarter/month source results and messages.
-- Correct recipient search/autocomplete descriptions and README follow-up guidance: profiles/trends use recipient hashes, children use the parent UEI/DUNS.
-- Add six real captured-API regressions: two annual cases fail before, four unchanged quarter/month cases already pass, and all six pass corrected. Full suite: 1,924 passed, 379 skipped (2,303 collected).
+Annual new-award counts for a recipient now follow federal fiscal years. Recipient descriptions now say profiles and trends use the recipient hash, while subsidiaries use the parent UEI or DUNS.
 
 ## 1.0.15
 
-- Correct the published descriptions of IDV File C funding and submission-calendar periods to match actual upstream scope.
-- Preserve all tool names, schemas, annotations and the existing hosted endpoint identity.
+Corrects the descriptions of IDV File C funding and submission periods to match what the source actually covers. No tool name or schema changes.
 
 ## 1.0.14
 
-- Extend 90-day procurement lag guidance to geographic/transaction searches, state summaries, recipient new-award timelines and USACE scopes.
-- Clarify File C coverage on award/IDV funding rollups and IDV amount summaries; preserve reported dollars.
-- Explain that submission periods are a reporting calendar, not evidence of agency completion, and label fiscal timeline buckets.
-- Add 36 regressions; 29 fail on 1.0.13 and all pass after correction. All 55 published tool definitions remain unchanged.
+The 90-day DoD procurement delay note now also covers USACE, geographic and transaction searches, state summaries and new-award timelines. File C rollups and IDV summaries explain partial coverage, submission periods are labeled as a reporting calendar, and fiscal timeline buckets are labeled.
 
 ## 1.0.13
 
-- Agency and state queries default to the last completed fiscal year and echo it.
-- PIID lookups check exact contracts and IDVs, identify ambiguity, and label fuzzy fallback.
-- Search, count and aggregates accept date_type, including new_awards_only.
-- Recent DoD results warn about the 90-day publication delay; grouped subaward pagination probes for another row.
-- Recipient and File C responses explain period, overlap and coverage limits; spending tools accept funding agency, competition and pricing filters.
-- Clarify fiscal buckets, lifetime award amounts and the lack of an expiry filter.
+Agency and state queries default to the last completed fiscal year and say so. PIID lookups check exact contracts and IDVs and label ambiguous or fuzzy matches. Searches accept `date_type` (including new awards only), spending tools accept funding agency, competition and pricing filters, recent DoD results warn about the 90-day delay, and grouped subaward paging is fixed.
 
 ## 1.0.12
 
-- Hosted service only: the machine running the service can give the answer cache
-  more room with `MCP_RESPONSE_CACHE_MB` (size in MiB) and
-  `MCP_RESPONSE_CACHE_ENTRIES`. Unset, the sizes are unchanged, so the small
-  Cloudflare backup containers keep the defaults.
-- Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package behaves exactly as
-  before. Tools, schemas, pacing, budgets and cache times are unchanged.
+Hosted service only: the answer cache size can be raised with `MCP_RESPONSE_CACHE_MB` and `MCP_RESPONSE_CACHE_ENTRIES`. The PyPI package is unchanged.
 
 ## 1.0.11
 
-- Hosted service only: answers are filed under USAspending's last load date,
-  read from `/api/v2/awards/last_updated/` at most every 15 minutes, outside the
-  cache. Searches, totals, counts and details filed under that date are kept 24
-  hours; the next nightly load changes the date and retires them, so no answer
-  from an earlier load is served more than 15 minutes after a new one. If the
-  date can't be read, answers use the 1.0.10 times (searches 1 hour, details 6
-  hours) and the date is read again after a minute.
-- Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package behaves exactly as
-  before. Tools, schemas, pacing and budgets are unchanged.
+Hosted service only: cached answers are tied to USAspending's last load date (checked at most every 15 minutes). Searches, totals, counts and details are kept 24 hours or until the next nightly load; if the date can't be read, the 1.0.10 times apply. The PyPI package is unchanged.
 
 ## 1.0.10
 
-- Hosted service only: answer repeat questions from a bounded in-memory copy of
-  USAspending's answers (USAspending reloads nightly). Reference lists,
-  autocompletes and the state list are kept 24 hours; award, IDV, recipient,
-  agency and federal-account details 6 hours; searches, totals and counts 1
-  hour; the last-updated date 15 minutes. A repeat makes no USAspending call
-  and uses no pacing slot or budget; identical questions asked at the same time
-  share one call. Errors and refusals are never kept. 48 MiB total, 4 MiB per
-  answer. `/health` reports cache counts.
-- Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package behaves exactly as
-  before. Tools, schemas, pacing and budgets are unchanged.
+Hosted service only: repeat questions are answered from a bounded in-memory cache (reference lists, autocompletes and the state list 24 hours; award, IDV, recipient, agency and federal-account details 6 hours; searches, totals and counts 1 hour; the last-updated date 15 minutes). Errors are never cached. Off unless `MCP_RESPONSE_CACHE=1`, so the PyPI package is unchanged.
 
 ## 1.0.7
 
-Unifies the hosted HTTP wrapper and existing published tool annotations with the
-canonical package source. Releases can now build PyPI packages and Cloudflare
-images from the same commit, with contract and live version checks.
+The hosted service and the PyPI package now build from the same source.
 
 ## 1.0.6
 
-Fixes shared request pacing locks that could remain held when background
-executor threads changed. Lock acquisition now uses non-blocking attempts with
-async polling, and release stays on the same event-loop thread. This also avoids
-abandoned lock acquisitions when a waiting request is cancelled. Pacing intervals
-and provider cooldowns are unchanged. Regression coverage includes repeated calls,
-upstream errors, cancellation, state-write failures, and cross-process contention.
-See [issue #10](https://github.com/1102tools-dev/federal-contracting-mcps/issues/10).
+Fixes request-pacing locks that could stay held after a cancelled or failed request. Pacing intervals are unchanged ([issue #10](https://github.com/1102tools-dev/federal-contracting-mcps/issues/10)).
 
 ## 1.0.5
 
-Publishes the package under the domain-verified
-`com.1102tools/usaspending-gov-mcp` MCP Registry identity and updates
-project links to the `1102tools-dev` GitHub repository. No tool behavior
-changed.
+Published under the MCP Registry name `com.1102tools/usaspending-gov-mcp`. No tool changes.
 
 ## 1.0.4
 
-Serializes concurrent same-process requests by API identity before acquiring
-the existing cross-process file lock. Adds an opt-in `acquisition-agent` tool
-profile with a stable 20-tool acquisition subset while preserving the complete
-55-tool catalog as the standalone default.
+Fixes concurrent requests in the same process. Adds an opt-in `acquisition-agent` tool profile with a stable 20-tool subset; the full 55 tools remain the default.
 
 ## 1.0.3
 
-Suite-wide API safety release. All four upstream request paths now pass
-through a 3-second default cross-process anti-burst gate. Provider
-`Retry-After` is honored without automatic retries. Version reporting now
-derives consistently from installed package metadata, and publication is
-blocked unless offline tests and wheel inspection pass.
+Safety release: every request waits at least 3 seconds after the last one, and `Retry-After` is honored without automatic retries.
 
 ## 1.0.2
 
-No code changes. Republish to verify the Trusted Publisher pipeline after the repo moved to the 1102tools-dev account.
+No code changes; republished after the repository moved to the 1102tools-dev account.
 
 ## 1.0.1
 
-Round 10 audit release. Two parallel live audits (search/spending/autocomplete
-family and entity/agency/award family) ran every finding through
-`mcp.call_tool` against the production API and fixed 22 verified findings
-(12 search family, 10 entity family) plus 3 search-family blind-spot
-follow-ups caught in the same pass.
-The headline lesson: rounds 1-9 asserted transport success and validator
-self-consistency; round 10 asserted parameter SEMANTICS (does the parameter
-change the output, does the validator match the API's actual contract).
-
-### Documented (field-evidence caveats)
-
-- `search_awards` recipient_name matching includes corporate affiliations:
-  a parent-company search can return joint ventures whose display names
-  share no text with the query (a Hanford JV surfaced under "Leidos" in
-  field testing). The docstring now says to verify names before presenting
-  a definitive list.
-- Large `search_awards` pulls can exceed MCP client payload budgets (a
-  limit=100 pull measured 89.5K characters in field testing); the
-  docstring now recommends paging in batches of 25-30.
-- `get_idv_children` can return zero children for an active vehicle
-  (upstream cross-linking gap); the docstring now says to treat an empty
-  result as a reporting gap, not proof of no orders.
-
-### Fixed (tools that could never succeed)
-
-- `get_recipient_children` never worked in any release: it validated its
-  input as a recipient hash, but the `/recipient/children/` endpoint is
-  keyed by UEI or DUNS and rejects every hash with HTTP 400 (and the
-  endpoint returns a JSON array, which the dict-only response guard would
-  have rejected even on success). The parameter is now `uei_or_duns`
-  (12-character UEI or legacy 9-digit DUNS, hashes rejected pre-network
-  with routing to search_recipients), and the array response is wrapped as
-  `{"results": [...], "total": N}`. Verified live: Lockheed Martin's UEI
-  and DUNS both return its -C child row.
-- `new_awards_over_time` always failed as documented: the API requires
-  `filters.time_period` (HTTP 422 without it), so the minimal
-  recipient-only call could never run. A default range (2007-10-01 through
-  2099-09-30) is now always sent.
-
-### Fixed (silent wrong data)
-
-- `spending_by_transaction` sent `recipient_uei` as the API's
-  `recipient_id` filter, which expects a hash, so every UEI silently
-  returned zero results. Now sent through `recipient_search_text` (matches
-  name, UEI, or DUNS), uppercased. Verified live: a UEI went from 0 rows to
-  matching rows.
-- `AWARD_TYPE_GROUPS` was missing the newer FABS F-codes: grants F001/F002,
-  loans F003/F004, direct payments F006/F007, other F005/F008/F009/F010.
-  Group searches silently excluded real awards (multi-billion Amtrak F001
-  grants, for example). All F-codes added.
-- `set_aside_type_codes`, `extent_competed_type_codes`, and
-  `contract_pricing_type_codes` are case-sensitive upstream and lowercase
-  values silently returned zero results. All three are now uppercased.
-- `search_awards` with grants/direct_payments/other silently requested
-  contract-only fields (null "Contract Award Type", no "CFDA Number").
-  Grants now use `DEFAULT_GRANT_FIELDS`; direct payments and other use a
-  new `DEFAULT_ASSISTANCE_FIELDS`.
-- `spending_by_category` had no minimum-filter guard: an unfiltered call
-  silently aggregated the entire database (an all-time $40.6T "MULTIPLE
-  RECIPIENTS" row). It now requires at least one real filter, same as
-  search_awards. `spending_by_geography` got the same guard (the API 500s
-  on its empty filter set).
-- `get_idv_activity` exposed sort/order parameters the API silently
-  ignores: results are ALWAYS obligated-amount descending, so the
-  advertised default sort (period_of_performance_start_date) was never the
-  actual ordering. The dead parameters are removed, the real
-  `hide_edge_cases` parameter is exposed, and the fixed ordering is
-  documented. Verified live: opposite sort/order produced byte-identical
-  results before the fix.
-- `autocomplete_naics` with `exclude_retired=True` capped the upstream
-  fetch at 50, silently starving results below the requested limit.
-  Verified live: 58 active codes matched "54" but only 41 came back. Cap
-  raised to 500, the API's maximum.
-
-### Fixed (validation and error hygiene)
-
-- Path safety: `get_award_detail` did no format validation, so
-  `'../references/toptier_agencies'` walked the request onto the agency
-  list endpoint and returned it dressed up as award detail. It now accepts
-  a generated award id (prefix-validated) or the numeric internal id, and
-  every path-interpolated id validator rejects `/`, `\`, `..`, and `%`
-  (including the PSC filter-tree drill-down path, where `/` stays legal as
-  the level separator).
-- `get_agency_sub_agencies` advertised `sort="total_outlays"`, which the
-  API rejects with HTTP 400 (valid: name, total_obligations,
-  transaction_count, new_award_count). Removed from the Literal.
-- Recipient hashes are now accepted case-insensitively and canonicalized
-  to lowercase hex + uppercase suffix. The API accepts uppercase hashes;
-  the lowercase-only regex falsely rejected them.
-- `_validate_fy` allowed current fiscal year + 1, a guaranteed upstream
-  HTTP 422. Capped at the current fiscal year, and the error text now
-  states the real bounds.
-- All eight agency tools share one toptier normalizer: short all-digit
-  codes are zero-padded everywhere ('97' becomes '097'). Previously
-  get_agency_overview and get_agency_awards padded while the other six
-  tools rejected, so the same input behaved differently across the family.
-  Codes longer than 4 digits are now rejected everywhere (the old padding
-  helper accepted them).
-- HTTP 404 translation is conditioned on the request path: award and IDV
-  endpoints keep the generated_internal_id hint, everything else gets a
-  generic identifier hint. A federal-account 404 no longer tells callers
-  to verify a generated_internal_id.
-- `get_recipient_profile` and `get_recipient_children` accept `year` as
-  int or str (an int year previously failed pydantic validation with a
-  raw type error despite the docstring suggesting a year).
-
-### Added
-
-- `def_codes` parameter (Disaster Emergency Fund codes) on `search_awards`,
-  `get_award_count`, `spending_over_time`, `spending_by_category`, and
-  `spending_by_geography`. The plumbing existed but was exposed only on
-  `spending_by_subaward_grouped`. def_codes counts as a real filter for
-  the minimum-filter guards.
-- `hide_edge_cases` on `get_idv_activity` (filters child awards missing
-  obligated/awarded amounts or end dates).
-
-### Documentation
-
-- `search_awards` and `spending_over_time` no longer recommend passing
-  'Department of the Navy' as `awarding_agency`: military departments are
-  SUBTIERS, and a non-toptier name at tier=toptier silently returns zero
-  results. Service branches are routed through `awarding_subagency`, with
-  a warning that mismatched toptier+subtier pairs also silently return
-  zero.
-- `autocomplete_recipient` claimed to return hash IDs. The endpoint
-  returns recipient names only (uei/duns come back null). Its docstring
-  and `get_recipient_profile`'s now route hash acquisition through
-  `search_recipients`, whose results carry the hash in `id`.
-- `get_federal_account_object_classes` now states that its totals are
-  CUMULATIVE across all reported fiscal years (FY2017 onward) and are not
-  comparable to `get_federal_account_fy_snapshot`'s single-year figures.
-  The upstream endpoint accepts but ignores a fiscal_year body parameter,
-  so none is exposed. Verified live: one account summed to $3.38B here vs
-  $0.42B obligated in its FY2024 snapshot.
-- `spending_by_subaward_grouped` documents its valid sort values, which
-  differ from `search_subawards`.
-
-### Removed
-
-- Dead constants `SPENDING_CATEGORIES`, `COMPETED_CODES`,
-  `NOT_COMPETED_CODES`, `ALL_SB_SET_ASIDE_CODES` (imported but never used).
-- `sort`/`order` on `get_idv_activity` and `"total_outlays"` from the
-  `get_agency_sub_agencies` sort Literal (both rejected or ignored
-  upstream; see Fixed).
-- The `recipient_hash` parameter on `get_recipient_children`, replaced by
-  `uei_or_duns`. No compatibility shim: the old parameter had never
-  produced a successful call.
-
-### Housekeeping
-
-- `uv.lock` regenerated, catching the lockfile up to the bounded
-  `mcp>=2.0.0,<3` requirement (same catch-up sam-gov-mcp's 1.0.1 made).
-- Version, `__version__`, and `USER_AGENT` synchronized at 1.0.1.
-
-### Verified
-
-Two new regression files: `tests/test_search_family_fixes.py` (29 offline +
-8 live-gated) and `tests/test_entity_family_fixes.py` (59 offline + 4
-live-gated). Pre-existing tests that encoded the old broken behaviors were
-updated rather than deleted, each with a comment naming the round 10 change.
-Full suite green offline and live-gated after the fixes.
+Fixes 22 problems found by a live audit. `get_recipient_children` now works (it takes a UEI or DUNS); UEI filters on transaction search, newer assistance award codes, lowercase set-aside/competition/pricing codes and unfiltered category searches no longer return silently wrong data; `get_award_detail` rejects IDs that would change the request path. Adds `def_codes` filters and `hide_edge_cases` on `get_idv_activity`, removes sort options the API ignores, and documents that recipient name searches can include joint ventures and that an empty IDV child list can be a reporting gap.
 
 ## 1.0.0
 
-First stable release. The suite is feature-complete for its intended scope and
-moves to baseline maintenance from here.
-
-### Breaking
-
-Requires **v2 of the MCP Python SDK** (`mcp>=2.0.0`). Version 2 renamed the
-high-level server class from `FastMCP` to `MCPServer` and removed the
-`mcp.server.fastmcp` module. No tool name, parameter, or response shape changed.
-Installs pinned to `mcp` 1.x should stay on the 0.x line of this package.
-The requirement is now bounded (`mcp>=2.0.0,<3`) so a future major release of
-the SDK produces a clean resolver error instead of an import-time crash.
-
-**Claude Desktop `.mcpb` bundles are discontinued.** Bundles could not be
-signed in a way Claude Desktop recognizes, so every install surfaced an
-untrusted-developer warning, and because the bundle shipped without a lockfile
-it re-resolved its dependencies on every launch, which is what made it the
-install path most exposed to the failure above. Install via `uvx`, `pip`, or
-Docker instead; the per-server readme has the client config block. Existing
-bundle installs keep working until removed, but will not receive updates.
-
-Earlier releases declared `mcp>=1.0.0` with no upper bound. When `mcp` 2.0.0
-published, fresh installs of the 0.x line resolved to it and failed at import
-with `ModuleNotFoundError: No module named 'mcp.server.fastmcp'`. Requiring
-`mcp>=2.0.0` closes that gap.
-
-### Changed
-
-- Package version, `__version__`, `USER_AGENT`, and the MCPB manifest version
-  are now synchronized. The USER_AGENT currency test derives its expected value
-  from package metadata rather than a hardcoded literal, which is why the string
-  had drifted a patch behind the package.
-- Declares Python 3.10 through 3.14. Classifiers normalized across all eight
-  servers.
-
-### Verified
-
-2,076 regression tests (1,720 offline, 356 live-gated), all passing
-against `mcp` 2.0.0 on Python 3.14, with pass counts identical to the pre-migration
-baseline on `mcp` 1.x. Server confirmed to boot over stdio and enumerate all
-55 tools.
+Requires MCP Python SDK 2 (`mcp>=2.0.0,<3`). No tool changes. Claude Desktop `.mcpb` bundles are discontinued; install with `uvx`, `pip`, or Docker.
 
 ## 0.3.1
 
-Quality expansion of the v0.3 mock test suite. No functional changes to the
-55 tools beyond two bug fixes uncovered while writing the new mocks.
-
-### Test count expansion
-
-v0.3.0 shipped with 243 tests for the new endpoints (~1-2 distinct mocks
-per concern per tool). v0.3.1 expands to 1,194 tests (1,113 mock + 81 live).
-Per-tool count range: 27-64. Most tools at 30-35.
-
-### How the new mocks were structured
-
-20 cross-cutting parametrized batteries × 38 tools, each battery testing
-ONE specific concern across every applicable tool:
-
-- Path correctness, response passthrough, default value construction
-- HTTP 401, 403, 404, 422, 429, 500, 502, 503 error translation
-- Network error wrapping, timeout error wrapping
-- HTML error body cleaning (no markup leak in error message)
-- Forward-compat (extra unknown response fields preserved)
-- Idempotency (sequential calls produce same result)
-- Concurrent calls share the global httpx client cleanly
-- Tool registered with mcp.list_tools()
-- Tool has docstring; readonly annotation
-- Real-API response fixture (captured live) passes through
-- Unicode in response fields preserved
-- Large response (100+ items) tolerated
-- Null fields tolerated
-- Extreme numeric values pass through
-- Deeply nested response objects pass through
-- Non-dict response rejected (except documented list_states case)
-
-Plus 30 focused mocks for `list_states` (which uses _get_client() directly
-instead of the _post/_get plumbing the cross-cutting batteries patch).
-
-Plus existing per-tool focused tests from v0.3.0.
-
-### Two P1 bugs uncovered while writing v0.3.1 tests
-
-1. **`get_federal_account_object_classes` was using GET, but the API
-   requires POST.** Live audit caught it; fix is `_post(path, {})`.
-2. **`get_federal_account_fy_snapshot` was taking the alphanumeric
-   `account_code` (e.g. "027-5183") but the endpoint requires the numeric
-   `account_id` (e.g. 4595).** Both fields are returned by
-   `list_federal_accounts` so the rename is a parameter clarification.
-   Tool now takes `account_id`.
+Fixes two federal-account tools: object classes now use the request method the API requires, and the fiscal-year snapshot takes the numeric `account_id`. Adds broader mock tests for the v0.3 tools.
 
 ## 0.3.0
 
-API surface expansion. Tool count goes from 17 to 55 (+38 new tools).
-Added FFATA subawards, recipient depth, agency depth, award detail
-rollups, transaction/geography/timeline search, IDV depth, autocomplete
-helpers, reference data, and Treasury federal accounts.
-
-### New tools (38)
-
-**Subawards (FFATA)**
-- `search_subawards` - Subawards under a single prime award
-- `spending_by_subaward_grouped` - Subaward search with full filter set
-
-**Recipient depth**
-- `search_recipients` - Search recipients by keyword
-- `get_recipient_profile` - Full recipient profile by hash
-- `get_recipient_children` - Subsidiaries of a parent recipient
-- `autocomplete_recipient` - Find recipient hashes by partial name
-- `list_states` - All states with FIPS codes and totals
-
-**Agency depth**
-- `get_agency_budgetary_resources` - Budget by FY
-- `get_agency_sub_agencies` - Subordinate orgs with obligations
-- `get_agency_federal_accounts` - Funding sources (TAS)
-- `get_agency_object_classes` - OMB spending categories
-- `get_agency_program_activities` - Program-level breakdown
-- `get_agency_obligations_by_award_category` - Contract vs grant mix
-
-**Award detail**
-- `get_award_funding_rollup` - Single-line funding summary
-- `get_award_subaward_count`, `get_award_federal_account_count`,
-  `get_award_transaction_count`
-- `awards_last_updated` - Data freshness
-
-**Search depth**
-- `spending_by_transaction` - Modification-level transaction search
-- `spending_by_geography` - State, county, district breakdown
-- `new_awards_over_time` - Pipeline trend for a recipient (requires recipient_id)
-
-**IDV depth**
-- `get_idv_amounts` - IDV top-line rollup
-- `get_idv_funding`, `get_idv_funding_rollup` - File C for IDV
-- `get_idv_activity` - Child orders under IDV
-
-**Autocomplete helpers**
-- `autocomplete_awarding_agency`, `autocomplete_funding_agency`
-- `autocomplete_cfda` (grants), `autocomplete_glossary`
-
-**Reference data**
-- `get_award_types_reference` - Award type code map (A=BPA Call etc.)
-- `get_def_codes_reference` - Disaster Emergency Fund codes (COVID, IIJA, IRA)
-- `get_glossary` - Acquisition/spending vocabulary
-- `get_submission_periods` - Agency reporting period coverage
-
-**Federal accounts (Treasury)**
-- `list_federal_accounts` - Search TAS
-- `get_federal_account_detail`, `get_federal_account_object_classes`,
-  `get_federal_account_program_activities`, `get_federal_account_fy_snapshot`
-
-### P1 bug found in live audit
-
-`list_states` returned a JSON array, but the MCP's response invariant
-required a dict. Wrapping the array in `{"results": [...], "total": N}`
-fixes the tool and matches the rest of the surface. Without live testing
-this would have been a guaranteed runtime error every call.
-
-### API surface notes baked in
-
-- `new_awards_over_time` requires `recipient_id` filter (API returns HTTP
-  422 otherwise). Validated pre-network with a clear error.
-- Recipient hashes are UUIDs with `-C/-R/-P` suffix; bare UEIs are not
-  valid. `_validate_recipient_hash` rejects them before network.
-- Generated award IDs use specific prefixes (`CONT_AWD_`, `CONT_IDV_`,
-  `ASST_NON_`, `ASST_AGG_`); IDV-specific tools require `CONT_IDV_`.
-- Treasury account symbols allow alphanumeric and hyphens.
-- Toptier agency codes are 3-4 numeric digits; alphabetic codes like
-  "DOD" are rejected.
-
-### Test counts
-
-- 167 offline tests (validation + mock + endpoint shape)
-- 76 live tests (10+ per major endpoint group, all confirmed against
-  production api.usaspending.gov)
-- 243 total new tests for v0.3
-- All tests pass; one originally-failing live stress test (deep pagination
-  on the recipients table) was retargeted to test connection reuse instead
+Expands from 17 to 55 tools: subawards, recipient profiles and subsidiaries, agency depth, award funding rollups, transaction and geography search, IDV depth, autocomplete helpers, reference data and Treasury federal accounts. Fixes `list_states`, which would have failed on every call.
 
 ## 0.2.10
 
-Round 8: Hypothesis-driven property test suite + bonus live tests. 69 new
-tests (~25,000 random probes via Hypothesis + 10 live API calls). Zero
-new bugs found, validating that the round-6 fixes plus the original
-hardening covered the failure surface completely.
-
-### Why zero bugs is meaningful
-
-The same Hypothesis approach found 2 P3 bugs in sam-gov-mcp (round 7).
-The fact that it found zero in usaspending-gov-mcp reflects a structural
-difference: usaspending uses `_ensure_dict_response` which raises on
-non-dict inputs (no normalization gap to exploit), and its validators
-are pydantic-pre-validated on the public boundary. The validators that
-Hypothesis stress-tested all handled the full random input space without
-crashing.
-
-### Round 8 coverage (69 functions, ~25,000 probes + 10 live calls)
-
-Bucket | Functions | Notes
----|---|---
-A. _validate_date | 4 + 8 specific | YYYY-MM-DD generators, calendar edge cases
-B. _clamp_limit | 2 | sys.maxsize values, in-range passthrough
-C. _coerce_code_list | 2 + 2 specific | None/list/int coercion, empty/whitespace rejection
-D. _validate_no_control_chars | 3 | Every codepoint 0-31 rejected, clean strings pass
-E. _normalize_toptier | 3 | Padding behavior, 0-99 → 3-digit
-F. _validate_fiscal_year | 3 | 2008..current valid, below/above rejected
-G. _ensure_dict_response | 2 | Dict passthrough, non-dict raises
-H. _clean_error_body | 3 | Random text, HTML titles, h1 extraction
-I. _validate_strings_no_control_chars | 1 + 2 specific | Lists with control chars
-J. Async concurrency stress | 3 | 50 concurrent + 100 mixed + 50 sequential
-K. Encoding edge cases | 10 + 5 specific | Unicode normalization, RTL, BOM, ZWSP, emoji
-L. Integer overflow | 1 | sys.maxsize bounds
-M. Composite tool deep tests | 5 specific | lookup_piid input variants
-N. Bonus live tests | 10 | int NAICS coercion live, PSC tree extra slashes, unicode recipient, emoji keyword, max pagination, NAICS sectors, top-10 state profiles, 50 concurrent live searches, decade-span aggregation, lowercase PIID
-
-### Test counts after round 8
-
-- `tests/test_validation.py`: 62 (52 offline + 10 live-gated)
-- `tests/test_density_r5.py`: 415 offline parameterized tests
-- `tests/test_live_audit_r6.py`: 157 live-gated tests
-- `tests/test_live_audit_r7.py`: 104 live-gated tests
-- `tests/test_round_8.py`: 69 (59 offline Hypothesis + 10 live)
-- **Total: 807 regression tests (526 offline, 281 live-gated)**
-- **Density: 47.5 tests per tool** (17 tools)
+Adds property-based tests for every input check. No tool changes.
 
 ## 0.2.9
 
-Round 7: deep live audit (104 new live-gated tests). Zero new server bugs
-found, validating round 6's two fixes covered the gaps. The two test
-failures during this round were both test-author errors (wrong sort field
-name "Action Date" instead of "Last Modified Date"; wrong HTTP code
-expectation 404 vs actual 400 on invalid FIPS), not MCP bugs.
-
-### Round 7 coverage targets (gaps from round 6)
-
-Bucket | Count | Coverage
----|---|---
-A. Detail tools with REAL chained IDs | 9 | get_award_detail, get_transactions, get_award_funding chained from real search results
-B. IDV children all 3 child_types | 4 | child_awards, child_idvs, grandchild_awards
-C. Loan award searches | 3 | award_type='loans' with default sort, amount filter, response shape
-D. Direct payments + Other | 3 | award_type='direct_payments', 'other', 'grants'
-E. Sort and order variations | 4 | Last Modified Date, Recipient Name, asc/desc
-F. Deep PSC tree drilldowns | 5 | Research and Development, Services, Products, trailing/leading slash handling
-G. Compound filters returning zero | 3 | Impossibly specific filters, invalid NAICS
-H. Pagination at depth | 3 | page=20, 50, 100
-I. Real prime + agency combos | 7 | Lockheed at Navy/Air Force, Booz at Treasury, GD at Navy, Raytheon, Northrop, awarding_subagency
-J. Award amount edge cases | 4 | $0, $1, $1B+, exact match
-K. High-volume agency deep-dives | 6 | DoD, HHS grants, NASA, DHS, VA, State
-L. Agency overview deep checks | 3 | DoD, HHS, NASA response shape
-M. NAICS details deep checks | 3 | 2-digit, invalid 6-digit, description presence
-N. State profile deep checks | 2 | Totals, state field
-O. spending_by_category deep checks | 6 | Top 10 recipients, NAICS+DoD, district, county, country, CFDA grants
-P. Autocomplete deep checks | 5 | 4-char PSC, 2-char PSC partial, NAICS int query, full code, max limit
-Q. lookup_piid format variations | 4 | Full NAVSEA, full Air Force, nonexistent, max limit + GSA Schedule, OASIS+, DLA, full DoD
-R. spending_over_time deep checks | 3 | Decade span, single quarter, NAICS+agency
-S. Funding vs awarding agency | 2 | funding_agency alone, mixed funding+awarding
-T. Date window edge cases | 3 | One day, FY2008 oldest, year span
-U. PSC + NAICS coercion validation | 3 | Multiple PSCs, int coercion (round 6 fix verification), mixed types
-V. Set-aside deep coverage | 3 | EDWOSB, VSA, multi-set-aside
-W. lookup_piid format variations | 4 | GSA hyphens, OASIS+, DLA, full DoD
-X. Cross-tool ID passing workflows | 2 | search → IDV children, search → funding
-Y. Response field verification at scale | 3 | Required fields per result, grants recipient, IDV last date
-Z. Concurrent stress | 2 | 10 concurrent searches, 8 concurrent agencies
-AA. Agency name edge cases | 2 | EPA, HUD
-BB. Invalid-but-well-formed inputs | 3 | Nonexistent agency code, invalid FIPS, unusual NAICS
-
-### Test counts after round 7
-
-- `tests/test_validation.py`: 62 (52 offline + 10 live-gated, unchanged)
-- `tests/test_density_r5.py`: 415 offline parameterized tests
-- `tests/test_live_audit_r6.py`: 157 live-gated tests
-- `tests/test_live_audit_r7.py`: 104 live-gated tests
-- **Total: 738 regression tests (467 offline, 271 live-gated)**
-- **Density: 43.4 tests per tool** (17 tools)
-
-### Why zero bugs is meaningful here
-
-Round 6 added the live-audit lens to a previously offline-only test suite
-and immediately found 2 P2 bugs (PSC tree trailing slash, list[str] int
-coercion). Round 7 stress-tested the same surface from different angles
-and found nothing. That's the round 7 finding: the round 6 fixes were
-complete, and the deeper areas (detail tool chaining, IDV children, loans,
-sort/order, deep PSC tree, compound filters) all work as documented.
+Adds a deeper live test set. No tool changes.
 
 ## 0.2.8
 
-Round 6: live audit. 157 new live-gated tests covering every tool against
-the production USASpending.gov API. Two real bugs found and fixed.
-
-### P2 bug: get_psc_filter_tree returned HTTP 301 on any non-empty path
-
-USASpending's PSC filter tree endpoint requires a trailing slash. The MCP
-constructed paths without one (`/api/v2/references/filter_tree/psc/Service`
-instead of `/api/v2/references/filter_tree/psc/Service/`), causing the API
-to return HTTP 301 with the corrected URL. The MCP did not follow redirects,
-so the tool errored on every drilldown. Fix: append trailing slash on
-non-empty paths. Caught by round 6 live audit.
-
-### P2 bug: list[str] type hints rejected int values across 4 search tools
-
-The internal `_coerce_code_list` helper accepts both str and int values
-and coerces ints to strings. But the tool signatures declared
-`naics_codes: list[str] | None`, so pydantic rejected int inputs at the
-public boundary before they reached the coercion logic. The pre-existing
-test `test_naics_codes_accepts_ints` only exercised the helper directly
-(not through `mcp.call_tool`), so the gap was invisible until live audit.
-Fix: type hints widened from `list[str]` to `list[str | int]` on all 7
-code-list parameters across search_awards, get_award_count, spending_over_time,
-spending_by_category. Public API is now consistent with the helper's behavior
-and the docstring promises.
-
-### Round 6 live test coverage (157 tests, runtime ~80 seconds)
-
-Each test makes a real HTTP call against api.usaspending.gov and verifies
-behavior that mocks cannot see. USASpending is keyless so no API key is
-required. Skipped automatically when `USASPENDING_LIVE_TESTS=1` is not set.
-
-Bucket | Count | Coverage
----|---|---
-A. search_awards | 30 | Real keyword searches, NAICS/PSC/state/amount/recipient/date/set-aside/pricing/competition filters, all award_types, pagination, compound filters, unicode keywords, PIID-prefix searches
-B. get_award_count | 7 | Filter combinations, set-aside, amount range, recipient, NAICS
-C. spending_over_time | 7 | All 3 group values (fiscal_year, quarter, month), keyword/NAICS filters, multi-year span
-D. spending_by_category | 11 | Parameterized across 8 categories (recipient, awarding_agency, naics, psc, etc.) plus filter combinations and max limit
-E. Agency tools | 27 | All 10 major federal agencies (DoD, HHS, NASA, DHS, VA, Treasury, Education, DoE, USDA, Commerce) tested against get_agency_overview and get_agency_awards, plus FY filters and toptier code normalization
-F. NAICS details | 11 | Real codes at every depth (2-digit, 3-digit, 4-digit, 6-digit) including 541512, 541611, 236220, 541990
-G. PSC filter tree | 5 | Top-level + drilldowns + response shape verification (after the trailing-slash fix)
-H. State profiles | 13 | Major state FIPS codes (CA, TX, FL, NY, PA, IL, OH, GA, NC, MI, VA, MD, DC)
-I. Autocomplete | 22 | 10 PSC + 10 NAICS queries plus exclude_retired flag behavior
-J. lookup_piid | 6 | NAVSEA, AFRL, Army, NAVAIR, DLA, GSA Schedule prefixes
-K. Concurrent calls | 3 | 5 concurrent searches, 3 concurrent agency lookups, mixed-tool concurrency
-L. Response shape verification | 9 | Per-tool field presence checks that catch upstream API drift
-M. Edge cases | 8 | Leap year dates, FY rollover window, multi-NAICS, unicode, apostrophes, high pagination, compound filters, award_ids filter
-
-### Test counts after round 6
-
-- `tests/test_validation.py`: 62 (52 offline + 10 live-gated, unchanged from rounds 1-4)
-- `tests/test_density_r5.py`: 415 offline parameterized tests
-- `tests/test_live_audit_r6.py`: 157 live-gated tests
-- **Total: 634 regression tests (467 offline, 167 live-gated)**
-- **Density: 37.3 tests per tool** (17 tools)
-
-### Why this round mattered
-
-Round 5 was offline density expansion. It found zero new bugs because it
-didn't test the live API. Round 6 hit the live API hard and found two
-real bugs within the first 200 calls, including one (the int-coercion
-mismatch) where a pre-existing test gave false confidence by exercising
-the helper directly instead of through the public MCP boundary. This is
-exactly what live audits exist to catch.
+Fixes PSC filter-tree drill-downs, which failed on every non-empty path, and lets NAICS, PSC and other code lists accept numbers as well as text.
 
 ## 0.2.7
 
-Round 5 density expansion. No code changes to `server.py`. The audit added
-415 new parameterized regression tests organized into 18 distinct
-failure-mode buckets, lifting suite-wide coverage from 62 tests (3.6 per
-tool) to 477 tests (28.1 per tool). Now in the same density tier as
-sam-gov-mcp (29.9) and gsa-perdiem-mcp (28.7).
-
-### Coverage by failure-mode bucket
-1. Date format validation across every date-taking tool, parameterized
-   across 12 invalid format variants per tool plus 7 calendar-invalid cases
-   including leap year correctness for FY2024 vs FY2025 (~50 tests)
-2. Limit and page boundary checks across every paginated tool: zero,
-   negative, just-above-cap, far-above-cap (~30 tests)
-3. Amount range validation: parameterized across 4 negative values for
-   both award_amount_min and award_amount_max on search_awards and
-   get_award_count, plus min-greater-than-max cross-field check (~17 tests)
-4. List/array filter validation on naics_codes, psc_codes, award_ids,
-   keywords: empty arrays, all-empty-string entries, all-whitespace
-   entries (~12 tests)
-5. Control-character safety: 8 control-char variants × 9 text-input
-   parameters across 5 tools, plus 10 legitimate text cases (apostrophes,
-   unicode, emoji, etc.) verified as accepted (~85 tests)
-6. `extra='forbid'` enforcement parameterized across all 16 tools that
-   accept kwargs, plus explicit historical typo cases (~20 tests)
-7. Award identifier validation across get_award_detail, get_transactions,
-   get_award_funding, get_idv_children: 4 invalid variants per tool (~16 tests)
-8. PIID validation on lookup_piid: 5 length and format variants (~5 tests)
-9. Toptier code normalization: invalid format variants × 2 tools, plus
-   left-padding behavior (3-digit, 2-digit, 1-digit, 4-digit, whitespace) (~17 tests)
-10. Fiscal year boundary checks: zero, negative, pre-2008, far-future,
-    boundary-valid, plus current-FY-plus-one (~7 tests)
-11. NAICS code validation on get_naics_details: 7 invalid format variants
-    plus valid 2-digit and 6-digit cases (~9 tests)
-12. State FIPS validation on get_state_profile: 10 invalid format variants
-    plus 3 valid cases including whitespace handling (~13 tests)
-13. Autocomplete query length and content checks (PSC + NAICS): empty,
-    single-char, whitespace, length cap at 200 chars (~8 tests)
-14. No-filter rejection on search_awards, get_award_count, spending_over_time:
-    empty call, award_type-only, group-only (~6 tests)
-15. Spending-by-category Literal validation, no-filter behavior, limit
-    boundaries (~4 tests)
-16. award_type Literal validation: 6 invalid variants × 2 tools (~12 tests)
-17. order Literal validation: 7 invalid variants × 2 tools (~14 tests)
-18. group / child_type Literal validation (~10 tests)
-19. Direct unit tests on validator helpers: `_validate_date`, `_clamp_limit`,
-    `_coerce_code_list`, `_validate_no_control_chars`, `_validate_strings_no_control_chars`,
-    `_normalize_toptier`, `_validate_fiscal_year`, `_ensure_dict_response`,
-    `_clean_error_body`, `_current_fiscal_year` (~75 tests)
-
-### Test file structure
-- `tests/test_validation.py` (existing 62 tests, unchanged): rounds 1-4 plus
-  live-gated integration tests
-- `tests/test_density_r5.py` (new 415 tests): round 5 density expansion
-
-### Why this matters
-Each new test exercises a distinct failure mode. No padding, no shape
-duplicates. Density of 28.1 tests per tool puts USASpending in the same
-tier as the well-tested MCPs in the suite. Future regressions
-in input validation, type coercion, or response-shape handling will be
-caught by pytest before they hit users.
+Adds 415 tests covering every input field on every tool. No tool changes.
 
 ## 0.2.3
 
-Follow-up hardening after a full playbook pass (round 3 deep live stress,
-round 4 response-shape mocks, plus a live-gated regression suite). The
-0.2.2 release shipped after only rounds 1-2; this closes the gap with
-how bls-oews / gsa-perdiem / regulationsgov were audited.
-
-### P1 silent-wrong-data
-- `search_awards()` called with NO filter arguments silently returned 25
-  unfiltered recent contracts. That's the same failure mode as
-  regulationsgov's `agency_id=""` returning all 1.95M records. Now
-  raises "search_awards requires at least one filter beyond award_type"
-  with a pointer to the typical filter combinations.
-
-### P2 response-shape defense
-- `_post` / `_get` now guarantee a dict return via `_ensure_dict_response`.
-  USASpending always returns JSON objects for the endpoints this MCP
-  uses; anything else (None, bare list, int, string) is a CDN / proxy
-  issue that used to leak into tool output as a type confusion. Now
-  surfaces clearly as "USASpending returned an empty body at {path}" or
-  "unexpected {type} at {path}".
-
-### Testing
-- 16 new tests: 6 offline (round-3 no-filter regression + 4 shape-guard
-  regressions on mocked responses) and 10 live gated by
-  `USASPENDING_LIVE_TESTS=1`.
-- Live suite now covers: real search with real results, compound
-  filters narrowing results, leap-year date, exact-match amount range,
-  autocomplete return, state profile, concurrent searches, unicode
-  keyword handling, and toptier-agency listing.
-- Test total: 52 offline + 10 live = 62 passing. 0.2.2 shipped with 46.
-- Added autouse fixture to reset `srv._client` between tests so the
-  shared httpx client doesn't leak across event loops.
-
-### USER_AGENT
-- Bumped to `usaspending-gov-mcp/0.2.3`.
+`search_awards()` with no filters now returns an error instead of 25 unfiltered recent contracts, and empty or non-JSON responses from USAspending return a clear error.
 
 ## 0.2.2
 
-Live audit against the USASpending.gov API surfaced 9 P1 silent-wrong-data
-paths and 4 P2 validation gaps. All fixed.
-
-### P1 silent-wrong-data
-- Null byte / newline / tab in `keywords` silently accepted: the API
-  either strips them (returns unfiltered-ish) or 500s on them. Now
-  every free-text field rejects control characters up front.
-- Null byte in `autocomplete_psc.search_text` and
-  `autocomplete_naics.search_text` produced HTTP 500 from the API.
-  Now rejected locally.
-- Null byte in `generated_award_id` / `generated_idv_id` on
-  `get_transactions`, `get_award_funding`, `get_idv_children`,
-  `get_award_detail` produced HTTP 500. Now rejected locally.
-- Negative `award_amount_min` / `award_amount_max` silently ignored
-  by USASpending and returned unfiltered default results. Now
-  rejected with an explanatory error.
-- `naics_codes=["", "", ""]`, `psc_codes=[""]`, `award_ids=[""]`:
-  list-of-empty-strings used to be silently dropped by
-  `_coerce_code_list`'s filter, leaving an empty list that applied
-  no filter at all. Now rejected with "contains only empty /
-  whitespace strings."
-- Empty / whitespace-only `generated_award_id` on the detail tools
-  hit the API as a 422 or 404. Now rejected up front with a clear
-  pointer to `search_awards` as the source of valid IDs.
-
-### P2 validation
-- `autocomplete_psc` / `autocomplete_naics` now cap `search_text` at
-  200 chars. Long searches are meaningless for autocomplete and
-  triggered upstream 500s.
-
-### Testing
-- 17 new regression tests covering every round-1 and round-2 finding.
-- Old tests kept; total is now 46 offline tests passing.
-
-### USER_AGENT
-- Bumped to `usaspending-gov-mcp/0.2.2`.
+Fixes nine silent wrong-data paths and four validation gaps: control characters, negative amounts, empty code lists and blank award IDs are now rejected before the request.
 
 ## 0.2.1
 
-Cross-MCP fix discovered during the sam-gov-mcp 0.3.1 live audit.
-
-- FastMCP tools register pydantic argument models with the default
-  `extra='ignore'` config, so a typo like
-  `search_awards(keyword='cyber')` (real param is `search_text`)
-  silently dropped the typo'd argument and returned unfiltered data.
-  Now every tool has `extra='forbid'` applied after registration, so
-  typos raise "Extra inputs are not permitted" before any HTTP call.
-- USER_AGENT bumped to `usaspending-gov-mcp/0.2.1`.
-- Added regression test covering the new behavior.
+Misspelled parameter names now return an error instead of being silently ignored.
 
 ## 0.2.0
 
-Hardening release. Found via integration stress testing through a real MCP client (not raw coroutine awaits), which surfaced 28+ issues invisible to the prior unit tests.
-
-### Tool behavior changes
-
-- **get_award_count** and **spending_over_time** now raise `ValueError` when called with no filters, rather than forwarding an empty-filters request to the API (which 400s). Pass at least one filter (time_period, keywords, agency).
-- **autocomplete_psc** and **autocomplete_naics** now require a minimum 2-character query. Single-character or empty queries return an empty result with a `_note` explaining why. Upstream returns arbitrary first-N alphabetical records on short queries, which silently misleads callers.
-- **autocomplete_naics** adds `exclude_retired=True` (default). The upstream NAICS taxonomy includes codes retired in 2012/2017/2022 which dominate certain keyword matches (e.g. "software" previously returned only retired codes). Set `exclude_retired=False` to restore prior behavior.
-
-### Schema and input validation
-
-- `limit` on search, autocomplete, and convenience tools now raises when <1 or over the API's cap (100 for search endpoints, 5000 for transactions). Previously schema was unbounded and callers hit upstream 422s or 95KB+ response payloads.
-- `page` parameter now requires `>= 1` across all paginated tools.
-- `time_period_start` / `time_period_end` now validated as `YYYY-MM-DD`. ISO 8601 datetimes, slash-separated dates, and reversed ranges (end before start) raise actionable errors.
-- `award_amount_min > award_amount_max` now raises instead of silently returning zero results.
-- `naics_codes`, `psc_codes`, `award_ids`, `set_aside_type_codes`, `extent_competed_type_codes`, `contract_pricing_type_codes`, `def_codes` accept both strings and integers (auto-coerced to strings). Empty arrays raise `ValueError` to catch `naics_codes=[]` silent-match bugs.
-- `place_of_performance_state` validated as 2-letter USPS code, auto-uppercased.
-- `toptier_code` in `get_agency_overview` and `get_agency_awards` auto-left-pads numeric inputs shorter than 3 digits (e.g. "97" → "097").
-- `fiscal_year` bounded to `[2008, current FY]` on agency endpoints.
-- `lookup_piid.piid` now requires minimum 3 characters (upstream keyword filter minimum).
-
-### Error hygiene
-
-- HTTP 404 responses from USASpending that return an HTML error page (`<!doctype html>...`) are now parsed down to the title/h1 text, rather than leaking the full HTML body to callers.
-
-### Documentation
-
-- `search_awards` docstring now warns that `awarding_agency` must be the full name (e.g. "Department of the Navy"), not the slug form ("department-of-the-navy"). Slugs silently return zero results.
+Hardening release: no-filter guards, bounded limits and pages, date validation, a two-character minimum for PSC/NAICS autocomplete, retired NAICS codes hidden by default (`exclude_retired=True`), and HTML error pages trimmed to their message.
 
 ## 0.1.2
-Initial release.
 
-- 17 MCP tools covering the USASpending.gov REST API
-- Search endpoints: search_awards, get_award_count, spending_over_time, spending_by_category
-- Detail endpoints: get_award_detail, get_transactions, get_award_funding, get_idv_children
-- Workflow: lookup_piid (auto-detects contract vs IDV)
-- Autocomplete: autocomplete_psc, autocomplete_naics
-- Reference: list_toptier_agencies, get_agency_overview, get_agency_awards, get_naics_details, get_psc_filter_tree, get_state_profile
-- Actionable error translation for common 400/404/422 API errors
-- Award type group validation (contracts, IDVs, grants, loans cannot be mixed)
-- Sort field auto-insertion (USASpending requires sort field in fields array)
-- Keyword minimum length validation (API requires 3+ chars)
-- Path parameter validation for FIPS codes, agency codes, and NAICS codes
-- No authentication required
+Initial release with 17 tools covering award search, award detail, PIID lookup, PSC/NAICS autocomplete and agency reference data.
