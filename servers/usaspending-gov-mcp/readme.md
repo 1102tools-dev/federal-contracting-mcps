@@ -8,45 +8,7 @@ Free, open-source MCP server for the USAspending.gov federal contract, award, su
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
-*Published 1.0.23 collects 2,322 regression cases. Its fresh official PyPI installation with MCP SDK 2.3.0 measures 1,943 passed and 379 skipped, with all 855 prior failed IDs executed and passing. The frozen MCP SDK 2.0.0 source lane separately measures the same counts. Eight actual console and eight public original/recovery calls pass with unchanged 55-tool metadata; the three specific input hints are visible and five successful answers match the baseline. Earlier 1.0.22 evidence below is preserved.*
-
-*The final Round 7 contracting audit verifies 132 new and 10 prior reference/control argument combinations across all 55 tools on fresh official 1.0.23 / MCP 2.3.0 and the public service. All 142 distinct combinations finish with source, console and public parity. The 151 recorded attempts preserve two excluded collector mistakes and five local request failures with successful bounded recoveries; 150 fresh official response bodies are retained. No new P0–P3 product defect was confirmed. Complete histories, fiscal crossfoots, agency roles, vehicle links and financial population limits are documented in [testing.md](testing.md). The full regression counts above are the retained SDK campaign execution, not a new Round 7 suite run.*
-
-*Published 1.0.22 has 2,318 collected regression cases. The measured frozen Python 3.12 / MCP SDK 2.0.0 source lane passed 1,939 and skipped 379 live-gated cases. Its separately installed official PyPI package with MCP 2.3.0 measured 1,084 passed, 855 retained legacy negative-expectation failures and 379 skipped. Actual published console/public acceptance passed 153 questions across all 55 tools, including 138 new Round 6 questions and 15 reference/control reads. See [testing.md](testing.md) for separate lane provenance.*
-
-Version 1.0.22 clarifies award-date scope: an omitted date type matches the
-interval from first signing through latest action, so it does not prove an
-action occurred inside the requested window. For actual activity use
-`spending_by_transaction`, read every page and deduplicate award identifiers;
-`get_transactions` gives a discovered award's action dates. Explicit
-`date_type="action_date"` bounds the latest action. The new Round 6 audit covers
-all 55 tools with 138 new entity/filter questions and 15 separate prior controls.
-Originals and recovery pass on the actual installed published package and public
-service at release source `d7154fd26f985cee55ff0db3617d4ce587844446`.
-
-Published 1.0.21 completed all 143 new Round 5 questions plus 10 separately
-counted prior vehicle checks on a fresh official PyPI installation and the
-public deployment. All 55 tool definitions matched. Its five-step NAICS
-workflow correctly separates actual retired codes from current matches
-omitted by the result limit and recovers the highway construction code.
-Four workflow steps are included in the 153-call replay; one genuine
-retired-inclusive control is additional.
-
-The separate actual latest MCP SDK 2.3.0 full regression run measured
-1,081 passed, 855 failed and 379 skipped. The 855 retained exception/message
-expectations are the same failures as published 1.0.20 and are not credited
-as passing. See [the final publication record](testing.md#round-17-final-published-verification-1021-2026-10-10)
-for exact content, source and regression provenance.
-
-Federal-account program lists contain codes/names across all reported years,
-without dollar amounts or a fiscal-year filter. The tool retrieves source pages
-internally (up to 2,000 records) and reports completeness and any requested FY
-that was not applied. Use the numeric account ID with the fiscal-year snapshot
-for single-year account resources. Agency program totals apply to the whole
-agency. Account listings default to the source’s latest available FY; check
-`fy`, especially after October rollover. Agency budgetary resources do not
-provide a mandatory/discretionary split. Published 1.0.21 preserves the source available-year explanation and guides
-omission of an unavailable year plus checking the returned `fy`.
+*2,322 regression tests, including live checks against the USAspending API. The October 2026 releases were also checked with realistic contracting questions across all 55 tools (award histories, fiscal-year totals, subcontract reports, federal accounts). See [testing.md](testing.md).*
 
 ## Local or hosted
 
@@ -54,8 +16,8 @@ omission of an unavailable year plus checking the returned `fy`.
 |---|---|---|
 | [Local setup](#installation) | [Install](https://claude.ai/directory/usaspending-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) |
 
-- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
-- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
+- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. It doesn't update itself: ask your AI to update it (for example with `@latest`) when you want the newest fixes. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
+- **Hosted** is always up to date, needs no setup or keys, and works in Claude or ChatGPT anywhere.
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#competitor-intelligence)
 
@@ -219,6 +181,9 @@ Once configured, try:
 - **No authentication required.** USAspending.gov is a free, public API.
 - **Fiscal time groups.** Fiscal years run October through September; quarter 1 is October–December and month 1 is October. `new_awards_over_time` combines the source’s fiscal-quarter counts for annual fiscal-year results. A date window that covers only part of a fiscal year returns counts for that requested portion, not the entire year. Quarter and month results retain the source counts.
 - **FFATA period scope.** `spending_by_subaward_grouped` ranks cumulative reported subaward totals for matching primes. Its date filters do not trim those totals to subaward actions inside the requested period. For period-specific reports, pass a returned `award_generated_internal_id` to `search_subawards`, read every page and filter the records by `action_date`. Reported amounts can repeat cumulative values; their sum is not net new subcontract spending.
+- **Award date windows.** By default, a date window matches any award active during it (first signing through latest action), so a match does not prove an action happened inside the window. For actual activity, use `spending_by_transaction`, read every page and deduplicate award identifiers; `get_transactions` gives a single award's action dates. Explicit `date_type="action_date"` bounds the latest action.
+- **Federal-account programs.** Program lists contain codes and names across all reported years, without dollar amounts or a fiscal-year filter. The tool retrieves source pages internally (up to 2,000 records) and reports completeness and any requested FY that was not applied. Use the numeric account ID with the fiscal-year snapshot for single-year account resources. Agency program totals apply to the whole agency.
+- **Available fiscal years.** Account listings default to the source's latest available FY; check `fy`, especially after October rollover. If you ask for a year the source does not have yet, the answer explains which years are available. Agency budgetary resources do not provide a mandatory/discretionary split.
 - **Award type groups cannot be mixed.** The `award_type` parameter takes one of: `contracts`, `idvs`, `grants`, `loans`, `direct_payments`, `other`. Use separate calls for separate categories.
 - **Actionable error messages.** Common API errors (422 mixed award types, 400 sort field missing, 400 empty keywords) are translated into guidance for the calling LLM.
 - **Sort field auto-handling.** The USAspending API requires the sort field to appear in the fields array; this server adds it automatically.
@@ -237,13 +202,8 @@ MIT
 ## Regression tests
 
 Run `PYTHONPATH=src uv run --python 3.12 python -m pytest -q` from this
-package directory. For published 1.0.23, measured Python 3.12.13 / frozen
-SDK 2.0.0 source and fresh official PyPI SDK 2.3.0 lanes each pass 1,943 cases
-and skip 379 live-gated cases. The full run includes existing unmocked source
-controls; it is separate from the eight-question console/public acceptance. Actual published 1.0.22 measured 1,084 passed / 855 failed / 379
-skipped; that prior execution remains separate. Set
-`USASPENDING_LIVE_TESTS=1` to enable public API checks. Counts below include
-parametrized and live-gated cases collected for published 1.0.23.
+package directory. Set `USASPENDING_LIVE_TESTS=1` to add the live checks
+against the public API (no key needed). See [testing.md](testing.md) for details.
 
 | Test file | Cases | Coverage |
 |---|---:|---|
@@ -270,4 +230,4 @@ parametrized and live-gated cases collected for published 1.0.23.
 | [test_naics_current_retired_1021.py](tests/test_naics_current_retired_1021.py) | 3 | Actual retired rows versus active rows omitted by the requested limit |
 | [test_award_date_overlap_r6.py](tests/test_award_date_overlap_r6.py) | 3 | Award interval overlap versus complete dated-transaction recovery |
 | [test_sdk23_expected_guidance.py](tests/test_sdk23_expected_guidance.py) | 4 | Visible ordinary recovery hints, no pre-validation source requests, preserved source outputs and unexpected-fault masking |
-| **Total** | **2,322** | **1,943 passes on each tested SDK; 379 live-gated skips** |
+| **Total** | **2,322** | **1,943 run by default; 379 live checks** |

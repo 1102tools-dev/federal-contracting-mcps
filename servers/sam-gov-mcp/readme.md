@@ -8,21 +8,7 @@ Free, open-source MCP server for SAM.gov entity registration, exclusion/debarmen
 
 Two editions: **hosted**, with 4 keyless tools for contract opportunities, and **local**, the full 20 tools with a free SAM.gov key. See [Local or hosted](#local-or-hosted).
 
-The final October 10 Round 7 contracting audit completed 136 new task steps
-(128 unique requests) on published hosted mirror 1.0.4, with no new confirmed
-P0–P2 defects. All 171 recorded calls matched the source oracle, including
-484 raw returned-row checks; prior controls and harness attempts are separated
-from new coverage. A fresh official PyPI 1.0.14 install completed the actual
-20-tool CLI catalog and access check, then passed 784 regression tests with
-374 optional tests skipped. Nineteen keyed data workflows remain unexecuted.
-The fresh official CSV check returned HTTP 304, validating retained bytes rather
-than a new download. See [the final-round record](testing.md#final-october-10-round-7-contracting-content-audit).
-
-*Tested and hardened through ten audit rounds including a ~230-call paced live campaign. 1,158 collected regression tests (784 offline, 374 live-gated). v0.4 added 278 tests for Federal Hierarchy + FFATA Subaward endpoints (123 live), catching three silently-ignored Subaward API parameter casings during live audit. Birthplace of the `extra='forbid'` cross-fix applied across the suite. See [testing.md](testing.md) for the full testing record.*
-
-The October 10, 2026 round-3 content audit verified published hosted mirror 1.0.3 with 110 realistic questions and followups plus data status. All 110 fresh official CSV comparisons and 345 returned-row checks passed. A fresh PyPI installation of the unchanged local 1.0.13 completed actual CLI initialization, its 20-tool catalog and access guidance; 19 keyed data workflows remained unexecuted without `SAM_API_KEY`. Optional live-test skips are not source passes. See [the round-3 record](testing.md#october-10-2026-round-3--published-opportunities-mirror-103) for scope and evidence.
-
-Round 4 checked another 114 realistic hosted questions and followups plus status, with 114 source comparisons and 348 returned-row checks. A fresh official conditional HTTP 304 confirmed the retained CSV bytes. Published Python 1.0.14 restores anticipated date/code repair guidance hidden by MCP SDK 2.3. A fresh official PyPI install passes both original console recoveries and 784 regression tests, with 374 optional tests skipped. The mirror remains 1.0.3. Nineteen planned local keyed workflows remain unexecuted without `SAM_API_KEY`; [the round-4 record](testing.md#october-10-2026-round-4--content-audit-and-published-local-1014) separates source content coverage from package acceptance.
+*1,158 regression tests, including live checks against the SAM.gov APIs. The October 2026 releases were also checked with realistic contracting questions against official SAM.gov records. See [testing.md](testing.md).*
 
 <a id="two-editions-hosted-or-full"></a>
 
@@ -32,12 +18,13 @@ SAM.gov comes in two editions. Hosted is the only one with no key.
 
 | | Local (full edition) | Hosted |
 |---|---|---|
-| Install | On your computer. Give your AI this page's link and ask it to set it up, or start at [Installation](#installation) | One click from the Claude directory (ChatGPT coming soon) |
+| Install | On your computer. Give your AI this page's link and ask it to set it up, or start at [Installation](#installation) | Add from the Claude directory (ChatGPT coming soon) |
 | API key | Free SAM.gov key, which expires every 90 days | None |
 | Tools | 20 | 4 |
 | Covers | Opportunities plus entity registrations, SBA certifications, exclusions, reps and certs, integrity records, contract award records, the federal hierarchy, and subawards | Contract opportunities, award notices, and justifications |
 | Data | Live SAM.gov APIs, within your key's daily limit | SAM.gov's public contract opportunities file, refreshed daily |
 | Works in | Claude or ChatGPT desktop apps and other AI apps, on a desktop or laptop | Claude or ChatGPT on web, desktop, and phone |
+| Updates | Manual. It keeps the version from first install, including bundled data, until you ask your AI to update it | Automatic. Always runs the latest release |
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|
@@ -63,10 +50,6 @@ Older notices can appear when they remain active, including notices posted in ea
 Use the full edition when you need to look up a company: registrations, UEI and CAGE codes, SBA certification dates, exclusions, reps and certs, integrity records (FAPIIS), or SAM.gov's contract award records, federal hierarchy, and subawards.
 
 The full edition is local only. Give your AI this page's link and ask it to set it up, or start at [Installation](#installation). It needs your own free SAM.gov key, and that key's daily limit applies; see [Authentication](#authentication).
-
-Round 5 checked 127 new hosted content questions and followups plus status: 127 official snapshot comparisons and 347 returned-row checks passed. Fresh official HTTP 304 validated the retained CSV bytes. Published native 1.0.4 clarifies that active awards and justifications remain included despite past response deadlines; all 127 actual production answers remain unchanged. Python 1.0.14 is unchanged, with actual fresh console readiness and 784 passing / 374 optional skipped tests; 19 keyed workflows remain unexecuted. See [the round-5 record](testing.md#october-10-2026-round-5--published-native-discovery-104).
-
-Round 6 checked 120 new hosted task steps plus status, with 120 source comparisons and 194 returned-row checks. Thirty-nine scope, eligibility, deadline and history interpretations used 33 distinct official records. No new application defects were confirmed within the executed corpus. Fresh official HTTP 304 confirmed the retained CSV; native 1.0.4 and Python 1.0.14 remain unchanged. The actual fresh Python console exposes 20 tools; 19 new keyed workflows remain unexecuted, and its suite passed 784 tests with 374 optional skips. See [the round-6 record](testing.md#october-10-2026-round-6--new-content-and-source-audit).
 
 ## What it does
 
@@ -126,7 +109,7 @@ Get a free personal API key by signing in and following the Public API Key instr
 
 ## Installation
 
-### Via uvx (recommended)
+### Via uvx
 
 ```bash
 uvx sam-gov-mcp

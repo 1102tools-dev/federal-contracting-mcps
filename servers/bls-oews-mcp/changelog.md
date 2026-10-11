@@ -1,469 +1,87 @@
 # Changelog
 
+Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
+
 ## 1.1.4
 
-- Explain unpublished wage measures using actual BLS footnotes in wage and
-  comparison results, preserving published topcoded wage floors.
-- Direct teacher hourly and performer annual comparisons to alternate published
-  measures without implying the occupations are absent or retired.
-- Add source-backed regressions and followups; Python and Worker agree.
+When BLS publishes no number for a wage measure, answers quote the actual BLS footnote and keep published top-coded wage floors. Teacher hourly and performer annual requests point to the wage measure BLS does publish instead of implying the occupation is missing.
 
 ## 1.1.3
 
-- Preserve actionable user-input guidance in installed CLI clients using MCP
-  2.3.0, including unsupported national employment-ratio questions. Expected
-  failures use SDK ToolError while remaining ValueError for direct Python callers.
-- Keep frozen MCP 2.0.0 behavior, wage values and reviewed tool metadata unchanged.
-- Add a real CLI regression that follows the national-ratio guidance with a
-  Virginia lookup and completes the wage research task.
+Input mistakes, such as asking for national employment ratios, again return a specific message saying how to fix the request in installed clients using MCP SDK 2.3, instead of a generic error. Wage values and tools are unchanged.
 
 ## 1.1.2
 
-- Preserve published hourly wages and burdened hourly benchmarks for hourly-only
-  occupations such as actors and musicians. Annual salaries remain unpublished;
-  the response flags `hourly_only` and explains that no annualization was done.
-- Reject national datatypes 16/17 with an actionable state/metro message instead
-  of implying the occupation has no published estimate.
-- Python and native Worker remain identical; reviewed tool metadata is unchanged.
+Hourly-only occupations such as actors and musicians keep their published hourly wages and burdened hourly benchmarks, flagged `hourly_only`, with no made-up annual salary. National requests for employment per 1,000 jobs or location quotient now say to ask by state or metro instead of implying the occupation has no data.
 
 ## 1.1.1
 
-Fixes from the 2026-10-10 content test (BLS-1 to BLS-9). Data is unchanged
-(still the May 2025 release); the hosted Worker answers the same way.
-
-- `igce_wage_benchmark`:
-  - returns `wage_period` (the release's reference month, from the bundled
-    manifest) and `_escalation_note` ("May 2025 wages; escalate to the
-    period of performance") beside the burdened rates (BLS-1);
-  - takes hourly figures from BLS's published hourly wages, deriving
-    annual / 2080 only where BLS publishes none (BLS-7);
-  - adds the 25th and 75th percentiles (BLS-3);
-  - returns `reliability` (employment, employment RSE, mean wage RSE) and a
-    `_reliability_warning` when either RSE is above 10% (BLS-2);
-  - for a cell with employment but no wage estimate (top-coded or not
-    released), `no_data_reason` quotes BLS's footnote and the employment
-    instead of "BLS publishes no estimate" (BLS-4).
-- `list_common_metros` and `list_common_soc_codes` use BLS's own area names
-  and occupation titles and add Huntsville, Virginia Beach-Norfolk, San
-  Antonio, Colorado Springs, Dayton, and SOCs 15-1299, 15-1243, 17-2141,
-  13-1081, 13-1161 (BLS-5).
-- `get_wage_data` names industry 999100 as BLS does ("Federal Executive
-  Branch (OEWS Designation)") and notes that federal IT staff mostly fall
-  under 15-1299 (BLS-6).
-- `compare_metros` and `compare_occupations` return `data_year` (BLS-8).
-- Employment per 1,000 jobs is formatted to BLS's three decimals (BLS-9).
-
-- The bundled release's year and name now come from `data/manifest.json`
-  instead of constants, so a new OEWS release needs no code change.
-  `.github/workflows/data-refresh.yml` checks BLS weekly and, when BLS
-  publishes new files, rebuilds, tests (including live parity), and releases
-  on its own.
-- `get_wage_data` and `detect_latest_year` descriptions no longer name the
-  May 2025 release; `get_data_status` derives `next_release` from the
-  bundled year. Data is unchanged (still the May 2025 release).
+Content fixes (BLS-1 to BLS-9) with the same May 2025 data. `igce_wage_benchmark` now states the wage month with an escalation note, uses BLS's published hourly wages, adds 25th and 75th percentiles, flags estimates with high relative standard errors, and quotes BLS footnotes for top-coded or unreleased cells. Starter metro and SOC lists use BLS names and add Huntsville, Virginia Beach-Norfolk, San Antonio, Colorado Springs, Dayton and SOCs 15-1299, 15-1243, 17-2141, 13-1081 and 13-1161; comparisons return `data_year`; employment per 1,000 jobs keeps three decimals. A weekly check now detects new BLS releases.
 
 ## 1.1.0
 
-Answers every tool from the current OEWS release (May 2025 estimates,
-published by BLS on May 15, 2026), bundled with the package as a read-only
-SQLite database built from BLS's published flat files by
-`scripts/build_oews_db.py`. No API key, no network calls, and no daily query
-limit, so the same package runs locally and as the hosted keyless service.
-`data/manifest.json` records each BLS source file's URL, size, SHA-256, and
-publication date; values match the live BLS API on a fixed 25-series parity
-sample (including unreleased and top-coded cells).
-
-- `get_access_status` is replaced by `get_data_status`, which reports the
-  bundled release and its sources (the tool count stays 8).
-- `detect_latest_year` reports the bundled release instead of probing the API.
-- Every result carries a `source` block citing the BLS release, publication
-  and retrieval dates, and source file, with BLS's required notice.
-- Results add the official BLS occupation title and area name; missing-data
-  reasons now say whether the SOC code or area is absent from the release.
-- Datatypes 02 and 05 (employment and mean wage relative standard errors) are
-  available.
-- Every tool is annotated `openWorldHint: false`, and the server sends no
-  initialize instructions.
-- `BLS_API_KEY` and request pacing are no longer used; `bls_oews_mcp.http`
-  serves the tools over stateless streamable HTTP for hosting.
+Every tool answers from the bundled May 2025 OEWS release, built from BLS's published flat files, so there is no API key, no network call and no daily limit, locally or hosted. `get_access_status` is replaced by `get_data_status`, and every result cites the BLS release, publication and retrieval dates, and source file.
 
 ## 1.0.10
 
-Fixes shared request pacing locks that could remain held when background
-executor threads changed. Lock acquisition now uses non-blocking attempts with
-async polling, and release stays on the same event-loop thread. This also avoids
-abandoned lock acquisitions when a waiting request is cancelled. Pacing intervals
-and provider cooldowns are unchanged. Regression coverage includes repeated calls,
-upstream errors, cancellation, state-write failures, and cross-process contention.
-See [issue #10](https://github.com/1102tools-dev/federal-contracting-mcps/issues/10).
+Fixes request-pacing locks that could stay held after a cancelled or failed request. Pacing intervals are unchanged ([issue #10](https://github.com/1102tools-dev/federal-contracting-mcps/issues/10)).
 
 ## 1.0.9
 
-Prevents HTTP client debug logging from recording credential-bearing request
-URLs. Tool schemas, readiness behavior, source routing, and results are
-unchanged.
+HTTP debug logging no longer records request URLs that carry credentials. Tools and results are unchanged.
 
 ## 1.0.8
 
-Adds a presence-only `get_access_status` tool that distinguishes configured
-but unverified v2 access from the unauthenticated v1 fallback and its published
-25-request-per-day limit. Anticipated rate, authentication, network, and
-sanitized upstream failures now remain model-visible through MCP `ToolError`.
+Adds `get_access_status`, which says whether a v2 key is configured or the server is using the keyless v1 fallback and its published 25-request-per-day limit. Rate, authentication and network failures stay visible to the AI as clear tool errors.
 
 ## 1.0.7
 
-Publishes the package under the domain-verified
-`com.1102tools/bls-oews-mcp` MCP Registry identity and updates project
-links to the `1102tools-dev` GitHub repository. No tool behavior changed.
+Published under the MCP Registry name `com.1102tools/bls-oews-mcp`. No tool changes.
 
 ## 1.0.6
 
-Redacts the active BLS registration key from upstream response bodies,
-structured messages, exceptions, and model-visible tool errors. Invalid-key
-responses now remain actionable without copying credential values into client
-transcripts. Deterministic regressions cover rejected, partial, HTML, and
-generic HTTP error paths.
+The BLS registration key is redacted from upstream responses, messages and tool errors, so it never appears in chat transcripts.
 
 ## 1.0.5
 
-Serializes concurrent same-process requests by API identity before acquiring
-the existing cross-process file lock. This preserves configured pacing while
-preventing same-process lock contention from deadlocking concurrent calls.
+Fixes a deadlock when several requests ran at once in the same process. Pacing is unchanged.
 
 ## 1.0.4
 
-Suite-wide API safety release. Every BLS request now passes through a
-3-second default cross-process gate, including keyless v1 traffic. The gate
-uses a one-way credential fingerprint, honors provider `Retry-After` without
-automatic retries, and supports the documented pacing environment overrides.
-Package, module, User-Agent, and MCP server versions now share installed
-package metadata. Offline pacing, concurrency, and publication-gate tests
-were added.
+Safety release: every BLS request waits at least 3 seconds after the last one, including keyless traffic, and `Retry-After` is honored without automatic retries.
 
 ## 1.0.3
 
-Added opt-in process-local pacing for credentialed BLS traffic. Version 1.0.4
-supersedes it with default-on, cross-process protection for keyed and keyless
-requests.
+Added optional pacing for keyed BLS traffic, superseded by 1.0.4.
 
 ## 1.0.2
 
-No code changes. Republish to verify the Trusted Publisher pipeline after the repo moved to the 1102tools-dev account.
+No code changes; republished after the repository moved to the 1102tools-dev account.
 
 ## 1.0.1
 
-Round 7: independent full-source re-audit with live verification. 13 findings
-fixed, one of them a money bug introduced by an earlier audit round.
-
-### Fixed
-
-- **Hourly percentile datatype labels were shifted one slot.** The 0.2.2
-  "empirical relabel" claimed dt08 was the Hourly 25th Percentile; live
-  cross-footing proves dt08 x 2080 equals the annual median exactly, so dt08
-  IS the Hourly Median. Requesting the hourly median had been returning the
-  75th percentile (26% high for 15-1252). Official mapping restored
-  (06=10th, 07=25th, 08=Median, 09=75th, 10=90th) and pinned by a live
-  cross-foot canary test that fails if BLS semantics ever move.
-- Datatype 06 (Hourly 10th Percentile) added; it was unrequestable.
-- Datatype 16 relabeled from the fictional "Annual 90th Percentile (alt
-  code)" to its real meaning, Employment per 1,000 Jobs; 17 (Location
-  Quotient) added. Both format as ratios, never as truncated dollars.
-- `igce_wage_benchmark` no longer silently fabricates hourly rates for
-  annual-only occupations (pilots, teachers): it now requests the hourly
-  mean alongside the annual set and flags `annual_only: true` with an
-  explicit warning when BLS publishes no hourly wage.
-- Unpublished cells are formatted "[Not published] {footnote}" instead of
-  "[Capped] ...": wage top-coding ended, and the old docstring claim that
-  '-' means "wage >= $239,200" is gone with it.
-- `compare_occupations` gains the all-no-data flag the other tools had, so
-  nonexistent SOCs no longer masquerade as privacy suppressions.
-- Dedup in `compare_metros` and `compare_occupations` now runs on the
-  normalized series ID: '47900'/'0047900' and '15-1252'/'151252' collapse
-  to one series with a `_note` naming the collapsed inputs, instead of
-  sending duplicate series and silently dropping a result label.
-- Per-series diagnostics under REQUEST_SUCCEEDED ("Series does not exist",
-  "No Data Available for ... Year") are surfaced as `_api_messages` instead
-  of being discarded.
-- `detect_latest_year` probes with the API's `latest=true` flag and reports
-  the true newest year at any staleness depth (previously it probed only
-  current+1, so a 2-year-stale default would report itself current). Also
-  reports key mode via the previously-dead `_api_key_status`.
-- An all-empty API response now sets `no_data`; requested datatypes missing
-  from the response are seeded as explicit "No data" entries.
-- `data_year` and `period` are top-level response fields; the `_data_year`
-  and `_period` keys no longer pollute the `wages` mapping.
-- State FIPS codes are validated against the full 54-entry state/territory
-  table; scope/area mismatches (MSA under scope='state', state FIPS under
-  scope='metro') raise actionable errors in both directions and all tools.
-- readme year guidance corrected: it said "defaults to 2024... Do NOT query
-  2025", the exact inversion of reality.
-
-### Removed
-
-- Dead constants `FULL_DATATYPES` and `COMMON_STATES` (never referenced).
-
-### Testing
-
-- `tests/test_audit_r7.py`: 21 offline regressions plus 2 live canaries
-  (cross-foot invariant, latest-year probe). Two 0.2.2 tests that pinned
-  the wrong datatype labels are rewritten to pin the official mapping.
-- testing.md round 7 documents the audit and corrects the prior record
-  (phantom test file, false validation claims, stale counts and version).
+Fixes 13 problems, including a money bug: hourly percentile labels were shifted one slot, so the Hourly Median returned the 75th percentile (26% high for Software Developers). Also stops inventing hourly rates for annual-only occupations, labels employment per 1,000 jobs and location quotient correctly, and validates state and metro codes.
 
 ## 1.0.0
 
-First stable release. The suite is feature-complete for its intended scope and
-moves to baseline maintenance from here.
-
-### Breaking
-
-Requires **v2 of the MCP Python SDK** (`mcp>=2.0.0`). Version 2 renamed the
-high-level server class from `FastMCP` to `MCPServer` and removed the
-`mcp.server.fastmcp` module. No tool name, parameter, or response shape changed.
-Installs pinned to `mcp` 1.x should stay on the 0.x line of this package.
-The requirement is now bounded (`mcp>=2.0.0,<3`) so a future major release of
-the SDK produces a clean resolver error instead of an import-time crash.
-
-**Claude Desktop `.mcpb` bundles are discontinued.** Bundles could not be
-signed in a way Claude Desktop recognizes, so every install surfaced an
-untrusted-developer warning, and because the bundle shipped without a lockfile
-it re-resolved its dependencies on every launch, which is what made it the
-install path most exposed to the failure above. Install via `uvx`, `pip`, or
-Docker instead; the per-server readme has the client config block. Existing
-bundle installs keep working until removed, but will not receive updates.
-
-Earlier releases declared `mcp>=1.0.0` with no upper bound. When `mcp` 2.0.0
-published, fresh installs of the 0.x line resolved to it and failed at import
-with `ModuleNotFoundError: No module named 'mcp.server.fastmcp'`. Requiring
-`mcp>=2.0.0` closes that gap.
-
-### Changed
-
-- Package version, `__version__`, `USER_AGENT`, and the MCPB manifest version
-  are now synchronized. The USER_AGENT currency test derives its expected value
-  from package metadata rather than a hardcoded literal, which is why the string
-  had drifted a patch behind the package.
-- Declares Python 3.10 through 3.14. Classifiers normalized across all eight
-  servers.
-
-### Fixed
-
-**Wage queries were returning empty results.** BLS withdrew the 2024 OEWS series
-when the May 2025 estimates published in April 2026. This server defaulted to
-2024, so any `get_wage_data`, `igce_wage_benchmark`, `compare_metros`, or
-`compare_occupations` call that did not pass an explicit `year` came back with
-empty values indistinguishable from privacy-suppressed cells. The default is now
-2025.
-
-Wage figures pulled from 0.2.x after April 2026 should be re-verified. Call
-`detect_latest_year()` at the start of an IGCE build to confirm the newest
-published year.
-
-`year=2024` is now rejected as a historical year, consistent with how the server
-already handled 2023 and earlier. Historical OEWS data is available for bulk
-download at bls.gov/oes/tables.htm.
-
-### Verified
-
-219 regression tests (60 offline, 159 live-gated), all passing
-against `mcp` 2.0.0 on Python 3.14, with pass counts identical to the pre-migration
-baseline on `mcp` 1.x. Server confirmed to boot over stdio and enumerate all
-7 tools.
+Requires MCP Python SDK 2 (`mcp>=2.0.0,<3`). Claude Desktop `.mcpb` bundles are discontinued; install with `uvx`, `pip`, or Docker. Fixes empty wage results after BLS withdrew the 2024 series: the default year is now 2025, so wage figures pulled from 0.2.x after April 2026 should be re-checked.
 
 ## 0.2.6
 
-Round 6: deep live audit (153 new live-gated tests). Zero new server bugs
-found, validating the original 0.2.x hardening covered the failure surface.
-
-### Round 6 coverage targets
-
-Bucket | Count | Coverage
----|---|---
-A. National wage data per SOC | 30 | All common federal IGCE SOC codes (Software Dev, PM, Operations Research, Engineers, Accountants, etc.)
-B. State wage data | 17 | 14 major states + DC + AK + HI for Software Developers, plus FIPS coercion (int, padded, missing-area-rejected)
-C. Metro wage data | 18 | Top 15 procurement metros + int coercion + padded + missing-area-rejected
-D. Datatype coverage | 12 | All 9 valid datatype codes (01, 03, 04, 08, 11-15) + defaults + multiple + dedup
-E. Industry breakdowns | 5 | All-industries, Professional Services, Computer Systems, Federal Government + int coercion
-F. Year handling | 5 | 2024 default, str/int variants, historical year rejection (2022/2023)
-G. SOC code formats | 3 | Int input, dash format ("15-1252"), padded
-H. compare_metros | 9 | Top 5 metros, DC area, int codes, mixed types, dedup, datatype variations, state-FIPS rejection, with year
-I. compare_occupations | 9 | National, state VA, metro DC, int codes, dedup, missing-area rejections, datatype, with year
-J. igce_wage_benchmark | 8 | Software Dev DC/national, PM Specialist VA, aging factor, Seattle, Engineer, with year, int inputs
-K. detect_latest_year | 2 | Returns year, year is recent (>=2024)
-L. List tools | 4 | SOC codes list, includes 151252; metros list, includes 47900/Washington
-M. Concurrent calls | 3 | 5 wage lookups, 3 metros, mixed tools
-N. Response shape verification | 4 | occ_code present, values/marker, metros keyed, occupations keyed
-O. Edge cases | 9 | Nonexistent SOC, DC FIPS, AK/HI, state+industry rejection, area+national, low-volume occ, max metros (12), max occupations (12)
-P. Key federal IGCE roles | 9 | IGCE benchmark for each high-frequency federal role at DC metro
-Q. State comparisons | 3 | VA, MD, CA via compare_occupations
-R. Metro comparisons for diverse roles | 3 | Engineer, Lawyer, PM across multiple metros
-
-### Test counts after round 6
-
-- `tests/test_validation.py`: 60 (52 offline + 8 live-gated, unchanged)
-- `tests/test_live_audit_r6.py`: 158 (155 live + 3 list-tool calls)
-- **Total: 218 regression tests (60 offline, 158 live-gated)**
-- **Density: 31.1 tests per tool** (7 tools)
-
-### Why zero new bugs is meaningful
-
-The original 0.2.x audits already did a real-key live audit and found
-10 P1s and 12 response-shape crashes (22 total fixed). Round 6 added a
-much wider live-test surface: 30 SOC codes vs the original ~5, 15 metros
-vs original 3, all 9 datatype codes vs default-only: and found nothing.
-That's the round 6 finding: the failure surface that the original audits
-hardened was complete enough that a 2.5x test expansion still couldn't
-surface anything new.
-
-The 6 test failures during the run were all my test errors (assumed
-historical years would work; assumed state+industry would work; the MCP's
-defensive validation correctly rejects both). Once the test expectations
-matched the documented behavior, everything passed.
+Wider live testing across 30 SOC codes, 15 metros and all datatypes found no new bugs. No behavior changes.
 
 ## 0.2.2
 
-Live audit with a real BLS API key surfaced 1 P0 usability bug and 10 P1
-silent-wrong-data paths that the 0.2.0 / 0.2.1 mocked rounds never caught.
-
-### Usability (P0)
-- `occ_code` validator previously rejected the **standard BLS SOC format**
-  `15-1252` with "must contain only ASCII digits." Users pasting codes
-  directly from bls.gov/soc, BLS publications, or procurement documents
-  hit a hard error on every lookup; only the un-dashed `151252` worked.
-  Now both forms are accepted and normalized: the dash is stripped
-  before validation. Verified live: `occ_code="15-1252"` returns
-  Software Developers mean wage $144,570.
-
-### Silent-wrong-data (P1)
-- `year` validator allowed 1997-2100, but the BLS OEWS **public API only
-  serves the current year** (2024). Asking for 2023 or 2015 returned
-  empty rows that the tool reported as `"suppressed": true` -- making it
-  look like BLS was censoring the cell for privacy when really the API
-  just doesn't serve historical data. Year range now tightened to
-  current ± 1, with a clear error pointing users to
-  bls.gov/oes/tables.htm for historical data.
-- Nonexistent SOC codes (e.g. `99-9999`) returned 4 wage fields all
-  flagged `"suppressed": true` with no indication the SOC was fake.
-  `igce_wage_benchmark` happily returned a benchmarks table with
-  `occ_title: "99-9999"` as if that were the real name. Now every
-  `get_wage_data` response includes `no_data: true` + `no_data_reason`
-  when all wage values are null, listing the common causes (SOC typo /
-  retired code / unsurveyed area + industry).
-- `igce_wage_benchmark` now also carries that `no_data` flag up, and
-  emits `_title_warning` when the SOC isn't in the built-in title
-  lookup (so typos like `99-9999` get called out explicitly).
-- Nonexistent state FIPS (`"99"`), metro MSA (`"99999"`), or NAICS
-  industry (`"999999"`) all used to return silently-suppressed fields.
-  Now flagged with the same `no_data` + `no_data_reason` payload.
-- `compare_metros` accepted 2-digit state FIPS mixed into the
-  `metro_codes` list. After normalization these became valid-looking
-  7-digit series components but silently returned zero results. Now
-  raises ValueError: "looks like a 2-digit state FIPS" and points at
-  `compare_occupations(scope='state')` instead.
-
-### Validation (P2)
-- Single-digit state FIPS (CA=`6`, AK=`2`, etc.) now auto-pads to two
-  digits. Previously rejected as "unrecognized area code (length 1)."
-  Users commonly know FIPS as `6` not `06`.
-- Control characters (`\n`, `\r`, `\t`, `\x00`) in `occ_code` are now
-  rejected up front. Previously `strip()` ate the newline and the
-  remaining digits validated fine.
-- `OEWS_LATEST_FUTURE_YEAR` dropped from 2100 to `OEWS_CURRENT_YEAR+1`
-  so years that will never have data are rejected at validation time.
-
-### Release automation
-- USER_AGENT bumped to `bls-oews-mcp/0.2.2`.
-- 12 new regression tests covering every round-1 finding.
+Dashed SOC codes such as `15-1252` now work. Fake SOC codes, areas and industries, and unavailable years, are flagged as no data instead of looking like privacy-suppressed cells. Single-digit state FIPS codes are padded automatically.
 
 ## 0.2.1
 
-Cross-MCP fix discovered during the sam-gov-mcp 0.3.1 live audit.
-
-- FastMCP tools generate pydantic argument models with the default
-  `extra='ignore'` config. Unknown parameter names were silently
-  dropped: a typo like `get_wage_data(ocupation_code='15-1252')` (the
-  real parameter is `occ_code`) succeeded with the typo discarded,
-  and the tool ran with an empty / default-filter result set. Now
-  every tool has `extra='forbid'` applied after registration, so
-  typos raise "Extra inputs are not permitted" before any HTTP call.
-- USER_AGENT bumped to `bls-oews-mcp/0.2.1`.
-- Added regression test covering the new behavior.
+Misspelled parameter names now return an error instead of being silently ignored.
 
 ## 0.2.0
-Hardening release. Five audit rounds surfaced 40+ issues; this release closes
-12 crash paths and 12 silent-wrong-data bugs, plus validation gaps across every
-tool.
 
-### Crash fixes (previously crashed on unusual BLS response shapes)
-- `series` or `data` returned as dict instead of list (XML-to-JSON single-item
-  collapse). Added `_as_list` normalizer; all response walks now tolerate both
-  shapes.
-- Entry missing `value`, `year`, `periodName`, or `seriesID` keys now handled
-  via `.get()` with safe defaults.
-- `footnotes` returned as dict or string (instead of list) handled via
-  `_safe_footnotes`.
-- `data` array containing `None` entries, or `series` list with `None` items,
-  now skipped defensively.
-- `seriesID` returned as int now coerced to str before `[-2:]` slicing.
-- BLS returning 200 OK with non-JSON body (HTML error page, empty body) now
-  raises a clean `RuntimeError` instead of `JSONDecodeError`.
-
-### Silent wrong-data fixes
-- `compare_metros`, `compare_occupations`: `occ_code` now enforced to 6 ASCII
-  digits. Previously dashed (`"15-1252"`) and alpha (`"ABCDEF"`) codes passed
-  through, producing confusing "No data" responses.
-- `_normalize_area`: enforces ASCII-digit-only area codes. Previously `"VA"`
-  became `"VA00000"` and silently returned no data.
-- `industry` param: same ASCII-digit enforcement.
-- `DATATYPE_LABELS`: fixed semantic bug. Datatype `"08"` was labeled "Hourly
-  Median" but BLS data proves it is Hourly 25th Percentile. Datatype `"09"` is
-  the true Hourly Median. Added missing labels for `07`, `09`, `10`, `16`.
-- Bogus datatypes (`"99"`, `"AA"`) now rejected with actionable error.
-- `year` parameter: range-validated (1997 through 2100). Decimals, whitespace,
-  leading zeros, and letters all rejected.
-- `_parse_value`: strips whitespace before comparing against SPECIAL_VALUES.
-  `"  *  "` now correctly marked suppressed instead of "Unparseable".
-- `BLS_API_KEY` whitespace-only value now flagged via `_api_key_status()` helper.
-- Python's `.isdigit()` accepts fullwidth Unicode digits; replaced with
-  ASCII-only regex.
-- `REQUEST_PARTIALLY_PROCESSED` status now surfaces `_partial: True` and
-  `_warnings: [...]` in the response. Previously treated as success.
-- `scope='national'` with `area_code` provided: area_code now flagged as
-  ignored via `_note` field instead of being silently dropped.
-- Mismatched series ID in response: defensive fallback keeps user-friendly
-  labels when BLS echoes a different ID.
-
-### Validation + UX
-- `igce_wage_benchmark`: burden multipliers now validated. Rejects
-  `burden_low > burden_high`, non-positive, and implausibly large (>10) values.
-- `compare_metros` / `compare_occupations`: input lists deduped before building
-  series IDs (saves BLS quota).
-- All tools accept int or str for `occ_code`, `area_code`, `year`, `industry`,
-  `datatype` (was str-only; users naturally pass `2024` as int).
-- `_format_error` strips HTML from 5xx bodies via `_clean_error_body`.
-- `detect_latest_year` no longer silently swallows exceptions. Probe errors
-  (rate limit, auth, network) now surface in `probe_error` field.
-- `USER_AGENT` bumped to 0.2.0.
-
-### Tests and release automation
-- New `tests/test_validation.py` with 52 tests, all through the FastMCP
-  registry (`mcp.call_tool`) so pydantic coercion runs as in production. The
-  prior `stress_test.py` awaited raw coroutines, which is why the round-3/4/5
-  crash paths shipped in 0.1.x.
-- Added `.github/workflows/publish.yml`. Tagging `v*.*.*` runs tests, builds,
-  and publishes to PyPI via Trusted Publisher (no tokens).
+Hardening release: fixes crashes on unusual BLS response shapes and wrong-data bugs from loose code validation, and adds input checks across every tool.
 
 ## 0.1.0
-Initial release.
 
-- 7 MCP tools covering the BLS OEWS API
-- Core: get_wage_data, compare_metros, compare_occupations
-- Workflows: igce_wage_benchmark (with burden multiplier), detect_latest_year
-- Reference: list_common_soc_codes, list_common_metros
-- 25-character series ID builder with component validation
-- Area code normalization (2-digit FIPS, 5-digit MSA, 7-char full)
-- Special value handling (wage caps, suppressed data, small samples)
-- v1/v2 API auto-selection based on key presence
-- Actionable error messages for rate limits, invalid keys, bad series IDs
-- Industry-scope validation (industry breakdowns national only)
-- Authentication via optional BLS_API_KEY environment variable
+Initial release with 7 tools covering the BLS OEWS API.

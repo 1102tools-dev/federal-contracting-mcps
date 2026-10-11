@@ -8,13 +8,7 @@ Free, open-source MCP server for the GSA Per Diem Rates API. Federal travel lodg
 
 ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network call: they are answered from GSA's published rate, ZIP, and M&IE files bundled in the package. For bundled fiscal years, city lookups, trip estimates and comparisons with a supplied `county` also work without a key or network call. City-name lookups without a county and lookups for unbundled years use the GSA Per Diem API and need a free api.data.gov key in `PERDIEM_API_KEY`. The hosted version needs no key for any lookup. See [Local or hosted](#local-or-hosted).
 
-*The completed testing record spans sixteen audit rounds. Current Python regression validation records 588 collected tests: 321 passed and 267 optional live-gated tests skipped. See [testing.md](testing.md) for detailed results and historical findings.*
-
-The final Round 7 contractor-travel audit completed all seven tools with 143 paired public/installed-console cases (145 actual console attempts including two repeated controls), 48 independently recomputed estimates and eight composed budgets. It found no new P0–P2 content defects or P3 observations; keyless county recovery, publisher-key differences and contractor allowability limits remain explicit in [testing.md](testing.md).
-
-The October 10 round-3 content audit checked 101 new travel questions across all seven tools against fresh official sources. Published 1.2.4 fixes valid Doña Ana County worksite lookups and clarifies when a local API key is needed. The actual installed CLI and public Worker replays passed; the keyless CLI explicitly returns missing-key guidance for two city-only API paths. Separate regression validation recorded 316 Python tests passed and 267 optional live tests skipped, plus 29 Worker tests passed. See [testing.md](testing.md) for source comparisons and scope limits.
-
-Published 1.2.5 preserves actionable input guidance with MCP SDK 2.3. Actual fresh official installation and public-service verification pass both ordinary state/month corrections and their bundled followups without a key. The actual published SDK 2.3 suite passes 321 tests with 267 optional skips (588 collected); all seven tool definitions and 17 package/data files match the release source. See [testing.md](testing.md).
+*588 regression tests, and realistic contractor travel questions checked against GSA's published rates before release. See [testing.md](testing.md).*
 
 ## Local or hosted
 
@@ -22,8 +16,8 @@ Published 1.2.5 preserves actionable input guidance with MCP SDK 2.3. Actual fre
 |---|---|---|
 | [Local setup](#installation) | [Install](https://claude.ai/directory/gsa-perdiem-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6ab85f56d4ec8191970ab75fdeddd2f9) |
 
-- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. Bundled ZIP, state, M&IE and city-plus-county requests need no key. Only live API requests need a free api.data.gov key. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
-- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
+- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. Bundled ZIP, state, M&IE and city-plus-county requests need no key. Only live API requests need a free api.data.gov key. It doesn't update itself: ask your AI to update it (for example with `@latest`) when you want the newest fixes. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
+- **Hosted** is always up to date, needs no setup or keys, and works in Claude or ChatGPT anywhere.
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#gsa-per-diem)
 
@@ -88,9 +82,9 @@ Use the configuration below as the server definition and adapt its placement to 
 }
 ```
 
-The server defaults `FEDERAL_API_MIN_INTERVAL_SECONDS` to `4` for keyed
-requests. The explicit value above documents the intended policy
-and can be changed when you have a documented reason. Per Diem and
+The server defaults `FEDERAL_API_MIN_INTERVAL_SECONDS` to `0.6` for keyed
+requests and caps them at 950 per hour. The example above sets a slower
+`4`; either works. Per Diem and
 Regulations.gov processes using the same `api.data.gov` key share the gate.
 
 **No-key setup** (bundled ZIP, state, M&IE, and city-plus-county lookups, estimates and comparisons work):

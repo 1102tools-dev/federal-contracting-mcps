@@ -8,17 +8,9 @@ Free, open-source MCP server for BLS Occupational Employment and Wage Statistics
 
 No API key and no daily limit. The package bundles the current OEWS release (May 2025 estimates, published by BLS on May 15, 2026) as a read-only database built from BLS's published flat files, so every answer is local and each result cites the BLS release, publication date, retrieval date, and source file. See [Local or hosted](#local-or-hosted).
 
-Version **1.1.4** preserves BLS publication footnotes when a requested wage measure has no numeric value. Teacher hourly and performer annual comparisons explain the alternate published measure and suggest a useful annual or hourly followup. Topcoded wages retain BLS's published lower bound; the server does not invent an exact wage or annualize hourly-only occupations.
+When BLS publishes no number for a wage measure, answers keep the BLS footnote that explains why and suggest the published hourly or annual alternative. Top-coded wages keep BLS's published lower bound; the server does not invent an exact wage or annualize hourly-only occupations.
 
-The current suite has **298 collected tests: 297 passed and one optional live BLS API parity test skipped** in both frozen and fresh dependency environments. After publishing 1.1.4, a fresh official PyPI installation and the public service each completed a separate 46-question corpus covering all eight tools, source values, IGCE arithmetic and useful followups. Twenty sampled current BLS API cells and footnotes matched the bundled source. The native Worker passed 31 tests; Python/Worker parity covered 227 cases with zero unexpected differences. See [testing.md](testing.md) for the historical audits, fixes and release checks.
-
-The next content audit, round 3, found **zero new defects** across 58 new ordinary and power-user questions. The actual published CLI and public service each completed all 58 questions and followups; 431 measure/benchmark objects matched the bundled source and IGCE arithmetic, and 28 fresh official BLS API cells and footnotes matched. The flat-file footnote refresh returned HTTP 403 and is recorded as unavailable, separate from those successful API checks.
-
-The fourth content round found **zero new P0, P1, P2 or P3 defects** in 66 new practical questions across all eight tools. A fresh official PyPI 1.1.4 CLI and the public service each completed the separate 66-call corpus with identical answers. All 418 wage/benchmark objects matched the bundled source; 31 selected fresh BLS API cells and footnotes matched independently. The audit covered environmental/civil work, social services, EMS/therapy, transportation, maintenance, communications and education, including successful annual-only/hourly-only followups. Flat-file footnote access remained unavailable (HTTP 403); no new package release was needed.
-
-The fifth content round found **zero new P0–P3 defects** in 65 new practical questions across all eight tools. Actual fresh official PyPI 1.1.4 CLI and public answers matched for all 65 questions; 450 wage/benchmark objects and 33 fresh official API cells/footnotes reconciled. New veterinary, utility, manufacturing, trades, science and language-service tasks include local benchmarks and four caller-composed staffing budgets. Flight attendant annual-only and dancer hourly-only alternatives remain explicit. Both full dependency lanes measured 297 passed / one optional skip / 298 collected; direct BLS HTML/flat-footnote 403s are retained source limitations. See the Round 5 record in [testing.md](testing.md).
-
-The sixth content round found **zero new P0–P3 defects** in 71 new questions across all eight tools. Fresh official PyPI 1.1.4 CLI and public answers match; 503 wage/benchmark objects and 40 selected fresh BLS API cells/footnotes reconcile. New trades, aircraft maintenance, metalworking, science technicians, childcare and performing-arts tasks include local benchmarks and four caller-composed budgets. One initial BLS API 503 was recovered by a bounded retry; direct HTML/flat-footnote 403s remain explicit. Both full Python lanes measured 297 passed / one optional skip / 298 collected. See the Round 6 record in [testing.md](testing.md).
+*298 regression tests, and realistic contracting wage questions checked against BLS source values before release. See [testing.md](testing.md).*
 
 ## Local or hosted
 
@@ -26,12 +18,10 @@ The sixth content round found **zero new P0–P3 defects** in 71 new questions a
 |---|---|---|
 | [Local setup](#installation) | [Install](https://claude.ai/directory/bls-oews-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6ab872bf5360819186af0917c923e57e) |
 
-- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. Answers come from the bundled BLS database, with no government API calls or request limits. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
-- **Hosted** is the convenient option: one click, no keys, and it works in Claude or ChatGPT anywhere.
+- **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. Answers come from the bundled BLS database, with no government API calls or request limits. It doesn't update itself: ask your AI to update it (for example with `@latest`) when you want the newest fixes. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
+- **Hosted** is always up to date, needs no setup or keys, and works in Claude or ChatGPT anywhere.
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#bls-oews)
-
-The final seventh content round found **zero new P0–P2 defects** and no new P3 observations in 84 new acquisition wage questions and follow-ups across all eight tools. Fresh official PyPI 1.1.4 stdio and public service calls each completed 84 calls: 82 successful answer payloads match exactly, and two expected scope limitations provide actionable recovery guidance. All 485 wage/benchmark objects per surface reconcile to the bundled May 2025 source; 46 selected fresh BLS API cells and footnotes match independently. Twenty caller-composed workflows distinguish base wages, user burden assumptions and actual contractor prices. Both Python dependency lanes measured 297 passed / one optional skip / 298 collected. Flat-footnote HTTP 403 and unavailable historical years remain explicit; no new top-coded cell appeared in this corpus. See the final Round 7 record in [testing.md](testing.md).
 
 ## What it does
 

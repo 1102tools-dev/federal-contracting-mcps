@@ -1,10 +1,10 @@
 # Paced live-audit harness
 
-A rate-disciplined prober for hunting real-API behavior that mocks can never
-catch. This is the harness behind the round-10 findings in
-[../../testing.md](../../testing.md): offset page-index semantics, the 400k
-paging ceiling, past-the-end phantom rows and hangs, dead enum values, and
-the rest.
+A rate-limited prober for finding real SAM.gov API behavior that mocked tests
+can't catch. It produced the 1.0.4 findings in
+[../../changelog.md](../../changelog.md): `offset` as a page number, the
+400,000-record paging ceiling, past-the-end stray rows and hangs, dead
+`registration_status` values, and more.
 
 ## Why it exists
 

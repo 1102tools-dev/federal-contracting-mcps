@@ -1,77 +1,45 @@
 # Test suite map
 
-Frozen source Python 3.12.13 and fresh official PyPI Python 3.12.13
-full executions for published 1.0.23 each collect 2,322 cases and measure
-1,943 passed / 379 skipped on MCP SDK 2.0.0 and 2.3.0 respectively. All 855
-retained failed node IDs are rerun and pass. Four new source-derived workflow
-and unexpected-fault controls are included; content questions are not pytest
-cases. The measured full suite includes existing unmocked source controls;
-379 explicitly live-gated cases remain skipped. Eight actual console/public
-questions are counted separately, with three error originals and five successful
-discovery/recovery calls in each lane.
+2,322 tests (1,943 run by default, 379 live-gated), counted including
+parametrized cases. Files are named by the audit round or fix release that
+produced them; keep those names so each test traces back to its fix in git
+history. [../testing.md](../testing.md) explains how to run them.
 
-The actual published 1.0.22 latest-SDK execution remains 1,084 passed /
-855 failed / 379 skipped / 2,318 collected. Its successful 153-question
-console/public content campaign is separate. Expected-input assertions retain
-visible, specific recovery hints. Unexpected provider/internal fixtures retain
-strict wrapper, causal type/status/detail/cleaning and SDK masking assertions;
-causes are not credited as client-visible guidance.
-
-Files retain their audit-round and fix-wave history; see [../testing.md](../testing.md).
-
-| File | Origin | Collected | Live-gated |
+| File | Origin and purpose | Tests | Live-gated |
 |---|---|---:|---:|
-| `test_audit_r11.py` | Round 11 paced live campaign contracts | 9 | 7 |
-| `test_content_e2e_1014.py` | Round 13 full end-to-end scope guidance | 36 | 0 |
-| `test_content_fixes_1013.py` | Round 12 content corrections | 75 | 4 |
-| `test_density_r5.py` | Round 5 density sweep | 415 | 0 |
-| `test_entity_family_fixes.py` | Round 10 entity-family fixes | 63 | 4 |
+| `test_validation.py` | Foundational input validation and live checks | 62 | 10 |
+| `test_density_r5.py` | Round 5 density sweep: every input field on every tool | 415 | 0 |
+| `test_live_audit_r6.py` | Round 6 live audit of every tool | 157 | 157 |
+| `test_live_audit_r7.py` | Round 7 deep live audit: chained IDs, IDV child modes, sorting, paging | 104 | 104 |
+| `test_round_8.py` | Round 8 property-based and live cases | 69 | 10 |
+| `test_v0_3_features.py` | v0.3 expansion from 17 to 55 tools | 1,244 | 75 |
+| `test_search_family_fixes.py` | 1.0.1 search-family fixes | 37 | 8 |
+| `test_entity_family_fixes.py` | 1.0.1 entity-family fixes | 63 | 4 |
+| `test_audit_r11.py` | Round 11 paced live campaign anchors | 9 | 7 |
+| `test_content_fixes_1013.py` | 1.0.13 content corrections | 75 | 4 |
+| `test_content_e2e_1014.py` | 1.0.14 scope guidance from the end-to-end audit | 36 | 0 |
+| `test_published_scope_1015.py` | 1.0.15 description scope guidance | 2 | 0 |
+| `test_new_awards_fiscal_year_1016.py` | 1.0.16 fiscal-year new-award counts; quarter/month unchanged | 6 | 0 |
+| `test_subaward_period_scope_1017.py` | 1.0.17 cumulative versus dated FFATA reports | 3 | 0 |
+| `test_federal_account_program_scope_1018.py` | 1.0.18 all-year program lists, complete list and single-year followup | 3 | 0 |
+| `test_federal_account_available_fy_1020.py` | 1.0.20 unavailable fiscal year guidance | 3 | 0 |
+| `test_naics_current_retired_1021.py` | 1.0.21 retired codes versus codes cut by the limit | 3 | 0 |
+| `test_award_date_overlap_r6.py` | 1.0.22 award date windows versus dated transactions | 3 | 0 |
+| `test_sdk23_expected_guidance.py` | 1.0.23 input-error guidance under MCP SDK 2.3 | 4 | 0 |
 | `test_http.py` | Hosted HTTP application | 2 | 0 |
-| `test_live_audit_r6.py` | Round 6 live audit | 157 | 157 |
-| `test_live_audit_r7.py` | Round 7 live audit | 104 | 104 |
-| `test_new_awards_fiscal_year_1016.py` | Round 14 captured annual fiscal-year correction; unchanged quarter/month | 6 | 0 |
-| `test_published_scope_1015.py` | Round 13 published description guidance | 2 | 0 |
 | `test_response_cache_hosted.py` | Hosted response cache | 10 | 0 |
-| `test_round_8.py` | Round 8 property and live cases | 69 | 10 |
-| `test_search_family_fixes.py` | Round 10 search-family fixes | 37 | 8 |
 | `test_throughput.py` | Request throughput and pacing | 9 | 0 |
 | `test_tool_profiles.py` | Tool profile selection | 3 | 0 |
-| `test_v0_3_features.py` | v0.3 expansion (17 to 55 tools) | 1,244 | 75 |
-| `test_validation.py` | Foundational validation and live checks | 62 | 10 |
-| `test_subaward_period_scope_1017.py` | Round 15 cumulative/dated FFATA scope | 3 | 0 |
-| `test_federal_account_program_scope_1018.py` | Round 16 captured all-year scope, complete program list and financial followup | 3 | 0 |
-| `test_federal_account_available_fy_1020.py` | Round 16 actual source availability, supported recovery and unexpected503 control | 3 | 0 |
-| `test_naics_current_retired_1021.py` | Round 17 captured current-versus-retired taxonomy, larger-limit recovery and source-row control | 3 | 0 |
-| `test_award_date_overlap_r6.py` | Round 18 source interval overlap, actual dated recovery and unchanged explicit/no-window controls | 3 | 0 |
-| `test_sdk23_expected_guidance.py` | SDK 2.3 expected guidance | 4 | 0 |
 | **Total** | | **2,322** | **379** |
 
 Live tests need `USASPENDING_LIVE_TESTS=1` (the API is keyless), are paced
 1-2 s apart by `conftest.py`, and the minimal anchor set runs via
 `pytest -m live_smoke` (~10 calls).
 
-- `scenarios/` holds standalone scenario scripts (not pytest; retained for
-  reproducibility of early rounds).
+- `scenarios/` holds standalone scenario scripts (not pytest; kept from early rounds).
 
-Reproduce collection without enabling live checks:
+List the tests without running live checks:
 
 ```bash
 USASPENDING_LIVE_TESTS=0 uv run --project servers/usaspending-gov-mcp pytest --collect-only -q servers/usaspending-gov-mcp/tests
 ```
-
-
-### Final Round 7 provenance
-
-The final contracting content audit uses a fresh official 1.0.23 / MCP 2.3.0
-installation and the public service: 132 new plus 10 prior reference/control
-argument combinations across all 55 tools, with all distinct combinations
-finishing source/console/public parity. Its 151 attempt records preserve two
-excluded collector mistakes and five local request failures with successful
-bounded recoveries; 150 fresh official response bodies are retained.
-
-No regression tests or runtime bytes change in this round. The current 1,943
-passed / 379 skipped / 2,322 collected is the retained actual published SDK
-campaign full default/non-gated execution, **not a newly executed Round 7
-suite**. All 855 former failed IDs executed and passed there. Existing unmocked
-source controls mean that lane is not wholly offline; the 379 live-gated cases
-remain skipped. See `testing.md` for task/source limitations and provenance.
