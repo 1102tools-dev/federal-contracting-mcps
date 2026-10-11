@@ -1,6 +1,66 @@
 # October 10, 2026 MCP content audit and release record
 
-## Final release summary
+## Summary
+
+On October 10, 2026, eight servers went through seven rounds of content checks against their primary sources: SAM.gov, USAspending, GSA CALC+, BLS OEWS, GSA Per Diem, eCFR, Federal Register and Regulations.gov. Each round asked realistic federal contracting questions. Every confirmed problem was fixed, tested and released before the next round started. The seventh round found nothing new, so the audit stopped there. Acquisition.gov had one round only (five fixes, version 1.0.10) and is outside this summary.
+
+### What was found
+
+The ledger counts 74 findings (2 P1, 44 P2, 28 P3, no P0). That number counts a few things more than once. One Wrangler upgrade is logged once per server (8 entries), and one MCP SDK 2.3 error-handling change is logged 10 times. Collapsed, it is about 57 distinct problems:
+
+- **28 could change an answer** a user might act on.
+- 13 were missing caveats or unclear error messages.
+- 15 were tool-description or documentation wording.
+- The rest were dev tooling and SDK compatibility.
+
+Findings by round: 36, 7, 10, 9, 4, 5, then 0. Three more came from the SDK 2.3 fix described below.
+
+### The fixes that mattered most
+
+- **GSA Per Diem:** a trip crossing two months counted meals twice ($460 instead of $414).
+- **eCFR:** it said FAR 15.305 had been removed. The newest snapshot simply ended before the requested date.
+- **eCFR:** it said FAR 2.101 doesn't define "individual surety." It does.
+- **eCFR:** an exponent was lost in rendered text, so a 0.00000003 mg/l limit read as "3 × 10−".
+- **GSA CALC+:** it judged a $200 Systems Engineering rate against a pool that included admin and technician titles. It now refuses a comparable-price verdict for mixed titles.
+- **GSA CALC+:** an exact labor-category search returned 91 loosely matching rows instead of the one exact title.
+- **BLS OEWS:** for hourly-only jobs such as musicians and actors, it reported no estimate and dropped the published hourly wage.
+- **Federal Register:** "upcoming comment deadlines" quietly checked only 500 of 1,040 open notices. It now says when a scan is partial.
+- **Regulations.gov:** it showed the wrong comment deadline for a rule whose period had been extended.
+- **USAspending:** "new awards per fiscal year" was counted by calendar year.
+
+### MCP SDK 2.3
+
+MCP Python SDK 2.3 only passes through error messages raised with its own error type. On a fresh local install, the servers' specific fix-it hints, such as "use the UEI", turned into a generic "Error executing tool." That caused the 931 failing tests (USAspending 855, Federal Register 60, Per Diem 16). No answer was wrong. The fix keeps the hints, and the republished packages pass with no failures.
+
+### Current versions
+
+| Server | Version |
+|---|---|
+| SAM.gov | 1.0.14 (hosted mirror 1.0.4) |
+| USAspending | 1.0.23 |
+| GSA CALC+ | 1.0.17 |
+| BLS OEWS | 1.1.4 |
+| GSA Per Diem | 1.2.5 |
+| eCFR | 1.1.8 |
+| Federal Register | 1.0.16 |
+| Regulations.gov | 2.0.6 |
+
+All of these are on PyPI. The hosted services run the same releases, and the five live-API servers answer from the origin server.
+
+### Known limits
+
+- **SAM.gov:** current active notices only. No archive, amendment history or attachments.
+- **USAspending:** DoD and Army Corps contract data runs about 90 days behind. Searching by award date and by action date covers different sets. Subaward amounts are cumulative reports, not new spending.
+- **GSA CALC+:** large counts are capped or approximate. Ceiling rates are not awarded prices, and there is no worksite filter.
+- **BLS OEWS:** May 2025 wages. BLS leaves some cells unpublished or top-coded.
+- **GSA Per Diem:** continental US only. It does not decide what a contractor may charge.
+- **eCFR:** snapshots lag a few days, and history mostly starts in 2017. It does not decide whether a rule applies to your procurement.
+- **Federal Register:** broad scans stop at 500 rows, and the API archive starts in 1994.
+- **Regulations.gov:** local use needs your own key and is subject to its quota. Attachments are links, not extracted text.
+
+The round-by-round record follows.
+
+## Detailed final release record
 
 All eight supported servers completed the final federal-contracting audit and independent review with **no new confirmed P0–P3 findings**. The cumulative ledger remains **74 distinct findings fully fixed and verified in published destinations: 0 P0, 2 P1, 44 P2 and 28 P3**, with no partial or unresolved confirmed findings. Historical tooling and shared documentation corrections are included; this is not a count of ordinary content defects alone. Acquisition.gov is excluded.
 
