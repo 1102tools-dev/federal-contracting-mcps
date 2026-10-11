@@ -457,28 +457,43 @@ export async function withinLimit(request: Request, env: {REQUEST_LIMITER: Limit
   return (await limiter.limit({key})).success;
 }
 
-/** The answer for a request over its address's per-minute limit, worded so the AI
- * can relay it: a tool call gets a readable tool error, anything else a JSON-RPC error. */
+const LOCAL_INSTALL = "install it locally in the Claude or ChatGPT desktop app for no shared limit: https://1102tools.com/#local-or-hosted";
+
+/** A message the AI can relay: a tool call gets a readable tool error, anything else a JSON-RPC error. */
+function explain(rpc: {id: unknown; method: string}, message: string, status: number): Response {
+  const headers = {"Content-Type": "application/json", "Retry-After": "60"};
+  if (rpc.method === "tools/call" && rpc.id !== null) {
+    return new Response(JSON.stringify({jsonrpc: "2.0", id: rpc.id, result: {content: [{type: "text", text: message}], isError: true}}), {status: 200, headers});
+  }
+  return new Response(JSON.stringify({jsonrpc: "2.0", id: rpc.id, error: {code: -32000, message}}), {status, headers});
+}
+
+/** The JSON-RPC id and method of a small request body, when it has them. */
+function rpcOf(text: string | null): {id: unknown; method: string} {
+  try {
+    const body = JSON.parse(text ?? "") as {id?: unknown; method?: unknown};
+    if (body && typeof body === "object" && !Array.isArray(body)) {
+      return {id: body.id ?? null, method: typeof body.method === "string" ? body.method : ""};
+    }
+  } catch {}
+  return {id: null, method: ""};
+}
+
+/** The answer for a request over its address's per-minute limit. */
 export async function rateLimited(request: Request, service: string, perMinute: number): Promise<Response> {
   const key = request.headers.get("CF-Connecting-IP") || "unknown";
   const message = isAiPlatform(key)
-    ? `The hosted ${service} server is busy right now. Wait a minute and try again.`
-    : `You've reached the hosted ${service} limit of ${perMinute} calls a minute. Wait a minute and try again, or install ${service} locally for no shared limit: https://1102tools.com/#local-or-hosted`;
-  let id: unknown = null;
-  let method = "";
+    ? `The hosted ${service} server is at capacity right now. Wait a minute and try again, or ${LOCAL_INSTALL}`
+    : `You've reached the hosted ${service} limit of ${perMinute} calls a minute. Wait a minute and try again, or ${LOCAL_INSTALL}`;
   // Only small bodies are read; the normal body limit is enforced after this check.
-  if (Number(request.headers.get("Content-Length") || "0") <= 65536) {
-    try {
-      const body = await request.clone().json() as {id?: unknown; method?: unknown};
-      if (body && typeof body === "object" && !Array.isArray(body)) {
-        id = body.id ?? null;
-        method = typeof body.method === "string" ? body.method : "";
-      }
-    } catch {}
-  }
-  const headers = {"Content-Type": "application/json", "Retry-After": "60"};
-  if (method === "tools/call" && id !== null) {
-    return new Response(JSON.stringify({jsonrpc: "2.0", id, result: {content: [{type: "text", text: message}], isError: true}}), {status: 200, headers});
-  }
-  return new Response(JSON.stringify({jsonrpc: "2.0", id, error: {code: -32000, message}}), {status: 429, headers});
+  const small = Number(request.headers.get("Content-Length") || "0") <= 65536;
+  return explain(rpcOf(small ? await request.clone().text().catch(() => null) : null), message, 429);
+}
+
+/** A backend's "busy" (429) or queue deadline (504) answer, reworded so the AI can relay it. */
+export function explainCapacity(response: Response, body: ArrayBuffer | null, service: string): Response {
+  if (response.status !== 429 && response.status !== 504) return response;
+  response.body?.cancel();
+  const text = body ? new TextDecoder().decode(body) : null;
+  return explain(rpcOf(text), `The hosted ${service} server is at capacity right now. Wait a minute and try again, or ${LOCAL_INSTALL}`, response.status);
 }

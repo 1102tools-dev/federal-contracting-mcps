@@ -1,7 +1,7 @@
 // Run: node --test deploy/shared/edge.test.ts
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited} from "./edge.ts";
+import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity} from "./edge.ts";
 
 const HEADERS = {
   "content-type": "application/json",
@@ -334,12 +334,27 @@ test("an address over its limit gets a message the AI can relay", async () => {
   const result = await tool.json() as any;
   assert.equal(result.id, 7);
   assert.equal(result.result.isError, true);
-  assert.match(result.result.content[0].text, /limit of 20 calls a minute.*install USAspending locally.*#local-or-hosted/);
+  assert.match(result.result.content[0].text, /limit of 20 calls a minute.*install it locally in the Claude or ChatGPT desktop app.*#local-or-hosted/);
   const other = await rateLimited(call("8.8.8.8", {jsonrpc: "2.0", id: 1, method: "tools/list"}), "eCFR", 20);
   assert.equal(other.status, 429);
   assert.match((await other.json() as any).error.message, /eCFR limit of 20 calls a minute/);
   const ai = await rateLimited(call("160.79.106.12", {jsonrpc: "2.0", id: 2, method: "tools/call"}), "GSA CALC+", 10);
-  assert.match((await ai.json() as any).result.content[0].text, /busy right now/);
+  assert.match((await ai.json() as any).result.content[0].text, /USAspending|GSA CALC\+ server is at capacity right now.*Claude or ChatGPT desktop app/);
   const garbled = await rateLimited(new Request("https://x.1102tools.com/mcp", {method: "POST", body: "not json"}), "eCFR", 20);
   assert.equal(garbled.status, 429);
+});
+
+test("a busy or timed-out backend answer is reworded for the AI", async () => {
+  const body = new TextEncoder().encode(JSON.stringify({jsonrpc: "2.0", id: 3, method: "tools/call", params: {name: "x"}})).buffer;
+  const busy = explainCapacity(Response.json({error: "Server busy"}, {status: 429}), body, "eCFR");
+  assert.equal(busy.status, 200);
+  const result = await busy.json() as any;
+  assert.equal(result.id, 3);
+  assert.equal(result.result.isError, true);
+  assert.match(result.result.content[0].text, /hosted eCFR server is at capacity.*Claude or ChatGPT desktop app.*#local-or-hosted/);
+  const late = explainCapacity(Response.json({error: "deadline"}, {status: 504}), null, "eCFR");
+  assert.equal(late.status, 504);
+  assert.match((await late.json() as any).error.message, /at capacity/);
+  const fine = Response.json({ok: true});
+  assert.equal(explainCapacity(fine, body, "eCFR"), fine);
 });

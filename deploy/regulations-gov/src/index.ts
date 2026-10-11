@@ -1,6 +1,6 @@
 import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
-import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited } from "../../shared/edge";
+import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited, explainCapacity } from "../../shared/edge";
 
 export class RegulationsGov extends Container {
   defaultPort = 8080;
@@ -53,7 +53,7 @@ export default {
       const response = await originFirst(env, url.pathname, {method: request.method, headers, body},
         () => fetchWithRetry(() => backend.fetch(forwarded())), {"X-Regulations-Key": env.REGULATIONS_GOV_API_KEY ?? ""});
       logToolCall("regulations-gov", body, response, started, request.headers.get("User-Agent"));
-      return response;
+      return explainCapacity(response, body, "Regulations.gov");
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
       return Response.json({error: "Regulations.gov service temporarily unavailable."}, {status: 503, headers: {"Retry-After": "15"}});
