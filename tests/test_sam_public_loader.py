@@ -165,6 +165,39 @@ class Safety(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,'Database operation rejected.*7500') as caught:
                 loader.D1('remote','sam-gov-entities').run('--command','SELECT 1')
         self.assertNotIn('private',str(caught.exception))
+    def test_postpromotion_diagnostic_failure_reports_committed_reload(self):
+        for fail_at in ['size','status_update']:
+            with self.subTest(fail_at=fail_at):
+                original_size=self.db.size
+                original_atomic=self.db.atomic
+                calls=0
+                def measured_size():
+                    nonlocal calls
+                    calls+=1
+                    if fail_at=='size' and calls==3:
+                        raise RuntimeError('metric read failed')
+                    return original_size()
+                def atomic(statements):
+                    if fail_at=='status_update' and statements[0].startswith('UPDATE extract_status'):
+                        raise RuntimeError('metric status write failed')
+                    original_atomic(statements)
+                with patch.object(loader,'prepare',side_effect=self.prepare),patch.object(self.db,'size',side_effect=measured_size),patch.object(self.db,'atomic',side_effect=atomic):
+                    result=loader.load(self.db,'exclusions',self.path,self.metadata,True)
+                self.assertTrue(result['promoted'])
+                self.assertIn('metric',result['diagnostics_warning'])
+                self.assertEqual(self.db.query('SELECT exclusion_id FROM exclusions'),[{'exclusion_id':'new'}])
+                self.assertEqual(self.db.query("SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE '%stage%' OR name LIKE '%previous%')"),[])
+    def test_lost_promotion_acknowledgement_reads_back_committed_generation(self):
+        original=self.db.atomic
+        def lost_acknowledgement(statements):
+            original(statements)
+            if statements[0].startswith('ALTER TABLE'):
+                raise RuntimeError('transport acknowledgement lost')
+        with patch.object(loader,'prepare',side_effect=self.prepare),patch.object(self.db,'atomic',side_effect=lost_acknowledgement):
+            result=loader.load(self.db,'exclusions',self.path,self.metadata,True)
+        self.assertTrue(result['promoted'])
+        self.assertIn('confirmed',result['promotion_warning'])
+        self.assertEqual(self.db.query('SELECT exclusion_id FROM exclusions'),[{'exclusion_id':'new'}])
     def test_middle_staged_index_failure_preserves_previous_data_and_status(self):
         self.db.db.execute("INSERT INTO extract_status (kind,file_name,file_date,source_url,loaded_at,row_count,sha256,database_bytes,load_seconds) VALUES ('exclusions','previous.zip','2026-10-09','public','then',1,'hash',1,1)")
         self.db.db.commit()

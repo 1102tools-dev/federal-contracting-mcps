@@ -375,8 +375,8 @@ def load(db, kind, path, metadata, allow_small=False, prepared=None):
             indexes = [s for s in stage_schema if s.startswith('CREATE INDEX')]
             for index,statement in enumerate(indexes,1):
                 # Create indexes on empty staging tables, before indexed uploads.
-                phase = f'creating empty-stage index {index}/{len(indexes)}'
-                print(f'{kind}: {phase}: {statement}',file=sys.stderr,flush=True)
+                phase = f'creating empty-stage index {index}/{len(indexes)}: {statement}'
+                print(f'{kind}: {phase}',file=sys.stderr,flush=True)
                 db.execute_file([statement])
             for index,batch in enumerate(chunks(stage_statements(local_path,kind,suffix)),1):
                 phase = f'uploading indexed chunk {index}'
@@ -399,14 +399,38 @@ def load(db, kind, path, metadata, allow_small=False, prepared=None):
             db.atomic(promotion_sql(kind,suffix,status))
         except BaseException as failure:
             failure.add_note(f'{kind}: failed while {phase}')
-            try:
-                db.execute_file([f'DROP TABLE IF EXISTS {table}{suffix};' for table in tables])
-            except Exception:
-                failure.add_note('Stage cleanup also failed; the next reload will refuse leftover tables')
-            raise
-        status['database_bytes'] = db.size()
+            committed = False
+            if phase == 'atomic promotion':
+                try:
+                    observed = db.query(f"SELECT loaded_at,sha256,row_count FROM extract_status WHERE kind={quote(kind)}")
+                    stable_indexes = db.query("SELECT name,tbl_name FROM sqlite_master WHERE type='index'")
+                    committed = bool(observed and all(observed[0][key]==status[key] for key in ['loaded_at','sha256','row_count']) and sum(row['name'].endswith(suffix) and row['tbl_name'] in tables for row in stable_indexes)==len(indexes))
+                except Exception:
+                    pass
+                if committed:
+                    status['promotion_warning'] = 'Promotion committed, confirmed by source metadata and stable index generation despite lost acknowledgement'
+                else:
+                    failure.add_note('Promotion outcome may be unknown after a transport failure; inspect stable source metadata before retrying')
+            if not committed:
+                try:
+                    db.execute_file([f'DROP TABLE IF EXISTS {table}{suffix};' for table in tables])
+                except Exception:
+                    failure.add_note('Stage cleanup also failed; the next reload will refuse leftover tables')
+                raise
+        status['promoted'] = True
         status['load_seconds'] = round(time.monotonic()-start,3)
-        db.atomic([f"UPDATE extract_status SET database_bytes={status['database_bytes']}, load_seconds={status['load_seconds']} WHERE kind={quote(kind)};"])
+        measured_final_size = False
+        try:
+            status['database_bytes'] = db.size()
+            measured_final_size = True
+            status['load_seconds'] = round(time.monotonic()-start,3)
+            db.atomic([f"UPDATE extract_status SET database_bytes={status['database_bytes']}, load_seconds={status['load_seconds']} WHERE kind={quote(kind)};"])
+        except Exception as diagnostic_failure:
+            # Promotion already committed. Do not misreport a successful swap as
+            # a failed reload or run stage cleanup because a metric query failed.
+            status['diagnostics_warning'] = readable_error(diagnostic_failure)
+            if not measured_final_size:
+                status['database_bytes'] = None
         status.update(existing_database_bytes=existing_bytes, prepared_database_bytes=size,
                       peak_database_bytes=peak_bytes, database_limit_bytes=MAX_DATABASE_BYTES,
                       peak_headroom_bytes=MAX_DATABASE_BYTES-peak_bytes,
