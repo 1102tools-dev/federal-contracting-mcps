@@ -601,3 +601,101 @@ retain pagination limits. Evidence, fresh capture timestamps and hashes, source
 reconciliations, task answers and installed-package provenance are retained under
 `Artifacts/mcp-e2e-20261010/round6/regulations/`. This record changes no runtime
 behavior or package version.
+
+
+## October 10, 2026: Final federal-contracting content audit (2.0.6)
+
+The final content round completed **129 actual public calls across all nine
+tools** on published 2.0.6, source `c0553538fca43e13a8c7db5a6ecd77a887303c32`.
+All 129 tool/argument combinations are distinct within this round. Comparison
+with the retained Round 2–6 corpora identifies **15 repeated continuity/control
+queries**, including access status, and **one caller navigation mistake**:
+a second VA publication page was requested although its total was five.
+That successful empty response is retained and excluded from substantive new
+coverage. The remaining **113 data-query combinations are new** relative to
+those corpora. No new P0–P2 defect was confirmed in this completed source scope;
+no runtime change or package release was needed.
+
+| Tool | Actual public calls |
+|---|---:|
+| `search_documents` | 16 |
+| `get_document_detail` | 27 |
+| `search_comments` | 35 |
+| `get_comment_detail` | 10 |
+| `search_dockets` | 10 |
+| `get_docket_detail` | 10 |
+| `open_comment_periods` | 2 |
+| `far_case_history` | 18 |
+| `get_access_status` | 1 |
+
+The ten subject chains cover CUI, organizational conflicts, sustainable
+procurement, subcontracting limitations, strategic-metal restrictions,
+mentor-protege consolidation, Federal Supply Schedule price adjustment,
+AI procurement, veteran contracting and federal-contractor wages. Useful
+followups recovered actual proposed-rule object IDs and posted submissions,
+separated final-rule zero comments from proposal input, continued mentor-protege
+correction pages to the underlying final and original proposal, and handed an
+empty OFPP AI search to the appropriate OMB RFI. The OCI chain is separately
+identified as a prior continuity control. Neither a proposed rule nor an old
+final publication establishes current contract obligations.
+
+**93 returned publication occurrences across 35 distinct documents/notices**
+were compared with authoritative Federal Register records: **54 matched primary
+closing fields**, **three original-methodology date occurrences were reconciled
+through the later SBA extension**, and **36 had no primary comment-closing
+field to compare**. The latter are not machine-date parity passes. Actual
+DATES text establishes the OMB RFI response date and final-rule effective dates.
+The SBA original methodology notice says September 21, while the returned
+metadata says November 20; notice **2026-19546 explicitly extends both size and
+methodology proposals through November 20, 2026**. Docket continuation also
+recovers the original size proposal 2026-17042. All **73 dated occurrences**
+preserve correct Eastern-time formatting, source-metadata qualification and
+`controlling_deadline_established: false`.
+
+Sources include **35 freshly captured Federal Register JSON responses and 35
+raw XML files**, plus **three fresh direct Regulations.gov records** for the
+CUI docket, document and comment. Two additional fresh Round 7 primary records
+were reused from the Federal Register worker with exact file/hash provenance:
+original size-proposal JSON 2026-17042 and wage-notice raw text 2026-20646.
+The two workers crossed messages while independently capturing 2026-19546;
+that duplicate URL is disclosed, not counted as two distinct notices. An initial
+XML capture flag searched for a literal `DATES` element; the retained semantic
+parse receipt correctly reads the source's `EFFDATE` element. All 35 XML files
+parse successfully. These are source-capture and harness distinctions, not
+product defects.
+
+**291 semantic/continuation checks** passed separately from **129 RPC-success
+checks**. They cover publication stages, source fields, time-zone display,
+deadline qualifications, organization/detail consistency and actual returned
+comment/docket identities. Ten docket posted-count comparisons are provider
+cross-tool consistency checks, not independent received-count equality. Posted
+submissions do not include all received feedback or mass-mail duplicates.
+Organization labels alone do not establish an author's position.
+
+A fresh uncached official by-name PyPI installation used Python 3.12.13 and
+MCP SDK 2.3.0. Actual console initialization, the nine-tool catalog and no-key
+access/setup guidance passed. A new direct DEMO_KEY probe subsequently returned
+HTTP 200 with nine requests remaining after UTC rollover, enabling **four actual
+keyed console calls**: CUI docket, document, object-ID comment search and comment
+detail. Two additional direct document/comment captures returned HTTP 200.
+Only this narrow continuation has keyed local data evidence; it does not replace
+the broader hosted corpus with keyed parity. The three direct records agree
+with the selected returned fields. All seven installed source modules match
+published source `c0553538fca43e13a8c7db5a6ecd77a887303c32`, and installed,
+public and reviewed catalogs agree exactly on all nine tools.
+
+The separate freshly installed-package SDK 2.3.0 regression lane passed
+**179**, skipped **119** optional live-gated checks and collected **298**.
+Those 119 checks were not enabled, not passed. Earlier quota-429 and attachment-403
+proofs remain historical; they are not repeated failures in this final round.
+No attachment PDFs were downloaded or their substantive positions inferred.
+The current-year WHD index returned no minimum-wage records; independently
+reused notice 2026-20646 establishes only its specified EO 13658 contract-vintage
+scope and January 6, 2027 rate change, not a rate for every federal contract.
+
+Full questions, responses, source dates and hashes, explicit prior/caller
+exclusions, task answers, source comparisons and actual installed/keyed console
+provenance are retained under
+`Artifacts/mcp-e2e-20261010/round7/regulations-gov/`. This final audit makes no
+claim that all independently keyed source checks or attachment content were
+available, and it starts no further content round.
