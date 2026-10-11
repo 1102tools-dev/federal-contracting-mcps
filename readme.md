@@ -48,7 +48,7 @@ The table shows where each server is listed as a hosted install.
 
 | MCP | Local setup (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|---|
-| SAM.gov | [Setup guide](servers/sam-gov-mcp#installation) (full 20-tool edition, free key) | [Add to Claude](https://claude.ai/directory/sam-gov-by-1102tools) (4-tool edition, no key) | In review |
+| SAM.gov | [Setup guide](servers/sam-gov-mcp#installation) (full 20-tool edition, free key) | [Add to Claude](https://claude.ai/directory/sam-gov-by-1102tools) (6-tool edition, no key) | In review |
 | USAspending | [Setup guide](servers/usaspending-gov-mcp#installation) | [Add to Claude](https://claude.ai/directory/usaspending-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9ee668cc248191a0bdb9911b546799) |
 | GSA CALC+ | [Setup guide](servers/gsa-calc-mcp#installation) | [Add to Claude](https://claude.ai/directory/gsa-calc-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a9eeeebfa8c81918945df0945276cb1) |
 | BLS OEWS | [Setup guide](servers/bls-oews-mcp#installation) | [Add to Claude](https://claude.ai/directory/bls-oews-by-1102tools) | [Add to ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ab872bf5360819186af0917c923e57e) |
@@ -66,11 +66,11 @@ The table shows where each server is listed as a hosted install.
 | **Rate limits** | Your own, in full | Pooled across all users. Your lookups stay private |
 | **Relies on** | Government sources | Government sources and Cloudflare |
 | **Updates** | Manual. Local installs don't update themselves. Ask your AI to update them | Automatic. Always runs the latest release |
-| **SAM.gov** | Full edition: 20 tools, free key | 4 tools, no key |
+| **SAM.gov** | Full edition: 20 tools, free key | 6 tools, no key |
 
-**Use hosted if** you're on your phone, your work computer blocks installs, or you want SAM.gov opportunity search without a key.
+**Use hosted if** you're on your phone, your work computer blocks installs, or you want SAM.gov opportunity, registration and exclusion search without a key.
 
-- **SAM.gov comes in two editions.** Hosted has 4 keyless tools for contract opportunities, award notices, and justifications. Local is the full edition: 20 tools that add entity registrations, SBA certifications, exclusions, and contract award records, with a free SAM.gov key. [Compare the editions](servers/sam-gov-mcp#two-editions-hosted-or-full).
+- **SAM.gov comes in two editions.** Hosted has 6 keyless tools for contract opportunities, public entity registrations, and exclusions, built from SAM.gov's public files. Local is the full edition: 20 tools that add live API lookups, detailed SBA certification dates, reps and certs, integrity records, and contract award records, with a free SAM.gov key. [Compare the editions](servers/sam-gov-mcp#two-editions-hosted-or-full).
 - **Hosted privacy.** Hosted services cache some public government responses temporarily in bounded memory to reduce repeated source requests. No conversations or query/result logs are retained. Public data snapshots are maintained separately. Their code and Cloudflare setup are public in [federal-contracting-mcps](deploy). Cloudflare still handles connection data such as IP addresses, and Claude or ChatGPT handles your conversation under its own privacy policy.
 
 ### Local setup
