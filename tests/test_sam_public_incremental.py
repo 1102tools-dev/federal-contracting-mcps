@@ -68,12 +68,33 @@ class Incremental(unittest.TestCase):
         self.assertEqual(result['delta'],dict(inserted=1,changed=1,removed=1,unchanged=0))
         self.assertEqual(self.db.query('SELECT COUNT(*) n FROM entities')[0]['n'],2)
         self.assertEqual(self.db.query('SELECT COUNT(*) n FROM entity_naics')[0]['n'],2)
-    def test_account_budget_fails_before_any_schema_or_record_write(self):
+    def test_historical_account_writes_do_not_block_new_delta(self):
         self.seed('entities',[self.entity()]);self.db.target='remote'
-        with patch.object(incremental,'billing_period',return_value={'start':'2026-10-07T00:00:00+00:00','end':'2026-11-07T00:00:00+00:00'}),patch.object(incremental,'account_month_written',return_value=111_000_000),patch.object(self.db,'execute_file') as ddl,patch.object(self.db,'atomic') as mutations:
-            with self.assertRaisesRegex(ValueError,'Account monthly write budget'):
-                self.run_load('entities',[self.entity(date='2026-10-12')],oracle=SimpleNamespace(db=self.db.db,total=0,round_limit=5000000))
-        ddl.assert_not_called();mutations.assert_not_called()
+        oracle=SimpleNamespace(db=self.db.db,total=0,round_limit=5000000,
+            steps=[],rehearse=lambda *args: {},invalidate=lambda: None)
+        with patch.object(incremental,'billing_period',return_value={'start':'2026-10-07T00:00:00+00:00','end':'2026-11-07T00:00:00+00:00'}),patch.object(incremental,'account_month_written',return_value=111_000_000),patch.object(self.db,'atomic',side_effect=RuntimeError('mutation reached')) as mutations:
+            with self.assertRaisesRegex(RuntimeError,'mutation reached'):
+                self.run_load('entities',[self.entity(date='2026-10-12')],oracle=oracle)
+        mutations.assert_called_once()
+    def test_entity_monthly_cap_still_blocks_before_mutations(self):
+        self.seed('entities',[self.entity()])
+        self.db.execute_file([incremental.BUDGET_SQL])
+        period=incremental.dt.datetime.now(incremental.dt.timezone.utc).replace(day=1,hour=0,minute=0,second=0,microsecond=0).isoformat()
+        self.db.db.execute('INSERT INTO public_write_budget VALUES (?,4000000,0)',(period,));self.db.db.commit()
+        with patch.object(self.db,'atomic') as mutations:
+            with self.assertRaisesRegex(ValueError,'Public refresh write allocation'):
+                self.run_load('entities',[self.entity(date='2026-10-12')])
+        mutations.assert_not_called()
+    def test_exclusions_daily_cap_still_blocks_before_mutations(self):
+        rows=[{'exclusion_id':'SAM0001','name':'Example','record_json':{'entityName':'Example'}}]
+        self.seed('exclusions',rows)
+        self.db.execute_file([incremental.DAILY_SQL])
+        day=incremental.dt.datetime.now(incremental.dt.timezone.utc).date().isoformat()
+        self.db.db.execute('INSERT INTO public_daily_budget VALUES (?,190000)',(day,));self.db.db.commit()
+        with patch.object(self.db,'atomic') as mutations:
+            with self.assertRaisesRegex(ValueError,'Public refresh write allocation'):
+                self.run_load('exclusions',[dict(rows[0],name='Changed')])
+        mutations.assert_not_called()
     def test_entire_delta_must_fit_diagnostic_limit(self):
         self.seed('entities',[self.entity()])
         with patch.object(self.db,'execute_file') as ddl,patch.object(self.db,'atomic') as mutations:
