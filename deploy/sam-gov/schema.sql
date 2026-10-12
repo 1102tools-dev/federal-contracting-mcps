@@ -67,6 +67,9 @@ CREATE INDEX IF NOT EXISTS opp_psc ON opportunities(psc_code);
 CREATE INDEX IF NOT EXISTS opp_set_aside ON opportunities(set_aside_code);
 CREATE INDEX IF NOT EXISTS opp_pop_state ON opportunities(pop_state);
 CREATE INDEX IF NOT EXISTS opp_solicitation ON opportunities(solicitation_number COLLATE NOCASE);
+-- Covering index for summaries and counts: every column they filter or group
+-- on, so SQLite scans ~11 MB of index instead of full rows with descriptions.
+CREATE INDEX IF NOT EXISTS opp_facets ON opportunities(is_latest, notice_type, response_deadline_utc, archive_date, posted_date, response_deadline, department, sub_tier, office, naics_code, psc_code, set_aside_code, pop_state, office_state);
 
 -- Keyword search over titles and full descriptions.
 CREATE VIRTUAL TABLE IF NOT EXISTS opportunities_fts USING fts5(
