@@ -556,7 +556,7 @@ export async function getDataStatus(db: Database, _args: Args, now = new Date())
   };
 }
 
-export const HANDLERS: Record<string, (db: Database, args: Args, entityDb?: Database) => Promise<unknown>> = {
+export const HANDLERS: Record<string, (db: Database, args: Args, entityDb?: Database, nameIndexDb?: Database) => Promise<unknown>> = {
   search_opportunities: (db, args) => searchOpportunities(db, args),
   get_opportunity: (db, args) => getOpportunity(db, args),
   summarize_opportunities: (db, args) => summarizeOpportunities(db, args),
@@ -568,6 +568,6 @@ export const HANDLERS: Record<string, (db: Database, args: Args, entityDb?: Data
       status: stale ? "stale" : opportunities.status,
       notes: [...opportunities.notes, ...staleFiles.flatMap(file => file.notes ?? [])]};
   },
-  search_entities: (db, args) => searchEntities(db, args),
-  search_exclusions: (db, args) => searchExclusions(db, args),
+  search_entities: (db, args, _entityDb, nameIndexDb) => searchEntities(db, args, new Date(), nameIndexDb),
+  search_exclusions: (db, args, _entityDb, nameIndexDb) => searchExclusions(db, args, new Date(), nameIndexDb),
 };

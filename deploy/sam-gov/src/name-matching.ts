@@ -110,3 +110,38 @@ export async function possibleNameMatches(db: Database, options: {
   }).filter(row => row.similarity >= 0.65).sort((a, b) => b.similarity - a.similarity || a.matched_name.localeCompare(b.matched_name)).slice(0, 5);
   return {possibleMatches: ranked, possibleMatchNote: "Possible matches, not confirmed. Bounded close-name suggestions are not an exhaustive search or an identity, exclusion, registration or eligibility determination. Compare identifiers and addresses; confirm current status on SAM.gov.", possibleMatchCandidatesTruncated: ranked.length > 0 && candidates.length === 501};
 }
+
+// Trigram name index (separate sam-gov-name-index D1). It only narrows the
+// rows that namePredicate then checks exactly, so results never change.
+// Queries shorter than 3 characters, very broad queries, a missing index or an
+// index built for another source generation all fall back to the full scan.
+export const NAME_INDEX_MAX_CANDIDATES = 10000;
+export type NameIndexCandidates = {ids: string; sha256: string; loadedAt: string};
+
+export function trigramMatch(query: string): string | undefined {
+  const key = [...normalizedName(query)];
+  if (key.length < 3) return undefined;
+  const grams = new Set<string>();
+  for (let i = 0; i + 3 <= key.length; i++) grams.add(key.slice(i, i + 3).join(""));
+  return [...grams].map(gram => `"${gram.replaceAll('"', '""')}"`).join(" AND ");
+}
+
+export async function nameIndexCandidates(indexDb: Database | undefined, kind: "entities" | "exclusions", query: string): Promise<NameIndexCandidates | undefined> {
+  const match = trigramMatch(query);
+  if (!indexDb || !match) return undefined;
+  try {
+    const row = (await indexDb.prepare(`SELECT s.source_sha AS sha256, s.source_loaded_at AS loaded_at,
+      (SELECT json_group_array(rowid) FROM (SELECT rowid FROM ${kind}_name_index WHERE ${kind}_name_index MATCH ? LIMIT ?)) AS ids
+      FROM name_index_status s WHERE s.kind = ?`).bind(match, NAME_INDEX_MAX_CANDIDATES + 1, kind).all<Record<string, any>>()).results[0];
+    if (!row?.sha256) return undefined;
+    const ids = JSON.parse(row.ids) as number[];
+    if (ids.length > NAME_INDEX_MAX_CANDIDATES) return undefined;
+    return {ids: JSON.stringify(ids), sha256: row.sha256, loadedAt: row.loaded_at};
+  } catch {
+    return undefined; // Index unavailable: the exact scan still answers.
+  }
+}
+
+/** True when the index was built from the snapshot the search actually read. */
+export const nameIndexMatches = (candidates: NameIndexCandidates | undefined, snapshot: Record<string, any> | undefined) =>
+  !candidates || (snapshot?.sha256 === candidates.sha256 && snapshot?.loaded_at === candidates.loadedAt);
