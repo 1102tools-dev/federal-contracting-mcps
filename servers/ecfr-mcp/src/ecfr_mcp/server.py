@@ -423,9 +423,11 @@ async def _data_version() -> str | None:
     return value
 
 
-def _cache_stats() -> dict[str, int]:
+def _cache_stats() -> dict[str, Any]:
     json_stats, xml_stats = _cache.stats(), _xml_cache.stats()
-    return {name: json_stats[name] + xml_stats[name] for name in json_stats}
+    out: dict[str, Any] = {name: json_stats[name] + xml_stats[name] for name in json_stats if name != "monitor"}
+    out["monitor"] = {name: json_stats["monitor"][name] + xml_stats["monitor"][name] for name in json_stats["monitor"]}
+    return out
 
 
 def _get_client() -> httpx.AsyncClient:

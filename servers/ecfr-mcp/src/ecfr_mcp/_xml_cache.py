@@ -6,6 +6,7 @@ from collections import OrderedDict
 import time
 import xml.etree.ElementTree as ET
 from ._pacing import _process_lock
+from ._response_cache import monitor_call_active
 
 
 class XmlCache:
@@ -20,6 +21,8 @@ class XmlCache:
         self.bytes=0
         self.hits=0
         self.misses=0
+        self.monitor_hits=0
+        self.monitor_misses=0
 
     def _get(self, key):
         now=self.clock()
@@ -31,22 +34,28 @@ class XmlCache:
         return self.entries[key][1]
 
     def stats(self):
-        return {"hits": self.hits, "misses": self.misses, "entries": len(self.entries), "bytes": self.bytes}
+        return {"hits": self.hits, "misses": self.misses, "entries": len(self.entries), "bytes": self.bytes,
+                "monitor": {"hits": self.monitor_hits, "misses": self.monitor_misses}}
+
+    def _count(self, hit):
+        # 1102tools' own health checks are counted apart from real users.
+        name=("monitor_" if monitor_call_active() else "")+("hits" if hit else "misses")
+        setattr(self, name, getattr(self, name)+1)
 
     async def get_or_fetch(self, key, fetch, ttl=None):
         ttl=self.ttl if ttl is None else ttl
         found=self._get(key)
         if found is not None:
-            self.hits+=1
+            self._count(True)
             return found
         # XML misses are already serialized upstream. One same-loop lock also
         # coalesces duplicate misses without an unbounded per-query lock map.
         async with _process_lock(f"ecfr-xml-cache:{id(self)}"):
             found=self._get(key)
             if found is not None:
-                self.hits+=1
+                self._count(True)
                 return found
-            self.misses+=1
+            self._count(False)
             value=await fetch()  # Errors/cancellation never populate the cache.
             size=len(value.encode('utf-8'))
             if size>min(self.max_entry_bytes,self.max_bytes) or self.max_entries<1:

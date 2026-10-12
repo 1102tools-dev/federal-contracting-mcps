@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 2.0.7
+
+Hosted cache counts on `/health` now cover real users only; 1102tools' own health checks and release checks are counted separately under `monitor`.
+
 ## 2.0.6
 
 Input mistakes (for example, asking to include closed comment periods, or a calendar date where a docket search needs a timestamp) again return a specific message saying how to fix the request under MCP SDK 2.3, instead of a generic error.

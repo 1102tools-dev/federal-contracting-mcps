@@ -77,7 +77,7 @@ def test_off_by_default(rc, monkeypatch):
     run(go())
     assert cache.enabled is False
     assert up.calls == 3
-    assert cache.stats() == {"hits": 0, "misses": 0, "entries": 0, "bytes": 0}
+    assert cache.stats() == {"hits": 0, "misses": 0, "entries": 0, "bytes": 0, "monitor": {"hits": 0, "misses": 0}}
     assert rc.enabled_from_env({rc.ENABLE_ENV: "1"}) is True
     assert rc.enabled_from_env({rc.ENABLE_ENV: "0"}) is False
     assert rc.enabled_from_env({}) is False
@@ -100,7 +100,7 @@ def test_hit_miss_and_expiry(rc):
         await cache.get_or_fetch("k", 60, up.fetcher("a"), parse)
         assert up.calls == 2
     run(go())
-    assert cache.stats() == {"hits": 2, "misses": 2, "entries": 1, "bytes": len(b'{"q": "a"}')}
+    assert cache.stats() == {"hits": 2, "misses": 2, "entries": 1, "bytes": len(b'{"q": "a"}'), "monitor": {"hits": 0, "misses": 0}}
 
 
 def test_each_hit_parses_fresh_objects(rc):
@@ -294,3 +294,31 @@ def test_the_hosting_machine_can_give_the_cache_more_room(rc):
     fixed = Cache(max_bytes=1024, max_entry_bytes=512, enabled=True, environment=env)
     assert fixed.max_bytes == 1024 and fixed.max_entries == 4096
 
+
+
+def test_monitoring_calls_share_the_cache_but_count_apart(rc):
+    cache, up = make(rc), Upstream()
+
+    async def scenario():
+        token = rc.mark_monitor_call(True)
+        try:
+            await cache.get_or_fetch("health", 60, up.fetcher("health"), parse)
+            await cache.get_or_fetch("health", 60, up.fetcher("health"), parse)
+        finally:
+            rc.reset_monitor_call(token)
+        await cache.get_or_fetch("health", 60, up.fetcher("health"), parse)
+        await cache.get_or_fetch("user", 60, up.fetcher("user"), parse)
+
+    asyncio.run(scenario())
+    stats = cache.stats()
+    assert up.calls == 2
+    assert (stats["hits"], stats["misses"]) == (1, 1)
+    assert stats["monitor"] == {"hits": 1, "misses": 1}
+
+
+def test_monitor_header_detection(rc):
+    assert rc.is_monitor_scope({"headers": [(b"x-1102tools-monitor", b"1")]})
+    assert rc.is_monitor_scope({"headers": [(b"X-1102tools-Monitor", b"1")]})
+    assert not rc.is_monitor_scope({"headers": [(b"x-1102tools-monitor", b"0")]})
+    assert not rc.is_monitor_scope({"headers": [(b"user-agent", b"Claude-User")]})
+    assert not rc.is_monitor_scope({})

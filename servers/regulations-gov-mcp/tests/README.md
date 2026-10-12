@@ -15,7 +15,7 @@ release that produced them, so each test traces back to its fix in git history.
 | `test_hosted_throughput.py` | Hosted pacing, budget, and throughput contract | 8 | 0 |
 | `test_round_4.py` | Round 4 property validation and live source audit | 125 | 106 |
 | `test_validation.py` | Foundational input validation and source checks | 51 | 5 |
-| `test_ordinary_recovery_guidance.py` | 2.0.6: filter and date fix-it guidance; unexpected errors stay unexpected | 3 | 0 |
+| `test_ordinary_recovery_guidance.py` | 2.0.7: filter and date fix-it guidance; unexpected errors stay unexpected | 3 | 0 |
 | `test_deadline_source_guidance.py` | 2.0.5: deadlines labeled as source metadata, with notice links for verification | 9 | 0 |
 | `test_workflow_content_audit.py` | 2.0.4: workflow recovery guidance and unknown organizations | 7 | 0 |
 | **Total** | | **298** | **119** |

@@ -102,5 +102,6 @@ def test_health_reports_cache_counts():
 
     with TestClient(create_app()) as client:
         cache = client.get("/health").json()["cache"]
-    assert set(cache) == {"hits", "misses", "entries", "bytes"}
-    assert all(isinstance(value, int) for value in cache.values())
+    assert set(cache) == {"hits", "misses", "entries", "bytes", "monitor"}
+    assert all(isinstance(cache[name], int) for name in ("hits", "misses", "entries", "bytes"))
+    assert set(cache["monitor"]) == {"hits", "misses"}
