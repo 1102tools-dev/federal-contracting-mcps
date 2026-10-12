@@ -524,11 +524,46 @@ export function isAiPlatform(address: string): boolean {
   return value !== null && PARSED_RANGES.some(([start, end]) => value >= start && value < end);
 }
 
-/** Whether this request is within its address's per-minute limit. */
+// ChatGPT attaches an anonymized per-user ID (_meta["openai/subject"]) to each
+// tool call, which OpenAI documents for rate limiting. A call from a platform
+// address that carries one also counts against REQUEST_LIMITER under a SHA-256
+// of that ID, so one ChatGPT user gets the same limit as one address. The ID is
+// trusted only from the published platform ranges: anyone else could invent a
+// new one per call. It is hashed here and never logged or stored.
+const MAX_SUBJECT_LENGTH = 256;
+const USER_LIMITED = new WeakSet<Request>();
+
+/** A SHA-256 of the tools/call's ChatGPT user ID, or null when there is none. */
+export async function chatgptUser(request: Request): Promise<string | null> {
+  if (request.method !== "POST") return null;
+  const body = await readBounded(request.clone() as Request).catch(() => null);
+  if (!body?.byteLength) return null;
+  let message: unknown;
+  try {
+    message = JSON.parse(new TextDecoder().decode(body));
+  } catch {
+    return null;
+  }
+  if (!isObject(message) || message.method !== "tools/call" || !isObject(message.params)) return null;
+  const meta = message.params._meta;
+  const subject = isObject(meta) ? meta["openai/subject"] : undefined;
+  if (typeof subject !== "string" || !subject || subject.length > MAX_SUBJECT_LENGTH) return null;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(subject));
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Whether this request is within its address's per-minute limit and, for a
+ * ChatGPT tool call, its user's. */
 export async function withinLimit(request: Request, env: {REQUEST_LIMITER: Limiter; AI_LIMITER?: Limiter}): Promise<boolean> {
   const key = request.headers.get("CF-Connecting-IP") || "unknown";
-  const limiter = env.AI_LIMITER && await isAiPlatformLive(key) ? env.AI_LIMITER : env.REQUEST_LIMITER;
-  return (await limiter.limit({key})).success;
+  const platform = Boolean(env.AI_LIMITER) && await isAiPlatformLive(key);
+  const limiter = platform ? env.AI_LIMITER! : env.REQUEST_LIMITER;
+  if (!(await limiter.limit({key})).success) return false;
+  if (!platform) return true;
+  const user = await chatgptUser(request);
+  if (user === null || (await env.REQUEST_LIMITER.limit({key: `chatgpt-user:${user}`})).success) return true;
+  USER_LIMITED.add(request);
+  return false;
 }
 
 const LOCAL_INSTALL = "install it locally in the Claude or ChatGPT desktop app for no shared limit: https://1102tools.com/#local-or-hosted";
@@ -556,7 +591,9 @@ function rpcOf(text: string | null): {id: unknown; method: string} {
 /** The answer for a request over its address's per-minute limit. */
 export async function rateLimited(request: Request, service: string, perMinute: number): Promise<Response> {
   const key = request.headers.get("CF-Connecting-IP") || "unknown";
-  const message = await isAiPlatformLive(key)
+  const message = USER_LIMITED.has(request)
+    ? `You've reached the hosted ${service} limit of ${perMinute} calls a minute per person. Wait a minute and try again, or ${LOCAL_INSTALL}`
+    : await isAiPlatformLive(key)
     ? `The hosted ${service} server is at capacity right now. Wait a minute and try again, or ${LOCAL_INSTALL}`
     : `You've reached the hosted ${service} limit of ${perMinute} calls a minute. Wait a minute and try again, or ${LOCAL_INSTALL}`;
   // Only small bodies are read; the normal body limit is enforced after this check.
