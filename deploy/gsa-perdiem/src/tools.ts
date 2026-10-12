@@ -526,9 +526,29 @@ async function resolveCityByCounty(snap: Year, city: string, state: string, coun
   return {status: "resolved", rate: fromAreaRecord(snap.areaRate(area, state)), match_type: "county"};
 }
 
+// Census place records plus GSA's county definitions settle most city lookups
+// without calling GSA. Names Census doesn't list, and places whose counties sit
+// in different rate areas, still go to GSA's city lookup.
+async function resolveCityLocally(snap: Year, city: string, state: string): Promise<Resolution | null> {
+  // A city named exactly like one of the state's rate areas is that area, the
+  // same exact-name match GSA's city lookup makes (Chicago spans counties in
+  // more than one area, but "Chicago" is a listed destination).
+  const q = normalizeForMatch(city);
+  const named = snap.stateDestinationIds(state).filter(id => normalizeForMatch(snap.destinations.get(id)!.name) === q);
+  if (named.length === 1) return {status: "resolved", rate: fromAreaRecord(snap.areaRate(named[0], state)), match_type: "exact"};
+  const [areas] = await snap.censusAreas(state, city);
+  if (areas.size !== 1) return null;
+  const [area] = areas;
+  const rate = fromAreaRecord(snap.areaRate(area, state));
+  const matchType = normalizeForMatch(rate.city!) === normalizeForMatch(city) ? "exact" : area === STANDARD ? "standard_local" : "census_local";
+  return {status: "resolved", rate, match_type: matchType};
+}
+
 async function lookupCity(ctx: Context, city: string, state: string, year: number, county: string | null): Promise<[Resolution, Dict]> {
   const snap = await ctx.snapshot.year(year);
   if (county && snap !== null) return [await resolveCityByCounty(snap, city, state, county), snap.source];
+  const local = !county && snap !== null ? await resolveCityLocally(snap, city, state) : null;
+  if (local) return [local, snap!.source];
   const path = `city/${normalizeCityForUrl(city)}/state/${state}/year/${year}`;
   const response = await ctx.upstream.get(path);
   if (county) {
@@ -575,6 +595,12 @@ function matchNote(matchType: string | undefined, queryCity: string, best: Rate,
       `Census 2020 place records put ${repr(queryCity)} only in the ${repr(best.city)} area, so that rate is shown.`;
   }
   if (matchType === "county") return "Rate determined from GSA's county definitions for the supplied county.";
+  if (matchType === "census_local") {
+    return `Census 2020 place records put ${repr(queryCity)} in the ${repr(best.city)} rate area under GSA's county definitions.`;
+  }
+  if (matchType === "standard_local") {
+    return `${repr(queryCity)} is not in a listed non-standard area for this state under GSA's county definitions, so the Standard Rate applies.`;
+  }
   return null;
 }
 

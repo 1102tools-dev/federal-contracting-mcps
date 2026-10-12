@@ -362,7 +362,7 @@ def test_perdiem_release_gate_requires_keyless_contract_and_live_city(monkeypatc
             verifier.main()
     else:
         verifier.main()
-        assert calls == ['get_data_status'] + ['lookup_zip_perdiem'] * 3 + ['lookup_city_perdiem']
+        assert calls == ['get_data_status'] + ['lookup_zip_perdiem'] * 3 + ['lookup_city_perdiem'] * 2
 
 
 def test_perdiem_release_gate_rejects_missing_publisher_key(monkeypatch):

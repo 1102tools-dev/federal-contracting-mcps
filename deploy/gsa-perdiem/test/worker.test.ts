@@ -201,7 +201,11 @@ test("bundled lookups never call the GSA API or need the key", async () => {
   assert.equal(dumps((await call("get_mie_breakdown")).structuredContent.tiers[0].total), "68.0");
   assert.equal((await call("lookup_city_perdiem", {city: "Arlington", state: "VA", county: "Arlington"})).structuredContent.status, "resolved");
   assert.equal((await call("get_data_status")).structuredContent.live_lookup_access, "hosted_key_missing");
-  const city = await call("lookup_city_perdiem", {city: "McLean", state: "VA"});
+  // Census places McLean in one rate area, so it no longer needs GSA.
+  const mclean = (await call("lookup_city_perdiem", {city: "McLean", state: "VA"})).structuredContent;
+  assert.equal(mclean.status, "resolved");
+  assert.equal(mclean.source.kind === "gsa_per_diem_api", false);
+  const city = await call("lookup_city_perdiem", {city: "Zzyzx Springs", state: "VA"});
   assert.equal(city.isError, true);
   assert.match(city.content[0].text, /service credential is not configured/);
   assert.equal(seen.length, 0);
@@ -358,17 +362,20 @@ test("a town whose name is inside an NSA name does not get that NSA's rate", asy
     "city/Milton/state/OH/year/2027": {body: REAL_CITY("city_Milton_state_OH_year_2027.json")},
     "city/Gardiner/state/MT/year/2027": {body: REAL_CITY("city_Gardiner_state_MT_year_2027.json")},
   })}});
+  // Census and GSA's county definitions now answer both without GSA's city
+  // lookup: Milton's counties are outside every Ohio rate area (the Standard
+  // Rate the old "unresolved" answer suggested), and Gardiner is in Park County.
   const milton = (await call("lookup_city_perdiem", {city: "Milton", state: "OH", fiscal_year: 2027})).structuredContent;
-  assert.equal(milton.status, "unresolved");
-  assert.equal(milton.matched_city, undefined);
-  assert.equal(milton.census_suggestion.destination, "Standard Rate");
-  assert.equal(milton.census_suggestion.lodging_range, "$113/night");
-  assert.equal(milton.census_suggestion.mie_daily, 68);
+  assert.equal(milton.status, "resolved");
+  assert.equal(milton.match_type, "standard_local");
+  assert.equal(milton.matched_city, "Standard Rate");
+  assert.equal(milton.lodging_range, "$113/night");
+  assert.equal(milton.mie_daily, 68);
   const row = (await call("compare_locations", {locations: [{city: "Milton", state: "OH"}], fiscal_year: 2027})).structuredContent.locations[0];
-  assert.equal(row.status, "unresolved");
+  assert.equal(row.status, "resolved");
   const gardiner = (await call("lookup_city_perdiem", {city: "Gardiner", state: "MT", fiscal_year: 2027})).structuredContent;
   assert.equal(gardiner.matched_city, "Big Sky / West Yellowstone/Gardiner");
-  assert.equal(gardiner.match_type, "composite");
+  assert.equal(gardiner.match_type, "census_local");
 });
 
 test("composite names match whole slash-separated parts only", async () => {

@@ -23,6 +23,14 @@ import gsa_perdiem_mcp.server as srv
 from gsa_perdiem_mcp import __version__
 from gsa_perdiem_mcp.server import mcp
 
+
+@pytest.fixture(autouse=True)
+def _gsa_city_fallback(monkeypatch):
+    # These tests feed fake GSA city responses, so they exercise the GSA
+    # fallback; test_city_local.py covers the bundled city path.
+    monkeypatch.setattr(srv, "_resolve_city_locally", lambda *args: None)
+
+
 LIVE = os.environ.get("MCP_LIVE_TESTS") == "1"
 live = pytest.mark.skipif(not LIVE, reason="requires MCP_LIVE_TESTS=1 + PERDIEM_API_KEY")
 
