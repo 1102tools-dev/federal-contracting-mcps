@@ -161,18 +161,21 @@ export async function searchEntities(db: Database, args: Args, now = new Date(),
     let queryParams = params;
     let matching = `matches AS NOT MATERIALIZED (SELECT e.* FROM entities e${clause})`;
     if (name) {
-      const narrowed = indexed ? ["e.rowid IN (SELECT value FROM json_each(?))"] : [];
+      // D1 has no ANALYZE statistics, so a plain rowid IN filter lets SQLite
+      // walk every active registration. CROSS JOIN fixes the order: candidates first.
+      const legalSource = indexed ? "json_each(?) AS c CROSS JOIN entities e ON e.rowid = c.value" : "entities e";
+      const dbaSource = indexed ? legalSource : `entities e ${uei || cage ? "" : "INDEXED BY entities_dba_name"}`;
       const narrowedParams = indexed ? [indexed.ids] : [];
       const legal = namePredicate(["e.legal_business_name"], name), dba = namePredicate(["e.dba_name"], name);
       const stable = "NOT EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='entities' AND state='applying')";
-      const legalClause = [...baseWhere, ...narrowed, legal.sql, stable].join(" AND ");
-      const dbaClause = [...baseWhere, "e.dba_name IS NOT NULL", "e.dba_name <> ''", ...narrowed, dba.sql, stable].join(" AND ");
+      const legalClause = [...baseWhere, legal.sql, stable].join(" AND ");
+      const dbaClause = [...baseWhere, "e.dba_name IS NOT NULL", "e.dba_name <> ''", dba.sql, stable].join(" AND ");
       matching = `name_keys AS MATERIALIZED (
-        SELECT e.rowid AS matched_rowid, CASE WHEN ${compactSQL("e.legal_business_name", name)} = ? THEN 0 ELSE 3 END AS name_rank FROM entities e WHERE ${legalClause}
-        UNION ALL SELECT e.rowid AS matched_rowid, CASE WHEN ${compactSQL("e.dba_name", name)} = ? THEN 1 ELSE 2 END AS name_rank FROM entities e ${uei || cage || indexed ? "" : "INDEXED BY entities_dba_name"} WHERE ${dbaClause}),
+        SELECT e.rowid AS matched_rowid, CASE WHEN ${compactSQL("e.legal_business_name", name)} = ? THEN 0 ELSE 3 END AS name_rank FROM ${legalSource} WHERE ${legalClause}
+        UNION ALL SELECT e.rowid AS matched_rowid, CASE WHEN ${compactSQL("e.dba_name", name)} = ? THEN 1 ELSE 2 END AS name_rank FROM ${dbaSource} WHERE ${dbaClause}),
         matched_keys AS MATERIALIZED (SELECT matched_rowid, min(name_rank) AS name_rank FROM name_keys GROUP BY matched_rowid),
         matches AS NOT MATERIALIZED (SELECT e.*, k.name_rank FROM entities e JOIN matched_keys k ON e.rowid=k.matched_rowid)`;
-      queryParams = [normalizedName(name), ...baseParams, ...narrowedParams, ...legal.values, normalizedName(name), ...baseParams, ...narrowedParams, ...dba.values];
+      queryParams = [normalizedName(name), ...narrowedParams, ...baseParams, ...legal.values, normalizedName(name), ...narrowedParams, ...baseParams, ...dba.values];
     }
     const order: string[] = [];
     const sortParams: unknown[] = [];

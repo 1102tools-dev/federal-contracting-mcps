@@ -142,12 +142,14 @@ export async function searchExclusions(db: Database | undefined, args: Args, now
   const runQuery = async (indexed: NameIndexCandidates | undefined) => {
     const predicates = [...baseWhere], values = [...baseValues];
     if (name) {
-      if (indexed) {predicates.push("rowid IN (SELECT value FROM json_each(?))"); values.push(indexed.ids);}
       const filter = namePredicate(["name", "coalesce(first_name, '') || ' ' || coalesce(middle_name, '') || ' ' || coalesce(last_name, '')", "coalesce(first_name, '') || ' ' || coalesce(last_name, '')"], name);
       predicates.push(filter.sql); values.push(...filter.values);
     }
     const clause = `${predicates.join(" AND ") || "1=1"} AND NOT EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='exclusions' AND state='applying')`;
-    const matching = name ? `matched_keys AS MATERIALIZED (SELECT rowid AS matched_rowid FROM exclusions WHERE ${clause}), matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE rowid IN (SELECT matched_rowid FROM matched_keys))` : `matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE ${clause})`;
+    // CROSS JOIN starts from the index candidates; D1 has no planner statistics.
+    const keySource = indexed ? "json_each(?) AS c CROSS JOIN exclusions ON exclusions.rowid = c.value" : "exclusions";
+    if (indexed) values.unshift(indexed.ids);
+    const matching = name ? `matched_keys AS MATERIALIZED (SELECT exclusions.rowid AS matched_rowid FROM ${keySource} WHERE ${clause}), matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE rowid IN (SELECT matched_rowid FROM matched_keys))` : `matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE ${clause})`;
     const result = (await db.prepare(`WITH ${matching},
       selected AS (SELECT * FROM matches ORDER BY name COLLATE NOCASE, exclusion_id LIMIT ? OFFSET ?)
       SELECT (SELECT json_group_array(json_object('row', json_object(
