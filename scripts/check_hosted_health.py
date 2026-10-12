@@ -28,6 +28,7 @@ KEY_MODE = {"gsa-perdiem": ("get_data_status", "live_lookup_access"),
             "regulations-gov": ("get_access_status", "status")}
 # Each resolved as an exact GSA API match for FY2027 on 2026-09-26. 79 runs at
 # one per 30 minutes is about 39 hours, longer than the 86,400-second cache.
+# Since 1.2.6 most resolve from bundled Census and county data, so either source passes.
 PERDIEM_CITIES = [
     ("Huntsville", "AL"), ("Gulf Shores", "AL"), ("Hot Springs", "AR"), ("Sedona", "AZ"), ("Tucson", "AZ"),
     ("Fresno", "CA"), ("Monterey", "CA"), ("Napa", "CA"), ("Visalia", "CA"), ("Stockton", "CA"),
@@ -46,6 +47,12 @@ PERDIEM_CITIES = [
     ("Provo", "UT"), ("Blacksburg", "VA"), ("Lynchburg", "VA"), ("Roanoke", "VA"), ("Stowe", "VT"),
     ("Montpelier", "VT"), ("Spokane", "WA"), ("Sturgeon Bay", "WI"), ("Charles Town", "WV"), ("Cody", "WY"),
 ]
+
+
+# Cities whose counties sit in different rate areas, so they still ask GSA's API
+# (checked 2026-10-12). One per run proves the hosted publisher key still works.
+PERDIEM_API_CITIES = [("Fort Worth", "TX"), ("Aurora", "CO"), ("Thornton", "CO"), ("Independence", "MO")]
+PERDIEM_SOURCES = {"bundled_gsa_files", "gsa_per_diem_api"}
 
 
 class UpstreamKeyRejected(RuntimeError):
@@ -113,10 +120,17 @@ def check(slug, service):
         data = rpc("tools/call", {"name": "lookup_city_perdiem",
                                   "arguments": {"city": city, "state": state}}).get("structuredContent") or {}
         kind = (data.get("source") or {}).get("kind")
-        if data.get("status") != "resolved" or kind != "gsa_per_diem_api":
+        if data.get("status") != "resolved" or kind not in PERDIEM_SOURCES:
             raise RuntimeError(f"city lookup {city}, {state} was {data.get('status')!r} from {kind!r}, "
+                               "expected resolved")
+        api_city, api_state = PERDIEM_API_CITIES[PERDIEM_CITIES.index((city, state)) % len(PERDIEM_API_CITIES)]
+        data = rpc("tools/call", {"name": "lookup_city_perdiem",
+                                  "arguments": {"city": api_city, "state": api_state}}).get("structuredContent") or {}
+        kind = (data.get("source") or {}).get("kind")
+        if data.get("status") != "resolved" or kind != "gsa_per_diem_api":
+            raise RuntimeError(f"city lookup {api_city}, {api_state} was {data.get('status')!r} from {kind!r}, "
                                "expected resolved from gsa_per_diem_api")
-        detail += f"; GSA API city lookup {city}, {state} resolved"
+        detail += f"; city lookup {city}, {state} and GSA API city lookup {api_city}, {api_state} resolved"
     return detail
 
 

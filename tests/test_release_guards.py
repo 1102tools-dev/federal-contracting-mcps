@@ -455,7 +455,12 @@ def test_perdiem_monitor_requires_a_live_gsa_city_lookup(monkeypatch):
     ok = {'structuredContent': {'status': 'resolved', 'source': {'kind': 'gsa_per_diem_api'}}}
     monkeypatch.setattr(hc._verify, 'request', _mcp_stub(ok))
     assert 'GSA API city lookup' in hc.check('gsa-perdiem', service)
-    bundled = {'structuredContent': {'status': 'resolved', 'source': {'kind': 'gsa_bundled_snapshot'}}}
+    unknown = {'structuredContent': {'status': 'resolved', 'source': {'kind': 'gsa_bundled_snapshot'}}}
+    monkeypatch.setattr(hc._verify, 'request', _mcp_stub(unknown))
+    with pytest.raises(RuntimeError, match='expected resolved'):
+        hc.check('gsa-perdiem', service)
+    # Bundled answers pass for the rotating city, but the GSA-path city must still reach GSA.
+    bundled = {'structuredContent': {'status': 'resolved', 'source': {'kind': 'bundled_gsa_files'}}}
     monkeypatch.setattr(hc._verify, 'request', _mcp_stub(bundled))
     with pytest.raises(RuntimeError, match='expected resolved from gsa_per_diem_api'):
         hc.check('gsa-perdiem', service)
