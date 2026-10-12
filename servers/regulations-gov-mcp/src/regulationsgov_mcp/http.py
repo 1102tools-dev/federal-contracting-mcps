@@ -7,6 +7,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from starlette.responses import JSONResponse
 
 from ._admission import AdmissionQueue
+from ._response_cache import is_monitor_scope, mark_monitor_call, reset_monitor_call
 from .server import mcp
 from . import server
 
@@ -34,7 +35,12 @@ class AdmissionControl(AdmissionQueue):
                 "admission": self.admission_limits,
                 "cache": server._cache.stats(),
             })(scope, receive, send)
-        return await super().__call__(scope, receive, send)
+        # 1102tools' own health checks are counted apart from real users.
+        token = mark_monitor_call(scope["type"] == "http" and is_monitor_scope(scope))
+        try:
+            return await super().__call__(scope, receive, send)
+        finally:
+            reset_monitor_call(token)
 
 
 

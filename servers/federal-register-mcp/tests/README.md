@@ -14,7 +14,7 @@ git history. [../testing.md](../testing.md) explains how to run them.
 | `test_round_8.py` | 1.0.13 content-test regressions and direct government API comparisons | 30 | 5 live |
 | `test_round_9.py` | 1.0.14 MCP-pipeline regressions: disclose partial comment scans, preserve FAR lower-bound metadata, distinguish scan completeness from returned limits | 4 | 0 |
 | `test_deadline_source_round6.py` | 1.0.15 real reopening metadata/DATES mismatch: zero/nonzero guidance and accurate-source count/date/sort control | 3 | 0 |
-| `test_sdk23_guidance.py` | 1.0.16 ordinary validation guidance, supported recovery, direct helper compatibility and unexpected-fault classification | 6 | 0 |
+| `test_sdk23_guidance.py` | 1.0.17 ordinary validation guidance, supported recovery, direct helper compatibility and unexpected-fault classification | 6 | 0 |
 | `test_http.py` | Hosted HTTP tool catalog and request guards | 2 | 0 |
 | `test_response_cache_hosted.py` | Hosted response caching, expiry, and issue-date invalidation | 9 | 0 |
 | `test_throughput.py` | Shared pacing, cross-process serialization, and budgets | 9 | 0 |

@@ -5,7 +5,8 @@ ROOT=Path(__file__).resolve().parents[1]
 CASES={'usaspending':('get_award_types_reference',{}),'ecfr':('get_latest_date',{}),'gsa-calc':('keyword_search',{'keyword':'program manager','page_size':1}),'federal-register':('search_documents',{'term':'Federal Acquisition Regulation','per_page':1}),'acquisition-gov':('list_rfo_parts',{'part':10}),'gsa-perdiem':('lookup_zip_perdiem',{'zip_code':'22201'}),'regulations-gov':('search_dockets',{'agency_id':'FAR','page_size':5}),'bls-oews':('get_wage_data',{'occ_code':'151252'})}
 
 def request(url,payload=None,*,timeout_seconds=65):
-    cmd=['curl','-fsS','--max-time',str(timeout_seconds),url]
+    # Marks 1102tools' own checks so servers count their cache use apart from real users.
+    cmd=['curl','-fsS','--max-time',str(timeout_seconds),'-H','X-1102tools-Monitor: 1',url]
     if payload is not None:cmd+=['-H','Content-Type: application/json','-H','Accept: application/json, text/event-stream','--data-binary',json.dumps(payload)]
     result=subprocess.run(cmd,capture_output=True,text=True)
     if result.returncode:raise RuntimeError('Endpoint unavailable: '+result.stderr[:200])

@@ -21,6 +21,7 @@ as before. Errors, refusals, timeouts and cancellations are never stored.
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import hashlib
 import json
 import os
@@ -41,6 +42,31 @@ HOUR = 3600.0
 DAY = 86400.0
 
 T = TypeVar("T")
+
+# Calls from 1102tools' own health checks and release verifier carry this
+# header. They still use the cache normally, but are counted apart so the
+# hit and miss counts on /health describe real users only.
+MONITOR_HEADER = b"x-1102tools-monitor"
+_monitor_call: contextvars.ContextVar[bool] = contextvars.ContextVar("monitor_call", default=False)
+
+
+def is_monitor_scope(scope: Mapping[str, Any]) -> bool:
+    """True when an ASGI request is one of 1102tools' own monitoring calls."""
+    return any(name.lower() == MONITOR_HEADER and value == b"1" for name, value in scope.get("headers", ()))
+
+
+def mark_monitor_call(monitor: bool) -> contextvars.Token[bool]:
+    """Count this request's cache use as monitoring; reset with the token."""
+    return _monitor_call.set(monitor)
+
+
+def reset_monitor_call(token: contextvars.Token[bool]) -> None:
+    _monitor_call.reset(token)
+
+
+def monitor_call_active() -> bool:
+    """True while handling one of 1102tools' own monitoring calls."""
+    return _monitor_call.get()
 
 
 def enabled_from_env(environment: Mapping[str, str] | None = None) -> bool:
@@ -108,15 +134,33 @@ class ResponseCache:
         self.bytes = 0
         self.hits = 0
         self.misses = 0
+        self.monitor_hits = 0
+        self.monitor_misses = 0
 
-    def stats(self) -> dict[str, int]:
-        """Counts since start: answers without a government call, calls made."""
+    def stats(self) -> dict[str, Any]:
+        """Counts since start: answers without a government call, calls made.
+
+        ``hits`` and ``misses`` count real users; 1102tools' own monitoring
+        calls are counted under ``monitor``.
+        """
         return {
             "hits": self.hits,
             "misses": self.misses,
             "entries": len(self._entries),
             "bytes": self.bytes,
+            "monitor": {"hits": self.monitor_hits, "misses": self.monitor_misses},
         }
+
+    def _count(self, hit: bool) -> None:
+        monitor = monitor_call_active()
+        if hit and monitor:
+            self.monitor_hits += 1
+        elif hit:
+            self.hits += 1
+        elif monitor:
+            self.monitor_misses += 1
+        else:
+            self.misses += 1
 
     def _drop(self, key: str) -> None:
         entry = self._entries.pop(key, None)
@@ -166,7 +210,7 @@ class ResponseCache:
         while True:
             content = self._lookup(key)
             if content is not None:
-                self.hits += 1
+                self._count(hit=True)
                 return parse(content)
             pending = self._inflight.get(key)
             if pending is None:
@@ -175,7 +219,7 @@ class ResponseCache:
             # shield: a waiter's cancellation must not cancel the shared call.
             content = await asyncio.shield(pending)
             if content is not None:
-                self.hits += 1
+                self._count(hit=True)
                 return parse(content)
             # That call failed and stored nothing: ask again ourselves.
 
@@ -183,7 +227,7 @@ class ResponseCache:
         self._inflight[key] = future
         shared: bytes | None = None
         try:
-            self.misses += 1
+            self._count(hit=False)
             content = await fetch()
             result = parse(content)
             self._store(key, ttl, content)

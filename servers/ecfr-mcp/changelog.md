@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.1.10
+
+Hosted cache counts on `/health` now cover real users only; 1102tools' own health checks and release checks are counted separately under `monitor`.
+
 ## 1.1.9
 
 Common COTS names and unique definition-name prefixes return complete FAR 2.101 definitions; unsuccessful lookups describe search results without claiming a term is undefined.

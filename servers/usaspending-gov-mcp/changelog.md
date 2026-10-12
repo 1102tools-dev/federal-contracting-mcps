@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.0.26
+
+Hosted cache counts on `/health` now cover real users only; 1102tools' own health checks and release checks are counted separately under `monitor`.
+
 ## 1.0.25
 
 The award search and spending tools can now filter grants, loans, and other assistance by assistance listing (CFDA) number, for example 93.778 for Medicaid. Undotted numbers like 93778 are accepted, and using the filter with contracts or IDVs returns a clear message. Seven tools gain the filter; the tool count is unchanged.

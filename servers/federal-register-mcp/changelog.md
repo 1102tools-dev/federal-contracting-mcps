@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.0.17
+
+Hosted cache counts on `/health` now cover real users only; 1102tools' own health checks and release checks are counted separately under `monitor`.
+
 ## 1.0.16
 
 Input mistakes (for example, a FAR part without a CFR title, or page 51) again return a specific message saying how to fix the request under MCP SDK 2.3, instead of a generic error.
