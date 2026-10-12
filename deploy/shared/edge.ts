@@ -293,7 +293,10 @@ export async function originFirst(
 //
 // One line per tools/call so Workers Logs can count which tools people use.
 // It names the tool only, never its arguments: they can hold what people
-// typed. A name that isn't a plain tool identifier logs as "other".
+// typed. A name that isn't a plain tool identifier logs as "other". It also
+// lists the names of the _meta labels the app attached (such as ChatGPT's
+// "openai/subject" user ID), never their values, to learn which apps send a
+// per-user ID that could support a per-user limit.
 
 const TOOL_NAME = /^[a-z][a-z0-9_]{0,63}$/;
 
@@ -309,6 +312,24 @@ export function toolName(body: ArrayBuffer | null): string | null {
   if (!isObject(message) || message.method !== "tools/call") return null;
   const name = isObject(message.params) ? message.params.name : undefined;
   return typeof name === "string" && TOOL_NAME.test(name) ? name : "other";
+}
+
+const META_KEY = /^[A-Za-z0-9._\/-]{1,64}$/;
+const MAX_META_KEYS = 12;
+
+/** The names of the tools/call params._meta labels, sorted; values are never read. */
+export function metaKeys(body: ArrayBuffer | null): string[] {
+  if (!body) return [];
+  let message: unknown;
+  try {
+    message = JSON.parse(new TextDecoder().decode(body));
+  } catch {
+    return [];
+  }
+  if (!isObject(message) || message.method !== "tools/call" || !isObject(message.params)) return [];
+  const meta = message.params._meta;
+  if (!isObject(meta)) return [];
+  return Object.keys(meta).filter(key => META_KEY.test(key)).sort().slice(0, MAX_META_KEYS);
 }
 
 // Directory and availability scanners that probe every listed server.
@@ -332,7 +353,7 @@ export function logToolCall(service: string, body: ArrayBuffer | null, response:
   if (tool === null) return;
   console.log(JSON.stringify({
     event: "tool_call", service, tool, client: clientApp(userAgent), backend: response.headers.get("X-1102tools-Backend"),
-    status: response.status, ms: Date.now() - started,
+    status: response.status, ms: Date.now() - started, meta: metaKeys(body),
   }));
 }
 

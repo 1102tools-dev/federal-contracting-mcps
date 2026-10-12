@@ -1,7 +1,7 @@
 // Run: node --test deploy/shared/edge.test.ts
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL} from "./edge.ts";
+import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys} from "./edge.ts";
 
 // Tests never reach openai.com: the live AI-platform list download fails unless a test mocks it.
 const networkFetch = globalThis.fetch;
@@ -266,6 +266,20 @@ test("AI platform addresses get the higher per-address limit", async () => {
   assert.deepEqual(used, ["ai:160.79.106.12", "normal:136.50.132.183", "normal:160.79.106.12", "normal:8.8.8.8"]);
 });
 
+test("logs the names of a call's _meta labels and never their values", () => {
+  const body = (message: unknown) => new TextEncoder().encode(JSON.stringify(message)).buffer as ArrayBuffer;
+  const meta = {"openai/subject": "v1/secret-user-id", "openai/session": "secret-chat", "openai/locale": "en-US", "bad key; drop": 1};
+  const call = body({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "search_awards", arguments: {}, _meta: meta}});
+  assert.deepEqual(metaKeys(call), ["openai/locale", "openai/session", "openai/subject"]);
+  assert.ok(!JSON.stringify(metaKeys(call)).includes("secret"));
+  assert.deepEqual(metaKeys(body({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "x"}})), []);
+  assert.deepEqual(metaKeys(body({jsonrpc: "2.0", id: 1, method: "tools/list", params: {_meta: meta}})), []);
+  const many = Object.fromEntries(Array.from({length: 20}, (_, i) => [`k${String(i).padStart(2, "0")}`, i]));
+  assert.equal(metaKeys(body({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "x", _meta: many}})).length, 12);
+  assert.deepEqual(metaKeys(new TextEncoder().encode("not json").buffer as ArrayBuffer), []);
+  assert.deepEqual(metaKeys(null), []);
+});
+
 test("logs the tool name of a tools/call and never its arguments", () => {
   const body = (message: unknown) => new TextEncoder().encode(JSON.stringify(message)).buffer as ArrayBuffer;
   const call = body({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "keyword_search", arguments: {keyword: "secret words"}}});
@@ -288,7 +302,7 @@ test("logs the tool name of a tools/call and never its arguments", () => {
   }
   assert.equal(lines.length, 1);
   const line = JSON.parse(lines[0]);
-  assert.deepEqual({...line, ms: 0}, {event: "tool_call", service: "gsa-calc", tool: "keyword_search", client: "claude", backend: "origin", status: 200, ms: 0});
+  assert.deepEqual({...line, ms: 0}, {event: "tool_call", service: "gsa-calc", tool: "keyword_search", client: "claude", backend: "origin", status: 200, ms: 0, meta: []});
   assert.ok(line.ms >= 0);
   assert.ok(!lines[0].includes("secret"));
 });
@@ -326,7 +340,7 @@ test("the D1 wrapper logs answered tools/call requests only", async () => {
     console.log = original;
   }
   assert.equal(lines.length, 1);
-  assert.deepEqual({...JSON.parse(lines[0]), ms: 0}, {event: "tool_call", service: "sam-gov", tool: "search_opportunities", client: "chatgpt", backend: null, status: 200, ms: 0});
+  assert.deepEqual({...JSON.parse(lines[0]), ms: 0}, {event: "tool_call", service: "sam-gov", tool: "search_opportunities", client: "chatgpt", backend: null, status: 200, ms: 0, meta: []});
   assert.ok(!lines[0].includes("secret"));
 });
 
