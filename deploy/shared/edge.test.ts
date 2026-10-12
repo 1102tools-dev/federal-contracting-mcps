@@ -1,7 +1,7 @@
 // Run: node --test deploy/shared/edge.test.ts
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys} from "./edge.ts";
+import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys, chatgptUser} from "./edge.ts";
 
 // Tests never reach openai.com: the live AI-platform list download fails unless a test mocks it.
 const networkFetch = globalThis.fetch;
@@ -264,6 +264,46 @@ test("AI platform addresses get the higher per-address limit", async () => {
   assert.equal(await withinLimit(request("160.79.106.12"), {REQUEST_LIMITER: limiter("normal")}), true);
   assert.equal(await withinLimit(request("8.8.8.8"), {REQUEST_LIMITER: limiter("normal", false), AI_LIMITER: limiter("ai")}), false);
   assert.deepEqual(used, ["ai:160.79.106.12", "normal:136.50.132.183", "normal:160.79.106.12", "normal:8.8.8.8"]);
+});
+
+test("limits each ChatGPT user like one address, trusting the ID only from platform addresses", async () => {
+  const used: string[] = [];
+  const counts = new Map<string, number>();
+  const limiter = (name: string, max: number) => ({limit: async ({key}: {key: string}) => {
+    used.push(`${name}:${key.startsWith("chatgpt-user:") ? "user" : key}`);
+    const n = (counts.get(`${name}:${key}`) ?? 0) + 1;
+    counts.set(`${name}:${key}`, n);
+    return {success: n <= max};
+  }});
+  const env = {REQUEST_LIMITER: limiter("normal", 2), AI_LIMITER: limiter("ai", 600)};
+  const call = (ip: string, subject?: string) => new Request("https://x.1102tools.com/mcp", {method: "POST",
+    headers: {"CF-Connecting-IP": ip},
+    body: JSON.stringify({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "search_awards", arguments: {}, ...(subject ? {_meta: {"openai/subject": subject}} : {})}})});
+  const openai = "4.14.111.5";
+  // One ChatGPT user gets the normal limit (2 here); another user on the same address is unaffected.
+  assert.equal(await withinLimit(call(openai, "user-a"), env), true);
+  assert.equal(await withinLimit(call(openai, "user-a"), env), true);
+  const third = call(openai, "user-a");
+  assert.equal(await withinLimit(third, env), false);
+  assert.equal(await withinLimit(call(openai, "user-b"), env), true);
+  // The request body is still readable by the handler afterwards.
+  assert.equal(JSON.parse(await call(openai, "user-c").text()).params.name, "search_awards");
+  // Over the per-user limit, the message names the limit instead of "at capacity".
+  const message = await (await rateLimited(third, "USAspending", 20)).json() as {result: {content: {text: string}[]}};
+  assert.match(message.result.content[0].text, /limit of 20 calls a minute per person/);
+  // Platform calls without an ID keep the address limit only.
+  used.length = 0;
+  assert.equal(await withinLimit(call(openai), env), true);
+  assert.deepEqual(used, [`ai:${openai}`]);
+  // An ID from any other address is ignored: the address limit applies.
+  used.length = 0;
+  assert.equal(await withinLimit(call("8.8.8.8", "made-up"), env), true);
+  assert.deepEqual(used, ["normal:8.8.8.8"]);
+  // The ID is hashed, never used as is.
+  const hashed = await chatgptUser(call(openai, "user-a"));
+  assert.match(hashed ?? "", /^[0-9a-f]{64}$/);
+  assert.equal(await chatgptUser(call(openai)), null);
+  assert.equal(await chatgptUser(new Request("https://x.1102tools.com/mcp", {method: "POST", body: "not json"})), null);
 });
 
 test("logs the names of a call's _meta labels and never their values", () => {
