@@ -5,7 +5,7 @@ import {HANDLERS, TOOLS, ToolError, type Database} from "./tools.ts";
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
 // this Worker from D1. No container, no session state, no SAM.gov API key.
 
-const SERVER_VERSION = "1.1.11";
+const SERVER_VERSION = "1.1.12";
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const MAX_BODY_BYTES = 65536;
 
@@ -16,6 +16,32 @@ type ReplicatedDatabase = Database & {withSession?(constraint: "first-unconstrai
 
 const readSession = (db: ReplicatedDatabase): Database => db.withSession?.("first-unconstrained") ?? db;
 
+// Answer cache: Cloudflare's per-location cache. Identical questions within a
+// few minutes skip D1, which absorbs bursts such as scheduled agents asking for
+// today's notices. Entries are filed under a SHA-256 fingerprint of the tool,
+// its arguments and the release; only successful answers are stored.
+const CACHE_SECONDS: Record<string, number> = {
+  get_data_status: 60,
+  search_opportunities: 300,
+  get_opportunity: 300,
+  summarize_opportunities: 300,
+  search_entities: 300,
+  search_exclusions: 300,
+};
+type AnswerCache = {match(key: Request): Promise<Response | undefined>; put(key: Request, response: Response): Promise<void>};
+
+function stable(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stable);
+  if (value && typeof value === "object") return Object.fromEntries(Object.keys(value).sort().map(k => [k, stable((value as Record<string, unknown>)[k])]));
+  return value;
+}
+
+export async function answerKey(name: string, args: unknown, release: string): Promise<Request> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify([release, name, stable(args)])));
+  const hex = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+  return new Request(`https://answer-cache.sam.1102tools.com/${hex}`);
+}
+
 export interface Env {
   DB: ReplicatedDatabase;
   ENTITY_DB: ReplicatedDatabase;
@@ -25,6 +51,7 @@ export interface Env {
   REQUEST_LIMITER: {limit(options: {key: string}): Promise<{success: boolean}>};
   AI_LIMITER?: {limit(options: {key: string}): Promise<{success: boolean}>};
   RELEASE_SHA?: string;
+  ANSWER_CACHE?: AnswerCache; // tests only; production uses caches.default
 }
 
 type Message = {jsonrpc?: unknown; id?: unknown; method?: unknown; params?: any};
@@ -57,7 +84,7 @@ async function readBounded(request: Request): Promise<string | null> {
   return new TextDecoder().decode(out);
 }
 
-export async function handleMessage(message: Message, env: Env): Promise<object | null> {
+export async function handleMessage(message: Message, env: Env, trace: {cache?: "hit" | "miss"} = {}): Promise<object | null> {
   const {id, method, params} = message;
   if (message.jsonrpc !== "2.0" || typeof method !== "string") return rpcError(id, -32600, "Invalid JSON-RPC request.");
   // Notifications (no id) get no response body.
@@ -86,10 +113,26 @@ export async function handleMessage(message: Message, env: Env): Promise<object 
       if (typeof args !== "object" || Array.isArray(args)) {
         return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: "arguments must be an object."}], isError: true}};
       }
+      const ttl = CACHE_SECONDS[name];
+      const cache = ttl ? env.ANSWER_CACHE ?? (globalThis as {caches?: {default?: AnswerCache}}).caches?.default : undefined;
+      const key = cache ? await answerKey(name, args, env.RELEASE_SHA ?? SERVER_VERSION) : undefined;
+      if (cache && key) {
+        const hit = await cache.match(key).catch(() => undefined);
+        const data = hit && await hit.json().catch(() => undefined);
+        if (data !== undefined) {
+          trace.cache = "hit";
+          return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify(data)}], structuredContent: data}};
+        }
+        trace.cache = "miss";
+      }
       try {
         const db = readSession(env.DB), entityDb = env.ENTITY_DB && readSession(env.ENTITY_DB);
         const nameIndexDb = env.NAME_INDEX_DB && readSession(env.NAME_INDEX_DB);
         const data = await handler(name === "search_entities" || name === "search_exclusions" ? entityDb : db, args, entityDb, nameIndexDb);
+        if (cache && key) {
+          const body = JSON.stringify(data);
+          await cache.put(key, new Response(body, {headers: {"Content-Type": "application/json", "Cache-Control": `public, max-age=${ttl}`}})).catch(() => {});
+        }
         return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify(data)}], structuredContent: data}};
       } catch (error) {
         if (error instanceof ToolError) {
@@ -134,8 +177,12 @@ async function serve(request: Request, env: Env): Promise<Response> {
   if (Array.isArray(message) || typeof message !== "object" || message === null) {
     return json(rpcError(null, -32600, "Send one JSON-RPC message per request."), 400);
   }
-  const response = await handleMessage(message as Message, env);
-  return response ? json(response) : new Response(null, {status: 202});
+  const trace: {cache?: "hit" | "miss"} = {};
+  const response = await handleMessage(message as Message, env, trace);
+  if (!response) return new Response(null, {status: 202});
+  const out = json(response);
+  if (trace.cache) out.headers.set("X-1102tools-Cache", trace.cache);
+  return out;
 }
 
 export default {fetch: withToolCallLog("sam-gov", serve)} satisfies ExportedHandler<Env>;
