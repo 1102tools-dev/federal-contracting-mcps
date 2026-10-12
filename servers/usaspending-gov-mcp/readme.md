@@ -27,6 +27,7 @@ Exposes the USAspending.gov REST API as 55 MCP tools covering:
 
 **Search and aggregation**
 - `search_awards` - Primary search for contracts, IDVs, grants, loans, direct payments
+- `program_numbers` filter - Narrow grants, loans, and other assistance to an assistance listing (CFDA) number, such as `93.778` for Medicaid. Works on `search_awards`, `get_award_count`, `spending_over_time`, `spending_by_category`, `spending_by_subaward_grouped`, `spending_by_transaction`, and `spending_by_geography`. Find numbers by program name with `autocomplete_cfda`.
 - `get_award_count` - Dimensional counts across award categories
 - `spending_over_time` - Time series aggregation (fiscal year, quarter, month)
 - `spending_by_category` - Top N breakdowns by agency, vendor, NAICS, PSC, state, etc.
@@ -185,6 +186,7 @@ Once configured, try:
 - **Federal-account programs.** Program lists contain codes and names across all reported years, without dollar amounts or a fiscal-year filter. The tool retrieves source pages internally (up to 2,000 records) and reports completeness and any requested FY that was not applied. Use the numeric account ID with the fiscal-year snapshot for single-year account resources. Agency program totals apply to the whole agency.
 - **Available fiscal years.** Account listings default to the source's latest available FY; check `fy`, especially after October rollover. If you ask for a year the source does not have yet, the answer explains which years are available. Agency budgetary resources do not provide a mandatory/discretionary split.
 - **Award type groups cannot be mixed.** The `award_type` parameter takes one of: `contracts`, `idvs`, `grants`, `loans`, `direct_payments`, `other`. Use separate calls for separate categories.
+- **`program_numbers` is for assistance only.** Use it with `award_type` set to `grants`, `loans`, `direct_payments`, or `other`. Contracts and IDVs have no assistance listing, so the server returns a message instead of zero results.
 - **Actionable error messages.** Common API errors (422 mixed award types, 400 sort field missing, 400 empty keywords) are translated into guidance for the calling LLM.
 - **Sort field auto-handling.** The USAspending API requires the sort field to appear in the fields array; this server adds it automatically.
 - **Sensible defaults.** Search limits default to 25 (API max 100). Default fields cover the most common columns for each award category.
