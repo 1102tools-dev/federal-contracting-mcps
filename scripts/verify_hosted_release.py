@@ -79,10 +79,13 @@ def main():
             pdf=tool('get_rfo_agency_deviation',{'source_id':listing['results'][0]['source_id'],'page_start':1,'page_end':2})
             assert pdf['text_extraction_status']=='complete' and pdf['page_numbered_text'],'Real PDF extraction incomplete'
         if args.slug == 'gsa-perdiem':
-            # ZIP lookups are served from bundled GSA files; only city lookups use
-            # the publisher key, so exercise one to prove the hosted secret works.
-            city=tool('lookup_city_perdiem',{'city':'Arlington','state':'VA'})
-            assert city.get('status')=='resolved' and city['source']['kind']=='gsa_per_diem_api','Hosted city lookup did not resolve through the GSA API'
+            # Most city lookups resolve from bundled Census and county data; a
+            # city whose counties sit in different rate areas still asks GSA,
+            # so exercise one to prove the hosted publisher key works.
+            local=tool('lookup_city_perdiem',{'city':'Arlington','state':'VA'})
+            assert local.get('status')=='resolved','Hosted city lookup did not resolve'
+            city=tool('lookup_city_perdiem',{'city':'Fort Worth','state':'TX'})
+            assert city['source']['kind']=='gsa_per_diem_api','Hosted GSA city lookup did not reach the GSA API'
             assert 'DEMO_KEY' not in json.dumps(city),'Hosted result mentions DEMO_KEY'
         if args.slug == 'regulations-gov':
             docs=tool('search_documents',{'agency_id':'FAR','page_size':5})

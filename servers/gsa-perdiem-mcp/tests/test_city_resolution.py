@@ -30,6 +30,9 @@ def _fixture_get(monkeypatch):
 
     monkeypatch.setattr(srv, "_get", fake_get)
     monkeypatch.setenv("PERDIEM_HOSTED", "1")
+    # These tests cover parsing GSA's city responses, which remains the
+    # fallback; test_city_local.py covers the bundled path for these cities.
+    monkeypatch.setattr(srv, "_resolve_city_locally", lambda *args: None)
 
 
 def _city(city, state):

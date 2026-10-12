@@ -904,6 +904,36 @@ def _resolve_city_by_county(
     return {"status": "resolved", "rate": rec, "match_type": "county"}
 
 
+def _resolve_city_locally(snap: snapshot.Year, city: str, state: str) -> dict[str, Any] | None:
+    """Settle a city lookup from bundled data, or None to ask GSA.
+
+    Census place records plus GSA's county definitions settle most city
+    lookups without calling GSA. Names Census doesn't list, and places whose
+    counties sit in different rate areas, still go to GSA's city lookup.
+    """
+    # A city named exactly like one of the state's rate areas is that area, the
+    # same exact-name match GSA's city lookup makes (Chicago spans counties in
+    # more than one area, but "Chicago" is a listed destination).
+    q = _normalize_for_match(city)
+    named = [i for i in snap.state_destination_ids(state)
+             if _normalize_for_match(snap.destinations[i]["name"]) == q]
+    if len(named) == 1:
+        rec = _from_area_record(snap.area_rate(named[0], state))
+        return {"status": "resolved", "rate": rec, "match_type": "exact"}
+    areas, _counties = snap.census_areas(state, city)
+    if len(areas) != 1:
+        return None
+    (area,) = areas
+    rec = _from_area_record(snap.area_rate(area, state))
+    if _normalize_for_match(rec["city"]) == q:
+        match_type = "exact"
+    elif area == snapshot.STANDARD:
+        match_type = "standard_local"
+    else:
+        match_type = "census_local"
+    return {"status": "resolved", "rate": rec, "match_type": match_type}
+
+
 async def _lookup_city(
     city: str, state: str, year: int, county: str | None
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -911,6 +941,9 @@ async def _lookup_city(
     snap = snapshot.load_year(year)
     if county and snap is not None:
         return _resolve_city_by_county(snap, city, state, county), snap.source
+    local = _resolve_city_locally(snap, city, state) if not county and snap is not None else None
+    if local is not None:
+        return local, snap.source
     path = f"city/{_normalize_city_for_url(city)}/state/{state}/year/{year}"
     response = await _get(path)
     if county:
@@ -1057,6 +1090,16 @@ def _match_note(
         )
     if match_type == "county":
         return "Rate determined from GSA's county definitions for the supplied county."
+    if match_type == "census_local":
+        return (
+            f"Census 2020 place records put {query_city!r} in the {best.get('city')!r} "
+            f"rate area under GSA's county definitions."
+        )
+    if match_type == "standard_local":
+        return (
+            f"{query_city!r} is not in a listed non-standard area for this state under "
+            f"GSA's county definitions, so the Standard Rate applies."
+        )
     return None
 
 

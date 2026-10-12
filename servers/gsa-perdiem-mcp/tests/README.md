@@ -18,7 +18,7 @@ history. [../testing.md](../testing.md) explains how to run them.
 | `test_live_audit_r6.py` | Round 6 production API matrix | 240 | 240 |
 | `test_live_parity.py` | Bundled data vs the live GSA API | 12 | 12 |
 | `test_pacing.py` | Shared pacing | 3 | 0 |
-| `test_sdk23_input_guidance.py` | 1.2.5 input-mistake guidance under MCP SDK 2.3 | 5 | 0 |
+| `test_sdk23_input_guidance.py` | 1.2.6 input-mistake guidance under MCP SDK 2.3 | 5 | 0 |
 | `test_snapshot.py` | Bundled ZIP/state/M&IE data, notes and seasonal-month corrections | 44 | 0 |
 | `test_validation.py` | Input validation and API response handling | 173 | 8 |
 
