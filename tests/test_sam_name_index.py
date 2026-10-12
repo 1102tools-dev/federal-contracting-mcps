@@ -99,6 +99,12 @@ class NameIndex(unittest.TestCase):
         finally:
             name_index.SMALL_SYNC_ROWS = original
 
+    def test_dry_run_plans_against_an_empty_database_without_writing(self):
+        source, index = source_db(), FakeD1()
+        result = name_index.sync(source, index, 'entities', 10_000, 0, 0, account=0, dry_run=True)
+        self.assertEqual((result['added'], result['estimated_rows_written']), (3, 16))
+        self.assertEqual(index.query("SELECT count(*) AS n FROM sqlite_master")[0]['n'], 0)
+
     def test_hard_cap_writes_nothing_and_refreshing_source_is_skipped(self):
         source, index = source_db(), index_db()
         with self.assertRaisesRegex(RuntimeError, 'hard cap'):

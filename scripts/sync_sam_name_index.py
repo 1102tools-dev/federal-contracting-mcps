@@ -129,17 +129,20 @@ def account_written():
     return account_month_written(billing_period())
 
 
-def sync(source, index, kind, max_rows, allow_paid_rows, written_so_far, account=None):
+def sync(source, index, kind, max_rows, allow_paid_rows, written_so_far, account=None, dry_run=False):
     result = {"kind": kind}
     before = snapshot(source, kind)
     if before is None:
         return dict(result, skipped="source refreshing or not loaded; index left as is")
-    status = index.query(f"SELECT source_sha, source_loaded_at FROM name_index_status WHERE kind={quote(kind)}")
+    built = index.query("SELECT count(*) AS n FROM sqlite_master WHERE name IN ('name_index_status','name_index_keys')")[0]["n"] == 2
+    status = index.query(f"SELECT source_sha, source_loaded_at FROM name_index_status WHERE kind={quote(kind)}") if built else []
     if status and (status[0]["source_sha"], status[0]["source_loaded_at"]) == before:
         return dict(result, skipped="index current")
     source_rows = read_source(source, kind)
-    removed, added, changed, estimate = plan(source_rows, read_keys(index, kind))
+    removed, added, changed, estimate = plan(source_rows, read_keys(index, kind) if built else {})
     result.update(source_rows=len(source_rows), added=len(added), changed=len(changed), removed=len(removed), estimated_rows_written=estimate)
+    if dry_run:
+        return dict(result, skipped="dry run; nothing written")
     if estimate > SMALL_SYNC_ROWS:
         account = account if account is not None else account_written()
         result["account_month_written"] = account
@@ -167,13 +170,15 @@ def main(argv=None):
     parser.add_argument("--kind", choices=["entities", "exclusions", "all"], default="all")
     parser.add_argument("--max-rows", type=int, default=DEFAULT_MAX_ROWS, help="hard stop on measured rows written for the run")
     parser.add_argument("--allow-paid-rows", type=int, default=0, help="run a sync up to this many rows even past the monthly ceiling")
+    parser.add_argument("--dry-run", action="store_true", help="read and plan only; write nothing")
     args = parser.parse_args(argv)
     source, index = D1("remote", "sam-gov-entities"), D1("remote", "sam-gov-name-index")
-    schema = (WORKER_DIR / "name-index-schema.sql").read_text()
-    index.api({"sql": "\n".join(line for line in schema.splitlines() if not line.startswith("--"))})
+    if not args.dry_run:
+        schema = (WORKER_DIR / "name-index-schema.sql").read_text()
+        index.api({"sql": "\n".join(line for line in schema.splitlines() if not line.startswith("--"))})
     output, written = [], 0
     for kind in ["entities", "exclusions"] if args.kind == "all" else [args.kind]:
-        result = sync(source, index, kind, args.max_rows, args.allow_paid_rows, written)
+        result = sync(source, index, kind, args.max_rows, args.allow_paid_rows, written, dry_run=args.dry_run)
         written += result.get("rows_written", 0)
         output.append(result)
     print(json.dumps(output, indent=2))
