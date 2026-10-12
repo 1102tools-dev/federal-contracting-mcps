@@ -4,7 +4,7 @@
 
 <!-- mcp-name: com.1102tools/usaspending-gov-mcp -->
 
-Free, open-source MCP server for the USAspending.gov federal contract, award, subaward, recipient, agency, and federal account API.
+Free, open-source MCP server for the USAspending.gov API: contracts, grants, loans, subawards, recipients, agencies, and federal accounts.
 
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
