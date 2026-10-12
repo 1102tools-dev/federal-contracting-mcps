@@ -116,7 +116,7 @@ If your app says it can't find `uvx`, use its full path instead: run `which uvx`
 | What you want to do | MCP to connect | Matching prompts |
 |---|---|---|
 | Find solicitations and check company registrations | [SAM.gov](servers/sam-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#catching-opportunities) |
-| Research awards, competitors, agencies, and recompetes | [USAspending](servers/usaspending-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#competitor-intelligence) |
+| Research contracts, grants, competitors, agencies, and recompetes | [USAspending](servers/usaspending-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#competitor-intelligence) |
 | Compare awarded labor-rate ceilings | [GSA CALC+](servers/gsa-calc-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#gsa-calc) |
 | Look up occupation and location wage data | [BLS OEWS](servers/bls-oews-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#bls-oews) |
 | Estimate lodging and meals for travel | [GSA Per Diem](servers/gsa-perdiem-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#gsa-per-diem) |
