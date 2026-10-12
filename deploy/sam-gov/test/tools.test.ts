@@ -12,6 +12,7 @@ const schema = readFileSync(new URL("../schema.sql", import.meta.url), "utf8");
 
 function d1(sqlite: DatabaseSync) {
   return {
+    raw: sqlite,
     prepare: (sql: string) => ({
       bind: (...values: unknown[]) => ({
         all: async () => ({results: sqlite.prepare(sql).all(...(values as any[])) as any[]}),
@@ -481,4 +482,16 @@ test("tool reads go through a D1 read-replication session", async () => {
   const result = await handleMessage({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "search_opportunities", arguments: {}}}, {...env(), DB: replicated} as any) as any;
   assert.equal(result.result.isError, undefined);
   assert.deepEqual(constraints, ["first-unconstrained"]);
+});
+
+test("summaries and default counts scan the covering opp_facets index, not full rows", async () => {
+  const plans: string[] = [];
+  const explain = {prepare: (sql: string) => ({bind: (...values: unknown[]) => ({all: async () => {
+    if (/COUNT\(\*\)/.test(sql)) plans.push((db as any).raw.prepare("EXPLAIN QUERY PLAN " + sql).all(...values as any[]).map((r: any) => r.detail).join(" | "));
+    return (db as any).prepare(sql).bind(...values).all();
+  }})})};
+  await summarizeOpportunities(explain as any, {group_by: "agency"}, NOW);
+  await summarizeOpportunities(explain as any, {group_by: "naics", naics_codes: ["5415"]}, NOW);
+  assert.ok(plans.length >= 2);
+  for (const plan of plans) assert.match(plan, /COVERING INDEX opp_facets/, plan);
 });
