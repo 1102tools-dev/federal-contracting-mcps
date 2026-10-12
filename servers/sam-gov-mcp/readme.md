@@ -53,7 +53,7 @@ An active registration does not establish current SBA certification. Public 8(a)
 
 ### Local full edition: when you need more
 
-Use the full edition for current registration and exclusion data straight from the SAM.gov APIs, SBA certification entry dates, reps and certs, integrity records (FAPIIS), SAM.gov's contract award records, the federal hierarchy, subawards, or PSC lookups. The hosted edition searches dated public files and covers only the fields in them.
+Use the full edition for reps and certs, integrity records (FAPIIS), SBA certification entry dates, contract awards, the federal hierarchy, subawards, or PSC lookups.
 
 The full edition is local only. Give your AI this page's link and ask it to set it up, or start at [Installation](#installation). It needs your own free SAM.gov key, and that key's daily limit applies; see [Authentication](#authentication).
 
