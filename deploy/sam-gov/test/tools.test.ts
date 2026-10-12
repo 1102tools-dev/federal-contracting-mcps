@@ -495,3 +495,12 @@ test("summaries and default counts scan the covering opp_facets index, not full 
   assert.ok(plans.length >= 2);
   for (const plan of plans) assert.match(plan, /COVERING INDEX opp_facets/, plan);
 });
+
+test("get_opportunity answers in one database round trip, found or not", async () => {
+  for (const args of [{notice_id: id(1)}, {solicitation_number: "SOL-1"}, {notice_id: "f".repeat(32)}]) {
+    let trips = 0;
+    const counted = {prepare: (sql: string) => { trips++; return (db as any).prepare(sql); }};
+    await getOpportunity(counted as any, args);
+    assert.equal(trips, 1, JSON.stringify(args));
+  }
+});

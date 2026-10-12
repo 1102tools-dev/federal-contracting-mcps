@@ -411,21 +411,35 @@ export async function getOpportunity(db: Database, args: Args, now = new Date())
   unknownKeys(args, ["notice_id", "solicitation_number"]);
   const id = str(args, "notice_id", 32);
   const sol = str(args, "solicitation_number", 100);
-  let rows: Row[];
+  let hit: string, hitParams: unknown[];
   if (id !== undefined) {
     if (!NOTICE_ID.test(id)) throw new ToolError("notice_id must be the 32-character hexadecimal notice ID from SAM.gov.");
-    rows = (await db.prepare("SELECT * FROM opportunities WHERE notice_id = ?").bind(id.toLowerCase()).all()).results;
+    hit = "SELECT * FROM opportunities WHERE notice_id = ?";
+    hitParams = [id.toLowerCase()];
   } else if (sol !== undefined) {
     // Prefer the solicitation (or other current notice) over the award
     // notices and justifications that share its number.
     const awardFirst = `notice_type IN (${NO_RESPONSE_TYPES.map(() => "?").join(", ")})`;
-    rows = (await db.prepare(`SELECT * FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE ORDER BY is_latest DESC, ${awardFirst}, posted_at DESC LIMIT 1`).bind(sol, ...NO_RESPONSE_TYPES).all()).results;
+    hit = `SELECT * FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE ORDER BY is_latest DESC, ${awardFirst}, posted_at DESC LIMIT 1`;
+    hitParams = [sol, ...NO_RESPONSE_TYPES];
   } else {
     throw new ToolError("Pass notice_id or solicitation_number.");
   }
-  const asOf = await dataAsOf(db);
+  // One round trip: the notice, other notices sharing its solicitation number,
+  // their total, and the file date, all from the same snapshot.
+  const sibling = "r.solicitation_number = h.solicitation_number COLLATE NOCASE AND r.notice_id != h.notice_id";
+  const [row] = (await db.prepare(`WITH h AS MATERIALIZED (${hit})
+    SELECT h.*, (SELECT value FROM load_status WHERE key = 'file_date') AS file_date_json,
+      CASE WHEN coalesce(h.solicitation_number, '') = '' THEN '[]' ELSE (SELECT json_group_array(json_object(
+        'notice_id', notice_id, 'notice_type', notice_type, 'title', title, 'posted_date', posted_date,
+        'response_deadline', response_deadline, 'award_number', award_number, 'awardee', awardee,
+        'award_amount', award_amount, 'is_latest', is_latest)) FROM (SELECT r.* FROM opportunities r WHERE ${sibling}
+        ORDER BY r.is_latest DESC, r.posted_at DESC LIMIT 20)) END AS related_json,
+      CASE WHEN coalesce(h.solicitation_number, '') = '' THEN 0 ELSE (SELECT COUNT(*) FROM opportunities r WHERE ${sibling}) END AS related_total
+    FROM (SELECT 1) LEFT JOIN h`).bind(...hitParams).all<Row>()).results;
+  const asOf = row?.file_date_json ? JSON.parse(row.file_date_json) : null;
   const {notes: freshnessNotes, ...freshness} = dataFreshness("opportunities", asOf, now);
-  if (!rows.length) {
+  if (!row?.notice_id) {
     return {
       found: false,
       data_as_of: asOf,
@@ -435,24 +449,13 @@ export async function getOpportunity(db: Database, args: Args, now = new Date())
       ...(id ? {link: publicLink(id.toLowerCase())} : {}),
     };
   }
-  const row = rows[0];
-  let related: Row[] = [];
-  let relatedTotal = 0;
-  if (row.solicitation_number) {
-    const [page, count] = await Promise.all([
-      db.prepare("SELECT notice_id, notice_type, title, posted_date, response_deadline, award_number, awardee, award_amount, is_latest FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE AND notice_id != ? ORDER BY is_latest DESC, posted_at DESC LIMIT 20")
-        .bind(row.solicitation_number, row.notice_id).all<Row>(),
-      db.prepare("SELECT COUNT(*) AS n FROM opportunities WHERE solicitation_number = ? COLLATE NOCASE AND notice_id != ?")
-        .bind(row.solicitation_number, row.notice_id).all<{n: number}>(),
-    ]);
-    related = page.results.map(({is_latest, award_number, awardee, award_amount, ...r}) => ({
-      ...r,
-      ...(r.notice_type === "Award Notice" ? {award_number, awardee, award_amount} : {}),
-      latest_version: is_latest === 1,
-      link: publicLink(r.notice_id),
-    }));
-    relatedTotal = count.results[0]?.n ?? 0;
-  }
+  const related = (JSON.parse(row.related_json) as Row[]).map(({is_latest, award_number, awardee, award_amount, ...r}) => ({
+    ...r,
+    ...(r.notice_type === "Award Notice" ? {award_number, awardee, award_amount} : {}),
+    latest_version: is_latest === 1,
+    link: publicLink(r.notice_id),
+  }));
+  const relatedTotal: number = row.related_total;
   const notes = ["Attachments and amendment documents are not included; open the sam.gov link for them.", ...freshnessNotes];
   if (row.is_latest === 0) notes.unshift("A newer version of this notice exists; related_notices entries with latest_version true are current.");
   if (/T\d{2}:\d{2}(:\d{2})?$/.test(row.response_deadline ?? "")) {
