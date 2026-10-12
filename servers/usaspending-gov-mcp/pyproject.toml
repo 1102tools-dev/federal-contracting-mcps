@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "usaspending-gov-mcp"
-version = "1.0.24"
-description = "MCP server for USASpending.gov federal contract and award data"
+version = "1.0.25"
+description = "USAspending.gov contracts, grants, loans, subawards, recipients, agencies, and federal accounts."
 readme = "readme.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

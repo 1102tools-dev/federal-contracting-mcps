@@ -566,6 +566,7 @@ def _build_filters(
     award_amount_max: float | None = None,
     place_of_performance_state: str | None = None,
     def_codes: list[str | int] | None = None,
+    program_numbers: list[str | int] | None = None,
 ) -> dict[str, Any]:
     """Build a USASpending filters object from flattened parameters."""
     filters: dict[str, Any] = {}
@@ -694,8 +695,43 @@ def _build_filters(
     coerced_def = _coerce_code_list(def_codes, "def_codes")
     if coerced_def:
         filters["def_codes"] = coerced_def
+    programs = _normalize_program_numbers(program_numbers)
+    if programs:
+        if award_type_codes and set(award_type_codes) <= _PROCUREMENT_CODES:
+            raise UserInputError(
+                "program_numbers are assistance listing (CFDA) numbers, which only "
+                "exist on financial assistance. Use award_type='grants', 'loans', "
+                "'direct_payments', or 'other'; contracts and IDVs have none."
+            )
+        filters["program_numbers"] = programs
 
     return filters
+
+
+_PROCUREMENT_CODES = set(AWARD_TYPE_GROUPS["contracts"]) | set(AWARD_TYPE_GROUPS["idvs"])
+_PROGRAM_NUMBER_RE = re.compile(r"^\d{2}\.\d{3}$")
+
+
+def _normalize_program_numbers(codes: list[str | int] | None) -> list[str] | None:
+    """Normalize assistance listing (CFDA) numbers to the dotted NN.NNN form.
+
+    USASpending's program_numbers filter only matches '93.778'; '93778' and
+    other shapes return HTTP 200 with zero results (verified live 2026-10-12).
+    """
+    coerced = _coerce_code_list(codes, "program_numbers")
+    if not coerced:
+        return None
+    out: list[str] = []
+    for code in coerced:
+        value = f"{code[:2]}.{code[2:]}" if re.match(r"^\d{5}$", code) else code
+        if not _PROGRAM_NUMBER_RE.match(value):
+            raise UserInputError(
+                f"program_numbers entry {code!r} is not an assistance listing number. "
+                f"Use the NN.NNN form (e.g. '93.778' for Medicaid); "
+                f"autocomplete_cfda() finds numbers by program name."
+            )
+        out.append(value)
+    return out
 
 
 def _resolve_award_type(
@@ -735,6 +771,7 @@ async def search_awards(
     place_of_performance_state: str | None = None,
     award_ids: list[str | int] | None = None,
     def_codes: list[str | int] | None = None,
+    program_numbers: list[str | int] | None = None,
     sort: str | None = None,
     order: Literal["asc", "desc"] = "desc",
     limit: int = 25,
@@ -807,6 +844,11 @@ async def search_awards(
     bounds first signing; 'last_modified_date' bounds the latest update.
     'new_awards_only' keeps awards first signed in the window.
     date_type needs time_period_start and/or time_period_end.
+
+    program_numbers filters assistance awards by assistance listing (CFDA)
+    number, e.g. ['93.778'] for Medicaid; use it with award_type='grants',
+    'loans', 'direct_payments', or 'other'. autocomplete_cfda() finds numbers
+    by program name.
     """
     codes = _resolve_award_type(award_type)
     limit = _clamp_limit(limit, cap=100)
@@ -873,6 +915,7 @@ async def search_awards(
         award_amount_max=award_amount_max,
         place_of_performance_state=place_of_performance_state,
         def_codes=def_codes,
+        program_numbers=program_numbers,
     )
     # award_type_codes is always present because we always set it, but it's
     # a scope not a filter. Require at least one real filter so that empty
@@ -926,6 +969,7 @@ async def get_award_count(
     award_amount_max: float | None = None,
     place_of_performance_state: str | None = None,
     def_codes: list[str | int] | None = None,
+    program_numbers: list[str | int] | None = None,
 ) -> dict[str, Any]:
     """Count awards matching filters, broken down by award category.
 
@@ -953,6 +997,11 @@ async def get_award_count(
     bounds first signing; 'last_modified_date' bounds the latest update.
     'new_awards_only' keeps awards first signed in the window.
     date_type needs time_period_start and/or time_period_end.
+
+    program_numbers filters assistance awards by assistance listing (CFDA)
+    number, e.g. ['93.778'] for Medicaid; use it with award_type='grants',
+    'loans', 'direct_payments', or 'other'. autocomplete_cfda() finds numbers
+    by program name.
     """
     _validate_strings_no_control_chars(keywords, field="keywords")
     _validate_no_control_chars(awarding_agency, field="awarding_agency")
@@ -980,6 +1029,7 @@ async def get_award_count(
         award_amount_max=award_amount_max,
         place_of_performance_state=place_of_performance_state,
         def_codes=def_codes,
+        program_numbers=program_numbers,
     )
     if not filters:
         raise UserInputError(
@@ -1013,6 +1063,7 @@ async def spending_over_time(
     time_period_end: str | None = None,
     date_type: DateType | None = None,
     def_codes: list[str | int] | None = None,
+    program_numbers: list[str | int] | None = None,
 ) -> dict[str, Any]:
     """Aggregate spending amounts over time, grouped by fiscal year, quarter, or month.
 
@@ -1048,6 +1099,11 @@ async def spending_over_time(
     use new_awards_over_time for counts. Award search/count tools use a
     different default interval-overlap rule.
     date_type needs time_period_start and/or time_period_end.
+
+    program_numbers filters assistance awards by assistance listing (CFDA)
+    number, e.g. ['93.778'] for Medicaid; use it with award_type='grants',
+    'loans', 'direct_payments', or 'other'. autocomplete_cfda() finds numbers
+    by program name.
     """
     _validate_strings_no_control_chars(keywords, field="keywords")
     _validate_no_control_chars(awarding_agency, field="awarding_agency")
@@ -1068,6 +1124,7 @@ async def spending_over_time(
         time_period_end=time_period_end,
         date_type=date_type,
         def_codes=def_codes,
+        program_numbers=program_numbers,
     )
     # award_type_codes alone (without other filters) is not enough: the API
     # treats award_type_codes as a scope, not a filter, and still 400s.
@@ -1109,6 +1166,7 @@ async def spending_by_category(
     time_period_end: str | None = None,
     date_type: DateType | None = None,
     def_codes: list[str | int] | None = None,
+    program_numbers: list[str | int] | None = None,
     limit: int = 10,
     page: int = 1,
 ) -> dict[str, Any]:
@@ -1139,6 +1197,11 @@ async def spending_by_category(
     use new_awards_over_time for counts. Award search/count tools use a
     different default interval-overlap rule.
     date_type needs time_period_start and/or time_period_end.
+
+    program_numbers filters assistance awards by assistance listing (CFDA)
+    number, e.g. ['93.778'] for Medicaid; use it with award_type='grants',
+    'loans', 'direct_payments', or 'other'. autocomplete_cfda() finds numbers
+    by program name.
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
@@ -1162,6 +1225,7 @@ async def spending_by_category(
         time_period_end=time_period_end,
         date_type=date_type,
         def_codes=def_codes,
+        program_numbers=program_numbers,
     )
     # Same guard as search_awards: award_type_codes is a scope, not a filter.
     # Without it an unfiltered call returns an all-time all-agency aggregate
@@ -1862,6 +1926,7 @@ async def spending_by_subaward_grouped(
     psc_codes: list[str | int] | None = None,
     set_aside_type_codes: list[str | int] | None = None,
     def_codes: list[str | int] | None = None,
+    program_numbers: list[str | int] | None = None,
     sort: str | None = None,
     order: Literal["asc", "desc"] = "desc",
     limit: int = 25,
@@ -1885,6 +1950,11 @@ async def spending_by_subaward_grouped(
     subawards (subaward_count 0). subaward_obligation sums FFATA reports,
     which can repeat cumulative amounts, so a subaward_to_award_ratio
     above 1 is a reporting artefact, not more subcontracting than the prime.
+
+    program_numbers filters assistance awards by assistance listing (CFDA)
+    number, e.g. ['93.778'] for Medicaid; use it with award_type='grants',
+    'loans', 'direct_payments', or 'other'. autocomplete_cfda() finds numbers
+    by program name.
     """
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
@@ -1899,6 +1969,7 @@ async def spending_by_subaward_grouped(
         time_period_start=time_period_start,
         time_period_end=time_period_end,
         def_codes=def_codes,
+        program_numbers=program_numbers,
     )
     payload: dict[str, Any] = {
         "filters": filters,
@@ -2444,6 +2515,7 @@ async def spending_by_transaction(
     funding_agency: str | None = None,
     recipient_uei: str | None = None,
     naics_codes: list[str | int] | None = None,
+    program_numbers: list[str | int] | None = None,
     psc_codes: list[str | int] | None = None,
     set_aside_type_codes: list[str | int] | None = None,
     time_period_start: str | None = None,
@@ -2467,6 +2539,11 @@ async def spending_by_transaction(
 
     Returns standard transaction fields: Action Date, Mod, Award ID,
     Action Type, Awarding Agency, Recipient Name.
+
+    program_numbers filters assistance awards by assistance listing (CFDA)
+    number, e.g. ['93.778'] for Medicaid; use it with award_type='grants',
+    'loans', 'direct_payments', or 'other'. autocomplete_cfda() finds numbers
+    by program name.
     """
     codes = _resolve_award_type(award_type)
     limit = _clamp_limit(limit, cap=100)
@@ -2479,6 +2556,7 @@ async def spending_by_transaction(
         funding_agency=funding_agency,
         recipient_uei=recipient_uei,
         naics_codes=naics_codes,
+        program_numbers=program_numbers,
         psc_codes=psc_codes,
         set_aside_type_codes=set_aside_type_codes,
         time_period_start=time_period_start,
@@ -2514,6 +2592,7 @@ async def spending_by_geography(
     naics_codes: list[str | int] | None = None,
     psc_codes: list[str | int] | None = None,
     def_codes: list[str | int] | None = None,
+    program_numbers: list[str | int] | None = None,
 ) -> dict[str, Any]:
     """Geographic breakdown of spending.
 
@@ -2523,6 +2602,11 @@ async def spending_by_geography(
 
     At least one filter is required. The API returns HTTP 500 on an empty
     filter set, so the requirement is enforced here with a clear error.
+
+    program_numbers filters assistance awards by assistance listing (CFDA)
+    number, e.g. ['93.778'] for Medicaid; use it with award_type='grants',
+    'loans', 'direct_payments', or 'other'. autocomplete_cfda() finds numbers
+    by program name.
     """
     codes = None if award_type == "all" else _resolve_award_type(award_type)
     filters = _build_filters(
@@ -2534,6 +2618,7 @@ async def spending_by_geography(
         time_period_start=time_period_start,
         time_period_end=time_period_end,
         def_codes=def_codes,
+        program_numbers=program_numbers,
     )
     # Same guard as search_awards. Unfiltered calls 500 upstream; award_type
     # alone is a scope, not a filter.
