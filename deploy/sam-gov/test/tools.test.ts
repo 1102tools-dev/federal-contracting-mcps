@@ -474,3 +474,11 @@ test("combined data status reports a stale exclusion file even when other files 
   opportunitySqlite.close();
   publicSqlite.close();
 });
+
+test("tool reads go through a D1 read-replication session", async () => {
+  const constraints: string[] = [];
+  const replicated = {...db, withSession: (constraint: string) => { constraints.push(constraint); return db; }};
+  const result = await handleMessage({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "search_opportunities", arguments: {}}}, {...env(), DB: replicated} as any) as any;
+  assert.equal(result.result.isError, undefined);
+  assert.deepEqual(constraints, ["first-unconstrained"]);
+});

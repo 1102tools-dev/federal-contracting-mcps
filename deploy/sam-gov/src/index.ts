@@ -5,13 +5,20 @@ import {HANDLERS, TOOLS, ToolError, type Database} from "./tools.ts";
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
 // this Worker from D1. No container, no session state, no SAM.gov API key.
 
-const SERVER_VERSION = "1.1.7";
+const SERVER_VERSION = "1.1.8";
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const MAX_BODY_BYTES = 65536;
 
+// D1 read replication: a session lets reads go to the nearest replica.
+// Writes come only from the GitHub load jobs, so replica lag of a few seconds
+// after a load is fine. Test doubles without withSession use the database as is.
+type ReplicatedDatabase = Database & {withSession?(constraint: "first-unconstrained"): Database};
+
+const readSession = (db: ReplicatedDatabase): Database => db.withSession?.("first-unconstrained") ?? db;
+
 export interface Env {
-  DB: Database;
-  ENTITY_DB: Database;
+  DB: ReplicatedDatabase;
+  ENTITY_DB: ReplicatedDatabase;
   REQUEST_LIMITER: {limit(options: {key: string}): Promise<{success: boolean}>};
   AI_LIMITER?: {limit(options: {key: string}): Promise<{success: boolean}>};
   RELEASE_SHA?: string;
@@ -77,7 +84,8 @@ export async function handleMessage(message: Message, env: Env): Promise<object 
         return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: "arguments must be an object."}], isError: true}};
       }
       try {
-        const data = await handler(name === "search_entities" || name === "search_exclusions" ? env.ENTITY_DB : env.DB, args, env.ENTITY_DB);
+        const db = readSession(env.DB), entityDb = env.ENTITY_DB && readSession(env.ENTITY_DB);
+        const data = await handler(name === "search_entities" || name === "search_exclusions" ? entityDb : db, args, entityDb);
         return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify(data)}], structuredContent: data}};
       } catch (error) {
         if (error instanceof ToolError) {
