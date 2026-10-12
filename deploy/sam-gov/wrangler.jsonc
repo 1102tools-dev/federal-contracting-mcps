@@ -20,6 +20,11 @@
       "binding": "ENTITY_DB",
       "database_name": "sam-gov-entities",
       "database_id": "18a226be-201f-46de-99b9-db65dd5edea7"
+    },
+    {
+      "binding": "NAME_INDEX_DB",
+      "database_name": "sam-gov-name-index",
+      "database_id": "4ed19059-3fc7-433d-aafe-ab4c1f3ee31f"
     }
   ],
   "ratelimits": [
@@ -66,6 +71,11 @@
           "binding": "ENTITY_DB",
           "database_name": "sam-gov-entities",
           "database_id": "18a226be-201f-46de-99b9-db65dd5edea7"
+        },
+        {
+          "binding": "NAME_INDEX_DB",
+          "database_name": "sam-gov-name-index",
+          "database_id": "4ed19059-3fc7-433d-aafe-ab4c1f3ee31f"
         }
       ],
       "ratelimits": [

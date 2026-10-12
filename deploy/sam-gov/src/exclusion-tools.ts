@@ -1,5 +1,5 @@
 import {dataFreshness, noMatchSummary} from "./data-freshness.ts";
-import {namePredicate, possibleNameMatches} from "./name-matching.ts";
+import {namePredicate, possibleNameMatches, nameIndexCandidates, nameIndexMatches, type NameIndexCandidates} from "./name-matching.ts";
 import {ToolError, type Database} from "./public-types.ts";
 import {ENTITY_CAVEATS} from "./entity-tools.ts";
 
@@ -110,7 +110,7 @@ function record(row: Row) {
   };
 }
 
-export async function searchExclusions(db: Database | undefined, args: Args, now = new Date()) {
+export async function searchExclusions(db: Database | undefined, args: Args, now = new Date(), nameIndexDb?: Database) {
   if (!db) throw new ToolError("SAM.gov public exclusions database is not configured; no exclusion determination can be made.");
   for (const key of Object.keys(args)) {
     if (!Object.hasOwn(EXCLUSION_TOOL.inputSchema.properties, key)) throw new ToolError(`Unknown argument: ${key}.`);
@@ -138,27 +138,36 @@ export async function searchExclusions(db: Database | undefined, args: Args, now
     }
   }
   const baseWhere = [...predicates], baseValues = [...values];
-  if (name) {
-    const filter = namePredicate(["name", "coalesce(first_name, '') || ' ' || coalesce(middle_name, '') || ' ' || coalesce(last_name, '')", "coalesce(first_name, '') || ' ' || coalesce(last_name, '')"], name);
-    predicates.push(filter.sql); values.push(...filter.values);
-  }
-  const clause = `${predicates.join(" AND ") || "1=1"} AND NOT EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='exclusions' AND state='applying')`;
-  const matching = name ? `matched_keys AS MATERIALIZED (SELECT rowid AS matched_rowid FROM exclusions WHERE ${clause}), matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE rowid IN (SELECT matched_rowid FROM matched_keys))` : `matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE ${clause})`;
-  const result = (await db.prepare(`WITH ${matching},
-    selected AS (SELECT * FROM matches ORDER BY name COLLATE NOCASE, exclusion_id LIMIT ? OFFSET ?)
-    SELECT (SELECT json_group_array(json_object('row', json_object(
-      'exclusion_id', exclusion_id, 'uei', uei, 'cage_code', cage_code, 'name', name,
-      'first_name', first_name, 'middle_name', middle_name, 'last_name', last_name, 'suffix', suffix,
-      'classification', classification, 'exclusion_type', exclusion_type, 'exclusion_program', exclusion_program,
-      'excluding_agency_code', excluding_agency_code, 'excluding_agency_name', excluding_agency_name,
-      'record_status', record_status, 'activation_date', activation_date, 'termination_date', termination_date,
-      'creation_date', creation_date, 'last_update_date', last_update_date,
-      'address_line_1', address_line_1, 'address_line_2', address_line_2, 'city', city, 'state', state,
-      'zip_code', zip_code, 'country', country, 'description', description, 'record_json', record_json))) FROM selected) AS records,
-    (SELECT COUNT(*) FROM matches) AS total_records,
-    (SELECT COUNT(*) FROM matches WHERE record_status = 'Active' COLLATE NOCASE) AS active_records,
-    EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='exclusions' AND state='applying') AS refreshing,
-    s.* FROM extract_status s WHERE kind = 'exclusions'`).bind(...values, size, page * size).all<Row>()).results[0];
+  const candidates = name ? await nameIndexCandidates(nameIndexDb, "exclusions", name) : undefined;
+  const runQuery = async (indexed: NameIndexCandidates | undefined) => {
+    const predicates = [...baseWhere], values = [...baseValues];
+    if (name) {
+      if (indexed) {predicates.push("rowid IN (SELECT value FROM json_each(?))"); values.push(indexed.ids);}
+      const filter = namePredicate(["name", "coalesce(first_name, '') || ' ' || coalesce(middle_name, '') || ' ' || coalesce(last_name, '')", "coalesce(first_name, '') || ' ' || coalesce(last_name, '')"], name);
+      predicates.push(filter.sql); values.push(...filter.values);
+    }
+    const clause = `${predicates.join(" AND ") || "1=1"} AND NOT EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='exclusions' AND state='applying')`;
+    const matching = name ? `matched_keys AS MATERIALIZED (SELECT rowid AS matched_rowid FROM exclusions WHERE ${clause}), matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE rowid IN (SELECT matched_rowid FROM matched_keys))` : `matches AS NOT MATERIALIZED (SELECT * FROM exclusions WHERE ${clause})`;
+    const result = (await db.prepare(`WITH ${matching},
+      selected AS (SELECT * FROM matches ORDER BY name COLLATE NOCASE, exclusion_id LIMIT ? OFFSET ?)
+      SELECT (SELECT json_group_array(json_object('row', json_object(
+        'exclusion_id', exclusion_id, 'uei', uei, 'cage_code', cage_code, 'name', name,
+        'first_name', first_name, 'middle_name', middle_name, 'last_name', last_name, 'suffix', suffix,
+        'classification', classification, 'exclusion_type', exclusion_type, 'exclusion_program', exclusion_program,
+        'excluding_agency_code', excluding_agency_code, 'excluding_agency_name', excluding_agency_name,
+        'record_status', record_status, 'activation_date', activation_date, 'termination_date', termination_date,
+        'creation_date', creation_date, 'last_update_date', last_update_date,
+        'address_line_1', address_line_1, 'address_line_2', address_line_2, 'city', city, 'state', state,
+        'zip_code', zip_code, 'country', country, 'description', description, 'record_json', record_json))) FROM selected) AS records,
+      (SELECT COUNT(*) FROM matches) AS total_records,
+      (SELECT COUNT(*) FROM matches WHERE record_status = 'Active' COLLATE NOCASE) AS active_records,
+      EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='exclusions' AND state='applying') AS refreshing,
+      s.* FROM extract_status s WHERE kind = 'exclusions'`).bind(...values, size, page * size).all<Row>()).results[0];
+    return result;
+  };
+  let result = await runQuery(candidates);
+  // The index must describe the snapshot this search read; otherwise search without it.
+  if (!nameIndexMatches(candidates, result)) result = await runQuery(undefined);
   if (result?.refreshing) throw new ToolError("SAM.gov public exclusions data is refreshing. Retry later; no exclusion determination can be made.");
   if (!result) throw new ToolError("SAM.gov public exclusions data has not been loaded yet; no exclusion determination can be made.");
   const possible = name && result.total_records === 0 ? await possibleNameMatches(db, {

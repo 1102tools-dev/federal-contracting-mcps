@@ -5,7 +5,7 @@ import {HANDLERS, TOOLS, ToolError, type Database} from "./tools.ts";
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
 // this Worker from D1. No container, no session state, no SAM.gov API key.
 
-const SERVER_VERSION = "1.1.8";
+const SERVER_VERSION = "1.1.9";
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const MAX_BODY_BYTES = 65536;
 
@@ -19,6 +19,9 @@ const readSession = (db: ReplicatedDatabase): Database => db.withSession?.("firs
 export interface Env {
   DB: ReplicatedDatabase;
   ENTITY_DB: ReplicatedDatabase;
+  // Trigram name index kept out of ENTITY_DB: D1 cannot export databases with
+  // virtual tables, and the public loader exports ENTITY_DB to rehearse costs.
+  NAME_INDEX_DB?: ReplicatedDatabase;
   REQUEST_LIMITER: {limit(options: {key: string}): Promise<{success: boolean}>};
   AI_LIMITER?: {limit(options: {key: string}): Promise<{success: boolean}>};
   RELEASE_SHA?: string;
@@ -85,7 +88,8 @@ export async function handleMessage(message: Message, env: Env): Promise<object 
       }
       try {
         const db = readSession(env.DB), entityDb = env.ENTITY_DB && readSession(env.ENTITY_DB);
-        const data = await handler(name === "search_entities" || name === "search_exclusions" ? entityDb : db, args, entityDb);
+        const nameIndexDb = env.NAME_INDEX_DB && readSession(env.NAME_INDEX_DB);
+        const data = await handler(name === "search_entities" || name === "search_exclusions" ? entityDb : db, args, entityDb, nameIndexDb);
         return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify(data)}], structuredContent: data}};
       } catch (error) {
         if (error instanceof ToolError) {
