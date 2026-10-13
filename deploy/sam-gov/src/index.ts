@@ -5,7 +5,7 @@ import {HANDLERS, TOOLS, ToolError, type Database} from "./tools.ts";
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
 // this Worker from D1. No container, no session state, no SAM.gov API key.
 
-const SERVER_VERSION = "1.1.12";
+const SERVER_VERSION = "1.1.13";
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const MAX_BODY_BYTES = 65536;
 
@@ -16,19 +16,44 @@ type ReplicatedDatabase = Database & {withSession?(constraint: "first-unconstrai
 
 const readSession = (db: ReplicatedDatabase): Database => db.withSession?.("first-unconstrained") ?? db;
 
-// Answer cache: Cloudflare's per-location cache. Identical questions within a
-// few minutes skip D1, which absorbs bursts such as scheduled agents asking for
-// today's notices. Entries are filed under a SHA-256 fingerprint of the tool,
-// its arguments and the release; only successful answers are stored.
+// Answer cache: Cloudflare's per-location cache. Identical questions skip D1,
+// which absorbs bursts such as scheduled agents asking for today's notices.
+// Entries are filed under a SHA-256 fingerprint of the tool, its arguments, the
+// release and the load stamp of the data the tool reads; only successful
+// answers are stored. A new load changes the stamp, so older answers are never
+// served again. Data status keeps a short fixed lifetime.
 const CACHE_SECONDS: Record<string, number> = {
   get_data_status: 60,
-  search_opportunities: 300,
-  get_opportunity: 300,
-  summarize_opportunities: 300,
-  search_entities: 300,
-  search_exclusions: 300,
+  search_opportunities: 86400,
+  get_opportunity: 86400,
+  summarize_opportunities: 86400,
+  search_entities: 86400,
+  search_exclusions: 86400,
+};
+const LOAD_KEYED: Record<string, "opportunities" | "public"> = {
+  search_opportunities: "opportunities",
+  get_opportunity: "opportunities",
+  summarize_opportunities: "opportunities",
+  search_entities: "public",
+  search_exclusions: "public",
 };
 type AnswerCache = {match(key: Request): Promise<Response | undefined>; put(key: Request, response: Response): Promise<void>};
+
+// Both loaders write these stamps after their data, so a stamp never names a
+// load that is still being written. Read in the same session as the answer,
+// which is then at least as new as the stamp. Null (not loaded, mid-refresh or
+// unreadable) means no caching for this call.
+export async function loadStamp(kind: "opportunities" | "public", db: Database): Promise<string | null> {
+  if (kind === "opportunities") {
+    const {results} = await db.prepare("SELECT value FROM load_status WHERE key = 'loaded_at'").bind().all<{value: string}>();
+    return results.length ? results[0].value : null;
+  }
+  const {results} = await db.prepare(`SELECT s.kind, s.sha256, s.loaded_at,
+    EXISTS(SELECT 1 FROM public_refresh_runs r WHERE r.kind = s.kind AND r.state = 'applying') AS refreshing
+    FROM extract_status s ORDER BY s.kind`).bind().all<{kind: string; sha256: string; loaded_at: string; refreshing: number}>();
+  if (!results.length || results.some(r => r.refreshing)) return null;
+  return JSON.stringify(results.map(r => [r.kind, r.sha256, r.loaded_at]));
+}
 
 function stable(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stable);
@@ -36,8 +61,8 @@ function stable(value: unknown): unknown {
   return value;
 }
 
-export async function answerKey(name: string, args: unknown, release: string): Promise<Request> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify([release, name, stable(args)])));
+export async function answerKey(name: string, args: unknown, release: string, stamp = ""): Promise<Request> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify([release, stamp, name, stable(args)])));
   const hex = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
   return new Request(`https://answer-cache.sam.1102tools.com/${hex}`);
 }
@@ -113,9 +138,13 @@ export async function handleMessage(message: Message, env: Env, trace: {cache?: 
       if (typeof args !== "object" || Array.isArray(args)) {
         return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: "arguments must be an object."}], isError: true}};
       }
+      const db = readSession(env.DB), entityDb = env.ENTITY_DB && readSession(env.ENTITY_DB);
+      const toolDb = name === "search_entities" || name === "search_exclusions" ? entityDb : db;
       const ttl = CACHE_SECONDS[name];
       const cache = ttl ? env.ANSWER_CACHE ?? (globalThis as {caches?: {default?: AnswerCache}}).caches?.default : undefined;
-      const key = cache ? await answerKey(name, args, env.RELEASE_SHA ?? SERVER_VERSION) : undefined;
+      const keyed = LOAD_KEYED[name];
+      const stamp = cache && keyed ? await loadStamp(keyed, toolDb).catch(() => null) : "";
+      const key = cache && stamp !== null ? await answerKey(name, args, env.RELEASE_SHA ?? SERVER_VERSION, stamp) : undefined;
       if (cache && key) {
         const hit = await cache.match(key).catch(() => undefined);
         const data = hit && await hit.json().catch(() => undefined);
@@ -126,9 +155,8 @@ export async function handleMessage(message: Message, env: Env, trace: {cache?: 
         trace.cache = "miss";
       }
       try {
-        const db = readSession(env.DB), entityDb = env.ENTITY_DB && readSession(env.ENTITY_DB);
         const nameIndexDb = env.NAME_INDEX_DB && readSession(env.NAME_INDEX_DB);
-        const data = await handler(name === "search_entities" || name === "search_exclusions" ? entityDb : db, args, entityDb, nameIndexDb);
+        const data = await handler(toolDb, args, entityDb, nameIndexDb);
         if (cache && key) {
           const body = JSON.stringify(data);
           await cache.put(key, new Response(body, {headers: {"Content-Type": "application/json", "Cache-Control": `public, max-age=${ttl}`}})).catch(() => {});
