@@ -17,3 +17,6 @@ export function dataFreshness(kind: Dataset, fileDate: string | null | undefined
 export function noMatchSummary(fileDate: string | null | undefined) {
   return `No record matched these filters in ${fileDate ? `the ${fileDate} public file` : "a loaded public file"}. This is not a clearance or eligibility determination; confirm on SAM.gov.`;
 }
+export function entityNoMatchSummary(fileDate: string | null | undefined) {
+  return `${noMatchSummary(fileDate)} SAM.gov lets registrants hide their record from public view, and those records are not in the public file, so no match does not mean the entity is unregistered. Confirm on SAM.gov with federal access, or ask the vendor for its UEI.`;
+}

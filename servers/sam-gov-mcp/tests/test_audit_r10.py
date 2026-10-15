@@ -89,7 +89,7 @@ def test_assistance_agency_code_four_digit_passes(monkeypatch):
 def test_vendor_responsibility_never_registered_but_excluded(monkeypatch):
     """Live-found edge: an actively excluded firm with NO entity registration
     in any population (samRegistered Yes or No). The check must flag both
-    NOT_REGISTERED and the active exclusion. Shape mirrors a real captured
+    NO_PUBLIC_RECORD and the active exclusion. Shape mirrors a real captured
     v4 record: active = exclusionActions.listOfActions[].recordStatus."""
     entity_empty = {"totalRecords": 0, "entityData": []}
     exclusion_hit = {"totalRecords": 1, "excludedEntity": [{
@@ -116,9 +116,24 @@ def test_vendor_responsibility_never_registered_but_excluded(monkeypatch):
     monkeypatch.setattr(server, "_get", fake_get)
     data = _payload(asyncio.run(_call(
         "vendor_responsibility_check", uei="TESTUEI00001")))
-    assert "NOT_REGISTERED" in data["flags"]
+    assert "NO_PUBLIC_RECORD" in data["flags"]
     assert "ACTIVE_EXCLUSION_FOUND" in data["flags"]
     assert data["exclusion"]["activeCount"] == 1
+    assert "public view" in data["_note"]
+
+
+def test_empty_entity_results_explain_public_display_opt_outs(monkeypatch):
+    async def fake_get(path, params, **kw):
+        return {"totalRecords": 0, "entityData": []}
+
+    monkeypatch.setattr(server, "_get", fake_get)
+    for tool, kwargs in (
+        ("search_entities", {"legal_business_name": "Hidden Vendor"}),
+        ("lookup_entity_by_uei", {"uei": "TESTUEI00001"}),
+        ("lookup_entity_by_cage", {"cage_code": "1ABC2"}),
+    ):
+        data = _payload(asyncio.run(_call(tool, **kwargs)))
+        assert "does not mean the entity is unregistered" in data["_note"], tool
 
 
 def test_opportunities_offset_passthrough_documented_page_index(monkeypatch):

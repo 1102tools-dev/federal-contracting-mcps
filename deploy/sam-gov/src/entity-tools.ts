@@ -1,4 +1,4 @@
-import {dataFreshness, noMatchSummary} from "./data-freshness.ts";
+import {dataFreshness, entityNoMatchSummary} from "./data-freshness.ts";
 import {compactSQL, normalizedName, namePredicate, possibleNameMatches, nameIndexCandidates, nameIndexMatches, type NameIndexCandidates} from "./name-matching.ts";
 import type {Database} from "./public-types.ts";
 import {ToolError} from "./public-types.ts";
@@ -210,12 +210,12 @@ export async function searchEntities(db: Database, args: Args, now = new Date(),
     source_url: snapshot?.source_url ?? null,
     notes: [...freshness.notes, ...ENTITY_CAVEATS, ...(quarantined > 0 ? [`${quarantined} malformed source rows were quarantined and excluded from this hosted mirror; coverage is incomplete.`] : [])],
   };
-  if (!snapshot?.file_date) return {summary: noMatchSummary(null), status: "not_loaded", totalRecords: 0, entityData: [], page, size, ...provenance};
+  if (!snapshot?.file_date) return {summary: entityNoMatchSummary(null), status: "not_loaded", totalRecords: 0, entityData: [], page, size, ...provenance};
   const rows: Row[] = JSON.parse(snapshot.records);
   const possible = name && snapshot.total_records === 0 ? await possibleNameMatches(db, {
     table: "entities", kind: "entities", columns: ["legal_business_name", "dba_name"],
     projection: ["entity_id", "uei", "cage_code", "legal_business_name", "dba_name", "state", "city", "zip_code", "address_line_1"],
     where: baseWhere.map(w => w.replaceAll("e.", "")), values: baseParams, query: name, snapshot,
   }) : {};
-  return {...(snapshot.total_records === 0 ? {summary: noMatchSummary(snapshot.file_date)} : {}), ...possible, totalRecords: snapshot.total_records, entityData: rows.map(row => entity(row, sections, now)), page, size, ...provenance};
+  return {...(snapshot.total_records === 0 ? {summary: entityNoMatchSummary(snapshot.file_date)} : {}), ...possible, totalRecords: snapshot.total_records, entityData: rows.map(row => entity(row, sections, now)), page, size, ...provenance};
 }

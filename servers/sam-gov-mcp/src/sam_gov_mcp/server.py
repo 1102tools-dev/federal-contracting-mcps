@@ -653,6 +653,21 @@ async def _get(
 # Entity Management tools
 # ---------------------------------------------------------------------------
 
+_PUBLIC_ONLY_NOTE = (
+    "No public record matched. SAM.gov lets registrants hide their record "
+    "from public view, and a SAM.gov API key returns only public records, so "
+    "no match does not mean the entity is unregistered. Confirm on SAM.gov "
+    "with federal access, or ask the vendor for its UEI."
+)
+
+
+def _note_if_no_public_record(data: dict[str, Any]) -> dict[str, Any]:
+    """Explain an empty entity result instead of letting it read as 'not registered'."""
+    if isinstance(data, dict) and _safe_int(data.get("totalRecords"), default=0) == 0:
+        data.setdefault("_note", _PUBLIC_ONLY_NOTE)
+    return data
+
+
 @mcp.tool(annotations={"title": "Lookup Entity by UEI", "readOnlyHint": True, "destructiveHint": False})
 async def lookup_entity_by_uei(
     uei: str,
@@ -674,6 +689,9 @@ async def lookup_entity_by_uei(
     Returns the full entity record from SAM.gov Entity Management v3.
     The UEI is a 12-character alphanumeric identifier assigned by SAM.gov.
     Matching is case-insensitive and whitespace-tolerant (live-verified).
+
+    Public records only: entities that opted out of public display never
+    appear, so zero results does not mean the entity is unregistered.
 
     A UEI is NOT guaranteed unique: live data contains UEIs with multiple
     (sometimes duplicate) registration records, so totalRecords can exceed 1;
@@ -711,7 +729,7 @@ async def lookup_entity_by_uei(
         "samRegistered": sam_registered,
         "includeSections": ",".join(include_sections),
     }
-    return await _get(ENTITY_PATH, params)
+    return _note_if_no_public_record(await _get(ENTITY_PATH, params))
 
 
 @mcp.tool(annotations={"title": "Lookup Entity by CAGE", "readOnlyHint": True, "destructiveHint": False})
@@ -723,6 +741,9 @@ async def lookup_entity_by_cage(
 
     CAGE (Commercial and Government Entity) codes are 5-character alphanumeric
     identifiers assigned by DLA. Useful when you have a CAGE but no UEI.
+
+    Public records only: entities that opted out of public display never
+    appear, so zero results does not mean the entity is unregistered.
     """
     if not cage_code or not cage_code.strip():
         return {"totalRecords": 0, "entityData": [], "_note": "Empty CAGE code provided."}
@@ -736,7 +757,7 @@ async def lookup_entity_by_cage(
         "samRegistered": "Yes",
         "includeSections": ",".join(include_sections),
     }
-    return await _get(ENTITY_PATH, params)
+    return _note_if_no_public_record(await _get(ENTITY_PATH, params))
 
 
 @mcp.tool(annotations={"title": "Search Entities", "readOnlyHint": True, "destructiveHint": False})
@@ -760,6 +781,9 @@ async def search_entities(
     All filters are AND-ed together. Returns paginated results; note that
     Entity Management has a HARD CAP of 10 records per page (size <= 10).
     For more results, increment 'page' and make multiple calls.
+
+    Public records only: entities that opted out of public display never
+    appear, so zero results does not mean the entity is unregistered.
 
     Key filter notes:
     - legal_business_name does partial matching with no relevance ranking.
@@ -877,7 +901,7 @@ async def search_entities(
     if free_text:
         params["q"] = free_text
 
-    return await _get(ENTITY_PATH, params)
+    return _note_if_no_public_record(await _get(ENTITY_PATH, params))
 
 
 @mcp.tool(annotations={"title": "Get Entity Reps and Certs", "readOnlyHint": True, "destructiveHint": False})
@@ -1700,12 +1724,15 @@ async def vendor_responsibility_check(uei: str) -> dict[str, Any]:
     2. Exclusions lookup (active debarment/suspension records)
 
     Returns a structured summary with:
-    - registration: full registration details or None if not registered
+    - registration: full registration details, or None when no public record matched
     - exclusion: exclusion record count and active exclusion details
     - flags: list of responsibility concern flags
 
     Flag meanings:
-    - NOT_REGISTERED: entity has no SAM registration (cannot receive award per FAR 4.1102)
+    - NO_PUBLIC_RECORD: no public SAM.gov registration matched. Entities that
+      opted out of public display are hidden from SAM.gov API keys, so this
+      is not proof the entity is unregistered; confirm registration on SAM.gov
+      with federal access before applying FAR 4.1102
     - REGISTRATION_NOT_ACTIVE: registration expired or inactive
     - EXCLUSION_FLAG_ON_ENTITY: entity record indicates exclusion exists
     - ACTIVE_EXCLUSION_FOUND: confirmed active exclusion (FAR 9.405 prohibits award)
@@ -1752,7 +1779,8 @@ async def vendor_responsibility_check(uei: str) -> dict[str, Any]:
         total = _safe_int(entity_resp.get("totalRecords"), default=0)
         entity_data = _as_list(entity_resp.get("entityData"))
         if total == 0 or not entity_data:
-            result["flags"].append("NOT_REGISTERED")
+            result["flags"].append("NO_PUBLIC_RECORD")
+            result["_note"] = _PUBLIC_ONLY_NOTE
         else:
             entity = entity_data[0]
             if not isinstance(entity, dict):

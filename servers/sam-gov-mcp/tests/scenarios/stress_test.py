@@ -282,7 +282,7 @@ async def main():
 
     await t("responsibility check nonexistent UEI",
         vendor_responsibility_check("ZZZZZZZZZZZZ"),
-        check=lambda r: ("NOT_REGISTERED" in r.get("flags",[]), f"flags={r.get('flags')}"))
+        check=lambda r: ("NO_PUBLIC_RECORD" in r.get("flags",[]), f"flags={r.get('flags')}"))
 
     await t("responsibility check empty UEI (guardrail)",
         vendor_responsibility_check(""),
