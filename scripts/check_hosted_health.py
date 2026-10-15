@@ -15,12 +15,17 @@ reach GSA, a revoked or rate-limited publisher key fails the check.
 
 Services with an "origin" also run on James's Dell (deploy/dell). The Worker
 falls back to the container when the Dell is down, so users never notice; the
-"Dell origin" row fails instead, so a home outage or a stuck updater is seen.
+"Dell origin" row warns instead (without failing the run), so a home outage or
+a stuck updater is still seen in the report.
+
+A failing check is retried after RETRY_WAITS seconds before it counts, so a
+brief upstream blip does not fail the run.
 """
 import argparse, importlib.util, json, os, subprocess, sys, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+RETRY_WAITS = (0, 60, 180)
 _spec = importlib.util.spec_from_file_location("verify_hosted_release", ROOT / "scripts/verify_hosted_release.py")
 _verify = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_verify)
@@ -171,17 +176,31 @@ def main():
     rows, failed = [], []
     slugs = args.slugs or list(services)
     for slug in slugs:
-        try:
-            rows.append(f"| {slug} | ok | {check(slug, services[slug])} |")
-        except Exception as e:  # noqa: BLE001 - report every service
+        # Upstream APIs blip (a timeout, a reset connection) and recover within
+        # minutes, so a service fails only if it is still failing after retries.
+        for wait in RETRY_WAITS:
+            time.sleep(wait)
+            try:
+                rows.append(f"| {slug} | ok | {check(slug, services[slug])} |")
+                break
+            except Exception as e:  # noqa: BLE001 - report every service
+                error = e
+        else:
             failed.append(slug)
-            rows.append(f"| {slug} | **FAILED** | {type(e).__name__}: {str(e)[:160]} |")
+            rows.append(f"| {slug} | **FAILED** | {type(error).__name__}: {str(error)[:160]} |")
     origins = [slug for slug in slugs if services[slug].get("origin")]
+    warning = False
     if origins:
-        problems = check_origins(origins, services)
+        for wait in RETRY_WAITS:
+            time.sleep(wait)
+            problems = check_origins(origins, services)
+            if not problems:
+                break
         if problems:
-            failed.append("Dell origin")
-            rows.append("| Dell origin | **FAILED** | Containers are serving instead (users unaffected). "
+            # Users are unaffected (containers serve), and the Dell lags ~20
+            # minutes after every release, so this warns without failing the run.
+            warning = True
+            rows.append("| Dell origin | warning | Containers are serving instead (users unaffected). "
                         + "; ".join(problems)[:400] + " |")
         else:
             rows.append(f"| Dell origin | ok | {len(origins)} services answered by the Dell |")
@@ -189,8 +208,8 @@ def main():
     if failed:
         print(f"\nFailing: {', '.join(failed)}. Check the service's /health, its Worker secret, and "
               "upstream API status; see docs/unified-release.md for rollback.")
-        if "Dell origin" in failed:
-            print("\nDell origin: on govnode check `systemctl status cloudflared-mcp mcp-origin-update` and "
+    if warning:
+        print("\nDell origin: on govnode check `systemctl status cloudflared-mcp mcp-origin-update` and "
                   "`docker compose -f /opt/mcp-origin/compose.yaml ps`. Just after a release the Dell "
                   "rebuilds within about 20 minutes; until then the new container serves.")
     return 1 if failed else 0
