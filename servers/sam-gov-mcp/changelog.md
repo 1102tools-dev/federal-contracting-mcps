@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.0.15
+
+When an entity search or lookup finds nothing, the answer now says that SAM.gov lets registrants hide their record from public view, so no match does not mean the entity is unregistered. `vendor_responsibility_check` now flags `NO_PUBLIC_RECORD` instead of `NOT_REGISTERED` for the same reason.
+
 ## 1.0.14
 
 Input mistakes (for example, award dates copied in the opportunity file's format, or a three-digit hierarchy agency code reused for assistance subawards) again return a specific message saying how to fix the request under MCP SDK 2.3. Tools and results are unchanged.

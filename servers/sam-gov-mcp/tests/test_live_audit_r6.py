@@ -495,8 +495,8 @@ def test_live_vendor_responsibility_nonexistent_uei():
     r = asyncio.run(_call("vendor_responsibility_check", uei="ZZZZZZZZZZZZ"))
     data = _payload(r)
     assert "flags" in data
-    # Should flag NOT_REGISTERED for a UEI that doesn't exist
-    assert "NOT_REGISTERED" in data["flags"]
+    # Should flag NO_PUBLIC_RECORD for a UEI that doesn't exist
+    assert "NO_PUBLIC_RECORD" in data["flags"]
 
 
 def test_live_vendor_responsibility_lowercase_uei():

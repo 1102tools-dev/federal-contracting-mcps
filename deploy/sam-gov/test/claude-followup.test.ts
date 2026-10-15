@@ -90,6 +90,9 @@ test("zero matches lead with dated non-clearance summary and untruncated empty c
   for (let n = 0; n < 25; n++) add(`ZZ Irrelevant Vendor ${n} LLC`);
   const entity = await searchEntities(db, {legal_business_name: "ZZ Quux Unimaginable"}, NOW);
   const exclusion = await searchExclusions(db, {entity_name: "ZZ Quux Unimaginable"}, NOW);
+  assert.match(entity.summary, /hide their record from public view/);
+  assert.match(entity.summary, /does not mean the entity is unregistered/);
+  assert.doesNotMatch(exclusion.summary, /public view/);
   for (const result of [entity, exclusion]) {
     assert.equal(Object.keys(result)[0], "summary");
     assert.match(result.summary, /No record matched/);
