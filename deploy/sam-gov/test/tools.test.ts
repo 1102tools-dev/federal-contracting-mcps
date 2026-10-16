@@ -362,7 +362,8 @@ test("JSON-RPC methods, notifications, and tool errors", async () => {
   assert.match(broken.result.structuredContent.error, /temporarily unavailable/);
 });
 
-test("HTTP edge: health, docs, origin, rate limit, methods, body limits", async () => {
+test("HTTP edge: health, docs, origin, rate limit, methods, body limits", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
   const health = await worker.fetch(new Request("https://sam.1102tools.com/health"), env() as any);
   assert.deepEqual(await health.json(), {status: "ok", tools: TOOLS.length, release_sha: "abc123"});
   assert.equal((await worker.fetch(new Request("https://sam.1102tools.com/privacy"), env() as any)).status, 200);
@@ -378,7 +379,8 @@ test("HTTP edge: health, docs, origin, rate limit, methods, body limits", async 
   assert.equal((await worker.fetch(post("x".repeat(70000)), env() as any)).status, 413);
 });
 
-test("new tools use the separate database and existing data status reports both files", async () => {
+test("new tools use the separate database and existing data status reports both files", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(readFileSync(new URL("../entity-schema.sql", import.meta.url), "utf8"));
   sqlite.prepare("INSERT INTO entities (entity_id,uei,cage_code,legal_business_name,registration_status,public_display_flag) VALUES (?,?,?,?,?,?)").run("entity1", "ABCDEF123456", "123AB", "Public Entity", "Active", "Y");
