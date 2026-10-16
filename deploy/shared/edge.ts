@@ -353,7 +353,7 @@ export function logToolCall(service: string, body: ArrayBuffer | null, response:
   if (tool === null) return;
   console.log(JSON.stringify({
     event: "tool_call", service, tool, client: clientApp(userAgent), backend: response.headers.get("X-1102tools-Backend"),
-    status: response.status, ms: Date.now() - started, meta: metaKeys(body),
+    cache: response.headers.get("X-1102tools-Cache"), status: response.status, ms: Date.now() - started, meta: metaKeys(body),
   }));
 }
 

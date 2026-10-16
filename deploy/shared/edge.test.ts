@@ -342,7 +342,7 @@ test("logs the tool name of a tools/call and never its arguments", () => {
   }
   assert.equal(lines.length, 1);
   const line = JSON.parse(lines[0]);
-  assert.deepEqual({...line, ms: 0}, {event: "tool_call", service: "gsa-calc", tool: "keyword_search", client: "claude", backend: "origin", status: 200, ms: 0, meta: []});
+  assert.deepEqual({...line, ms: 0}, {event: "tool_call", service: "gsa-calc", tool: "keyword_search", client: "claude", backend: "origin", cache: null, status: 200, ms: 0, meta: []});
   assert.ok(line.ms >= 0);
   assert.ok(!lines[0].includes("secret"));
 });
@@ -367,7 +367,7 @@ test("the D1 wrapper logs answered tools/call requests only", async () => {
   console.log = (line: string) => { lines.push(line); };
   const post = (method: string, status: number) => withToolCallLog("sam-gov", async (request: Request) => {
     await request.text();
-    return new Response("{}", {status});
+    return new Response("{}", {status, headers: {"X-1102tools-Cache": "hit"}});
   })(new Request("https://sam.1102tools.com/mcp", {
     method: "POST", headers: {"User-Agent": "openai-mcp/1.0.0"},
     body: JSON.stringify({jsonrpc: "2.0", id: 1, method, params: {name: "search_opportunities", arguments: {q: "secret words"}}}),
@@ -380,7 +380,7 @@ test("the D1 wrapper logs answered tools/call requests only", async () => {
     console.log = original;
   }
   assert.equal(lines.length, 1);
-  assert.deepEqual({...JSON.parse(lines[0]), ms: 0}, {event: "tool_call", service: "sam-gov", tool: "search_opportunities", client: "chatgpt", backend: null, status: 200, ms: 0, meta: []});
+  assert.deepEqual({...JSON.parse(lines[0]), ms: 0}, {event: "tool_call", service: "sam-gov", tool: "search_opportunities", client: "chatgpt", backend: null, cache: "hit", status: 200, ms: 0, meta: []});
   assert.ok(!lines[0].includes("secret"));
 });
 
