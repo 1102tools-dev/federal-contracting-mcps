@@ -129,4 +129,4 @@ Results reflect government-source data and retrieval time or the bundled snapsho
 
 ## License and author
 
-MIT licensed. Built by James Jenrette. Independently developed and not affiliated with or endorsed by any federal agency.
+MIT licensed. Independently developed and not affiliated with or endorsed by any federal agency.
