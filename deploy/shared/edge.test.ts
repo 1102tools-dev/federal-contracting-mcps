@@ -1,7 +1,7 @@
 // Run: node --test deploy/shared/edge.test.ts
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {clientApp, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys, chatgptUser} from "./edge.ts";
+import {clientApp, programName, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys, chatgptUser} from "./edge.ts";
 
 // Tests never reach openai.com: the live AI-platform list download fails unless a test mocks it.
 const networkFetch = globalThis.fetch;
@@ -359,6 +359,33 @@ test("labels the app from the User-Agent without keeping the string", () => {
   assert.equal(clientApp("OldRexTech-govcon-tools/1.0"), "other");
   assert.equal(clientApp("Mozilla/5.0 (Macintosh)"), "other");
   assert.equal(clientApp(null), "other");
+});
+
+test("names an unknown app by its first User-Agent word only", () => {
+  assert.equal(programName("Wallmad/0.3 (procurement-source-connector)"), "Wallmad");
+  assert.equal(programName("OldRexTech-govcon-tools/1.0"), "OldRexTech-govcon-tools");
+  assert.equal(programName("node"), "node");
+  assert.equal(programName("python-httpx/0.28.1"), "python-httpx");
+  assert.equal(programName("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"), "browser");
+  assert.equal(programName("my app <script>/1"), "my");
+  assert.equal(programName("x".repeat(80)), "x".repeat(40));
+  assert.equal(programName(""), "unnamed");
+  assert.equal(programName(null), "unnamed");
+
+  const lines: string[] = [];
+  const original = console.log;
+  console.log = (line: string) => { lines.push(line); };
+  try {
+    const call = new TextEncoder().encode(JSON.stringify({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "search_opportunities"}})).buffer as ArrayBuffer;
+    const response = new Response("{}", {status: 200});
+    logToolCall("sam-gov", call, response, Date.now(), "Wallmad/0.3 (procurement-source-connector)");
+    logToolCall("sam-gov", call, response, Date.now(), "Claude-User");
+  } finally {
+    console.log = original;
+  }
+  assert.equal(JSON.parse(lines[0]).program, "Wallmad");
+  assert.ok(!lines[0].includes("0.3") && !lines[0].includes("procurement"));
+  assert.equal("program" in JSON.parse(lines[1]), false);
 });
 
 test("the D1 wrapper logs answered tools/call requests only", async () => {
