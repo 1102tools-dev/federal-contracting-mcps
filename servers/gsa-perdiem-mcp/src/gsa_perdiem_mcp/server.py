@@ -332,6 +332,13 @@ def _clean_error_body(text: Any, api_key: str | None = None) -> str:
 # Auth and HTTP
 # ---------------------------------------------------------------------------
 
+HOSTED_UPDATE_NOTE = (
+    "GSA publishes per diem rates once a year, in the summer before the fiscal year starts on October 1. "
+    "This server checks weekly for new rate files. Rates don't change during the year, so lookups return "
+    "the same rate until the next fiscal year's rates load."
+)
+
+
 def _hosted() -> bool:
     """True in the 1102tools hosted container, which holds the publisher key."""
     return os.environ.get("PERDIEM_HOSTED", "").strip() == "1"
@@ -406,6 +413,8 @@ def get_data_status() -> dict[str, Any]:
             + (f" (bundled: FY{years[0]}-FY{years[-1]})" if years else "")
         ),
         "live_lookup_access": mode,
+        # Hosted only: the hosted copy is refreshed on a schedule; a local install is not.
+        **({"update_note": HOSTED_UPDATE_NOTE} if _hosted() else {}),
     }
     if mode == "key_missing":
         out["credential_env"] = "PERDIEM_API_KEY"

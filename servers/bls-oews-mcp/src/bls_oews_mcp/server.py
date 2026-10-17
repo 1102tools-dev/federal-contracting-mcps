@@ -14,6 +14,7 @@ the latest BLS has published. Do NOT query the current calendar year.
 
 from __future__ import annotations
 
+import os
 import re
 from typing import Any, Literal, Union
 
@@ -221,6 +222,12 @@ def _normalize_whitespace_str(value: Any) -> str | None:
 # Bundled data
 # ---------------------------------------------------------------------------
 
+HOSTED_UPDATE_NOTE = (
+    "BLS publishes OEWS wage data once a year, in the spring. This server checks weekly for a new release. "
+    "You can check as often as you like, but lookups return the same numbers until BLS publishes the next one."
+)
+
+
 @mcp.tool(annotations={"title": "Check Bundled OEWS Data", **_LOCAL_ONLY})
 def get_data_status() -> dict[str, Any]:
     """Report which OEWS release this server answers from and where it came from.
@@ -246,6 +253,8 @@ def get_data_status() -> dict[str, Any]:
             f"BLS publishes the next OEWS release (May {int(meta['data_year']) + 1} estimates) "
             f"in spring {int(meta['data_year']) + 2}."
         ),
+        # Hosted only: the hosted copy is refreshed on a schedule; a local install is not.
+        **({"update_note": HOSTED_UPDATE_NOTE} if os.environ.get("BLS_HOSTED", "").strip() == "1" else {}),
         "source": snapshot.source(),
     }
 

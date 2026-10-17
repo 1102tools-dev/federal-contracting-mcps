@@ -552,7 +552,7 @@ export async function getDataStatus(db: Database, _args: Args, now = new Date())
     latest_versions: s.latest_versions,
     by_notice_type: s.by_notice_type,
     last_load: {added: s.added, updated: s.updated, removed: s.removed, skipped_past_archive_date: s.skipped_past_archive_date},
-    refresh: "Checks every two hours and loads only when a newer public file is available. SAM.gov publishes the opportunities file daily; notices posted since then appear after the next new-file load.",
+    refresh: "SAM.gov publishes contract opportunities and exclusions once a day and entity registrations once a month. This server checks for new opportunity files every two hours and new entity and exclusion files every four hours. You can check as often as you like, but searches return the same results until the next file loads; loaded_at shows when each file came in.",
     coverage: "Active notices only, including notices posted in earlier fiscal years that remain active. This is not a complete historical archive; archived notices and attachments are not included. active_notices counts every listed version of amended notices; latest_versions and by_notice_type count only the latest version of each.",
     source: SOURCE,
     source_url: s.source_url,
