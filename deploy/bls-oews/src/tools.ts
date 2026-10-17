@@ -805,6 +805,7 @@ export async function getDataStatus(db: Database, args: Args) {
     sources,
     api_key_required: false,
     next_release: `BLS publishes the next OEWS release (May ${Number(meta.data_year) + 1} estimates) in spring ${Number(meta.data_year) + 2}.`,
+    update_note: "BLS publishes OEWS wage data once a year, in the spring. This server checks weekly for a new release. You can check as often as you like, but lookups return the same numbers until BLS publishes the next one.",
     source: source(rel),
   } satisfies Py;
 }

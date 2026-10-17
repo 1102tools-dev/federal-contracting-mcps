@@ -48,6 +48,25 @@ const EXPECTED_MESSAGE_ONLY: Record<string, string> = {
   '"just a string"': "Not an object: the SDK appends pydantic's multi-model union error dump.",
 };
 
+// The hosted get_data_status adds update_note (how often GSA publishes and the
+// hosted copy is checked); the Python package, which also runs locally, does not.
+const UPDATE_NOTE = "Hosted get_data_status adds update_note; the Python package does not. Same answer otherwise.";
+
+function withoutUpdateNote(answer: {status: number; body: string}): {status: number; body: string} {
+  try {
+    const message = JSON.parse(answer.body);
+    const result = message?.result;
+    if (!result?.structuredContent) return answer;
+    delete result.structuredContent.update_note;
+    const text = JSON.parse(result.content[0].text);
+    delete text.update_note;
+    result.content[0].text = canonical(text);
+    return {...answer, body: JSON.stringify(message)};
+  } catch {
+    return answer;
+  }
+}
+
 interface Outcome {name: string; responses: {status: number; body: string}[]; upstream: {path: string; key_header: boolean; user_agent: string | null}[]}
 
 class MemoryCache implements CacheLike {
@@ -163,6 +182,12 @@ corpus.scenarios.forEach((scenario: any, s: number) => {
     const problems = compare(python[s].responses[r], worker[s].responses[r]);
     if (!problems.length) {
       identical++;
+      return;
+    }
+    const ts = worker[s].responses[r];
+    if (ts.body.includes('"update_note"') && !compare(withoutUpdateNote(python[s].responses[r]), withoutUpdateNote(ts)).length) {
+      expected++;
+      expectedNotes.add(UPDATE_NOTE);
       return;
     }
     if (EXPECTED_MESSAGE_ONLY[body] && !compare(python[s].responses[r], worker[s].responses[r], true).length) {

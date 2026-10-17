@@ -646,6 +646,7 @@ async function getDataStatus(ctx: Context): Promise<Dict> {
     live_api_also_used_for: "ZIP, state, and M&IE lookups for fiscal years not bundled" +
       (years.length ? ` (bundled: FY${years[0]}-FY${years[years.length - 1]})` : ""),
     live_lookup_access: ctx.upstream.keyConfigured ? "hosted_publisher_key" : "hosted_key_missing",
+    update_note: "GSA publishes per diem rates once a year, in the summer before the fiscal year starts on October 1. This server checks weekly for new rate files. Rates don't change during the year, so lookups return the same rate until the next fiscal year's rates load.",
   };
 }
 

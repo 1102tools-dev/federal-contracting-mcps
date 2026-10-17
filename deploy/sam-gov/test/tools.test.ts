@@ -443,7 +443,7 @@ test("recent ingestion does not make an old opportunities source current", async
   assert.equal(result.loaded_at, NOW.toISOString());
   assert.ok(result.file_age_hours > 30);
   assert.match(result.refresh, /every two hours/);
-  assert.match(result.refresh, /newer public file/);
+  assert.match(result.refresh, /same results until the next file loads/);
   sqlite.close();
 });
 
