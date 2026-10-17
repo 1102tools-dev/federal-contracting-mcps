@@ -342,6 +342,7 @@ export function clientApp(userAgent: string | null): string {
   const ua = (userAgent ?? "").toLowerCase();
   if (ua.includes("claude-user")) return "claude";
   if (ua.startsWith("openai-mcp")) return ua.includes("codex") ? "codex" : "chatgpt";
+  if (ua.startsWith("codex-mcp-client")) return "codex";  // the Codex CLI
   if (ua.includes("perplexity")) return "perplexity";
   if (ua.includes("claude-code")) return "claude-code";
   if (ua.includes("1102tools") || ua.startsWith("curl/")) return "1102tools";
