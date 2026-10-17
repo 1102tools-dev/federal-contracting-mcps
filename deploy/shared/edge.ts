@@ -293,7 +293,8 @@ export async function originFirst(
 //
 // One line per tools/call so Workers Logs can count which tools people use.
 // It names the tool only, never its arguments: they can hold what people
-// typed. A name that isn't a plain tool identifier logs as "other". It also
+// typed. A name that isn't a plain tool identifier logs as "other". A call from
+// an app outside the known platforms also logs that app's own name. It also
 // lists the names of the _meta labels the app attached (such as ChatGPT's
 // "openai/subject" user ID), never their values, to learn which apps send a
 // per-user ID that could support a per-user limit.
@@ -335,7 +336,7 @@ export function metaKeys(body: ArrayBuffer | null): string[] {
 // Directory and availability scanners that probe every listed server.
 const SCANNERS = ["tedix", "catalog-health", "directory-admin", "mcplane", "looper", "agent-evidence", "discoverability", "runside"];
 
-/** Which app sent a request, as a platform label; the User-Agent itself is never logged.
+/** Which app sent a request, as a platform label; the full User-Agent is never logged.
  * "1102tools" is our own checks and tests (our scripts and curl). */
 export function clientApp(userAgent: string | null): string {
   const ua = (userAgent ?? "").toLowerCase();
@@ -348,12 +349,23 @@ export function clientApp(userAgent: string | null): string {
   return "other";
 }
 
+/** For an "other" call, the name the app or script gives itself: the first word of
+ * its User-Agent, with no version or anything after it. Browsers log as "browser". */
+export function programName(userAgent: string | null): string {
+  const first = (userAgent ?? "").trim().split(/[\s\/(;]/, 1)[0];
+  const name = first.replace(/[^A-Za-z0-9._-]/g, "").slice(0, 40);
+  if (!name) return "unnamed";
+  return name.toLowerCase() === "mozilla" ? "browser" : name;
+}
+
 export function logToolCall(service: string, body: ArrayBuffer | null, response: Response, started: number, userAgent: string | null): void {
   const tool = toolName(body);
   if (tool === null) return;
+  const client = clientApp(userAgent);
   console.log(JSON.stringify({
-    event: "tool_call", service, tool, client: clientApp(userAgent), backend: response.headers.get("X-1102tools-Backend"),
-    cache: response.headers.get("X-1102tools-Cache"), status: response.status, ms: Date.now() - started, meta: metaKeys(body),
+    event: "tool_call", service, tool, client, ...(client === "other" ? {program: programName(userAgent)} : {}),
+    backend: response.headers.get("X-1102tools-Backend"), cache: response.headers.get("X-1102tools-Cache"),
+    status: response.status, ms: Date.now() - started, meta: metaKeys(body),
   }));
 }
 
