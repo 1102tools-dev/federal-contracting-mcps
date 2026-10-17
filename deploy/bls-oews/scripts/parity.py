@@ -41,7 +41,15 @@ INVALID_MESSAGE = (
     "instead of its parser or pydantic error dump.",
     lambda py, ts: py["status"] == ts["status"] == 400 and error_code(py) == error_code(ts),
 )
+UPDATE_NOTE = (
+    "The hosted get_data_status adds update_note (how often BLS publishes and the hosted copy is "
+    "checked); the Python package, which also runs locally, does not. Same answer otherwise.",
+    lambda py, ts: py["status"] == ts["status"] and without_update_note(ts) == without_update_note(py),
+)
 DOCUMENTED = {
+    "tools/call without arguments": UPDATE_NOTE,
+    "get_data_status": UPDATE_NOTE,
+    "modern: get_data_status": UPDATE_NOTE,
     "tools/list": TOOLS_LIST,
     "tools/list with cursor": TOOLS_LIST,
     "modern: tools/list": TOOLS_LIST,
@@ -62,6 +70,17 @@ DOCUMENTED = {
         lambda py, ts: py["status"] == ts["status"] and error_blocks(py) == error_blocks(ts),
     ),
 }
+
+
+def without_update_note(answer):
+    """A tool answer with update_note dropped from structuredContent and the text."""
+    message = json.loads(answer["body"])
+    result = message["result"]
+    result["structuredContent"].pop("update_note", None)
+    text = json.loads(result["content"][0]["text"])
+    text.pop("update_note", None)
+    result["content"][0]["text"] = text
+    return message
 
 
 def error_code(answer):
