@@ -118,11 +118,33 @@ def test_a_hit_uses_no_pacing_and_no_budget(upstream):
 
     first, second = asyncio.run(upstream["run"](calls))
     assert first == second
-    # titles.json for the latest date, titles.json again for the update state
-    # (read outside the cache) and one XML call; the repeat made none.
-    assert len(upstream["requests"]) == 3
-    assert upstream["budget_starts"]() == 3  # the XML call also takes a JSON-lane start
-    assert server._cache_stats()["hits"] == 2 and server._cache_stats()["misses"] == 2
+    # titles.json once for the update state (read outside the cache, and reused
+    # for the latest date) and one XML call; the repeat made none.
+    assert len(upstream["requests"]) == 2
+    assert upstream["budget_starts"]() == 2  # the XML call also takes a JSON-lane start
+    assert server._cache_stats()["hits"] == 1 and server._cache_stats()["misses"] == 1
+
+
+def test_the_latest_date_check_is_not_counted(upstream):
+    async def calls():
+        for section in ("15.305", "52.212-4", "9.104-1"):
+            await server.lookup_far_clause(section)
+
+    asyncio.run(upstream["run"](calls))
+    # Three different questions: three misses and no hits. Resolving the
+    # latest date is not a lookup of its own.
+    assert server._cache_stats()["hits"] == 0 and server._cache_stats()["misses"] == 3
+    assert len([r for r in upstream["requests"] if r.endswith("/titles.json")]) == 1
+
+
+def test_the_latest_date_falls_back_when_the_update_state_cannot_be_read(upstream):
+    upstream["responses"].append(httpx.Response(500, text="boom"))  # the update-state read fails
+
+    async def calls():
+        return await server.lookup_far_clause("15.305")
+
+    asyncio.run(upstream["run"](calls))
+    assert len([r for r in upstream["requests"] if r.endswith("/titles.json")]) == 2
 
 
 def test_cached_answers_match_uncached_answers(upstream, monkeypatch):

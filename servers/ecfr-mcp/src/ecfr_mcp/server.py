@@ -361,6 +361,8 @@ _DATED_PATH = re.compile(r"^/api/versioner/v1/(?:full|structure|ancestry)/(\d{4}
 _TITLES = "/api/versioner/v1/titles.json"
 # eCFR's update state (a fingerprint of every title's dates) and when it was read.
 _version: tuple[str | None, float] = (None, float("-inf"))
+# The titles list that state was read from; hosted date lookups reuse it.
+_version_titles: list[Any] = []
 _version_lock: asyncio.Lock | None = None
 
 
@@ -399,7 +401,7 @@ async def _data_version() -> str | None:
     cache, so it never counts as a hit or miss. If it can't be read, answers use
     the shorter times and it is read again after a minute.
     """
-    global _version, _version_lock
+    global _version, _version_lock, _version_titles
     if not _cache.enabled:
         return None
     value, read_at = _version
@@ -417,6 +419,7 @@ async def _data_version() -> str | None:
                      for t in titles if isinstance(t, dict)]
             value = hashlib.sha256(_json.dumps(state, separators=(",", ":")).encode()).hexdigest()[:16] if state else None
             _version = (value, time.monotonic())
+            _version_titles = titles if value else []
         except Exception:
             value = None
             _version = (None, time.monotonic() - 14 * MINUTE)
@@ -631,9 +634,17 @@ async def _resolve_date(title_number: int) -> str:
     Raises ValueError with an actionable message for reserved titles
     (which have null up_to_date_as_of) rather than building a URL with
     'None' in it.
+
+    Hosted, the titles list comes from the update-state read (at most every
+    15 minutes, outside the cache), so this step is never counted as a cache
+    hit or miss and asks eCFR nothing extra. Locally, or if that read failed,
+    it is fetched like any other answer.
     """
-    data = await _get_json("/api/versioner/v1/titles.json")
-    titles = _as_list(_safe_dict(data).get("titles"))
+    if await _data_version() and _version_titles:
+        titles = _version_titles
+    else:
+        data = await _get_json("/api/versioner/v1/titles.json")
+        titles = _as_list(_safe_dict(data).get("titles"))
     for title in titles:
         t = _safe_dict(title)
         if _safe_int(t.get("number")) == title_number:
