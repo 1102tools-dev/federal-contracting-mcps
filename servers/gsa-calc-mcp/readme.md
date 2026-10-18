@@ -44,7 +44,7 @@ The GSA CALC+ API is public. GSA does not publish a numeric limit for this endpo
 ## Installation
 
 ```bash
-uvx gsa-calc-mcp
+uvx --refresh-package gsa-calc-mcp --from gsa-calc-mcp gsa-calc-mcp
 ```
 
 Or from source:

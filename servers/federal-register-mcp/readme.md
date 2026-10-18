@@ -44,7 +44,7 @@ The Federal Register API is fully public. No key, no registration.
 ## Installation
 
 ```bash
-uvx federal-register-mcp
+uvx --refresh-package federal-register-mcp --from federal-register-mcp federal-register-mcp
 ```
 
 ## Configuration

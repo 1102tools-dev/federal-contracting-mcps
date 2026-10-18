@@ -106,7 +106,7 @@ pip install usaspending-gov-mcp
 ### Via uvx (recommended, no venv needed)
 
 ```bash
-uvx --from usaspending-gov-mcp usaspending-mcp
+uvx --refresh-package usaspending-gov-mcp --from usaspending-gov-mcp usaspending-mcp
 ```
 
 The `--from` is required for this server and only this server. The PyPI package
