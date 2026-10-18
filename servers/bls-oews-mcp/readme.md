@@ -50,7 +50,7 @@ BLS.gov cannot vouch for the data or analyses derived from these data after the 
 ## Installation
 
 ```bash
-uvx bls-oews-mcp
+uvx --refresh-package bls-oews-mcp --from bls-oews-mcp bls-oews-mcp
 ```
 
 ## Configuration

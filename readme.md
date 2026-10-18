@@ -98,13 +98,13 @@ The table shows where each server is listed as a hosted install.
    - **Claude Code or Codex:** one command. For example, USAspending:
 
      ```sh
-     claude mcp add usaspending -- uvx --from usaspending-gov-mcp usaspending-mcp
-     codex mcp add usaspending -- uvx --from usaspending-gov-mcp usaspending-mcp
+     claude mcp add usaspending -- uvx --refresh-package usaspending-gov-mcp --from usaspending-gov-mcp usaspending-mcp
+     codex mcp add usaspending -- uvx --refresh-package usaspending-gov-mcp --from usaspending-gov-mcp usaspending-mcp
      ```
 
 3. **Add a key if the server needs one.** SAM.gov, Regulations.gov, and GSA Per Diem take a free key from the agency. The setup guide shows where to get it and which setting to use.
 
-**Updating.** Local installs don't update themselves. To get the latest version, ask your AI to update the server, or run it with `@latest` (for example `uvx usaspending-gov-mcp@latest`).
+**Updating.** Local installs don't update themselves. To get the latest version, ask your AI to update the server, or run it with `--refresh-package` (for example `uvx --refresh-package usaspending-gov-mcp --from usaspending-gov-mcp usaspending-mcp`).
 
 If your app says it can't find `uvx`, use its full path instead: run `which uvx` on macOS or `where uvx` on Windows.
 

@@ -118,7 +118,7 @@ Get a free personal API key by signing in and following the Public API Key instr
 ### Via uvx
 
 ```bash
-uvx sam-gov-mcp
+uvx --refresh-package sam-gov-mcp --from sam-gov-mcp sam-gov-mcp
 ```
 
 ### Via pip

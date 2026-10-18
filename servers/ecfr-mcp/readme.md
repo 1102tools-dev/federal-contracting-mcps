@@ -51,7 +51,7 @@ The eCFR API is fully public. No API key, no registration, no auth headers. Just
 ### Via uvx (recommended)
 
 ```bash
-uvx ecfr-mcp
+uvx --refresh-package ecfr-mcp --from ecfr-mcp ecfr-mcp
 ```
 
 ### Via pip

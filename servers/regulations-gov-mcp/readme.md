@@ -61,7 +61,7 @@ have one for another 1102tools MCP you can reuse it.
 ## Installation
 
 ```bash
-uvx regulationsgov-mcp
+uvx --refresh-package regulationsgov-mcp --from regulationsgov-mcp regulationsgov-mcp
 ```
 
 ## Configuration

@@ -59,7 +59,7 @@ FEC, FCC, etc.).
 ## Installation
 
 ```bash
-uvx gsa-perdiem-mcp
+uvx --refresh-package gsa-perdiem-mcp --from gsa-perdiem-mcp gsa-perdiem-mcp
 ```
 
 ## Configuration
