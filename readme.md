@@ -4,39 +4,45 @@
 
 [![Cloudflare Workers](https://img.shields.io/badge/hosted%20on-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/deploy)
 
-Free, open-source, read-only source tools for federal contracting research: opportunities, awards, company records, labor pricing, travel rates, regulations, and rulemaking.
+### Ask Claude or ChatGPT about federal contracts. Get answers from the government's own records.
 
-[Explore 1102tools](https://1102tools.com) · [Find a matching prompt](https://github.com/1102tools-dev/federal-contracting-prompts) · [Download the MCP prompt guide](https://github.com/1102tools-dev/federal-contracting-prompts/blob/main/docs/1102tools-mcp-prompt-guide.pdf) · [Demo videos on YouTube](https://www.youtube.com/@1102tools)
+Free MCP servers that plug your AI into SAM.gov, USAspending, GSA CALC+, BLS wage data, GSA Per Diem, the FAR, the Federal Register, Regulations.gov and Acquisition.gov. Find opportunities, size up the incumbent, price labor and travel, and check the rules without leaving the chat.
 
-## Why these MCPs
+**[Install in Claude or ChatGPT](#local-or-hosted)** · [Watch a demo](https://www.youtube.com/watch?v=Au7r2A9JgdM) · [Find a ready-made prompt](https://github.com/1102tools-dev/federal-contracting-prompts) · [1102tools.com](https://1102tools.com)
 
-- **Free.** MIT-licensed, with no subscription and no credits. Hosted installs need no account or API key.
-- **Tested.** Checked against the government sources, reviewed by Claude Code and Codex, and backed by thousands of regression tests. [How it's tested](#testing).
-- **Listed.** Hosted installs are in the Claude and ChatGPT directories and need no user API key. [See where each server is listed](#local-or-hosted).
-- **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
+<a href="https://www.youtube.com/watch?v=Au7r2A9JgdM"><img src="https://img.youtube.com/vi/Au7r2A9JgdM/maxresdefault.jpg" alt="Watch the SAM.gov demo: finding contract opportunities in Claude" width="560"></a>
 
-## Testing
+## Why people use it
 
-- **Checked against the source.** Realistic contracting questions run against each server, and the answers are compared with the government source: the numbers, the dates, the citations.
-- **Worst problems first.** Every problem is ranked by how much it could mislead you, from a wrong answer you might act on down to a minor wording issue. Wrong answers are fixed first.
-- **Reviewed by more than one AI.** Audits run with both Claude Code and Codex, and every finding is checked by a second reviewer before a fix ships.
-- **Fixed for good.** Every fix gets a regression test so the problem can't come back, and thousands of these tests run before each release.
-
-| Server | Testing record |
+| Instead of | You get |
 |---|---|
-| SAM.gov | [Testing](servers/sam-gov-mcp/testing.md) |
-| USAspending | [Testing](servers/usaspending-gov-mcp/testing.md) |
-| GSA CALC+ | [Testing](servers/gsa-calc-mcp/testing.md) |
-| BLS OEWS | [Testing](servers/bls-oews-mcp/testing.md) |
-| GSA Per Diem | [Testing](servers/gsa-perdiem-mcp/testing.md) |
-| eCFR | [Testing](servers/ecfr-mcp/testing.md) |
-| Federal Register | [Testing](servers/federal-register-mcp/testing.md) |
-| Regulations.gov | [Testing](servers/regulations-gov-mcp/testing.md) |
-| Acquisition.gov | [Testing](servers/acquisition-gov-mcp/testing.md) |
+| Paying hundreds to thousands of dollars a year for a GovCon platform | $0. No subscription, no credits, no 1102tools account |
+| Clicking through agency websites and spreadsheet exports | One question in the AI you already use |
+| An AI guessing at award amounts, labor rates and FAR text | Answers pulled from the government source, with the record and the date |
+| Waiting on IT to install software | Hosted versions in the Claude and ChatGPT directories. No key |
 
-Release details are in the [October 10, 2026 release record](docs/releases/2026-10-10-content-audit.md).
+- **Built by a federal contracting officer.** It's made by someone who sits on the buying side, so it looks where the buyer looks.
+- **Checked against the source.** Every server is tested against its government source, and thousands of regression tests run before each release. [How it's tested](#testing)
+- **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
+- **Private.** No tracking. Searches aren't logged and IP addresses aren't kept. Run it locally and nothing passes through 1102tools at all.
 
-See [how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
+[See how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
+
+## What you can ask
+
+| MCP | Best for | Try asking | Demo |
+|---|---|---|---|
+| [SAM.gov](https://1102tools.com/mcp/sam-gov) | Finding opportunities to bid on. The full version looks up awards too. | "Find open small business set-aside solicitations for NAICS 541512 that close in the next 30 days." | [Watch](https://www.youtube.com/watch?v=Au7r2A9JgdM) |
+| [USAspending](https://1102tools.com/mcp/usaspending) | Looking up past awards: who won, how much, and from which agency. | "Who holds the incumbent contract for this requirement, and when does it expire?" | [Watch](https://www.youtube.com/watch?v=8_D-HmCdXYQ) |
+| [GSA CALC+](https://1102tools.com/mcp/gsa-calc) | Pricing labor in proposals and IGCEs against rates GSA has already awarded. | "Is my proposed labor rate competitive with awarded GSA rates?" | [Watch](https://www.youtube.com/watch?v=2SQJE4hwWhk) |
+| [BLS OEWS](https://1102tools.com/mcp/bls-oews) | Pricing labor in proposals and IGCEs with market wage data. | "Build a fully burdened labor rate from BLS wages for my price proposal." | [Watch](https://www.youtube.com/watch?v=3AqAob6zxw4) |
+| [GSA Per Diem](https://1102tools.com/mcp/gsa-per-diem) | Pricing travel in proposals and IGCEs. | "What travel costs should I include for a three-day site visit to Denver?" | [Watch](https://www.youtube.com/watch?v=uX6Us64AJMc) |
+| [eCFR](https://1102tools.com/mcp/ecfr) | A FAR answer when there's no contracting officer to ask. | "What does FAR Part 19 say about small business set-asides?" | [Watch](https://www.youtube.com/watch?v=6Gye4tPVV6w) |
+| [Federal Register](https://1102tools.com/mcp/federal-register) | Seeing which FAR rules are coming and when comments close. | "Which proposed FAR rules could affect small contractors, and when do comments close?" | [Watch](https://www.youtube.com/watch?v=QBgRDS4xKPI) |
+| [Regulations.gov](https://1102tools.com/mcp/regulations-gov) | Reading what contractors said about a rule before you comment. | "What did other contractors say in their comments on this FAR rule?" | [Watch](https://www.youtube.com/watch?v=Cz6R5j3deew) |
+| [Acquisition.gov](https://1102tools.com/mcp/acquisition-gov) | Seeing which FAR Overhaul changes an agency has adopted. | "Has this agency issued a class deviation that affects my proposal?" | [Watch](https://www.youtube.com/watch?v=eE4y8sEZPbE) |
+
+Want a stronger starting point? The [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts) has ready-made requests for capture, pricing, competitor research and FAR questions. Each one names the MCPs it needs.
 
 <a id="available-in-claude-and-chatgpt"></a>
 
@@ -108,26 +114,26 @@ The table shows where each server is listed as a hosted install. Each name links
 
 If your app says it can't find `uvx`, use its full path instead: run `which uvx` on macOS or `where uvx` on Windows.
 
+
 ## Start with a question
 
-1. Pick a request from the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts). Each one names the MCPs it needs.
-2. Connect those MCPs, local or hosted, from the table above.
+1. Pick a request from the [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts), or start from one of the questions in [What you can ask](#what-you-can-ask).
+2. Connect the MCPs it needs, local or hosted, from the [install table](#local-or-hosted).
 3. Fill in the bracketed details, such as `[AGENCY]` or `[COMPANY]`, and send it. Ask for source links and dates.
-
-| What you want to do | MCP to connect | Matching prompts |
-|---|---|---|
-| Find solicitations and check company registrations | [SAM.gov](servers/sam-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#catching-opportunities) |
-| Research contracts, grants, competitors, agencies, and recompetes | [USAspending](servers/usaspending-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#competitor-intelligence) |
-| Compare awarded labor-rate ceilings | [GSA CALC+](servers/gsa-calc-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#gsa-calc) |
-| Look up occupation and location wage data | [BLS OEWS](servers/bls-oews-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#bls-oews) |
-| Estimate lodging and meals for travel | [GSA Per Diem](servers/gsa-perdiem-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#gsa-per-diem) |
-| Read and compare codified FAR, DFARS, and CFR text | [eCFR](servers/ecfr-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#ecfr) |
-| Follow proposed rules, final rules, and FAR cases | [Federal Register](servers/federal-register-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#federal-register) |
-| Explore rulemaking dockets and public comments | [Regulations.gov](servers/regulations-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#regulationsgov) |
-| Research FAR Overhaul model text and posted agency deviations | [Acquisition.gov](servers/acquisition-gov-mcp) | [Open prompts](https://github.com/1102tools-dev/federal-contracting-prompts#far-overhaul-and-agency-deviations) |
 
 Results reflect government-source data and retrieval time or the bundled snapshot release. Check source and as-of metadata; bundled data does not make a fresh upstream request on every lookup. Check dates, completeness, identity matches, and reported limitations. The MCPs provide evidence; they do not make a contracting or procurement-specific applicability decision.
 
+## Testing
+
+- **Checked against the source.** Realistic contracting questions run against each server, and the answers are compared with the government source: the numbers, the dates, the citations.
+- **Worst problems first.** Every problem is ranked by how much it could mislead you, from a wrong answer you might act on down to a minor wording issue. Wrong answers are fixed first.
+- **Reviewed by more than one AI.** Audits run with both Claude Code and Codex, and every finding is checked by a second reviewer before a fix ships.
+- **Fixed for good.** Every fix gets a regression test so the problem can't come back, and thousands of these tests run before each release.
+
+Each server keeps its own testing record: [SAM.gov](servers/sam-gov-mcp/testing.md) · [USAspending](servers/usaspending-gov-mcp/testing.md) · [GSA CALC+](servers/gsa-calc-mcp/testing.md) · [BLS OEWS](servers/bls-oews-mcp/testing.md) · [GSA Per Diem](servers/gsa-perdiem-mcp/testing.md) · [eCFR](servers/ecfr-mcp/testing.md) · [Federal Register](servers/federal-register-mcp/testing.md) · [Regulations.gov](servers/regulations-gov-mcp/testing.md) · [Acquisition.gov](servers/acquisition-gov-mcp/testing.md)
+
+Release details are in the [October 10, 2026 release record](docs/releases/2026-10-10-content-audit.md).
+
 ## License and author
 
-MIT licensed. Independently developed and not affiliated with or endorsed by any federal agency.
+MIT licensed. Built by a federal contracting officer. Independently developed and not affiliated with or endorsed by any federal agency.
