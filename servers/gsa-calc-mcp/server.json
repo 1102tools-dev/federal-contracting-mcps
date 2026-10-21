@@ -8,17 +8,23 @@
     "source": "github",
     "subfolder": "servers/gsa-calc-mcp"
   },
-  "version": "1.0.20",
+  "version": "1.0.21",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "gsa-calc-mcp",
-      "version": "1.0.20",
+      "version": "1.0.21",
       "transport": {
         "type": "stdio"
       }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://gsa-calc.1102tools.com/mcp"
     }
   ]
 }

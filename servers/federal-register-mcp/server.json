@@ -8,17 +8,23 @@
     "source": "github",
     "subfolder": "servers/federal-register-mcp"
   },
-  "version": "1.0.17",
+  "version": "1.0.18",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "federal-register-mcp",
-      "version": "1.0.17",
+      "version": "1.0.18",
       "transport": {
         "type": "stdio"
       }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://federal-register.1102tools.com/mcp"
     }
   ]
 }

@@ -6,6 +6,8 @@
 
 Free, open-source MCP server for the eCFR (Electronic Code of Federal Regulations) API. Read FAR, DFARS, and all agency FAR supplement text with no authentication required.
 
+Overview, demo video and hosted setup: https://1102tools.com/mcp/ecfr
+
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
 *Regression tests, including live checks against the eCFR API and a check that every piece of text in ten saved eCFR responses comes out exactly once and in order. The October 2026 releases were also checked with realistic contracting questions (clause lookups, FAR definitions, version history, recent changes). See [testing.md](testing.md).*

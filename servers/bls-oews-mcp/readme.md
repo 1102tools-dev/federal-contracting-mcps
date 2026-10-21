@@ -6,6 +6,8 @@
 
 Free, open-source MCP server for BLS Occupational Employment and Wage Statistics (OEWS) market wages. For IGCE development, price analysis, and labor market research.
 
+Overview, demo video and hosted setup: https://1102tools.com/mcp/bls-oews
+
 No API key and no daily limit. The package bundles the current OEWS release (May 2025 estimates, published by BLS on May 15, 2026) as a read-only database built from BLS's published flat files, so every answer is local and each result cites the BLS release, publication date, retrieval date, and source file. See [Local or hosted](#local-or-hosted).
 
 When BLS publishes no number for a wage measure, answers keep the BLS footnote that explains why and suggest the published hourly or annual alternative. Top-coded wages keep BLS's published lower bound; the server does not invent an exact wage or annualize hourly-only occupations.

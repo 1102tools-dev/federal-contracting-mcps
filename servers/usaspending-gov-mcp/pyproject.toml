@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "usaspending-gov-mcp"
-version = "1.0.26"
+version = "1.0.27"
 description = "USAspending.gov contracts, grants, loans, subawards, recipients, agencies, and federal accounts."
 readme = "readme.md"
 requires-python = ">=3.10"
@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://1102tools.com"
+Homepage = "https://1102tools.com/mcp/usaspending"
 Repository = "https://github.com/1102tools-dev/federal-contracting-mcps"
 Issues = "https://github.com/1102tools-dev/federal-contracting-mcps/issues"
 

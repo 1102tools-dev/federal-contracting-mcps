@@ -6,6 +6,8 @@
 
 Free, open-source MCP server for the GSA Per Diem Rates API. Federal travel lodging and M&IE rates for IGCEs and travel cost estimation.
 
+Overview, demo video and hosted setup: https://1102tools.com/mcp/gsa-per-diem
+
 ZIP, state, and M&IE lookups for FY2021 onward work with no key and no network call: they are answered from GSA's published rate, ZIP, and M&IE files bundled in the package. For bundled fiscal years, city lookups, trip estimates and comparisons with a supplied `county` also work without a key or network call. City-name lookups without a county are answered from bundled Census place and GSA county data when that settles the rate area; other city names and lookups for unbundled years use the GSA Per Diem API and need a free api.data.gov key in `PERDIEM_API_KEY`. The hosted version needs no key for any lookup. See [Local or hosted](#local-or-hosted).
 
 *Regression tests, and realistic contractor travel questions checked against GSA's published rates before release. See [testing.md](testing.md).*

@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.0.16
+
+The PyPI page now links to this server's 1102tools page, and the MCP registry entry lists the hosted endpoint. Tools and answers are unchanged.
+
 ## 1.0.15
 
 When an entity search or lookup finds nothing, the answer now says that SAM.gov lets registrants hide their record from public view, so no match does not mean the entity is unregistered. `vendor_responsibility_check` now flags `NO_PUBLIC_RECORD` instead of `NOT_REGISTERED` for the same reason.

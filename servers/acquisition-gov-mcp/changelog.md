@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.15 — 2026-10-21
+
+- The PyPI page now links to this server's 1102tools page, and the MCP registry entry lists the hosted endpoint. Tools and answers are unchanged.
+
 ## 1.0.14 — 2026-10-11
 
 - Use current PDF revision dates and warn with the official PDF link when outlined text cannot be extracted.

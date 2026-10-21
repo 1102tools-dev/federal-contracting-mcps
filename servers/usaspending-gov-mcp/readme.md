@@ -6,6 +6,8 @@
 
 Free, open-source MCP server for the USAspending.gov API: contracts, grants, loans, subawards, recipients, agencies, and federal accounts.
 
+Overview, demo video and hosted setup: https://1102tools.com/mcp/usaspending
+
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
 *Regression tests, including live checks against the USAspending API. The October 2026 releases were also checked with realistic contracting questions across all 55 tools (award histories, fiscal-year totals, subcontract reports, federal accounts). See [testing.md](testing.md).*
