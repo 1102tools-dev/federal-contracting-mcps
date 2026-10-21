@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gsa-perdiem-mcp"
-version = "1.2.6"
+version = "1.2.7"
 description = "MCP server for GSA Per Diem Rates API. Federal travel lodging and M&IE rates for IGCEs and travel cost estimation."
 readme = "readme.md"
 requires-python = ">=3.10"
@@ -43,7 +43,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://1102tools.com"
+Homepage = "https://1102tools.com/mcp/gsa-per-diem"
 Repository = "https://github.com/1102tools-dev/federal-contracting-mcps"
 Issues = "https://github.com/1102tools-dev/federal-contracting-mcps/issues"
 

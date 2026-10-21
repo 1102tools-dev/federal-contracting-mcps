@@ -6,6 +6,8 @@
 
 Free, open-source MCP server for SAM.gov entity registration, exclusion/debarment, contract opportunity, contract award, federal hierarchy, and FFATA subaward data.
 
+Overview, demo video and hosted setup: https://1102tools.com/mcp/sam-gov
+
 Two editions: **hosted**, with 6 keyless tools for contract opportunities, public entity registrations, and exclusions, and **local**, the full 20 tools with a free SAM.gov key. See [Local or hosted](#local-or-hosted).
 
 *Regression tests, including live checks against the SAM.gov APIs. The October 2026 releases were also checked with realistic contracting questions against official SAM.gov records. See [testing.md](testing.md).*

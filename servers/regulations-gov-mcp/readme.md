@@ -6,6 +6,8 @@
 
 Free, open-source MCP server for the Regulations.gov API. Federal rulemaking dockets, proposed rules, final rules, public comments, and comment period tracking.
 
+Overview, demo video and hosted setup: https://1102tools.com/mcp/regulations-gov
+
 Hosted: no key. Local: a free api.data.gov key. See [Local or hosted](#local-or-hosted).
 
 *Regression tests, including live checks against the Regulations.gov API. The October 2026 releases were also checked with realistic rulemaking questions (open comment periods, comment deadlines, FAR case histories, posted comments). See [testing.md](testing.md).*

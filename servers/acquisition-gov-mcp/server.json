@@ -8,17 +8,23 @@
     "source": "github",
     "subfolder": "servers/acquisition-gov-mcp"
   },
-  "version": "1.0.14",
+  "version": "1.0.15",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "acquisition-gov-mcp",
-      "version": "1.0.14",
+      "version": "1.0.15",
       "transport": {
         "type": "stdio"
       }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://acquisition-gov.1102tools.com/mcp"
     }
   ]
 }

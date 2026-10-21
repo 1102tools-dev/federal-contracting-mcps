@@ -6,6 +6,8 @@
 
 Free, open-source, read-only, deterministic MCP access to the official Acquisition.gov FAR Overhaul (RFO) model-part pages, the posted agency-deviation index, official deviation PDFs, and a small allowlist of RFO guidance resources.
 
+Overview, demo video and hosted setup: https://1102tools.com/mcp/acquisition-gov
+
 This server reports source content and metadata. It does **not** decide which rule governs a procurement. In particular, model deviation text is not treated as operative for an agency without that agency's posted deviation.
 
 ## Local or hosted

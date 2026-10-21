@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.2.7
+
+The PyPI page now links to this server's 1102tools page, and the MCP registry entry lists the hosted endpoint. Tools and answers are unchanged.
+
 ## 1.2.6
 
 City lookups without a county are now answered from bundled Census place and GSA county data whenever that places the city in one rate area, so most need no key or network call. Big cities named like a rate area (Chicago, Houston, Dallas) match it directly. Other names still use GSA's city lookup. Small places GSA's lookup doesn't recognize, like Shields, IL (Lake County, Chicago rate area), now get their county's rate instead of an unresolved result.

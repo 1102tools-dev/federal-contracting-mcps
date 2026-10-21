@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.1.12
+
+The PyPI page now links to this server's 1102tools page, and the MCP registry entry lists the hosted endpoint. Tools and answers are unchanged.
+
 ## 1.1.11
 
 Hosted cache counts on `/health` no longer include the latest-date check before each lookup. That check now reuses the titles list eCFR's update-state read already fetches, so a new question counts as one lookup and asks eCFR one request fewer. Answers are unchanged.

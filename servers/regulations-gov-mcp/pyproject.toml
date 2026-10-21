@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "regulationsgov-mcp"
-version = "2.0.7"
+version = "2.0.8"
 description = "MCP server for the Regulations.gov API. Federal rulemaking dockets, documents, comments, and comment period tracking."
 readme = "readme.md"
 requires-python = ">=3.10"
@@ -41,7 +41,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://1102tools.com"
+Homepage = "https://1102tools.com/mcp/regulations-gov"
 Repository = "https://github.com/1102tools-dev/federal-contracting-mcps"
 Issues = "https://github.com/1102tools-dev/federal-contracting-mcps/issues"
 

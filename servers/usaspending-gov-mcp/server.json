@@ -8,17 +8,23 @@
     "source": "github",
     "subfolder": "servers/usaspending-gov-mcp"
   },
-  "version": "1.0.26",
+  "version": "1.0.27",
   "websiteUrl": "https://1102tools.com",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "usaspending-gov-mcp",
-      "version": "1.0.26",
+      "version": "1.0.27",
       "transport": {
         "type": "stdio"
       }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://usaspending.1102tools.com/mcp"
     }
   ]
 }

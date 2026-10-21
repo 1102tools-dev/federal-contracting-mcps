@@ -6,6 +6,8 @@
 
 Free, open-source MCP server for the Federal Register API. Proposed rules, final rules, notices, executive orders, comment periods, and regulatory tracking since 1994.
 
+Overview, demo video and hosted setup: https://1102tools.com/mcp/federal-register
+
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
 *Regression tests, including live checks against the Federal Register API. The October 2026 releases were also checked with realistic contracting questions (comment deadlines, FAR case histories, FAR Council co-filings). See [testing.md](testing.md).*

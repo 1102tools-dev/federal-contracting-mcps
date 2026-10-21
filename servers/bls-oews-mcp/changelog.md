@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.1.5
+
+The PyPI page now links to this server's 1102tools page, and the MCP registry entry lists the hosted endpoint. Tools and answers are unchanged.
+
 ## 1.1.4
 
 When BLS publishes no number for a wage measure, answers quote the actual BLS footnote and keep published top-coded wage floors. Teacher hourly and performer annual requests point to the wage measure BLS does publish instead of implying the occupation is missing.

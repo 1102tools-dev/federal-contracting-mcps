@@ -6,6 +6,8 @@
 
 Free, open-source MCP server for the GSA CALC+ Labor Ceiling Rates API. Query awarded GSA MAS schedule hourly rates for IGCE development, price reasonableness analysis, and market research.
 
+Overview, demo video and hosted setup: https://1102tools.com/mcp/gsa-calc
+
 No API key required, locally or hosted. See [Local or hosted](#local-or-hosted).
 
 *Regression tests, including live checks against the GSA CALC+ API. The October 2026 releases were also checked with realistic pricing questions (IGCE benchmarks, price checks, vendor rate cards, exact-title lookups). See [testing.md](testing.md).*
