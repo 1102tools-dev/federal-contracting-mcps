@@ -40,6 +40,8 @@ jobs:
   load:
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    # A failure alerts through outage-alert.yml (with backoff), not by failing the run.
+    continue-on-error: true
     environment: sam-data-load
     env:
       CLOUDFLARE_ACCOUNT_ID: 846d3e41e48446abcd3570c0959f9fb5
@@ -55,3 +57,14 @@ jobs:
           uv run --frozen --python 3.12 --project servers/acquisition-gov-mcp \
             python scripts/load_acquisition_gov.py --remote $FULL > status.json
           { echo '```json'; cat status.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+  alert:
+    needs: load
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    uses: ./.github/workflows/outage-alert.yml
+    with:
+      title: Acquisition.gov load failing

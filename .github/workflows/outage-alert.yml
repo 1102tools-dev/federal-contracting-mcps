@@ -1,0 +1,70 @@
+name: Outage alert
+
+# Called at the end of each scheduled workflow (hosted health and the SAM.gov
+# and Acquisition.gov loads). Their jobs use continue-on-error, so a failure
+# never fails the run by itself; scripts/outage_alert.py reads why they failed,
+# keeps one issue per title, and decides whether this run alerts: when a
+# problem starts, then 30 minutes, 1, 2, 5 and 12 hours apart and daily after
+# that, and once more when it recovers. Only then does the alert job fail,
+# named with the headline, which is what GitHub's failure email shows.
+
+on:
+  workflow_call:
+    inputs:
+      title:
+        description: Issue title prefix, one per workflow
+        type: string
+        required: true
+      failing:
+        description: Comma-separated failing parts the caller found itself (empty when healthy)
+        type: string
+        default: ''
+      headline:
+        description: One line saying what broke and whose side it is on
+        type: string
+        default: ''
+      report:
+        description: Markdown for the issue body
+        type: string
+        default: ''
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    outputs:
+      alert: ${{ steps.decide.outputs.alert }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: scripts/outage_alert.py
+          sparse-checkout-cone-mode: false
+      - name: Update the issue and decide whether to alert
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORKFLOW: ${{ github.workflow }}
+          TITLE: ${{ inputs.title }}
+          FAILING: ${{ inputs.failing }}
+          HEADLINE: ${{ inputs.headline }}
+          REPORT: ${{ inputs.report }}
+        run: python3 scripts/outage_alert.py
+
+  alert:
+    needs: track
+    if: needs.track.outputs.alert != ''
+    name: ${{ needs.track.outputs.alert }}
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          ALERT: ${{ needs.track.outputs.alert }}
+        run: |
+          echo "::error::$ALERT"
+          exit 1

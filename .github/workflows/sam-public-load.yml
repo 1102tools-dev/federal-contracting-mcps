@@ -25,6 +25,8 @@ jobs:
   load:
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    # A failure alerts through outage-alert.yml (with backoff), not by failing the run.
+    continue-on-error: true
     environment: sam-data-load
     env:
       CLOUDFLARE_ACCOUNT_ID: 846d3e41e48446abcd3570c0959f9fb5
@@ -92,3 +94,14 @@ jobs:
             exclusions-cost-report/
             entities-status.json
             exclusions-status.json
+
+  alert:
+    needs: load
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    uses: ./.github/workflows/outage-alert.yml
+    with:
+      title: SAM.gov entities and exclusions load failing

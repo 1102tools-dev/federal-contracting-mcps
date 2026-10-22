@@ -7,12 +7,10 @@ name: Hosted service health
 # closes it when all services recover. Read-only: never deploys or changes a
 # service.
 #
-# GitHub emails James for every failed run, so a run fails only to alert:
-# through an "alert" job named with the one-line headline (the email lists job
-# names). The first run that finds a problem alerts; while it lasts, reminders
-# back off to 30 minutes, 1, 2 and 5 hours apart, then every 12 hours. A newly
-# failing service alerts at once and restarts the backoff. Recovery sends one
-# all-clear. Other runs pass quietly and keep the issue body current.
+# Alerts go through outage-alert.yml: the first run that finds a problem emails
+# with a one-line headline saying what broke and whose side it is on, then
+# reminders back off; a newly failing service alerts at once; recovery sends an
+# all-clear.
 
 on:
   schedule:
@@ -21,7 +19,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 concurrency:
   group: hosted-health
@@ -31,70 +28,39 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    continue-on-error: true
+    outputs:
+      failing: ${{ steps.check.outputs.failing }}
+      headline: ${{ steps.check.outputs.headline }}
+      report: ${{ steps.check.outputs.report }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
       - name: Check every hosted service
+        id: check
         run: |
           set +e
           python scripts/check_hosted_health.py --status status.json > report.md
+          set -e
           cat report.md | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Open, update, or close the outage issue
-        id: issue
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          prefix="Hosted MCP outage"
-          gaps=(1800 3600 7200 18000 43200)  # seconds between alert emails, last one repeats
-          failing=$(jq -r '.failing | join(",")' status.json)
-          headline=$(jq -r '.headline' status.json)
-          now=$(date -u +%s)
-          read -r number created < <(gh issue list --state open --search "in:title \"$prefix\"" \
-            --json number,createdAt --jq '.[0] // empty | "\(.number) \(.createdAt)"') || true
-          lasted() { m=$(( (now - $(date -ud "$created" +%s)) / 60 )); [ "$m" -lt 90 ] && echo "$m min" || echo "$(( (m + 30) / 60 )) h"; }
-          if [ -n "$number" ]; then
-            marker=$(gh issue view "$number" --json body --jq '.body' | sed -n 's/^<!-- \(failing: .*\) -->$/\1/p')
-            before=$(sed -n 's/^failing: \([^;]*\).*/\1/p' <<<"$marker")
-            alerts=$(sed -n 's/.*alerts: \([0-9]*\).*/\1/p' <<<"$marker")
-            last=$(sed -n 's/.*last: \([0-9]*\).*/\1/p' <<<"$marker")
-            alerts=${alerts:-0} last=${last:-0}
-          fi
-          if [ -n "$failing" ]; then
-            alert=""
-            if [ -z "$number" ]; then
-              alert="$headline" alerts=1 last=$now
-            else
-              new=$(comm -13 <(tr , '\n' <<<"$before" | sort) <(tr , '\n' <<<"$failing" | sort))
-              i=$(( alerts > 0 ? alerts - 1 : 0 )); [ "$i" -lt "${#gaps[@]}" ] || i=$(( ${#gaps[@]} - 1 ))
-              if [ -n "$new" ]; then
-                alert="$headline" alerts=1 last=$now
-                gh issue comment "$number" --body-file report.md
-              elif [ $(( now - last )) -ge $(( gaps[i] - 300 )) ]; then
-                alert="Still down after $(lasted): $headline" alerts=$((alerts + 1)) last=$now
-              fi
-            fi
-            { echo "<!-- failing: $failing; alerts: $alerts; last: $last -->"; cat report.md; } > body.md
-            if [ -z "$number" ]; then gh issue create --title "$prefix: $headline" --body-file body.md
-            else gh issue edit "$number" --title "$prefix: $headline" --body-file body.md; fi
-            if [ -n "$alert" ]; then echo "alert=$alert" >> "$GITHUB_OUTPUT"; fi
-          elif [ -n "$number" ]; then
-            gh issue comment "$number" --body "All hosted services passed again. $(date -u +%FT%TZ)"
-            gh issue close "$number"
-            echo "alert=All clear: every hosted service passes again (${before//,/, } was down $(lasted))" >> "$GITHUB_OUTPUT"
-          fi
-    outputs:
-      alert: ${{ steps.issue.outputs.alert }}
+          {
+            echo "failing=$(jq -r '.failing | join(",")' status.json)"
+            echo "headline=$(jq -r '.headline' status.json)"
+            echo "report<<REPORT_END"; cat report.md; echo "REPORT_END"
+          } >> "$GITHUB_OUTPUT"
 
   alert:
     needs: check
-    if: needs.check.outputs.alert != ''
-    name: ${{ needs.check.outputs.alert }}
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          echo "::error::$ALERT"
-          exit 1
-        env:
-          ALERT: ${{ needs.check.outputs.alert }}
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    uses: ./.github/workflows/outage-alert.yml
+    with:
+      title: Hosted MCP outage
+      failing: ${{ needs.check.outputs.failing }}
+      headline: ${{ needs.check.outputs.headline }}
+      report: ${{ needs.check.outputs.report }}

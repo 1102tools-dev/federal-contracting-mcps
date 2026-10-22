@@ -1,0 +1,26 @@
+name: Outage alert test
+on:
+  push:
+    branches: [health-alert-quieter]
+permissions:
+  contents: read
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Pretend to load SAM.gov
+        run: |
+          echo "fetching file"
+          echo "RuntimeError: SAM.gov returned HTTP 503 for the daily file (test only)" >&2
+          exit 1
+  alert:
+    needs: load
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    uses: ./.github/workflows/outage-alert.yml
+    with:
+      title: Outage alert test
