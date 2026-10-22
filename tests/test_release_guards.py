@@ -469,7 +469,9 @@ def test_perdiem_monitor_requires_a_live_gsa_city_lookup(monkeypatch):
 @pytest.mark.parametrize('text, error', [
     ("HTTP 403: the GSA Per Diem API rejected this service's credential.", 'UpstreamKeyRejected'),
     ('HTTP 429: the GSA Per Diem API rate limit was reached. Retry later.', 'UpstreamRateLimited'),
-    ('Network error calling GSA Per Diem API: timed out', 'RuntimeError'),
+    ('Network error calling GSA Per Diem API: timed out', 'UpstreamDown'),
+    ('HTTP 500: GSA Per Diem API error', 'UpstreamDown'),
+    ('lookup failed: unexpected field', 'RuntimeError'),
 ])
 def test_perdiem_monitor_reports_rejected_and_rate_limited_keys_separately(monkeypatch, text, error):
     hc = _health_check()
@@ -477,6 +479,19 @@ def test_perdiem_monitor_reports_rejected_and_rate_limited_keys_separately(monke
     with pytest.raises(RuntimeError) as caught:
         hc.check('gsa-perdiem', {'endpoint': 'https://perdiem.example/mcp'})
     assert type(caught.value).__name__ == error and text in str(caught.value)
+
+
+@pytest.mark.parametrize('error, expected', [
+    ('UpstreamDown', 'Regulations.gov is down on its end (search_dockets gets HTTP 500); our regulations-gov server is fine'),
+    ('ServiceDown', 'Our regulations-gov hosted server is down: /health status None'),
+    ('UpstreamKeyRejected', 'Regulations.gov rejected our publisher key (HTTP 403)'),
+])
+def test_health_headline_says_what_broke_and_whose_side(error, expected):
+    hc = _health_check()
+    text = {'UpstreamDown': 'search_dockets returned an error. Error executing tool search_dockets: HTTP 500: {\n "status" : 500',
+            'ServiceDown': '/health status None',
+            'UpstreamKeyRejected': 'search_dockets: upstream rejected the publisher key (HTTP 403).'}[error]
+    assert hc.headline('regulations-gov', getattr(hc, error)(text)).startswith(expected)
 
 
 @pytest.mark.parametrize('failure', [None, 'pre_deploy', 'instructions', 'not_bundled', 'wrong_source'])
@@ -695,3 +710,48 @@ def test_registry_and_release_resume_after_expected_skips_only_with_publication_
             assert _job_allowed(jobs['release'], results, hosted) == expected
             for name in ('publish-registry', 'release'):
                 assert not _job_allowed(jobs[name], results, hosted, cancelled=True)
+
+
+def _outage_alert():
+    spec = importlib.util.spec_from_file_location('outage_alert', ROOT / 'scripts/outage_alert.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_outage_alerts_back_off_restart_for_new_failures_and_clear_once():
+    oa = _outage_alert()
+    issue, sent = None, []
+    for k in range(80):  # one run every 30 minutes for 40 hours
+        now = 1_761_000_000 + k * 1800
+        failing = [] if k == 79 else ['regulations-gov'] + (['sam'] if k == 30 else [])
+        kind, alerts, last = oa.decide(issue, failing, now)
+        if kind:
+            sent.append((k * 30, kind))
+        issue = None if kind == 'clear' else {
+            'body': f'<!-- failing: {",".join(failing)}; alerts: {alerts}; last: {last} -->\nreport'}
+    minutes = [m for m, _ in sent]
+    assert minutes[:5] == [0, 30, 90, 210, 510]  # then 30 min, 1, 2 and 5 hours apart
+    assert (900, 'new') in sent and (930, 'new') not in sent  # a newly failing service alerts at once
+    assert sent[-1] == (79 * 30, 'clear') and len(sent) < 14
+
+
+def test_outage_alert_reads_why_a_job_failed_from_its_log(monkeypatch):
+    oa = _outage_alert()
+    log = ('﻿2026-10-22T07:11:50.1Z ##[group]Run python scripts/load_sam_opportunities.py --remote\n'
+           '2026-10-22T07:11:55.2Z Traceback (most recent call last):\n'
+           '2026-10-22T07:11:55.3Z RuntimeError: SAM.gov returned HTTP 503 for the daily file\n'
+           '2026-10-22T07:11:55.35Z fetching file\n'
+           '2026-10-22T07:11:55.4Z ##[error]Process completed with exit code 1.\n')
+    jobs = {'jobs': [{'id': 7, 'name': 'load', 'conclusion': 'failure',
+                      'steps': [{'name': 'Load the latest SAM.gov file into D1', 'conclusion': 'failure'}]},
+                     {'id': 8, 'name': 'alert / track', 'conclusion': None, 'steps': []}]}
+    monkeypatch.setattr(oa, 'gh', lambda *a: json.dumps(jobs))
+    monkeypatch.setattr(oa, 'job_log', lambda repo, job_id: log)
+    [(key, headline)] = oa.failed_jobs('o/r', '1', '1', 'SAM.gov opportunities two-hour check')
+    assert key == 'job:load'
+    assert headline == ('SAM.gov opportunities two-hour check failed at "Load the latest SAM.gov file into D1": '
+                        'RuntimeError: SAM.gov returned HTTP 503 for the daily file; '
+                        'looks like the government site is down, not our code')
+    assert oa.error_line('2026-10-22T07:11:55.4Z ##[error]The job exceeded the maximum execution time of 60m0s.\n') == \
+        'The job exceeded the maximum execution time of 60m0s.'

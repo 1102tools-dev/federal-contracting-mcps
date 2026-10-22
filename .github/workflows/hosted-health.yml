@@ -3,9 +3,14 @@ name: Hosted service health
 # Every 30 minutes, check each hosted MCP service end to end (health,
 # initialize, one upstream tool call, publisher-key mode, and for GSA Per Diem
 # a rotating GSA API city lookup that usually misses the response cache and
-# so exercises the publisher key). Opens or updates one
-# issue while anything fails and closes it when all services recover.
-# Read-only: never deploys or changes a service.
+# so exercises the publisher key). Opens one issue while anything fails and
+# closes it when all services recover. Read-only: never deploys or changes a
+# service.
+#
+# Alerts go through outage-alert.yml: the first run that finds a problem emails
+# with a one-line headline saying what broke and whose side it is on, then
+# reminders back off; a newly failing service alerts at once; recovery sends an
+# all-clear.
 
 on:
   schedule:
@@ -14,7 +19,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 concurrency:
   group: hosted-health
@@ -24,6 +28,11 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    continue-on-error: true
+    outputs:
+      failing: ${{ steps.check.outputs.failing }}
+      headline: ${{ steps.check.outputs.headline }}
+      report: ${{ steps.check.outputs.report }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -33,21 +42,25 @@ jobs:
         id: check
         run: |
           set +e
-          python scripts/check_hosted_health.py > report.md
-          echo "status=$?" >> "$GITHUB_OUTPUT"
+          python scripts/check_hosted_health.py --status status.json > report.md
+          set -e
           cat report.md | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Open, update, or close the outage issue
-        env:
-          GH_TOKEN: ${{ github.token }}
-          STATUS: ${{ steps.check.outputs.status }}
-        run: |
-          title="Hosted MCP service health check failing"
-          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
-          if [ "$STATUS" != "0" ]; then
-            if [ -n "$number" ]; then gh issue comment "$number" --body-file report.md
-            else gh issue create --title "$title" --body-file report.md; fi
-            exit 1
-          elif [ -n "$number" ]; then
-            gh issue comment "$number" --body "All hosted services passed again. $(date -u +%FT%TZ)"
-            gh issue close "$number"
-          fi
+          {
+            echo "failing=$(jq -r '.failing | join(",")' status.json)"
+            echo "headline=$(jq -r '.headline' status.json)"
+            echo "report<<REPORT_END"; cat report.md; echo "REPORT_END"
+          } >> "$GITHUB_OUTPUT"
+
+  alert:
+    needs: check
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    uses: ./.github/workflows/outage-alert.yml
+    with:
+      title: Hosted MCP outage
+      failing: ${{ needs.check.outputs.failing }}
+      headline: ${{ needs.check.outputs.headline }}
+      report: ${{ needs.check.outputs.report }}
