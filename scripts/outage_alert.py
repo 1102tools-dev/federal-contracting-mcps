@@ -14,13 +14,14 @@ GAPS apart (the last gap repeats), at once when something new fails, and once
 more as an all-clear when it recovers. The issue body keeps the state in a
 first-line marker: <!-- failing: a,b; alerts: N; last: EPOCH -->.
 """
-import json, os, re, subprocess, sys, time
+import json, os, re, subprocess, sys, time, urllib.request
 from datetime import datetime
 
 GAPS = (1800, 3600, 7200, 18000, 43200, 86400)  # seconds between alerts
 SLACK = 300  # scheduled runs drift by a few minutes
 UPSTREAM_DOWN = re.compile(r"HTTP 5\d\d|\b50[234]\b|timed? ?out|Connection (reset|refused|aborted)|"
                            r"Temporary failure in name resolution|RemoteDisconnected", re.I)
+ERROR_WORDS = re.compile(r"error|exception|fail|HTTP \d{3}|refused|denied|not found|missing|invalid", re.I)
 MARKER = re.compile(r"^<!-- failing: (.*?); alerts: (\d+); last: (\d+) -->")
 
 
@@ -28,18 +29,28 @@ def gh(*args):
     return subprocess.run(["gh", *args], check=True, capture_output=True, text=True).stdout
 
 
+def job_log(repo, job_id):
+    """A finished job's plain-text log. Not through gh, which refuses output with color codes."""
+    request = urllib.request.Request(f"https://api.github.com/repos/{repo}/actions/jobs/{job_id}/logs")
+    # Unredirected, so the token is not sent on to the log storage URL GitHub redirects to.
+    request.add_unredirected_header("Authorization", f"Bearer {os.environ['GH_TOKEN']}")
+    with urllib.request.urlopen(request, timeout=60) as response:
+        return response.read().decode("utf-8", "replace")
+
+
 def error_line(log):
-    """The line that says why a job failed: its error annotation, else the last output line before it."""
-    lines = [re.sub(r"\x1b\[[0-9;]*m", "", re.sub(r"^﻿?\S+Z ", "", line)).strip() for line in log.splitlines()]
+    """The line that says why a job failed: its error annotation, else the failed step's error output."""
+    lines = [re.sub(r"\x1b\[[0-9;]*m", "", re.sub(r"^\ufeff?\S+Z ", "", line)).strip() for line in log.splitlines()]
     for i, line in enumerate(lines):
         if line.startswith("##[error]"):
             message = line.removeprefix("##[error]")
             if not message.startswith("Process completed with exit code"):
                 return message
-            for before in reversed(lines[:i]):
-                if before and not before.startswith(("##[", "[command]", "+ ")):
-                    return before
-            return message
+            start = max((j for j in range(i) if lines[j] == "##[endgroup]"), default=-1) + 1
+            output = [x for x in lines[start:i] if x and not x.startswith(("##[", "[command]", "+ "))]
+            # stdout and stderr interleave out of order, so prefer a line that reads as an error.
+            errors = [x for x in output if ERROR_WORDS.search(x)]
+            return (errors or output or [message])[-1]
     return "no error line in the log"
 
 
@@ -52,9 +63,9 @@ def failed_jobs(repo, run_id, attempt, workflow):
         if job.get("conclusion") != "failure" and not steps:
             continue
         try:
-            why = error_line(gh("api", f"repos/{repo}/actions/jobs/{job['id']}/logs"))
-        except subprocess.CalledProcessError:
-            why = "log unavailable"
+            why = error_line(job_log(repo, job["id"]))
+        except OSError as e:
+            why = f"log unavailable ({e})"
         why = " ".join(why.split())[:160]
         hint = "; looks like the government site is down, not our code" if UPSTREAM_DOWN.search(why) else ""
         step = f' at "{steps[0]}"' if steps else ""

@@ -741,11 +741,13 @@ def test_outage_alert_reads_why_a_job_failed_from_its_log(monkeypatch):
     log = ('﻿2026-10-22T07:11:50.1Z ##[group]Run python scripts/load_sam_opportunities.py --remote\n'
            '2026-10-22T07:11:55.2Z Traceback (most recent call last):\n'
            '2026-10-22T07:11:55.3Z RuntimeError: SAM.gov returned HTTP 503 for the daily file\n'
+           '2026-10-22T07:11:55.35Z fetching file\n'
            '2026-10-22T07:11:55.4Z ##[error]Process completed with exit code 1.\n')
     jobs = {'jobs': [{'id': 7, 'name': 'load', 'conclusion': 'failure',
                       'steps': [{'name': 'Load the latest SAM.gov file into D1', 'conclusion': 'failure'}]},
                      {'id': 8, 'name': 'alert / track', 'conclusion': None, 'steps': []}]}
-    monkeypatch.setattr(oa, 'gh', lambda *a: json.dumps(jobs) if a[1].endswith('per_page=100') else log)
+    monkeypatch.setattr(oa, 'gh', lambda *a: json.dumps(jobs))
+    monkeypatch.setattr(oa, 'job_log', lambda repo, job_id: log)
     [(key, headline)] = oa.failed_jobs('o/r', '1', '1', 'SAM.gov opportunities two-hour check')
     assert key == 'job:load'
     assert headline == ('SAM.gov opportunities two-hour check failed at "Load the latest SAM.gov file into D1": '
