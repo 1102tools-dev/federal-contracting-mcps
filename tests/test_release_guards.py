@@ -469,7 +469,9 @@ def test_perdiem_monitor_requires_a_live_gsa_city_lookup(monkeypatch):
 @pytest.mark.parametrize('text, error', [
     ("HTTP 403: the GSA Per Diem API rejected this service's credential.", 'UpstreamKeyRejected'),
     ('HTTP 429: the GSA Per Diem API rate limit was reached. Retry later.', 'UpstreamRateLimited'),
-    ('Network error calling GSA Per Diem API: timed out', 'RuntimeError'),
+    ('Network error calling GSA Per Diem API: timed out', 'UpstreamDown'),
+    ('HTTP 500: GSA Per Diem API error', 'UpstreamDown'),
+    ('lookup failed: unexpected field', 'RuntimeError'),
 ])
 def test_perdiem_monitor_reports_rejected_and_rate_limited_keys_separately(monkeypatch, text, error):
     hc = _health_check()
@@ -477,6 +479,19 @@ def test_perdiem_monitor_reports_rejected_and_rate_limited_keys_separately(monke
     with pytest.raises(RuntimeError) as caught:
         hc.check('gsa-perdiem', {'endpoint': 'https://perdiem.example/mcp'})
     assert type(caught.value).__name__ == error and text in str(caught.value)
+
+
+@pytest.mark.parametrize('error, expected', [
+    ('UpstreamDown', 'Regulations.gov is down on its end (search_dockets gets HTTP 500); our regulations-gov server is fine'),
+    ('ServiceDown', 'Our regulations-gov hosted server is down: /health status None'),
+    ('UpstreamKeyRejected', 'Regulations.gov rejected our publisher key (HTTP 403)'),
+])
+def test_health_headline_says_what_broke_and_whose_side(error, expected):
+    hc = _health_check()
+    text = {'UpstreamDown': 'search_dockets returned an error. Error executing tool search_dockets: HTTP 500: {\n "status" : 500',
+            'ServiceDown': '/health status None',
+            'UpstreamKeyRejected': 'search_dockets: upstream rejected the publisher key (HTTP 403).'}[error]
+    assert hc.headline('regulations-gov', getattr(hc, error)(text)).startswith(expected)
 
 
 @pytest.mark.parametrize('failure', [None, 'pre_deploy', 'instructions', 'not_bundled', 'wrong_source'])

@@ -3,9 +3,16 @@ name: Hosted service health
 # Every 30 minutes, check each hosted MCP service end to end (health,
 # initialize, one upstream tool call, publisher-key mode, and for GSA Per Diem
 # a rotating GSA API city lookup that usually misses the response cache and
-# so exercises the publisher key). Opens or updates one
-# issue while anything fails and closes it when all services recover.
-# Read-only: never deploys or changes a service.
+# so exercises the publisher key). Opens one issue while anything fails and
+# closes it when all services recover. Read-only: never deploys or changes a
+# service.
+#
+# GitHub emails James for every failed run, so a run fails only to alert:
+# through an "alert" job named with the one-line headline (the email lists job
+# names). The first run that finds a problem alerts; while it lasts, reminders
+# back off to 30 minutes, 1, 2 and 5 hours apart, then every 12 hours. A newly
+# failing service alerts at once and restarts the backoff. Recovery sends one
+# all-clear. Other runs pass quietly and keep the issue body current.
 
 on:
   schedule:
@@ -30,24 +37,64 @@ jobs:
         with:
           python-version: '3.12'
       - name: Check every hosted service
-        id: check
         run: |
           set +e
-          python scripts/check_hosted_health.py > report.md
-          echo "status=$?" >> "$GITHUB_OUTPUT"
+          python scripts/check_hosted_health.py --status status.json > report.md
           cat report.md | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Open, update, or close the outage issue
+        id: issue
         env:
           GH_TOKEN: ${{ github.token }}
-          STATUS: ${{ steps.check.outputs.status }}
         run: |
-          title="Hosted MCP service health check failing"
-          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
-          if [ "$STATUS" != "0" ]; then
-            if [ -n "$number" ]; then gh issue comment "$number" --body-file report.md
-            else gh issue create --title "$title" --body-file report.md; fi
-            exit 1
+          prefix="Hosted MCP outage"
+          gaps=(1800 3600 7200 18000 43200)  # seconds between alert emails, last one repeats
+          failing=$(jq -r '.failing | join(",")' status.json)
+          headline=$(jq -r '.headline' status.json)
+          now=$(date -u +%s)
+          read -r number created < <(gh issue list --state open --search "in:title \"$prefix\"" \
+            --json number,createdAt --jq '.[0] // empty | "\(.number) \(.createdAt)"') || true
+          lasted() { m=$(( (now - $(date -ud "$created" +%s)) / 60 )); [ "$m" -lt 90 ] && echo "$m min" || echo "$(( (m + 30) / 60 )) h"; }
+          if [ -n "$number" ]; then
+            marker=$(gh issue view "$number" --json body --jq '.body' | sed -n 's/^<!-- \(failing: .*\) -->$/\1/p')
+            before=$(sed -n 's/^failing: \([^;]*\).*/\1/p' <<<"$marker")
+            alerts=$(sed -n 's/.*alerts: \([0-9]*\).*/\1/p' <<<"$marker")
+            last=$(sed -n 's/.*last: \([0-9]*\).*/\1/p' <<<"$marker")
+            alerts=${alerts:-0} last=${last:-0}
+          fi
+          if [ -n "$failing" ]; then
+            alert=""
+            if [ -z "$number" ]; then
+              alert="$headline" alerts=1 last=$now
+            else
+              new=$(comm -13 <(tr , '\n' <<<"$before" | sort) <(tr , '\n' <<<"$failing" | sort))
+              i=$(( alerts > 0 ? alerts - 1 : 0 )); [ "$i" -lt "${#gaps[@]}" ] || i=$(( ${#gaps[@]} - 1 ))
+              if [ -n "$new" ]; then
+                alert="$headline" alerts=1 last=$now
+                gh issue comment "$number" --body-file report.md
+              elif [ $(( now - last )) -ge $(( gaps[i] - 300 )) ]; then
+                alert="Still down after $(lasted): $headline" alerts=$((alerts + 1)) last=$now
+              fi
+            fi
+            { echo "<!-- failing: $failing; alerts: $alerts; last: $last -->"; cat report.md; } > body.md
+            if [ -z "$number" ]; then gh issue create --title "$prefix: $headline" --body-file body.md
+            else gh issue edit "$number" --title "$prefix: $headline" --body-file body.md; fi
+            if [ -n "$alert" ]; then echo "alert=$alert" >> "$GITHUB_OUTPUT"; fi
           elif [ -n "$number" ]; then
             gh issue comment "$number" --body "All hosted services passed again. $(date -u +%FT%TZ)"
             gh issue close "$number"
+            echo "alert=All clear: every hosted service passes again (${before//,/, } was down $(lasted))" >> "$GITHUB_OUTPUT"
           fi
+    outputs:
+      alert: ${{ steps.issue.outputs.alert }}
+
+  alert:
+    needs: check
+    if: needs.check.outputs.alert != ''
+    name: ${{ needs.check.outputs.alert }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::error::$ALERT"
+          exit 1
+        env:
+          ALERT: ${{ needs.check.outputs.alert }}

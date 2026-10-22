@@ -20,8 +20,13 @@ a stuck updater is still seen in the report.
 
 A failing check is retried after RETRY_WAITS seconds before it counts, so a
 brief upstream blip does not fail the run.
+
+With --status PATH it also writes {"failing": [...], "headline": "..."}: the
+headline says in one line what broke and whether it is our service or the
+government API behind it. The workflow uses it as the alert's job name, which
+is what the GitHub failure email shows.
 """
-import argparse, importlib.util, json, os, subprocess, sys, time
+import argparse, importlib.util, json, os, re, subprocess, sys, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,6 +63,10 @@ PERDIEM_CITIES = [
 # (checked 2026-10-12). One per run proves the hosted publisher key still works.
 PERDIEM_API_CITIES = [("Fort Worth", "TX"), ("Aurora", "CO"), ("Thornton", "CO"), ("Independence", "MO")]
 PERDIEM_SOURCES = {"bundled_gsa_files", "gsa_per_diem_api"}
+UPSTREAM = {"usaspending": "USAspending.gov", "ecfr": "eCFR.gov", "gsa-calc": "GSA CALC+",
+            "federal-register": "FederalRegister.gov", "acquisition-gov": "Acquisition.gov",
+            "gsa-perdiem": "the GSA Per Diem API", "regulations-gov": "Regulations.gov",
+            "bls-oews": "BLS OEWS"}
 
 
 class UpstreamKeyRejected(RuntimeError):
@@ -66,6 +75,14 @@ class UpstreamKeyRejected(RuntimeError):
 
 class UpstreamRateLimited(RuntimeError):
     """The upstream API returned HTTP 429 for the publisher key."""
+
+
+class UpstreamDown(RuntimeError):
+    """Our service answered, but the government API behind it errored or timed out."""
+
+
+class ServiceDown(RuntimeError):
+    """Our hosted service itself did not answer /health or initialize."""
 
 
 def perdiem_city(run_number=None, now=None):
@@ -82,21 +99,26 @@ def tool_error(name, result):
         return UpstreamKeyRejected(f"{name}: upstream rejected the publisher key (HTTP 403). {text}")
     if "HTTP 429" in text:
         return UpstreamRateLimited(f"{name}: upstream rate limit reached (HTTP 429). {text}")
+    if re.search(r"HTTP 5\d\d|timed out|[Nn]etwork error", text):
+        return UpstreamDown(f"{name} returned an error. {text}")
     return RuntimeError(f"{name} returned an error. {text}".strip())
 
 
 def check(slug, service):
     base = service["endpoint"].removesuffix("/mcp")
-    health = _verify.request(base + "/health")
+    try:
+        health = _verify.request(base + "/health")
+    except Exception as e:  # noqa: BLE001 - any failure here is our service
+        raise ServiceDown(f"/health did not answer. {e}") from e
     if health.get("status") != "ok":
-        raise RuntimeError(f"/health status {health.get('status')!r}")
+        raise ServiceDown(f"/health status {health.get('status')!r}")
     ident = [0]
 
     def rpc(method, params):
         ident[0] += 1
         data = _verify.request(base + "/mcp", {"jsonrpc": "2.0", "id": ident[0], "method": method, "params": params})
         if data.get("error"):
-            raise RuntimeError(f"{method} returned an error")
+            raise (ServiceDown if method == "initialize" else RuntimeError)(f"{method} returned an error")
         if data.get("result", {}).get("isError"):
             raise tool_error(params.get("name", method), data["result"])
         return data["result"]
@@ -139,6 +161,24 @@ def check(slug, service):
     return detail
 
 
+def headline(slug, error):
+    """One line for the alert: what broke, and whose side it is on."""
+    upstream = UPSTREAM.get(slug, slug)
+    text = " ".join(str(error).split())
+    status = re.search(r"HTTP (\d{3})", text)
+    call = text.split(" ", 1)[0]
+    if isinstance(error, UpstreamDown):
+        what = f"HTTP {status.group(1)}" if status else "no answer"
+        return f"{upstream} is down on its end ({call} gets {what}); our {slug} server is fine"
+    if isinstance(error, UpstreamKeyRejected):
+        return f"{upstream} rejected our publisher key (HTTP 403); check the {slug} Worker secret"
+    if isinstance(error, UpstreamRateLimited):
+        return f"{upstream} rate limit reached on our publisher key (HTTP 429)"
+    if isinstance(error, ServiceDown):
+        return f"Our {slug} hosted server is down: {text[:100]}"
+    return f"{slug} check failed: {text[:100]}"
+
+
 def served_by(url):
     """The Worker's X-1102tools-Backend header for a GET: origin or container."""
     result = subprocess.run(["curl", "-fsS", "--max-time", "65", "-o", "/dev/null", "-D", "-", url],
@@ -171,9 +211,11 @@ def check_origins(slugs, services):
 
 
 def main():
-    p = argparse.ArgumentParser(); p.add_argument("slugs", nargs="*"); args = p.parse_args()
+    p = argparse.ArgumentParser(); p.add_argument("slugs", nargs="*")
+    p.add_argument("--status", type=Path, help="write the failing slugs and a one-line headline as JSON")
+    args = p.parse_args()
     services = json.loads((ROOT / "deploy/services.json").read_text())
-    rows, failed = [], []
+    rows, failed, headlines = [], [], []
     slugs = args.slugs or list(services)
     for slug in slugs:
         # Upstream APIs blip (a timeout, a reset connection) and recover within
@@ -187,6 +229,7 @@ def main():
                 error = e
         else:
             failed.append(slug)
+            headlines.append(headline(slug, error))
             rows.append(f"| {slug} | **FAILED** | {type(error).__name__}: {str(error)[:160]} |")
     origins = [slug for slug in slugs if services[slug].get("origin")]
     warning = False
@@ -204,6 +247,10 @@ def main():
                         + "; ".join(problems)[:400] + " |")
         else:
             rows.append(f"| Dell origin | ok | {len(origins)} services answered by the Dell |")
+    if args.status:
+        args.status.write_text(json.dumps({"failing": failed, "headline": "; ".join(headlines)}))
+    if headlines:
+        print("**" + "; ".join(headlines) + ".**\n")
     print("| Service | Result | Detail |\n|---|---|---|\n" + "\n".join(rows))
     if failed:
         print(f"\nFailing: {', '.join(failed)}. Check the service's /health, its Worker secret, and "
