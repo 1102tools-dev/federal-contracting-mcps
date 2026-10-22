@@ -113,10 +113,13 @@ city is not already cached. It opens one issue while anything fails
 and closes it when all services pass again. Each failure gets a one-line
 headline that says what broke and whether it is our service or the government
 API behind it (`UpstreamDown` for an upstream HTTP 5xx or timeout). GitHub
-emails every failed run, so the workflow fails only to alert, through a job
-named with that headline: once when a problem starts, then reminders 30
-minutes, 1, 2 and 5 hours apart and every 12 hours after that, at once for a
-newly failing service, and one all-clear on recovery. Run it
+emails every failed run, so this and the scheduled SAM.gov and Acquisition.gov
+loads never fail a run by themselves (job-level `continue-on-error`);
+`.github/workflows/outage-alert.yml` (`scripts/outage_alert.py`) fails it only
+to alert, through a job named with the headline or with the failed step and its
+error line: when a problem starts, then 30 minutes, 1, 2, 5 and 12 hours apart
+and daily after that, at once for a newly failing part, and one all-clear on
+recovery. Run it
 locally with `python3 scripts/check_hosted_health.py [slug ...]` (Python 3.11+).
 
 If Cloudflare deployment or verification fails, PyPI and registry publication
