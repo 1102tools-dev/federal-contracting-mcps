@@ -648,8 +648,8 @@ async def search_documents(
 ) -> dict[str, Any]:
     """Search Federal Register documents.
 
-    The primary tool for finding proposed rules, final rules, notices,
-    and presidential documents published in the Federal Register since 1994.
+    Finds proposed rules, final rules, notices, and presidential documents
+    published in the Federal Register since 1994.
 
     Key parameters:
     - agencies: list of agency URL slugs (OR logic). Use list_agencies() to find slugs.
@@ -835,7 +835,7 @@ async def get_documents_batch(
 ) -> dict[str, Any]:
     """Fetch multiple documents in one call (up to ~20).
 
-    Pass a list of document numbers. More efficient than individual calls.
+    Pass a list of document numbers to fetch up to about 20 in one call.
     Always returns {count, results, [errors]}; errors.not_found lists any
     requested numbers the API could not locate. Results come back in the
     order requested. Image metadata (images, images_metadata) is left out
