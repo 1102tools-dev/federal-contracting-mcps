@@ -779,8 +779,7 @@ async def get_cfr_content(
 ) -> dict[str, Any]:
     """Get the full text of a CFR section, subpart, part, or appendix.
 
-    This is the primary workhorse for reading regulatory text. Returns
-    parsed clean text by default: heading, paragraphs and citations, plus
+    Returns parsed clean text by default: heading, paragraphs and citations, plus
     tables, notes, examples, images, pending_amendments and editorial_notes
     when present. Tables, notes and examples are numbered, and a marker like
     "[See table 1: ...]" sits in the paragraphs where each appears. [fn N]
