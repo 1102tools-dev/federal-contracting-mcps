@@ -8,9 +8,9 @@
 
 Free MCP servers that plug your AI into SAM.gov, USAspending, GSA CALC+, BLS wage data, GSA Per Diem, the FAR, the Federal Register, Regulations.gov and Acquisition.gov. Find opportunities, size up the incumbent, price labor and travel, and check the rules without leaving the chat.
 
-**[Install in Claude or ChatGPT](#local-or-hosted)** · [Watch a demo](https://www.youtube.com/watch?v=Au7r2A9JgdM) · [Find a ready-made prompt](https://github.com/1102tools-dev/federal-contracting-prompts) · [1102tools.com](https://1102tools.com)
+**[Install in Claude or ChatGPT](#local-or-hosted)** · [Watch a demo](https://www.youtube.com/watch?v=K2p0Gr5G51E) · [Find a ready-made prompt](https://github.com/1102tools-dev/federal-contracting-prompts) · [1102tools.com](https://1102tools.com)
 
-<a href="https://www.youtube.com/watch?v=Au7r2A9JgdM"><img src="https://img.youtube.com/vi/Au7r2A9JgdM/maxresdefault.jpg" alt="Watch the SAM.gov demo: finding contract opportunities in Claude" width="560"></a>
+<a href="https://www.youtube.com/watch?v=K2p0Gr5G51E"><img src="https://img.youtube.com/vi/K2p0Gr5G51E/maxresdefault.jpg" alt="Watch the SAM.gov demo: finding contract opportunities in Claude" width="560"></a>
 
 ## Why people use it
 
@@ -32,15 +32,15 @@ Free MCP servers that plug your AI into SAM.gov, USAspending, GSA CALC+, BLS wag
 
 | MCP | Best for | Try asking | Demo |
 |---|---|---|---|
-| [SAM.gov](https://1102tools.com/mcp/sam-gov) | Finding opportunities to bid on. The full version looks up awards too. | "Find open small business set-aside solicitations for NAICS 541512 that close in the next 30 days." | [Watch](https://www.youtube.com/watch?v=Au7r2A9JgdM) |
-| [USAspending](https://1102tools.com/mcp/usaspending) | Looking up past awards: who won, how much, and from which agency. | "Who holds the incumbent contract for this requirement, and when does it expire?" | [Watch](https://www.youtube.com/watch?v=8_D-HmCdXYQ) |
-| [GSA CALC+](https://1102tools.com/mcp/gsa-calc) | Pricing labor in proposals and IGCEs against rates GSA has already awarded. | "Is my proposed labor rate competitive with awarded GSA rates?" | [Watch](https://www.youtube.com/watch?v=2SQJE4hwWhk) |
-| [BLS OEWS](https://1102tools.com/mcp/bls-oews) | Pricing labor in proposals and IGCEs with market wage data. | "Build a fully burdened labor rate from BLS wages for my price proposal." | [Watch](https://www.youtube.com/watch?v=3AqAob6zxw4) |
-| [GSA Per Diem](https://1102tools.com/mcp/gsa-per-diem) | Pricing travel in proposals and IGCEs. | "What travel costs should I include for a three-day site visit to Denver?" | [Watch](https://www.youtube.com/watch?v=uX6Us64AJMc) |
-| [eCFR](https://1102tools.com/mcp/ecfr) | A FAR answer when there's no contracting officer to ask. | "What does FAR Part 19 say about small business set-asides?" | [Watch](https://www.youtube.com/watch?v=6Gye4tPVV6w) |
-| [Federal Register](https://1102tools.com/mcp/federal-register) | Seeing which FAR rules are coming and when comments close. | "Which proposed FAR rules could affect small contractors, and when do comments close?" | [Watch](https://www.youtube.com/watch?v=QBgRDS4xKPI) |
-| [Regulations.gov](https://1102tools.com/mcp/regulations-gov) | Reading what contractors said about a rule before you comment. | "What did other contractors say in their comments on this FAR rule?" | [Watch](https://www.youtube.com/watch?v=Cz6R5j3deew) |
-| [Acquisition.gov](https://1102tools.com/mcp/acquisition-gov) | Seeing which FAR Overhaul changes an agency has adopted. | "Has this agency issued a class deviation that affects my proposal?" | [Watch](https://www.youtube.com/watch?v=eE4y8sEZPbE) |
+| [SAM.gov](https://1102tools.com/mcp/sam-gov) | Finding opportunities to bid on. The full version looks up awards too. | "Find open small business set-aside solicitations for NAICS 541512 that close in the next 30 days." | [Watch](https://www.youtube.com/watch?v=K2p0Gr5G51E) |
+| [USAspending](https://1102tools.com/mcp/usaspending) | Looking up past awards: who won, how much, and from which agency. | "Who holds the incumbent contract for this requirement, and when does it expire?" | [Watch](https://www.youtube.com/watch?v=j8rK_l_7u5Y) |
+| [GSA CALC+](https://1102tools.com/mcp/gsa-calc) | Pricing labor in proposals and IGCEs against rates GSA has already awarded. | "Is my proposed labor rate competitive with awarded GSA rates?" | [Watch](https://www.youtube.com/watch?v=AYJNeIwnEjM) |
+| [BLS OEWS](https://1102tools.com/mcp/bls-oews) | Pricing labor in proposals and IGCEs with market wage data. | "Build a fully burdened labor rate from BLS wages for my price proposal." | [Watch](https://www.youtube.com/watch?v=s8KXOP0GE_E) |
+| [GSA Per Diem](https://1102tools.com/mcp/gsa-per-diem) | Pricing travel in proposals and IGCEs. | "What travel costs should I include for a three-day site visit to Denver?" | [Watch](https://www.youtube.com/watch?v=lQxSMRltO-w) |
+| [eCFR](https://1102tools.com/mcp/ecfr) | A FAR answer when there's no contracting officer to ask. | "What does FAR Part 19 say about small business set-asides?" | [Watch](https://www.youtube.com/watch?v=MPmbY_7JOrQ) |
+| [Federal Register](https://1102tools.com/mcp/federal-register) | Seeing which FAR rules are coming and when comments close. | "Which proposed FAR rules could affect small contractors, and when do comments close?" | [Watch](https://www.youtube.com/watch?v=uVpZIWXz5j4) |
+| [Regulations.gov](https://1102tools.com/mcp/regulations-gov) | Reading what contractors said about a rule before you comment. | "What did other contractors say in their comments on this FAR rule?" | [Watch](https://www.youtube.com/watch?v=5tLd2EobUaw) |
+| [Acquisition.gov](https://1102tools.com/mcp/acquisition-gov) | Seeing which FAR Overhaul changes an agency has adopted. | "Has this agency issued a class deviation that affects my proposal?" | [Watch](https://www.youtube.com/watch?v=FyFrYhKA7h8) |
 
 Want a stronger starting point? The [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts) has ready-made requests for capture, pricing, competitor research and FAR questions. Each one names the MCPs it needs.
 
