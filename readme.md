@@ -8,9 +8,9 @@
 
 Free MCP servers that plug your AI into SAM.gov, USAspending, GSA CALC+, BLS wage data, GSA Per Diem, the FAR, the Federal Register, Regulations.gov and Acquisition.gov. Find opportunities, size up the incumbent, price labor and travel, and check the rules without leaving the chat.
 
-**[Install in Claude or ChatGPT](#local-or-hosted)** · [Watch a demo](https://www.youtube.com/watch?v=K2p0Gr5G51E) · [Find a ready-made prompt](https://github.com/1102tools-dev/federal-contracting-prompts) · [1102tools.com](https://1102tools.com)
+**[Install in Claude or ChatGPT](#local-or-hosted)** · [Watch a demo](https://www.youtube.com/watch?v=2CnYSrNIuWU) · [Find a ready-made prompt](https://github.com/1102tools-dev/federal-contracting-prompts) · [1102tools.com](https://1102tools.com)
 
-<a href="https://www.youtube.com/watch?v=K2p0Gr5G51E"><img src="https://img.youtube.com/vi/K2p0Gr5G51E/maxresdefault.jpg" alt="Watch the SAM.gov demo: finding contract opportunities in Claude" width="560"></a>
+<a href="https://www.youtube.com/watch?v=2CnYSrNIuWU"><img src="https://img.youtube.com/vi/2CnYSrNIuWU/maxresdefault.jpg" alt="Watch: You don't have to pay for AI on SAM.gov" width="560"></a>
 
 ## Why people use it
 
@@ -32,7 +32,7 @@ Free MCP servers that plug your AI into SAM.gov, USAspending, GSA CALC+, BLS wag
 
 | MCP | Best for | Try asking | Demo |
 |---|---|---|---|
-| [SAM.gov](https://1102tools.com/mcp/sam-gov) | Finding opportunities to bid on. The full version looks up awards too. | "Find open small business set-aside solicitations for NAICS 541512 that close in the next 30 days." | [Watch](https://www.youtube.com/watch?v=K2p0Gr5G51E) |
+| [SAM.gov](https://1102tools.com/mcp/sam-gov) | Finding opportunities to bid on. The full version looks up awards too. | "Find open small business set-aside solicitations for NAICS 541512 that close in the next 30 days." | [Watch](https://www.youtube.com/watch?v=2CnYSrNIuWU) |
 | [USAspending](https://1102tools.com/mcp/usaspending) | Looking up past awards: who won, how much, and from which agency. | "Who holds the incumbent contract for this requirement, and when does it expire?" | [Watch](https://www.youtube.com/watch?v=j8rK_l_7u5Y) |
 | [GSA CALC+](https://1102tools.com/mcp/gsa-calc) | Pricing labor in proposals and IGCEs against rates GSA has already awarded. | "Is my proposed labor rate competitive with awarded GSA rates?" | [Watch](https://www.youtube.com/watch?v=AYJNeIwnEjM) |
 | [BLS OEWS](https://1102tools.com/mcp/bls-oews) | Pricing labor in proposals and IGCEs with market wage data. | "Build a fully burdened labor rate from BLS wages for my price proposal." | [Watch](https://www.youtube.com/watch?v=s8KXOP0GE_E) |
