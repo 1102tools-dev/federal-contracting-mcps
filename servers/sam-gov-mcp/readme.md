@@ -20,7 +20,7 @@ SAM.gov comes in two editions. Hosted is the only one with no key.
 
 | | Local (full edition) | Hosted |
 |---|---|---|
-| Install | On your computer. Give your AI this page's link and ask it to set it up, or start at [Installation](#installation) | Add from the Claude directory (ChatGPT coming soon) |
+| Install | On your computer. Give your AI this page's link and ask it to set it up, or start at [Installation](#installation) | Add from the Claude or ChatGPT directory |
 | API key | Free SAM.gov key, which expires every 90 days | None |
 | Tools | 20 | 6 |
 | Covers | Opportunities plus entity registrations, SBA certifications, exclusions, reps and certs, integrity records, contract award records, the federal hierarchy, and subawards | Contract opportunities, award notices, justifications, public entity registrations and business/SBA certification codes, and exclusions |
@@ -30,7 +30,7 @@ SAM.gov comes in two editions. Hosted is the only one with no key.
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|
-| [Local setup](#installation) | [Install](https://claude.ai/directory/sam-gov-by-1102tools) | Coming soon |
+| [Local setup](#installation) | [Install](https://claude.ai/directory/sam-gov-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6ad986ea765081919a8856a5b5233f40) |
 
 [Compare local and hosted](../../#local-or-hosted) · [Matching prompts](https://1102tools.com/#catching-opportunities)
 
