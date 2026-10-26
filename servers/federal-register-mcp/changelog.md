@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.0.20
+
+The PyPI page now links to this server in the ChatGPT directory. Tools and answers are unchanged.
+
 ## 1.0.19
 
 `search_documents` and `get_documents_batch` describe what they do without ranking themselves: no more "the primary tool" or "more efficient than individual calls." Tools and answers are unchanged.

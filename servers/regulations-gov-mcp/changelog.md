@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 2.0.9
+
+The PyPI page now links to this server in the ChatGPT directory. Tools and answers are unchanged.
+
 ## 2.0.8
 
 The PyPI page now links to this server's 1102tools page, and the MCP registry entry lists the hosted endpoint. Tools and answers are unchanged.
