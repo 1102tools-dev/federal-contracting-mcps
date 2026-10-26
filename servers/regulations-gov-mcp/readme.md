@@ -16,7 +16,7 @@ Hosted: no key. Local: a free api.data.gov key. See [Local or hosted](#local-or-
 
 | Local (desktop) | Claude (hosted) | ChatGPT (hosted) |
 |---|---|---|
-| [Local setup](#installation) | [Install](https://claude.ai/directory/regulations-gov-by-1102tools) | Coming soon |
+| [Local setup](#installation) | [Install](https://claude.ai/directory/regulations-gov-by-1102tools) | [Install](https://chatgpt.com/plugins/plugin_asdk_app_6ad988bee41c8191a72c0b0e94d84eb9) |
 
 - **Local** runs it on your computer, inside the Claude or ChatGPT desktop app or another AI app. You get your own full rate limits, and it relies only on the government service. It needs a free api.data.gov key. It doesn't update itself, so ask your AI to update it. You don't have to set it up by hand: give your AI this page's link and ask it to set it up or walk you through it.
 - **Hosted** is always up to date, needs no setup or keys, and works in Claude or ChatGPT anywhere.

@@ -12,7 +12,7 @@ Source: https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/depl
 Documentation: https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/sam-gov-mcp
 Category: Data & Analytics.
 
-Status: **Claude: approved and listed October 6, 2026** at https://claude.ai/directory/sam-gov-by-1102tools. ChatGPT: in review.
+Status: **Claude: approved and listed October 6, 2026** at https://claude.ai/directory/sam-gov-by-1102tools. **ChatGPT: approved and listed October 26, 2026** at https://chatgpt.com/plugins/plugin_asdk_app_6ad986ea765081919a8856a5b5233f40.
 
 Earlier status: deployed 2026-09-27 (Worker `sam-gov-mcp`, D1 `sam-gov-opportunities`). The nightly load (`.github/workflows/sam-opportunities-load.yml`, 10:15 UTC) mirrors SAM.gov's daily file: it adds new notices, updates changed ones and deletes the ones SAM.gov archives.
 

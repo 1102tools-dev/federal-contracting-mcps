@@ -11,7 +11,7 @@ Terms: https://regulations-gov.1102tools.com/terms
 Source: https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/servers/regulations-gov-mcp
 Category: Government / legal and regulatory.
 
-Status: **Claude: approved and listed September 30, 2026** at https://claude.ai/directory/regulations-gov-by-1102tools. ChatGPT: not yet submitted; the items under "Open before submission" still apply to OpenAI.
+Status: **Claude: approved and listed September 30, 2026** at https://claude.ai/directory/regulations-gov-by-1102tools. **ChatGPT: approved and listed October 26, 2026** at https://chatgpt.com/plugins/plugin_asdk_app_6ad988bee41c8191a72c0b0e94d84eb9.
 
 Earlier status: prepared, **not ready to submit**. 2.0.0 is released and verified in production (tag `regulations-gov/v2.0.0`, commit `0691651`, 2026-09-26). Resolve every item under "Open before submission" first.
 
