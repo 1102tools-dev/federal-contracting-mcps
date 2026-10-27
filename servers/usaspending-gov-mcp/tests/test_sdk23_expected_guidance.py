@@ -109,9 +109,16 @@ def test_unknown_programming_and_source_errors_are_not_expected_guidance(monkeyp
     monkeypatch.setattr(srv, '_data_version', lambda: asyncio.sleep(0, result=None))
     with pytest.raises(ToolError) as unavailable:
         asyncio.run(srv.mcp.call_tool('get_award_types_reference', {}))
-    assert type(unavailable.value.__cause__) is RuntimeError
-    assert '503' in str(unavailable.value.__cause__)
-    if unexpected is not None:
-        assert isinstance(unavailable.value, unexpected)
-        assert str(unavailable.value) == 'Error executing tool get_award_types_reference'
-        assert secret not in str(unavailable.value) and 'api_key' not in str(unavailable.value)
+    # A government outage is not a programming error: it is a visible
+    # GovernmentApiError (a ToolError) with the plain outage message, and the
+    # provider's body and URL never leak.
+    outage = unavailable.value
+    if type(outage).__name__ != 'GovernmentApiError':
+        outage = outage.__cause__
+    assert type(outage) is srv.GovernmentApiError and isinstance(outage, ToolError)
+    assert str(outage) == (
+        "The government's USAspending API isn't responding right now (error 503). "
+        "This is on the government's side; try again in a few minutes."
+    )
+    assert str(outage) in str(unavailable.value)
+    assert secret not in str(unavailable.value) and 'api_key' not in str(unavailable.value)

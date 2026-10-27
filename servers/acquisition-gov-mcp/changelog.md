@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.16
+
+Clearer error messages: when the government's API is down, slow or limiting requests, the message says so and how long to wait, and it no longer shows raw server text. Limits are unchanged. Tools and answers are unchanged.
+
 ## 1.0.15 — 2026-10-21
 
 - The PyPI page now links to this server's 1102tools page, and the MCP registry entry lists the hosted endpoint. Tools and answers are unchanged.

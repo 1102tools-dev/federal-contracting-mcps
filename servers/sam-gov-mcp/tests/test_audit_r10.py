@@ -49,7 +49,7 @@ def test_bare_string_json_200_raises_not_silent_empty(monkeypatch):
     )
     monkeypatch.setattr(server, "_get_client", lambda: _FakeClient(resp))
     asyncio.run(_expect_error(
-        "search_contract_awards", "non-object JSON", fiscal_year=2024, limit=1
+        "search_contract_awards", "sent an unreadable response", fiscal_year=2024, limit=1
     ))
 
 

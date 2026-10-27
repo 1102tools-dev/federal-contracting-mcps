@@ -6,12 +6,12 @@
 // fetch errors are the ones the snapshot run saw, and fields that record when
 // a source was retrieved carry the snapshot's fetch time.
 import CONTRACT from "../tools-contract.json" with {type: "json"};
-import {ToolError, validateArgs, type PyInt} from "./args.ts";
+import {DataMissing, ToolError, validateArgs, type PyInt} from "./args.ts";
 import {casefold} from "./casefold.ts";
 import {intStr, repr, type Py} from "./pyjson.ts";
 import {WORD, cpLen, cpSlice, escapeRegex, pySorted, splitlines, squash, strip} from "./text.ts";
 
-export {ToolError};
+export {DataMissing, ToolError};
 
 type Row = Record<string, any>;
 export interface Statement {
@@ -106,9 +106,9 @@ interface Source {
 /** A fetched source as the tool saw it, or the error its fetch raised. */
 function fetched(rows: Row[], key: string): Source {
   const row = rows[0];
-  if (!row) throw new Error(`no ${key} source in the current snapshot`);
+  if (!row) throw new DataMissing(`no ${key} source in the current snapshot`);
   if (row.error !== null) throw new ToolError(row.error);
-  if (row.info === null) throw new Error(`${key} has no stored content`);
+  if (row.info === null) throw new DataMissing(`${key} has no stored content`);
   return {...row, info: JSON.parse(row.info)} as Source;
 }
 
@@ -180,7 +180,7 @@ async function loadIndex(db: Database): Promise<Index> {
     db.prepare(`SELECT ordinal, part, deviations, item FROM index_parts WHERE doc = ${DOC_OF} ORDER BY ordinal`).bind("index"),
   ]);
   const row = source.results[0];
-  if (!row || row.info === null) throw new Error("no index in the current snapshot");
+  if (!row || row.info === null) throw new DataMissing("no index in the current snapshot");
   let first = 0;
   const cards = parts.results.map(r => {
     const card = {ordinal: r.ordinal, part: r.part, deviations: r.deviations, first, item: JSON.parse(r.item)};
@@ -373,7 +373,7 @@ function readPdf(info: Record<string, any>, rows: Row[], pageStart: PyInt, pageE
   let extracted = 0;
   for (let number = start; number <= end; number++) {
     const page = stored.get(number);
-    if (!page) throw new Error(`page ${number} is missing from the stored PDF`);
+    if (!page) throw new DataMissing(`page ${number} is missing from the stored PDF`);
     if (page.failure) warnings.push(`Page ${number} extraction failed: ${page.failure}.`);
     if (page.failure === "UnreadableFontEncoding") warnings.push(`Page ${number} has unreadable font encoding; consult the official PDF for its text.`);
     let cleaned = page.text;
@@ -428,7 +428,7 @@ async function getRfoAgencyDeviation(db: Database, args: Args): Promise<Py> {
       .bind("index", sourceId, bound(pageStart), bound(last)),
   ]);
   const indexRow = index.results[0];
-  if (!indexRow) throw new Error("no index in the current snapshot");
+  if (!indexRow) throw new DataMissing("no index in the current snapshot");
   if (!discovered.results.length) throw new ToolError("source_id is not present in the current official RFO index.");
   const entries = discovered.results.map(r => JSON.parse(r.item));
   const parts = [...new Set(entries.flatMap(e => e.far_parts as number[]))].sort((x, y) => x - y);

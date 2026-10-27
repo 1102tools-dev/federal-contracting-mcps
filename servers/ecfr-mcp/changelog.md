@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.1.14
+
+Clearer error messages: when the government's API is down, slow or limiting requests, the message says so and how long to wait, and it no longer shows raw server text. Regulation-text requests now stop waiting after 40 seconds instead of 60, so a slow eCFR site gets that clear message. Limits are unchanged. Tools and answers are unchanged.
+
 ## 1.1.13
 
 `get_cfr_content` no longer calls itself the primary workhorse for reading regulatory text. Its description now just says what it returns. Tools and answers are unchanged.

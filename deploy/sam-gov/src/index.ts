@@ -1,11 +1,11 @@
 import {publicDocs} from "./public-docs.ts";
-import {withToolCallLog, withinLimit} from "../../shared/edge.ts";
-import {HANDLERS, TOOLS, ToolError, type Database} from "./tools.ts";
+import {rateLimited, withToolCallLog, withinLimit} from "../../shared/edge.ts";
+import {HANDLERS, TOOLS, ToolError, loadingMarkerFresh, type Database} from "./tools.ts";
 
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
 // this Worker from D1. No container, no session state, no SAM.gov API key.
 
-const SERVER_VERSION = "1.1.15";
+const SERVER_VERSION = "1.1.16";
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const MAX_BODY_BYTES = 65536;
 
@@ -42,11 +42,16 @@ type AnswerCache = {match(key: Request): Promise<Response | undefined>; put(key:
 // Both loaders write these stamps after their data, so a stamp never names a
 // load that is still being written. Read in the same session as the answer,
 // which is then at least as new as the stamp. Null (not loaded, mid-refresh or
-// unreadable) means no caching for this call.
-export async function loadStamp(kind: "opportunities" | "public", db: Database): Promise<string | null> {
+// unreadable) means no caching for this call. The opportunities loader marks a
+// load in progress with loading_started_at; while that marker is fresh, answers
+// could mix old and new rows, so none are cached.
+export async function loadStamp(kind: "opportunities" | "public", db: Database, now = new Date()): Promise<string | null> {
   if (kind === "opportunities") {
-    const {results} = await db.prepare("SELECT value FROM load_status WHERE key = 'loaded_at'").bind().all<{value: string}>();
-    return results.length ? results[0].value : null;
+    const {results} = await db.prepare(`SELECT (SELECT value FROM load_status WHERE key = 'loaded_at') AS loaded_at,
+      (SELECT value FROM load_status WHERE key = 'loading_started_at') AS loading_started_at`).bind().all<{loaded_at: string | null; loading_started_at: string | null}>();
+    const row = results[0];
+    if (!row?.loaded_at || loadingMarkerFresh(row.loading_started_at, now)) return null;
+    return row.loaded_at;
   }
   const {results} = await db.prepare(`SELECT s.kind, s.sha256, s.loaded_at,
     EXISTS(SELECT 1 FROM public_refresh_runs r WHERE r.kind = s.kind AND r.state = 'applying') AS refreshing
@@ -109,6 +114,14 @@ async function readBounded(request: Request): Promise<string | null> {
   return new TextDecoder().decode(out);
 }
 
+/** What kind of failure a tool call hit, for the log; never the message text. */
+export function failureCategory(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/timed? ?out|timeout/i.test(message)) return "d1_timeout";
+  if (/D1_/.test(message)) return "d1";
+  return error instanceof Error ? error.name : "unknown";
+}
+
 export async function handleMessage(message: Message, env: Env, trace: {cache?: "hit" | "miss"} = {}): Promise<object | null> {
   const {id, method, params} = message;
   if (message.jsonrpc !== "2.0" || typeof method !== "string") return rpcError(id, -32600, "Invalid JSON-RPC request.");
@@ -154,23 +167,27 @@ export async function handleMessage(message: Message, env: Env, trace: {cache?: 
         }
         trace.cache = "miss";
       }
+      const toolError = (message: string) => ({jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify({error: message})}], structuredContent: {error: message}, isError: true}});
+      const nameIndexDb = env.NAME_INDEX_DB && readSession(env.NAME_INDEX_DB);
+      const run = async () => handler(toolDb, args, entityDb, nameIndexDb);
+      let data: unknown;
       try {
-        const nameIndexDb = env.NAME_INDEX_DB && readSession(env.NAME_INDEX_DB);
-        const data = await handler(toolDb, args, entityDb, nameIndexDb);
-        if (cache && key) {
-          const body = JSON.stringify(data);
-          await cache.put(key, new Response(body, {headers: {"Content-Type": "application/json", "Cache-Control": `public, max-age=${ttl}`}})).catch(() => {});
-        }
-        return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify(data)}], structuredContent: data}};
+        // One quiet retry for a passing D1 failure; a ToolError is an answer, not a failure.
+        data = await run().catch(error => {
+          if (error instanceof ToolError) throw error;
+          return run();
+        });
       } catch (error) {
-        if (error instanceof ToolError) {
-          return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify({error: error.message})}], structuredContent: {error: error.message}, isError: true}};
-        }
-        // Error type only: messages can echo request text.
-        console.log(JSON.stringify({event: "tool_failed", tool: name, error: error instanceof Error ? error.name : "unknown"}));
-        const message = "SAM.gov data is temporarily unavailable. Try again shortly.";
-        return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify({error: message})}], structuredContent: {error: message}, isError: true}};
+        if (error instanceof ToolError) return toolError(error.message);
+        // A category only: messages can echo request text.
+        console.log(JSON.stringify({event: "tool_failed", tool: name, error: failureCategory(error)}));
+        return toolError("SAM.gov data is temporarily unavailable. Try again in a minute.");
       }
+      if (cache && key) {
+        const body = JSON.stringify(data);
+        await cache.put(key, new Response(body, {headers: {"Content-Type": "application/json", "Cache-Control": `public, max-age=${ttl}`}})).catch(() => {});
+      }
+      return {jsonrpc: "2.0", id, result: {content: [{type: "text", text: JSON.stringify(data)}], structuredContent: data}};
     }
     default:
       return rpcError(id, -32601, `Method not found: ${method}`);
@@ -185,9 +202,7 @@ async function serve(request: Request, env: Env): Promise<Response> {
   }
   const origin = request.headers.get("Origin");
   if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-  if (!await withinLimit(request, env)) {
-    return new Response("Request limit reached; retry later.", {status: 429, headers: {"Retry-After": "60"}});
-  }
+  if (!await withinLimit(request, env)) return rateLimited(request, "SAM.gov", 120);
   if (url.pathname === "/health") {
     if (request.method !== "GET") return new Response(null, {status: 405});
     return json({status: "ok", tools: TOOLS.length, release_sha: env.RELEASE_SHA ?? null});

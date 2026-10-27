@@ -97,9 +97,9 @@ def tool_error(name, result):
     text = " ".join(c.get("text", "") for c in result.get("content") or [] if isinstance(c, dict))[:300]
     if "HTTP 403" in text:
         return UpstreamKeyRejected(f"{name}: upstream rejected the publisher key (HTTP 403). {text}")
-    if "HTTP 429" in text:
+    if "HTTP 429" in text or "API is limiting requests" in text:
         return UpstreamRateLimited(f"{name}: upstream rate limit reached (HTTP 429). {text}")
-    if re.search(r"HTTP 5\d\d|timed out|[Nn]etwork error", text):
+    if re.search(r"HTTP 5\d\d|timed out|[Nn]etwork error|API isn't responding right now", text):
         return UpstreamDown(f"{name} returned an error. {text}")
     return RuntimeError(f"{name} returned an error. {text}".strip())
 

@@ -45,7 +45,7 @@ def test_error_formatting_redacts_raw_and_encoded_key() -> None:
     rendered = srv._format_error(500, body, SECRET)
     assert SECRET not in rendered
     assert "rc5-perdiem-secret%2Fvalue" not in rendered
-    assert "[REDACTED]" in rendered
+    assert "raw=" not in rendered
 
 
 def test_json_payload_is_redacted_before_return(
@@ -71,7 +71,7 @@ def test_network_error_url_never_echoes_key(
         asyncio.run(srv._get("rates/city/Denver/state/CO/year/2026"))
     assert SECRET not in str(captured.value)
     assert "rc5-perdiem-secret%2Fvalue" not in str(captured.value)
-    assert "[REDACTED]" in str(captured.value)
+    assert "(could not connect)" in str(captured.value)
 
 
 class _RecordingClient:

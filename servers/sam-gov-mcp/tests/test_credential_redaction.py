@@ -52,7 +52,7 @@ def test_error_formatting_redacts_raw_and_encoded_key() -> None:
     body = f"raw={SECRET}&api_key={SECRET}"
     rendered = srv._format_error(400, body, SECRET)
     assert SECRET not in rendered
-    assert "[REDACTED]" in rendered
+    assert "raw=" not in rendered
 
 
 def test_json_payload_is_redacted_before_return(
@@ -78,4 +78,4 @@ def test_network_error_url_never_echoes_key(
     with pytest.raises(ToolError) as captured:
         asyncio.run(srv._get("/test", {"q": "value"}))
     assert SECRET not in str(captured.value)
-    assert "[REDACTED]" in str(captured.value)
+    assert "(could not connect)" in str(captured.value)

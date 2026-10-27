@@ -8,6 +8,9 @@ import {PyFloat, parseJson, pyType, repr} from "./pyjson.ts";
 /** Deliberate tool errors (Python exceptions): "Error executing tool <name>: <message>". */
 export class ToolError extends Error {}
 
+/** The current snapshot lacks a stored row (never loaded, or cleared): retrying the same read won't help. */
+export class DataMissing extends Error {}
+
 type Schema = {type?: string; anyOf?: Schema[]; enum?: string[]; default?: unknown};
 type Issue = {loc: string; type: string; msg: string; input: unknown};
 type Result = {ok: true; value: unknown} | {ok: false; issue: Issue};

@@ -18,8 +18,26 @@ def test_hourly_cap_stops_before_the_provider_limit(monkeypatch):
     monkeypatch.setattr(server, "_upstream_starts", server.collections.deque())
     for _ in range(3):
         server._reserve_hourly_upstream()
-    with pytest.raises(ToolError, match="hourly .* request budget"):
+    with pytest.raises(ToolError) as exc:
         server._reserve_hourly_upstream()
+    assert str(exc.value) == (
+        "This Regulations.gov install has used its hourly budget of 3 government calls. "
+        "Try again in about 60 minutes."
+    )
+
+
+def test_hosted_hourly_cap_message(monkeypatch):
+    monkeypatch.setenv("REGULATIONS_HOSTED", "1")
+    monkeypatch.setattr(server, "HOURLY_UPSTREAM_CAP", 950)
+    monkeypatch.setattr(server, "_upstream_starts", server.collections.deque())
+    for _ in range(950):
+        server._reserve_hourly_upstream()
+    with pytest.raises(ToolError) as exc:
+        server._reserve_hourly_upstream()
+    assert str(exc.value) == (
+        "The hosted Regulations.gov server has used its shared hourly budget of 950 calls. "
+        "Try again in about 60 minutes. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"
+    )
 
 
 def test_cache_is_off_unless_the_deployment_opts_in():

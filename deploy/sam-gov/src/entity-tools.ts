@@ -200,7 +200,7 @@ export async function searchEntities(db: Database, args: Args, now = new Date(),
   let snapshot = await runQuery(candidates);
   // The index must describe the snapshot this search read; otherwise search without it.
   if (!nameIndexMatches(candidates, snapshot)) snapshot = await runQuery(undefined);
-  if (snapshot?.refreshing) throw new ToolError("SAM.gov public entity data is refreshing. Retry later; confirm current registration on SAM.gov.");
+  if (snapshot?.refreshing) throw new ToolError("SAM.gov public entity data is refreshing. Try again in about 30 minutes; confirm current registration on SAM.gov.");
   const quarantined = Number(snapshot?.quarantined_rows ?? snapshot?.rejected_rows ?? 0);
   const freshness = dataFreshness("entities", snapshot?.file_date, now);
   const provenance = {

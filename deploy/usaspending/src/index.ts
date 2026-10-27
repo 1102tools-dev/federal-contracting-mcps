@@ -1,6 +1,6 @@
 import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
-import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited, explainCapacity } from "../../shared/edge";
+import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited, explainCapacity, explainUnavailable } from "../../shared/edge";
 
 export class USASpending extends Container {
   defaultPort = 8080;
@@ -52,8 +52,8 @@ export default {
       logToolCall("usaspending", body, response, started, request.headers.get("User-Agent"));
       return explainCapacity(response, body, "USAspending");
     } catch (error) {
-      console.log(JSON.stringify({event: "backend_unavailable", reason: error instanceof Error ? error.message.slice(0, 200) : "unknown"}));
-      return Response.json({error: "USAspending service temporarily unavailable."}, {status: 503, headers: {"Retry-After": "15"}});
+      console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
+      return explainUnavailable(body, "USAspending");
     }
   },
 } satisfies ExportedHandler<Env>;

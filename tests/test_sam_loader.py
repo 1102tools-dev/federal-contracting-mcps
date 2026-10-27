@@ -235,3 +235,40 @@ def test_same_file_without_legacy_source_hash_writes_zero(tmp_path, d1):
     before = d1.db.total_changes
     load(tmp_path, rows, "--allow-small")
     assert d1.db.total_changes == before
+
+
+def test_changed_load_marks_itself_in_progress_until_the_final_status_write(tmp_path, d1, monkeypatch):
+    seen = []
+    write = d1.execute_file
+
+    def recording(statements):
+        write(statements)
+        if d1.query("SELECT name FROM sqlite_master WHERE name='load_status'"):
+            seen.append((statements, status(d1).get(loader.LOADING_KEY)))
+
+    monkeypatch.setattr(d1, "execute_file", recording)
+    load(tmp_path, [notice("a" * 32), notice("b" * 32)], "--allow-small")
+    marker = seen[1][1]
+    assert dt.datetime.strptime(marker, "%Y-%m-%dT%H:%M:%SZ")  # UTC ISO, the Worker parses it
+    assert seen[1][0] == loader.status_sql({loader.LOADING_KEY: marker})
+    # Set before the data rows are written, kept while they are, gone with the final status write.
+    assert seen[2][1] == marker and any("INSERT INTO opportunities" in s for s in seen[2][0])
+    assert seen[-1][1] is None and any("DELETE FROM load_status" in s for s in seen[-1][0])
+    assert loader.LOADING_KEY not in status(d1)
+
+    seen.clear()
+    load(tmp_path, [notice("a" * 32, Title="Changed")], "--allow-small")
+    assert seen[0][1] is not None and seen[0][0] == loader.status_sql({loader.LOADING_KEY: seen[0][1]})
+    assert seen[-1][1] is None
+    assert status(d1)["updated"] == 1 and status(d1)["removed"] == 1
+
+
+def test_unchanged_reload_never_sets_the_loading_marker(tmp_path, d1, monkeypatch):
+    rows = [notice("a" * 32)]
+    load(tmp_path, rows, "--allow-small")
+    writes = []
+    monkeypatch.setattr(d1, "execute_file", writes.append)
+    load(tmp_path, rows, "--allow-small")
+    d1.db.execute("DELETE FROM load_status WHERE key='source_sha256'")
+    load(tmp_path, rows, "--allow-small")
+    assert writes == []

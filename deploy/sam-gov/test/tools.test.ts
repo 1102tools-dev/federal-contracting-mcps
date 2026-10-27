@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
 import {test} from "node:test";
-import worker, {handleMessage} from "../src/index.ts";
+import worker, {failureCategory, handleMessage} from "../src/index.ts";
+import {TURNED_AWAY_HEADER} from "../../shared/edge.ts";
 import {ftsQuery, getDataStatus, getOpportunity, searchOpportunities, summarizeOpportunities, TOOLS, ToolError, HANDLERS} from "../src/tools.ts";
 
 const NOW = new Date("2026-09-27T12:00:00Z");
@@ -13,11 +14,19 @@ const schema = readFileSync(new URL("../schema.sql", import.meta.url), "utf8");
 function d1(sqlite: DatabaseSync) {
   return {
     raw: sqlite,
+    batches: 0,
     prepare: (sql: string) => ({
       bind: (...values: unknown[]) => ({
         all: async () => ({results: sqlite.prepare(sql).all(...(values as any[])) as any[]}),
       }),
     }),
+    // Like D1, a batch runs its statements one after another as one transaction.
+    async batch(statements: {all(): Promise<{results: any[]}>}[]) {
+      this.batches++;
+      const out = [];
+      for (const statement of statements) out.push(await statement.all());
+      return out;
+    },
   };
 }
 
@@ -377,6 +386,85 @@ test("HTTP edge: health, docs, origin, rate limit, methods, body limits", async 
   assert.equal((await worker.fetch(post("{"), env() as any)).status, 400);
   assert.equal((await worker.fetch(post([{jsonrpc: "2.0", id: 1, method: "ping"}]), env() as any)).status, 400);
   assert.equal((await worker.fetch(post("x".repeat(70000)), env() as any)).status, 413);
+});
+
+test("a tool call over the per-minute limit gets a readable answer the AI can relay", async () => {
+  const response = await worker.fetch(post({jsonrpc: "2.0", id: 7, method: "tools/call", params: {name: "get_data_status", arguments: {}}}), env(false) as any);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get(TURNED_AWAY_HEADER), "1");
+  assert.equal(response.headers.get("Retry-After"), "60");
+  const body = await response.json() as any;
+  assert.equal(body.id, 7);
+  assert.equal(body.result.isError, true);
+  assert.match(body.result.content[0].text, /hosted SAM\.gov limit of 120 calls per minute from your connection/);
+});
+
+test("a passing database failure is retried once without the caller seeing it", async (t) => {
+  const logged = t.mock.method(console, "log", () => {});
+  let failures = 1;
+  const flaky = {prepare: (sql: string) => {
+    if (failures > 0) { failures--; throw new Error("D1_ERROR: Network connection lost."); }
+    return db.prepare(sql);
+  }};
+  const result = await handleMessage({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "get_opportunity", arguments: {notice_id: id(4)}}}, {...env(), DB: flaky} as any) as any;
+  assert.equal(result.result.isError, undefined);
+  assert.equal(result.result.structuredContent.title, "Bridge repair");
+  assert.equal(logged.mock.callCount(), 0);
+});
+
+test("a failure that outlasts the retry is logged once by category, never by message", async (t) => {
+  const logged = t.mock.method(console, "log", () => {});
+  let calls = 0;
+  const down = {prepare: () => { calls++; throw new Error("D1_ERROR: request for notice SOL-123 timed out"); }};
+  const result = await handleMessage({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "search_opportunities", arguments: {}}}, {...env(), DB: down} as any) as any;
+  assert.equal(calls, 2);
+  assert.equal(result.result.structuredContent.error, "SAM.gov data is temporarily unavailable. Try again in a minute.");
+  assert.equal(logged.mock.callCount(), 1);
+  const line = logged.mock.calls[0].arguments[0] as string;
+  assert.deepEqual(JSON.parse(line), {event: "tool_failed", tool: "search_opportunities", error: "d1_timeout"});
+  assert.doesNotMatch(line, /SOL-123/);
+  assert.equal(failureCategory(new Error("D1_TYPE_ERROR: bad binding")), "d1");
+  assert.equal(failureCategory(new Error("Operation timeout")), "d1_timeout");
+  assert.equal(failureCategory(new TypeError("x is undefined")), "TypeError");
+  assert.equal(failureCategory("plain string"), "unknown");
+});
+
+test("opportunity answers wait while a load is being written, and use one snapshot", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const sqlite = new DatabaseSync(":memory:");
+  sqlite.exec(schema);
+  for (const row of NOTICES.slice(0, 4)) {
+    const columns = Object.keys(row);
+    sqlite.prepare(`INSERT INTO opportunities (${columns.join(", ")}) VALUES (${columns.map(() => "?").join(", ")})`).run(...(Object.values(row) as any[]));
+  }
+  for (const [key, value] of Object.entries({file_date: "2026-09-26", loaded_at: "2026-09-26T10:20:00Z", notices: 4})) {
+    sqlite.prepare("INSERT INTO load_status (key, value) VALUES (?, ?)").run(key, JSON.stringify(value));
+  }
+  const loading = d1(sqlite);
+  const mark = (at: string) => sqlite.prepare("INSERT OR REPLACE INTO load_status (key, value) VALUES ('loading_started_at', ?)").run(JSON.stringify(at));
+  const refreshing = "SAM.gov opportunity data is refreshing. Try again in about 2 minutes; confirm deadlines on SAM.gov.";
+
+  assert.equal((await searchOpportunities(loading, {}, NOW)).total_matches, 3);
+  assert.equal(loading.batches, 1);
+  await summarizeOpportunities(loading, {group_by: "agency", place_of_performance_state: "MD"}, NOW);
+  assert.equal(loading.batches, 2);
+
+  mark("2026-09-27T11:50:00Z");
+  await assert.rejects(searchOpportunities(loading, {}, NOW), {message: refreshing});
+  await assert.rejects(summarizeOpportunities(loading, {group_by: "agency"}, NOW), {message: refreshing});
+  await assert.rejects(getOpportunity(loading, {notice_id: id(1)}, NOW), {message: refreshing});
+  const status: any = await getDataStatus(loading, {}, NOW);
+  assert.equal(status.file_date, "2026-09-26");
+  assert.ok(!JSON.stringify(status).includes("loading_started_at"));
+  const tool: any = await handleMessage({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "search_opportunities", arguments: {}}}, {...env(), DB: loading} as any);
+  assert.equal(tool.result.isError, true);
+  assert.equal(tool.result.structuredContent.error, refreshing);
+
+  // A marker over 30 minutes old is left from a crashed load and is ignored.
+  mark("2026-09-27T11:29:00Z");
+  assert.equal((await searchOpportunities(loading, {}, NOW)).total_matches, 3);
+  assert.equal((await getOpportunity(loading, {notice_id: id(1)}, NOW) as any).found, true);
+  sqlite.close();
 });
 
 test("new tools use the separate database and existing data status reports both files", async (t) => {

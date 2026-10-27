@@ -52,7 +52,7 @@ async def test_not_found_guidance_is_expected_and_runtimeerror_compatible(monkey
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("kind", ["xml", "json"])
-async def test_unexpected_server_failure_remains_ordinary_runtimeerror(monkeypatch, kind):
+async def test_server_failure_is_a_visible_government_message(monkeypatch, kind):
     client = httpx.AsyncClient(base_url="https://www.ecfr.gov", transport=httpx.MockTransport(
         lambda request: httpx.Response(503, text="upstream service unavailable")
     ))
@@ -60,12 +60,18 @@ async def test_unexpected_server_failure_remains_ordinary_runtimeerror(monkeypat
     monkeypatch.setattr(srv, "_pacer", NoWait())
     monkeypatch.setattr(srv, "_xml_pacer", NoWait())
     try:
-        with pytest.raises(RuntimeError, match="HTTP 503") as exc:
+        with pytest.raises(RuntimeError) as exc:
             if kind == "xml":
                 await srv._get_xml_uncached("/content", {})
             else:
                 await srv._fetch_json("/structure", {}, 1)
-        assert not isinstance(exc.value, ToolError)
+        # RuntimeError-compatible for existing fallbacks, ToolError so it shows.
+        assert isinstance(exc.value, ToolError)
+        assert str(exc.value) == (
+            "The government's eCFR API isn't responding right now (error 503). "
+            "This is on the government's side; try again in a few minutes."
+        )
+        assert "upstream" not in str(exc.value)
     finally:
         await client.aclose()
 

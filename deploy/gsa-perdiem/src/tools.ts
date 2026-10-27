@@ -1087,27 +1087,39 @@ export interface CallResult {
 /**
  * tools/call as the MCP SDK answers it. Every exception a Python tool can
  * raise becomes "Error executing tool <name>: <message>". DeadlineExceeded
- * propagates (HTTP 504, as the container answered); DataUnavailable and
- * unexpected failures become a generic temporary-unavailability error.
+ * propagates (the busy answer); DataUnavailable and unexpected failures become
+ * a generic temporary-unavailability error. An unexpected failure (a D1
+ * hiccup) gets one quiet retry first, still inside the request deadline.
  */
 export async function callTool(ctx: Context, name: unknown, args: Record<string, unknown>): Promise<CallResult> {
   const handler = typeof name === "string" && Object.hasOwn(HANDLERS, name) ? HANDLERS[name] : undefined;
   if (!handler) return errorResult(`Unknown tool: ${name}`);
   let data: Dict;
-  try {
-    data = await handler(ctx, validateArguments(name as string, args));
-  } catch (error) {
-    if (error instanceof DeadlineExceeded) throw error;
-    if (error instanceof ArgumentError || error instanceof ValueError || error instanceof ToolError || error instanceof PythonError) {
-      return errorResult(`Error executing tool ${name}: ${error.message}`);
+  for (let attempt = 1; ; attempt++) {
+    try {
+      data = await handler(ctx, validateArguments(name as string, args));
+      break;
+    } catch (error) {
+      if (error instanceof DeadlineExceeded) throw error;
+      if (error instanceof ArgumentError || error instanceof ValueError || error instanceof ToolError || error instanceof PythonError) {
+        return errorResult(`Error executing tool ${name}: ${error.message}`);
+      }
+      if (attempt < 2 && !(error instanceof DataUnavailable)) continue;
+      // A category only: error text can carry arguments or SQL.
+      console.log(JSON.stringify({event: "tool_failed", tool: name, reason: failureReason(error)}));
+      return errorResult(`Error executing tool ${name}: GSA Per Diem data is temporarily unavailable. Try again in a minute.`);
     }
-    console.log(JSON.stringify({
-      event: "tool_failed", tool: name,
-      reason: error instanceof DataUnavailable ? "data_unavailable" : error instanceof Error ? error.name : "unknown",
-    }));
-    return errorResult(`Error executing tool ${name}: GSA Per Diem data is temporarily unavailable. Try again shortly.`);
   }
   return {content: [{type: "text", text: dumps(data)}], structuredContent: data, isError: false};
+}
+
+/** A loggable category for an unexpected tool failure. */
+function failureReason(error: unknown): string {
+  if (error instanceof DataUnavailable) return "data_unavailable";
+  if (!(error instanceof Error)) return "unknown";
+  if (/timed? ?out|timeout/i.test(error.message)) return "d1_timeout";
+  if (/D1_/.test(error.message)) return "d1";
+  return error.name.slice(0, 40) || "Error";
 }
 
 const errorResult = (text: string): CallResult => ({content: [{type: "text", text}], isError: true});

@@ -5,9 +5,10 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
 import {test} from "node:test";
+import {TURNED_AWAY_HEADER} from "../../shared/edge.ts";
 import {REQUEST_DEADLINE_MS, SERVER_VERSION, handleMessage, serve, type Runtime} from "../src/mcp.ts";
 import {loads, dumps, repr, round2, float} from "../src/py.ts";
-import {TOOLS} from "../src/tools.ts";
+import {DataUnavailable, TOOLS} from "../src/tools.ts";
 import {BASE_URL, MAX_SLOT_WAIT, USER_AGENT, Upstream, type CacheLike} from "../src/upstream.ts";
 import {ROOT, d1, loadedDatabaseFile} from "./d1.ts";
 
@@ -178,6 +179,13 @@ test("HTTP edge: health, docs, methods, origin, limits, parse errors, notificati
   assert.equal((await serve(post({jsonrpc: "2.0", method: "notifications/initialized"}), env)).status, 202);
   const limited = {...env, REQUEST_LIMITER: {limit: async () => ({success: false})}};
   assert.equal((await serve(post({jsonrpc: "2.0", id: 1, method: "ping"}), limited)).status, 429);
+  const tool = await serve(post({jsonrpc: "2.0", id: 4, method: "tools/call", params: {name: "lookup_zip_perdiem", arguments: {zip_code: "22201"}}}), limited);
+  assert.equal(tool.status, 200);
+  assert.equal(tool.headers.get(TURNED_AWAY_HEADER), "1");
+  const turned = await tool.json() as any;
+  assert.equal(turned.id, 4);
+  assert.equal(turned.result.isError, true);
+  assert.match(turned.result.content[0].text, /^You've reached the hosted GSA Per Diem limit of 120 calls per minute from your connection\. /);
 });
 
 test("tool results: indented text with Python floats, compact structuredContent on the wire", async () => {
@@ -244,7 +252,21 @@ test("upstream errors are redacted and reported as tool errors", async () => {
   const result = await call("lookup_city_perdiem", {city: "Broken", state: "VA"});
   assert.equal(result.isError, true);
   assert.equal(result.content[0].text.includes(KEY), false);
-  assert.match(result.content[0].text, /^Error executing tool lookup_city_perdiem: HTTP 500: .*Response: oops \[REDACTED\]$/);
+  assert.equal(result.content[0].text, "Error executing tool lookup_city_perdiem: The government's GSA Per Diem API isn't responding right now (error 500). This is on the government's side; try again in a few minutes.");
+});
+
+test("a garbled or unreachable GSA API gets the plain government message, without its text", async () => {
+  const garbled = CITY("Garbled", []).path;
+  const {call} = setup({runtime: {fetch: gsa({[garbled]: {body: `<html>oops ${KEY}</html>`, headers: {"content-type": "text/html"}}})}});
+  assert.equal((await call("lookup_city_perdiem", {city: "Garbled", state: "VA"})).content[0].text,
+    "Error executing tool lookup_city_perdiem: The government's GSA Per Diem API isn't responding right now (sent an unreadable response). This is on the government's side; try again in a few minutes.");
+  const refused = (async () => { throw new TypeError(`connect ECONNREFUSED ${KEY}`); }) as typeof fetch;
+  const {call: down} = setup({runtime: {fetch: refused}});
+  assert.equal((await down("lookup_city_perdiem", {city: "Boise", state: "VA"})).content[0].text,
+    "Error executing tool lookup_city_perdiem: The government's GSA Per Diem API isn't responding right now (could not connect). This is on the government's side; try again in a few minutes.");
+  const slow = (async () => { throw new DOMException("timed out", "TimeoutError"); }) as typeof fetch;
+  const {call: late} = setup({runtime: {fetch: slow}});
+  assert.match((await late("lookup_city_perdiem", {city: "Boise", state: "VA"})).content[0].text, /isn't responding right now \(timed out\)\./);
 });
 
 test("pacing spaces upstream starts across isolates and honors Retry-After", async () => {
@@ -255,6 +277,8 @@ test("pacing spaces upstream starts across isolates and honors Retry-After", asy
   const responses: Record<string, any> = {
     a: {body: {}}, b: {body: {}},
     limited: {status: 429, body: "{}", headers: {"retry-after": "30", "x-ratelimit-remaining": "0"}},
+    "limited-silent": {status: 429, body: "{}"},
+    "limited-long": {status: 429, body: "{}", headers: {"retry-after": "150"}},
     c: {body: {}},
   };
   const make = () => new Upstream({
@@ -263,13 +287,17 @@ test("pacing spaces upstream starts across isolates and honors Retry-After", asy
   await make().get("a");
   await make().get("b");
   assert.deepEqual(waits.map(Math.round), [600], "a second isolate waits out the 0.6 s spacing");
-  await assert.rejects(make().get("limited"), /Retry-After='30'.*Rate-limit diagnostics: \{'remaining': '0'\}/);
+  await assert.rejects(make().get("limited"), {message: "The government's GSA Per Diem API is limiting requests right now. This is on the government's side. Try again in about 1 minute."});
   waits.length = 0;
   await make().get("c");
   assert.ok(waits[0] > 29_000 && waits[0] <= 30_001, `waited ${waits[0]} ms for the provider cooldown`);
+  await assert.rejects(make().get("limited-silent"), {message: "The government's GSA Per Diem API is limiting requests right now. This is on the government's side. Wait a few minutes before trying again."});
+  await assert.rejects(make().get("limited-long"), {message: "The government's GSA Per Diem API is limiting requests right now. This is on the government's side. Try again in about 3 minutes."});
 });
 
-test("a wait beyond the deadline answers 504, as the container did", async () => {
+const BUSY = "The hosted GSA Per Diem server is busy right now. Wait 60 seconds, then try again. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted";
+
+test("a wait beyond the deadline gets the readable busy answer", async () => {
   const db = d1(new DatabaseSync(DB_FILE));
   const now = Date.now();
   const path = CITY("Boise", []).path;
@@ -277,16 +305,18 @@ test("a wait beyond the deadline answers 504, as the container did", async () =>
   db.sqlite.prepare("UPDATE upstream_state SET cooldown_until = ?").run(now / 1000 + MAX_SLOT_WAIT + 5);
   const response = await serve(post({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "lookup_city_perdiem", arguments: {city: "Boise", state: "VA"}}}), env,
     {now: () => TODAY, cache: null, fetch: gsa({[path]: {body: {}}})});
-  assert.equal(response.status, 504);
-  assert.deepEqual(await response.json(), {error: "Request deadline exceeded while waiting or processing; retry later."});
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Retry-After"), "60");
+  assert.deepEqual(await response.json(), {jsonrpc: "2.0", id: 1, result: {content: [{type: "text", text: BUSY}], isError: true}});
 });
 
-test("a request still running at the deadline gets the 504", async () => {
+test("a request still running at the deadline gets the busy answer", async () => {
   const {env} = setup();
   const hang = (() => new Promise<Response>(() => {})) as typeof fetch;
   const response = await serve(post({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "lookup_city_perdiem", arguments: {city: "Boise", state: "VA"}}}), env,
     {now: () => TODAY, cache: null, fetch: hang, upstream: {interval: 0}, deadlineMs: 50});
-  assert.equal(response.status, 504);
+  assert.equal(response.status, 200);
+  assert.equal((await response.json() as any).result.content[0].text, BUSY);
   assert.equal(REQUEST_DEADLINE_MS, 55_000);
 });
 
@@ -296,7 +326,7 @@ test("the hourly budget is shared through D1", async () => {
   const make = () => new Upstream({db, key: KEY, fetch: gsa({a: {body: {}}, b: {body: {}}, c: {body: {}}}), interval: 0, hourlyCap: 2});
   await make().get("a");
   await make().get("b");
-  await assert.rejects(make().get("c"), /budget \(2 upstream calls\) is used up\. Retry in about 3600 seconds\./);
+  await assert.rejects(make().get("c"), {message: "The hosted GSA Per Diem server has used its shared hourly budget of 2 calls. Try again in about 60 minutes. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"});
 });
 
 test("without a loaded release every tool reports the data as temporarily unavailable", async () => {
@@ -306,7 +336,39 @@ test("without a loaded release every tool reports the data as temporarily unavai
   for (const [name, args] of [["get_data_status", {}], ["lookup_zip_perdiem", {zip_code: "22201"}], ["lookup_city_perdiem", {city: "A", state: "VA"}]] as const) {
     const result = await call(name, args);
     assert.equal(result.isError, true);
-    assert.equal(result.content[0].text, `Error executing tool ${name}: GSA Per Diem data is temporarily unavailable. Try again shortly.`);
+    assert.equal(result.content[0].text, `Error executing tool ${name}: GSA Per Diem data is temporarily unavailable. Try again in a minute.`);
+  }
+});
+
+test("a D1 hiccup is retried once quietly; a second failure logs one category", async () => {
+  const logged: string[] = [];
+  const original = console.log;
+  console.log = (line: string) => logged.push(line);
+  try {
+    const real = d1(new DatabaseSync(DB_FILE));
+    let failures = 1;
+    const flaky = {...real, prepare: (sql: string) => { if (failures-- > 0) throw new Error("D1_ERROR: Network connection lost."); return real.prepare(sql); }};
+    const {call} = setup({db: flaky as any});
+    const result = await call("lookup_zip_perdiem", {zip_code: "22201"});
+    assert.equal(result.isError, false, result.content[0].text);
+    assert.equal(logged.length, 0);
+    let attempts = 0;
+    const broken = {...real, prepare: () => { attempts++; throw new Error("D1_ERROR: secret 22201"); }};
+    const {call: fail} = setup({db: broken as any});
+    assert.equal((await fail("lookup_zip_perdiem", {zip_code: "22201"})).content[0].text,
+      "Error executing tool lookup_zip_perdiem: GSA Per Diem data is temporarily unavailable. Try again in a minute.");
+    assert.equal(attempts, 2);
+    assert.deepEqual(logged.map(line => JSON.parse(line)), [{event: "tool_failed", tool: "lookup_zip_perdiem", reason: "d1"}]);
+    // No release loaded: DataUnavailable keeps its meaning and is not retried.
+    logged.length = 0;
+    attempts = 0;
+    const unloaded = {...real, prepare: () => { attempts++; throw new DataUnavailable("GSA per diem data has not been loaded."); }};
+    const {call: none} = setup({db: unloaded as any});
+    assert.match((await none("lookup_zip_perdiem", {zip_code: "22201"})).content[0].text, /temporarily unavailable\. Try again in a minute\.$/);
+    assert.equal(attempts, 1, "no retry");
+    assert.deepEqual(logged.map(line => JSON.parse(line).reason), ["data_unavailable"]);
+  } finally {
+    console.log = original;
   }
 });
 

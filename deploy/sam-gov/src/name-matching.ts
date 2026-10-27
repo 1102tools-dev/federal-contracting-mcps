@@ -85,7 +85,7 @@ export async function possibleNameMatches(db: Database, options: {
     EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='${kind}' AND state='applying') AS refreshing,
     s.* FROM extract_status s WHERE kind='${kind}'`).bind(...params).all<Record<string, any>>()).results[0];
   if (!result || result.refreshing || result.sha256 !== snapshot.sha256 || result.loaded_at !== snapshot.loaded_at) {
-    throw new ToolError("SAM.gov name-search snapshot changed or is refreshing. Retry; confirm current status on SAM.gov.");
+    throw new ToolError("SAM.gov name search is refreshing. Try again in about 10 minutes; confirm current status on SAM.gov.");
   }
   const candidates = JSON.parse(result.candidates) as Record<string, any>[];
   const limit = Math.min(6, Math.max(2, Math.ceil(key.length * 0.2)));

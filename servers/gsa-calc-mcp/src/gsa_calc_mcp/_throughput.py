@@ -9,11 +9,18 @@ from __future__ import annotations
 import asyncio
 import json
 import math
+import os
 from contextlib import asynccontextmanager
 
 from filelock import FileLock, Timeout as FileLockTimeout
 
-from ._pacing import FederalApiPacer, RequestSlot, _process_lock
+from ._pacing import (
+    FederalApiPacer,
+    RequestSlot,
+    _process_lock,
+    government_limited_message,
+    minutes_text,
+)
 
 
 class CalcBudgetUnavailable(RuntimeError):
@@ -111,14 +118,22 @@ class GsaCalcPacer(FederalApiPacer):
                     ready = max(ready, starts[-self.MAX_REQUESTS] + self.WINDOW_SECONDS)
                 delay = ready - now
                 if len(starts) >= self.MAX_REQUESTS and delay > 0:
+                    if os.environ.get("CALC_HOSTED") == "1":
+                        raise CalcBudgetUnavailable(
+                            f"The hosted GSA CALC+ server has used its shared hourly budget of "
+                            f"{self.MAX_REQUESTS} calls. Try again in {minutes_text(delay)}. "
+                            f"For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"
+                        )
                     raise CalcBudgetUnavailable(
-                        f"GSA CALC+ local safety budget of 500 upstream attempts per hour "
-                        f"is exhausted. Retry after {math.ceil(delay)} seconds."
+                        f"This GSA CALC+ install has used its hourly budget of "
+                        f"{self.MAX_REQUESTS} government calls. "
+                        f"Try again in {minutes_text(delay)}."
                     )
                 if state.get("cooldown_until", 0) - now > 30:
                     raise CalcBudgetUnavailable(
-                        f"GSA CALC+ provider cooldown is active. Retry after "
-                        f"{math.ceil(state['cooldown_until'] - now)} seconds."
+                        government_limited_message(
+                            "GSA CALC+", state["cooldown_until"] - now
+                        )
                     )
                 if delay <= 0:
                     state.update(starts=starts + [now], last_started=now)

@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.0.18
+
+Clearer error messages: when the government's API is down, slow or limiting requests, the message says so and how long to wait, and it no longer shows raw server text. It also no longer blames your search terms when the government's server fails. Limits are unchanged. Tools and answers are unchanged.
+
 ## 1.0.17
 
 The PyPI page now links to the hosted edition in the ChatGPT directory. Tools and answers are unchanged.

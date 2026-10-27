@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.1.6
+
+Shares the clearer error-message helper used by the other 1102tools servers. Limits, tools and answers are unchanged.
+
 ## 1.1.5
 
 The PyPI page now links to this server's 1102tools page, and the MCP registry entry lists the hosted endpoint. Tools and answers are unchanged.

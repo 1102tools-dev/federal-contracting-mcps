@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import time
 from contextlib import asynccontextmanager
 
 import httpx
@@ -10,6 +11,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 import acquisition_gov_mcp.server as server
+from acquisition_gov_mcp._errors import GovernmentApiError
 from acquisition_gov_mcp._pacing import FederalApiPacer
 
 
@@ -206,23 +208,13 @@ async def test_get_deviation_enforces_output_length_limit(monkeypatch, index_byt
 
 
 class NoWaitPacer:
+    """No waiting and no shared state, but the real RequestSlot wording."""
+
     @asynccontextmanager
     async def request_slot(self):
-        class Slot:
-            diagnostics = {}
-            cooldown_until = 0.0
+        from acquisition_gov_mcp._pacing import RequestSlot
 
-            def observe_response(self, response):
-                if response.headers.get("Retry-After"):
-                    self.diagnostics["retry_after"] = response.headers["Retry-After"]
-
-            def raise_if_rate_limited(self, response, *, service):
-                if response.status_code == 429:
-                    raise RuntimeError(
-                        f"{service} rate limited the request. Retry-After={self.diagnostics.get('retry_after')!r}"
-                    )
-
-        yield Slot()
+        yield RequestSlot(now=time.time)
 
 
 @pytest.mark.asyncio
@@ -250,8 +242,12 @@ async def test_429_preserves_retry_after_without_retry(monkeypatch):
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler), follow_redirects=False)
     monkeypatch.setattr(server, "_client", client)
     monkeypatch.setattr(server, "_pacer", NoWaitPacer())
-    with pytest.raises(RuntimeError, match="Retry-After='17'"):
+    with pytest.raises(GovernmentApiError) as excinfo:
         await server._fetch_bytes(server.RFO_INDEX_URL, allowed_types=("text/html",), max_bytes=1000)
+    assert str(excinfo.value) == (
+        "The government's Acquisition.gov API is limiting requests right now. This is "
+        "on the government's side. Try again in about 1 minute."
+    )
     assert calls == 1
     await client.aclose()
 

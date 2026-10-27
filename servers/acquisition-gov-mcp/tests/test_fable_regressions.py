@@ -79,6 +79,7 @@ def test_real_http_timeout_cancels_underlying_tool(monkeypatch):
  with TestClient(app) as client:
   response=client.post('/mcp',headers={'Host':'localhost:8080','Accept':'application/json, text/event-stream'},json={'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':'get_rfo_part','arguments':{'part':10}}})
   assert response.status_code==504 and started.is_set()
+  assert response.json()=={'error':"The hosted Acquisition.gov server is busy right now. Wait 60 seconds, then try again. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"}
   assert stopped.wait(.2), 'HTTP slot released but underlying MCP tool remains active'
   assert app.active==0
 
@@ -234,8 +235,9 @@ async def test_long_provider_cooldown_fails_fast_without_shortening_it(monkeypat
  client=httpx.AsyncClient(transport=httpx.MockTransport(handler))
  monkeypatch.setattr(s,'_pacer',pacer);monkeypatch.setattr(s,'_client',client);monkeypatch.setattr(s,'_prefer_system_curl',False)
  try:
-  with pytest.raises(RuntimeError,match='rate limited'):await s._fetch_bytes(s.RFO_INDEX_URL,allowed_types=('text/html',),max_bytes=100)
-  with pytest.raises(RuntimeError,match='No upstream request was sent'):await s._fetch_bytes(s.RFO_INDEX_URL,allowed_types=('text/html',),max_bytes=100)
+  with pytest.raises(RuntimeError,match='limiting requests right now'):await s._fetch_bytes(s.RFO_INDEX_URL,allowed_types=('text/html',),max_bytes=100)
+  with pytest.raises(RuntimeError,match='limiting requests right now') as second:await s._fetch_bytes(s.RFO_INDEX_URL,allowed_types=('text/html',),max_bytes=100)
+  assert str(second.value).endswith("Try again in about 525600 minutes.")
   assert len(calls)==1
   state=json.loads(next(tmp_path.glob('*.json')).read_text())
   assert state['cooldown_until']>time.time()+31535000

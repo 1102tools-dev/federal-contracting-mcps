@@ -5,7 +5,7 @@
 // Budget and spacing live in D1 so they hold across every Worker isolate.
 import PACKAGE from "../../../servers/gsa-perdiem-mcp/server.json" with {type: "json"};
 import type {Database} from "./data.ts";
-import {PyFloat, dumps, loads, quote, quotePlus, repr, squash, strip, pySlice} from "./py.ts";
+import {PyFloat, dumps, loads, quote, quotePlus, squash, strip, pySlice} from "./py.ts";
 
 export const BASE_URL = "https://api.gsa.gov/travel/perdiem/v2/rates";
 /** The gsa-perdiem-mcp package version (server.json, bumped with pyproject.toml). */
@@ -14,7 +14,7 @@ export const USER_AGENT = `gsa-perdiem-mcp/${PACKAGE_VERSION}`;
 export const HOURLY_UPSTREAM_CAP = 950;
 export const REGISTERED_KEY_INTERVAL = 0.6;
 // The container answered 504 after 55 seconds; a call that would wait for a
-// slot longer than this (plus the 15-second request timeout) gets that 504 now.
+// slot longer than this (plus the 15-second request timeout) gets the busy answer now.
 export const MAX_SLOT_WAIT = 40;
 export const REQUEST_TIMEOUT_MS = 15_000;
 export const RESPONSE_CACHE_SECONDS = 86_400;
@@ -89,25 +89,38 @@ export function cleanErrorBody(text: string | null, key?: string): string {
   return pieces.length ? pieces.join(" - ") : "upstream returned HTML page";
 }
 
-export function formatError(status: number, body: string, key?: string): string {
-  const cleaned = cleanErrorBody(body, key);
+const SERVICE = "GSA Per Diem";
+
+/** "about N minutes", rounded up, never less than one minute (_pacing.minutes_text). */
+export function minutesText(seconds: number): string {
+  const minutes = Math.max(1, Math.ceil(seconds / 60));
+  return minutes === 1 ? "about 1 minute" : `about ${minutes} minutes`;
+}
+
+/** The government's API is down, slow, or sent something unreadable (_pacing.government_unavailable_message). */
+export function unavailableMessage(reason: string): string {
+  return `The government's ${SERVICE} API isn't responding right now (${reason}). This is on the government's side; try again in a few minutes.`;
+}
+
+/** The government's API is limiting requests (_pacing.government_limited_message); the hosted key adds no fact. */
+export function limitedMessage(retryAfterSeconds: number | null): string {
+  const wait = retryAfterSeconds === null ? "Wait a few minutes before trying again." : `Try again in ${minutesText(retryAfterSeconds)}.`;
+  return `The government's ${SERVICE} API is limiting requests right now. This is on the government's side. ${wait}`;
+}
+
+/** Plain user-facing text for an HTTP error. Never includes the response body. */
+export function formatError(status: number): string {
   if (status === 403) {
     return "HTTP 403: the GSA Per Diem API rejected this service's credential. This is a server-side issue; " +
       "ZIP, state, and M&IE lookups for bundled fiscal years still work without it.";
   }
-  if (status === 429) {
-    return "HTTP 429: the GSA Per Diem API rate limit was reached. Retry later; ZIP, state, and M&IE lookups " +
-      "for bundled fiscal years are unaffected.";
-  }
-  if (status === 500) {
-    return "HTTP 500: GSA Per Diem API server error. This often happens with non-ASCII characters, special " +
-      "characters, or unusual whitespace in city names. Use standard English city names. Response: " + cleaned;
-  }
+  if (status === 429) return limitedMessage(null);
   if (status === 404) {
     return "HTTP 404: Endpoint not found. If you passed a city with '..' or a slash, it may have been rejected " +
-      "by the API router. Response: " + cleaned;
+      "by the API router.";
   }
-  return `HTTP ${status}: ${cleaned}`;
+  if (status >= 500) return unavailableMessage(`error ${status}`);
+  return `HTTP ${status}: The government's ${SERVICE} API rejected this request.`;
 }
 
 // ---------- provider rate-limit headers (_pacing.py) ----------
@@ -140,22 +153,8 @@ export function retryAfterEpoch(value: string | undefined, now: number): number 
   return Number.isNaN(parsed) ? null : Math.max(now, parsed / 1000);
 }
 
-function rateLimitedMessage(diagnostics: Record<string, string>, guidance: string): string {
-  const details = [guidance];
-  const retryAfter = diagnostics.retry_after;
-  if (retryAfter) {
-    details.push(`The provider returned Retry-After=${repr(retryAfter)}; the shared local cooldown has been recorded.`);
-  } else {
-    details.push("The provider did not return Retry-After. No undocumented lockout duration was assumed and no automatic retry was attempted.");
-  }
-  const visible = Object.fromEntries(Object.entries(diagnostics).filter(([k]) => k !== "retry_after"));
-  if (Object.keys(visible).length) details.push(`Rate-limit diagnostics: ${repr(visible)}.`);
-  return `GSA Per Diem rate limited the request. ${details.join(" ")}`;
-}
-
-function networkMessage(error: unknown): string {
-  if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) return "timed out";
-  return error instanceof Error ? error.message : String(error);
+function networkReason(error: unknown): string {
+  return error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError") ? "timed out" : "could not connect";
 }
 
 // ---------- the client ----------
@@ -216,7 +215,7 @@ export class Upstream {
     ).bind(minute).all<{first_at: number}>();
     const oldest = results[0]?.first_at ?? now;
     const retry = Math.max(1, Math.ceil(oldest + 3600 - now));
-    throw new ToolError(`The hourly GSA Per Diem request budget (${this.hourlyCap} upstream calls) is used up. Retry in about ${retry} seconds.`);
+    throw new ToolError(`The hosted ${SERVICE} server has used its shared hourly budget of ${this.hourlyCap} calls. Try again in ${minutesText(retry)}. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted`);
   }
 
   /** Claim the next start slot, at least `interval` after the previous one and after any provider cooldown. */
@@ -271,22 +270,20 @@ export class Upstream {
       });
       text = await response.text();
     } catch (error) {
-      throw new ToolError(`Network error calling GSA Per Diem API: ${redact(networkMessage(error), key)}`);
+      throw new ToolError(unavailableMessage(networkReason(error)));
     }
     if (response.status === 429) {
-      const diagnostics = safeHeaders(response.headers);
-      const until = retryAfterEpoch(diagnostics.retry_after, this.clock() / 1000);
+      const now = this.clock() / 1000;
+      const until = retryAfterEpoch(safeHeaders(response.headers).retry_after, now);
       if (until !== null) await this.recordCooldown(until);
-      throw new ToolError(redact(rateLimitedMessage(diagnostics, formatError(429, text, key)), key));
+      throw new ToolError(limitedMessage(until === null ? null : until - now));
     }
-    if (response.status >= 400) throw new ToolError(formatError(response.status, text, key));
+    if (response.status >= 400) throw new ToolError(formatError(response.status));
     let payload: unknown;
     try {
       payload = loads(text);
     } catch {
-      const preview = pySlice(cleanErrorBody(text || "(empty body)", key), 200);
-      const type = response.headers.get("content-type") ?? "?";
-      throw new ToolError(`GSA Per Diem returned a non-JSON response (status ${response.status}, content-type=${repr(type)}): ${preview}`);
+      throw new ToolError(unavailableMessage("sent an unreadable response"));
     }
     payload = redactPayload(payload, key);
     // A null payload is never served from the container's cache either.

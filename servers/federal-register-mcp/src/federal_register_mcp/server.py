@@ -24,6 +24,7 @@ from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__
+from ._pacing import government_limited_message, government_unavailable_message
 from ._throughput import FederalRegisterPacer
 from ._response_cache import DAY, HOUR, MINUTE, ResponseCache, cache_key
 from .constants import (
@@ -50,6 +51,17 @@ class _UserInputError(ValueError, ToolError):
     explicit validation sites use this marker; unrelated parsing, transport
     and programming exceptions keep the SDK's unexpected-error handling.
     """
+
+
+class GovernmentApiError(RuntimeError, ToolError):
+    """The Federal Register itself is down, slow, limiting or garbled; visible to clients."""
+
+
+_SERVICE = "Federal Register"
+
+
+def _unavailable(reason: str) -> GovernmentApiError:
+    return GovernmentApiError(government_unavailable_message(_SERVICE, reason))
 
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -285,7 +297,7 @@ def _format_error(status: int, body: str) -> str:
             f"and field names. API response: {cleaned}"
         )
     if status == 429:
-        return "HTTP 429: Rate limited. Add delays between requests."
+        return government_limited_message(_SERVICE)
     return f"HTTP {status}: {cleaned}"
 
 
@@ -298,17 +310,17 @@ def _ensure_json_container(data: Any, *, url: str) -> dict[str, Any] | list[Any]
     """
     if isinstance(data, (dict, list)):
         return data
-    if data is None:
-        raise RuntimeError(
-            f"Federal Register returned an empty body at {url!r}. This "
-            f"usually indicates a transient CDN / proxy issue; retry "
-            f"in a few seconds."
-        )
-    raise RuntimeError(
-        f"Federal Register returned an unexpected {type(data).__name__} "
-        f"at {url!r} (expected JSON object or list). First 200 chars: "
-        f"{str(data)[:200]!r}"
-    )
+    # None (an empty body), a number or a string: a CDN, proxy or outage
+    # problem on the government's side, never a real empty result.
+    raise _unavailable("sent an unreadable response")
+
+
+def _load_json(content: bytes) -> Any:
+    """Parse a 200 body; a non-JSON page (HTML outage notice) is unreadable."""
+    try:
+        return json.loads(content)
+    except ValueError as exc:  # JSONDecodeError and bad UTF-8 are both ValueError
+        raise _unavailable("sent an unreadable response") from exc
 
 
 def _cache_seconds(url: str, versioned: bool = False) -> float:
@@ -335,11 +347,7 @@ async def _fetch(url: str) -> bytes:
     async with _pacer.request_slot() as pacing:
         r = await _get_client().get(url)
         pacing.observe_response(r)
-        pacing.raise_if_rate_limited(
-            r,
-            service="Federal Register",
-            guidance=_format_error(r.status_code, r.text[:500]),
-        )
+        pacing.raise_if_rate_limited(r, service=_SERVICE, error_type=GovernmentApiError)
     r.raise_for_status()
     return r.content
 
@@ -383,12 +391,19 @@ async def _get(url: str) -> Any:
     try:
         return await _cache.get_or_fetch(
             key, _cache_seconds(url, versioned=version is not None), lambda: _fetch(url),
-            lambda content: _ensure_json_container(json.loads(content), url=url),
+            lambda content: _ensure_json_container(_load_json(content), url=url),
         )
     except httpx.HTTPStatusError as e:
-        raise RuntimeError(_format_error(e.response.status_code, e.response.text[:500])) from e
+        status = e.response.status_code
+        if status == 429:
+            raise GovernmentApiError(government_limited_message(_SERVICE)) from e
+        if status >= 500:
+            raise _unavailable(f"error {status}") from e
+        raise RuntimeError(_format_error(status, e.response.text[:500])) from e
+    except httpx.TimeoutException as e:
+        raise _unavailable("timed out") from e
     except httpx.RequestError as e:
-        raise RuntimeError(f"Network error calling Federal Register: {e}") from e
+        raise _unavailable("could not connect") from e
 
 
 _CONTROL_CHARS_RE = re.compile(r"[\x00-\x1f]")

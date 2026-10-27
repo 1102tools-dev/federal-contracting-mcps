@@ -125,7 +125,7 @@ def test_errors_and_rate_limits_are_not_cached(upstream):
             await server._get("keyword=engineer")
         with pytest.raises(ToolError):
             await server._get("keyword=engineer")
-        with pytest.raises(RuntimeError, match="non-JSON"):
+        with pytest.raises(RuntimeError, match="sent an unreadable response"):
             await server._get("keyword=engineer")
         return await server._get("keyword=engineer")
 

@@ -36,7 +36,12 @@ from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__, snapshot
-from ._pacing import FederalApiPacer
+from ._pacing import (
+    FederalApiPacer,
+    government_limited_message,
+    government_unavailable_message,
+    minutes_text,
+)
 from .constants import BASE_URL, DEFAULT_TIMEOUT, USER_AGENT
 
 
@@ -456,9 +461,16 @@ def _reserve_hourly_upstream() -> None:
         _upstream_starts.popleft()
     if len(_upstream_starts) >= HOURLY_UPSTREAM_CAP:
         retry = int(_upstream_starts[0] + 3600 - now) + 1
+        wait = minutes_text(retry)
+        if _hosted():
+            raise ToolError(
+                f"The hosted GSA Per Diem server has used its shared hourly budget of "
+                f"{HOURLY_UPSTREAM_CAP} calls. Try again in {wait}. "
+                f"For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"
+            )
         raise ToolError(
-            f"The hourly GSA Per Diem request budget ({HOURLY_UPSTREAM_CAP} upstream "
-            f"calls) is used up. Retry in about {retry} seconds."
+            f"This GSA Per Diem install has used its hourly budget of "
+            f"{HOURLY_UPSTREAM_CAP} government calls. Try again in {wait}."
         )
     _upstream_starts.append(now)
 
@@ -485,7 +497,7 @@ def _cache_put(cache_key: str, value: Any) -> None:
 
 
 def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
-    cleaned = _clean_error_body(body, api_key)
+    """Plain user-facing text for an HTTP error. Never includes the response body."""
     mode = _live_access_mode()
     if status == 403:
         if mode.startswith("hosted"):
@@ -499,27 +511,25 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
             "Check the key at https://api.data.gov/signup/."
         )
     if status == 429:
-        if mode.startswith("hosted"):
-            return (
-                "HTTP 429: the GSA Per Diem API rate limit was reached. Retry later; "
-                "ZIP, state, and M&IE lookups for bundled fiscal years are unaffected."
-            )
-        return (
-            "HTTP 429: the configured PERDIEM_API_KEY reached its api.data.gov "
-            "hourly limit (1,000 req/hr by default). Retry later."
-        )
-    if status == 500:
-        return (
-            f"HTTP 500: GSA Per Diem API server error. This often happens with "
-            f"non-ASCII characters, special characters, or unusual whitespace in "
-            f"city names. Use standard English city names. Response: {cleaned}"
-        )
+        return government_limited_message(_SERVICE, None, _rate_limit_fact())
     if status == 404:
         return (
-            f"HTTP 404: Endpoint not found. If you passed a city with '..' or a "
-            f"slash, it may have been rejected by the API router. Response: {cleaned}"
+            "HTTP 404: Endpoint not found. If you passed a city with '..' or a "
+            "slash, it may have been rejected by the API router."
         )
-    return f"HTTP {status}: {cleaned}"
+    if status >= 500:
+        return government_unavailable_message(_SERVICE, f"error {status}")
+    return f"HTTP {status}: The government's {_SERVICE} API rejected this request."
+
+
+_SERVICE = "GSA Per Diem"
+
+
+def _rate_limit_fact() -> str | None:
+    """The one plain fact worth adding to a 429: a local key's hourly limit."""
+    if _live_access_mode().startswith("hosted"):
+        return None
+    return "A PERDIEM_API_KEY allows 1,000 calls an hour by default."
 
 
 async def _get(path: str) -> Any:
@@ -538,13 +548,15 @@ async def _get(path: str) -> Any:
             pacing.observe_response(r)
             pacing.raise_if_rate_limited(
                 r,
-                service="GSA Per Diem",
-                guidance=_format_error(r.status_code, r.text, key),
+                service=_SERVICE,
+                guidance=_rate_limit_fact(),
+                error_type=ToolError,
             )
+    except httpx.TimeoutException as e:
+        raise ToolError(government_unavailable_message(_SERVICE, "timed out")) from e
     except httpx.RequestError as e:
-        safe_error = _redact_sensitive_text(str(e), key)
         raise ToolError(
-            f"Network error calling GSA Per Diem API: {safe_error}"
+            government_unavailable_message(_SERVICE, "could not connect")
         ) from e
     except RuntimeError as e:
         raise ToolError(_redact_sensitive_text(str(e), key)) from e
@@ -553,11 +565,8 @@ async def _get(path: str) -> Any:
     try:
         payload = _redact_sensitive_payload(r.json(), key)
     except (ValueError, _json.JSONDecodeError) as e:
-        preview = _clean_error_body(r.text or "(empty body)", key)[:200]
-        ct = r.headers.get("content-type", "?")
         raise ToolError(
-            f"GSA Per Diem returned a non-JSON response (status {r.status_code}, "
-            f"content-type={ct!r}): {preview}"
+            government_unavailable_message(_SERVICE, "sent an unreadable response")
         ) from e
     _cache_put(path, payload)
     return payload

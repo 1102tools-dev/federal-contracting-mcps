@@ -1,6 +1,6 @@
 import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
-import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited, explainCapacity } from "../../shared/edge";
+import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited, explainCapacity, explainUnavailable } from "../../shared/edge";
 
 export class ECFR extends Container {
   defaultPort = 8080;
@@ -53,7 +53,7 @@ export default {
       return explainCapacity(response, body, "eCFR");
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
-      return Response.json({error: "eCFR service temporarily unavailable."}, {status: 503, headers: {"Retry-After": "15"}});
+      return explainUnavailable(body, "eCFR");
     }
   },
 } satisfies ExportedHandler<Env>;

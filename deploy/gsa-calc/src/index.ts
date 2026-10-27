@@ -1,7 +1,7 @@
-import { HourlyBudget, readBoundedBody, BodyTimeoutError } from "./hourly-budget";
+import { HourlyBudget, budgetMessage, readBoundedBody, BodyTimeoutError } from "./hourly-budget";
 import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
-import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited, explainCapacity } from "../../shared/edge";
+import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited, explainCapacity, explainUnavailable } from "../../shared/edge";
 
 export class GSACalc extends Container {
   defaultPort = 8080;
@@ -24,9 +24,8 @@ export class GSACalc extends Container {
     if (body && body.method === "tools/call") {
       const budget = this.hourlyBudget.reserve();
       if (!budget.allowed) {
-        const detail = budget.reason === "provider" ? "GSA CALC+ provider cooldown is active." : "GSA CALC+ hosted safety budget of 500 tool requests per hour is exhausted.";
         return Response.json({jsonrpc: "2.0", id: body.id ?? null, result: {
-          content: [{type: "text", text: `${detail} Retry after ${budget.retryAfter} seconds.`}], isError: true,
+          content: [{type: "text", text: budgetMessage(budget)}], isError: true,
         }}, {headers: {"Retry-After": String(budget.retryAfter), "X-1102tools-Hourly-Remaining": String(budget.remaining), "Cache-Control": "no-store"}});
       }
       remaining = budget.remaining;
@@ -88,7 +87,7 @@ export default {
       return explainCapacity(response, body, "GSA CALC+");
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
-      return Response.json({error: "GSA CALC+ service temporarily unavailable."}, {status: 503, headers: {"Retry-After": "15"}});
+      return explainUnavailable(body, "GSA CALC+");
     }
   },
 } satisfies ExportedHandler<Env>;

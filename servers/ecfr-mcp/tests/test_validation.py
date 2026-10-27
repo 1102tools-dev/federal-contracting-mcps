@@ -610,8 +610,14 @@ def test_walk_structure_skips_null_children_entries():
 # HTTP layer defense
 # ---------------------------------------------------------------------------
 
+UNREADABLE = (
+    "The government's eCFR API isn't responding right now (sent an unreadable "
+    "response). This is on the government's side; try again in a few minutes."
+)
+
+
 def test_get_json_handles_non_json_body():
-    """200 with HTML body should raise a descriptive RuntimeError."""
+    """200 with HTML body is the government's side: plain visible message, no page text."""
     import httpx
 
     class FakeResp:
@@ -631,8 +637,10 @@ def test_get_json_handles_non_json_body():
     orig = srv._client
     srv._client = FakeClient()
     try:
-        with pytest.raises(RuntimeError, match="non-JSON"):
+        with pytest.raises(srv.GovernmentApiError) as exc:
             asyncio.run(srv._get_json("/x"))
+        assert str(exc.value) == UNREADABLE
+        assert "maintenance" not in str(exc.value)
     finally:
         srv._client = orig
 
@@ -653,8 +661,9 @@ def test_get_json_handles_empty_body():
     orig = srv._client
     srv._client = FakeClient()
     try:
-        with pytest.raises(RuntimeError, match="non-JSON"):
+        with pytest.raises(srv.GovernmentApiError) as exc:
             asyncio.run(srv._get_json("/x"))
+        assert str(exc.value) == UNREADABLE
     finally:
         srv._client = orig
 
@@ -668,20 +677,28 @@ def test_get_json_handles_timeout():
     orig = srv._client
     srv._client = FakeClient()
     try:
-        with pytest.raises(RuntimeError, match="Network error"):
+        with pytest.raises(srv.GovernmentApiError) as exc:
             asyncio.run(srv._get_json("/x"))
+        assert str(exc.value) == (
+            "The government's eCFR API isn't responding right now (timed out). "
+            "This is on the government's side; try again in a few minutes."
+        )
     finally:
         srv._client = orig
 
 
 def test_format_error_handles_bytes():
     msg = srv._format_error(500, b"<html>error</html>")
-    assert "HTTP 500" in msg
+    assert msg == (
+        "The government's eCFR API isn't responding right now (error 500). "
+        "This is on the government's side; try again in a few minutes."
+    )
+    assert "<html>" not in msg
 
 
 def test_format_error_handles_none():
-    msg = srv._format_error(500, None)
-    assert "HTTP 500" in msg
+    msg = srv._format_error(400, None)
+    assert "HTTP 400" in msg
 
 
 def test_clean_error_body_strips_html():

@@ -33,6 +33,41 @@ _PROCESS_LOCKS: weakref.WeakKeyDictionary[
 _PROCESS_LOCKS_GUARD = threading.Lock()
 
 
+# --- User-facing wording ------------------------------------------------------
+#
+# One wording for all nine servers, local and hosted: say whose side the problem
+# is on and how long to wait. Never include raw response bodies or exception text.
+
+def minutes_text(seconds: float) -> str:
+    """'about N minutes', rounded up, never less than one minute."""
+    minutes = max(1, math.ceil(seconds / 60))
+    return "about 1 minute" if minutes == 1 else f"about {minutes} minutes"
+
+
+def government_unavailable_message(service: str, reason: str) -> str:
+    """The government's API is down, slow, or sent something unreadable."""
+    return (
+        f"The government's {service} API isn't responding right now ({reason}). "
+        "This is on the government's side; try again in a few minutes."
+    )
+
+
+def government_limited_message(
+    service: str, retry_after_seconds: float | None = None, detail: str | None = None
+) -> str:
+    """The government's API is rate limiting us; give its wait time when it sent one."""
+    wait = (
+        f"Try again in {minutes_text(retry_after_seconds)}."
+        if retry_after_seconds is not None
+        else "Wait a few minutes before trying again."
+    )
+    extra = f" {detail}" if detail else ""
+    return (
+        f"The government's {service} API is limiting requests right now.{extra} "
+        f"This is on the government's side. {wait}"
+    )
+
+
 def _process_lock(key: str) -> asyncio.Lock:
     """Return one same-loop lock for a pacing identity.
 
@@ -121,29 +156,20 @@ class RequestSlot:
         *,
         service: str,
         guidance: str | None = None,
+        error_type: type[Exception] = RuntimeError,
     ) -> None:
+        """Raise the plain government-limit message for a 429.
+
+        `guidance` is an optional plain fact for the user (such as a key's hourly
+        limit). Packages pass their ToolError subclass as `error_type` so the
+        message reaches the user instead of the SDK's generic error.
+        """
         if getattr(response, "status_code", None) != 429:
             return
-        details: list[str] = []
-        if guidance:
-            details.append(guidance)
-        retry_after = self.diagnostics.get("retry_after")
-        if retry_after:
-            details.append(
-                f"The provider returned Retry-After={retry_after!r}; "
-                "the shared local cooldown has been recorded."
-            )
-        else:
-            details.append(
-                "The provider did not return Retry-After. No undocumented "
-                "lockout duration was assumed and no automatic retry was attempted."
-            )
-        visible = {
-            key: value for key, value in self.diagnostics.items() if key != "retry_after"
-        }
-        if visible:
-            details.append(f"Rate-limit diagnostics: {visible}.")
-        raise RuntimeError(f"{service} rate limited the request. {' '.join(details)}")
+        now = self.now()
+        retry_at = _retry_after_epoch(self.diagnostics.get("retry_after"), now)
+        wait = None if retry_at is None else retry_at - now
+        raise error_type(government_limited_message(service, wait, guidance))
 
 
 class FederalApiPacer:

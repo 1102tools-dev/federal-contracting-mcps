@@ -21,3 +21,21 @@ def unexpected_source_error_text(error, tool):
         # Retain the SDK 2.0 contract, including its original causal message.
         assert str(cause) in str(error)
     return str(cause)
+
+
+def government_error_text(error, tool):
+    """Require a visible government-side message (not the SDK's hidden wrapper).
+
+    Outages, rate limits and garbled answers from USASpending are raised as
+    GovernmentApiError, a ToolError, so the client sees the plain message.
+    """
+    assert isinstance(error, sdk_errors.ToolError)
+    gov = error
+    while gov is not None and type(gov).__name__ != 'GovernmentApiError':
+        gov = gov.__cause__
+    assert gov is not None, f'{tool}: expected GovernmentApiError, got {error!r}'
+    assert isinstance(gov, sdk_errors.ToolError)
+    text = str(gov)
+    assert text in str(error)
+    assert f'Error executing tool {tool}' != str(error)
+    return text

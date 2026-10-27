@@ -75,7 +75,9 @@ export async function getPublicDataStatus(db: Database, now = new Date()) {
     const quarantined = Number(row?.quarantined_rows ?? row?.rejected_rows ?? 0);
     const freshness = dataFreshness(kind as "entities" | "exclusions", row?.file_date, now);
     const notes = [...freshness.notes, ...(kind === "entities" ? [...ENTITY_CAVEATS, ...(quarantined > 0 ? [`${quarantined} malformed source rows were quarantined and excluded from this hosted mirror; coverage is incomplete.`] : [])] : [...CAVEATS])];
-    if (row?.refreshing) notes.push("Public data is refreshing; retry later. The listed source describes the last completed refresh.");
+    if (row?.refreshing) notes.push(kind === "entities"
+      ? "SAM.gov public entity data is refreshing; try again in about 30 minutes. The listed source describes the last completed refresh."
+      : "SAM.gov public exclusions data is refreshing; try again in about 10 minutes. The listed source describes the last completed refresh.");
     return row ? {...row, ...freshness, available: !row.refreshing, notes, ...(row.refreshing ? {status: "refreshing"} : {})} : {...freshness, available: false, kind, file_name: null, file_date: null, row_count: 0, notes};
   };
   return {entities: status("entities"), exclusions: status("exclusions")};
@@ -170,7 +172,7 @@ export async function searchExclusions(db: Database | undefined, args: Args, now
   let result = await runQuery(candidates);
   // The index must describe the snapshot this search read; otherwise search without it.
   if (!nameIndexMatches(candidates, result)) result = await runQuery(undefined);
-  if (result?.refreshing) throw new ToolError("SAM.gov public exclusions data is refreshing. Retry later; no exclusion determination can be made.");
+  if (result?.refreshing) throw new ToolError("SAM.gov public exclusions data is refreshing. Try again in about 10 minutes; no exclusion determination can be made until then.");
   if (!result) throw new ToolError("SAM.gov public exclusions data has not been loaded yet; no exclusion determination can be made.");
   const possible = name && result.total_records === 0 ? await possibleNameMatches(db, {
     table: "exclusions", kind: "exclusions", columns: ["name", "coalesce(first_name, '') || ' ' || coalesce(middle_name, '') || ' ' || coalesce(last_name, '')"],
