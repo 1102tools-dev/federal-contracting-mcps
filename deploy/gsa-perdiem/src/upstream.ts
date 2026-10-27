@@ -119,7 +119,8 @@ export function formatError(status: number): string {
     return "HTTP 404: Endpoint not found. If you passed a city with '..' or a slash, it may have been rejected " +
       "by the API router.";
   }
-  return unavailableMessage(`error ${status}`);
+  if (status >= 500) return unavailableMessage(`error ${status}`);
+  return `HTTP ${status}: The government's ${SERVICE} API rejected this request.`;
 }
 
 // ---------- provider rate-limit headers (_pacing.py) ----------
