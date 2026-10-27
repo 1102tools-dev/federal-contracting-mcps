@@ -1,5 +1,6 @@
 import {Container} from "@cloudflare/containers";
 import {withToolCallLog} from "../../shared/edge.ts";
+export {RateCounter} from "../../shared/rate-counter.ts";
 import {serve} from "./mcp.ts";
 
 // The container that served this service before the D1 port. Kept exported

@@ -1,11 +1,12 @@
 import {publicDocs} from "./public-docs.ts";
 import {rateLimited, withToolCallLog, withinLimit} from "../../shared/edge.ts";
+export {RateCounter} from "../../shared/rate-counter.ts";
 import {HANDLERS, TOOLS, ToolError, loadingMarkerFresh, type Database} from "./tools.ts";
 
 // Stateless MCP over streamable HTTP with JSON responses, served entirely by
 // this Worker from D1. No container, no session state, no SAM.gov API key.
 
-const SERVER_VERSION = "1.1.16";
+const SERVER_VERSION = "1.1.17";
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const MAX_BODY_BYTES = 65536;
 
@@ -80,6 +81,8 @@ export interface Env {
   NAME_INDEX_DB?: ReplicatedDatabase;
   REQUEST_LIMITER: {limit(options: {key: string}): Promise<{success: boolean}>};
   AI_LIMITER?: {limit(options: {key: string}): Promise<{success: boolean}>};
+  // Exact per-minute tool-call tallies (deploy/shared/rate-counter.ts).
+  RATE_COUNTER?: {idFromName(name: string): unknown; get(id: unknown): {fetch(input: string, init?: RequestInit): Promise<Response>}};
   RELEASE_SHA?: string;
   ANSWER_CACHE?: AnswerCache; // tests only; production uses caches.default
 }
@@ -202,7 +205,7 @@ async function serve(request: Request, env: Env): Promise<Response> {
   }
   const origin = request.headers.get("Origin");
   if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-  if (!await withinLimit(request, env)) return rateLimited(request, "SAM.gov", 120);
+  if (!await withinLimit(request, env, 120)) return rateLimited(request, "SAM.gov", 120);
   if (url.pathname === "/health") {
     if (request.method !== "GET") return new Response(null, {status: 405});
     return json({status: "ok", tools: TOOLS.length, release_sha: env.RELEASE_SHA ?? null});

@@ -22,6 +22,8 @@ export interface WorkerEnv {
   DB: Database;
   REQUEST_LIMITER: {limit(options: {key: string}): Promise<{success: boolean}>};
   AI_LIMITER?: {limit(options: {key: string}): Promise<{success: boolean}>};
+  // Exact per-minute tool-call tallies (deploy/shared/rate-counter.ts).
+  RATE_COUNTER?: {idFromName(name: string): unknown; get(id: unknown): {fetch(input: string, init?: RequestInit): Promise<Response>}};
   PERDIEM_API_KEY?: string;
   RELEASE_SHA?: string;
 }
@@ -135,7 +137,7 @@ export async function serve(request: Request, env: WorkerEnv, runtime: Runtime =
   }
   const origin = request.headers.get("Origin");
   if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-  if (!await withinLimit(request, env)) return rateLimited(request, "GSA Per Diem", 120);
+  if (!await withinLimit(request, env, 120)) return rateLimited(request, "GSA Per Diem", 120);
   if (url.pathname === "/health") {
     if (request.method !== "GET") return new Response(null, {status: 405});
     // As the container reported it: "development" when no release is recorded.

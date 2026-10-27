@@ -21,6 +21,10 @@
   "durable_objects": {
     "bindings": [
       {
+        "class_name": "RateCounter",
+        "name": "RATE_COUNTER"
+      },
+      {
         "class_name": "AcquisitionGov",
         "name": "BACKEND"
       }
@@ -31,6 +35,12 @@
       "tag": "v1",
       "new_sqlite_classes": [
         "AcquisitionGov"
+      ]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": [
+        "RateCounter"
       ]
     }
   ],
@@ -87,6 +97,10 @@
       ],
       "durable_objects": {
         "bindings": [
+          {
+            "class_name": "RateCounter",
+            "name": "RATE_COUNTER"
+          },
           {
             "class_name": "AcquisitionGov",
             "name": "BACKEND"

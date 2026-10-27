@@ -1,6 +1,7 @@
 import { publicDocs } from "./public-docs";
 import { Container, getContainer } from "@cloudflare/containers";
 import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited, explainCapacity, explainUnavailable } from "../../shared/edge";
+export { RateCounter } from "../../shared/rate-counter";
 
 export class USASpending extends Container {
   defaultPort = 8080;
@@ -16,7 +17,7 @@ export default {
     }
     const origin = request.headers.get("Origin");
     if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-    if (!await withinLimit(request, env)) {
+    if (!await withinLimit(request, env, 20)) {
       return rateLimited(request, "USAspending", 20);
     }
     if (url.pathname === "/mcp" && request.method !== "POST") {

@@ -549,9 +549,17 @@ export function isAiPlatform(address: string): boolean {
 const MAX_SUBJECT_LENGTH = 256;
 const USER_LIMITED = new WeakSet<Request>();
 
-/** A SHA-256 of the tools/call's ChatGPT user ID, or null when there is none. */
-export async function chatgptUser(request: Request): Promise<string | null> {
+async function sha256(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** For a tools/call, its ChatGPT user ID (null when it has none); null for anything else. */
+async function toolCall(request: Request): Promise<{subject: string | null} | null> {
   if (request.method !== "POST") return null;
+  // An oversized body is turned away later; reading a clone of it here would
+  // stall the handler's cancel of the original.
+  if (Number(request.headers.get("Content-Length") ?? "0") > MAX_BODY_BYTES) return null;
   const body = await readBounded(request.clone() as Request).catch(() => null);
   if (!body?.byteLength) return null;
   let message: unknown;
@@ -563,23 +571,74 @@ export async function chatgptUser(request: Request): Promise<string | null> {
   if (!isObject(message) || message.method !== "tools/call" || !isObject(message.params)) return null;
   const meta = message.params._meta;
   const subject = isObject(meta) ? meta["openai/subject"] : undefined;
-  if (typeof subject !== "string" || !subject || subject.length > MAX_SUBJECT_LENGTH) return null;
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(subject));
-  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+  return {subject: typeof subject === "string" && subject && subject.length <= MAX_SUBJECT_LENGTH ? subject : null};
+}
+
+/** A SHA-256 of the tools/call's ChatGPT user ID, or null when there is none. */
+export async function chatgptUser(request: Request): Promise<string | null> {
+  const subject = (await toolCall(request))?.subject;
+  return subject ? sha256(subject) : null;
+}
+
+// --- Exact per-minute tallies -------------------------------------------------
+//
+// Cloudflare's rate-limit binding counts separately on each of its machines,
+// so a burst spread across them rarely trips it (Oct 27: 64 calls a minute
+// passed a 20 cap). Tool calls are therefore also counted in one place: a
+// RateCounter Durable Object (deploy/shared/rate-counter.ts) holds the
+// current minute's tallies in memory, split across COUNTER_SHARDS objects by
+// a hash of the caller. Keys are SHA-256 hashes, never addresses or IDs, and
+// every tally is dropped when the minute ends. Only tools/call is counted, so
+// the Durable Object bill follows real tool use. If the counter can't be
+// reached the call is allowed: a counting problem never blocks anyone.
+
+export const PLATFORM_PER_MINUTE = 600;
+const COUNTER_SHARDS = 32;
+
+export interface CounterNamespace {
+  idFromName(name: string): unknown;
+  get(id: unknown): {fetch(input: string, init?: RequestInit): Promise<Response>};
+}
+
+async function exactHit(counter: CounterNamespace, key: string, limit: number): Promise<boolean> {
+  try {
+    const shard = parseInt(key.slice(-6), 16) % COUNTER_SHARDS;
+    const stub = counter.get(counter.idFromName(`minute-${shard}`));
+    const response = await stub.fetch("https://rate-counter/hit", {method: "POST", body: JSON.stringify({key, limit})});
+    return response.status !== 429;
+  } catch {
+    console.log(JSON.stringify({event: "rate_counter_unavailable"}));
+    return true;
+  }
 }
 
 /** Whether this request is within its address's per-minute limit and, for a
- * ChatGPT tool call, its user's. */
-export async function withinLimit(request: Request, env: {REQUEST_LIMITER: Limiter; AI_LIMITER?: Limiter}): Promise<boolean> {
+ * ChatGPT tool call, its user's. With RATE_COUNTER and `perMinute`, tool calls
+ * are also counted exactly: per ChatGPT user, per Anthropic or OpenAI address
+ * (PLATFORM_PER_MINUTE) for platform calls without a user ID, otherwise per
+ * address at `perMinute`. */
+export async function withinLimit(
+  request: Request,
+  env: {REQUEST_LIMITER: Limiter; AI_LIMITER?: Limiter; RATE_COUNTER?: CounterNamespace},
+  perMinute?: number,
+): Promise<boolean> {
   const key = request.headers.get("CF-Connecting-IP") || "unknown";
   const platform = Boolean(env.AI_LIMITER) && await isAiPlatformLive(key);
   const limiter = platform ? env.AI_LIMITER! : env.REQUEST_LIMITER;
   if (!(await limiter.limit({key})).success) return false;
-  if (!platform) return true;
-  const user = await chatgptUser(request);
-  if (user === null || (await env.REQUEST_LIMITER.limit({key: `chatgpt-user:${user}`})).success) return true;
-  USER_LIMITED.add(request);
-  return false;
+  const counting = Boolean(env.RATE_COUNTER && perMinute);
+  const call = platform || counting ? await toolCall(request) : null;
+  const user = platform && call?.subject ? await sha256(call.subject) : null;
+  if (user !== null && !(await env.REQUEST_LIMITER.limit({key: `chatgpt-user:${user}`})).success) {
+    USER_LIMITED.add(request);
+    return false;
+  }
+  if (!call || !counting) return true;
+  const within = user !== null
+    ? await exactHit(env.RATE_COUNTER!, await sha256(`user:${user}`), perMinute!)
+    : await exactHit(env.RATE_COUNTER!, await sha256(`address:${key}`), platform ? PLATFORM_PER_MINUTE : perMinute!);
+  if (!within && user !== null) USER_LIMITED.add(request);
+  return within;
 }
 
 const WAIT = "Wait 60 seconds, then try again.";

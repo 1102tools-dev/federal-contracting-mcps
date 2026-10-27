@@ -27,6 +27,22 @@
       "database_id": "4ed19059-3fc7-433d-aafe-ab4c1f3ee31f"
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "RateCounter",
+        "name": "RATE_COUNTER"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "RateCounter"
+      ]
+    }
+  ],
   "ratelimits": [
     {
       "name": "REQUEST_LIMITER",
@@ -78,6 +94,14 @@
           "database_id": "4ed19059-3fc7-433d-aafe-ab4c1f3ee31f"
         }
       ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "RateCounter",
+            "name": "RATE_COUNTER"
+          }
+        ]
+      },
       "ratelimits": [
         {
           "name": "REQUEST_LIMITER",
