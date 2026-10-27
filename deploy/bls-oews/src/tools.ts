@@ -20,6 +20,9 @@ export interface Database {
 /** Deliberate tool errors (Python ValueError): "Error executing tool <name>: <message>". */
 export class ToolError extends Error {}
 
+/** No release in D1 (never loaded, or cleared): retrying the same read won't help. */
+export class DataMissing extends Error {}
+
 /** The reviewed tool definitions, unchanged. */
 export const TOOLS = CONTRACT;
 
@@ -355,7 +358,7 @@ interface Release {
 }
 
 function release(rows: Row[]): Release {
-  if (!rows.length) throw new Error("no active OEWS release in D1");
+  if (!rows.length) throw new DataMissing("no active OEWS release in D1");
   const manifest = JSON.parse(rows[0].manifest);
   return {manifest, footnotes: JSON.parse(rows[0].footnotes), year: manifest.release.year, name: manifest.release.description};
 }

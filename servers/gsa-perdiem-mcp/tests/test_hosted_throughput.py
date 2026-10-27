@@ -13,12 +13,31 @@ def test_registered_key_bursts():
 
 
 def test_hourly_cap_stops_before_the_provider_limit(monkeypatch):
+    monkeypatch.delenv("PERDIEM_HOSTED", raising=False)
     monkeypatch.setattr(server, "HOURLY_UPSTREAM_CAP", 3)
     monkeypatch.setattr(server, "_upstream_starts", server.collections.deque())
     for _ in range(3):
         server._reserve_hourly_upstream()
-    with pytest.raises(ToolError, match="hourly .* request budget"):
+    with pytest.raises(ToolError) as exc:
         server._reserve_hourly_upstream()
+    assert str(exc.value) == (
+        "This GSA Per Diem install has used its hourly budget of 3 government "
+        "calls. Try again in about 60 minutes."
+    )
+
+
+def test_hourly_cap_hosted_wording(monkeypatch):
+    monkeypatch.setenv("PERDIEM_HOSTED", "1")
+    monkeypatch.setattr(server, "HOURLY_UPSTREAM_CAP", 2)
+    monkeypatch.setattr(server, "_upstream_starts", server.collections.deque())
+    for _ in range(2):
+        server._reserve_hourly_upstream()
+    with pytest.raises(ToolError) as exc:
+        server._reserve_hourly_upstream()
+    assert str(exc.value) == (
+        "The hosted GSA Per Diem server has used its hourly budget of 2 calls. "
+        "Try again in about 60 minutes."
+    )
 
 
 def test_cache_is_off_unless_the_deployment_opts_in(monkeypatch):

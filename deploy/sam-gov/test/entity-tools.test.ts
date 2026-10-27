@@ -219,7 +219,7 @@ test("legacy cached NAICS aliases normalize to the official API key without chan
 test("unfinished incremental entities refresh hides partial records until completion", async () => {
  const {db, sqlite} = database();
  sqlite.exec("INSERT INTO public_refresh_runs VALUES ('entities','applying','target','parser','{}',3,100,10,'2026-10','now','now','owner','later')");
- await assert.rejects(() => searchEntities(db, {}), /refreshing/);
+ await assert.rejects(() => searchEntities(db, {}), {message: "SAM.gov public entity data is refreshing. Try again in about 30 minutes; confirm current registration on SAM.gov."});
  sqlite.exec("UPDATE public_refresh_runs SET state='complete'");
  assert.ok(await searchEntities(db, {}));
  sqlite.close();

@@ -4,7 +4,7 @@ import {DatabaseSync} from "node:sqlite";
 import {test} from "node:test";
 import {searchEntities} from "../src/entity-tools.ts";
 import {searchExclusions} from "../src/exclusion-tools.ts";
-import {normalizedName, namePredicate} from "../src/name-matching.ts";
+import {normalizedName, namePredicate, possibleNameMatches} from "../src/name-matching.ts";
 
 function fixture() {
   const sqlite = new DatabaseSync(":memory:");
@@ -151,5 +151,16 @@ test("possible candidates preserve state and exact-identifier constraints", asyn
     assert.equal(result.totalRecords, 0);
     assert.equal(result.possibleMatches?.length ?? 0, 0);
   }
+  sqlite.close();
+});
+
+test("a name search that spans a refresh asks the caller to come back later", async () => {
+  const {sqlite, db, add} = fixture();
+  add("Acme Widgets");
+  const options = {table: "entities" as const, kind: "entities" as const, columns: ["legal_business_name", "dba_name"], projection: ["entity_id", "legal_business_name", "dba_name"], where: [], values: [], query: "Acme Widgetz"};
+  const message = "SAM.gov name search is refreshing. Try again in about 10 minutes; confirm current status on SAM.gov.";
+  await assert.rejects(possibleNameMatches(db, {...options, snapshot: {sha256: "older", loaded_at: "2026-10-11T12:00:00Z"}}), {message});
+  sqlite.exec("INSERT INTO public_refresh_runs VALUES ('entities','applying','target','parser','{}',3,100,10,'2026-10','now','now','owner','later')");
+  await assert.rejects(possibleNameMatches(db, {...options, snapshot: {sha256: "fixture", loaded_at: "2026-10-11T12:00:00Z"}}), {message});
   sqlite.close();
 });

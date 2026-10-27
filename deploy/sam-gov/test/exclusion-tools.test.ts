@@ -131,10 +131,12 @@ test("identifier lookups use ingestion indexes", async () => {
 test("unfinished incremental exclusions refresh hides partial records until completion", async () => {
  const {db, sqlite} = database();
  sqlite.exec("INSERT INTO public_refresh_runs VALUES ('exclusions','applying','target','parser','{}',3,100,10,'2026-10','now','now','owner','later')");
- await assert.rejects(() => searchExclusions(db, {}), /refreshing/);
+ await assert.rejects(() => searchExclusions(db, {}), {message: "SAM.gov public exclusions data is refreshing. Try again in about 10 minutes; no exclusion determination can be made until then."});
  const during = await getPublicDataStatus(db);
  assert.equal(during.exclusions.available, false);
  assert.equal(during.exclusions.status, "refreshing");
+ assert.ok(during.exclusions.notes.includes("SAM.gov public exclusions data is refreshing; try again in about 10 minutes. The listed source describes the last completed refresh."));
+ assert.ok(!during.entities.notes.some((note: string) => /refreshing/.test(note)));
  assert.equal(during.entities.available, true);
  sqlite.exec("UPDATE public_refresh_runs SET state='complete'");
  assert.ok(await searchExclusions(db, {}));

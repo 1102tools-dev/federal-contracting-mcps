@@ -27,6 +27,7 @@ from typing_extensions import Annotated
 
 from . import __version__
 from ._throughput import GsaCalcPacer, CalcBudgetUnavailable
+from ._pacing import government_limited_message, government_unavailable_message
 from ._response_cache import HOUR, ResponseCache, cache_key
 from mcp.server.mcpserver.exceptions import ToolError
 from .constants import (
@@ -41,6 +42,13 @@ from .constants import (
 
 class UserInputError(ValueError, ToolError):
     """Expected user-input failure with recoverable guidance on MCP 2.x."""
+
+
+class GovernmentApiError(RuntimeError, ToolError):
+    """GSA CALC+ failed or refused; the plain message reaches the user."""
+
+
+_SERVICE = "GSA CALC+"
 
 
 mcp = MCPServer("gsa-calc", version=__version__)
@@ -444,17 +452,9 @@ def _format_error(status: int, body: str) -> str:
             f"API response: {cleaned}"
         )
     if status == 429:
-        return (
-            "HTTP 429: GSA CALC+ rate limited the request. The provider does "
-            "not publish a numeric limit for this endpoint. Do not retry in a "
-            "burst; wait for provider guidance and reduce batch concurrency."
-        )
-    if status == 503:
-        return (
-            "HTTP 503: GSA upstream service unavailable. This often happens when "
-            "the request URL contains characters that trigger their firewall. "
-            "Remove special characters (quotes, angle brackets, SQL keywords) and retry."
-        )
+        return government_limited_message(_SERVICE)
+    if status >= 500:
+        return government_unavailable_message(_SERVICE, f"error {status}")
     if status == 400:
         return f"HTTP 400: Bad request. Check filter format (field:value) and page_size (max 500). API response: {cleaned}"
     return f"HTTP {status}: {cleaned}"
@@ -468,11 +468,13 @@ async def _get(params_str: str) -> dict[str, Any]:
             cache_key("GET", url), _CACHE_SECONDS, lambda: _fetch(url), _parse_body,
         )
     except CalcBudgetUnavailable as e:
-        raise ToolError(str(e)) from e
+        raise GovernmentApiError(str(e)) from e
     except httpx.HTTPStatusError as e:
-        raise RuntimeError(_format_error(e.response.status_code, e.response.text[:500])) from e
+        raise GovernmentApiError(_format_error(e.response.status_code, e.response.text[:500])) from e
+    except httpx.TimeoutException as e:
+        raise GovernmentApiError(government_unavailable_message(_SERVICE, "timed out")) from e
     except httpx.RequestError as e:
-        raise RuntimeError(f"Network error calling GSA CALC+: {e}") from e
+        raise GovernmentApiError(government_unavailable_message(_SERVICE, "could not connect")) from e
 
 
 async def _fetch(url: str) -> bytes:
@@ -480,16 +482,7 @@ async def _fetch(url: str) -> bytes:
     async with _pacer.request_slot() as pacing:
         r = await _get_client().get(url)
         pacing.observe_response(r)
-        try:
-            pacing.raise_if_rate_limited(
-                r,
-                service="GSA CALC+",
-                guidance=_format_error(r.status_code, r.text[:500]),
-            )
-        except RuntimeError as e:
-            # This helper raises only for an expected provider 429. Show
-            # its retry guidance while keeping unrelated crashes masked.
-            raise ToolError(str(e)) from e
+        pacing.raise_if_rate_limited(r, service=_SERVICE, error_type=GovernmentApiError)
     r.raise_for_status()
     return r.content
 
@@ -497,18 +490,13 @@ async def _fetch(url: str) -> bytes:
 def _parse_body(content: bytes) -> dict[str, Any]:
     try:
         data = json.loads(content)
-    except json.JSONDecodeError as e:
-        body_preview = _clean_error_body(content.decode("utf-8", "replace") or "(empty body)")
-        raise RuntimeError(
-            f"GSA CALC+ returned non-JSON response on 200 OK. "
-            f"This often happens during API maintenance or when an HTML "
-            f"error page is served without an error status. "
-            f"Body: {body_preview}"
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
+        raise GovernmentApiError(
+            government_unavailable_message(_SERVICE, "sent an unreadable response")
         ) from e
     if not isinstance(data, dict):
-        raise RuntimeError(
-            f"GSA CALC+ response was not a JSON object. "
-            f"Got {type(data).__name__}: {str(data)[:200]}"
+        raise GovernmentApiError(
+            government_unavailable_message(_SERVICE, "sent an unreadable response")
         )
     return data
 

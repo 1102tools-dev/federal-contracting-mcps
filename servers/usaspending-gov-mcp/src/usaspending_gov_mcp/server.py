@@ -25,6 +25,7 @@ from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__
+from ._pacing import government_limited_message, government_unavailable_message
 from ._throughput import USASpendingPacer
 from ._response_cache import DAY, HOUR, MINUTE, ResponseCache, cache_key
 from .constants import (
@@ -41,6 +42,17 @@ from .constants import (
 
 class UserInputError(ValueError, ToolError):
     """Deliberate input/domain rejection, visible to clients on supported SDKs."""
+
+
+class GovernmentApiError(RuntimeError, ToolError):
+    """USASpending itself is down, slow, limiting or garbled; visible to clients."""
+
+
+_SERVICE = "USAspending"
+
+
+def _unavailable(reason: str) -> GovernmentApiError:
+    return GovernmentApiError(government_unavailable_message(_SERVICE, reason))
 
 
 mcp = MCPServer("usaspending", version=__version__)
@@ -216,11 +228,7 @@ def _format_http_error(e: httpx.HTTPStatusError) -> str:
             )
         return f"HTTP 404: resource not found. {hint} API response: {detail}"
     if status == 429:
-        return (
-            "HTTP 429: rate limited. "
-            "Add 0.3s delay between batch requests, or reduce concurrency. "
-            f"API response: {detail}"
-        )
+        return government_limited_message(_SERVICE)
 
     return f"HTTP {status}: {detail}"
 
@@ -233,16 +241,17 @@ def _ensure_dict_response(data: Any, *, path: str) -> dict[str, Any]:
     """
     if isinstance(data, dict):
         return data
-    if data is None:
-        raise RuntimeError(
-            f"USASpending returned an empty body at {path!r}. This usually "
-            f"means a CDN / proxy issue rather than a real empty result; "
-            f"retry in a few seconds."
-        )
-    raise RuntimeError(
-        f"USASpending returned an unexpected {type(data).__name__} at "
-        f"{path!r} (expected JSON object). First 200 chars: {str(data)[:200]!r}"
-    )
+    # None (an empty body) or a list/number/string: a CDN, proxy or outage
+    # problem on the government's side, never a real empty result.
+    raise _unavailable("sent an unreadable response")
+
+
+def _load_json(content: bytes) -> Any:
+    """Parse a 200 body; a non-JSON page (HTML outage notice) is unreadable."""
+    try:
+        return _json.loads(content)
+    except ValueError as exc:  # JSONDecodeError and bad UTF-8 are both ValueError
+        raise _unavailable("sent an unreadable response") from exc
 
 
 async def _send(
@@ -257,15 +266,7 @@ async def _send(
         else:
             r = await _get_client().get(path, params=params)
         pacing.observe_response(r)
-        if getattr(r, "status_code", 200) == 429:
-            try:
-                r.raise_for_status()
-            except httpx.HTTPStatusError as exc:
-                pacing.raise_if_rate_limited(
-                    r,
-                    service="USASpending",
-                    guidance=_format_http_error(exc),
-                )
+        pacing.raise_if_rate_limited(r, service=_SERVICE, error_type=GovernmentApiError)
     r.raise_for_status()
     return r.content
 
@@ -312,22 +313,29 @@ async def _cached(method: str, path: str, parse, *, params=None, body=None):
             lambda: _send(method, path, params=params, body=body), parse,
         )
     except httpx.HTTPStatusError as e:
+        status = e.response.status_code
+        if status == 429:
+            raise GovernmentApiError(government_limited_message(_SERVICE)) from e
+        if status >= 500:
+            raise _unavailable(f"error {status}") from e
         raise RuntimeError(_format_http_error(e)) from e
+    except httpx.TimeoutException as e:
+        raise _unavailable("timed out") from e
     except httpx.RequestError as e:
-        raise RuntimeError(f"Network error calling USASpending: {e}") from e
+        raise _unavailable("could not connect") from e
 
 
 async def _post(path: str, json: dict[str, Any]) -> dict[str, Any]:
     """POST helper with actionable error translation."""
     return await _cached(
-        "POST", path, lambda content: _ensure_dict_response(_json.loads(content), path=path), body=json,
+        "POST", path, lambda content: _ensure_dict_response(_load_json(content), path=path), body=json,
     )
 
 
 async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """GET helper with actionable error translation."""
     return await _cached(
-        "GET", path, lambda content: _ensure_dict_response(_json.loads(content), path=path),
+        "GET", path, lambda content: _ensure_dict_response(_load_json(content), path=path),
         params=params or {},
     )
 
@@ -2169,15 +2177,12 @@ async def get_recipient_children(
 
 
 def _parse_recipient_children(content: bytes) -> dict[str, Any]:
-    data = _json.loads(content)
+    data = _load_json(content)
     if isinstance(data, list):
         return {"results": data, "total": len(data)}
     if isinstance(data, dict):
         return data
-    raise RuntimeError(
-        f"USASpending /recipient/children/ returned an unexpected "
-        f"{type(data).__name__} (expected list or dict)."
-    )
+    raise _unavailable("sent an unreadable response")
 
 
 @mcp.tool(annotations={"title": "Autocomplete Recipient", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -2216,15 +2221,12 @@ async def list_states() -> dict[str, Any]:
 
 
 def _parse_state_list(content: bytes) -> dict[str, Any]:
-    data = _json.loads(content)
+    data = _load_json(content)
     if isinstance(data, list):
         return {"results": data, "total": len(data)}
     if isinstance(data, dict):
         return data
-    raise RuntimeError(
-        f"USASpending /recipient/state/ returned an unexpected "
-        f"{type(data).__name__} (expected list or dict)."
-    )
+    raise _unavailable("sent an unreadable response")
 
 
 # ---------------------------------------------------------------------------

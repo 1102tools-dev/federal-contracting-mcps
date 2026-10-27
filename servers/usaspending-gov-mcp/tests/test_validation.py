@@ -503,6 +503,12 @@ def test_search_awards_award_type_alone_rejected():
     ))
 
 
+UNREADABLE = (
+    "The government's USAspending API isn't responding right now (sent an unreadable "
+    "response). This is on the government's side; try again in a few minutes."
+)
+
+
 def test_ensure_dict_response_catches_none():
     """Shape guard: None response raises a clear error, not a type confusion."""
     class FakeResp:
@@ -521,7 +527,7 @@ def test_ensure_dict_response_catches_none():
             keywords=["test"], time_period_start="2024-01-01", time_period_end="2024-06-30"
         ))
     except RuntimeError as e:
-        assert "empty body" in str(e).lower() or "unexpected" in str(e).lower()
+        assert str(e) == UNREADABLE and isinstance(e, srv.GovernmentApiError)
         return
     raise AssertionError("expected shape-guard rejection")
 
@@ -543,7 +549,7 @@ def test_ensure_dict_response_catches_list():
             keywords=["test"], time_period_start="2024-01-01", time_period_end="2024-06-30"
         ))
     except RuntimeError as e:
-        assert "unexpected list" in str(e).lower()
+        assert str(e) == UNREADABLE and isinstance(e, srv.GovernmentApiError)
         return
     raise AssertionError("expected shape-guard rejection")
 
@@ -565,7 +571,7 @@ def test_ensure_dict_response_catches_int():
             keywords=["test"], time_period_start="2024-01-01", time_period_end="2024-06-30"
         ))
     except RuntimeError as e:
-        assert "unexpected int" in str(e).lower()
+        assert str(e) == UNREADABLE and isinstance(e, srv.GovernmentApiError)
         return
     raise AssertionError("expected shape-guard rejection")
 
@@ -587,7 +593,7 @@ def test_ensure_dict_response_catches_string():
             keywords=["test"], time_period_start="2024-01-01", time_period_end="2024-06-30"
         ))
     except RuntimeError as e:
-        assert "unexpected str" in str(e).lower()
+        assert str(e) == UNREADABLE and isinstance(e, srv.GovernmentApiError)
         return
     raise AssertionError("expected shape-guard rejection")
 

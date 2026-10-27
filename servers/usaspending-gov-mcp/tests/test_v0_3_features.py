@@ -13,7 +13,7 @@ import asyncio
 import os
 
 import pytest
-from tests._sdk_error_assertions import unexpected_source_error_text
+from tests._sdk_error_assertions import government_error_text, unexpected_source_error_text
 
 import usaspending_gov_mcp.server as srv  # noqa: E402
 from usaspending_gov_mcp.server import mcp  # noqa: E402
@@ -1661,6 +1661,28 @@ def _format_runtime(http_err):
     return RuntimeError(srv._format_http_error(http_err))
 
 
+def _gov_down(reason):
+    return (
+        f"The government's USAspending API isn't responding right now ({reason}). "
+        "This is on the government's side; try again in a few minutes."
+    )
+
+
+_GOV_LIMITED = (
+    "The government's USAspending API is limiting requests right now. "
+    "This is on the government's side. Wait a few minutes before trying again."
+)
+
+
+def _patch_send(monkeypatch, *, exc=None, content=None):
+    """Fail (or answer) at the one paced government call every tool shares."""
+    async def send(method, path, *, params=None, body=None):
+        if exc is not None:
+            raise exc
+        return content
+    monkeypatch.setattr(srv, "_send", send)
+
+
 _POST_TOOLS = [
     ("search_subawards", {}, "/api/v2/subawards/"),
     ("spending_by_subaward_grouped", {}, "/api/v2/search/spending_by_subaward_grouped/"),
@@ -1781,13 +1803,18 @@ _HTTP_ERRORS = [
 @pytest.mark.parametrize("status,detail", _HTTP_ERRORS)
 def test_q03_http_errors_surfaced(status, detail, tool, kwargs, _, monkeypatch):
     err = _http_error(status, f'{{"detail":"{detail}"}}'.encode())
-    mock = _make_failing_post(_format_runtime(err)) if _is_post(tool) else _make_failing_get(_format_runtime(err))
-    _patch_for(tool, mock, monkeypatch)
+    _patch_send(monkeypatch, exc=err)
     try:
         asyncio.run(_call(tool, **kwargs))
     except Exception as e:
-        msg = unexpected_source_error_text(e, tool)
-        assert str(status) in msg or detail in msg.lower()
+        if status == 429 or status >= 500:
+            # Government-side: visible plain message, no raw body.
+            msg = government_error_text(e, tool)
+            assert msg == (_GOV_LIMITED if status == 429 else _gov_down(f"error {status}"))
+            assert detail not in msg.lower()
+        else:
+            msg = unexpected_source_error_text(e, tool)
+            assert str(status) in msg or detail in msg.lower()
         return
     raise AssertionError(f"expected error for HTTP {status}")
 
@@ -1798,14 +1825,13 @@ def test_q03_http_errors_surfaced(status, detail, tool, kwargs, _, monkeypatch):
 
 @pytest.mark.parametrize("tool,kwargs,_", _ALL_TOOLS)
 def test_q04_network_error(tool, kwargs, _, monkeypatch):
-    err = RuntimeError("Network error calling USASpending: connection refused")
-    mock = _make_failing_post(err) if _is_post(tool) else _make_failing_get(err)
-    _patch_for(tool, mock, monkeypatch)
+    _patch_send(monkeypatch, exc=_httpx.ConnectError("connection refused"))
     try:
         asyncio.run(_call(tool, **kwargs))
     except Exception as e:
-        msg = unexpected_source_error_text(e, tool)
-        assert "network error" in msg.lower() or "connection" in msg.lower()
+        msg = government_error_text(e, tool)
+        assert msg == _gov_down("could not connect")
+        assert "refused" not in msg
         return
     raise AssertionError("expected error")
 
@@ -1913,15 +1939,14 @@ def test_q11_unicode_response(tool, kwargs, _, monkeypatch):
 @pytest.mark.parametrize("tool,kwargs,_", _ALL_TOOLS)
 def test_q12_html_error_cleaned(tool, kwargs, _, monkeypatch):
     err = _http_error(502, b"<!doctype html><html><head><title>Bad Gateway</title></head><body><h1>502</h1></body></html>", content_type="text/html")
-    mock = _make_failing_post(_format_runtime(err)) if _is_post(tool) else _make_failing_get(_format_runtime(err))
-    _patch_for(tool, mock, monkeypatch)
+    _patch_send(monkeypatch, exc=err)
     try:
         asyncio.run(_call(tool, **kwargs))
     except Exception as e:
-        msg = unexpected_source_error_text(e, tool)
-        s = msg
-        # Title/h1 extracted, no raw HTML tags
-        assert ("Bad Gateway" in s or "502" in s) and "<html" not in s
+        msg = government_error_text(e, tool)
+        # The status number only; no HTML or page title leaks through.
+        assert msg == _gov_down("error 502")
+        assert "<html" not in msg and "Bad Gateway" not in msg
         return
     raise AssertionError("expected error")
 
@@ -2006,14 +2031,13 @@ def test_q17_deeply_nested(tool, kwargs, _, monkeypatch):
 
 @pytest.mark.parametrize("tool,kwargs,_", _ALL_TOOLS)
 def test_q18_timeout_error(tool, kwargs, _, monkeypatch):
-    err = RuntimeError("Network error calling USASpending: timeout exceeded")
-    mock = _make_failing_post(err) if _is_post(tool) else _make_failing_get(err)
-    _patch_for(tool, mock, monkeypatch)
+    _patch_send(monkeypatch, exc=_httpx.ReadTimeout("timeout exceeded"))
     try:
         asyncio.run(_call(tool, **kwargs))
     except Exception as e:
-        msg = unexpected_source_error_text(e, tool)
-        assert "timeout" in msg.lower() or "network error" in msg.lower()
+        msg = government_error_text(e, tool)
+        assert msg == _gov_down("timed out")
+        assert "exceeded" not in msg
         return
     raise AssertionError("expected error")
 
@@ -2025,16 +2049,15 @@ def test_q18_timeout_error(tool, kwargs, _, monkeypatch):
 @pytest.mark.parametrize("tool,kwargs,_", _ALL_TOOLS)
 def test_q19_non_dict_response_rejected(tool, kwargs, _, monkeypatch):
     """API returning a list instead of dict should raise (except list_states)."""
-    if tool == "list_states":
-        return  # documented exception, special-cased in code
-    err = RuntimeError(f"USASpending returned an unexpected list at '/x' (expected JSON object).")
-    mock = _make_failing_post(err) if _is_post(tool) else _make_failing_get(err)
-    _patch_for(tool, mock, monkeypatch)
+    if tool in ("list_states", "get_recipient_children"):
+        return  # documented exceptions: these endpoints answer with a list
+    _patch_send(monkeypatch, content=b'["secret-row"]')
     try:
         asyncio.run(_call(tool, **kwargs))
     except Exception as e:
-        msg = unexpected_source_error_text(e, tool)
-        assert "unexpected list" in msg or "expected JSON object" in msg
+        msg = government_error_text(e, tool)
+        assert msg == _gov_down("sent an unreadable response")
+        assert "secret-row" not in msg
         return
     raise AssertionError("expected error")
 
@@ -2232,8 +2255,8 @@ def test_states_q18_invalid_response_type_raises(monkeypatch):
     try:
         asyncio.run(_call("list_states"))
     except Exception as e:
-        msg = unexpected_source_error_text(e, 'list_states')
-        assert "unexpected" in msg.lower() or "int" in msg.lower()
+        msg = government_error_text(e, 'list_states')
+        assert msg == _gov_down("sent an unreadable response")
         return
     raise AssertionError("expected error")
 
@@ -2256,8 +2279,9 @@ def test_states_q19_http_error_surfaced(monkeypatch):
     try:
         asyncio.run(_call("list_states"))
     except Exception as e:
-        msg = unexpected_source_error_text(e, 'list_states')
-        assert "500" in msg or "db down" in msg.lower()
+        msg = government_error_text(e, 'list_states')
+        assert msg == _gov_down("error 500")
+        assert "db down" not in msg.lower()
         return
     raise AssertionError("expected error")
 
@@ -2270,8 +2294,9 @@ def test_states_q20_network_error_surfaced(monkeypatch):
     try:
         asyncio.run(_call("list_states"))
     except Exception as e:
-        msg = unexpected_source_error_text(e, 'list_states')
-        assert "network error" in msg.lower() or "connection" in msg.lower()
+        msg = government_error_text(e, 'list_states')
+        assert msg == _gov_down("could not connect")
+        assert "refused" not in msg
         return
     raise AssertionError("expected error")
 

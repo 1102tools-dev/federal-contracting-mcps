@@ -5,7 +5,7 @@ import {EXCLUSION_TOOL, searchExclusions, getPublicDataStatus} from "./exclusion
 // Hosted SAM.gov tools query separate D1 mirrors of public opportunities,
 // entity registrations and exclusions. No SAM.gov API key is used.
 
-import {ToolError, type Database} from "./public-types.ts";
+import {ToolError, type Database, type Statement} from "./public-types.ts";
 export {ToolError, type Database} from "./public-types.ts";
 
 type Row = Record<string, any>;
@@ -280,24 +280,26 @@ const whereSql = (q: Query) => (q.where.length ? " WHERE " + q.where.join(" AND 
 
 /** Most notices leave the place of performance blank. When filtering on it,
  * count the other matches whose contracting office is in that state. */
-async function officeStateHint(db: Database, args: Args, now: Date): Promise<string | undefined> {
+function officeStateQuery(db: Database, args: Args, now: Date): {state: string; statement: Statement} | undefined {
   const state = str(args, "place_of_performance_state", 2)?.toUpperCase();
   if (!state || str(args, "office_state", 2) !== undefined) return undefined;
   const q = buildQuery({...args, place_of_performance_state: undefined, office_state: state}, now);
   q.where.push("o.pop_state IS NULL");
-  const {results} = await db.prepare(`SELECT COUNT(*) AS n FROM ${q.from}${whereSql(q)}`).bind(...q.params).all<{n: number}>();
-  const n = results[0]?.n ?? 0;
-  if (!n) return undefined;
+  return {state, statement: db.prepare(`SELECT COUNT(*) AS n FROM ${q.from}${whereSql(q)}`).bind(...q.params)};
+}
+
+function officeStateHint(state: string | undefined, rows: Row[] | undefined): string | undefined {
+  const n = rows?.[0]?.n ?? 0;
+  if (!state || !n) return undefined;
   return `${n} more matching notices leave the place of performance blank but have a contracting office in ${state}; set office_state to "${state}" (instead of place_of_performance_state) to include them. An office's state is not always where the work happens.`;
 }
 
 /** Without a notice type filter, results mix in award notices and
  * justifications, which take no responses. Count them so answers can say so. */
-async function noResponseCount(db: Database, args: Args, q: Query): Promise<number> {
-  if (list(args, "notice_types", /./, "a SAM.gov notice type", NOTICE_TYPES).length) return 0;
+function noResponseQuery(db: Database, args: Args, q: Query): Statement | undefined {
+  if (list(args, "notice_types", /./, "a SAM.gov notice type", NOTICE_TYPES).length) return undefined;
   const where = [...q.where, `o.notice_type IN (${NO_RESPONSE_TYPES.map(() => "?").join(", ")})`];
-  const {results} = await db.prepare(`SELECT COUNT(*) AS n FROM ${q.from} WHERE ${where.join(" AND ")}`).bind(...q.params, ...NO_RESPONSE_TYPES).all<{n: number}>();
-  return results[0]?.n ?? 0;
+  return db.prepare(`SELECT COUNT(*) AS n FROM ${q.from} WHERE ${where.join(" AND ")}`).bind(...q.params, ...NO_RESPONSE_TYPES);
 }
 
 function noResponseNote(n: number, total: number): string | undefined {
@@ -346,12 +348,41 @@ function summary(row: Row) {
 
 async function status(db: Database): Promise<Row> {
   const {results} = await db.prepare("SELECT key, value FROM load_status").bind().all<{key: string; value: string}>();
-  return Object.fromEntries(results.map(r => [r.key, JSON.parse(r.value)]));
+  return Object.fromEntries(results.filter(r => r.key !== LOADING_KEY).map(r => [r.key, JSON.parse(r.value)]));
 }
 
-async function dataAsOf(db: Database): Promise<string | null> {
-  const {results} = await db.prepare("SELECT value FROM load_status WHERE key = 'file_date'").bind().all<{value: string}>();
-  return results.length ? JSON.parse(results[0].value) : null;
+// The opportunities loader sets this load_status key before it writes rows and
+// clears it with its final status write. A marker older than LOADING_MAX_MS is
+// left over from a load that crashed and is ignored.
+const LOADING_KEY = "loading_started_at";
+const LOADING_MAX_MS = 30 * 60_000;
+const REFRESHING = "SAM.gov opportunity data is refreshing. Try again in about 2 minutes; confirm deadlines on SAM.gov.";
+
+/** Whether a loading_started_at value (JSON text) names a load still in progress. */
+export function loadingMarkerFresh(value: string | null | undefined, now: Date): boolean {
+  if (!value) return false;
+  let text: unknown = value;
+  try { text = JSON.parse(value); } catch {}
+  const started = typeof text === "string" ? Date.parse(text) : Number.NaN;
+  return Number.isFinite(started) && Math.abs(now.getTime() - started) < LOADING_MAX_MS;
+}
+
+const LOAD_SQL = `SELECT (SELECT value FROM load_status WHERE key = 'file_date') AS file_date,
+  (SELECT value FROM load_status WHERE key = '${LOADING_KEY}') AS loading_started_at`;
+
+/** Runs the statements and the file date in one D1 batch, so every count and
+ * page comes from the same snapshot; refuses while a load is being written. */
+async function readSnapshot(db: Database, now: Date, statements: (Statement | undefined)[]): Promise<{asOf: string | null; results: (Row[] | undefined)[]}> {
+  const present = statements.filter((s): s is Statement => s !== undefined);
+  const all = [db.prepare(LOAD_SQL).bind(), ...present];
+  const [load, ...rest] = db.batch ? await db.batch(all) : await Promise.all(all.map(s => s.all<Row>()));
+  const status = load.results[0] as Row | undefined;
+  if (loadingMarkerFresh(status?.loading_started_at, now)) throw new ToolError(REFRESHING);
+  let i = 0;
+  return {
+    asOf: status?.file_date ? JSON.parse(status.file_date) : null,
+    results: statements.map(s => (s ? rest[i++].results : undefined)),
+  };
 }
 
 const SUMMARY_COLUMNS = "o.notice_id, o.title, o.solicitation_number, o.notice_type, o.department, o.sub_tier, o.office, o.posted_date, o.response_deadline, o.set_aside_code, o.set_aside, o.naics_code, o.psc_code, o.pop_street, o.pop_city, o.pop_state, o.pop_zip, o.pop_country, o.award_number, o.award_date, o.award_amount, o.awardee, o.is_latest";
@@ -376,15 +407,17 @@ export async function searchOpportunities(db: Database, args: Args, now = new Da
     throw new ToolError("sort must be deadline, newest, or relevance.");
   }
   const where = whereSql(q);
-  const [count, page, asOf, hint, noResponse] = await Promise.all([
-    db.prepare(`SELECT COUNT(*) AS n FROM ${q.from}${where}`).bind(...q.params).all<{n: number}>(),
-    db.prepare(`SELECT ${SUMMARY_COLUMNS} FROM ${q.from}${where} ORDER BY ${order} LIMIT ? OFFSET ?`).bind(...q.params, limit, offset).all(),
-    dataAsOf(db),
-    officeStateHint(db, args, now),
-    noResponseCount(db, args, q),
+  const office = officeStateQuery(db, args, now);
+  const {asOf, results: [count, page, officeRows, noResponseRows]} = await readSnapshot(db, now, [
+    db.prepare(`SELECT COUNT(*) AS n FROM ${q.from}${where}`).bind(...q.params),
+    db.prepare(`SELECT ${SUMMARY_COLUMNS} FROM ${q.from}${where} ORDER BY ${order} LIMIT ? OFFSET ?`).bind(...q.params, limit, offset),
+    office?.statement,
+    noResponseQuery(db, args, q),
   ]);
-  const total = count.results[0]?.n ?? 0;
-  const results = page.results.map(summary);
+  const total = count?.[0]?.n ?? 0;
+  const results = (page ?? []).map(summary);
+  const hint = officeStateHint(office?.state, officeRows);
+  const noResponse = noResponseRows?.[0]?.n ?? 0;
   const {notes: freshnessNotes, ...freshness} = dataFreshness("opportunities", asOf, now);
   const notes = [...q.notes, ...freshnessNotes];
   const typeNote = noResponseNote(noResponse, total);
@@ -430,6 +463,7 @@ export async function getOpportunity(db: Database, args: Args, now = new Date())
   const sibling = "r.solicitation_number = h.solicitation_number COLLATE NOCASE AND r.notice_id != h.notice_id";
   const [row] = (await db.prepare(`WITH h AS MATERIALIZED (${hit})
     SELECT h.*, (SELECT value FROM load_status WHERE key = 'file_date') AS file_date_json,
+      (SELECT value FROM load_status WHERE key = '${LOADING_KEY}') AS loading_json,
       CASE WHEN coalesce(h.solicitation_number, '') = '' THEN '[]' ELSE (SELECT json_group_array(json_object(
         'notice_id', notice_id, 'notice_type', notice_type, 'title', title, 'posted_date', posted_date,
         'response_deadline', response_deadline, 'award_number', award_number, 'awardee', awardee,
@@ -437,6 +471,7 @@ export async function getOpportunity(db: Database, args: Args, now = new Date())
         ORDER BY r.is_latest DESC, r.posted_at DESC LIMIT 20)) END AS related_json,
       CASE WHEN coalesce(h.solicitation_number, '') = '' THEN 0 ELSE (SELECT COUNT(*) FROM opportunities r WHERE ${sibling}) END AS related_total
     FROM (SELECT 1) LEFT JOIN h`).bind(...hitParams).all<Row>()).results;
+  if (loadingMarkerFresh(row?.loading_json, now)) throw new ToolError(REFRESHING);
   const asOf = row?.file_date_json ? JSON.parse(row.file_date_json) : null;
   const {notes: freshnessNotes, ...freshness} = dataFreshness("opportunities", asOf, now);
   if (!row?.notice_id) {
@@ -507,23 +542,26 @@ export async function summarizeOpportunities(db: Database, args: Args, now = new
   const column = GROUPS[groupBy].startsWith("substr") ? "substr(o.posted_date, 1, 7)" : `o.${GROUPS[groupBy]}`;
   const where = whereSql(q);
   const byMonth = groupBy === "posted_month";
-  const [groups, count, asOf, hint, noResponse] = await Promise.all([
-    db.prepare(`SELECT ${column} AS value, COUNT(*) AS count FROM ${q.from}${where} GROUP BY value ORDER BY ${byMonth ? "value DESC" : "count DESC, value"} LIMIT ?`).bind(...q.params, top).all<{value: string | null; count: number}>(),
-    db.prepare(`SELECT COUNT(*) AS n, COUNT(DISTINCT ${column}) + MAX(${column} IS NULL) AS g FROM ${q.from}${where}`).bind(...q.params).all<{n: number; g: number}>(),
-    dataAsOf(db),
-    officeStateHint(db, args, now),
-    groupBy === "notice_type" ? 0 : noResponseCount(db, args, q),
+  const office = officeStateQuery(db, args, now);
+  const {asOf, results: [groupRows, countRows, officeRows, noResponseRows]} = await readSnapshot(db, now, [
+    db.prepare(`SELECT ${column} AS value, COUNT(*) AS count FROM ${q.from}${where} GROUP BY value ORDER BY ${byMonth ? "value DESC" : "count DESC, value"} LIMIT ?`).bind(...q.params, top),
+    db.prepare(`SELECT COUNT(*) AS n, COUNT(DISTINCT ${column}) + MAX(${column} IS NULL) AS g FROM ${q.from}${where}`).bind(...q.params),
+    office?.statement,
+    groupBy === "notice_type" ? undefined : noResponseQuery(db, args, q),
   ]);
-  const total = count.results[0]?.n ?? 0;
-  const shown = groups.results.reduce((sum, g) => sum + g.count, 0);
-  const typeNote = noResponseNote(noResponse, total);
-  const rows = byMonth ? [...groups.results].reverse() : groups.results;
+  const groups = (groupRows ?? []) as {value: string | null; count: number}[];
+  const count = countRows?.[0];
+  const hint = officeStateHint(office?.state, officeRows);
+  const total = count?.n ?? 0;
+  const shown = groups.reduce((sum, g) => sum + g.count, 0);
+  const typeNote = noResponseNote(noResponseRows?.[0]?.n ?? 0, total);
+  const rows = byMonth ? [...groups].reverse() : groups;
   const {notes: freshnessNotes, ...freshness} = dataFreshness("opportunities", asOf, now);
   const monthNote = byMonth ? "Months are in order. Each month counts only notices still active today; SAM.gov archives notices over time, so earlier months look smaller and the counts are not a posting trend." : undefined;
   return {
     group_by: groupBy,
     total_matches: total,
-    distinct_values: count.results[0]?.g ?? 0,
+    distinct_values: count?.g ?? 0,
     groups: rows.map(g => ({value: g.value ?? "(blank)", count: g.count})),
     other_count: total - shown,
     data_as_of: asOf,

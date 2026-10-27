@@ -7,6 +7,7 @@ from pathlib import Path
 import httpx
 import pytest
 import usaspending_gov_mcp.server as s
+from mcp.server.mcpserver.exceptions import ToolError
 
 FIXTURE = json.loads((Path(__file__).parent / 'fixtures/federal_account_available_fy_1020.json').read_text())
 
@@ -60,5 +61,13 @@ def test_unexpected_503_is_not_relabelled_as_unavailable_year(monkeypatch):
     while chain is not None:
         errors.append(str(chain))
         chain = chain.__cause__
-    assert any('HTTP 503' in error for error in errors)
+    # A government outage gets the plain, visible outage message, never the
+    # unavailable-year recovery and never the raw response body.
+    assert any(
+        "The government's USAspending API isn't responding right now (error 503). "
+        "This is on the government's side; try again in a few minutes." in error
+        for error in errors
+    )
+    assert isinstance(caught.value, ToolError)
     assert not any('Omit fiscal_year' in error for error in errors)
+    assert not any('temporarily unavailable' in error for error in errors)

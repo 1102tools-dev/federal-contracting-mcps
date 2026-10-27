@@ -10,6 +10,13 @@ from starlette.responses import JSONResponse
 from .server import mcp
 
 
+BUSY_MESSAGE = (
+    "The hosted Acquisition.gov server is busy right now. Wait 60 seconds, then "
+    "try again. For no shared limit, install it locally: "
+    "https://1102tools.com/#local-or-hosted"
+)
+
+
 def create_app():
     hosts = os.environ.get("MCP_ALLOWED_HOSTS", "localhost:*,127.0.0.1:*").split(",")
     origins = os.environ.get("MCP_ALLOWED_ORIGINS", "http://localhost:*,http://127.0.0.1:*").split(",")
@@ -110,7 +117,7 @@ class AdmissionControl:
                     await app_task
         except TimeoutError:
             if not started:
-                await JSONResponse({"error": "Upstream request timed out; retry later."}, status_code=504)(scope, receive, send)
+                await JSONResponse({"error": BUSY_MESSAGE}, status_code=504)(scope, receive, send)
             else:
                 raise
         finally:

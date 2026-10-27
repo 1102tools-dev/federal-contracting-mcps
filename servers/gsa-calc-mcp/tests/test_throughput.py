@@ -25,8 +25,11 @@ async def test_hourly_budget_fails_promptly_and_recovers_across_instances(tmp_pa
     for i in range(500):
         await (a if i%2 else b)._reserve(.01)
     before=clock()
-    with pytest.raises(RuntimeError,match='500 upstream attempts per hour'):
+    with pytest.raises(RuntimeError) as exc:
         await a._reserve(.01)
+    assert str(exc.value)==(
+        'This GSA CALC+ server has used its hourly budget of 500 government calls. '
+        'Try again in about 60 minutes.')
     assert clock()==before
     clock.now=4600
     await b._reserve(.01)
@@ -39,8 +42,11 @@ async def test_long_provider_cooldown_fails_promptly_without_new_attempt(tmp_pat
     async with p.request_slot() as slot:
         slot.observe_response(SimpleNamespace(status_code=429,headers={'Retry-After':'2221'}))
     before=clock()
-    with pytest.raises(RuntimeError,match='provider cooldown is active'):
+    with pytest.raises(RuntimeError) as exc:
         async with p.request_slot():pass
+    assert str(exc.value)==(
+        "The government's GSA CALC+ API is limiting requests right now. "
+        "This is on the government's side. Try again in about 38 minutes.")
     assert clock()==before
     assert len(json.loads(next(tmp_path.glob('*.json')).read_text())['starts'])==1
 
@@ -64,7 +70,7 @@ async def test_start_spacing_not_completion_spacing_and_errors_count(tmp_path, m
     for _ in range(498):
         async with p.request_slot(): pass
     before=clock()
-    with pytest.raises(RuntimeError, match='500 upstream attempts per hour'):
+    with pytest.raises(RuntimeError, match='hourly budget of 500 government calls'):
         async with p.request_slot(): pass
     assert clock()==before  # Exhaustion fails promptly without consuming another attempt.
     assert len(histories)==500
@@ -206,8 +212,10 @@ async def test_exhausted_budget_is_visible_in_mcp_response(tmp_path,monkeypatch)
             response=await asyncio.wait_for(client.post('/mcp',json={'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':'keyword_search','arguments':{'keyword':'engineer','page_size':1}}}),2)
             result=response.json()['result']
             assert result['isError']
-            assert '500 upstream attempts per hour' in result['content'][0]['text']
-            assert 'Retry after' in result['content'][0]['text']
+            text=result['content'][0]['text']
+            assert 'This GSA CALC+ server has used its hourly budget of 500 government calls. Try again in about ' in text
+            assert text.rstrip().endswith('minutes.')
+            assert 'upstream attempts' not in text and 'Retry after' not in text
 
 @pytest.mark.asyncio
 async def test_provider_429_guidance_survives_mcp_and_prevents_retry(tmp_path,monkeypatch):
@@ -225,9 +233,12 @@ async def test_provider_429_guidance_survives_mcp_and_prevents_retry(tmp_path,mo
         app=create_app()
         async with app.app.router.lifespan_context(app.app):
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://localhost:8080',headers={'Accept':'application/json, text/event-stream'}) as client:
-                for expected in ('Retry-After','provider cooldown'):
+                expected=("The government's GSA CALC+ API is limiting requests right now. "
+                          "This is on the government's side. Try again in about 38 minutes.")
+                for _ in range(2):
                     response=await asyncio.wait_for(client.post('/mcp',json={'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':'keyword_search','arguments':{'keyword':'engineer','page_size':1}}}),2)
                     assert int(response.headers['x-1102tools-provider-retry-after']) >= 2200
                     result=response.json()['result']
                     assert result['isError'] and expected in result['content'][0]['text']
+                    assert 'throttled' not in result['content'][0]['text']
     assert calls==1

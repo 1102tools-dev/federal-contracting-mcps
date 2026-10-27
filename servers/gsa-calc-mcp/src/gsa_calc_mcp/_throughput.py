@@ -13,7 +13,13 @@ from contextlib import asynccontextmanager
 
 from filelock import FileLock, Timeout as FileLockTimeout
 
-from ._pacing import FederalApiPacer, RequestSlot, _process_lock
+from ._pacing import (
+    FederalApiPacer,
+    RequestSlot,
+    _process_lock,
+    government_limited_message,
+    minutes_text,
+)
 
 
 class CalcBudgetUnavailable(RuntimeError):
@@ -112,13 +118,15 @@ class GsaCalcPacer(FederalApiPacer):
                 delay = ready - now
                 if len(starts) >= self.MAX_REQUESTS and delay > 0:
                     raise CalcBudgetUnavailable(
-                        f"GSA CALC+ local safety budget of 500 upstream attempts per hour "
-                        f"is exhausted. Retry after {math.ceil(delay)} seconds."
+                        f"This GSA CALC+ server has used its hourly budget of "
+                        f"{self.MAX_REQUESTS} government calls. "
+                        f"Try again in {minutes_text(delay)}."
                     )
                 if state.get("cooldown_until", 0) - now > 30:
                     raise CalcBudgetUnavailable(
-                        f"GSA CALC+ provider cooldown is active. Retry after "
-                        f"{math.ceil(state['cooldown_until'] - now)} seconds."
+                        government_limited_message(
+                            "GSA CALC+", state["cooldown_until"] - now
+                        )
                     )
                 if delay <= 0:
                     state.update(starts=starts + [now], last_started=now)

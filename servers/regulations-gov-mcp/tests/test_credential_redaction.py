@@ -45,7 +45,11 @@ def test_error_formatting_redacts_raw_and_encoded_key() -> None:
     rendered = srv._format_error(500, body, SECRET)
     assert SECRET not in rendered
     assert "rc5-regulations-secret%2Fvalue" not in rendered
-    assert "[REDACTED]" in rendered
+    # Government errors carry no response body at all.
+    assert rendered == (
+        "The government's Regulations.gov API isn't responding right now (error 500). "
+        "This is on the government's side; try again in a few minutes."
+    )
 
 
 def test_json_payload_is_redacted_before_return(
@@ -71,7 +75,12 @@ def test_network_error_url_never_echoes_key(
         asyncio.run(srv._get("documents", {"filter[searchTerm]": "FAR"}))
     assert SECRET not in str(captured.value)
     assert "rc5-regulations-secret%2Fvalue" not in str(captured.value)
-    assert "[REDACTED]" in str(captured.value)
+    assert "failed request" not in str(captured.value)
+    assert str(captured.value) == (
+        "The government's Regulations.gov API isn't responding right now (could not connect). "
+        "This is on the government's side; try again in a few minutes."
+    )
+    assert captured.value.__cause__ is None and captured.value.__suppress_context__
 
 
 class _RecordingClient:

@@ -13,7 +13,7 @@ never needs to process raw XML. Structure and metadata endpoints return JSON.
 
 from __future__ import annotations
 
-from ._errors import SourceNotFoundError, UserInputError
+from ._errors import GovernmentApiError, SourceNotFoundError, UserInputError
 
 import asyncio
 import difflib
@@ -29,6 +29,7 @@ import httpx
 from mcp.server import MCPServer
 
 from . import __version__, _definitions, _xml_text
+from ._pacing import government_limited_message, government_unavailable_message
 from ._throughput import EcfrPacer, EcfrXmlPacer
 from ._response_cache import DAY, HOUR, MINUTE, ResponseCache, cache_key, positive_int_from_env
 from ._xml_cache import XmlCache
@@ -443,6 +444,13 @@ def _get_client() -> httpx.AsyncClient:
     return _client
 
 
+_SERVICE = "eCFR"
+_UNREADABLE = "sent an unreadable response"
+# eCFR's content endpoint only returns XML; an HTML page in its place is an
+# outage or maintenance notice, never regulation text.
+_HTML_PAGE_RE = re.compile(r"\A(?:\ufeff)?\s*<(?:!doctype\s+html|html[\s>])", re.IGNORECASE)
+
+
 def _format_error(status: int, body: Any) -> str:
     """Translate common eCFR errors into actionable messages."""
     cleaned = _clean_error_body(body)
@@ -480,13 +488,24 @@ def _format_error(status: int, body: Any) -> str:
             )
         return f"HTTP 400: {cleaned}"
     if status == 429:
-        return (
-            "HTTP 429: Rate limited by eCFR. Wait a few seconds and retry. "
-            "eCFR throttles heavy automated use."
-        )
+        return government_limited_message(_SERVICE)
     if 500 <= status < 600:
-        return f"HTTP {status}: eCFR server error. {cleaned}. Retry after a short backoff."
+        return government_unavailable_message(_SERVICE, f"error {status}")
     return f"HTTP {status}: {cleaned}"
+
+
+def _unavailable(reason: str) -> GovernmentApiError:
+    return GovernmentApiError(government_unavailable_message(_SERVICE, reason))
+
+
+def _raise_for_status(r: Any, path: str, params: dict[str, Any] | None) -> None:
+    """404 keeps its 'HTTP 404' guidance; 5xx is the government's side."""
+    if r.status_code < 400:
+        return
+    if r.status_code >= 500:
+        raise _unavailable(f"error {r.status_code}")
+    error_type = SourceNotFoundError if r.status_code == 404 else RuntimeError
+    raise error_type(_format_error(r.status_code, r.text) + _what_was_asked(r.status_code, path, params))
 
 
 def _what_was_asked(status: int, path: str, params: dict[str, Any] | None) -> str:
@@ -519,25 +538,16 @@ async def _fetch_json(path: str, params: dict[str, Any] | None, timeout: float) 
         async with _pacer.request_slot() as pacing:
             r = await _get_client().get(path, params=params or {}, timeout=timeout)
             pacing.observe_response(r)
-            pacing.raise_if_rate_limited(
-                r,
-                service="eCFR",
-                guidance=_format_error(r.status_code, r.text),
-            )
+            pacing.raise_if_rate_limited(r, service=_SERVICE, error_type=GovernmentApiError)
+    except httpx.TimeoutException as e:
+        raise _unavailable("timed out") from e
     except httpx.RequestError as e:
-        raise RuntimeError(f"Network error calling eCFR: {e}") from e
-    if r.status_code >= 400:
-        error_type = SourceNotFoundError if r.status_code == 404 else RuntimeError
-        raise error_type(_format_error(r.status_code, r.text) + _what_was_asked(r.status_code, path, params))
+        raise _unavailable("could not connect") from e
+    _raise_for_status(r, path, params)
     try:
         r.json()
-    except (ValueError, _json.JSONDecodeError) as e:
-        preview = _clean_error_body(r.text or "(empty body)")[:200]
-        ct = r.headers.get("content-type", "?")
-        raise RuntimeError(
-            f"eCFR returned a non-JSON response (status {r.status_code}, "
-            f"content-type={ct!r}): {preview}"
-        ) from e
+    except ValueError as e:  # JSONDecodeError and bad UTF-8 are both ValueError
+        raise _unavailable(_UNREADABLE) from e
     return r.content
 
 
@@ -546,9 +556,7 @@ def _parse_json_body(content: bytes) -> dict[str, Any]:
     if data is None:
         return {}
     if not isinstance(data, (dict, list)):
-        raise RuntimeError(
-            f"eCFR returned unexpected JSON type {type(data).__name__}: {str(data)[:200]}"
-        )
+        raise _unavailable(_UNREADABLE)
     return data if isinstance(data, dict) else {"_list": data}
 
 
@@ -568,19 +576,17 @@ async def _get_xml_uncached(path: str, params: dict[str, Any] | None = None) -> 
             )
             xml_pacing.observe_response(r)
             pacing.observe_response(r)
-            pacing.raise_if_rate_limited(
-                r,
-                service="eCFR",
-                guidance=_format_error(r.status_code, r.text),
-            )
+            pacing.raise_if_rate_limited(r, service=_SERVICE, error_type=GovernmentApiError)
+    except httpx.TimeoutException as e:
+        raise _unavailable("timed out") from e
     except httpx.RequestError as e:
-        raise RuntimeError(f"Network error calling eCFR: {e}") from e
-    if r.status_code >= 400:
-        error_type = SourceNotFoundError if r.status_code == 404 else RuntimeError
-        raise error_type(_format_error(r.status_code, r.text) + _what_was_asked(r.status_code, path, params))
+        raise _unavailable("could not connect") from e
+    _raise_for_status(r, path, params)
     text = r.text
     if not isinstance(text, str):
         text = str(text)
+    if _HTML_PAGE_RE.match(text):
+        raise _unavailable(_UNREADABLE)
     return text
 
 

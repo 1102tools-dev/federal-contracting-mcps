@@ -373,6 +373,9 @@ export function logToolCall(service: string, body: ArrayBuffer | null, response:
 // Requests turned away before the server sees them; the container-backed
 // Workers return these before logToolCall runs, so the wrapper skips them too.
 const TURNED_AWAY = new Set([403, 413, 429]);
+// A per-minute limit answer to a tools/call is a readable 200, so it carries this
+// header instead; the call never reached the server and is not logged.
+export const TURNED_AWAY_HEADER = "X-1102tools-Turned-Away";
 
 /** Logs each tools/call a Worker answers itself (the D1 services), the same
  * way the container-backed Workers log the calls they forward. */
@@ -385,7 +388,7 @@ export function withToolCallLog<E>(service: string, handler: (request: Request, 
     if (body === null) return tooLarge();
     const started = Date.now();
     const response = await handler(new Request(request, {body}), env);
-    if (!TURNED_AWAY.has(response.status)) logToolCall(service, body, response, started, request.headers.get("User-Agent"));
+    if (!TURNED_AWAY.has(response.status) && !response.headers.has(TURNED_AWAY_HEADER)) logToolCall(service, body, response, started, request.headers.get("User-Agent"));
     return response;
   };
 }
@@ -579,11 +582,12 @@ export async function withinLimit(request: Request, env: {REQUEST_LIMITER: Limit
   return false;
 }
 
-const LOCAL_INSTALL = "install it locally in the Claude or ChatGPT desktop app for no shared limit: https://1102tools.com/#local-or-hosted";
+const WAIT = "Wait 60 seconds, then try again.";
+const LOCAL_INSTALL = "For no shared limit, install it locally: https://1102tools.com/#local-or-hosted";
 
 /** A message the AI can relay: a tool call gets a readable tool error, anything else a JSON-RPC error. */
-function explain(rpc: {id: unknown; method: string}, message: string, status: number): Response {
-  const headers = {"Content-Type": "application/json", "Retry-After": "60"};
+function explain(rpc: {id: unknown; method: string}, message: string, status: number, extra: Record<string, string> = {}): Response {
+  const headers = {"Content-Type": "application/json", "Retry-After": "60", ...extra};
   if (rpc.method === "tools/call" && rpc.id !== null) {
     return new Response(JSON.stringify({jsonrpc: "2.0", id: rpc.id, result: {content: [{type: "text", text: message}], isError: true}}), {status: 200, headers});
   }
@@ -604,20 +608,35 @@ function rpcOf(text: string | null): {id: unknown; method: string} {
 /** The answer for a request over its address's per-minute limit. */
 export async function rateLimited(request: Request, service: string, perMinute: number): Promise<Response> {
   const key = request.headers.get("CF-Connecting-IP") || "unknown";
+  // ChatGPT users are counted one by one; other addresses are one connection;
+  // an AI platform's address carries many people, so it just reads as busy.
   const message = USER_LIMITED.has(request)
-    ? `You've reached the hosted ${service} limit of ${perMinute} calls a minute per person. Wait a minute and try again, or ${LOCAL_INSTALL}`
+    ? `You've reached the hosted ${service} limit of ${perMinute} calls per minute per person. ${WAIT} ${LOCAL_INSTALL}`
     : await isAiPlatformLive(key)
-    ? `The hosted ${service} server is at capacity right now. Wait a minute and try again, or ${LOCAL_INSTALL}`
-    : `You've reached the hosted ${service} limit of ${perMinute} calls a minute. Wait a minute and try again, or ${LOCAL_INSTALL}`;
+    ? busyMessage(service)
+    : `You've reached the hosted ${service} limit of ${perMinute} calls per minute from your connection. ${WAIT} ${LOCAL_INSTALL}`;
   // Only small bodies are read; the normal body limit is enforced after this check.
   const small = Number(request.headers.get("Content-Length") || "0") <= 65536;
-  return explain(rpcOf(small ? await request.clone().text().catch(() => null) : null), message, 429);
+  return explain(rpcOf(small ? await request.clone().text().catch(() => null) : null), message, 429, {[TURNED_AWAY_HEADER]: "1"});
 }
 
-/** A backend's "busy" (429) or queue deadline (504) answer, reworded so the AI can relay it. */
+const busyMessage = (service: string) => `The hosted ${service} server is busy right now. ${WAIT} ${LOCAL_INSTALL}`;
+
+/** The readable answer when the hosted server itself is down, after its retry. */
+export function explainUnavailable(body: ArrayBuffer | null, service: string): Response {
+  const text = body ? new TextDecoder().decode(body) : null;
+  return explain(rpcOf(text), `The hosted ${service} server is temporarily unavailable. ${WAIT} ${LOCAL_INSTALL}`, 503);
+}
+
+/** A backend's "busy" (429), queue deadline (504) or container failure (plain-text
+ * 500/503 after its retry), reworded so the AI can relay it. */
 export function explainCapacity(response: Response, body: ArrayBuffer | null, service: string): Response {
+  if (isContainerFailure(response)) {
+    response.body?.cancel();
+    return explainUnavailable(body, service);
+  }
   if (response.status !== 429 && response.status !== 504) return response;
   response.body?.cancel();
   const text = body ? new TextDecoder().decode(body) : null;
-  return explain(rpcOf(text), `The hosted ${service} server is at capacity right now. Wait a minute and try again, or ${LOCAL_INSTALL}`, response.status);
+  return explain(rpcOf(text), busyMessage(service), response.status);
 }

@@ -540,6 +540,11 @@ def test_get_facet_counts_empty_agencies_rejected():
 
 # --- Response shape guard ---
 
+UNREADABLE = (
+    "The government's Federal Register API isn't responding right now (sent an "
+    "unreadable response). This is on the government's side; try again in a few minutes."
+)
+
 def test_ensure_json_container_rejects_none():
     class FakeResp:
         status_code = 200
@@ -556,7 +561,7 @@ def test_ensure_json_container_rejects_none():
     try:
         asyncio.run(srv.search_documents(term="test"))
     except RuntimeError as e:
-        assert "empty body" in str(e).lower()
+        assert str(e) == UNREADABLE and isinstance(e, srv.GovernmentApiError)
         return
     raise AssertionError("expected RuntimeError")
 
@@ -577,7 +582,7 @@ def test_ensure_json_container_rejects_int():
     try:
         asyncio.run(srv.search_documents(term="test"))
     except RuntimeError as e:
-        assert "unexpected int" in str(e).lower()
+        assert str(e) == UNREADABLE and isinstance(e, srv.GovernmentApiError)
         return
     raise AssertionError("expected RuntimeError")
 
@@ -616,7 +621,7 @@ def test_ensure_json_container_rejects_string():
     try:
         asyncio.run(srv.search_documents(term="test"))
     except RuntimeError as e:
-        assert "unexpected str" in str(e).lower()
+        assert str(e) == UNREADABLE and isinstance(e, srv.GovernmentApiError)
         return
     raise AssertionError("expected RuntimeError")
 

@@ -267,6 +267,17 @@ def status_sql(status):
             "ON CONFLICT(key) DO UPDATE SET value=excluded.value;" for k, v in status.items()]
 
 
+# Set before the first data write and cleared with the final status write, so
+# the Worker can say "refreshing" (and skip its answer cache) while rows from
+# two files are mixed. The Worker ignores a marker over 30 minutes old, so a
+# crashed load cannot block searches.
+LOADING_KEY = "loading_started_at"
+
+
+def utc_now():
+    return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def chunks(statements):
     chunk, size = [], 0
     for statement in statements:
@@ -355,13 +366,14 @@ def main(argv=None):
     for row in rows.values():
         if row["is_latest"]:
             types[row["notice_type"] or "Unknown"] = types.get(row["notice_type"] or "Unknown", 0) + 1
-    status = {"source_sha256": source_sha, "file_date": file_date, "loaded_at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    status = {"source_sha256": source_sha, "file_date": file_date, "loaded_at": utc_now(),
               "source_url": SOURCE_URL, "notices": len(rows),
               "latest_versions": sum(r["is_latest"] for r in rows.values()), "skipped_past_archive_date": skipped,
               "by_notice_type": dict(sorted(types.items(), key=lambda kv: -kv[1])), **counts}
+    db.execute_file(status_sql({LOADING_KEY: utc_now()}))
     for chunk in chunks(statements):
         db.execute_file(chunk)
-    db.execute_file(status_sql(status))
+    db.execute_file(status_sql(status) + [f"DELETE FROM load_status WHERE key = {quote(LOADING_KEY)};"])
     print(json.dumps(status, indent=2))
 
 

@@ -101,7 +101,12 @@ def test_hosted_error_messages_do_not_ask_users_for_keys(monkeypatch, status, bo
     assert "REGULATIONS_GOV_API_KEY" not in msg and "Register" not in msg and "DEMO_KEY" not in msg
     _mode(monkeypatch, key="local-key", hosted=None)
     local = srv._format_error(status, body, "local-key")
-    assert "REGULATIONS_GOV_API_KEY" in local and "DEMO_KEY" not in local
+    assert "DEMO_KEY" not in local
+    if status == 429:
+        assert "Your Regulations.gov API key allows 1,000 calls per hour by default." in local
+        assert "Your Regulations.gov API key" not in msg
+    else:
+        assert "REGULATIONS_GOV_API_KEY" in local
 
 
 def test_waf_403_is_not_reported_as_key_problem(monkeypatch):

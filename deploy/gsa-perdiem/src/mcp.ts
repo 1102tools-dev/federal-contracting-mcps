@@ -1,4 +1,4 @@
-import {MAX_BODY_BYTES, readBounded, tooLarge, withinLimit} from "../../shared/edge.ts";
+import {MAX_BODY_BYTES, explainCapacity, rateLimited, readBounded, tooLarge, withinLimit} from "../../shared/edge.ts";
 import {publicDocs} from "./public-docs.ts";
 import {Snapshot, type Database} from "./data.ts";
 import {dumps, loads} from "./py.ts";
@@ -12,7 +12,7 @@ import {DeadlineExceeded, PACKAGE_VERSION, Upstream, type CacheLike} from "./ups
 /** The gsa-perdiem-mcp package version this Worker answers as. */
 export const SERVER_VERSION = PACKAGE_VERSION;
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
-// The container's admission deadline; work still running then gets its 504.
+// The container's admission deadline; work still running then gets the busy answer.
 export const REQUEST_DEADLINE_MS = 55_000;
 // scripts/verify_hosted_release.py checks /health for the container's
 // admission limits; a Worker has no queue, so the values are fixed.
@@ -135,9 +135,7 @@ export async function serve(request: Request, env: WorkerEnv, runtime: Runtime =
   }
   const origin = request.headers.get("Origin");
   if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-  if (!await withinLimit(request, env)) {
-    return new Response("Request limit reached; retry later.", {status: 429, headers: {"Retry-After": "60"}});
-  }
+  if (!await withinLimit(request, env)) return rateLimited(request, "GSA Per Diem", 120);
   if (url.pathname === "/health") {
     if (request.method !== "GET") return new Response(null, {status: 405});
     // As the container reported it: "development" when no release is recorded.
@@ -167,7 +165,8 @@ export async function serve(request: Request, env: WorkerEnv, runtime: Runtime =
     response = await handleMessage(withExactArguments(body, message as Message), env, runtime);
   } catch (error) {
     if (!(error instanceof DeadlineExceeded)) throw error;
-    return json({error: error.message}, 504);
+    // The busy answer: a readable tool error for a tools/call, else a JSON-RPC error (504).
+    return explainCapacity(new Response(null, {status: 504}), raw, "GSA Per Diem");
   }
   // dumps keeps Python's float text and dict key order in structuredContent.
   return response ? new Response(dumps(response, null), {headers: {"Content-Type": "application/json"}}) : new Response(null, {status: 202});

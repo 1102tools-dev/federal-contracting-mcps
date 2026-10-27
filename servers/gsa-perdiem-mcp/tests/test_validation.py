@@ -689,29 +689,58 @@ def _install_fake_client(resp_or_exc):
     srv._client = FC()
 
 
+_UNREADABLE = (
+    "The government's GSA Per Diem API isn't responding right now (sent an "
+    "unreadable response). This is on the government's side; try again in a "
+    "few minutes."
+)
+
+
 def test_get_handles_html_200(offline_key):
     _install_fake_client(_FakeResp(200, "<html>maint</html>", "text/html"))
-    with pytest.raises(ToolError, match="non-JSON"):
+    with pytest.raises(ToolError) as exc:
         asyncio.run(srv._get("x"))
+    assert str(exc.value) == _UNREADABLE
+    assert "maint" not in str(exc.value)
 
 
 def test_get_handles_empty_200(offline_key):
     _install_fake_client(_FakeResp(200, "", "application/json"))
-    with pytest.raises(ToolError, match="non-JSON"):
+    with pytest.raises(ToolError) as exc:
         asyncio.run(srv._get("x"))
+    assert str(exc.value) == _UNREADABLE
 
 
 def test_get_handles_truncated_json(offline_key):
     _install_fake_client(_FakeResp(200, "{\"rates\":[{", "application/json"))
-    with pytest.raises(ToolError, match="non-JSON"):
+    with pytest.raises(ToolError) as exc:
         asyncio.run(srv._get("x"))
+    assert str(exc.value) == _UNREADABLE
+    assert "rates" not in str(exc.value)
 
 
 def test_get_handles_timeout(offline_key):
     import httpx
-    _install_fake_client(httpx.TimeoutException("timed out"))
-    with pytest.raises(ToolError, match="Network error"):
+    _install_fake_client(httpx.TimeoutException("read timed out on socket 42"))
+    with pytest.raises(ToolError) as exc:
         asyncio.run(srv._get("x"))
+    assert str(exc.value) == (
+        "The government's GSA Per Diem API isn't responding right now (timed out). "
+        "This is on the government's side; try again in a few minutes."
+    )
+    assert "socket 42" not in str(exc.value)
+
+
+def test_get_handles_connect_error(offline_key):
+    import httpx
+    _install_fake_client(httpx.ConnectError("[Errno 61] Connection refused"))
+    with pytest.raises(ToolError) as exc:
+        asyncio.run(srv._get("x"))
+    assert str(exc.value) == (
+        "The government's GSA Per Diem API isn't responding right now (could not "
+        "connect). This is on the government's side; try again in a few minutes."
+    )
+    assert "Errno" not in str(exc.value)
 
 
 def test_get_formats_403(offline_key):
@@ -720,25 +749,74 @@ def test_get_formats_403(offline_key):
         asyncio.run(srv._get("x"))
 
 
-def test_get_formats_429(offline_key):
-    _install_fake_client(_FakeResp(429, '{"error":{}}', "application/json"))
-    with pytest.raises(ToolError, match="rate limit|hourly limit"):
+def test_get_formats_429_local(offline_key):
+    _install_fake_client(_FakeResp(429, '{"error":{"code":"OVER_RATE_LIMIT"}}', "application/json"))
+    with pytest.raises(ToolError) as exc:
         asyncio.run(srv._get("x"))
+    assert str(exc.value) == (
+        "The government's GSA Per Diem API is limiting requests right now. A "
+        "PERDIEM_API_KEY allows 1,000 calls an hour by default. This is on the "
+        "government's side. Wait a few minutes before trying again."
+    )
+    assert "OVER_RATE_LIMIT" not in str(exc.value)
+
+
+def test_get_formats_429_with_retry_after(offline_key):
+    resp = _FakeResp(429, "{}", "application/json")
+    resp.headers["Retry-After"] = "300"
+    _install_fake_client(resp)
+    with pytest.raises(ToolError) as exc:
+        asyncio.run(srv._get("x"))
+    assert str(exc.value).endswith("This is on the government's side. Try again in about 5 minutes.")
+
+
+def test_get_formats_429_hosted(offline_key, monkeypatch):
+    monkeypatch.setenv("PERDIEM_HOSTED", "1")
+    _install_fake_client(_FakeResp(429, '{"error":{}}', "application/json"))
+    with pytest.raises(ToolError) as exc:
+        asyncio.run(srv._get("x"))
+    assert str(exc.value) == (
+        "The government's GSA Per Diem API is limiting requests right now. This is "
+        "on the government's side. Wait a few minutes before trying again."
+    )
 
 
 def test_get_formats_500(offline_key):
-    _install_fake_client(_FakeResp(500, "internal error", "text/plain"))
-    with pytest.raises(ToolError, match="server error"):
+    _install_fake_client(_FakeResp(500, "internal error detail", "text/plain"))
+    with pytest.raises(ToolError) as exc:
         asyncio.run(srv._get("x"))
+    msg = str(exc.value)
+    assert msg == (
+        "The government's GSA Per Diem API isn't responding right now (error 500). "
+        "This is on the government's side; try again in a few minutes."
+    )
+    assert "internal error detail" not in msg
+    assert "non-ASCII" not in msg
+
+
+def test_get_formats_other_status(offline_key):
+    _install_fake_client(_FakeResp(502, "<html>bad gateway page</html>", "text/html"))
+    with pytest.raises(ToolError) as exc:
+        asyncio.run(srv._get("x"))
+    assert "(error 502)" in str(exc.value)
+    assert "bad gateway page" not in str(exc.value)
+
+
+def test_format_error_404_has_no_body():
+    msg = srv._format_error(404, "secret upstream body")
+    assert msg == (
+        "HTTP 404: Endpoint not found. If you passed a city with '..' or a "
+        "slash, it may have been rejected by the API router."
+    )
 
 
 def test_format_error_handles_bytes():
     msg = srv._format_error(500, b"<html>oops</html>")
-    assert "HTTP 500" in msg
+    assert "(error 500)" in msg and "oops" not in msg
 
 
 def test_format_error_handles_none():
-    assert "HTTP 500" in srv._format_error(500, None)
+    assert "(error 500)" in srv._format_error(500, None)
 
 
 def test_clean_error_body_strips_html():

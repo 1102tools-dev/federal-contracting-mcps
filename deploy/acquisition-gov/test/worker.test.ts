@@ -15,6 +15,7 @@ import {join} from "node:path";
 import {DatabaseSync} from "node:sqlite";
 import {mock, test} from "node:test";
 import {fileURLToPath} from "node:url";
+import {TURNED_AWAY_HEADER} from "../../shared/edge.ts";
 import worker, {callTool, handleMessage} from "../src/worker.ts";
 import {casefold} from "../src/casefold.ts";
 import {dumps} from "../src/pyjson.ts";
@@ -160,18 +161,50 @@ test("no snapshot or a D1 failure is a generic tool error without arguments in l
     const {sqlite, db: empty} = copy();
     sqlite.exec("DELETE FROM meta");
     assert.equal((await call("list_rfo_parts", {agency: "secret-agency"}, empty)).content[0].text,
-      "Error executing tool list_rfo_parts: Acquisition.gov data is temporarily unavailable. Try again shortly.");
-    const broken = {prepare: () => { throw new Error("D1 down"); }, batch: () => { throw new Error("D1 down"); }};
+      "Error executing tool list_rfo_parts: Acquisition.gov data is temporarily unavailable. Try again in a minute.");
+    let attempts = 0;
+    const fail = () => { attempts++; throw new Error("D1 down secret"); };
+    const broken = {prepare: fail, batch: fail};
     const result = await call("get_rfo_part", {part: 9, section: "secret-section"}, broken);
     assert.deepEqual([result.isError, result.structuredContent], [true, undefined]);
-    assert.match(result.content[0].text, /temporarily unavailable/);
+    assert.equal(result.content[0].text, "Error executing tool get_rfo_part: Acquisition.gov data is temporarily unavailable. Try again in a minute.");
+    assert.equal(attempts, 2, "one quiet retry");
   } finally {
     console.log = original;
   }
+  // One line per failed call, with a category and never the error text.
   assert.equal(logged.length, 2);
+  assert.deepEqual(logged.map(line => JSON.parse(line).reason), ["no_data", "Error"]);
   for (const line of logged) {
     assert.equal(JSON.parse(line).event, "tool_failed");
     assert.ok(!line.includes("secret"));
+    assert.ok(!line.includes("D1 down"));
+  }
+});
+
+test("a D1 hiccup is retried once quietly; an empty snapshot is not retried", async () => {
+  const logged: string[] = [];
+  const original = console.log;
+  console.log = (line: string) => logged.push(line);
+  try {
+    let failures = 1;
+    const flaky = {
+      prepare: (sql: string) => db.prepare(sql),
+      batch: (statements: any) => { if (failures-- > 0) throw new Error("D1_ERROR: Network connection lost."); return db.batch(statements); },
+    };
+    const result = await call("list_rfo_parts", {}, flaky);
+    assert.equal(result.isError, false, result.content[0].text);
+    assert.equal(failures, -1, "the first try failed");
+    assert.equal(logged.length, 0);
+    const {sqlite, db: empty} = copy();
+    sqlite.exec("DELETE FROM meta");
+    let batches = 0;
+    const counting = {prepare: (sql: string) => empty.prepare(sql), batch: (statements: any) => { batches++; return empty.batch(statements); }};
+    assert.match((await call("list_rfo_parts", {}, counting)).content[0].text, /temporarily unavailable/);
+    assert.equal(batches, 1, "no retry when there is no snapshot");
+    assert.equal(logged.length, 1);
+  } finally {
+    console.log = original;
   }
 });
 
@@ -188,6 +221,12 @@ test("HTTP edge: health, docs, origin, rate limit, methods, body limits, message
   assert.equal((await worker.fetch(post({jsonrpc: "2.0", method: "notifications/initialized"}), env())).status, 202);
   assert.equal((await worker.fetch(post({}, {Origin: "https://evil.example"}), env())).status, 403);
   assert.equal((await worker.fetch(post({}), env(false))).status, 429);
+  const limited = await worker.fetch(post({jsonrpc: "2.0", id: 3, method: "tools/call", params: {name: "list_rfo_parts", arguments: {}}}), env(false));
+  assert.equal(limited.status, 200);
+  assert.equal(limited.headers.get(TURNED_AWAY_HEADER), "1");
+  const turned = await limited.json() as any;
+  assert.equal(turned.result.isError, true);
+  assert.match(turned.result.content[0].text, /^You've reached the hosted Acquisition\.gov limit of 120 calls per minute from your connection\. /);
   assert.equal((await worker.fetch(new Request(`${url}/mcp`), env())).status, 405);
   assert.equal((await worker.fetch(post("{"), env())).status, 400);
   assert.equal((await worker.fetch(post("x".repeat(70000)), env())).status, 413);

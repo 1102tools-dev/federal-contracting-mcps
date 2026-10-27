@@ -35,8 +35,9 @@ async def test_cached_curl_429_observes_retry_after(monkeypatch):
     monkeypatch.setattr(s,'_prefer_system_curl',True)
     monkeypatch.setattr(s.shutil,'which',lambda n:'/usr/bin/curl')
     monkeypatch.setattr(s,'_curl_once',curl)
-    with pytest.raises(RuntimeError,match="Retry-After='17'"):
+    with pytest.raises(RuntimeError,match="limiting requests right now") as excinfo:
         await s._fetch_bytes(s.RFO_INDEX_URL,allowed_types=('text/html',),max_bytes=1000)
+    assert str(excinfo.value).endswith("Try again in about 1 minute.")
     assert len(calls)==1
 
 @pytest.mark.p1

@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'deploy/sam-gov/**'
+      - 'deploy/shared/**'
       - 'scripts/load_sam_opportunities.py'
       - 'scripts/load_sam_public.py'
       - 'scripts/sam_*_extract.py'
@@ -15,6 +16,7 @@ on:
     branches: [main]
     paths:
       - 'deploy/sam-gov/**'
+      - 'deploy/shared/**'
       - 'scripts/load_sam_opportunities.py'
       - 'scripts/load_sam_public.py'
       - 'scripts/sam_*_extract.py'

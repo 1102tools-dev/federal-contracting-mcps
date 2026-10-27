@@ -76,6 +76,9 @@ def test_auth_and_rate_failures_remain_model_visible_and_redacted(monkeypatch, s
         }))
     message = str(excinfo.value)
     assert secret not in message
-    assert f"{status}" in message
+    if status == 429:
+        assert "is limiting requests right now" in message
+    else:
+        assert f"{status}" in message
     asyncio.run(srv._client.aclose())
     srv._client = None

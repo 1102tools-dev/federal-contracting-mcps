@@ -1467,12 +1467,18 @@ def test_ensure_dict_response_string_raises():
         _ensure_dict_response("text", path="/api/v2/x/")
 
 
-def test_ensure_dict_response_path_in_error():
-    """Error message should include the path for debugging."""
+def test_ensure_dict_response_empty_body_is_a_government_problem():
+    """An empty body is the government's fault: plain message 6, no internals."""
     try:
         _ensure_dict_response(None, path="/api/v2/special/")
     except Exception as e:
-        assert "/api/v2/special/" in str(e) or "special" in str(e).lower()
+        assert str(e) == (
+            "The government's USAspending API isn't responding right now (sent an "
+            "unreadable response). This is on the government's side; try again in a few minutes."
+        )
+        assert "special" not in str(e)
+        return
+    raise AssertionError("expected error")
 
 
 # _clean_error_body

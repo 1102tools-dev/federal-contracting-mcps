@@ -31,9 +31,9 @@ async def test_forbidden_initial_url_never_opens_transport(monkeypatch,url):
 @pytest.mark.parametrize('use_curl',[False,True])
 @pytest.mark.parametrize('status,headers,expect',[
  (200,{'Content-Type':'text/html'},None),
- (404,{'Content-Type':'text/html'},'HTTP 404'),
- (503,{'Content-Type':'text/html'},'HTTP 503'),
- (429,{'Retry-After':'19'},'Retry-After'),
+ (404,{'Content-Type':'text/html'},'HTTP 404 for this page'),
+ (503,{'Content-Type':'text/html'},r'\(error 503\)'),
+ (429,{'Retry-After':'19'},'limiting requests right now'),
  (302,{},'without Location'),
  (200,{'Content-Type':'text/html-extra'},'Content-Type'),
  (200,{'Content-Type':'text/html','Content-Encoding':'gzip'},'compressed'),

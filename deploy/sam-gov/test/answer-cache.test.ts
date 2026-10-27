@@ -20,8 +20,8 @@ function memoryCache() {
 }
 
 function countingDb() {
-  const db = {queries: 0, loadedAt: "2026-10-12T04:16:07Z", prepare: (sql: string) => ({bind: () => ({all: async () => {
-    if (/key = 'loaded_at'/.test(sql)) return {results: [{value: JSON.stringify(db.loadedAt)}]};
+  const db = {queries: 0, loadedAt: "2026-10-12T04:16:07Z", loadingStartedAt: null as string | null, prepare: (sql: string) => ({bind: () => ({all: async () => {
+    if (/key = 'loaded_at'/.test(sql)) return {results: [{loaded_at: JSON.stringify(db.loadedAt), loading_started_at: db.loadingStartedAt && JSON.stringify(db.loadingStartedAt)}]};
     db.queries++;
     if (/load_status/.test(sql) && /SELECT key, value/.test(sql)) return {results: [{key: "file_date", value: JSON.stringify("2026-10-12")}, {key: "loaded_at", value: JSON.stringify("2026-10-12T04:16:07Z")}]};
     return {results: [{file_date_json: JSON.stringify("2026-10-12"), related_json: "[]", related_total: 0, notice_id: null}]};
@@ -99,6 +99,23 @@ test("a new opportunities load retires older answers at once", async () => {
   db.loadedAt = "2026-10-13T04:16:07Z";
   assert.equal(await ask(), "miss");
   assert.equal(await ask(), "hit");
+});
+
+test("answers given while an opportunities load is being written are never cached", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-10-13T04:20:00Z")});
+  const cache = memoryCache(), db = countingDb();
+  const env = {DB: db, ENTITY_DB: db, ANSWER_CACHE: cache, RELEASE_SHA: "r1"} as any;
+  db.loadingStartedAt = "2026-10-13T04:10:00Z";
+  assert.equal(await loadStamp("opportunities", db as any, new Date()), null);
+  const trace: any = {};
+  await handleMessage(call("search_opportunities", {}), env, trace);
+  assert.equal(trace.cache, undefined);
+  assert.equal(cache.store.size, 0);
+  // A marker over 30 minutes old is left from a crashed load and is ignored.
+  db.loadingStartedAt = "2026-10-13T03:40:00Z";
+  assert.equal(await loadStamp("opportunities", db as any, new Date()), JSON.stringify(db.loadedAt));
+  db.loadingStartedAt = null;
+  assert.equal(await loadStamp("opportunities", db as any, new Date()), JSON.stringify(db.loadedAt));
 });
 
 function publicDb() {

@@ -35,7 +35,12 @@ from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__
-from ._pacing import FederalApiPacer
+from ._pacing import (
+    FederalApiPacer,
+    government_limited_message,
+    government_unavailable_message,
+    minutes_text,
+)
 from ._response_cache import HOUR, MINUTE, ResponseCache, cache_key
 from .constants import (
     BASE_URL,
@@ -487,12 +492,26 @@ def _reserve_hourly_upstream() -> None:
     while _upstream_starts and _upstream_starts[0] <= now - 3600:
         _upstream_starts.popleft()
     if len(_upstream_starts) >= HOURLY_UPSTREAM_CAP:
-        retry = int(_upstream_starts[0] + 3600 - now) + 1
+        retry = minutes_text(_upstream_starts[0] + 3600 - now)
+        if _hosted():
+            raise ToolError(
+                f"The hosted Regulations.gov server has used its hourly budget of "
+                f"{HOURLY_UPSTREAM_CAP:,} calls. Try again in {retry}."
+            )
         raise ToolError(
-            f"The hourly Regulations.gov request budget ({HOURLY_UPSTREAM_CAP} upstream "
-            f"calls) is used up. Retry in about {retry} seconds."
+            f"This Regulations.gov install has used its hourly budget of "
+            f"{HOURLY_UPSTREAM_CAP:,} government calls. Try again in {retry}."
         )
     _upstream_starts.append(now)
+
+
+_SERVICE = "Regulations.gov"
+_LOCAL_KEY_LIMIT = "Your Regulations.gov API key allows 1,000 calls per hour by default."
+
+
+def _rate_limit_detail() -> str | None:
+    """Plain fact for a government 429: only a local install has its own key."""
+    return None if _hosted() else _LOCAL_KEY_LIMIT
 
 
 def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
@@ -515,20 +534,12 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
                 "Check the key at https://open.gsa.gov/api/regulationsgov/#getting-started"
             )
         return (
-            f"HTTP 403: Request blocked. Common cause: Regulations.gov's WAF "
-            f"rejects angle brackets and a handful of other patterns. Remove "
-            f"special characters from search terms. API response: {cleaned}"
+            "HTTP 403: Request blocked. Common cause: Regulations.gov's WAF "
+            "rejects angle brackets and a handful of other patterns. Remove "
+            "special characters from search terms."
         )
     if status == 429:
-        if mode.startswith("hosted"):
-            return (
-                "HTTP 429: the Regulations.gov API rate limit for this service was "
-                "reached. Retry in a few minutes."
-            )
-        return (
-            "HTTP 429: the configured REGULATIONS_GOV_API_KEY reached its "
-            "api.data.gov hourly limit (1,000 req/hr by default). Retry later."
-        )
+        return government_limited_message(_SERVICE, None, _rate_limit_detail())
     if status == 400:
         if "page" in low and "size" in low:
             return (
@@ -571,14 +582,9 @@ def _format_error(status: int, body: Any, api_key: str | None = None) -> str:
             f"'FAR-2023-0008-0001' is documentId; 'FAR-2023-0008' is docketId). "
             f"API response: {cleaned}"
         )
-    if status == 503:
-        return (
-            "HTTP 503: Regulations.gov upstream service unavailable. "
-            "This often happens when the request contains characters that "
-            "trigger their firewall (SQL keywords, angle brackets). Remove "
-            "special characters and retry."
-        )
-    return f"HTTP {status}: {cleaned}"
+    if status >= 500:
+        return government_unavailable_message(_SERVICE, f"error {status}")
+    return f"HTTP {status}: The government's {_SERVICE} API rejected this request."
 
 
 async def _get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -605,32 +611,31 @@ async def _fetch(path: str, params: dict[str, Any] | None) -> bytes:
             pacing.observe_response(r)
             pacing.raise_if_rate_limited(
                 r,
-                service="Regulations.gov",
-                guidance=_format_error(r.status_code, r.text, key),
+                service=_SERVICE,
+                guidance=_rate_limit_detail(),
+                error_type=ToolError,
             )
-    except httpx.RequestError as e:
-        safe_error = _redact_sensitive_text(str(e), key)
-        raise ToolError(f"Network error calling Regulations.gov: {safe_error}") from e
+    except httpx.TimeoutException:
+        # No exception text: it can carry the request URL or headers.
+        raise ToolError(government_unavailable_message(_SERVICE, "timed out")) from None
+    except httpx.RequestError:
+        raise ToolError(government_unavailable_message(_SERVICE, "could not connect")) from None
     except RuntimeError as e:
         raise ToolError(_redact_sensitive_text(str(e), key)) from e
     if r.status_code >= 400:
         raise ToolError(_format_error(r.status_code, r.text, key))
     try:
         data = r.json()
-    except (ValueError, _json.JSONDecodeError) as e:
-        preview = _clean_error_body(r.text or "(empty body)", key)[:200]
-        ct = r.headers.get("content-type", "?")
+    except (ValueError, _json.JSONDecodeError):
         raise ToolError(
-            f"Regulations.gov returned a non-JSON response (status {r.status_code}, "
-            f"content-type={ct!r}): {preview}"
-        ) from e
+            government_unavailable_message(_SERVICE, "sent an unreadable response")
+        ) from None
     data = _redact_sensitive_payload(data, key)
     if data is None:
         raise _EmptyBody
     if not isinstance(data, dict):
         raise ToolError(
-            f"Regulations.gov returned unexpected JSON type {type(data).__name__}: "
-            f"{str(data)[:200]}"
+            government_unavailable_message(_SERVICE, "sent an unreadable response")
         )
     # Re-serialized after redaction, so the cache never holds the key.
     return _json.dumps(data).encode("utf-8")

@@ -8,7 +8,6 @@ import hashlib
 import re
 import shutil
 import json
-import math
 import sys
 import tempfile
 from datetime import date, datetime, timezone
@@ -19,13 +18,17 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 import httpx
 from mcp.server import MCPServer
 
-from ._errors import UserInputError
+from ._errors import GovernmentApiError, UserInputError
 from ._html import (
     _source_id, _validated_url, _validate_html_body, _main_content, _text_lines, _validate_heading, _validate_chunk_inputs, _extract_section, _chunk, _part_from_card, _agency_name, _parse_index, _parse_html_document
 )
 from ._pdf import _normalize_date, _labeled_date, _extract_document_fields, _read_pdf
 from . import __version__
-from ._pacing import FederalApiPacer
+from ._pacing import (
+    FederalApiPacer,
+    government_limited_message,
+    government_unavailable_message,
+)
 from .constants import (
     ALLOWED_HOSTS,
     BASE_URL,
@@ -56,8 +59,16 @@ async def _bounded_pacing_sleep(seconds: float) -> None:
     # Preserve the provider's full persisted cooldown, but do not occupy a tool
     # for minutes/days. This bounds waiting, not the provider's retry deadline.
     if seconds > 30:
-        raise RuntimeError(f"Acquisition.gov cooldown remains active for approximately {math.ceil(seconds)} seconds; retry after that interval. No upstream request was sent.")
+        # No upstream request is sent while the government's cooldown is active.
+        raise GovernmentApiError(government_limited_message(_SERVICE, seconds))
     await asyncio.sleep(seconds)
+
+
+_SERVICE = "Acquisition.gov"
+
+
+def _unavailable(reason: str) -> GovernmentApiError:
+    return GovernmentApiError(government_unavailable_message(_SERVICE, reason))
 
 
 _pacer = FederalApiPacer(bucket="www.acquisition.gov", default_interval=3.0, sleep=_bounded_pacing_sleep)
@@ -138,7 +149,9 @@ async def _fetch_bytes(
                             current, max_bytes=max_bytes
                         )
                 pacing.observe_response(response)
-                pacing.raise_if_rate_limited(response, service="Acquisition.gov")
+                pacing.raise_if_rate_limited(
+                    response, service=_SERVICE, error_type=GovernmentApiError
+                )
                 if response.status_code in _REDIRECTS:
                     location = response.headers.get("location")
                     if not location:
@@ -148,9 +161,11 @@ async def _fetch_bytes(
                     current = _validated_url(urljoin(current, location))
                     continue
                 if not 200 <= response.status_code < 300:
-                    body = response_body[:500].decode("utf-8", "replace")
-                    raise RuntimeError(
-                        f"Acquisition.gov returned HTTP {response.status_code}: {body}"
+                    # Never echo the response body.
+                    if response.status_code >= 500:
+                        raise _unavailable(f"error {response.status_code}")
+                    raise GovernmentApiError(
+                        f"Acquisition.gov returned HTTP {response.status_code} for this page."
                     )
                 if response.headers.get("content-encoding", "identity").strip().lower() not in ("", "identity"):
                     raise RuntimeError("Unexpected compressed Acquisition.gov response; identity encoding is required.")
@@ -165,8 +180,10 @@ async def _fetch_bytes(
                         f"Acquisition.gov content exceeds the {max_bytes}-byte limit."
                     )
                 return response_body, content_type, current
+        except httpx.TimeoutException as exc:
+            raise _unavailable("timed out") from exc
         except httpx.RequestError as exc:
-            raise RuntimeError(f"Network error calling Acquisition.gov: {exc}") from exc
+            raise _unavailable("could not connect") from exc
     raise RuntimeError("Acquisition.gov exceeded the redirect limit.")
 
 
@@ -186,6 +203,10 @@ async def _bounded_httpx_body(
             raise RuntimeError(f"Acquisition.gov content exceeds the {max_bytes}-byte limit.")
         chunks.append(chunk)
     return b"".join(chunks)
+
+
+_CURL_TIMEOUT = 28
+_CURL_FILESIZE_EXCEEDED = 63
 
 
 async def _curl_once(url: str, *, max_bytes: int) -> tuple[httpx.Response, bytes]:
@@ -221,9 +242,14 @@ async def _curl_once(url: str, *, max_bytes: int) -> tuple[httpx.Response, bytes
             try:
                 body, errors, _ = await asyncio.wait_for(asyncio.gather(*tasks), DEFAULT_TIMEOUT + 2)
             except asyncio.TimeoutError as exc:
-                raise RuntimeError("System curl timed out calling Acquisition.gov.") from exc
+                raise _unavailable("timed out") from exc
             if process.returncode:
-                raise RuntimeError(f"System curl could not retrieve Acquisition.gov: exit {process.returncode}; {errors.decode('utf-8', 'replace').strip()[:300]}")
+                # Never pass curl's exit code or stderr to the user.
+                if process.returncode == _CURL_TIMEOUT:
+                    raise _unavailable("timed out")
+                if process.returncode == _CURL_FILESIZE_EXCEEDED:
+                    raise RuntimeError(f"Acquisition.gov content exceeds the {max_bytes}-byte limit.")
+                raise _unavailable("could not connect")
             metadata = dict(line.split(":", 1) for line in errors.decode("utf-8", "replace").splitlines() if ":" in line)
             if not {"STATUS", "TYPE", "REDIRECT"}.issubset(metadata):
                 raise RuntimeError("System curl returned incomplete response metadata.")

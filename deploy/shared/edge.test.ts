@@ -1,7 +1,7 @@
 // Run: node --test deploy/shared/edge.test.ts
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {clientApp, programName, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys, chatgptUser} from "./edge.ts";
+import {clientApp, programName, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, explainUnavailable, TURNED_AWAY_HEADER, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys, chatgptUser} from "./edge.ts";
 
 // Tests never reach openai.com: the live AI-platform list download fails unless a test mocks it.
 const networkFetch = globalThis.fetch;
@@ -288,9 +288,9 @@ test("limits each ChatGPT user like one address, trusting the ID only from platf
   assert.equal(await withinLimit(call(openai, "user-b"), env), true);
   // The request body is still readable by the handler afterwards.
   assert.equal(JSON.parse(await call(openai, "user-c").text()).params.name, "search_awards");
-  // Over the per-user limit, the message names the limit instead of "at capacity".
+  // Over the per-user limit, the message names the limit instead of "busy".
   const message = await (await rateLimited(third, "USAspending", 20)).json() as {result: {content: {text: string}[]}};
-  assert.match(message.result.content[0].text, /limit of 20 calls a minute per person/);
+  assert.equal(message.result.content[0].text, "You've reached the hosted USAspending limit of 20 calls per minute per person. Wait 60 seconds, then try again. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted");
   // Platform calls without an ID keep the address limit only.
   used.length = 0;
   assert.equal(await withinLimit(call(openai), env), true);
@@ -404,6 +404,12 @@ test("the D1 wrapper logs answered tools/call requests only", async () => {
     assert.equal((await post("tools/call", 200)).status, 200);
     await post("tools/list", 200);
     await post("tools/call", 429);
+    // A per-minute limit answer to a tool call is a readable 200, marked so it isn't logged.
+    const limited = await withToolCallLog("sam-gov", async (request: Request) => rateLimited(request, "SAM.gov", 120))(new Request("https://sam.1102tools.com/mcp", {
+      method: "POST", headers: {"CF-Connecting-IP": "8.8.8.8"},
+      body: JSON.stringify({jsonrpc: "2.0", id: 2, method: "tools/call", params: {name: "search_opportunities"}}),
+    }), {});
+    assert.equal(limited.status, 200);
   } finally {
     console.log = original;
   }
@@ -421,12 +427,13 @@ test("an address over its limit gets a message the AI can relay", async () => {
   const result = await tool.json() as any;
   assert.equal(result.id, 7);
   assert.equal(result.result.isError, true);
-  assert.match(result.result.content[0].text, /limit of 20 calls a minute.*install it locally in the Claude or ChatGPT desktop app.*#local-or-hosted/);
+  assert.equal(result.result.content[0].text, "You've reached the hosted USAspending limit of 20 calls per minute from your connection. Wait 60 seconds, then try again. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted");
+  assert.equal(tool.headers.get(TURNED_AWAY_HEADER), "1");
   const other = await rateLimited(call("8.8.8.8", {jsonrpc: "2.0", id: 1, method: "tools/list"}), "eCFR", 20);
   assert.equal(other.status, 429);
-  assert.match((await other.json() as any).error.message, /eCFR limit of 20 calls a minute/);
+  assert.match((await other.json() as any).error.message, /eCFR limit of 20 calls per minute from your connection\. Wait 60 seconds/);
   const ai = await rateLimited(call("160.79.106.12", {jsonrpc: "2.0", id: 2, method: "tools/call"}), "GSA CALC+", 10);
-  assert.match((await ai.json() as any).result.content[0].text, /USAspending|GSA CALC\+ server is at capacity right now.*Claude or ChatGPT desktop app/);
+  assert.equal((await ai.json() as any).result.content[0].text, "The hosted GSA CALC+ server is busy right now. Wait 60 seconds, then try again. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted");
   const garbled = await rateLimited(new Request("https://x.1102tools.com/mcp", {method: "POST", body: "not json"}), "eCFR", 20);
   assert.equal(garbled.status, 429);
 });
@@ -438,10 +445,19 @@ test("a busy or timed-out backend answer is reworded for the AI", async () => {
   const result = await busy.json() as any;
   assert.equal(result.id, 3);
   assert.equal(result.result.isError, true);
-  assert.match(result.result.content[0].text, /hosted eCFR server is at capacity.*Claude or ChatGPT desktop app.*#local-or-hosted/);
+  assert.match(result.result.content[0].text, /^The hosted eCFR server is busy right now\. Wait 60 seconds, then try again\. .*#local-or-hosted$/);
   const late = explainCapacity(Response.json({error: "deadline"}, {status: 504}), null, "eCFR");
   assert.equal(late.status, 504);
-  assert.match((await late.json() as any).error.message, /at capacity/);
+  assert.match((await late.json() as any).error.message, /busy right now/);
+  // Container library text that survived its retry becomes a readable answer.
+  const down = explainCapacity(new Response("There is no Container instance available", {status: 503}), body, "eCFR");
+  assert.equal(down.status, 200);
+  const downText = (await down.json() as any).result.content[0].text;
+  assert.match(downText, /^The hosted eCFR server is temporarily unavailable\. Wait 60 seconds, then try again\./);
+  assert.ok(!downText.includes("Container"));
+  const thrown = explainUnavailable(null, "eCFR");
+  assert.equal(thrown.status, 503);
+  assert.match((await thrown.json() as any).error.message, /temporarily unavailable/);
   const fine = Response.json({ok: true});
   assert.equal(explainCapacity(fine, body, "eCFR"), fine);
 });

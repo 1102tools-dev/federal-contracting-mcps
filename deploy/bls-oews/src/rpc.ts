@@ -2,7 +2,7 @@
 // small JSON-RPC helpers.
 import SERVER from "../../../servers/bls-oews-mcp/server.json" with {type: "json"};
 import {dumps, type Py} from "./pyjson.ts";
-import {HANDLERS, ToolError, type Database} from "./tools.ts";
+import {DataMissing, HANDLERS, ToolError, type Database} from "./tools.ts";
 
 // The package version (server.json is kept equal to pyproject.toml by
 // scripts/validate_versions.py), reported as serverInfo.version.
@@ -30,14 +30,29 @@ const textResult = (text: string, isError: boolean) => ({content: [{text, type: 
 export async function callTool(name: string, args: Record<string, unknown>, env: Env): Promise<{[key: string]: Py}> {
   const handler = Object.hasOwn(HANDLERS, name) ? HANDLERS[name] : undefined;
   if (!handler) return textResult(`Unknown tool: ${name}`, true);
-  try {
-    const data = await handler(env.DB, args);
-    return {content: [{text: dumps(data, 2), type: "text"}], isError: false, structuredContent: data};
-  } catch (error) {
-    if (error instanceof ToolError) return textResult(`Error executing tool ${name}: ${error.message}`, true);
-    console.log(JSON.stringify({event: "tool_failed", tool: name, reason: error instanceof Error ? error.message.slice(0, 200) : "unknown"}));
-    return textResult(`Error executing tool ${name}: BLS OEWS data is temporarily unavailable. Try again shortly.`, true);
+  // An unexpected failure (a D1 hiccup) gets one quiet retry; missing data and
+  // deliberate tool errors don't, since the same read gives the same answer.
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const data = await handler(env.DB, args);
+      return {content: [{text: dumps(data, 2), type: "text"}], isError: false, structuredContent: data};
+    } catch (error) {
+      if (error instanceof ToolError) return textResult(`Error executing tool ${name}: ${error.message}`, true);
+      if (attempt < 2 && !(error instanceof DataMissing)) continue;
+      // A category only: error text can carry arguments or SQL.
+      console.log(JSON.stringify({event: "tool_failed", tool: name, reason: failureReason(error)}));
+      return textResult(`Error executing tool ${name}: BLS OEWS data is temporarily unavailable. Try again in a minute.`, true);
+    }
   }
+}
+
+/** A loggable category for an unexpected tool failure. */
+function failureReason(error: unknown): string {
+  if (error instanceof DataMissing) return "no_data";
+  if (!(error instanceof Error)) return "unknown";
+  if (/timed? ?out|timeout/i.test(error.message)) return "d1_timeout";
+  if (/D1_/.test(error.message)) return "d1";
+  return error.name.slice(0, 40) || "Error";
 }
 
 /** Accept header media ranges, as the SDK's check_accept_headers reads them. */

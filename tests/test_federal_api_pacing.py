@@ -16,7 +16,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "shared"))
 
 import federal_api_pacing as pacing_module  # noqa: E402
-from federal_api_pacing import FederalApiPacer, RequestSlot  # noqa: E402
+from federal_api_pacing import (  # noqa: E402
+    FederalApiPacer,
+    RequestSlot,
+    government_limited_message,
+    government_unavailable_message,
+    minutes_text,
+)
 
 
 class FakeClock:
@@ -100,8 +106,30 @@ def test_retry_after_numeric_http_date_and_absent() -> None:
     slot = RequestSlot(now=lambda: 1_000.0)
     absent = httpx.Response(429)
     slot.observe_response(absent)
-    with pytest.raises(RuntimeError, match="No undocumented lockout duration"):
-        slot.raise_if_rate_limited(absent, service="Test API")
+    with pytest.raises(RuntimeError, match="Wait a few minutes before trying again") as absent_error:
+        slot.raise_if_rate_limited(absent, service="Test")
+    assert str(absent_error.value) == (
+        "The government's Test API is limiting requests right now. "
+        "This is on the government's side. Wait a few minutes before trying again."
+    )
+
+    slot = RequestSlot(now=lambda: 1_000.0)
+    slot.observe_response(numeric)
+    with pytest.raises(ValueError, match="Try again in about 1 minute") as timed:
+        slot.raise_if_rate_limited(numeric, service="Test", guidance="Key limit: 1,000 an hour.", error_type=ValueError)
+    assert "Key limit: 1,000 an hour." in str(timed.value)
+    assert "remaining" not in str(timed.value) and "Retry-After" not in str(timed.value)
+
+
+def test_user_facing_wording() -> None:
+    assert minutes_text(0) == "about 1 minute"
+    assert minutes_text(61) == "about 2 minutes"
+    assert minutes_text(734) == "about 13 minutes"
+    assert government_unavailable_message("eCFR", "timed out") == (
+        "The government's eCFR API isn't responding right now (timed out). "
+        "This is on the government's side; try again in a few minutes."
+    )
+    assert government_limited_message("eCFR", 300).endswith("Try again in about 5 minutes.")
 
 
 def test_cross_process_serialization(tmp_path: Path) -> None:

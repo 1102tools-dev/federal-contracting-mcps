@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
 import {mock, test} from "node:test";
+import {TURNED_AWAY_HEADER} from "../../shared/edge.ts";
 import worker, {callTool, handleMessage} from "../src/worker.ts";
 import {dumps, fixed, floatRepr, parseJson, PyFloat, repr, strip} from "../src/pyjson.ts";
 import {TOOLS, validateArgs} from "../src/tools.ts";
@@ -286,18 +287,48 @@ test("missing data or a D1 failure is a generic tool error without arguments in 
   try {
     const empty = database({active: false}).db;
     assert.equal((await call("get_data_status", {}, empty)).content[0].text,
-      "Error executing tool get_data_status: BLS OEWS data is temporarily unavailable. Try again shortly.");
-    const broken = {prepare: () => { throw new Error("D1 down"); }, batch: () => { throw new Error("D1 down"); }};
+      "Error executing tool get_data_status: BLS OEWS data is temporarily unavailable. Try again in a minute.");
+    let attempts = 0;
+    const fail = () => { attempts++; throw new Error("D1 down 151252"); };
+    const broken = {prepare: fail, batch: fail};
     const result = await call("get_wage_data", {occ_code: "151252"}, broken);
     assert.deepEqual([result.isError, result.structuredContent], [true, undefined]);
-    assert.match(result.content[0].text, /temporarily unavailable/);
+    assert.equal(result.content[0].text, "Error executing tool get_wage_data: BLS OEWS data is temporarily unavailable. Try again in a minute.");
+    assert.equal(attempts, 2, "one quiet retry");
   } finally {
     console.log = original;
   }
+  // One line per failed call, with a category and never the error text.
   assert.equal(logged.length, 2);
+  assert.deepEqual(logged.map(line => JSON.parse(line).reason), ["no_data", "Error"]);
   for (const line of logged) {
     assert.equal(JSON.parse(line).event, "tool_failed");
     assert.ok(!line.includes("151252"));
+    assert.ok(!line.includes("D1 down"));
+  }
+});
+
+test("a D1 hiccup is retried once quietly; a missing release is not retried", async () => {
+  const logged: string[] = [];
+  const original = console.log;
+  console.log = (line: string) => logged.push(line);
+  try {
+    let failures = 1;
+    const flaky = {
+      prepare: (sql: string) => { if (failures-- > 0) throw new Error("D1_ERROR: Network connection lost."); return db.prepare(sql); },
+      batch: (statements: any) => db.batch(statements),
+    };
+    const result = await call("list_common_metros", {}, flaky);
+    assert.equal(result.isError, false, result.content[0].text);
+    assert.equal(logged.length, 0);
+    let reads = 0;
+    const {db: empty} = database({active: false});
+    const counting = {prepare: (sql: string) => { reads++; return empty.prepare(sql); }, batch: (statements: any) => { reads++; return empty.batch(statements); }};
+    assert.match((await call("get_data_status", {}, counting)).content[0].text, /temporarily unavailable/);
+    assert.equal(reads, 1, "no retry when there is no release");
+    assert.equal(logged.length, 1);
+  } finally {
+    console.log = original;
   }
 });
 
@@ -319,6 +350,12 @@ test("HTTP edge: health, docs, origin, rate limit, methods, body limits, message
   assert.equal((await worker.fetch(post({jsonrpc: "2.0", id: 1, method: "ping", params: []}), env())).status, 400);
   assert.equal((await worker.fetch(post({}, {Origin: "https://evil.example"}), env())).status, 403);
   assert.equal((await worker.fetch(post({}), env(false))).status, 429);
+  const limited = await worker.fetch(post({jsonrpc: "2.0", id: 3, method: "tools/call", params: {name: "list_common_metros", arguments: {}}}), env(false));
+  assert.equal(limited.status, 200);
+  assert.equal(limited.headers.get(TURNED_AWAY_HEADER), "1");
+  const turned = await limited.json() as any;
+  assert.equal(turned.result.isError, true);
+  assert.match(turned.result.content[0].text, /^You've reached the hosted BLS OEWS limit of 120 calls per minute from your connection\. /);
   assert.equal((await worker.fetch(new Request("https://bls-oews.1102tools.com/mcp"), env())).status, 405);
   assert.equal((await worker.fetch(post("{"), env())).status, 400);
   assert.equal((await worker.fetch(post([{jsonrpc: "2.0", id: 1, method: "ping"}]), env())).status, 400);

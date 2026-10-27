@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
-import { HourlyBudget, readBoundedBody, BodyTimeoutError } from '../src/hourly-budget.ts';
+import { HourlyBudget, budgetMessage, readBoundedBody, BodyTimeoutError } from '../src/hourly-budget.ts';
 
 function storage(db) {
   return {
@@ -56,4 +56,11 @@ test('provider cooldown survives recreation and cannot be shortened',()=>{
   assert.deepEqual(new HourlyBudget(store).reserve(1_300_000),{allowed:false,remaining:500,retryAfter:1921,reason:'provider'});
   assert.equal(new HourlyBudget(store).reserve(3_221_000).allowed,true);
   db.close();
+});
+
+test('turned-away tool calls read plainly, in minutes',()=>{
+  assert.equal(budgetMessage({reason:'hourly',retryAfter:3300}),'The hosted GSA CALC+ server has used its hourly budget of 500 calls. Try again in about 55 minutes.');
+  assert.equal(budgetMessage({reason:'hourly',retryAfter:1}),'The hosted GSA CALC+ server has used its hourly budget of 500 calls. Try again in about 1 minute.');
+  assert.equal(budgetMessage({reason:'provider',retryAfter:1921}),"The government's GSA CALC+ API is limiting requests right now. This is on the government's side. Try again in about 33 minutes.");
+  assert.equal(budgetMessage({reason:'provider',retryAfter:61}),"The government's GSA CALC+ API is limiting requests right now. This is on the government's side. Try again in about 2 minutes.");
 });

@@ -30,7 +30,11 @@ from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from . import __version__
-from ._pacing import FederalApiPacer
+from ._pacing import (
+    FederalApiPacer,
+    government_limited_message,
+    government_unavailable_message,
+)
 from .constants import (
     ASSISTANCE_SUBAWARDS_PATH,
     BASE_URL,
@@ -518,12 +522,7 @@ def _format_error(
             "proxy is injecting one."
         )
     if status == 429:
-        return (
-            "HTTP 429: SAM.gov rate limited the request. Published daily "
-            "allowances vary by account, while burst and abuse controls are "
-            "not numerically documented. Do not retry automatically. Check "
-            "the key's rate plan and any provider-supplied retry guidance."
-        )
+        return government_limited_message(_SERVICE, None, _RATE_LIMIT_FACT)
     if status == 400:
         # Surface specific 400 patterns
         lower = cleaned.lower()
@@ -538,17 +537,18 @@ def _format_error(
                 f"HTTP 400: Invalid search parameter. "
                 f"Exclusions uses 'size' not 'limit'. "
                 f"Opportunities requires postedFrom and postedTo (MM/DD/YYYY). "
-                f"Dates must be MM/DD/YYYY, not ISO 8601. "
-                f"API response: {cleaned}"
+                f"Dates must be MM/DD/YYYY, not ISO 8601."
             )
         if "date" in lower and ("range" in lower or "format" in lower):
             return (
                 f"HTTP 400: Date parameter error. "
                 f"SAM.gov uses MM/DD/YYYY format (not ISO 8601). "
-                f"Opportunity postedFrom/postedTo range max is 364 days. "
-                f"API response: {cleaned}"
+                f"Opportunity postedFrom/postedTo range max is 364 days."
             )
-        return f"HTTP 400: {cleaned}"
+        return (
+            "HTTP 400: SAM.gov rejected the request parameters. Check the "
+            "search values and try again."
+        )
     if status == 414:
         return (
             "HTTP 414: URI Too Long. The query string exceeds SAM.gov's URL "
@@ -572,8 +572,19 @@ def _format_error(
                 "For free-text PSC searches: SAM's PSC endpoint requires a "
                 "substring that appears in an active PSC name or description."
             )
-        return f"HTTP 404: {cleaned}"
-    return f"HTTP {status}: {cleaned}"
+        return "HTTP 404: SAM.gov did not find a record matching this request."
+    if status >= 500:
+        return government_unavailable_message(_SERVICE, f"error {status}")
+    return f"HTTP {status}: SAM.gov rejected this request."
+
+
+_SERVICE = "SAM.gov"
+_RATE_LIMIT_FACT = "Each SAM.gov API key also has a daily request allowance."
+
+
+_UNREADABLE = government_unavailable_message(
+    _SERVICE, "sent an unreadable response"
+)
 
 
 async def _get(
@@ -598,52 +609,49 @@ async def _get(
             pacing.observe_response(r)
             pacing.raise_if_rate_limited(
                 r,
-                service="SAM.gov",
-                guidance=_format_error(r.status_code, r.text, api_key),
+                service=_SERVICE,
+                guidance=_RATE_LIMIT_FACT,
+                error_type=ToolError,
             )
         r.raise_for_status()
         # Most endpoints return JSON; opportunity description endpoint returns
         # a JSON object with a "description" HTML field.
         content_type = r.headers.get("content-type", "")
         if "json" in content_type:
-            data = _redact_sensitive_payload(r.json(), api_key)
+            try:
+                parsed = r.json()
+            except ValueError as e:
+                raise ToolError(_UNREADABLE) from e
+            data = _redact_sensitive_payload(parsed, api_key)
             # Contract Awards can 200 with a BARE JSON STRING error message
             # (e.g. '"Max value allowed for parameter \"limit\" is 100"').
             # Surfacing it as an error beats normalizing it into a silent
             # zero-result response.
             if not isinstance(data, dict):
-                raise ToolError(
-                    f"SAM.gov returned a non-object JSON response: {str(data)[:500]}"
-                )
+                raise ToolError(_UNREADABLE)
             return data
         # Contract Awards returns plain text for certain errors even on 200
         # (e.g. "Max value allowed for parameter \"limit\" is 100").
         # Also returns HTML for auth errors (e.g. <h1>API_KEY_INVALID</h1>).
         body = _redact_sensitive_text(r.text.strip(), api_key)
         if body and not body.startswith("{"):
-            raise ToolError(f"SAM.gov returned non-JSON response: {body[:500]}")
+            if "api_key_invalid" in body.lower():
+                raise ToolError(_format_error(403, "", api_key))
+            raise ToolError(_UNREADABLE)
         # Sometimes SAM.gov returns text/html for errors even on 200
         return {"raw_response": _redact_sensitive_text(r.text, api_key)}
     except httpx.HTTPStatusError as e:
         raise ToolError(
             _format_error(e.response.status_code, e.response.text, api_key)
         ) from e
+    # A timeout, reset, or dropped connection is an outage, not the user's
+    # input. Never echo the exception text (it can carry the request URL).
+    except httpx.TimeoutException as e:
+        raise ToolError(government_unavailable_message(_SERVICE, "timed out")) from e
     except httpx.RequestError as e:
-        safe_error = _redact_sensitive_text(str(e), api_key)
-        err_str = safe_error.lower()
-        # SAM's WAF drops the connection silently for bad chars; sometimes httpx
-        # surfaces this as an empty error string, other times as reset/closed/eof.
-        waf_signals = ["reset", "closed", "connection", "timeout", "eof"]
-        if not err_str or any(x in err_str for x in waf_signals):
-            raise ToolError(
-                f"SAM.gov dropped the connection. This often happens when the "
-                f"request URL contains characters that trigger their web application "
-                f"firewall (single quotes, angle brackets, SQL keywords, path "
-                f"traversal sequences like '../'). Remove special characters "
-                f"from your search parameters and try again. "
-                f"Original error: {safe_error or type(e).__name__}"
-            ) from e
-        raise ToolError(f"Network error calling SAM.gov: {safe_error}") from e
+        raise ToolError(
+            government_unavailable_message(_SERVICE, "could not connect")
+        ) from e
     except RuntimeError as e:
         # FederalApiPacer uses RuntimeError for anticipated local pacing failures.
         raise ToolError(_redact_sensitive_text(str(e), api_key)) from e

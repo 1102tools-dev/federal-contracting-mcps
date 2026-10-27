@@ -7,7 +7,7 @@ from . import __version__
 BASE_URL = "https://www.ecfr.gov"
 DEFAULT_TIMEOUT_JSON = 15.0
 DEFAULT_TIMEOUT_STRUCTURE = 30.0
-DEFAULT_TIMEOUT_CONTENT = 60.0
+DEFAULT_TIMEOUT_CONTENT = 40.0  # under the hosted 55 s deadline
 
 USER_AGENT = f"ecfr-mcp/{__version__}"
 

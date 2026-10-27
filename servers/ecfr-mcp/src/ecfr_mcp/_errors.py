@@ -18,3 +18,11 @@ class SourceNotFoundError(RuntimeError, ToolError):
     ToolError keeps the not-found explanation visible in newer MCP clients.
     Unexpected provider and internal failures retain their ordinary exceptions.
     """
+
+
+class GovernmentApiError(RuntimeError, ToolError):
+    """eCFR itself is down, slow, limiting or garbled: the government's side.
+
+    RuntimeError compatibility keeps existing fallbacks working; ToolError keeps
+    the plain outage message visible in newer MCP clients.
+    """

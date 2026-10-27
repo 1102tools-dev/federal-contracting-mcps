@@ -561,7 +561,8 @@ def test_query_bls_handles_non_json_200():
             asyncio.run(S._get("keyword=test"))
             raise AssertionError("expected RuntimeError")
         except RuntimeError as e:
-            assert "non-JSON" in str(e)
+            assert str(e) == "The government's GSA CALC+ API isn't responding right now (sent an unreadable response). This is on the government's side; try again in a few minutes."
+            assert "<html>" not in str(e) and "incomplete" not in str(e)
     finally:
         S._get_client = orig
 
@@ -581,7 +582,8 @@ def test_query_handles_empty_body():
             asyncio.run(S._get("keyword=test"))
             raise AssertionError("expected RuntimeError")
         except RuntimeError as e:
-            assert "non-JSON" in str(e)
+            assert str(e) == "The government's GSA CALC+ API isn't responding right now (sent an unreadable response). This is on the government's side; try again in a few minutes."
+            assert "<html>" not in str(e) and "incomplete" not in str(e)
     finally:
         S._get_client = orig
 
@@ -601,7 +603,8 @@ def test_query_handles_malformed_json():
             asyncio.run(S._get("keyword=test"))
             raise AssertionError("expected RuntimeError")
         except RuntimeError as e:
-            assert "non-JSON" in str(e)
+            assert str(e) == "The government's GSA CALC+ API isn't responding right now (sent an unreadable response). This is on the government's side; try again in a few minutes."
+            assert "<html>" not in str(e) and "incomplete" not in str(e)
     finally:
         S._get_client = orig
 
