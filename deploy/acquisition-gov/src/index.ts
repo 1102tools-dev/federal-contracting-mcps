@@ -1,5 +1,6 @@
 import {Container} from "@cloudflare/containers";
 import {withToolCallLog} from "../../shared/edge.ts";
+export {RateCounter} from "../../shared/rate-counter.ts";
 import worker, {type Env} from "./worker.ts";
 
 // Every request is answered by the Worker from D1 (src/worker.ts).

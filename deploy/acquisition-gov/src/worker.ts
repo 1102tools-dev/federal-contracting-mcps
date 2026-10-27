@@ -95,7 +95,7 @@ export default {
     }
     const origin = request.headers.get("Origin");
     if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-    if (!await withinLimit(request, env)) return rateLimited(request, "Acquisition.gov", 120);
+    if (!await withinLimit(request, env, 120)) return rateLimited(request, "Acquisition.gov", 120);
     if (url.pathname === "/health") {
       if (request.method !== "GET") return new Response(null, {status: 405});
       // RELEASE_SHA is a Worker var set at deploy; "development" is the container's default.

@@ -12,6 +12,8 @@ export interface Env {
   DB: Database;
   REQUEST_LIMITER: {limit(options: {key: string}): Promise<{success: boolean}>};
   AI_LIMITER?: {limit(options: {key: string}): Promise<{success: boolean}>};
+  // Exact per-minute tool-call tallies (deploy/shared/rate-counter.ts).
+  RATE_COUNTER?: {idFromName(name: string): unknown; get(id: unknown): {fetch(input: string, init?: RequestInit): Promise<Response>}};
   RELEASE_SHA?: string;
 }
 

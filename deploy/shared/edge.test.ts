@@ -1,7 +1,8 @@
 // Run: node --test deploy/shared/edge.test.ts
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {clientApp, programName, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, explainUnavailable, TURNED_AWAY_HEADER, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys, chatgptUser} from "./edge.ts";
+import {MinuteCounter, RateCounter} from "./rate-counter.ts";
+import {clientApp, programName, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, explainUnavailable, TURNED_AWAY_HEADER, type CounterNamespace, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys, chatgptUser} from "./edge.ts";
 
 // Tests never reach openai.com: the live AI-platform list download fails unless a test mocks it.
 const networkFetch = globalThis.fetch;
@@ -484,4 +485,66 @@ test("OpenAI's live connector list extends the built-in ranges, and failures kee
     globalThis.fetch = realFetch;
     resetLiveRanges();
   }
+});
+
+test("tool calls are also counted exactly, per user, per platform address, or per address", async () => {
+  const counter = new MinuteCounter();
+  const keys: string[] = [];
+  const ns: CounterNamespace = {
+    idFromName: (name: string) => name,
+    get: () => ({fetch: async (_url: string, init?: RequestInit) => {
+      const {key, limit} = JSON.parse(String(init?.body));
+      keys.push(key);
+      return new Response(null, {status: counter.hit(key, limit, 60_000 * 5 + 1) ? 204 : 429});
+    }}),
+  };
+  const open = {limit: async () => ({success: true})};
+  const env = {REQUEST_LIMITER: open, AI_LIMITER: open, RATE_COUNTER: ns};
+  const request = (ip: string, method = "tools/call", subject?: string) => new Request("https://x.1102tools.com/mcp", {method: "POST",
+    headers: {"CF-Connecting-IP": ip, "Content-Type": "application/json"},
+    body: JSON.stringify({jsonrpc: "2.0", id: 1, method, params: {name: "x", arguments: {}, ...(subject ? {_meta: {"openai/subject": subject}} : {})}})});
+  // A plain address gets exactly perMinute tool calls; the next one is turned away.
+  for (let i = 0; i < 20; i++) assert.equal(await withinLimit(request("8.8.8.8"), env, 20), true);
+  const over = request("8.8.8.8");
+  assert.equal(await withinLimit(over, env, 20), false);
+  assert.match((await (await rateLimited(over, "eCFR", 20)).json() as any).result.content[0].text, /20 calls per minute from your connection/);
+  // Other requests aren't counted, and other addresses have their own tally.
+  assert.equal(await withinLimit(request("8.8.8.8", "tools/list"), env, 20), true);
+  assert.equal(await withinLimit(request("8.8.4.4"), env, 20), true);
+  // ChatGPT users are counted one by one, and the message says per person.
+  for (let i = 0; i < 20; i++) assert.equal(await withinLimit(request("4.14.111.5", "tools/call", "user-a"), env, 20), true);
+  const person = request("4.14.111.5", "tools/call", "user-a");
+  assert.equal(await withinLimit(person, env, 20), false);
+  assert.match((await (await rateLimited(person, "eCFR", 20)).json() as any).result.content[0].text, /per person/);
+  assert.equal(await withinLimit(request("4.14.111.5", "tools/call", "user-b"), env, 20), true);
+  // A platform address without a user ID gets the platform tally (600), not 20.
+  for (let i = 0; i < 25; i++) assert.equal(await withinLimit(request("160.79.106.12"), env, 20), true);
+  // Keys are hashes: no address or user ID reaches the counter.
+  assert.ok(keys.every(key => /^[0-9a-f]{64}$/.test(key)));
+  // Without perMinute, or when the counter fails, nothing extra is enforced.
+  assert.equal(await withinLimit(request("8.8.8.8"), env), true);
+  const broken = {...env, RATE_COUNTER: {idFromName: () => "x", get: () => ({fetch: async () => { throw new Error("down"); }})}};
+  const original = console.log;
+  console.log = () => {};
+  try {
+    assert.equal(await withinLimit(request("8.8.8.8"), broken, 20), true);
+  } finally {
+    console.log = original;
+  }
+});
+
+test("a minute's tallies reset when the minute ends", () => {
+  const counter = new MinuteCounter();
+  assert.equal(counter.hit("k", 1, 60_000), true);
+  assert.equal(counter.hit("k", 1, 60_001), false);
+  assert.equal(counter.hit("k", 1, 120_000), true);
+});
+
+test("the RateCounter object answers 204 within the limit and 429 over it", async () => {
+  const counter = new RateCounter();
+  const hit = () => counter.fetch(new Request("https://rate-counter/hit", {method: "POST", body: JSON.stringify({key: "k", limit: 2})}));
+  assert.equal((await hit()).status, 204);
+  assert.equal((await hit()).status, 204);
+  assert.equal((await hit()).status, 429);
+  assert.equal((await counter.fetch(new Request("https://rate-counter/hit", {method: "POST", body: "{}"}))).status, 400);
 });
