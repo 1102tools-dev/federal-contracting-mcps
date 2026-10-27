@@ -495,8 +495,9 @@ def _reserve_hourly_upstream() -> None:
         retry = minutes_text(_upstream_starts[0] + 3600 - now)
         if _hosted():
             raise ToolError(
-                f"The hosted Regulations.gov server has used its hourly budget of "
-                f"{HOURLY_UPSTREAM_CAP:,} calls. Try again in {retry}."
+                f"The hosted Regulations.gov server has used its shared hourly budget of "
+                f"{HOURLY_UPSTREAM_CAP:,} calls. Try again in {retry}. "
+                f"For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"
             )
         raise ToolError(
             f"This Regulations.gov install has used its hourly budget of "

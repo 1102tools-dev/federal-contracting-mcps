@@ -108,8 +108,8 @@ def test_waf_403_keeps_hint_without_body(monkeypatch):
 @pytest.mark.parametrize("hosted,expected", [
     (None, "This Regulations.gov install has used its hourly budget of 2 government calls. "
            "Try again in about 60 minutes."),
-    ("1", "The hosted Regulations.gov server has used its hourly budget of 2 calls. "
-          "Try again in about 60 minutes."),
+    ("1", "The hosted Regulations.gov server has used its shared hourly budget of 2 calls. "
+          "Try again in about 60 minutes. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"),
 ])
 def test_hourly_budget_messages(monkeypatch, hosted, expected):
     if hosted:

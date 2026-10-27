@@ -326,7 +326,7 @@ test("the hourly budget is shared through D1", async () => {
   const make = () => new Upstream({db, key: KEY, fetch: gsa({a: {body: {}}, b: {body: {}}, c: {body: {}}}), interval: 0, hourlyCap: 2});
   await make().get("a");
   await make().get("b");
-  await assert.rejects(make().get("c"), {message: "The hosted GSA Per Diem server has used its hourly budget of 2 calls. Try again in about 60 minutes."});
+  await assert.rejects(make().get("c"), {message: "The hosted GSA Per Diem server has used its shared hourly budget of 2 calls. Try again in about 60 minutes. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"});
 });
 
 test("without a loaded release every tool reports the data as temporarily unavailable", async () => {

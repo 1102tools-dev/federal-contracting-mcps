@@ -109,6 +109,25 @@ def test_budget_messages_reach_user_as_tool_error(tmp_path, monkeypatch):
     monkeypatch.setattr(S, "_pacer", p)
     text = _call(lambda r: httpx.Response(200, json={}, request=r))
     assert text == (
-        "This GSA CALC+ server has used its hourly budget of 500 government calls. "
+        "This GSA CALC+ install has used its hourly budget of 500 government calls. "
         "Try again in about 60 minutes."
+    )
+
+
+def test_hosted_budget_message_points_to_local_install(tmp_path, monkeypatch):
+    clock = Clock()
+    p = GsaCalcPacer(pacing_dir=tmp_path, environment={}, clock=clock, sleep=clock.sleep)
+
+    async def fill():
+        for _ in range(500):
+            await p._reserve(0.01)
+
+    asyncio.run(fill())
+    monkeypatch.setattr(S, "_pacer", p)
+    monkeypatch.setenv("CALC_HOSTED", "1")
+    text = _call(lambda r: httpx.Response(200, json={}, request=r))
+    assert text == (
+        "The hosted GSA CALC+ server has used its shared hourly budget of 500 calls. "
+        "Try again in about 60 minutes. "
+        "For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"
     )

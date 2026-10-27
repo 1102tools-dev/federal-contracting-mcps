@@ -464,8 +464,9 @@ def _reserve_hourly_upstream() -> None:
         wait = minutes_text(retry)
         if _hosted():
             raise ToolError(
-                f"The hosted GSA Per Diem server has used its hourly budget of "
-                f"{HOURLY_UPSTREAM_CAP} calls. Try again in {wait}."
+                f"The hosted GSA Per Diem server has used its shared hourly budget of "
+                f"{HOURLY_UPSTREAM_CAP} calls. Try again in {wait}. "
+                f"For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"
             )
         raise ToolError(
             f"This GSA Per Diem install has used its hourly budget of "

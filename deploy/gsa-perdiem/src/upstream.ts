@@ -214,7 +214,7 @@ export class Upstream {
     ).bind(minute).all<{first_at: number}>();
     const oldest = results[0]?.first_at ?? now;
     const retry = Math.max(1, Math.ceil(oldest + 3600 - now));
-    throw new ToolError(`The hosted ${SERVICE} server has used its hourly budget of ${this.hourlyCap} calls. Try again in ${minutesText(retry)}.`);
+    throw new ToolError(`The hosted ${SERVICE} server has used its shared hourly budget of ${this.hourlyCap} calls. Try again in ${minutesText(retry)}. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted`);
   }
 
   /** Claim the next start slot, at least `interval` after the previous one and after any provider cooldown. */

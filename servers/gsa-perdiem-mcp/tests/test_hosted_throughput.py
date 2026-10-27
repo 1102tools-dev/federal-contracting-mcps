@@ -35,8 +35,8 @@ def test_hourly_cap_hosted_wording(monkeypatch):
     with pytest.raises(ToolError) as exc:
         server._reserve_hourly_upstream()
     assert str(exc.value) == (
-        "The hosted GSA Per Diem server has used its hourly budget of 2 calls. "
-        "Try again in about 60 minutes."
+        "The hosted GSA Per Diem server has used its shared hourly budget of 2 calls. "
+        "Try again in about 60 minutes. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"
     )
 
 

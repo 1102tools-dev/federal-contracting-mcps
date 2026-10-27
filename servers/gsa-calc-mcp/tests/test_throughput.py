@@ -28,7 +28,7 @@ async def test_hourly_budget_fails_promptly_and_recovers_across_instances(tmp_pa
     with pytest.raises(RuntimeError) as exc:
         await a._reserve(.01)
     assert str(exc.value)==(
-        'This GSA CALC+ server has used its hourly budget of 500 government calls. '
+        'This GSA CALC+ install has used its hourly budget of 500 government calls. '
         'Try again in about 60 minutes.')
     assert clock()==before
     clock.now=4600
@@ -213,7 +213,7 @@ async def test_exhausted_budget_is_visible_in_mcp_response(tmp_path,monkeypatch)
             result=response.json()['result']
             assert result['isError']
             text=result['content'][0]['text']
-            assert 'This GSA CALC+ server has used its hourly budget of 500 government calls. Try again in about ' in text
+            assert 'This GSA CALC+ install has used its hourly budget of 500 government calls. Try again in about ' in text
             assert text.rstrip().endswith('minutes.')
             assert 'upstream attempts' not in text and 'Retry after' not in text
 

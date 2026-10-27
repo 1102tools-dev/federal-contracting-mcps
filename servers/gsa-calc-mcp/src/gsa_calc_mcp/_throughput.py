@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import math
+import os
 from contextlib import asynccontextmanager
 
 from filelock import FileLock, Timeout as FileLockTimeout
@@ -117,8 +118,14 @@ class GsaCalcPacer(FederalApiPacer):
                     ready = max(ready, starts[-self.MAX_REQUESTS] + self.WINDOW_SECONDS)
                 delay = ready - now
                 if len(starts) >= self.MAX_REQUESTS and delay > 0:
+                    if os.environ.get("CALC_HOSTED") == "1":
+                        raise CalcBudgetUnavailable(
+                            f"The hosted GSA CALC+ server has used its shared hourly budget of "
+                            f"{self.MAX_REQUESTS} calls. Try again in {minutes_text(delay)}. "
+                            f"For no shared limit, install it locally: https://1102tools.com/#local-or-hosted"
+                        )
                     raise CalcBudgetUnavailable(
-                        f"This GSA CALC+ server has used its hourly budget of "
+                        f"This GSA CALC+ install has used its hourly budget of "
                         f"{self.MAX_REQUESTS} government calls. "
                         f"Try again in {minutes_text(delay)}."
                     )

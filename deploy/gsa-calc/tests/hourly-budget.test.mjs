@@ -59,8 +59,8 @@ test('provider cooldown survives recreation and cannot be shortened',()=>{
 });
 
 test('turned-away tool calls read plainly, in minutes',()=>{
-  assert.equal(budgetMessage({reason:'hourly',retryAfter:3300}),'The hosted GSA CALC+ server has used its hourly budget of 500 calls. Try again in about 55 minutes.');
-  assert.equal(budgetMessage({reason:'hourly',retryAfter:1}),'The hosted GSA CALC+ server has used its hourly budget of 500 calls. Try again in about 1 minute.');
+  assert.equal(budgetMessage({reason:'hourly',retryAfter:3300}),'The hosted GSA CALC+ server has used its shared hourly budget of 500 calls. Try again in about 55 minutes. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted');
+  assert.equal(budgetMessage({reason:'hourly',retryAfter:1}),'The hosted GSA CALC+ server has used its shared hourly budget of 500 calls. Try again in about 1 minute. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted');
   assert.equal(budgetMessage({reason:'provider',retryAfter:1921}),"The government's GSA CALC+ API is limiting requests right now. This is on the government's side. Try again in about 33 minutes.");
   assert.equal(budgetMessage({reason:'provider',retryAfter:61}),"The government's GSA CALC+ API is limiting requests right now. This is on the government's side. Try again in about 2 minutes.");
 });

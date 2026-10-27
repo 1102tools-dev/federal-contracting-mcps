@@ -36,7 +36,7 @@ export function budgetMessage(budget: {reason: string; retryAfter: number}): str
   const wait = minutes === 1 ? "about 1 minute" : `about ${minutes} minutes`;
   return budget.reason === "provider"
     ? `The government's GSA CALC+ API is limiting requests right now. This is on the government's side. Try again in ${wait}.`
-    : `The hosted GSA CALC+ server has used its hourly budget of 500 calls. Try again in ${wait}.`;
+    : `The hosted GSA CALC+ server has used its shared hourly budget of 500 calls. Try again in ${wait}. For no shared limit, install it locally: https://1102tools.com/#local-or-hosted`;
 }
 
 export class BodyTimeoutError extends Error {}
