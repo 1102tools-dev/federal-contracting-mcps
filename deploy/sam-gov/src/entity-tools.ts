@@ -109,6 +109,17 @@ export function certificationLapsed(exit: unknown, now: Date): boolean | null {
   if (!Number.isFinite(parsed) || new Date(parsed).toISOString().slice(0, 10) !== date) return null;
   return date < now.toISOString().slice(0, 10);
 }
+// Counting every match of a broad search (a common word, a whole state) took
+// seconds; past this many the total says "more than" and stops counting. Pages
+// are unchanged: each is still read from all matches in the same order.
+export const TOTAL_RECORDS_CAP = 1000;
+const KEY_COLUMNS = "e.legal_business_name AS key_name, e.uei AS key_uei, e.entity_id AS key_id";
+function totals(count: number) {
+  if (count <= TOTAL_RECORDS_CAP) return {totalRecords: count};
+  return {totalRecords: TOTAL_RECORDS_CAP, totalRecordsCapped: true, totalRecordsNote: TOTAL_RECORDS_NOTE};
+}
+export const TOTAL_RECORDS_NOTE = "More than 1,000 registrations match, so the count stops at 1,000. Every match is still searchable: results come in the same order, and later pages continue past 1,000. To narrow it, add a state, a NAICS code or more of the company name.";
+
 export async function searchEntities(db: Database, args: Args, now = new Date(), nameIndexDb?: Database) {
   if (!db || typeof db.prepare !== "function") throw new ToolError("SAM.gov public entity data is unavailable; confirm registration status on SAM.gov.");
   const allowed = Object.keys(ENTITY_TOOL.inputSchema.properties);
@@ -171,9 +182,9 @@ export async function searchEntities(db: Database, args: Args, now = new Date(),
       const legalClause = [...baseWhere, legal.sql, stable].join(" AND ");
       const dbaClause = [...baseWhere, "e.dba_name IS NOT NULL", "e.dba_name <> ''", dba.sql, stable].join(" AND ");
       matching = `name_keys AS MATERIALIZED (
-        SELECT e.rowid AS matched_rowid, CASE WHEN ${compactSQL("e.legal_business_name", name)} = ? THEN 0 ELSE 3 END AS name_rank FROM ${legalSource} WHERE ${legalClause}
-        UNION ALL SELECT e.rowid AS matched_rowid, CASE WHEN ${compactSQL("e.dba_name", name)} = ? THEN 1 ELSE 2 END AS name_rank FROM ${dbaSource} WHERE ${dbaClause}),
-        matched_keys AS MATERIALIZED (SELECT matched_rowid, min(name_rank) AS name_rank FROM name_keys GROUP BY matched_rowid),
+        SELECT e.rowid AS matched_rowid, CASE WHEN ${compactSQL("e.legal_business_name", name)} = ? THEN 0 ELSE 3 END AS name_rank, ${KEY_COLUMNS} FROM ${legalSource} WHERE ${legalClause}
+        UNION ALL SELECT e.rowid AS matched_rowid, CASE WHEN ${compactSQL("e.dba_name", name)} = ? THEN 1 ELSE 2 END AS name_rank, ${KEY_COLUMNS} FROM ${dbaSource} WHERE ${dbaClause}),
+        matched_keys AS MATERIALIZED (SELECT matched_rowid, min(name_rank) AS name_rank, key_name, key_uei, key_id FROM name_keys GROUP BY matched_rowid),
         matches AS NOT MATERIALIZED (SELECT e.*, k.name_rank FROM entities e JOIN matched_keys k ON e.rowid=k.matched_rowid)`;
       queryParams = [normalizedName(name), ...narrowedParams, ...baseParams, ...legal.values, normalizedName(name), ...narrowedParams, ...baseParams, ...dba.values];
     }
@@ -189,9 +200,17 @@ export async function searchEntities(db: Database, args: Args, now = new Date(),
     }
     if (name) order.push("name_rank");
     order.push("legal_business_name COLLATE NOCASE", "uei", "entity_id");
+    // A name search without an SBA sort orders and counts its matches by the keys
+    // the name scan already read, then reads full records for the one page only.
+    // Reading every matching record just to sort or count it took seconds.
+    const byKeys = name && !sba;
+    const selected = byKeys
+      ? `selected AS (SELECT e.*, k.name_rank FROM (SELECT * FROM matched_keys ORDER BY name_rank, key_name COLLATE NOCASE, key_uei, key_id LIMIT ? OFFSET ?) k
+          JOIN entities e ON e.rowid = k.matched_rowid ORDER BY ${order.join(", ")})`
+      : `selected AS (SELECT * FROM matches ORDER BY ${order.join(", ")} LIMIT ? OFFSET ?)`;
     const {results} = await db.prepare(`WITH ${matching},
-      selected AS (SELECT * FROM matches ORDER BY ${order.join(", ")} LIMIT ? OFFSET ?)
-      SELECT (SELECT COUNT(*) FROM matches) AS total_records,
+      ${selected}
+      SELECT (SELECT COUNT(*) FROM (SELECT 1 FROM ${byKeys ? "matched_keys" : "matches"} LIMIT ${TOTAL_RECORDS_CAP + 1})) AS total_records,
       (SELECT json_group_array(json_object(${projection})) FROM selected) AS records,
       EXISTS(SELECT 1 FROM public_refresh_runs WHERE kind='entities' AND state='applying') AS refreshing,
       s.* FROM extract_status s WHERE s.kind = 'entities'`).bind(...queryParams, ...sortParams, size, page * size).all<Row>();
@@ -217,5 +236,5 @@ export async function searchEntities(db: Database, args: Args, now = new Date(),
     projection: ["entity_id", "uei", "cage_code", "legal_business_name", "dba_name", "state", "city", "zip_code", "address_line_1"],
     where: baseWhere.map(w => w.replaceAll("e.", "")), values: baseParams, query: name, snapshot,
   }) : {};
-  return {...(snapshot.total_records === 0 ? {summary: entityNoMatchSummary(snapshot.file_date)} : {}), ...possible, totalRecords: snapshot.total_records, entityData: rows.map(row => entity(row, sections, now)), page, size, ...provenance};
+  return {...(snapshot.total_records === 0 ? {summary: entityNoMatchSummary(snapshot.file_date)} : {}), ...possible, ...totals(snapshot.total_records), entityData: rows.map(row => entity(row, sections, now)), page, size, ...provenance};
 }
