@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
 import {test} from "node:test";
-import {ENTITY_TOOL, searchEntities} from "../src/entity-tools.ts";
+import {ENTITY_TOOL, searchEntities, TOTAL_RECORDS_CAP, TOTAL_RECORDS_NOTE} from "../src/entity-tools.ts";
 
 function database(loaded = true) {
   const sqlite = new DatabaseSync(":memory:");
@@ -223,4 +223,26 @@ test("unfinished incremental entities refresh hides partial records until comple
  sqlite.exec("UPDATE public_refresh_runs SET state='complete'");
  assert.ok(await searchEntities(db, {}));
  sqlite.close();
+});
+
+test("broad searches cap the total at 1,000 but page through every match in the same order", async () => {
+  const {db, sqlite} = database();
+  const insert = sqlite.prepare("INSERT INTO entities (entity_id,uei,legal_business_name,dba_name,registration_status,state,naics_codes_json,business_type_codes_json,sba_business_type_codes_json) VALUES (?,?,?,?,?,?,'[]','[]','[]')");
+  for (let i = 0; i < TOTAL_RECORDS_CAP + 5; i++) {
+    const uei = "BROAD" + String(i).padStart(7, "0");
+    // Every 97th registration is found by its DBA name only, which ranks ahead of legal-name matches.
+    insert.run(uei + "-record", uei, i % 97 ? `Zeta ${i} Solutions LLC` : `Zeta ${i} Group`, i % 97 ? null : "Zeta Solutions", "Active", "TX");
+  }
+  const capped = await searchEntities(db, {state_code: "TX"});
+  assert.equal(capped.totalRecords, TOTAL_RECORDS_CAP);
+  assert.equal(capped.totalRecordsCapped, true);
+  assert.equal(capped.totalRecordsNote, TOTAL_RECORDS_NOTE);
+  assert.equal((await searchEntities(db, {state_code: "VA"})).totalRecordsCapped, undefined);
+  // Names: the page order matches sorting every match, and pages reach past the cap.
+  const all = (sqlite.prepare("SELECT uei, dba_name FROM entities WHERE registration_status='Active' AND state='TX' ORDER BY CASE WHEN dba_name IS NULL THEN 3 ELSE 2 END, legal_business_name COLLATE NOCASE, uei, entity_id").all() as any[]).map(r => r.uei);
+  for (const page of [0, 1, 100]) {
+    const result = await searchEntities(db, {legal_business_name: "solutions", state_code: "TX", page});
+    assert.equal(result.totalRecords, TOTAL_RECORDS_CAP);
+    assert.deepEqual(result.entityData.map((e: any) => e.entityRegistration.ueiSAM), all.slice(page * 10, page * 10 + 10));
+  }
 });
