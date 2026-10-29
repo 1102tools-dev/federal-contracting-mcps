@@ -74,6 +74,7 @@ The table shows where each server is listed as a hosted install. Each name links
 | **Rate limits** | Your own, in full | Pooled across all users. Your lookups stay private |
 | **Relies on** | Government sources | Government sources and Cloudflare |
 | **Privacy** | Runs on your computer. Nothing passes through 1102tools | No tracking. Searches aren't logged and IP addresses aren't kept. [Details](https://1102tools.com/privacy) |
+| **CUI** | Lookups go straight from your computer to the government source. Nothing reaches 1102tools. Use it with an AI your agency approves for CUI | Only the lookup your AI sends (like a NAICS code or vendor name) reaches the server. Never your chat or files, and searches aren't logged. Whether CUI can go in your chat depends on the AI you use |
 | **Updates** | Manual. Local installs don't update themselves. Ask your AI to update them | Automatic. Always runs the latest release |
 | **SAM.gov** | Full edition: 20 tools, free key | 6 tools, no key |
 
