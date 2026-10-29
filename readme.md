@@ -28,6 +28,8 @@ Free MCP servers that plug your AI into SAM.gov, USAspending, GSA CALC+, BLS wag
 
 [See how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
 
+<a href="https://www.youtube.com/watch?v=TlPaQOu2fgY"><img src="https://img.youtube.com/vi/TlPaQOu2fgY/maxresdefault.jpg" alt="Watch: USAspending vs SAM.gov, same contract data without the 1,000-a-day limit" width="560"></a>
+
 ## What you can ask
 
 | MCP | Best for | Try asking | Demo |
