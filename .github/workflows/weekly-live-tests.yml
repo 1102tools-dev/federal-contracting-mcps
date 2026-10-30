@@ -44,7 +44,7 @@ jobs:
             timeout: 45
           - package: usaspending-gov-mcp
             gate: USASPENDING_LIVE_TESTS
-            timeout: 150
+            timeout: 60
     name: live (${{ matrix.package }})
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -62,7 +62,13 @@ jobs:
         env:
           GATE: ${{ matrix.gate }}
           REGULATIONS_GOV_API_KEY: ${{ matrix.package == 'regulations-gov-mcp' && secrets.REGULATIONS_GOV_API_KEY || '' }}
-        run: env "$GATE=1" uv run --frozen --group dev pytest -q -rs
+        run: |
+          env "$GATE=1" uv run --frozen --group dev pytest -q -rs && exit 0
+          # A slow or dropped government response fails one test now and then
+          # (USAspending county geography, for example), so retry failures once.
+          echo "::warning::Retrying the failed live tests once in 2 minutes"
+          sleep 120
+          env "$GATE=1" uv run --frozen --group dev pytest -q -rs --last-failed --last-failed-no-failures none
 
   alert:
     needs: live
