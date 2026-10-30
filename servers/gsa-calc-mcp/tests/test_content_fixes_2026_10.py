@@ -176,7 +176,10 @@ def test_live_g2_help_desk_full_population_keeps_verdict():
         "price_reasonableness_check", labor_category="Help Desk Specialist", proposed_rate=95,
     )))
     assert r["total_rates"] == api["aggregations"]["wage_stats"]["count"] > 1000
-    assert r["analysis"]["iqr_position"] == "within IQR P25-P75 (typical)"
+    # Since 40eb441 (Oct 10) the pooled Help Desk Specialist I-V titles get no
+    # high/low verdict; the full population count is still reported.
+    assert r["status"] == "MIXED_LABOR_TITLES"
+    assert r["analysis"]["iqr_position"] is None
 
 
 # ---------------------------------------------------------------------------

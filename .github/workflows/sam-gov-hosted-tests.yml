@@ -11,6 +11,9 @@ on:
       - 'scripts/verify_sam*.py'
       - 'tests/test_sam*.py'
       - 'tests/fixtures/sam_public/**'
+      # The local Python server: a fix there may need the same fix in the Worker.
+      - 'servers/sam-gov-mcp/src/**'
+      - 'servers/sam-gov-mcp/server.json'
       - '.github/workflows/sam-gov-hosted-tests.yml'
   push:
     branches: [main]
@@ -23,6 +26,9 @@ on:
       - 'scripts/verify_sam*.py'
       - 'tests/test_sam*.py'
       - 'tests/fixtures/sam_public/**'
+      # The local Python server: a fix there may need the same fix in the Worker.
+      - 'servers/sam-gov-mcp/src/**'
+      - 'servers/sam-gov-mcp/server.json'
       - '.github/workflows/sam-gov-hosted-tests.yml'
 
 permissions:
@@ -38,6 +44,16 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
+      - name: Flag Python-only SAM changes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch -q --depth=1 origin "$BASE"
+          changed=$(git diff --name-only "$BASE" HEAD)
+          if grep -q '^servers/sam-gov-mcp/src/' <<<"$changed" && ! grep -q '^deploy/sam-gov/' <<<"$changed"; then
+            echo "::warning title=SAM Worker not changed::This PR changes the local Python SAM server but not the hosted Worker in deploy/sam-gov. If the fix applies to hosted users too, make it there as well."
+          fi
       - name: Loader
         run: uv run --python 3.12 --with pytest --with pyyaml --with 'mcp>=2.0.0a1,<3' --with httpx --with filelock --with platformdirs --prerelease allow pytest -q tests/test_sam_loader.py tests/test_sam_entity_extract.py tests/test_sam_exclusion_extract.py tests/test_sam_public_loader.py tests/test_sam_public_incremental.py tests/test_sam_public_cost.py tests/test_sam_public_parity.py tests/test_sam_native_release.py
       - name: Worker typecheck, tools, and contract
