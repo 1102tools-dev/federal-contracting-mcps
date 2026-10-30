@@ -1407,6 +1407,10 @@ async def price_reasonableness_check(
 
 
 _ACRONYM_RE = re.compile(r"[A-Z0-9&]{2,6}")
+_LEGAL_SUFFIX_RE = re.compile(
+    r"[\s,]+(INC|INCORPORATED|LLC|L\.L\.C|CORP|CORPORATION|CO|COMPANY|LTD|LLP|LP|PLLC|PC)\.?$",
+    re.IGNORECASE,
+)
 
 
 def _contains_whole_word(name: str, term: str) -> bool:
@@ -1504,7 +1508,9 @@ async def vendor_rate_card(
     match_note = None
     if whole_word:
         suggestions = whole_word + [s for s in suggestions if s not in whole_word]
-    elif _ACRONYM_RE.fullmatch(vendor_name):
+    elif _ACRONYM_RE.fullmatch(vendor_name) or _LEGAL_SUFFIX_RE.search(vendor_name):
+        # An acronym, or a full name ending in INC/LLC/..., is a specific
+        # company: 'PACT, INC.' found inside 'REEL IMPACT, INC.' is not it.
         return {
             "vendor_search": vendor_name,
             "error": (

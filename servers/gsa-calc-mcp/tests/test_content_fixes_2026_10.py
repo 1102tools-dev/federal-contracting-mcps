@@ -323,6 +323,15 @@ def test_live_g7_saic_points_to_legal_name():
     assert "rates" not in r
 
 
+@live
+def test_live_full_name_not_matched_inside_another():
+    # Found by the October 2026 name sweep: 'PACT, INC.' returned the card
+    # of 'REEL IMPACT, INC.'. A full legal name must match as a whole word.
+    r = _payload(asyncio.run(_call("vendor_rate_card", vendor_name="PACT, INC.")))
+    assert "No vendor named" in r["error"]
+    assert "rates" not in r
+
+
 # ---------------------------------------------------------------------------
 # G-4: sin and security_clearance reach the workflow tools
 # ---------------------------------------------------------------------------
