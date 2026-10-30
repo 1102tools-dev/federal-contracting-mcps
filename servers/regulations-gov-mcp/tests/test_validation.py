@@ -506,8 +506,10 @@ def test_no_data_flag_when_total_zero():
 @pytest.mark.skipif(not LIVE, reason="requires REGULATIONS_LIVE_TESTS=1 + REGULATIONS_GOV_API_KEY")
 def test_live_paged_past_end():
     """Round-3 enhancement: pages past end must be flagged distinctly."""
+    # page_size is capped at 100 and page_number at 20, so use an agency with
+    # well under 1,900 documents (NASA has about 730).
     r = asyncio.run(_call(
-        "search_documents", agency_id="FAR", page_size=250, page_number=20,
+        "search_documents", agency_id="NASA", page_size=100, page_number=20,
     ))
     data = _payload(r)
     assert data.get("paged_past_end") is True

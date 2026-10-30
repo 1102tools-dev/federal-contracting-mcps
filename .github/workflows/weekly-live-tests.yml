@@ -1,0 +1,76 @@
+name: Weekly live tests
+
+# Once a week, run the live tests of the five servers that call a government
+# API on every request, against the real API. They catch a changed field, a new
+# error or a moved endpoint that the offline tests and the half-hourly health
+# check (one tool call per server) can't see. Each test is paced about a second
+# apart, and Regulations.gov uses its own key, not the hosted one.
+#
+# A failure alerts through outage-alert.yml (with backoff), not by failing the run.
+
+on:
+  schedule:
+    - cron: '17 14 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-live-tests
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ matrix.timeout }}
+    continue-on-error: true
+    environment: live-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: ecfr-mcp
+            gate: ECFR_LIVE_TESTS
+            timeout: 45
+          - package: federal-register-mcp
+            gate: FR_LIVE_TESTS
+            timeout: 45
+          - package: gsa-calc-mcp
+            gate: GSA_CALC_LIVE_TESTS
+            timeout: 45
+          - package: regulations-gov-mcp
+            gate: REGULATIONS_LIVE_TESTS
+            timeout: 45
+          - package: usaspending-gov-mcp
+            gate: USASPENDING_LIVE_TESTS
+            timeout: 150
+    name: live (${{ matrix.package }})
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: Check credential
+        if: matrix.package == 'regulations-gov-mcp'
+        env:
+          REGULATIONS_GOV_API_KEY: ${{ secrets.REGULATIONS_GOV_API_KEY }}
+        run: test -n "$REGULATIONS_GOV_API_KEY" || { echo 'Add REGULATIONS_GOV_API_KEY to the live-tests environment'; exit 1; }
+      - name: Live tests against the government API
+        working-directory: servers/${{ matrix.package }}
+        env:
+          GATE: ${{ matrix.gate }}
+          REGULATIONS_GOV_API_KEY: ${{ matrix.package == 'regulations-gov-mcp' && secrets.REGULATIONS_GOV_API_KEY || '' }}
+        run: env "$GATE=1" uv run --frozen --group dev pytest -q -rs
+
+  alert:
+    needs: live
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    uses: ./.github/workflows/outage-alert.yml
+    with:
+      title: Weekly live tests failing

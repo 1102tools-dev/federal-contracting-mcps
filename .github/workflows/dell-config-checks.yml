@@ -1,0 +1,50 @@
+name: Dell config checks
+
+# The Dell's own files (compose, gateway, firewall, updater, tunnel config and
+# units) are copied to govnode by hand, not by a release, so check them on
+# every PR before they can be installed: shell lint, the compose file, the
+# nginx gateway with a placeholder secret, the key shim, and YAML syntax.
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/dell/**'
+      - '.github/workflows/dell-config-checks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/dell/**'
+      - '.github/workflows/dell-config-checks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: deploy/dell
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Shell scripts
+        run: shellcheck update.sh firewall.sh
+      - name: Compose file
+        run: |
+          # The real env file holds the origin secret and lives only on govnode.
+          sudo mkdir -p /etc/mcp-origin
+          echo 'ORIGIN_SECRET=ci-placeholder' | sudo tee /etc/mcp-origin/origin.env >/dev/null
+          docker compose -f compose.yaml config -q
+      - name: Gateway (nginx -t on the image compose runs)
+        run: |
+          image=$(docker compose -f compose.yaml config --images | grep '^nginx:')
+          docker run --rm -e ORIGIN_SECRET=ci-placeholder \
+            -v "$PWD/gateway.conf.template:/etc/nginx/templates/default.conf.template:ro" \
+            "$image" sh -c '/docker-entrypoint.sh nginx -t'
+      - name: Regulations.gov key shim
+        run: python3 -m py_compile regulations_key.py
+      - name: Tunnel config
+        run: |
+          python3 -m pip install -q pyyaml
+          python3 -c "import yaml; yaml.safe_load(open('cloudflared-config.yml'))"

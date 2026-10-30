@@ -32,6 +32,15 @@ def _disable_offline_network_pacing(monkeypatch):
     yield
 
 
+@pytest.fixture(autouse=True)
+def _isolate_mocked_pacing_state(request, monkeypatch, tmp_path):
+    # In a live run the pacer is active, so a mocked 429 would record a real
+    # cooldown and make the live tests after it refuse to call GSA.
+    if LIVE and "live" not in request.node.name:
+        monkeypatch.setenv("FEDERAL_API_PACING_DIR", str(tmp_path))
+    yield
+
+
 # Each test runs in its own event loop (asyncio.run), but the server caches
 # an AsyncClient bound to the first loop; reset it so every test gets a
 # fresh client (same pattern as the per-file _reset_client fixtures).
