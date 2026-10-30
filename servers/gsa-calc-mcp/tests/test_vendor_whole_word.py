@@ -84,3 +84,11 @@ def test_partial_name_that_is_a_whole_word_is_unchanged(monkeypatch):
     assert r["vendor"] == "BOOZ ALLEN HAMILTON INC"
     assert "_match_note" not in r and "_note" not in r
     assert "error" not in r
+
+
+def test_full_name_with_suffix_inside_a_longer_name_is_not_that_vendor(monkeypatch):
+    vendors = [("REEL IMPACT, INC.", 27), ("INFOPACT, INC.", 5)]
+    gsa, r = _card(monkeypatch, vendors, "PACT, INC.")
+    assert "No vendor named 'PACT, INC.'" in r["error"]
+    assert "REEL IMPACT, INC." in r["error"]
+    assert "rates" not in r and gsa.searched == []
