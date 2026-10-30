@@ -1406,6 +1406,15 @@ async def price_reasonableness_check(
     }
 
 
+_ACRONYM_RE = re.compile(r"[A-Z0-9&]{2,6}")
+
+
+def _contains_whole_word(name: str, term: str) -> bool:
+    return re.search(
+        rf"(?<![A-Za-z0-9]){re.escape(term)}(?![A-Za-z0-9])", name, re.IGNORECASE
+    ) is not None
+
+
 @mcp.tool(annotations={"title": "Vendor Rate Card", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def vendor_rate_card(
     vendor_name: str,
@@ -1484,13 +1493,48 @@ async def vendor_rate_card(
             ),
         }
 
+    # GSA's suggest-contains is a substring match, so 'SAIC' also finds
+    # 'SAICAM CORPORATION, INC.'. Prefer names that contain the term as a
+    # whole word; an acronym found only inside longer names is not that
+    # vendor, so say so instead of returning someone else's card.
+    whole_word = [
+        s for s in suggestions
+        if _contains_whole_word(str(s.get("value") or ""), vendor_name)
+    ]
+    match_note = None
+    if whole_word:
+        suggestions = whole_word + [s for s in suggestions if s not in whole_word]
+    elif _ACRONYM_RE.fullmatch(vendor_name):
+        return {
+            "vendor_search": vendor_name,
+            "error": (
+                f"No vendor named '{vendor_name}'. It only appears inside longer "
+                f"names: {', '.join(repr(s.get('value')) for s in suggestions[:5])}. "
+                f"CALC+ lists vendors by their registered legal name, not acronyms "
+                f"or brand names: for example SAIC is 'SCIENCE APPLICATIONS "
+                f"INTERNATIONAL CORPORATION', so search 'Science Applications'. "
+                f"Try part of the legal name."
+            ),
+            "_candidates": [
+                {"value": s.get("value"), "count": s.get("count")}
+                for s in suggestions[:10]
+            ],
+        }
+    else:
+        match_note = (
+            f"'{vendor_name}' matched only inside the longer name "
+            f"'{suggestions[0]['value']}', not as a whole word. Confirm this "
+            f"is the intended vendor before using these rates."
+        )
+
     exact_name = suggestions[0]["value"]
     multi_match_note = None
     if len(suggestions) > 1:
         multi_match_note = (
             f"{len(suggestions)} vendors matched '{vendor_name}'. Picked the one "
-            f"with the most rate records ({suggestions[0].get('count')}). If this "
-            f"isn't the intended vendor, pass a more specific term."
+            f"with the most rate records ({suggestions[0].get('count')})"
+            f"{' among names with it as a whole word' if whole_word and len(whole_word) < len(suggestions) else ''}. "
+            f"If this isn't the intended vendor, pass a more specific term."
         )
 
     # Step 2: pull one page of rates for that vendor
@@ -1566,6 +1610,8 @@ async def vendor_rate_card(
             f"page={page + 1} to continue; do not present a partial slice as "
             f"the complete card."
         )
+    if match_note:
+        response["_match_note"] = match_note
     if multi_match_note:
         response["_note"] = multi_match_note
         response["_candidates"] = [

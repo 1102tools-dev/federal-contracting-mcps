@@ -316,10 +316,11 @@ def test_g7_vendor_not_found_suggests_legal_name(monkeypatch):
 
 @live
 def test_live_g7_saic_points_to_legal_name():
-    api = _api("suggest-contains=vendor_name:SAIC&page=1&page_size=1&ordering=current_price&sort=asc")
-    assert api["aggregations"]["vendor_name"]["buckets"] == []
+    # Since October 2026 GSA also lists SAICAM CORPORATION, INC., which
+    # contains 'SAIC' but is not SAIC; the tool must not return its card.
     r = _payload(asyncio.run(_call("vendor_rate_card", vendor_name="SAIC")))
     assert "legal name" in r["error"]
+    assert "rates" not in r
 
 
 # ---------------------------------------------------------------------------
