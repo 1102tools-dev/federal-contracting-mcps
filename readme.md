@@ -1,6 +1,6 @@
 # Federal contracting MCPs
 
-[![price: free](https://img.shields.io/badge/price-free-007a59)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59)](license) [![Cloudflare Workers](https://img.shields.io/badge/hosted%20on-Cloudflare%20Workers-007a59?logo=cloudflare&logoColor=white&labelColor=172f2a)](https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/deploy)
+[![price: free](https://img.shields.io/badge/price-free-007a59?labelColor=172f2a)](https://1102tools.com/#why) [![license: MIT](https://img.shields.io/badge/license-MIT-007a59?labelColor=172f2a)](license) [![Cloudflare Workers](https://img.shields.io/badge/hosted%20on-Cloudflare%20Workers-007a59?logo=cloudflare&logoColor=white&labelColor=172f2a)](https://github.com/1102tools-dev/federal-contracting-mcps/tree/main/deploy)
 
 ### Ask Claude or ChatGPT about federal contracts. Get answers from the government's own records.
 
