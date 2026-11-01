@@ -10,6 +10,18 @@ Free MCP servers that plug your AI into SAM.gov, USAspending, GSA CALC+, BLS wag
 
 <a href="https://www.youtube.com/watch?v=2CnYSrNIuWU"><img src="https://img.youtube.com/vi/2CnYSrNIuWU/maxresdefault.jpg" alt="Watch: You don't have to pay for AI on SAM.gov" width="560"></a>
 
+## Not sure where to start?
+
+Get these three first:
+
+1. **[SAM.gov](https://1102tools.com/mcp/sam-gov)**: where the work is. Find open opportunities to bid on, and check a company's registration and exclusions.
+2. **[USAspending](https://1102tools.com/mcp/usaspending)**: who has the work now. See who won past contracts, for how much, and when they end.
+3. **[eCFR](https://1102tools.com/mcp/ecfr)**: what the rules say. Look up any FAR or DFARS clause and get the actual text, not an AI's guess.
+
+Working under the FAR Overhaul (RFO)? Add **[Acquisition.gov](https://1102tools.com/mcp/acquisition-gov)** as your fourth. It has the RFO model text and the class deviations each agency has issued.
+
+Add them from the [install table](#local-or-hosted).
+
 ## Why people use it
 
 | Instead of | You get |
