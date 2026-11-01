@@ -10,7 +10,7 @@
 // scan of the narrow records columns, grouped), and the page of hits with
 // their _source text (only the page's rows read from sources).
 import {Forward} from "./args.ts";
-import {parseJson, type Py} from "./pyjson.ts";
+import {PyFloat, parseJson, type Py} from "./pyjson.ts";
 import {
   AGGREGATIONS, EDUCATION_WORDS, HISTOGRAM, MEDIAN_PERCENTS, PERCENTS, SHARDS, SIGMA, SUGGEST_SIZE, TERMS_SIZE, TRACK_TOTAL_HITS,
   orderBy, parseQuery, sortValues, termsKey, where, withTimestamp, type Query,
@@ -130,7 +130,8 @@ function searchBody(query: Query, statsRows: Row[], hitRows: Row[], night: Recor
     // A records row without its _source is a gap in the copy: the Python server answers instead.
     if (typeof row.json !== "string") throw new Forward("missing_source");
     const source = withTimestamp(parseJson(row.json) as Record<string, Py>, night.timestamp ?? null);
-    return {_index: night.version, _id: String(row.id), _score: null, _source: source, sort: sortValues(query, row)};
+    // A match_all sorts by _score too, so each hit carries it (1.0); max_score stays null.
+    return {_index: night.version, _id: String(row.id), _score: query.scoreSort ? new PyFloat(1) : null, _source: source, sort: sortValues(query, row)};
   });
   const ordered: Record<string, Py> = {};
   for (const name of AGGREGATIONS) if (Object.hasOwn(aggregations, name)) ordered[name] = aggregations[name];

@@ -107,22 +107,34 @@ test("rules: matching, filters, exclude, ordering, paging", async () => {
     rec(5, {labor_category: "Data*Scientist", business_size: "O", current_price: new PyFloat(28.9), education_level: "Masters"}),
   ]);
   const ids = async (query: string) => (await body(db, query)).hits.hits.map((h: any) => Number(h._id));
-  // keyword: case-insensitive substring over title, vendor and contract; * as a wildcard.
+  // keyword: every 2-4 character gram of the lowercased phrase in one field value; * is an ordinary character.
   assert.deepEqual(await ids("keyword=ANALYST&page=1&page_size=100&ordering=current_price&sort=asc"), [2, 1, 3]);
   assert.deepEqual(await ids("keyword=data%2Ascien&page=1&page_size=100&ordering=current_price&sort=asc"), [5]);
+  assert.deepEqual(await ids("keyword=data+scien&page=1&page_size=100&ordering=current_price&sort=asc"), []);
   assert.deepEqual(await ids("keyword=47qtest&page=1&page_size=2&ordering=current_price&sort=desc"), [3, 1]);
+  assert.deepEqual(await ids("keyword=analyst+senior&page=1&page_size=100&ordering=current_price&sort=asc"), [], "grams across a space must be there too");
+  assert.deepEqual(await ids("keyword=A&page=1&page_size=100&ordering=current_price&sort=asc"), [], "1 character: no grams, nothing");
+  assert.deepEqual(await ids("keyword=ii&page=1&page_size=100&ordering=current_price&sort=asc"), [2], "2 characters: a substring");
   // search: exact field value, cut at a colon.
   assert.deepEqual(await ids("search=labor_category:Engineer%3A+Sr.&page=1&page_size=100&ordering=current_price&sort=asc"), [4, 3]);
   assert.deepEqual(await ids("search=labor_category:engineer&page=1&page_size=100&ordering=current_price&sort=asc"), []);
   // filters
   const one = (filter: string) => ids(`filter=${filter}&page=1&page_size=100&ordering=current_price&sort=asc`);
   assert.deepEqual(await one("sin:541611"), [5, 2, 1, 3]);
+  assert.deepEqual(await one("sin:541330eng"), [3]);
   assert.deepEqual(await one("price_range:28.9%2C60.1"), [5, 4, 2]);
   assert.deepEqual(await one("experience_range:10%2C999"), [4]);
+  assert.deepEqual(await one("min_years_experience:12"), [4]);
   assert.deepEqual(await one("education_level:HS%7CMA"), [5, 4]);
+  assert.deepEqual(await one("education_level:ba"), [5, 4, 2, 1, 3], "unknown codes are ignored");
   assert.deepEqual(await one("security_clearance:yes"), [4]);
+  assert.deepEqual(await one("security_clearance:true"), [5, 4, 2, 1, 3]);
   assert.deepEqual(await one("business_size:O"), [5]);
+  assert.deepEqual(await one("business_size:o"), []);
   assert.deepEqual(await one("worksite:Virtual"), [5, 4, 2, 1, 3]);
+  assert.deepEqual(await one("worksite:customer"), [5, 4, 2, 1, 3]);
+  assert.deepEqual(await one("worksite:contractor"), []);
+  assert.deepEqual(await ids("filter=business_size:O&filter=business_size:S&page=1&page_size=100"), [4, 2, 1, 3], "the same field twice: the last wins");
   // exclude drops records from hits and aggregations.
   const excluded = await body(db, "filter=sin:541611&page=1&page_size=100&ordering=current_price&sort=asc&exclude=5%7C2");
   assert.deepEqual(excluded.hits.hits.map((h: any) => h._id), ["1", "3"]);
@@ -131,9 +143,18 @@ test("rules: matching, filters, exclude, ordering, paging", async () => {
   const ordered = await body(db, "filter=business_size:S&page=1&page_size=100&ordering=labor_category&sort=desc&ordering=current_price&sort=asc");
   assert.deepEqual(ordered.hits.hits.map((h: any) => h._id), ["2", "1", "4", "3"]);
   assert.equal(dumps(ordered.hits.hits[2].sort), '["Engineer",50.5]');
-  // paging
+  // Several pairs leave idv_piid out; sort=desc alone is current_price descending; a match_all adds _score 1.0.
+  const pairs = await body(db, "filter=business_size:S&page=1&page_size=1&ordering=idv_piid&sort=desc&ordering=current_price&sort=asc");
+  assert.equal(dumps(pairs.hits.hits[0].sort), "[50.5]");
+  assert.deepEqual(await ids("keyword=analyst&page=1&page_size=100&sort=desc"), [3, 1, 2]);
+  const all = await body(db, "page=1&page_size=1&ordering=current_price&sort=asc");
+  assert.equal(dumps([all.hits.max_score, all.hits.hits[0]._score, all.hits.hits[0].sort]), "[null,1.0,[28.9,1.0]]");
+  // paging: page_size 0 and 501 are answered; page 0 and past 10,000 are refused with an empty 406.
   assert.deepEqual(await ids("filter=business_size:S&page=2&page_size=3&ordering=current_price&sort=asc"), [3]);
-  assert.deepEqual(await emulate(db, "filter=business_size:S&page=101&page_size=100"), {status: 406, text: '{"detail":"Result window is too large."}'});
+  assert.deepEqual(await ids("filter=business_size:S&page=1&page_size=0"), []);
+  assert.equal((await ids("filter=business_size:S&page=1&page_size=501")).length, 4);
+  assert.deepEqual(await emulate(db, "filter=business_size:S&page=101&page_size=100"), {status: 406, text: ""});
+  assert.deepEqual(await emulate(db, "filter=business_size:S&page=0&page_size=10"), {status: 406, text: ""});
   // _source gets the night's _timestamp, in place.
   const hit = (await body(db, "search=idv_piid:47QTEST&page=1&page_size=1")).hits.hits[0];
   assert.equal(hit._source._timestamp, NIGHT.timestamp);
@@ -169,7 +190,7 @@ test("an empty copy forwards; a night's rows outside the window are not read", a
   const db = buildDatabase([rec(1, {}), rec(2, {})]);
   db.exec("UPDATE records SET v_to = 1 WHERE id = 2");
   assert.deepEqual((await body(d1(db), "keyword=analyst&page=1&page_size=10")).hits.total, {value: 1, relation: "eq"});
-  assert.deepEqual(parseQuery("ordering=bogus"), {status: 406, text: '{"detail":"Invalid ordering."}'});
+  assert.deepEqual(parseQuery("ordering=bogus"), {status: 406, text: ""});
 });
 
 test("one D1 round trip per query", async () => {

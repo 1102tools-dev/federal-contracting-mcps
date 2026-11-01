@@ -79,19 +79,45 @@ Rules: no GSA calls from the Mac, no deploys, no D1 remote commands, no commits 
   call: about twice the matched records (stats scan + page sort) plus the terms LIKE scan. Tools parity on that copy:
   521 cases, 0 unexpected.
 
+- 2026-11-01 (coordinator's night-1 round, step 1): PROBE_FINDINGS.md implemented in src/rules.ts (+ _score for
+  match_all in emulator.ts): keyword and suggest-contains = 2-4 char grams per field (json_each + instr in SQL, one
+  bound parameter per field), 1-char nothing, `*` literal; sin = standard-tokenizer pieces via GLOB; filters: same
+  field twice -> last, min_years_experience exact, unknown education codes ignored, worksite customer/contractor,
+  suggest + filter -> plain search; ordering: several pairs drop idv_piid, sort=desc alone, match_all _score;
+  paging: page_size 0/501 answered, empty-body 406. Evidence under "Settled" in PROBE_FINDINGS.md (max gram 4 per
+  field: 61/61 keyword probes). stats.ts unchanged: sums were already exactly rounded (= fsum); GSA differs by 1 ulp
+  in 158 of 1,005 answers and shard models do worse (documented). Tests updated: npm test 32/32.
+- 2026-11-01 (step 2): compare-emulator gained: other-night skip (manifest index), max_score check, categories
+  (noise: tie order, tie cut by page edge, 1-ulp sum_of_squares, terminated_early, undercount past GSA's bound;
+  gsa-approximate only when GSA never counts more than the copy). Night 1: 0 different (details in PROBE_FINDINGS.md).
+
+- 2026-11-01 (step 3): tools parity on calc-night1.sqlite (521 cases, then the regenerated 605): 592 identical, 13
+  documented, 0 unexpected, with and without --cache (435 cache hits); fixture copy and branch copy unchanged (0
+  unexpected). parity.py now resolves --db/--rec (node helpers run in deploy/gsa-calc). Per tool on the real copy
+  (Mac, node:sqlite; scratch worker/n1/per-tool.ts; rows read are an estimate: match scan + terms rows of the searched
+  fields, once per statement, + materialized/page rows): keyword_search p50 94 ms / p95 199 ms, ~295k rows (two terms
+  scans of 146,789 rows dominate); igce/price check ~105-125 ms, ~295k; filtered_browse 226/648 ms, 0.7-1.0M rows;
+  sin_analysis 249/553 ms, 0.7-0.8M; suggest 10/110 ms; vendor_rate_card 3/21 ms (2 round trips); exact_search 1/183 ms.
+- 2026-11-01 (step 4): make_parity_cases.py --db: price-check rates at the copy's p25/p50/p75 (case-rates.ts), plus 14
+  VERDICT_TITLES (the only titles with 20+ rates whose keyword population is one verified exact title, found by
+  checking all 1,693 such titles) -> 605 cases, 84 of them verdict-bearing price checks (14 low, 56 typical, 14 high
+  on the copy). Loader pytest was already in gsa-calc-hosted-tests.yml (uv, Python 3.12).
+- 2026-11-01 (step 5): gsa-calc-load.yml: new commands probe-record-cases (probe, record, cases; one job, one stream,
+  --gap between phases too, stops at the first failure, one artifact) and cases; uv set up and the package synced
+  before any GSA call when cases run; existing commands unchanged (stub run of every command checked). parity.py gained
+  --gap. The cases make ~319 distinct GSA calls (about 40 min at 7.5 s); with probes and the pull about 3 h.
+
 ## Checkpoint
-- Done: steps 1-6 (code, tests, CI workflow, parity harness, 521 + 44 cases, compare-emulator).
-- Waiting: the loader's night-1 copy (`.snapshot.nosync/calc-night1.sqlite`) and the night-1 recording (run
-  41263303785: probes + full pull), then PROBE_FINDINGS.md from the coordinator.
-- Next, in order (all offline; paths from the repo root; PY = `uv run --frozen --python 3.12 --project servers/gsa-calc-mcp`):
-  1. `node deploy/gsa-calc/scripts/compare-emulator.ts COPY REC/pull REC/probes --json report.json` (cwd deploy/gsa-calc
-     or absolute paths): fix every "different" by changing src/rules.ts only (PROBE_FINDINGS.md wins).
-  2. `$PY python deploy/gsa-calc/scripts/parity.py --db COPY [--cache] [--show]` (tools, must stay 0 unexpected).
-  3. `python3 deploy/gsa-calc/scripts/make_parity_cases.py --db COPY` (price-check rates at the copy's p25/p50/p75),
-     then the GitHub recording of the cases: `$PY python deploy/gsa-calc/scripts/parity.py --rec DIR --record
-     --python-only` (needs GITHUB_ACTIONS=true; 7.5 s per GSA call through load_gsa_calc.Recorder).
-  4. `$PY python deploy/gsa-calc/scripts/parity.py --db COPY --rec DIR --verdicts --json verdicts.json` (stop and
-     ask James if more than a handful of verdicts change).
+- Done: steps 1-6 and the coordinator's night-1 round (rules from PROBE_FINDINGS.md, compare-emulator 0 different,
+  tools parity 0 unexpected on the real copy, 605 cases at the copy's percentiles, recording workflow).
+- Waiting: the coordinator merges .github/workflows/gsa-calc-load.yml (+ deploy/gsa-calc/scripts/parity.py and
+  test/parity-cases.json on the dispatched ref) and dispatches probe-record-cases after 02:00 UTC.
+- Next, when that artifact lands (offline; PY = `uv run --frozen --python 3.12 --project servers/gsa-calc-mcp`):
+  1. build the night's copy from its pull (loader), then `node scripts/compare-emulator.ts COPY REC/pull REC/probes
+     REC/cases --json r.json` (cwd deploy/gsa-calc): expect 0 different.
+  2. `$PY python deploy/gsa-calc/scripts/parity.py --db COPY [--cache]` (0 unexpected).
+  3. `$PY python deploy/gsa-calc/scripts/parity.py --db COPY --rec REC/cases --verdicts --json verdicts.json`; stop and
+     ask James if more than a handful of verdicts change.
 
 ## Schema requests
 None needed. The Worker relies on: meta current (text, CAST in SQL) / version / timestamp; v_to compared in SQL;
@@ -101,22 +127,14 @@ the folding); sources.json keeps _timestamp in place (rules.withTimestamp replac
 price-ordered whole-index pages turns out too slow, an index on records(price) would remove the page sort (one more
 index write per record).
 
-## Open questions (provisional rules in src/rules.ts, for PROBE_FINDINGS.md)
-- keyword: case-insensitive substring of the whole phrase over the three fields, `*` any run, `?` literal.
-- search=field:value: exact and case-sensitive; value cut at its first colon (fixture-confirmed). suggest-contains:
-  case-insensitive substring like keyword; answer shape = hits.total (10,000 cap) + that one terms aggregation, no
-  hits, no other aggregations (unknown: GSA may send more; the Python tool reads only those two).
-- filters: price_range inclusive on float32 bounds; experience_range numeric inclusive; education codes -> words
-  (HS = High School + High School Equivalent, TEC = Other Tech School or Certification, PHD = PhD; fixture-
-  confirmed counts); sin whole code, ASCII case-insensitive; security_clearance yes/no -> true/false; worksite,
-  vendor_name, labor_category filters ignored. min_years_experience terms keys sort as strings in GSA's answers
-  ("30" before "9"), so it may be a keyword field: then experience_range and ordering by it could be lexicographic.
-- ordering pairs in turn, missing values last, ties by _id ascending (GSA: shard order); sort value of a missing
-  price is null here (ES may write Infinity). Repeated keyword/search params: the last one wins.
-- errors: page*page_size > 10,000, bad page/page_size or an unknown ordering -> 406 with a JSON detail text (the
-  Python server never sends these).
-- Percentiles: true values by James's decision; fixture n = 91: 5 of 9 equal GSA's TDigest, the others within $0.95
-  (p25 +0.735, p50 +0.952, p65 +0.421, p70 -0.270). Histogram: ES 7.10 algorithm, one shard, sorted input; equals
-  GSA on every fixture (n <= 91). Past ~450 prices per GSA shard GSA's 5-shard clustering differs. If the full
-  recordings show many histogram differences, emulating GSA's routing (murmur3 of _id, 5 shards) would reproduce
-  it exactly up to ~6,000 prices per shard.
+## Open questions
+Settled by the night-1 probes (PROBE_FINDINGS.md "Settled"): keyword/suggest grams, sin tokens, filters, ordering,
+paging, match_all _score, summation. Still open:
+- GSA's last-digit sum_of_squares (1 ulp in 158 of 1,005 answers) and terminated_early on some suggest answers are
+  not reproducible; counted as documented noise.
+- Unreachable leftovers: worksite values other than customer/contractor, a mix of known and unknown education codes
+  (known ones kept), an unknown ordering field (empty 406 assumed).
+- Lowercasing: the copy folds with Python lower()/JS toLowerCase (full mapping); Lucene lowercases per code point
+  (simple mapping). Only differs for a few characters such as U+0130.
+- Rows read: the keyword match scans `terms` in both the statistics and the page statement (~294k of the ~295k rows
+  per keyword call). Folding both into one statement would halve it if D1's rows-read bill or time calls for it.

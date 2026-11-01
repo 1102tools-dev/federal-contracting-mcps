@@ -3589,7 +3589,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Project Manager",
-   "proposed_rate": 95.0
+   "proposed_rate": 124.68509674072266
   }
  },
  {
@@ -3597,7 +3597,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Project Manager",
-   "proposed_rate": 120.0
+   "proposed_rate": 152.89999389648438
   }
  },
  {
@@ -3605,7 +3605,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Project Manager",
-   "proposed_rate": 150.0
+   "proposed_rate": 184.38999938964844
   }
  },
  {
@@ -3613,7 +3613,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Project Manager",
-   "proposed_rate": 94.99
+   "proposed_rate": 124.68
   }
  },
  {
@@ -3621,7 +3621,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Project Manager",
-   "proposed_rate": 150.01
+   "proposed_rate": 184.4
   }
  },
  {
@@ -3629,7 +3629,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Project Manager",
-   "proposed_rate": 120.01
+   "proposed_rate": 152.91
   }
  },
  {
@@ -3637,7 +3637,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Senior Software Engineer",
-   "proposed_rate": 110.0
+   "proposed_rate": 137.25
   }
  },
  {
@@ -3645,7 +3645,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Senior Software Engineer",
-   "proposed_rate": 135.0
+   "proposed_rate": 160.41259765625
   }
  },
  {
@@ -3653,7 +3653,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Senior Software Engineer",
-   "proposed_rate": 160.0
+   "proposed_rate": 192.91000366210938
   }
  },
  {
@@ -3661,7 +3661,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Senior Software Engineer",
-   "proposed_rate": 109.99
+   "proposed_rate": 137.24
   }
  },
  {
@@ -3669,7 +3669,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Senior Software Engineer",
-   "proposed_rate": 160.01
+   "proposed_rate": 192.92
   }
  },
  {
@@ -3677,7 +3677,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Senior Software Engineer",
-   "proposed_rate": 135.01
+   "proposed_rate": 160.42
   }
  },
  {
@@ -3685,7 +3685,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Business Analyst",
-   "proposed_rate": 75.0
+   "proposed_rate": 97.91000366210938
   }
  },
  {
@@ -3693,7 +3693,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Business Analyst",
-   "proposed_rate": 95.0
+   "proposed_rate": 121.91999816894531
   }
  },
  {
@@ -3701,7 +3701,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Business Analyst",
-   "proposed_rate": 120.0
+   "proposed_rate": 151.3000030517578
   }
  },
  {
@@ -3709,7 +3709,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Business Analyst",
-   "proposed_rate": 74.99
+   "proposed_rate": 97.9
   }
  },
  {
@@ -3717,7 +3717,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Business Analyst",
-   "proposed_rate": 120.01
+   "proposed_rate": 151.31
   }
  },
  {
@@ -3725,7 +3725,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Business Analyst",
-   "proposed_rate": 95.01
+   "proposed_rate": 121.93
   }
  },
  {
@@ -3733,7 +3733,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Help Desk Specialist",
-   "proposed_rate": 40.0
+   "proposed_rate": 62.27000045776367
   }
  },
  {
@@ -3741,7 +3741,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Help Desk Specialist",
-   "proposed_rate": 55.0
+   "proposed_rate": 80.06999969482422
   }
  },
  {
@@ -3749,7 +3749,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Help Desk Specialist",
-   "proposed_rate": 70.0
+   "proposed_rate": 100.45999908447266
   }
  },
  {
@@ -3757,7 +3757,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Help Desk Specialist",
-   "proposed_rate": 39.99
+   "proposed_rate": 62.26
   }
  },
  {
@@ -3765,7 +3765,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Help Desk Specialist",
-   "proposed_rate": 70.01
+   "proposed_rate": 100.47
   }
  },
  {
@@ -3773,7 +3773,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Help Desk Specialist",
-   "proposed_rate": 55.01
+   "proposed_rate": 80.08
   }
  },
  {
@@ -3781,7 +3781,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Technical Writer",
-   "proposed_rate": 60.0
+   "proposed_rate": 76.97000122070312
   }
  },
  {
@@ -3789,7 +3789,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Technical Writer",
-   "proposed_rate": 78.0
+   "proposed_rate": 95.76000213623047
   }
  },
  {
@@ -3797,7 +3797,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Technical Writer",
-   "proposed_rate": 95.0
+   "proposed_rate": 118.55000305175781
   }
  },
  {
@@ -3805,7 +3805,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Technical Writer",
-   "proposed_rate": 59.99
+   "proposed_rate": 76.96
   }
  },
  {
@@ -3813,7 +3813,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Technical Writer",
-   "proposed_rate": 95.01
+   "proposed_rate": 118.56
   }
  },
  {
@@ -3821,7 +3821,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Technical Writer",
-   "proposed_rate": 78.01
+   "proposed_rate": 95.77
   }
  },
  {
@@ -3829,7 +3829,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Database Administrator",
-   "proposed_rate": 85.0
+   "proposed_rate": 104.66500091552734
   }
  },
  {
@@ -3837,7 +3837,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Database Administrator",
-   "proposed_rate": 105.0
+   "proposed_rate": 129.44000244140625
   }
  },
  {
@@ -3845,7 +3845,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Database Administrator",
-   "proposed_rate": 130.0
+   "proposed_rate": 156.12989807128906
   }
  },
  {
@@ -3853,7 +3853,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Database Administrator",
-   "proposed_rate": 84.99
+   "proposed_rate": 104.66
   }
  },
  {
@@ -3861,7 +3861,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Database Administrator",
-   "proposed_rate": 130.01
+   "proposed_rate": 156.14
   }
  },
  {
@@ -3869,7 +3869,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Database Administrator",
-   "proposed_rate": 105.01
+   "proposed_rate": 129.45
   }
  },
  {
@@ -3877,7 +3877,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Ocean Engineer I",
-   "proposed_rate": 72.54
+   "proposed_rate": 72.54000091552734
   }
  },
  {
@@ -3885,7 +3885,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Ocean Engineer I",
-   "proposed_rate": 72.54
+   "proposed_rate": 83.73999786376953
   }
  },
  {
@@ -3893,7 +3893,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Ocean Engineer I",
-   "proposed_rate": 72.54
+   "proposed_rate": 117.20999908447266
   }
  },
  {
@@ -3909,7 +3909,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Ocean Engineer I",
-   "proposed_rate": 72.55
+   "proposed_rate": 117.22
   }
  },
  {
@@ -3917,7 +3917,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Ocean Engineer I",
-   "proposed_rate": 72.55
+   "proposed_rate": 83.75
   }
  },
  {
@@ -3925,7 +3925,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Registered Nurse I",
-   "proposed_rate": 63.92
+   "proposed_rate": 63.91999816894531
   }
  },
  {
@@ -3933,7 +3933,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Registered Nurse I",
-   "proposed_rate": 75.69
+   "proposed_rate": 76.87999725341797
   }
  },
  {
@@ -3941,7 +3941,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Registered Nurse I",
-   "proposed_rate": 105.18
+   "proposed_rate": 94.41999816894531
   }
  },
  {
@@ -3957,7 +3957,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Registered Nurse I",
-   "proposed_rate": 105.19
+   "proposed_rate": 94.43
   }
  },
  {
@@ -3965,7 +3965,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Registered Nurse I",
-   "proposed_rate": 75.7
+   "proposed_rate": 76.89
   }
  },
  {
@@ -3973,7 +3973,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Network Engineer",
-   "proposed_rate": 80.0
+   "proposed_rate": 105.4000015258789
   }
  },
  {
@@ -3981,7 +3981,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Network Engineer",
-   "proposed_rate": 100.0
+   "proposed_rate": 132.15939331054688
   }
  },
  {
@@ -3989,7 +3989,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Network Engineer",
-   "proposed_rate": 125.0
+   "proposed_rate": 161.75999450683594
   }
  },
  {
@@ -3997,7 +3997,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Network Engineer",
-   "proposed_rate": 79.99
+   "proposed_rate": 105.39
   }
  },
  {
@@ -4005,7 +4005,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Network Engineer",
-   "proposed_rate": 125.01
+   "proposed_rate": 161.77
   }
  },
  {
@@ -4013,7 +4013,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Network Engineer",
-   "proposed_rate": 100.01
+   "proposed_rate": 132.17
   }
  },
  {
@@ -4021,7 +4021,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Graphic Designer",
-   "proposed_rate": 55.0
+   "proposed_rate": 81.45999908447266
   }
  },
  {
@@ -4029,7 +4029,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Graphic Designer",
-   "proposed_rate": 70.0
+   "proposed_rate": 103.04810333251953
   }
  },
  {
@@ -4037,7 +4037,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Graphic Designer",
-   "proposed_rate": 88.0
+   "proposed_rate": 128.0800018310547
   }
  },
  {
@@ -4045,7 +4045,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Graphic Designer",
-   "proposed_rate": 54.99
+   "proposed_rate": 81.45
   }
  },
  {
@@ -4053,7 +4053,7 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Graphic Designer",
-   "proposed_rate": 88.01
+   "proposed_rate": 128.09
   }
  },
  {
@@ -4061,7 +4061,679 @@
   "tool": "price_reasonableness_check",
   "arguments": {
    "labor_category": "Graphic Designer",
-   "proposed_rate": 70.01
+   "proposed_rate": 103.06
+  }
+ },
+ {
+  "name": "price: General Clerk II** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 34.698001861572266
+  }
+ },
+ {
+  "name": "price: General Clerk II** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 40.47999954223633
+  }
+ },
+ {
+  "name": "price: General Clerk II** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 50.060001373291016
+  }
+ },
+ {
+  "name": "price: General Clerk II** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 34.69
+  }
+ },
+ {
+  "name": "price: General Clerk II** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 50.07
+  }
+ },
+ {
+  "name": "price: General Clerk II** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 40.49
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 38.79999923706055
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 44.619998931884766
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 51.16999816894531
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 38.79
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 51.18
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 44.63
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 81.97440338134766
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 103.75180053710938
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 121.63069915771484
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 81.96
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 121.64
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 103.76
+  }
+ },
+ {
+  "name": "price: General Clerk I** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 31.299400329589844
+  }
+ },
+ {
+  "name": "price: General Clerk I** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 35.66999816894531
+  }
+ },
+ {
+  "name": "price: General Clerk I** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 42.786598205566406
+  }
+ },
+ {
+  "name": "price: General Clerk I** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 31.29
+  }
+ },
+ {
+  "name": "price: General Clerk I** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 42.8
+  }
+ },
+ {
+  "name": "price: General Clerk I** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 35.68
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 162.4199981689453
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 192.8800048828125
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 226.13079833984375
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 162.41
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 226.14
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 192.89
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 107.33999633789062
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 134.00999450683594
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 149.72999572753906
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 107.33
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 149.74
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 134.02
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 52.93000030517578
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 58.439998626708984
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 67.83879852294922
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 52.92
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 67.85
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 58.45
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 49.630001068115234
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 54.50870132446289
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 61.95000076293945
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 49.62
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 61.96
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 54.52
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 46.6442985534668
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 49.718101501464844
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 55.70000076293945
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 46.63
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 55.71
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 49.73
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 38.79999923706055
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 46.63999938964844
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 47.52000045776367
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 38.79
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 47.53
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 46.65
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 109.19999694824219
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 127.70999908447266
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 148.02000427246094
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 109.19
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 148.03
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 127.72
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 132.66000366210938
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 145.389892578125
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 152.19000244140625
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 132.65
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 152.2
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 145.4
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 60.04669952392578
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 62.63090133666992
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 68.27999877929688
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 60.04
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 68.29
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 62.64
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 135.81640625
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 144.57000732421875
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 151.25
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 135.81
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 151.26
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 144.58
   }
  },
  {

@@ -13,6 +13,9 @@
 //   histogram are measured, not required (GSA's TDigest and 5-shard
 //   clustering). Terms with GSA error bounds above 0 are approximate on GSA's
 //   side and counted apart.
+// - documented GSA noise, counted apart: sum_of_squares one unit in the last
+//   place off the exactly rounded sum (GSA adds shard partials with Kahan
+//   summation), and terminated_early: true on some suggest-contains answers.
 //
 //   node scripts/compare-emulator.ts <d1.sqlite> <recording dir>... [--json report.json] [--only TEXT] [--show N]
 //
@@ -52,8 +55,12 @@ function compare(query: string, gsa: Obj, ours: Obj): {exact: string[]; approxim
   const exact: string[] = [];
   const approximate: string[] = [];
   const measured: Obj = {};
-  if (dumps(Object.keys(gsa)) !== dumps(Object.keys(ours))) exact.push(`keys ${dumps(Object.keys(gsa))} vs ${dumps(Object.keys(ours))}`);
+  const noise: string[] = [];
+  const keys = (o: Obj) => Object.keys(o).filter(k => k !== "terminated_early");
+  if ("terminated_early" in gsa) noise.push("terminated_early");
+  if (dumps(keys(gsa)) !== dumps(keys(ours))) exact.push(`keys ${dumps(Object.keys(gsa))} vs ${dumps(Object.keys(ours))}`);
   if (dumps(gsa.hits?.total) !== dumps(ours.hits?.total)) exact.push(`hits.total ${dumps(gsa.hits?.total)} vs ${dumps(ours.hits?.total)}`);
+  if (dumps(gsa.hits?.max_score) !== dumps(ours.hits?.max_score)) exact.push(`hits.max_score ${dumps(gsa.hits?.max_score)} vs ${dumps(ours.hits?.max_score)}`);
   // Hits, up to ties.
   const theirs: Obj[] = gsa.hits?.hits ?? [];
   const mine: Obj[] = ours.hits?.hits ?? [];
@@ -73,8 +80,11 @@ function compare(query: string, gsa: Obj, ours: Obj): {exact: string[]; approxim
     const page = Number(new URLSearchParams(query).get("page") ?? "1");
     for (let i = 0; i < Math.min(a.length, b.length); i++) {
       const edge = i === a.length - 1 || (i === 0 && page > 1);
-      if (dumps(a[i][1]) !== dumps(b[i][1]) && !(edge && a[i][1].length === b[i][1].length)) exact.push(`records at sort ${a[i][0]} differ`);
+      if (dumps(a[i][1]) === dumps(b[i][1])) continue;
+      if (edge && a[i][1].length === b[i][1].length) noise.push("tie cut by the page edge");
+      else exact.push(`records at sort ${a[i][0]} differ`);
     }
+    if (dumps(theirs.map(h => h._id)) !== dumps(mine.map(h => h._id))) noise.push("tie order");
     const sources = new Map(theirs.map(h => [h._id, dumps({...h, sort: undefined})]));
     for (const h of mine) {
       const expected = sources.get(h._id);
@@ -103,17 +113,43 @@ function compare(query: string, gsa: Obj, ours: Obj): {exact: string[]; approxim
           for (const [b, bv] of Object.entries(v as Obj)) {
             if (dumps(bv) !== dumps(o?.[b]) && !(Math.abs(num(bv) - num(o?.[b])) <= 1e-9 * Math.abs(num(bv)))) exact.push(`wage_stats.${b} ${dumps(bv)} vs ${dumps(o?.[b])}`);
           }
+        } else if (key === "sum_of_squares" && dumps(v) !== dumps(o) && Math.abs(num(v) - num(o)) <= ulp(num(v))) {
+          noise.push("sum_of_squares last digit");
         } else if (dumps(v) !== dumps(o) && !(NEAR.has(key) && Math.abs(num(v) - num(o)) <= 1e-9 * Math.abs(num(v)))) {
           exact.push(`wage_stats.${key} ${dumps(v)} vs ${dumps(o)}`);
         }
       }
       continue;
     }
-    // Terms: GSA's own counts are approximate when its error bound is above 0.
-    if (value?.doc_count_error_upper_bound > 0) approximate.push(name);
-    else exact.push(`${name} differs`);
+    // Terms: GSA's own counts are approximate when its error bound is above 0
+    // (5 shards, each sending its top list). GSA then undercounts, never
+    // overcounts: a key both lists hold must not have more records in GSA's
+    // answer. (On night 1, 28 answers undercount by 1 or 2 more than GSA's
+    // stated bound; counted apart.)
+    const bound = value?.doc_count_error_upper_bound ?? 0;
+    const counts = new Map<string, number>((other?.buckets ?? []).map((b: Obj) => [b.key, b.doc_count]));
+    const shared = (value?.buckets ?? []).filter((b: Obj) => counts.has(b.key));
+    const over = shared.filter((b: Obj) => b.doc_count > counts.get(b.key)!);
+    if (bound > 0 && !over.length) {
+      approximate.push(name);
+      if (shared.some((b: Obj) => counts.get(b.key)! > b.doc_count + bound)) noise.push(`${name} undercount beyond GSA's stated bound`);
+    } else {
+      exact.push(`${name} differs${over.length ? ` (GSA counts more: ${over.slice(0, 3).map((b: Obj) => `${dumps(b.key)} ${b.doc_count} vs ${counts.get(b.key)}`).join(", ")})` : ""}`);
+    }
   }
-  return {exact, approximate, measured};
+  return {exact, approximate, measured, noise};
+}
+
+/** One unit in the last place of a double. */
+function ulp(x: number): number {
+  const a = Math.abs(x);
+  if (!Number.isFinite(a)) return NaN;
+  const e = Math.max(Math.floor(Math.log2(a)), -1022);
+  let u = 2 ** (e - 52);
+  // log2 can land one off near powers of two.
+  if (a / 2 ** e >= 2) u *= 2;
+  else if (a / 2 ** e < 1) u /= 2;
+  return u;
 }
 
 const rows: Obj[] = [];
@@ -123,6 +159,11 @@ for (const dir of recordings) {
   for (const line of readFileSync(join(dir, "manifest.jsonl"), "utf8").split("\n")) if (line.trim()) entries.set(JSON.parse(line).query, JSON.parse(line));
   for (const [query, entry] of entries) {
     if (only && !query.includes(only)) continue;
+    // An answer from another night's index can't match this copy.
+    if (entry.index && version && entry.index !== version) {
+      rows.push({query, kind: "other night", index: entry.index});
+      continue;
+    }
     const text = gunzipSync(readFileSync(join(dir, "bodies", `${String(entry.n).padStart(5, "0")}.json.gz`))).toString("utf8");
     let answer;
     try {
@@ -146,8 +187,10 @@ for (const dir of recordings) {
     }
     const result = compare(query, gsa, ours);
     const kind = result.exact.length ? "different" : result.approximate.length ? "gsa-approximate"
-      : Object.keys(result.measured).length ? "percentiles/histogram only" : "identical";
-    rows.push({query, kind, ...result});
+      : Object.keys(result.measured).length ? "percentiles/histogram only" : result.noise.length ? "gsa noise only" : "identical";
+    const categories = [...(result.exact.length ? ["different"] : []), ...result.approximate.map(a => `gsa-approximate ${a}`),
+      ...Object.keys(result.measured).map(m => `measured ${m}`), ...new Set(result.noise.map(n => `noise ${n}`))];
+    rows.push({query, kind, categories, ...result});
   }
 }
 
@@ -163,5 +206,8 @@ if (percentileGaps.length) {
   console.log(`Percentiles differ in ${percentileGaps.length} aggregations: median gap $${sorted[Math.floor(sorted.length / 2)].toFixed(4)}, `
     + `max $${sorted[sorted.length - 1].toFixed(4)}. Histograms differ in ${histogramRows} answers.`);
 }
+const byCategory: Record<string, number> = {};
+for (const row of rows) for (const c of row.categories ?? []) byCategory[c] = (byCategory[c] ?? 0) + 1;
+console.log(`Answers per category (one answer can be in several): ${Object.entries(byCategory).sort().map(([k, n]) => `${k} ${n}`).join("; ")}.`);
 if (jsonOut) writeFileSync(jsonOut, JSON.stringify({version, indexes: [...indexes], counts, rows}, null, 1) + "\n");
 process.exitCode = counts.different ? 1 : 0;

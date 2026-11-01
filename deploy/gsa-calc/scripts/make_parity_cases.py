@@ -381,9 +381,22 @@ PRICE_TITLES = {"Project Manager": (95.0, 120.0, 150.0), "Senior Software Engine
                 "Network Engineer": (80.0, 100.0, 125.0), "Graphic Designer": (55.0, 70.0, 88.0)}
 
 
-def copy_rates(database):
-    """p25/p50/p75 for PRICE_TITLES from the copy (the Worker's igce_benchmark)."""
-    out = subprocess.run(["node", "scripts/case-rates.ts", str(database), json.dumps(list(PRICE_TITLES))],
+# Titles whose keyword population is one verified exact title with 20+ rates on night 1, so the price check
+# gives a high/low verdict (found by checking every title with 20+ rates in the copy; only these 14 qualify:
+# GSA's gram matching pools most titles with others). Rates sit at and around their percentiles.
+VERDICT_TITLES = {"General Clerk II**": (34.698, 40.48, 50.06), "Warehouse Specialist**": (38.8, 44.62, 51.17),
+                  "Information Technology Professional Services": (81.9744, 103.7518, 121.6307),
+                  "General Clerk I**": (31.2994, 35.67, 42.7866), "Cloud Subject Matter Expert 1": (162.42, 192.88, 226.1308),
+                  "Health IT Analyst III": (107.34, 134.01, 149.73), "General Maintenance Worker**": (52.93, 58.44, 67.8388),
+                  "Engineering Technician II**": (49.63, 54.5087, 61.95), "Engineering Technician I**": (46.6443, 49.7181, 55.7),
+                  "Forklift Operator**": (38.8, 46.64, 47.52), "GIS Specialist IV": (109.2, 127.71, 148.02),
+                  "Senior Computer Systems Engineer/Architect": (132.66, 145.3899, 152.19),
+                  "Engineering Technician III**": (60.0467, 62.6309, 68.28), "Senior Computer Hardware Engineer": (135.8164, 144.57, 151.25)}
+
+
+def copy_rates(database, titles):
+    """p25/p50/p75 for these titles from the copy (the Worker's igce_benchmark)."""
+    out = subprocess.run(["node", "scripts/case-rates.ts", str(database), json.dumps(list(titles))],
                          cwd=HERE.parent, capture_output=True, text=True, check=True).stdout
     rates = json.loads(out)
     return {t: tuple(r) for t, r in rates.items() if None not in r}
@@ -393,7 +406,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--db", help="place price-check rates at this copy's percentiles")
     args = parser.parse_args()
-    rates = copy_rates(args.db) if args.db else PRICE_TITLES
+    rates = {**PRICE_TITLES, **VERDICT_TITLES}
+    if args.db:
+        rates = copy_rates(Path(args.db).resolve(), rates)
     cases = protocol_cases() + validation_cases() + search_cases() + price_cases(rates)
     names = [c["name"] for c in cases]
     assert len(names) == len(set(names)), [n for n in names if names.count(n) > 1]

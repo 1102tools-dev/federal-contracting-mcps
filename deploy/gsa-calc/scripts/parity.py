@@ -174,9 +174,10 @@ class Recording:
     """GSA's answers by query string, from a recording in load_gsa_calc.py's
     format; with record=True a miss is fetched from GSA live (paced) and saved."""
 
-    def __init__(self, directory, record):
+    def __init__(self, directory, record, gap=GAP):
         self.dir = Path(directory)
         self.record = record
+        self.gap = gap
         self.dir.mkdir(parents=True, exist_ok=True)
         (self.dir / "manifest.jsonl").touch()
         self.entries = {}
@@ -208,7 +209,7 @@ class Recording:
         sys.path.insert(0, str(ROOT / "scripts"))
         from load_gsa_calc import IndexChanged, Recorder
         if self.recorder is None:
-            self.recorder = Recorder(self.dir, GAP, 100_000)
+            self.recorder = Recorder(self.dir, self.gap, 100_000)
         try:
             self.recorder.get(query, strict=False)
         except IndexChanged as error:
@@ -390,7 +391,8 @@ def main(argv=None):
     parser.add_argument("--db", type=Path, help="the local D1 copy (SQLite) the Worker and the emulator read")
     parser.add_argument("--cases", type=Path, default=CASES)
     parser.add_argument("--rec", type=Path, help="a recording of GSA's answers (load_gsa_calc.py format)")
-    parser.add_argument("--record", action="store_true", help="fetch what --rec lacks from GSA live, 7.5 s apart (GitHub only)")
+    parser.add_argument("--record", action="store_true", help="fetch what --rec lacks from GSA live, --gap apart (GitHub only)")
+    parser.add_argument("--gap", type=float, default=GAP, help="seconds between live GSA calls when recording (default 7.5)")
     parser.add_argument("--python-only", action="store_true", help="only run (and record) the Python side over --rec")
     parser.add_argument("--verdicts", action="store_true", help="Python over --rec vs Python over the emulator")
     parser.add_argument("--json", help="write the verdict report here")
@@ -399,6 +401,9 @@ def main(argv=None):
                         "compare the second (cached) answer; any change between the two is unexpected")
     parser.add_argument("--show", action="store_true", help="print every case's backend, statements, round trips and time")
     args = parser.parse_args(argv)
+    # The node helpers run in deploy/gsa-calc; paths given from anywhere must still resolve.
+    args.db = args.db.resolve() if args.db else None
+    args.rec = args.rec.resolve() if args.rec else None
     if args.record and os.environ.get("GITHUB_ACTIONS") != "true":
         raise SystemExit("--record calls GSA live: run it on GitHub (gsa-calc-load.yml), never from the Mac.")
     if (args.python_only or args.verdicts) and not args.rec:
@@ -415,7 +420,7 @@ def main(argv=None):
     requests = [request(case) for case in cases]
     base, use = start_python()
 
-    recording = Recording(args.rec, args.record) if args.rec else None
+    recording = Recording(args.rec, args.record, args.gap) if args.rec else None
     if args.python_only:
         use(recording)
         run_python(requests, base)
