@@ -24,7 +24,7 @@ concurrency:
 jobs:
   load:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 360  # monthly entity refresh: ~2 h compare + ~8k write batches
     # A failure alerts through outage-alert.yml (with backoff), not by failing the run.
     continue-on-error: true
     environment: sam-data-load
