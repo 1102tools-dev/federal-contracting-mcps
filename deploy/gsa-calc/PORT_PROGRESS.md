@@ -45,7 +45,7 @@ Status: building. No D1 database yet; production untouched.
   (WORKER_PROGRESS.md: protocol copy, tools port, emulator/stats, tests, parity harness + 350+ cases).
   Next for the coordinator: read the probes once the run finishes and write PROBE_FINDINGS.md; dispatch
   night 2 (full pull) after 02:00 UTC Nov 2 for churn.
-- 2026-11-01 04:xx UTC: night-1 recording done (run 41263303785: 849 GSA calls, 106 min; index
+- 2026-11-01 04:30 UTC: night-1 recording done (run 41263303785: 849 GSA calls, 106 min; index
   ceilingrates-2026-11-01_02-00-03). Loader built the copy: 351,334 records = GSA's priced count,
   every price and _source byte-identical to the recording, one _timestamp for the night, 430 MB,
   projected first load 1,903,471 D1 rows (10k sample: 57,337). Committed 9b5c35d (Worker) and 4421f8f (loader).
