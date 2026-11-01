@@ -211,3 +211,12 @@ plus out-of-part appendices) the content is a JSON object:
    answers, a listen test, and a D1 analytics rowsWritten check.
 5. Later: the slow overnight audit of derived parts (one stream, ≥ 6 s gap); delete the staging Worker and its
    domain once production has run cleanly for a week.
+- 2026-10-31 evening: **Switch started** (James: "let's begin transferring over the service").
+  - Privacy notice applied (effective October 31, 2026), with the wording shown in chat first.
+  - `/health` in production now goes to the Dell, then the container, as before, so check_hosted_health's
+    Dell-origin row keeps working. Staging still answers it itself.
+  - PR https://github.com/1102tools-dev/federal-contracting-mcps/pull/286.
+  - Hand refresh against remote D1: 2 eCFR requests, 0 rows written.
+  - Live Dell release_sha 214c7ff530a4e2d06125de1e6534db68f85c3896 (image present in the registry).
+  - **Rollback**: `npx wrangler rollback f55295fe-38fd-45e2-8d39-20c4451fb271 --env production` in deploy/ecfr,
+    the container-forwarding Worker live before the switch.
