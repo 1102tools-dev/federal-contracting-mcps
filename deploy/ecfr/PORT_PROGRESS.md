@@ -194,3 +194,20 @@ plus out-of-part appendices) the content is a JSON object:
   - Rarely asked sections (production cache miss): new 0.08–0.16 s vs production 1.56–3.00 s.
   - Search is the same path on both: staging forwarded first, so it paid production's uncached 4.7 s.
   - Median first call: new 0.07 s vs production 0.14 s.
+- 2026-10-31 19:3x: **Parity with 500 random sections from all titles** (live per-section eCFR answers vs the D1 copy,
+  derived metadata included): 949 cases, 938 identical, 11 documented, **0 unexpected**; 896 answered from D1.
+  eCFR still at 2026-10-29 (no title changed), so the copy is current. Committed on the branch (1a80158), not pushed.
+
+## Switch checklist (when James says go)
+1. Show James the privacy and freshness drafts above; apply the approved wording to `public-docs.ts` (+ prompts
+   repo FRESHNESS / llms_help after the switch).
+2. Push the branch, open the PR (CI: ecfr-hosted-tests.yml), merge, so `ecfr-load.yml` (hourly refresh, daily
+   verify) runs from main with `CLOUDFLARE_D1_TOKEN` (environment sam-data-load). Run one refresh by hand first.
+3. Worker-only production deploy keeping the live container image and the Dell's RELEASE_SHA:
+   - `configure_hosted_image.py ecfr <live sha>`
+   - `npx wrangler deployments list --env production` (record the rollback version here)
+   - `npx wrangler deploy --config wrangler.release.json --env production --containers-rollout=none`
+4. Verify: verify_hosted_release.py, check_hosted_health.py, compare_live.py staging-style against the pre-switch
+   answers, a listen test, and a D1 analytics rowsWritten check.
+5. Later: the slow overnight audit of derived parts (one stream, ≥ 6 s gap); delete the staging Worker and its
+   domain once production has run cleanly for a week.

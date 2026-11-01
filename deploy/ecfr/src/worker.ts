@@ -115,6 +115,9 @@ export function makeWorker(backend: Backend) {
       if (!await withinLimit(request, env, PER_MINUTE)) return rateLimited(request, "eCFR", PER_MINUTE);
       if (url.pathname === "/health") {
         if (request.method !== "GET") return new Response(null, {status: 405});
+        // Production asks the Dell (then the container), as before the copy: the live tools
+        // still run there, and scripts/check_hosted_health.py checks it answers /health.
+        if (env.BACKEND && !env.FORWARD_URL) return await backend(request, null, env);
         // RELEASE_SHA is a Worker var set at deploy; "development" is the container's default.
         return json({status: "ok", tools: TOOLS.length, release_sha: env.RELEASE_SHA || "development", admission: ADMISSION});
       }

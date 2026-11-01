@@ -139,7 +139,6 @@
     "staging": {
       "name": "ecfr-mcp-staging",
       "workers_dev": true,
-      // A custom domain, because the Cache API does nothing on workers.dev.
       "routes": [
         {
           "pattern": "ecfr-staging.1102tools.com",
