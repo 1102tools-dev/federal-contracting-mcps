@@ -16,6 +16,7 @@ import {DatabaseSync} from "node:sqlite";
 import {mock, test} from "node:test";
 import {fileURLToPath} from "node:url";
 import {TURNED_AWAY_HEADER} from "../../shared/edge.ts";
+import {MinuteCounter} from "../../shared/rate-counter.ts";
 import {Forward} from "../src/args.ts";
 import {sizeOf} from "../src/assemble.ts";
 import {toForwardUrl} from "../src/forward.ts";
@@ -207,6 +208,37 @@ test("a forwarded request goes on exactly as sent; local answers are tagged d1",
   assert.equal(sent.length, 2);
 });
 
+test("every call counts toward 120 a minute; calls sent to the Dell also toward 20", async () => {
+  const counter = new MinuteCounter();
+  const RATE_COUNTER = {
+    idFromName: (name: string) => name,
+    get: () => ({fetch: async (_url: string, init?: RequestInit) => {
+      const {key, limit} = JSON.parse(String(init?.body));
+      return new Response(null, {status: counter.hit(key, limit, 60_000 * 5 + 1) ? 204 : 429});
+    }}),
+  };
+  const {worker, sent} = recordingWorker();
+  const limited = env(true, db, {RATE_COUNTER});
+  const from = (body: unknown) => post(body, {"CF-Connecting-IP": "8.8.8.8"});
+  for (let i = 0; i < 20; i++) {
+    assert.equal(await (await worker.fetch(from(toolCall("search_cfr", {query: "set-aside"})), limited)).text(), '{"forwarded":true}');
+  }
+  const over = await worker.fetch(from(toolCall("search_cfr", {query: "set-aside"}, 7)), limited);
+  const text = (await over.json() as any).result.content[0].text;
+  assert.match(text, /^You've reached the hosted eCFR limit of 20 calls per minute from your connection for lookups that go to eCFR live/);
+  assert.equal(over.headers.get(TURNED_AWAY_HEADER), "1");
+  assert.equal(sent.length, 20);
+  // The copy still answers: those calls only count toward 120 (21 used so far).
+  for (let i = 0; i < 99; i++) {
+    assert.equal((await worker.fetch(from(toolCall("get_latest_date", {})), limited)).headers.get("X-1102tools-Backend"), "d1");
+  }
+  const capped = await worker.fetch(from(toolCall("get_latest_date", {})), limited);
+  assert.match((await capped.json() as any).result.content[0].text, /limit of 120 calls per minute from your connection/);
+  // Another address has its own tallies.
+  const other = await worker.fetch(post(toolCall("search_cfr", {query: "set-aside"}), {"CF-Connecting-IP": "8.8.4.4"}), limited);
+  assert.equal(await other.text(), '{"forwarded":true}');
+});
+
 test("a D1 failure or a gap in the copy forwards at once, logging only a category", async () => {
   const logged: string[] = [];
   const original = console.log;
@@ -264,7 +296,7 @@ test("HTTP edge: health, docs, origin, rate limit, methods, body limits, message
   const limited = await worker.fetch(post(toolCall("get_latest_date", {}, 3)), env(false));
   assert.equal(limited.status, 200);
   assert.equal(limited.headers.get(TURNED_AWAY_HEADER), "1");
-  assert.match((await limited.json() as any).result.content[0].text, /^You've reached the hosted eCFR limit of 20 calls per minute from your connection\. /);
+  assert.match((await limited.json() as any).result.content[0].text, /^You've reached the hosted eCFR limit of 120 calls per minute from your connection\. /);
   assert.equal((await worker.fetch(new Request(`${url}/mcp`), env())).status, 405);
   assert.equal((await worker.fetch(post("{"), env())).status, 400);
   assert.equal((await worker.fetch(post("x".repeat(70000)), env())).status, 413);

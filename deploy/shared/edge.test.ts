@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
 import {MinuteCounter, RateCounter} from "./rate-counter.ts";
-import {clientApp, programName, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, explainUnavailable, TURNED_AWAY_HEADER, type CounterNamespace, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys, chatgptUser} from "./edge.ts";
+import {clientApp, programName, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, explainUnavailable, TURNED_AWAY_HEADER, type CounterNamespace, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, withinOriginLimit, originLimited, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys, chatgptUser} from "./edge.ts";
 
 // Tests never reach openai.com: the live AI-platform list download fails unless a test mocks it.
 const networkFetch = globalThis.fetch;
@@ -531,6 +531,48 @@ test("tool calls are also counted exactly, per user, per platform address, or pe
   } finally {
     console.log = original;
   }
+});
+
+test("calls sent on to the Dell get their own, tighter count", async () => {
+  const counter = new MinuteCounter();
+  const ns: CounterNamespace = {
+    idFromName: (name: string) => name,
+    get: () => ({fetch: async (_url: string, init?: RequestInit) => {
+      const {key, limit} = JSON.parse(String(init?.body));
+      return new Response(null, {status: counter.hit(key, limit, 60_000 * 5 + 1) ? 204 : 429});
+    }}),
+  };
+  const open = {limit: async () => ({success: true})};
+  const env = {AI_LIMITER: open, RATE_COUNTER: ns};
+  const call = (ip: string, subject?: string) => {
+    const body = new TextEncoder().encode(JSON.stringify({jsonrpc: "2.0", id: 3, method: "tools/call",
+      params: {name: "search_cfr", arguments: {}, ...(subject ? {_meta: {"openai/subject": subject}} : {})}})).buffer as ArrayBuffer;
+    return {request: new Request("https://x.1102tools.com/mcp", {method: "POST", headers: {"CF-Connecting-IP": ip}}), body};
+  };
+  for (let i = 0; i < 2; i++) {
+    const {request, body} = call("8.8.8.8");
+    assert.equal(await withinOriginLimit(request, body, env, 2), true);
+  }
+  const over = call("8.8.8.8");
+  assert.equal(await withinOriginLimit(over.request, over.body, env, 2), false);
+  const answer = await originLimited(over.request, over.body, "eCFR", 2, "searches").json() as any;
+  assert.equal(answer.id, 3);
+  assert.match(answer.result.content[0].text, /limit of 2 calls per minute from your connection for searches\./);
+  // A ChatGPT user is counted by ID and told "per person"; a platform address without one isn't counted here.
+  for (let i = 0; i < 2; i++) {
+    const {request, body} = call("4.14.111.5", "user-a");
+    assert.equal(await withinOriginLimit(request, body, env, 2), true);
+  }
+  const person = call("4.14.111.5", "user-a");
+  assert.equal(await withinOriginLimit(person.request, person.body, env, 2), false);
+  assert.match((await originLimited(person.request, person.body, "eCFR", 2, "searches").json() as any).result.content[0].text, /per person/);
+  for (let i = 0; i < 5; i++) {
+    const {request, body} = call("160.79.106.12");
+    assert.equal(await withinOriginLimit(request, body, env, 2), true);
+  }
+  // Not a tool call, or no counter: nothing to count.
+  assert.equal(await withinOriginLimit(over.request, null, env, 2), true);
+  assert.equal(await withinOriginLimit(over.request, over.body, {}, 2), true);
 });
 
 test("a minute's tallies reset when the minute ends", () => {

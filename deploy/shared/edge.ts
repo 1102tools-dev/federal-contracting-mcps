@@ -664,6 +664,52 @@ function rpcOf(text: string | null): {id: unknown; method: string} {
   return {id: null, method: ""};
 }
 
+// A Worker that answers most calls from D1 and sends the rest to the Dell
+// (eCFR) also counts the calls it sends on, under keys of their own and a
+// tighter limit: the Dell's calls to the government are what a busy caller
+// could use up for everyone. Claude's and ChatGPT's own addresses keep only
+// PLATFORM_PER_MINUTE; a ChatGPT user is counted by ID, as in withinLimit.
+
+/** The tools/call in a body the Worker has already read: its ChatGPT user ID, or null. */
+function toolCallIn(body: ArrayBuffer | null): {subject: string | null} | null {
+  if (!body?.byteLength) return null;
+  let message: unknown;
+  try {
+    message = JSON.parse(new TextDecoder().decode(body));
+  } catch {
+    return null;
+  }
+  if (!isObject(message) || message.method !== "tools/call" || !isObject(message.params)) return null;
+  const meta = message.params._meta;
+  const subject = isObject(meta) ? meta["openai/subject"] : undefined;
+  return {subject: typeof subject === "string" && subject && subject.length <= MAX_SUBJECT_LENGTH ? subject : null};
+}
+
+/** Whether a tool call the Worker is about to send to the Dell is within `perMinute` for its caller. */
+export async function withinOriginLimit(
+  request: Request,
+  body: ArrayBuffer | null,
+  env: {AI_LIMITER?: Limiter; RATE_COUNTER?: CounterNamespace},
+  perMinute: number,
+): Promise<boolean> {
+  const call = toolCallIn(body);
+  if (!env.RATE_COUNTER || !call) return true;
+  const key = request.headers.get("CF-Connecting-IP") || "unknown";
+  const platform = Boolean(env.AI_LIMITER) && await isAiPlatformLive(key);
+  if (platform && !call.subject) return true;
+  if (!platform) return exactHit(env.RATE_COUNTER, await sha256(`origin-address:${key}`), perMinute);
+  const within = await exactHit(env.RATE_COUNTER, await sha256(`origin-user:${await sha256(call.subject!)}`), perMinute);
+  if (!within) USER_LIMITED.add(request);
+  return within;
+}
+
+/** The answer for a call over withinOriginLimit; `what` names the calls that limit covers. */
+export function originLimited(request: Request, body: ArrayBuffer | null, service: string, perMinute: number, what: string): Response {
+  const who = USER_LIMITED.has(request) ? "per person" : "from your connection";
+  const message = `You've reached the hosted ${service} limit of ${perMinute} calls per minute ${who} for ${what}. ${WAIT} ${LOCAL_INSTALL}`;
+  return explain(rpcOf(body ? new TextDecoder().decode(body) : null), message, 429, {[TURNED_AWAY_HEADER]: "1"});
+}
+
 /** The answer for a request over its address's per-minute limit. */
 export async function rateLimited(request: Request, service: string, perMinute: number): Promise<Response> {
   const key = request.headers.get("CF-Connecting-IP") || "unknown";
