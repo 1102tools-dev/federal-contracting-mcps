@@ -31,6 +31,12 @@ verify: the daily safety net. Re-downloads about 7 titles' whole-title XML in a
 weekly rotation and compares each part's parsed text with the stored rows'
 hashes. Only parts that differ are fetched again and rewritten.
 
+audit: fetch every part's real ?part= answer (and each out-of-part ?appendix=)
+at the copy's date and rewrite only the rows that differ, for parts first loaded
+from the whole-title XML (deploy/ecfr/scripts/derive_parts.py). Titles in order,
+48 only when named; a cursor in meta (audit_cursor) lets each run resume where
+the last stopped, and a run stops cleanly after --minutes (default 300).
+
 Targets: --local PATH (a sqlite file with schema.sql) or --remote (the D1 HTTP
 API with CLOUDFLARE_D1_TOKEN, CLOUDFLARE_ACCOUNT_ID, and the database id from
 --database-id, ECFR_D1_DATABASE_ID or deploy/ecfr/wrangler.jsonc
@@ -81,6 +87,8 @@ MAX_ROWS = 200_000        # default --max-rows for remote runs
 NODE_WRITES = 3           # D1 rows written per node row: the row, its primary-key index, nodes_identifier
 VERIFY_GROUPS = 7         # the safety net sees every title once a week
 DOC_AGENCIES = "agencies.json"
+AUDIT_BATCH = 25          # audit: parts per write and cursor save
+AUDIT_MINUTES = 300.0     # audit: default time budget, under GitHub's 6-hour job limit
 
 
 class Stop(Exception):
@@ -89,6 +97,10 @@ class Stop(Exception):
 
 class RowCap(Exception):
     """A run would pass --max-rows; stop before writing more."""
+
+
+class DateMoved(Exception):
+    """The copy's date for a title moved while it was being audited; nothing of it is written."""
 
 
 def now() -> str:
@@ -1199,6 +1211,131 @@ def verify(db: Target, fetcher: Fetcher, titles: list[int] | None = None, today:
     return stats
 
 
+def audit(db: Target, fetcher: Fetcher, titles: list[int] | None = None, minutes: float = AUDIT_MINUTES,
+          restart: bool = False, log: Callable[[str], None] = print,
+          clock: Callable[[], float] = time.monotonic) -> dict[str, Any]:
+    """Real part answers for parts first written from the whole-title XML.
+
+    Every part (and out-of-part appendix) of the titles is fetched live at the
+    copy's date for that title and rebuilt exactly as build does; only rows whose
+    hash changed are written. Titles go in ascending order, skipping 48 (always
+    recorded part by part) unless it is named. meta audit_cursor holds the plan and
+    the last part done, saved with every AUDIT_BATCH parts, so the next run resumes
+    there; a run stops cleanly once `minutes` have passed. A part is fetched at the
+    title's current copy date, and a batch is written only if the copy is still at
+    that date, so no title ever mixes dates. Cursor saves are loader state and don't
+    move meta version; content writes do (Writer).
+    """
+    started = clock()
+    writer = Writer(db, log)
+    copy_titles = {r["number"]: json.loads(r["json"]) for r in db.query("SELECT number, json FROM titles")}
+    loaded = sorted(n for n, t in copy_titles.items() if not t.get("reserved") and t.get("up_to_date_as_of"))
+    plan = sorted({n for n in titles if n in loaded}) if titles else [n for n in loaded if n != 48]
+    stats: dict[str, Any] = {"plan": plan, "titles": [], "stopped": None}
+    if titles and set(titles) - set(loaded):
+        stats["not_in_copy"] = sorted(set(titles) - set(loaded))
+    rows = db.query("SELECT value FROM meta WHERE key = 'audit_cursor'")
+    cursor = json.loads(rows[0]["value"]) if rows else None
+    if restart or not cursor or cursor.get("titles") != plan:
+        cursor = {"titles": plan, "title": plan[0] if plan else None, "after": None, "index": 0,
+                  "date": None, "done": not plan}
+    if cursor.get("done"):
+        log("audit: already complete for these titles (pass --restart to run it again)")
+        stats.update(cursor=cursor, rows_written=db.rows_written, requests=fetcher.requests)
+        return stats
+
+    def save(state: dict[str, Any]) -> None:
+        state = {**state, "updated": now()}
+        db.execute(upserts("meta", ("key", "value"), ("key",), [["audit_cursor", dumps(state)]]))
+        cursor.clear()
+        cursor.update(state)
+
+    def out_of_time() -> bool:
+        return clock() - started > minutes * 60
+
+    for n in plan[plan.index(cursor["title"]):]:
+        if out_of_time():
+            stats["stopped"] = f"time budget of {minutes:g} minutes used; the next run resumes at title {n}"
+            break
+        date = copy_titles[n]["up_to_date_as_of"]
+        resume = cursor["title"] == n and cursor.get("after")
+        if resume and cursor.get("date") != date:
+            log(f"title {n}: copy moved from {cursor.get('date')} to {date}; auditing the rest at {date}")
+        stored = writer.stored_nodes(n, ("key", "structure", "children", "chunks", "hash"))
+        nodes = walk(tree_from_rows(stored)) if stored else {}
+        groups = by_unit(nodes)
+        units = list(groups)
+        start = 0
+        if resume:  # after the cursor's part; by position if a refresh removed that part
+            start = (units.index(cursor["after"]) + 1 if cursor["after"] in groups
+                     else min(int(cursor.get("index") or 0), len(units)))
+        report: dict[str, Any] = {"title": n, "date": date, "parts": len(units), "fetched": 0,
+                                  "nodes_changed": 0, "rows_written": 0, "differed": {}}
+        stats["titles"].append(report)
+        fetch = live_fetch(fetcher, n, date)
+        batch: dict[str, Row] = {}
+        state = {"done": start, "saved": start, "moved": False}
+
+        def flush() -> None:
+            """Write the batch's changed rows, then move the cursor past it."""
+            nonlocal batch
+            if state["moved"] or state["done"] == state["saved"]:
+                return
+            current = writer.stored_title(n)
+            if current is None or json.loads(current["json"]).get("up_to_date_as_of") != date:
+                state["moved"] = True
+                raise DateMoved(f"title {n}: the copy moved off {date} during the audit; the last batch was "
+                                f"not written, and the next run redoes it at the copy's date")
+            if batch:
+                report["rows_written"] += writer.sync_title(n, batch, None, stored, None)["rows_written"]
+            batch = {}
+            done = state["done"]
+            save({"titles": plan, "title": n, "after": units[done - 1] if done else None, "index": done,
+                  "date": date, "done": False})
+            state["saved"] = done
+
+        try:
+            for i in range(start, len(units)):
+                if out_of_time():
+                    stats["stopped"] = (f"time budget of {minutes:g} minutes used; the next run resumes "
+                                        f"at title {n} after {units[i - 1] if i else 'its start'}")
+                    break
+                key = units[i]
+                unit, _, _ = unit_rows(nodes, key, fetch(nodes[key]), keys=groups[key])
+                changed = [k for k, r in unit.items() if (stored.get(k) or {}).get("hash") != r.hash]
+                if changed:
+                    report["differed"][key] = len(changed)
+                    report["nodes_changed"] += len(changed)
+                    log(f"  title {n} {key}: {len(changed)} node(s) differ: {', '.join(changed[:4])}"
+                        + (" ..." if len(changed) > 4 else ""))
+                batch.update(unit)
+                report["fetched"] += 1
+                state["done"] = i + 1
+                if state["done"] - state["saved"] >= AUDIT_BATCH:
+                    flush()
+        except DateMoved as exc:
+            stats["stopped"] = str(exc)
+        finally:
+            # Whatever was fetched before a stop (time, 403, eCFR failing) is still written.
+            try:
+                flush()
+            except DateMoved as exc:
+                stats["stopped"] = str(exc)
+            finally:
+                log(f"title {n} ({date}): {report['fetched']} of {len(units)} parts fetched, "
+                    f"{report['nodes_changed']} nodes changed in {len(report['differed'])} parts, "
+                    f"{report['rows_written']:,} rows written")
+        if stats["stopped"]:
+            log(f"audit stopped: {stats['stopped']}")
+            break
+        following = plan[plan.index(n) + 1:]
+        save({"titles": plan, "title": following[0] if following else n, "after": None, "index": 0,
+              "date": None, "done": not following})
+    stats.update(cursor=dict(cursor), rows_written=db.rows_written, requests=fetcher.requests,
+                 seconds=round(clock() - started, 1))
+    return stats
+
+
 def target(args: argparse.Namespace) -> Target:
     if args.remote:
         token = os.environ.get("CLOUDFLARE_D1_TOKEN") or os.environ.get("CLOUDFLARE_API_TOKEN")
@@ -1223,7 +1360,8 @@ def main(argv: list[str] | None = None) -> int:
     rec.add_argument("--titles", type=int, nargs="*")
     for name, text in (("build", "recording -> database, change-only"),
                        ("refresh", "live eCFR -> database, change-only"),
-                       ("verify", "today's safety-net slice: whole-title XML vs stored hashes")):
+                       ("verify", "today's safety-net slice: whole-title XML vs stored hashes"),
+                       ("audit", "real part answers for derived parts, change-only, resumable")):
         p = sub.add_parser(name, help=text)
         where = p.add_mutually_exclusive_group(required=True)
         where.add_argument("--remote", action="store_true", help="write to the ecfr D1 database")
@@ -1235,6 +1373,9 @@ def main(argv: list[str] | None = None) -> int:
         if name == "build":
             p.add_argument("--rec", required=True, type=Path, help="recording directory")
             p.add_argument("--partial", action="store_true", help=argparse.SUPPRESS)  # dev: build what is recorded so far
+        if name == "audit":
+            p.add_argument("--minutes", type=float, default=AUDIT_MINUTES, help="stop cleanly after this long (default 300)")
+            p.add_argument("--restart", action="store_true", help="start the audit over instead of resuming at meta audit_cursor")
     args = parser.parse_args(argv)
     if args.command == "record":
         try:
@@ -1256,8 +1397,10 @@ def main(argv: list[str] | None = None) -> int:
             stats = build(db, args.rec, args.titles, log, report, partial=args.partial)
         elif args.command == "refresh":
             stats = refresh(db, Fetcher(), args.titles, log)
-        else:
+        elif args.command == "verify":
             stats = verify(db, Fetcher(), args.titles, log=log)
+        else:
+            stats = audit(db, Fetcher(), args.titles, args.minutes, args.restart, log)
     except (Stop, RowCap) as exc:
         log(f"stopped: {exc}")
         stats["stopped"] = str(exc)
