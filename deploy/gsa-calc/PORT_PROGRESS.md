@@ -40,3 +40,8 @@ Status: building. No D1 database yet; production untouched.
 - 2026-11-01 02:15 UTC: night-1 recording started on GitHub (probe then full pull), run 41263303785.
 - Schema v1 written (`schema.sql`); matching columns (terms.folded, which indexes) may change once the
   probes are read (PROBE_FINDINGS.md).
+- 2026-11-01 ~02:30 UTC: two background agents started against schema v1: loader (LOADER_PROGRESS.md:
+  build/diff/refresh, tests, full local build of night 1 when the artifact lands) and Worker
+  (WORKER_PROGRESS.md: protocol copy, tools port, emulator/stats, tests, parity harness + 350+ cases).
+  Next for the coordinator: read the probes once the run finishes and write PROBE_FINDINGS.md; dispatch
+  night 2 (full pull) after 02:00 UTC Nov 2 for churn.

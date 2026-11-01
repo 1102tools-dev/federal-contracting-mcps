@@ -1,0 +1,365 @@
+[
+ {
+  "name": "branch: verdict at p10",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 65.75
+  }
+ },
+ {
+  "name": "branch: verdict below p10",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 65.74
+  }
+ },
+ {
+  "name": "branch: verdict above p10",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 65.76
+  }
+ },
+ {
+  "name": "branch: verdict at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 73.25
+  }
+ },
+ {
+  "name": "branch: verdict below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 73.24
+  }
+ },
+ {
+  "name": "branch: verdict above p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 73.26
+  }
+ },
+ {
+  "name": "branch: verdict at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 86.25
+  }
+ },
+ {
+  "name": "branch: verdict below p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 86.24
+  }
+ },
+ {
+  "name": "branch: verdict above p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 86.26
+  }
+ },
+ {
+  "name": "branch: verdict at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 100.0
+  }
+ },
+ {
+  "name": "branch: verdict below p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 99.99
+  }
+ },
+ {
+  "name": "branch: verdict above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 100.01
+  }
+ },
+ {
+  "name": "branch: verdict at p90",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 107.75
+  }
+ },
+ {
+  "name": "branch: verdict below p90",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 107.74
+  }
+ },
+ {
+  "name": "branch: verdict above p90",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 107.76
+  }
+ },
+ {
+  "name": "branch: verdict far below",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "verified quantum auditor",
+   "proposed_rate": 1
+  }
+ },
+ {
+  "name": "branch: verdict far above",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 500
+  }
+ },
+ {
+  "name": "branch: verdict at the average",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "proposed_rate": 86.0
+  }
+ },
+ {
+  "name": "branch: verdict with filters",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "education_level": "BA|MA",
+   "proposed_rate": 80
+  }
+ },
+ {
+  "name": "branch: verdict small after filters",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "sin": "541330ENG",
+   "experience_min": 10,
+   "proposed_rate": 80
+  }
+ },
+ {
+  "name": "branch: zero spread",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Flat Rate Courier",
+   "proposed_rate": 42.5
+  }
+ },
+ {
+  "name": "branch: zero spread above",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Flat Rate Courier",
+   "proposed_rate": 43
+  }
+ },
+ {
+  "name": "branch: vendor phrase",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Rapid Courier",
+   "proposed_rate": 40
+  }
+ },
+ {
+  "name": "branch: phrase in several titles",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Courier",
+   "proposed_rate": 40
+  }
+ },
+ {
+  "name": "branch: 500-title cap",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Gizmo Fitter",
+   "proposed_rate": 80
+  }
+ },
+ {
+  "name": "branch: 500-title cap igce",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Gizmo Fitter"
+  }
+ },
+ {
+  "name": "branch: 500-title cap keyword",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "gizmo",
+   "page_size": 3,
+   "ordering": "labor_category",
+   "sort": "desc"
+  }
+ },
+ {
+  "name": "branch: 500-title cap sin",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541611",
+   "page_size": 2
+  }
+ },
+ {
+  "name": "branch: 500-title cap suggest",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "gizmo fitter"
+  }
+ },
+ {
+  "name": "branch: igce verified",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Verified Quantum Auditor",
+   "security_clearance": "no"
+  }
+ },
+ {
+  "name": "branch: igce zero spread",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Flat Rate Courier"
+  }
+ },
+ {
+  "name": "branch: vendor not a whole word",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "zorpx",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "branch: vendor whole word among several",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "zorp",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "branch: vendor substring of several",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "orp",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "branch: vendor acronym inside",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ZORPL"
+  }
+ },
+ {
+  "name": "branch: vendor legal suffix inside",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Zorp Industries, Inc."
+  }
+ },
+ {
+  "name": "branch: vendor paging",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "megazorpx",
+   "page": 2,
+   "page_size": 12
+  }
+ },
+ {
+  "name": "branch: vendor last page",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "megazorpx",
+   "page": 3,
+   "page_size": 12
+  }
+ },
+ {
+  "name": "branch: vendor past the end",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "megazorpx",
+   "page": 4,
+   "page_size": 12
+  }
+ },
+ {
+  "name": "branch: vendor by price desc",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Gizmo Shop",
+   "ordering": "current_price",
+   "sort": "desc",
+   "page_size": 4
+  }
+ },
+ {
+  "name": "branch: exact vendor",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "vendor_name",
+   "value": "MEGAZORPX HOLDINGS",
+   "page_size": 7,
+   "page": 2
+  }
+ },
+ {
+  "name": "branch: suggest many vendors",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "gizmo"
+  }
+ },
+ {
+  "name": "branch: browse two orderings source",
+  "tool": "filtered_browse",
+  "arguments": {
+   "sin": "54151S",
+   "ordering": "education_level",
+   "sort": "desc",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "branch: keyword exclude",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Flat Rate Courier",
+   "exclude": "8000041|8000042",
+   "page_size": 2
+  }
+ }
+]

@@ -44,12 +44,19 @@
       ]
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gsa-calc",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
   "ratelimits": [
     {
       "name": "REQUEST_LIMITER",
       "namespace_id": "110260",
       "simple": {
-        "limit": 10,
+        "limit": 120,
         "period": 60
       }
     },
@@ -100,12 +107,19 @@
           }
         ]
       },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "gsa-calc",
+          "database_id": "00000000-0000-0000-0000-000000000000"
+        }
+      ],
       "ratelimits": [
         {
           "name": "REQUEST_LIMITER",
           "namespace_id": "110260",
           "simple": {
-            "limit": 10,
+            "limit": 120,
             "period": 60
           }
         },
@@ -120,6 +134,60 @@
       ],
       "vars": {
         "ORIGIN_URL": "https://gsa-calc-origin.1102tools.com"
+      }
+    },
+    "staging": {
+      "name": "gsa-calc-mcp-staging",
+      "workers_dev": true,
+      "routes": [
+        {
+          "pattern": "calc-staging.1102tools.com",
+          "custom_domain": true
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "RateCounter",
+            "name": "RATE_COUNTER"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": [
+            "RateCounter"
+          ]
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "gsa-calc",
+          "database_id": "00000000-0000-0000-0000-000000000000"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "REQUEST_LIMITER",
+          "namespace_id": "110260",
+          "simple": {
+            "limit": 120,
+            "period": 60
+          }
+        },
+        {
+          "name": "AI_LIMITER",
+          "namespace_id": "110273",
+          "simple": {
+            "limit": 600,
+            "period": 60
+          }
+        }
+      ],
+      "vars": {
+        "FORWARD_URL": "https://gsa-calc.1102tools.com/mcp"
       }
     }
   }

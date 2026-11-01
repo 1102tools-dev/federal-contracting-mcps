@@ -1,0 +1,90 @@
+name: GSA CALC+ hosted tests
+
+# The hosted GSA CALC+ Worker answers every tool call from a D1 copy of GSA's
+# ceiling rates ("GSA in a box", deploy/gsa-calc/src/emulator.ts, under a
+# line-by-line port of the Python tools) and forwards only when the copy can't
+# answer. This checks the loader offline, the Worker's types and tests (the
+# emulator against GSA's recorded answers in servers/gsa-calc-mcp/tests/
+# fixtures), and parity with the Python server: every case in
+# deploy/gsa-calc/test/parity-cases.json sent to both, compared byte for byte,
+# with the Python server's GSA calls answered by the same emulator over a small
+# copy built from those fixtures. Parity on a full night's copy, the emulator
+# against a full recording, and the verdict comparison run locally; see
+# deploy/gsa-calc/WORKER_PROGRESS.md.
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/gsa-calc/**'
+      - 'deploy/shared/**'
+      - 'scripts/load_gsa_calc.py'
+      - 'tests/test_gsa_calc_loader.py'
+      - 'servers/gsa-calc-mcp/src/**'
+      - 'servers/gsa-calc-mcp/tests/fixtures/**'
+      - 'servers/gsa-calc-mcp/pyproject.toml'
+      - 'servers/gsa-calc-mcp/uv.lock'
+      - 'servers/gsa-calc-mcp/server.json'
+      - '.github/workflows/gsa-calc-hosted-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/gsa-calc/**'
+      - 'deploy/shared/**'
+      - 'scripts/load_gsa_calc.py'
+      - 'tests/test_gsa_calc_loader.py'
+      - 'servers/gsa-calc-mcp/src/**'
+      - 'servers/gsa-calc-mcp/tests/fixtures/**'
+      - 'servers/gsa-calc-mcp/pyproject.toml'
+      - 'servers/gsa-calc-mcp/uv.lock'
+      - 'servers/gsa-calc-mcp/server.json'
+      - '.github/workflows/gsa-calc-hosted-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # The package's own environment, on the container's Python.
+      PY: uv run --frozen --python 3.12 --project servers/gsa-calc-mcp
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - name: Loader
+        run: $PY --with pytest pytest -q tests/test_gsa_calc_loader.py
+      - name: Fixture copy, built by the loader
+        run: |
+          python3 deploy/gsa-calc/test/fixture_recording.py "$RUNNER_TEMP/rec"
+          python3 scripts/load_gsa_calc.py build --rec "$RUNNER_TEMP/rec" --local "$RUNNER_TEMP/d1.sqlite"
+      - name: Worker typecheck and tests
+        working-directory: deploy/gsa-calc
+        env:
+          GSA_CALC_TEST_DB: ${{ runner.temp }}/d1.sqlite
+        run: |
+          npm ci --ignore-scripts
+          npm run check
+          npm test
+          node --test ../shared/edge.test.ts
+      - name: Emulator against GSA's recorded answers
+        working-directory: deploy/gsa-calc
+        run: node scripts/compare-emulator.ts "$RUNNER_TEMP/d1.sqlite" "$RUNNER_TEMP/rec"
+      - name: Parity with the Python server, without and with the answer cache
+        # parity-cases.json over the fixture copy; branch-cases.json over it plus made-up records
+        # that reach the verdict, cap and vendor-note branches (test/fixture-db.ts branchRecords).
+        run: |
+          node deploy/gsa-calc/test/fixture-db.ts "$RUNNER_TEMP/branches.sqlite" --branches
+          for cache in "" --cache; do
+            $PY python deploy/gsa-calc/scripts/parity.py --db "$RUNNER_TEMP/d1.sqlite" $cache
+            $PY python deploy/gsa-calc/scripts/parity.py --db "$RUNNER_TEMP/branches.sqlite" --cases deploy/gsa-calc/test/branch-cases.json $cache
+          done
+      - name: Deploy dry runs
+        working-directory: deploy/gsa-calc
+        # Production keeps its container (not rebuilt here); staging has none.
+        run: |
+          npx wrangler deploy --dry-run --env production --containers-rollout=none --outdir "$RUNNER_TEMP/gsa-calc-dist"
+          npx wrangler deploy --dry-run --env staging --outdir "$RUNNER_TEMP/gsa-calc-staging-dist"
