@@ -1,4 +1,4 @@
-import {MAX_BODY_BYTES, listenAtEdge, rateLimited, readBounded, tooLarge, withinLimit} from "../../shared/edge.ts";
+import {MAX_BODY_BYTES, listenAtEdge, originLimited, rateLimited, readBounded, tooLarge, withinLimit, withinOriginLimit} from "../../shared/edge.ts";
 import {Forward} from "./args.ts";
 import {handleModern} from "./modern.ts";
 import {publicDocs} from "./public-docs.ts";
@@ -27,8 +27,12 @@ const CAPABILITIES = {
 // scripts/verify_hosted_release.py checks /health for the container's
 // admission limits; the Worker has no queue, so the values are fixed.
 const ADMISSION = {processing: 16, waiting: 32, total: 48, deadline_seconds: 55};
-// The per-address limit the privacy notice states.
-const PER_MINUTE = 20;
+// The per-address limits the privacy notice states: every call counts toward
+// PER_MINUTE, and a call sent on to the Dell also toward LIVE_PER_MINUTE, since
+// the Dell's paced calls to eCFR are shared by everyone.
+const PER_MINUTE = 120;
+const LIVE_PER_MINUTE = 20;
+const LIVE_CALLS = "lookups that go to eCFR live, such as searches, version history and past dates (current regulation text allows 120 a minute)";
 
 type Message = {jsonrpc?: unknown; id?: unknown; method?: unknown; params?: any; result?: unknown; error?: unknown};
 
@@ -132,8 +136,11 @@ export function makeWorker(backend: Backend) {
       try {
         return local(await answer(request, body, env, trace), trace);
       } catch (error) {
-        if (error instanceof Forward) return await backend(request, body, env);
-        throw error;
+        if (!(error instanceof Forward)) throw error;
+        if (!await withinOriginLimit(request, body, env, LIVE_PER_MINUTE)) {
+          return originLimited(request, body, "eCFR", LIVE_PER_MINUTE, LIVE_CALLS);
+        }
+        return await backend(request, body, env);
       }
     },
   };
