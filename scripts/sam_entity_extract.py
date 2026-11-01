@@ -139,7 +139,8 @@ def iter_rows(path, *, audit=None):
                 reasons = metrics['quarantine_reasons']
                 reasons['unescaped_pipe_expanded_row'] = reasons.get('unescaped_pipe_expanded_row', 0) + 1
                 continue
-            if len(fields) == 142 and fields[-1] == '!end' and fields[5] == 'A~E' and re.fullmatch(r'\d{8}~\d{8}', fields[8]):
+            # SAM sometimes merges two registrations into one row (two dates joined by ~), with status A, E or A~E.
+            if len(fields) == 142 and fields[-1] == '!end' and any(re.fullmatch(r'\d{8}~\d{8}', fields[i].strip()) for i in DATES.values()):
                 metrics['rejected_rows'] += 1
                 reasons = metrics['quarantine_reasons']
                 reasons['ambiguous_merged_registration'] = reasons.get('ambiguous_merged_registration', 0) + 1

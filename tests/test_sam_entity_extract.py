@@ -82,6 +82,22 @@ class EntityExtractTests(unittest.TestCase):
             p.write_text(p.read_text().replace(row,bad,1))
             with self.assertRaisesRegex(ValueError,'0.1%'):list(m.iter_rows(p))
 
+    def test_merged_registration_rows_quarantined_for_any_status(self):
+        # Shapes from the real 2026-11 source: status A, A~E; two dates joined by ~.
+        row=FIXTURE.read_text().splitlines()[1]
+        merged=[]
+        for status,dates in [('A',{8:'20261106~20271027',9:'20261027~20251110'}),('A~E',{8:'20261029~20271014'}),('E',{10:'20261009~20261029'})]:
+            a=row.split('|');a[5]=status
+            for i,v in dates.items():a[i]=v
+            merged.append('|'.join(a))
+        h='PUBLIC V2 00000000 20261101 0003000 0008387'
+        audit={}
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td)/'entities.dat'
+            p.write_text('BOF '+h+'\n'+(row+'\n')*2997+'\n'.join(merged)+'\nEOF '+h+'\n')
+            self.assertEqual(len(list(m.iter_rows(p,audit=audit))),2997)
+            self.assertEqual(audit['quarantine_reasons'],{'ambiguous_merged_registration':3})
+
     def test_unsafe_zip_path(self):
         with tempfile.TemporaryDirectory() as td:
             p=Path(td)/'bad.zip'
