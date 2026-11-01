@@ -31,8 +31,9 @@ on:
       - 'tests/test_response_cache.py'
       - 'servers/**'
   schedule:
-    # Weekly, so a new MCP SDK release is caught even without a PR.
-    - cron: '23 12 * * 1'
+    # Daily at 09:30 UTC (3:30 a.m. Central standard time), so a new MCP SDK
+    # release is caught within a day even without a PR.
+    - cron: '30 9 * * *'
   workflow_dispatch:
 
 permissions:
