@@ -38,7 +38,7 @@ kind TEXT NOT NULL CHECK(kind IN ('entities','exclusions')),
 record_key TEXT NOT NULL, content_hash TEXT NOT NULL,
 PRIMARY KEY(kind,record_key));'''
 MANIFEST_ROWS = 1000
-RESPONSE_BUDGET = 80_000
+RESPONSE_BUDGET = 800_000  # 80 KB took ~18k D1 round trips (~2 h) for the Nov 2026 plan; manifests already allow 1 MB
 SINGLE_RECORD_BUDGET = 1_000_000
 BATCH_BYTES = 65_000
 MIGRATION_ALLOWANCE = 1000
