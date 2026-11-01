@@ -220,3 +220,15 @@ plus out-of-part appendices) the content is a JSON object:
   - Live Dell release_sha 214c7ff530a4e2d06125de1e6534db68f85c3896 (image present in the registry).
   - **Rollback**: `npx wrangler rollback f55295fe-38fd-45e2-8d39-20c4451fb271 --env production` in deploy/ecfr,
     the container-forwarding Worker live before the switch.
+- 2026-10-31 ~20:15 CDT: **Production switched.** Worker-only deploy from the branch, keeping the live container
+  image and RELEASE_SHA 214c7ff (`configure_hosted_image.py ecfr 214c7ff…`, then
+  `wrangler deploy --config wrangler.release.json --env production --containers-rollout=none`).
+  - New version f04d67e6-a259-4baa-a4ad-f3abe16e0de4. Rollback: f55295fe-38fd-45e2-8d39-20c4451fb271 (above).
+  - Smoke test:
+    - `/health` from the Dell (backend origin)
+    - get_latest_date and lookup_far_clause from D1 (backend d1)
+    - search_cfr and get_version_history from the Dell (origin)
+    - the privacy notice live
+  - `verify_hosted_release.py ecfr` passed (1.1.14 at 214c7ff, 13 tools).
+  - `check_hosted_health.py ecfr`: ecfr ok, Dell origin ok.
+  - PR CI (ecfr-hosted-tests) passed.
