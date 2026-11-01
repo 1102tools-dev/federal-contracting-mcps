@@ -232,3 +232,15 @@ plus out-of-part appendices) the content is a JSON object:
   - `verify_hosted_release.py ecfr` passed (1.1.14 at 214c7ff, 13 tools).
   - `check_hosted_health.py ecfr`: ecfr ok, Dell origin ok.
   - PR CI (ecfr-hosted-tests) passed.
+- 2026-10-31 evening: **Caps** (PR #287, production version 7141c42e):
+  - Every call counts toward 120/min per address and per ChatGPT user.
+  - Calls sent to the Dell also count toward 20/min under their own RateCounter key.
+  - Platform addresses: 600.
+  - Live check: the 21st search in a minute was refused while copy lookups continued.
+  - Privacy, llms.txt (prompts #100) and the dashboard updated. The dashboard's Cost and efficiency panel was refreshed
+    for eCFR on D1 (backups `.bak-20261031-ecfr-d1`, `.bak-20261031-ecfr-caps`).
+- 2026-10-31: production vs staging after the switch: 365 of 365 identical. The first GitHub `verify` run checked
+  6 titles and fixed 1 part in Title 31 (3 rows).
+- 2026-10-31: `load_ecfr.py audit` (loader agent) re-fetches real part answers on GitHub, resumable with a time
+  budget. It replaces the derived parts' metadata and text wherever eCFR's part answer differs. Never run it from
+  the Mac (shared home IP).

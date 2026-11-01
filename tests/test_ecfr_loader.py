@@ -644,3 +644,186 @@ def test_every_writing_run_sets_a_new_version_last(built, tmp_path):
     assert last.startswith("INSERT INTO meta (key, value) VALUES ('version', ")
     title_writes = [i for i, sql in enumerate(writes) if "INSERT INTO titles" in sql]
     assert all("'version'" in writes[i].rsplit("INSERT INTO titles", 1)[1] for i in title_writes)
+
+
+# ---------- audit (real part answers for derived parts) ----------
+
+APPENDIX_C1 = "chapter:1/appendix:Appendix A to Chapter 1"
+
+
+def derived_copy(tmp_path, model):
+    """A copy built from a recording whose Part 2 file was 'derived': the subject
+    group's citation differs from what eCFR's real ?part=2 answer says."""
+    rec = write_recording(tmp_path / "derived-rec", model)
+    path = rec / "parts/title-48/part-2.xml"
+    text = path.read_text()
+    assert f"48 CFR {SG}" in text
+    path.write_text(text.replace(f"48 CFR {SG}", "48 CFR Part 2 Definitions"))
+    db = loader.LocalD1(tmp_path / "derived.sqlite")
+    loader.build(db, rec, log=quiet)
+    db.rows_written = 0
+    return db
+
+
+def node_rows(db) -> dict:
+    return {r["key"]: (r["hash"], r["content"], r["meta"]) for r in db.query("SELECT key, hash, content, meta FROM nodes")}
+
+
+def cursor(db) -> dict:
+    return json.loads(db.query("SELECT value FROM meta WHERE key = 'audit_cursor'")[0]["value"])
+
+
+def ticking(step: float):
+    """A clock that moves step seconds every time it is read."""
+    t = {"now": -step}
+
+    def clock() -> float:
+        t["now"] += step
+        return t["now"]
+    return clock
+
+
+def test_audit_rewrites_only_a_derived_node_that_differs(tmp_path):
+    model = base_model()
+    db = derived_copy(tmp_path, model)
+    before, first_version = node_rows(db), version(db)
+    f, fake = fetcher(model)
+    logs: list[str] = []
+    stats = loader.audit(db, f, [48], log=logs.append)
+    group = f"{P2}/subject_group:{SG}"
+    after = node_rows(db)
+    assert {k for k in after if after[k] != before[k]} == {group}
+    assert json.loads(after[group][2])["citation"] == f"48 CFR {SG}"
+    report = stats["titles"][0]
+    assert report["fetched"] == 3 and report["nodes_changed"] == 1 and report["differed"] == {P2: 1}
+    assert report["rows_written"] == 2  # the node and meta version
+    assert any(group in line for line in logs) and any("1 nodes changed in 1 parts" in line for line in logs)
+    assert version(db) != first_version
+    assert [c.split("?")[1] for c in fake.calls] == [
+        "part=1", "part=2", "chapter=1&appendix=Appendix+A+to+Chapter+1"]
+    assert cursor(db)["done"] is True
+    # The copy now equals a build from the real answers.
+    real = loader.LocalD1(tmp_path / "real.sqlite")
+    loader.build(real, write_recording(tmp_path / "real-rec", model), log=quiet)
+    assert node_rows(db) == node_rows(real)
+
+
+def test_audit_of_identical_parts_writes_no_content(built):
+    model, _, db, _ = built
+    before, first_version = node_rows(db), version(db)
+    stats = loader.audit(db, fetcher(model)[0], [48], log=quiet)
+    assert node_rows(db) == before and version(db) == first_version
+    assert stats["titles"][0]["rows_written"] == 0 and stats["titles"][0]["nodes_changed"] == 0
+    # Only the cursor moved (loader state, not content).
+    assert db.rows_written == 2  # cursor saves: end of Title 48, then the plan marked done
+
+
+def test_audit_stops_on_its_time_budget_and_resumes_at_the_cursor(tmp_path, monkeypatch, capsys):
+    model = base_model()
+    db = derived_copy(tmp_path, model)
+    monkeypatch.setattr(loader, "AUDIT_BATCH", 1)
+    # Each clock read is 20 s (start, title, then one per part); a 1-minute budget allows
+    # two part fetches, then stops cleanly.
+    f, fake = fetcher(model)
+    stats = loader.audit(db, f, [48], minutes=1, clock=ticking(20), log=quiet)
+    assert "time budget" in stats["stopped"] and stats["titles"][0]["fetched"] == 2
+    assert cursor(db)["title"] == 48 and cursor(db)["after"] == P2 and cursor(db)["done"] is False
+    assert stats["titles"][0]["nodes_changed"] == 1  # Part 2's fix was written before stopping
+    assert len(fake.calls) == 2
+    # The next run fetches only what is left, then marks the audit done.
+    f, fake = fetcher(model)
+    stats = loader.audit(db, f, [48], log=quiet)
+    assert [c.split("?")[1] for c in fake.calls] == ["chapter=1&appendix=Appendix+A+to+Chapter+1"]
+    assert stats["titles"][0]["fetched"] == 1 and cursor(db)["done"] is True
+    # Done means done until --restart.
+    f, fake = fetcher(model)
+    assert loader.audit(db, f, [48], log=quiet)["titles"] == [] and fake.calls == []
+    loader.audit(db, f, [48], restart=True, log=quiet)
+    assert len(fake.calls) == 3
+
+
+def test_audit_command_exits_cleanly_on_its_budget(tmp_path, monkeypatch, capsys):
+    model = base_model()
+    db = derived_copy(tmp_path, model)
+    f, _ = fetcher(model)
+    monkeypatch.setattr(loader, "Fetcher", lambda: f)
+    args = ["audit", "--local", str(tmp_path / "derived.sqlite"), "--titles", "48", "--minutes", "0",
+            "--json", str(tmp_path / "audit.json")]
+    assert loader.main(args) == 0
+    out = json.loads((tmp_path / "audit.json").read_text())
+    assert "time budget" in out["stopped"] and out["requests"] == 0
+
+
+def test_audit_follows_the_copy_date_and_never_mixes_dates(tmp_path, monkeypatch):
+    model = base_model()
+    db = derived_copy(tmp_path, model)
+    monkeypatch.setattr(loader, "AUDIT_BATCH", 1)
+    loader.audit(db, fetcher(model)[0], [48], minutes=1, clock=ticking(20), log=quiet)
+    # A refresh moved Title 48 to 10-30 between runs: the rest is audited at 10-30.
+    newer = copy.deepcopy(model)
+    newer["titles"]["up_to_date_as_of"] = "2026-10-30"
+    loader.refresh(db, fetcher(newer)[0], log=quiet)
+    f, fake = fetcher(newer)
+    loader.audit(db, f, [48], log=quiet)
+    assert fake.calls == ["https://www.ecfr.gov/api/versioner/v1/full/2026-10-30/title-48.xml"
+                          "?chapter=1&appendix=Appendix+A+to+Chapter+1"]
+    # A move during a run: the batch fetched at the old date is not written, and the cursor stays.
+    db2 = derived_copy(tmp_path / "second", model)
+    before = node_rows(db2)
+    fake2 = FakeEcfr(model)
+
+    def moving(request):
+        response = fake2(request)
+        if len(fake2.calls) == 2:  # someone else moves the copy while Part 2 is being fetched
+            newer_row = dict(model["titles"], up_to_date_as_of="2026-10-30")
+            db2.execute(upserts_titles(newer_row))
+        return response
+    client = httpx.Client(transport=httpx.MockTransport(moving), base_url=loader.BASE)
+    stats = loader.audit(db2, loader.Fetcher(client, sleep=lambda s: None), [48], log=quiet)
+    assert "moved off 2026-10-29" in stats["stopped"]
+    assert node_rows(db2) == before  # Part 2's fix, fetched at the old date, was not written
+    assert cursor(db2)["after"] == P1 and cursor(db2)["done"] is False  # the next run redoes Part 2
+
+
+def upserts_titles(row: dict) -> list[str]:
+    text = loader.dumps(row)
+    return loader.upserts("titles", ("number", "json", "hash"), ("number",), [[48, text, loader.sha(text)]])
+
+
+def test_audit_skips_title_48_unless_named(built):
+    model, _, db, _ = built
+    f, fake = fetcher(model)
+    stats = loader.audit(db, f, None, log=quiet)
+    assert stats["plan"] == [] and fake.calls == []
+
+
+def test_audit_remote_sums_rows_written_respects_the_cap_and_keeps_work_on_a_403(tmp_path):
+    model = base_model()
+    rec = write_recording(tmp_path / "derived-rec", model)
+    part2 = rec / "parts/title-48/part-2.xml"
+    part2.write_text(part2.read_text().replace(f"48 CFR {SG}", "48 CFR Part 2 Definitions"))
+    fake_d1 = FakeD1()
+    loader.build(remote(fake_d1), rec, log=quiet)
+    # The cap: Part 2's fix would pass --max-rows 1, so nothing of it is written.
+    with pytest.raises(loader.RowCap):
+        loader.audit(remote(fake_d1, max_rows=1), fetcher(model)[0], [48], log=quiet)
+    group = f"{P2}/subject_group:{SG}"
+    stale = fake_d1.db.execute("SELECT meta FROM nodes WHERE key = ?", (group,)).fetchone()[0]
+    assert "Part 2 Definitions" in stale
+    # eCFR refuses (403) after Part 2: the fix is written, the cursor saved, then the run stops.
+    fake = FakeEcfr(model)
+
+    def refusing(request):
+        if len(fake.calls) == 2:
+            fake.calls.append(str(request.url))
+            return httpx.Response(403, text="forbidden")
+        return fake(request)
+    client = httpx.Client(transport=httpx.MockTransport(refusing), base_url=loader.BASE)
+    db = remote(fake_d1)
+    with pytest.raises(loader.Stop):
+        loader.audit(db, loader.Fetcher(client, sleep=lambda s: None), [48], log=quiet)
+    assert db.rows_written == 3  # the node, meta version, the cursor
+    fixed = fake_d1.db.execute("SELECT meta FROM nodes WHERE key = ?", (group,)).fetchone()[0]
+    assert f"48 CFR {SG}" in fixed
+    saved = json.loads(fake_d1.db.execute("SELECT value FROM meta WHERE key = 'audit_cursor'").fetchone()[0])
+    assert saved["after"] == P2

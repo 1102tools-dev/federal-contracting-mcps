@@ -15,6 +15,13 @@ name: eCFR copy refresh
 # once a week, rotation kept in the database) and rewrites only parts whose
 # parsed text no longer matches. Nothing differs, nothing written.
 #
+# On demand: audit. Fetches every part's real ?part= answer (and out-of-part
+# ?appendix=) at the copy's date, titles in order (48 only when named), and
+# rewrites only rows that differ: the check for parts first loaded from the
+# whole-title XML. A cursor in the database lets each run resume where the last
+# one stopped; a run stops cleanly after `minutes`. It shares the concurrency
+# group, so hourly refreshes wait (one queued) until it finishes.
+#
 # Every run adds up D1's rows_written and stops past --max-rows. Never deploys
 # the Worker.
 #
@@ -30,9 +37,9 @@ on:
   workflow_dispatch:
     inputs:
       command:
-        description: 'refresh (change-only) or verify (safety-net slice)'
+        description: 'refresh (change-only), verify (safety-net slice) or audit (real part answers, resumable)'
         type: choice
-        options: [refresh, verify]
+        options: [refresh, verify, audit]
         default: refresh
       titles:
         description: 'Only these titles, space-separated (verify: instead of the day''s slice)'
@@ -42,6 +49,14 @@ on:
         description: 'Stop once this run writes more D1 rows'
         type: string
         default: '200000'
+      minutes:
+        description: 'audit: stop cleanly after this many minutes (at most 330); the next run resumes'
+        type: string
+        default: '300'
+      restart:
+        description: 'audit: start over instead of resuming at the saved cursor'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -53,7 +68,7 @@ concurrency:
 jobs:
   load:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 350
     # A failure alerts through outage-alert.yml (with backoff), not by failing the run.
     continue-on-error: true
     environment: sam-data-load
@@ -65,6 +80,8 @@ jobs:
       INPUT_COMMAND: ${{ github.event.inputs.command }}
       TITLES: ${{ github.event.inputs.titles }}
       MAX_ROWS: ${{ github.event.inputs.max_rows || '200000' }}
+      MINUTES: ${{ github.event.inputs.minutes || '300' }}
+      RESTART: ${{ github.event.inputs.restart == 'true' && '--restart' || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
@@ -75,7 +92,7 @@ jobs:
           if [ "$EVENT" = workflow_dispatch ]; then command="$INPUT_COMMAND"
           elif [ "$SCHEDULE" = '50 9 * * *' ]; then command=verify
           else command=refresh; fi
-          case "$command" in refresh|verify) ;; *) echo "unknown command $command"; exit 1 ;; esac
+          case "$command" in refresh|verify|audit) ;; *) echo "unknown command $command"; exit 1 ;; esac
           case "$MAX_ROWS" in ''|*[!0-9]*) echo "max_rows must be a number"; exit 1 ;; esac
           extra=()
           for t in $TITLES; do
@@ -83,6 +100,12 @@ jobs:
             extra+=("$t")
           done
           if [ ${#extra[@]} -gt 0 ]; then extra=(--titles "${extra[@]}"); fi
+          if [ "$command" = audit ]; then
+            case "$MINUTES" in ''|*[!0-9]*) echo "minutes must be a whole number"; exit 1 ;; esac
+            if [ "$MINUTES" -gt 330 ]; then echo "minutes must be at most 330 (the job stops at 350)"; exit 1; fi
+            extra+=(--minutes "$MINUTES")
+            if [ -n "$RESTART" ]; then extra+=(--restart); fi
+          fi
           status=0
           uv run --frozen --python 3.12 --project servers/ecfr-mcp \
             python scripts/load_ecfr.py "$command" --remote --max-rows "$MAX_ROWS" \

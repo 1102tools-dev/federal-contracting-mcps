@@ -141,3 +141,58 @@ only replaced by a tested version after that process has started.
   glob; rebuilt at once. If a Worker test failed with "no such table" around then, rerun it.)
   Titles 1-3 (recorded since): 2,674 nodes; 137 parts, 1,911 sections+appendices, 363 subparts match,
   0 mismatches, 0 alignment problems; 152 nodes flagged, all "no section or appendix below".
+
+## Audit of derived parts (branch `ecfr-audit`, from origin/main 58d43ea)
+- 2026-10-31 20:30: `load_ecfr.py audit` added, plus `command=audit` in `ecfr-load.yml`.
+  - Fetches each part's real `?part=X` answer (and each out-of-part `?appendix=`) at the title's copy
+    date. One XML request at a time, 3 s after the previous one completes (the loader's `Fetcher`).
+  - Rebuilds the nodes exactly as `build` does (`unit_rows` over the copy's stored structure), then
+    writes only rows whose hash changed: the same `Writer`, `rows_written` summed, `--max-rows`, and
+    `meta.version` moved by content writes only.
+  - Titles go in ascending order; 48 is skipped unless named.
+  - The cursor lives in `meta` as `audit_cursor`: `{titles (the plan), title, after (last part done),
+    index, date, done, updated}`. It's saved with every 25 parts (`AUDIT_BATCH`) and at each title's
+    end. Cursor saves don't move `meta.version`, because no answer changes.
+  - Resuming:
+    - A new run with the same title list resumes after `after`; a different list starts a new plan.
+    - `done: true` means a rerun does nothing until `--restart` (workflow input `restart`).
+  - The run stops cleanly after `--minutes` (default 300; the workflow allows at most 330, and the job
+    timeout is now 350). What was fetched before a stop (time budget, a 403, eCFR failing) is still
+    written and the cursor saved, before the stop is reported.
+  - Dates are never mixed:
+    - Each title is audited at its copy date when the run reaches it. A refresh that moved it between
+      runs just means the rest is fetched at the new date: parts already audited are either unchanged
+      across the move or were refetched by that refresh.
+    - Each batch is written only if the copy is still at the date it was fetched at. If a writer
+      elsewhere moved it mid-run, the batch is dropped, the cursor stays, and the run stops with a
+      note; the next run redoes the batch at the copy's date.
+  - Log, per part that differed: `title N <part key>: k node(s) differ: <keys>`. Per title:
+    `title N (date): fetched of total parts fetched, nodes changed in P parts, rows written`. The JSON
+    (`--json`, the step summary) has per title `fetched`, `nodes_changed`, `rows_written` and
+    `differed` {part key: nodes}.
+  - Concurrency: the same `ecfr-load` group, so an hourly refresh waits (one queued) while an audit runs.
+    300 minutes means the copy can lag eCFR by up to ~5 h during an audit run; dispatch a smaller
+    `minutes` if that matters.
+  - Tests (fake eCFR via httpx.MockTransport and fake D1 only; no live requests from the Mac), in
+    `tests/test_ecfr_loader.py`: **29 pass** (22 before + 7 audit). They cover:
+    - a derived node that differs is rewritten (only it, 2 rows), and the copy then equals a build from
+      the real answers
+    - identical parts write no content and keep `meta.version`
+    - the cursor resumes (only the remaining part fetched), done stays done, `--restart` starts over
+    - the time budget stops cleanly (`main` exit 0, nothing fetched with `--minutes 0`)
+    - the copy date moving between runs (audited at the new date) and during a run (batch not written)
+    - 48 skipped unless named
+    - remote: `--max-rows` refuses with nothing written; a 403 after Part 2 still writes its fix and
+      saves the cursor
+  - Offline dry run on real data (a copy of `ecfr-all.sqlite`; fake fetcher serving the real sampled
+    `?part=` answers in `rec-2026-10-29/sample/` where present, else the derived files):
+    - Titles 12 and 20: 628 parts fetched; exactly the two known misses differ: 12 CFR 192
+      `subpart:A/subject_group:ECFR9a7490d1c0ea607` (2 rows) and 20 CFR 404
+      `subpart:P/appendix:Appendix 1 to Subpart P of Part 404` (chunked: 15 rows).
+    - 46 rows in all, the rest cursor saves. On D1 a cursor save is 2 rows (meta row plus its key
+      index), about 660 rows for a full pass.
+  - Full pass from GitHub: about 8,300 requests at 3 s+ each is about 7 to 9 hours, so 2 runs at
+    300 minutes.
+  - Dispatch, once merged to main (the `sam-data-load` environment is main-only):
+    `gh workflow run ecfr-load.yml --ref main -f command=audit -f minutes=300`. Add
+    `-f titles="12 20"` for chosen titles; repeat the same command to continue.
