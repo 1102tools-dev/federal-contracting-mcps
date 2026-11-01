@@ -1,0 +1,71 @@
+name: GSA CALC+ copy
+
+# Recordings for the hosted GSA CALC+ copy (Worker + D1, being built on branch
+# calc-d1-port). On demand only; nothing here writes to D1 or deploys.
+#
+# record: pulls every ceiling-rate record from GSA's API (about 750-1,100
+#   requests, one at a time, 7.5 s apart) and uploads the raw answers plus
+#   records.jsonl.gz as an artifact. Start it after GSA's nightly rebuild at
+#   02:00 UTC; a rebuild mid-pull aborts the run.
+# probe: records GSA's answers to deploy/gsa-calc/scripts/probes.txt, the query
+#   strings that pin down GSA's matching, filter, sort and paging rules.
+#
+# Runs here, never from the Mac: the Mac and the Dell share the home IP, and
+# the Dell's hosted CALC+ calls GSA from it. No credentials needed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'probe-and-record (both, one stream), record or probe'
+        type: choice
+        options: [probe-and-record, record, probe]
+        default: probe-and-record
+      gap:
+        description: 'Seconds between GSA requests'
+        type: string
+        default: '7.5'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gsa-calc-load
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      COMMAND: ${{ github.event.inputs.command }}
+      GAP: ${{ github.event.inputs.gap }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Record GSA CALC+
+        run: |
+          case "$GAP" in ''|*[!0-9.]*) echo "gap must be a number"; exit 1 ;; esac
+          mkdir -p rec
+          status=0
+          if [ "$COMMAND" != record ]; then
+            python3 scripts/load_gsa_calc.py probe --out rec/probes --gap "$GAP" || status=$?
+          fi
+          if [ "$COMMAND" != probe ] && [ $status -eq 0 ]; then
+            python3 scripts/load_gsa_calc.py record --out rec/pull --gap "$GAP" || status=$?
+          fi
+          {
+            echo "### GSA CALC+ $COMMAND"
+            echo '```json'
+            jq '{index, priced_records, records, calls, tiebreak_orderings, lost_in_subslices, unresolved, minutes}' \
+              rec/pull/summary.json 2>/dev/null || echo '{}'
+            echo '```'
+            echo "Probes recorded: $(wc -l < rec/probes/manifest.jsonl 2>/dev/null || echo 0)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: gsa-calc-rec-${{ github.run_id }}
+          path: rec/
+          retention-days: 30
+          compression-level: 0
