@@ -39,6 +39,7 @@ record_key TEXT NOT NULL, content_hash TEXT NOT NULL,
 PRIMARY KEY(kind,record_key));'''
 MANIFEST_ROWS = 1000
 RESPONSE_BUDGET = 80_000
+SINGLE_RECORD_BUDGET = 1_000_000
 BATCH_BYTES = 65_000
 MIGRATION_ALLOWANCE = 1000
 
@@ -116,7 +117,8 @@ def projected_rows(db,kind,ids,fields):
         batch=[];size=0
         for record in sizes:
             cost=record['bytes']
-            if cost>RESPONSE_BUDGET:
+            # Entities listing hundreds of NAICS codes run past the batch budget; read those alone.
+            if cost>SINGLE_RECORD_BUDGET:
                 raise ValueError('Legacy normalized record exceeds bounded response budget')
             if batch and size+cost>RESPONSE_BUDGET:
                 yield from db.query(f"SELECT {','.join(fields)} FROM {kind} WHERE {key} IN ({','.join(map(quote,batch))})")
@@ -260,11 +262,38 @@ def iter_pages(iterator,size):
     if batch:yield batch
 
 
+def split_record(items,units):
+    """Split one oversized record into child batches, then main row + hash last.
+
+    Child writes are idempotent, and the hash commits only with the main row, so
+    a run that stops between pieces replans this record and finishes it on resume.
+    """
+    from load_sam_public import MAX_STATEMENT_BYTES
+    child=re.compile(r'(INSERT INTO|DELETE FROM) (entity_naics|entity_business_types) ')
+    children=[re.sub(r'^INSERT INTO ','INSERT OR IGNORE INTO ',s) for s in items if child.match(s)]
+    final=[s for s in items if not child.match(s)]
+    chunks=[];chunk=[];size=0
+    for statement in children:
+        cost=len(statement.encode())+1
+        if chunk and size+cost>BATCH_BYTES:chunks.append(chunk);chunk=[];size=0
+        chunk.append(statement);size+=cost
+    if chunk:chunks.append(chunk)
+    if sum(len(s.encode())+1 for s in final)>MAX_STATEMENT_BYTES:
+        raise ValueError('Registration transaction exceeds bounded SQL budget')
+    chunks.append(final)
+    for piece in chunks:
+        yield piece,-(-units*len(piece)//len(items))+10
+
+
 def batches(connection):
     statements=[];units=0;size=0
     for row in connection.execute('SELECT * FROM delta ORDER BY seq'):
         items=json.loads(row['sql_json']);cost=sum(len(s.encode())+1 for s in items)
-        if cost>BATCH_BYTES: raise ValueError('Registration transaction exceeds bounded SQL budget')
+        if cost>BATCH_BYTES:
+            if statements:yield statements,units+10
+            statements=[];units=0;size=0
+            yield from split_record(items,row['units'])
+            continue
         if statements and size+cost>BATCH_BYTES:
             yield statements,units+10
             statements=[];units=0;size=0

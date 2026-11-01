@@ -68,6 +68,39 @@ class Incremental(unittest.TestCase):
         self.assertEqual(result['delta'],dict(inserted=1,changed=1,removed=1,unchanged=0))
         self.assertEqual(self.db.query('SELECT COUNT(*) n FROM entities')[0]['n'],2)
         self.assertEqual(self.db.query('SELECT COUNT(*) n FROM entity_naics')[0]['n'],2)
+    def test_oversized_legacy_record_is_read_alone(self):
+        # Real 2026-10 rows list hundreds of NAICS codes (~111 KB projected), past the 80 KB batch budget.
+        big=dict(self.entity('BIGBIG123456','54321'),record_json={'pad':'x'*60_000})
+        self.seed('entities',[self.entity(),big])
+        ids={r['uei']:r['entity_id'] for r in self.db.query('SELECT uei,entity_id FROM entities')}
+        rows=list(incremental.projected_rows(self.db,'entities',[ids['ABCDEF123456'],ids['BIGBIG123456']],loader.ENTITY_FIELDS))
+        self.assertEqual(sorted(r['uei'] for r in rows),['ABCDEF123456','BIGBIG123456'])
+        with patch.object(incremental,'SINGLE_RECORD_BUDGET',100_000),self.assertRaisesRegex(ValueError,'bounded response budget'):
+            list(incremental.projected_rows(self.db,'entities',[ids['BIGBIG123456']],loader.ENTITY_FIELDS))
+
+    def test_oversized_registration_splits_children_before_main_row(self):
+        # Real 2026-11 deltas reach 165 KB for entities listing hundreds of NAICS codes.
+        many=[f'{n:06d}' for n in range(100000,101000)]
+        self.seed('entities',[self.entity(),self.entity('BIGBIG123456','54321',naics=many[:500])])
+        result=self.run_load('entities',[self.entity(),self.entity('BIGBIG123456','54321',date='2026-11-01',naics=many[400:]),self.entity('NEWNEW123456','67890',naics=many)])
+        self.assertTrue(result['completed'])
+        for uei,codes in [('BIGBIG123456',many[400:]),('NEWNEW123456',many)]:
+            entity=self.db.query(f"SELECT entity_id FROM entities WHERE uei='{uei}'")[0]['entity_id']
+            self.assertEqual(sorted(r['code'] for r in self.db.query(f"SELECT code FROM entity_naics WHERE entity_id='{entity}'")),codes)
+        with patch.object(incremental,'split_record',wraps=incremental.split_record) as split:
+            self.run_load('entities',[self.entity(),self.entity('BIGBIG123456','54321',naics=many[:200])])
+        self.assertTrue(split.called)
+        work=sqlite3.connect(':memory:');work.row_factory=sqlite3.Row
+        work.execute('CREATE TABLE delta(seq INTEGER PRIMARY KEY,sql_json TEXT,units INTEGER,action TEXT)')
+        key='x'*64
+        statements=[f"INSERT INTO entities (entity_id) VALUES ('{key}');"]+[f"INSERT INTO entity_naics VALUES ('{key}','{c}');" for c in many]+["INSERT INTO public_record_hashes VALUES ('entities','x','x');"]
+        work.execute('INSERT INTO delta(sql_json,units,action) VALUES (?,?,?)',(json.dumps(statements),len(statements),'inserted'))
+        pieces=[p for p,_ in incremental.batches(work)]
+        self.assertGreater(len(pieces),1)
+        self.assertTrue(all(sum(len(s.encode())+1 for s in p)<=incremental.BATCH_BYTES for p in pieces[:-1]))
+        self.assertTrue(all(s.startswith('INSERT OR IGNORE INTO entity_naics') for p in pieces[:-1] for s in p))
+        self.assertEqual(pieces[-1],[statements[0],statements[-1]])
+
     def test_historical_account_writes_do_not_block_new_delta(self):
         self.seed('entities',[self.entity()]);self.db.target='remote'
         oracle=SimpleNamespace(db=self.db.db,total=0,round_limit=5000000,
