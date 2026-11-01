@@ -53,3 +53,11 @@ Status: building. No D1 database yet; production untouched.
   substring), `*` literal; sin filter = exact match on standard-tokenizer pieces (reproduced 5 of 5 codes);
   sum_of_squares needs exact summation. Sent to the Worker agent to implement and rerun the comparisons.
   Loader asked to keep cleanup one night behind (closes a read race at the switch).
+- 2026-11-01 05:30 UTC: Worker implemented the probe findings (keyword = every min(4, length)-char gram in
+  one field value, 61/61 keyword probes; sin = standard-tokenizer term; quirks). compare-emulator over
+  1,015 night-1 answers: 0 different (verified by rerun). Tools parity on the real copy: 605 cases, 592
+  identical, 13 documented, 0 unexpected. Committed ef3285b.
+- PR #293 merged: gsa-calc-load.yml `probe-record-cases` (probes + full pull + Python server on every
+  parity case, ~3 h), scheduled ONCE for 02:20 UTC Nov 2 so it doesn't need the Mac. Remove the
+  schedule after it runs. Then: build night 2 change-only on the night-1 copy (churn + rows), rerun
+  compare-emulator, `parity.py --verdicts`, scratch-D1 sample, report to James.
