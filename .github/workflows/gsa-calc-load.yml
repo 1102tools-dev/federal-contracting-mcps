@@ -9,17 +9,28 @@ name: GSA CALC+ copy
 #   02:00 UTC; a rebuild mid-pull aborts the run.
 # probe: records GSA's answers to deploy/gsa-calc/scripts/probes.txt, the query
 #   strings that pin down GSA's matching, filter, sort and paging rules.
+# cases: runs the Python server (servers/gsa-calc-mcp) on every case in
+#   deploy/gsa-calc/test/parity-cases.json with its GSA calls recorded
+#   (deploy/gsa-calc/scripts/parity.py --record --python-only; about 320 calls),
+#   for the parity verdict comparison against the Worker's copy.
+# probe-record-cases: probe, then record, then cases, in one job and one
+#   stream (--gap apart throughout, including between phases), one artifact.
+#
+# Scheduled once (02:20 UTC on November 2, after GSA's rebuild): night 2 of the
+# port's measurements, probe-record-cases. Remove the schedule after it runs.
 #
 # Runs here, never from the Mac: the Mac and the Dell share the home IP, and
 # the Dell's hosted CALC+ calls GSA from it. No credentials needed.
 
 on:
+  schedule:
+    - cron: '20 2 2 11 *'
   workflow_dispatch:
     inputs:
       command:
-        description: 'probe-and-record (both, one stream), record or probe'
+        description: 'probe-and-record (both, one stream), record, probe, probe-record-cases (all three, one stream) or cases'
         type: choice
-        options: [probe-and-record, record, probe]
+        options: [probe-and-record, record, probe, probe-record-cases, cases]
         default: probe-and-record
       gap:
         description: 'Seconds between GSA requests'
@@ -38,28 +49,50 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 350
     env:
-      COMMAND: ${{ github.event.inputs.command }}
-      GAP: ${{ github.event.inputs.gap }}
+      COMMAND: ${{ github.event.inputs.command || 'probe-record-cases' }}
+      GAP: ${{ github.event.inputs.gap || '7.5' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        if: ${{ github.event_name == 'schedule' || github.event.inputs.command == 'probe-record-cases' || github.event.inputs.command == 'cases' }}
+      - name: Python server for the cases
+        if: ${{ github.event_name == 'schedule' || github.event.inputs.command == 'probe-record-cases' || github.event.inputs.command == 'cases' }}
+        # Ready before the first GSA call, so a setup failure can't waste a recorded night.
+        run: |
+          uv sync --frozen --python 3.12 --project servers/gsa-calc-mcp
+          uv run --frozen --python 3.12 --project servers/gsa-calc-mcp python deploy/gsa-calc/scripts/parity.py --help > /dev/null
       - name: Record GSA CALC+
         run: |
           case "$GAP" in ''|*[!0-9.]*) echo "gap must be a number"; exit 1 ;; esac
+          case "$COMMAND" in
+            probe-and-record) phases="probe record" ;;
+            probe-record-cases) phases="probe record cases" ;;
+            *) phases="$COMMAND" ;;
+          esac
           mkdir -p rec
           status=0
-          if [ "$COMMAND" != record ]; then
-            python3 scripts/load_gsa_calc.py probe --out rec/probes --gap "$GAP" || status=$?
-          fi
-          if [ "$COMMAND" != probe ] && [ $status -eq 0 ]; then
-            python3 scripts/load_gsa_calc.py record --out rec/pull --gap "$GAP" || status=$?
-          fi
+          started=
+          for phase in $phases; do
+            [ $status -eq 0 ] || break
+            # One stream: the previous phase's last call is --gap behind too.
+            [ -z "$started" ] || sleep "$GAP"
+            started=1
+            case "$phase" in
+              probe) python3 scripts/load_gsa_calc.py probe --out rec/probes --gap "$GAP" || status=$? ;;
+              record) python3 scripts/load_gsa_calc.py record --out rec/pull --gap "$GAP" || status=$? ;;
+              cases) uv run --frozen --python 3.12 --project servers/gsa-calc-mcp python deploy/gsa-calc/scripts/parity.py \
+                       --rec rec/cases --record --python-only --gap "$GAP" || status=$? ;;
+              *) echo "unknown command $COMMAND"; exit 1 ;;
+            esac
+          done
           {
             echo "### GSA CALC+ $COMMAND"
             echo '```json'
             jq '{index, priced_records, records, calls, tiebreak_orderings, lost_in_subslices, unresolved, minutes}' \
               rec/pull/summary.json 2>/dev/null || echo '{}'
             echo '```'
-            echo "Probes recorded: $(wc -l < rec/probes/manifest.jsonl 2>/dev/null || echo 0)"
+            echo "Probes recorded: $(cat rec/probes/manifest.jsonl 2>/dev/null | wc -l)"
+            echo "Case answers recorded: $(cat rec/cases/manifest.jsonl 2>/dev/null | wc -l)"
           } >> "$GITHUB_STEP_SUMMARY"
           exit $status
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

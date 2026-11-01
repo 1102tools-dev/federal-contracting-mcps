@@ -1,0 +1,4825 @@
+[
+ {
+  "name": "initialize",
+  "method": "initialize",
+  "params": {
+   "protocolVersion": "2025-06-18",
+   "capabilities": {},
+   "clientInfo": {
+    "name": "parity",
+    "version": "1"
+   }
+  }
+ },
+ {
+  "name": "initialize unknown protocol version",
+  "method": "initialize",
+  "params": {
+   "protocolVersion": "2026-07-28",
+   "capabilities": {},
+   "clientInfo": {
+    "name": "parity",
+    "version": "1"
+   }
+  }
+ },
+ {
+  "name": "initialize without params",
+  "method": "initialize"
+ },
+ {
+  "name": "ping",
+  "method": "ping"
+ },
+ {
+  "name": "tools/list",
+  "method": "tools/list"
+ },
+ {
+  "name": "prompts/list",
+  "method": "prompts/list"
+ },
+ {
+  "name": "resources/list",
+  "method": "resources/list"
+ },
+ {
+  "name": "resources/templates/list",
+  "method": "resources/templates/list"
+ },
+ {
+  "name": "resources/read unknown",
+  "method": "resources/read",
+  "params": {
+   "uri": "calc://nothing"
+  }
+ },
+ {
+  "name": "unknown method",
+  "method": "tools/frobnicate",
+  "params": {}
+ },
+ {
+  "name": "notification",
+  "method": "notifications/initialized",
+  "notification": true
+ },
+ {
+  "name": "tools/call without arguments",
+  "method": "tools/call",
+  "params": {
+   "name": "sin_analysis"
+  }
+ },
+ {
+  "name": "unknown tool",
+  "tool": "get_salary",
+  "arguments": {}
+ },
+ {
+  "name": "validation float-ness of JSON numbers",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"keyword_search\",\"arguments\":{\"keyword\":\"nurse\",\"page\":1.0,\"page_size\":1E1,\"price_min\":5,\"experience_min\":2.0}}}"
+ },
+ {
+  "name": "validation big integers",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"keyword_search\",\"arguments\":{\"keyword\":\"nurse\",\"page\":123456789012345678901234567890}}}"
+ },
+ {
+  "name": "validation float too large for an integer",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"filtered_browse\",\"arguments\":{\"experience_min\":1e20,\"page\":9.3e18}}}"
+ },
+ {
+  "name": "validation huge integer price",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"filtered_browse\",\"arguments\":{\"price_min\":1000000000000000000000000000000}}}"
+ },
+ {
+  "name": "tools/call with null arguments",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"tools/call\",\"params\":{\"name\":\"sin_analysis\",\"arguments\":null}}"
+ },
+ {
+  "name": "string request id",
+  "raw": "{\"jsonrpc\": \"2.0\", \"id\": \"req-1\", \"method\": \"tools/call\", \"params\": {\"name\": \"sin_analysis\", \"arguments\": {\"sin_code\": \"611430\"}}}"
+ },
+ {
+  "name": "tools/list with cursor",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{\"cursor\":\"abc\"}}"
+ },
+ {
+  "name": "prompts/get unknown",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"prompts/get\",\"params\":{\"name\":\"nothing\"}}"
+ },
+ {
+  "name": "request id 1.0 is a notification",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1.0,\"method\":\"ping\"}"
+ },
+ {
+  "name": "request id true is a notification",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":true,\"method\":\"tools/list\"}"
+ },
+ {
+  "name": "request id null is a notification",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":null,\"method\":\"ping\"}"
+ },
+ {
+  "name": "big integer request id",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1180591620717411303424,\"method\":\"ping\"}"
+ },
+ {
+  "name": "client response accepted",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}"
+ },
+ {
+  "name": "client error accepted",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":1,\"message\":\"x\"}}"
+ },
+ {
+  "name": "initialize without client version",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{},\"clientInfo\":{\"name\":\"x\"}}}"
+ },
+ {
+  "name": "tools/call without name",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"arguments\":{}}}"
+ },
+ {
+  "name": "tools/call list arguments",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"sin_analysis\",\"arguments\":[]}}"
+ },
+ {
+  "name": "duplicate argument keys, last wins",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"sin_analysis\",\"arguments\":{\"sin_code\":\"bad code\",\"sin_code\":\"611430\"}}}"
+ },
+ {
+  "name": "invalid: malformed JSON",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,"
+ },
+ {
+  "name": "invalid: batch",
+  "raw": "[{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}]"
+ },
+ {
+  "name": "invalid: jsonrpc 1.0",
+  "raw": "{\"jsonrpc\":\"2.0x\",\"id\":1,\"method\":\"ping\"}"
+ },
+ {
+  "name": "invalid: params is a list",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":[1]}"
+ },
+ {
+  "name": "invalid: NaN literal",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"filtered_browse\",\"arguments\":{\"price_min\":NaN}}}"
+ },
+ {
+  "name": "invalid: lone surrogate in an argument",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse \ud800"
+  }
+ },
+ {
+  "name": "invalid: lone low surrogate in an argument",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "\udc00ab"
+  }
+ },
+ {
+  "name": "modern: lone surrogate in an argument",
+  "modern": true,
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "\udc00\udc01 nurse"
+  }
+ },
+ {
+  "name": "numeric-looking extra argument names",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"sin_analysis\",\"arguments\":{\"sin_code\":\"611430\",\"b\":1,\"10\":2,\"a\":3}}}"
+ },
+ {
+  "name": "unknown protocol header routes to 2026 rules",
+  "method": "tools/list",
+  "headers": {
+   "mcp-protocol-version": "1999-01-01"
+  }
+ },
+ {
+  "name": "handshake protocol header stays on the handshake path",
+  "method": "ping",
+  "headers": {
+   "mcp-protocol-version": "2025-06-18"
+  }
+ },
+ {
+  "name": "content-type text/plain",
+  "method": "ping",
+  "headers": {
+   "content-type": "text/plain"
+  }
+ },
+ {
+  "name": "content-type missing",
+  "method": "ping",
+  "headers": {
+   "content-type": null
+  }
+ },
+ {
+  "name": "modern: server/discover",
+  "modern": true,
+  "method": "server/discover"
+ },
+ {
+  "name": "modern: server/discover, string id, no clientInfo",
+  "modern": true,
+  "method": "server/discover",
+  "params": {
+   "_meta": {
+    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+    "io.modelcontextprotocol/clientCapabilities": {}
+   }
+  },
+  "id": "disc-1"
+ },
+ {
+  "name": "modern: tools/list",
+  "modern": true,
+  "method": "tools/list"
+ },
+ {
+  "name": "modern: tools/list with cursor",
+  "modern": true,
+  "method": "tools/list",
+  "params": {
+   "cursor": "abc"
+  }
+ },
+ {
+  "name": "modern: prompts/list",
+  "modern": true,
+  "method": "prompts/list"
+ },
+ {
+  "name": "modern: resources/list",
+  "modern": true,
+  "method": "resources/list"
+ },
+ {
+  "name": "modern: resources/templates/list",
+  "modern": true,
+  "method": "resources/templates/list"
+ },
+ {
+  "name": "modern: resources/read unknown",
+  "modern": true,
+  "method": "resources/read",
+  "params": {
+   "uri": "calc://x"
+  }
+ },
+ {
+  "name": "modern: prompts/get unknown",
+  "modern": true,
+  "method": "prompts/get",
+  "params": {
+   "name": "p"
+  }
+ },
+ {
+  "name": "modern: unknown tool",
+  "modern": true,
+  "tool": "get_salary",
+  "arguments": {}
+ },
+ {
+  "name": "modern: keyword_search",
+  "modern": true,
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "project manager",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "modern: price check",
+  "modern": true,
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Registered Nurse I",
+   "proposed_rate": 60
+  }
+ },
+ {
+  "name": "modern: validation error",
+  "modern": true,
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "54-151"
+  }
+ },
+ {
+  "name": "modern: vendor card",
+  "modern": true,
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "booz",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "modern: tools/call without name",
+  "modern": true,
+  "method": "tools/call",
+  "params": {
+   "arguments": {}
+  }
+ },
+ {
+  "name": "modern: tools/call list arguments",
+  "modern": true,
+  "method": "tools/call",
+  "params": {
+   "name": "sin_analysis",
+   "arguments": []
+  },
+  "headers": {
+   "mcp-name": "sin_analysis"
+  }
+ },
+ {
+  "name": "modern: mcp-method mismatch",
+  "modern": true,
+  "method": "tools/list",
+  "headers": {
+   "mcp-method": "tools/call"
+  }
+ },
+ {
+  "name": "modern: mcp-name mismatch",
+  "modern": true,
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "611430"
+  },
+  "headers": {
+   "mcp-name": "keyword_search"
+  }
+ },
+ {
+  "name": "modern: protocol header differs from _meta",
+  "modern": true,
+  "method": "tools/list",
+  "params": {
+   "_meta": {
+    "io.modelcontextprotocol/protocolVersion": "2027-01-01",
+    "io.modelcontextprotocol/clientCapabilities": {}
+   }
+  }
+ },
+ {
+  "name": "modern: unsupported protocol version",
+  "modern": true,
+  "method": "tools/list",
+  "params": {
+   "_meta": {
+    "io.modelcontextprotocol/protocolVersion": "2027-01-01",
+    "io.modelcontextprotocol/clientCapabilities": {}
+   }
+  },
+  "headers": {
+   "mcp-protocol-version": "2027-01-01"
+  }
+ },
+ {
+  "name": "modern: protocol version not a string",
+  "modern": true,
+  "method": "tools/list",
+  "params": {
+   "_meta": {
+    "io.modelcontextprotocol/protocolVersion": 5,
+    "io.modelcontextprotocol/clientCapabilities": {}
+   }
+  }
+ },
+ {
+  "name": "modern: _meta missing",
+  "modern": true,
+  "method": "tools/list",
+  "params": {
+   "_meta": null
+  }
+ },
+ {
+  "name": "modern: _meta not an object",
+  "modern": true,
+  "method": "tools/list",
+  "params": {
+   "_meta": 5
+  }
+ },
+ {
+  "name": "modern: _meta without capabilities",
+  "modern": true,
+  "method": "tools/list",
+  "params": {
+   "_meta": {
+    "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+   }
+  }
+ },
+ {
+  "name": "modern: _meta without either key",
+  "modern": true,
+  "method": "server/discover",
+  "params": {
+   "_meta": {
+    "x": 1
+   }
+  }
+ },
+ {
+  "name": "modern: capabilities with a bad roots value",
+  "modern": true,
+  "method": "tools/list",
+  "params": {
+   "_meta": {
+    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+    "io.modelcontextprotocol/clientCapabilities": {
+     "roots": 5
+    }
+   }
+  }
+ },
+ {
+  "name": "modern: capabilities with unknown keys",
+  "modern": true,
+  "method": "tools/list",
+  "params": {
+   "_meta": {
+    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+    "io.modelcontextprotocol/clientCapabilities": {
+     "x": 5,
+     "experimental": {}
+    }
+   }
+  }
+ },
+ {
+  "name": "modern: clientInfo null",
+  "modern": true,
+  "method": "server/discover",
+  "params": {
+   "_meta": {
+    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+    "io.modelcontextprotocol/clientCapabilities": {},
+    "io.modelcontextprotocol/clientInfo": null
+   }
+  }
+ },
+ {
+  "name": "modern: clientInfo without version",
+  "modern": true,
+  "method": "server/discover",
+  "params": {
+   "_meta": {
+    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+    "io.modelcontextprotocol/clientCapabilities": {},
+    "io.modelcontextprotocol/clientInfo": {
+     "name": "x"
+    }
+   }
+  }
+ },
+ {
+  "name": "modern: ping is not a 2026 method",
+  "modern": true,
+  "method": "ping"
+ },
+ {
+  "name": "modern: initialize is not a 2026 method",
+  "modern": true,
+  "method": "initialize",
+  "params": {
+   "protocolVersion": "2026-07-28",
+   "capabilities": {},
+   "clientInfo": {
+    "name": "x",
+    "version": "1"
+   }
+  }
+ },
+ {
+  "name": "modern: completion/complete has no handler",
+  "modern": true,
+  "method": "completion/complete",
+  "params": {
+   "ref": {
+    "type": "ref/prompt",
+    "name": "x"
+   },
+   "argument": {
+    "name": "a",
+    "value": "b"
+   }
+  }
+ },
+ {
+  "name": "modern: completion/complete bad params",
+  "modern": true,
+  "method": "completion/complete"
+ },
+ {
+  "name": "modern: unknown method",
+  "modern": true,
+  "method": "foo/bar"
+ },
+ {
+  "name": "modern: notification is rejected",
+  "modern": true,
+  "method": "notifications/initialized",
+  "notification": true
+ },
+ {
+  "name": "modern: request id 1.0",
+  "modern": true,
+  "method": "tools/list",
+  "id": 1.0
+ },
+ {
+  "name": "modern: listen without event-stream accept",
+  "modern": true,
+  "method": "subscriptions/listen",
+  "params": {
+   "notifications": {
+    "toolsListChanged": true
+   }
+  },
+  "headers": {
+   "accept": "application/json"
+  }
+ },
+ {
+  "name": "modern: listen with a non-object filter",
+  "modern": true,
+  "method": "subscriptions/listen",
+  "params": {
+   "notifications": 5
+  }
+ },
+ {
+  "name": "modern: listen without a filter",
+  "modern": true,
+  "method": "subscriptions/listen"
+ },
+ {
+  "name": "modern: accept application/json only",
+  "modern": true,
+  "method": "server/discover",
+  "headers": {
+   "accept": "application/json"
+  }
+ },
+ {
+  "name": "modern: accept */*",
+  "modern": true,
+  "method": "server/discover",
+  "headers": {
+   "accept": "*/*"
+  }
+ },
+ {
+  "name": "modern: accept event-stream only",
+  "modern": true,
+  "method": "server/discover",
+  "headers": {
+   "accept": "text/event-stream"
+  }
+ },
+ {
+  "name": "modern: malformed JSON",
+  "raw": "{",
+  "headers": {
+   "mcp-protocol-version": "2026-07-28",
+   "mcp-method": "tools/list"
+  }
+ },
+ {
+  "name": "modern: params is a list",
+  "raw": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":[]}",
+  "headers": {
+   "mcp-protocol-version": "2026-07-28",
+   "mcp-method": "tools/list"
+  }
+ },
+ {
+  "name": "validation: keyword missing",
+  "tool": "keyword_search",
+  "arguments": {}
+ },
+ {
+  "name": "validation: keyword empty",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "   "
+  }
+ },
+ {
+  "name": "validation: keyword not a string",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": 5
+  }
+ },
+ {
+  "name": "validation: keyword control characters",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse\tpractitioner"
+  }
+ },
+ {
+  "name": "validation: keyword newline",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse\n"
+  }
+ },
+ {
+  "name": "validation: keyword too long",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+ },
+ {
+  "name": "validation: keyword 500 characters",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+ },
+ {
+  "name": "validation: keyword path traversal",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "../etc"
+  }
+ },
+ {
+  "name": "validation: keyword angle bracket",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "<script>"
+  }
+ },
+ {
+  "name": "validation: keyword angle bracket slash",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "a </b"
+  }
+ },
+ {
+  "name": "validation: keyword Kelvin sign after bracket",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "<\u212a"
+  }
+ },
+ {
+  "name": "validation: keyword non-ASCII",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Caf\u00e9 Manager \u00fc"
+  }
+ },
+ {
+  "name": "validation: page 0",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page": 0
+  }
+ },
+ {
+  "name": "validation: page too big",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page": 100001
+  }
+ },
+ {
+  "name": "validation: page_size 0",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page_size": 0
+  }
+ },
+ {
+  "name": "validation: page_size 501",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page_size": 501
+  }
+ },
+ {
+  "name": "validation: page window",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page": 21,
+   "page_size": 500
+  }
+ },
+ {
+  "name": "validation: page window edge",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page": 20,
+   "page_size": 500
+  }
+ },
+ {
+  "name": "validation: page string",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page": "2"
+  }
+ },
+ {
+  "name": "validation: page float",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page": 2.5
+  }
+ },
+ {
+  "name": "validation: page bool",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page": true
+  }
+ },
+ {
+  "name": "validation: page list",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page": "[1]"
+  }
+ },
+ {
+  "name": "validation: experience_min negative",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "experience_min": -1
+  }
+ },
+ {
+  "name": "validation: experience_max negative",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "experience_max": -2
+  }
+ },
+ {
+  "name": "validation: experience min above max",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "experience_min": 10,
+   "experience_max": 5
+  }
+ },
+ {
+  "name": "validation: experience string",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "experience_min": "5"
+  }
+ },
+ {
+  "name": "validation: price_min negative",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_min": -1
+  }
+ },
+ {
+  "name": "validation: price_max zero",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_max": 0
+  }
+ },
+ {
+  "name": "validation: price_max negative zero",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_max": "-0"
+  }
+ },
+ {
+  "name": "validation: price min above max",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_min": 200,
+   "price_max": 100.5
+  }
+ },
+ {
+  "name": "validation: price nan string",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_min": "nan"
+  }
+ },
+ {
+  "name": "validation: price inf string",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_max": "Infinity"
+  }
+ },
+ {
+  "name": "validation: price -inf string",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_min": "-inf"
+  }
+ },
+ {
+  "name": "validation: price text",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_min": "abc"
+  }
+ },
+ {
+  "name": "validation: price underscores",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_min": "1_000"
+  }
+ },
+ {
+  "name": "validation: price spaces",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_min": " 50 "
+  }
+ },
+ {
+  "name": "validation: price bool",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_min": true
+  }
+ },
+ {
+  "name": "validation: price list",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_min": [
+    1
+   ]
+  }
+ },
+ {
+  "name": "validation: price tiny",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_min": 1e-05
+  }
+ },
+ {
+  "name": "validation: price huge",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_max": 1e+16
+  }
+ },
+ {
+  "name": "validation: education bad code",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "education_level": "BS"
+  }
+ },
+ {
+  "name": "validation: education empty pipe",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "education_level": "BA||MA"
+  }
+ },
+ {
+  "name": "validation: education trailing pipe",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "education_level": "BA|"
+  }
+ },
+ {
+  "name": "validation: education lowercase",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "education_level": "ba"
+  }
+ },
+ {
+  "name": "validation: education spaces",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "education_level": " BA | MA "
+  }
+ },
+ {
+  "name": "validation: education blank",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "education_level": "  "
+  }
+ },
+ {
+  "name": "validation: education null string",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "education_level": "null"
+  }
+ },
+ {
+  "name": "validation: education list string",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "education_level": "[\"BA\"]"
+  }
+ },
+ {
+  "name": "validation: worksite",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "worksite": "Customer"
+  }
+ },
+ {
+  "name": "validation: worksite blank",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "worksite": "  "
+  }
+ },
+ {
+  "name": "validation: sin bool",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sin": true
+  }
+ },
+ {
+  "name": "validation: sin float",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sin": 1.5
+  }
+ },
+ {
+  "name": "validation: sin whole float",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sin": 541611.0
+  }
+ },
+ {
+  "name": "validation: sin list",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sin": [
+    1
+   ]
+  }
+ },
+ {
+  "name": "validation: sin too long",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sin": "111111111111111111111"
+  }
+ },
+ {
+  "name": "validation: sin punctuation",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sin": "54-151"
+  }
+ },
+ {
+  "name": "validation: sin int",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sin": 541611
+  }
+ },
+ {
+  "name": "validation: sin negative int",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sin": -5
+  }
+ },
+ {
+  "name": "validation: sin blank",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sin": "   "
+  }
+ },
+ {
+  "name": "validation: sin json string",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sin": "[1]"
+  }
+ },
+ {
+  "name": "validation: ordering bad",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "ordering": "price"
+  }
+ },
+ {
+  "name": "validation: ordering padded",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "ordering": " labor_category "
+  }
+ },
+ {
+  "name": "validation: ordering blank",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "ordering": "  "
+  }
+ },
+ {
+  "name": "validation: sort upper",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sort": "ASC"
+  }
+ },
+ {
+  "name": "validation: sort bad",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sort": "up"
+  }
+ },
+ {
+  "name": "validation: sort null string",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "sort": "null"
+  }
+ },
+ {
+  "name": "validation: business_size bad",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "business_size": "L"
+  }
+ },
+ {
+  "name": "validation: business_size null string",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "business_size": "null"
+  }
+ },
+ {
+  "name": "validation: clearance bad",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "security_clearance": "maybe"
+  }
+ },
+ {
+  "name": "validation: exclude control",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "exclude": "1\n2"
+  }
+ },
+ {
+  "name": "validation: exclude too long",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "exclude": "1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|"
+  }
+ },
+ {
+  "name": "validation: exclude angle",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "exclude": "<a"
+  }
+ },
+ {
+  "name": "validation: extra argument",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "q": "x"
+  }
+ },
+ {
+  "name": "validation: two extra arguments",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "q": "x",
+   "limit": 5
+  }
+ },
+ {
+  "name": "validation: no filters",
+  "tool": "filtered_browse",
+  "arguments": {}
+ },
+ {
+  "name": "validation: no filters but worksite",
+  "tool": "filtered_browse",
+  "arguments": {
+   "worksite": "Virtual"
+  }
+ },
+ {
+  "name": "validation: only blank filters",
+  "tool": "filtered_browse",
+  "arguments": {
+   "education_level": " ",
+   "sin": " "
+  }
+ },
+ {
+  "name": "validation: exact value empty",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": " "
+  }
+ },
+ {
+  "name": "validation: exact field bad",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "sin",
+   "value": "x"
+  }
+ },
+ {
+  "name": "validation: exact missing value",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "vendor_name"
+  }
+ },
+ {
+  "name": "validation: exact value control",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "a\u0000b"
+  }
+ },
+ {
+  "name": "validation: exact sin not accepted",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "Engineer",
+   "sin": "54151S"
+  }
+ },
+ {
+  "name": "validation: suggest one character",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "b"
+  }
+ },
+ {
+  "name": "validation: suggest one character padded",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": " b "
+  }
+ },
+ {
+  "name": "validation: suggest field bad",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "sin",
+   "term": "54"
+  }
+ },
+ {
+  "name": "validation: suggest too long",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  }
+ },
+ {
+  "name": "validation: suggest path traversal",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "a/../b"
+  }
+ },
+ {
+  "name": "validation: igce empty",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": ""
+  }
+ },
+ {
+  "name": "validation: igce price filter not accepted",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "nurse",
+   "price_min": 5
+  }
+ },
+ {
+  "name": "validation: igce education bad",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "nurse",
+   "education_level": "XX"
+  }
+ },
+ {
+  "name": "validation: price check zero",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "nurse",
+   "proposed_rate": 0
+  }
+ },
+ {
+  "name": "validation: price check negative",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "nurse",
+   "proposed_rate": -5
+  }
+ },
+ {
+  "name": "validation: price check nan",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "nurse",
+   "proposed_rate": "nan"
+  }
+ },
+ {
+  "name": "validation: price check inf",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "nurse",
+   "proposed_rate": "1e400"
+  }
+ },
+ {
+  "name": "validation: price check string",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "nurse",
+   "proposed_rate": "sixty"
+  }
+ },
+ {
+  "name": "validation: price check missing rate",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "nurse"
+  }
+ },
+ {
+  "name": "validation: price check empty title",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": " ",
+   "proposed_rate": 50
+  }
+ },
+ {
+  "name": "validation: vendor one character",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "b"
+  }
+ },
+ {
+  "name": "validation: vendor angle bracket",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "<b>"
+  }
+ },
+ {
+  "name": "validation: vendor ordering bad",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "booz",
+   "ordering": "rate"
+  }
+ },
+ {
+  "name": "validation: vendor page window",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "booz",
+   "page": 101
+  }
+ },
+ {
+  "name": "validation: sin_code empty",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": " "
+  }
+ },
+ {
+  "name": "validation: sin_code bool",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": false
+  }
+ },
+ {
+  "name": "validation: sin_code null",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": null
+  }
+ },
+ {
+  "name": "validation: sin_code missing",
+  "tool": "sin_analysis",
+  "arguments": {}
+ },
+ {
+  "name": "validation: sin_code page_size",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "54151S",
+   "page_size": 0
+  }
+ },
+ {
+  "name": "validation: sin_code too long",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "XXXXXXXXXXXXXXXXXXXXXXXXX"
+  }
+ },
+ {
+  "name": "keyword: Project Manager",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Project Manager",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Senior Software Engineer",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Senior Software Engineer",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Software Engineer",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Software Engineer",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Program Manager",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Program Manager",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Systems Engineer",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Systems Engineer",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Business Analyst",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Business Analyst",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Data Scientist",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Data Scientist",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Registered Nurse I",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Registered Nurse I",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Help Desk Specialist",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Help Desk Specialist",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Network Engineer",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Network Engineer",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Cybersecurity Analyst",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Cybersecurity Analyst",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Cyber Security Analyst",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Cyber Security Analyst",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Subject Matter Expert",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Subject Matter Expert",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Technical Writer",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Technical Writer",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Database Administrator",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Database Administrator",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Administrative Assistant",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Administrative Assistant",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Engineer II",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Engineer II",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Ocean Engineer I",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Ocean Engineer I",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Graphic Designer",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Graphic Designer",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: Training Specialist",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Training Specialist",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword ordering current_price asc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Project Manager",
+   "ordering": "current_price",
+   "sort": "asc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering current_price desc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Project Manager",
+   "ordering": "current_price",
+   "sort": "desc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering labor_category asc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Senior Software Engineer",
+   "ordering": "labor_category",
+   "sort": "asc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering labor_category desc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Senior Software Engineer",
+   "ordering": "labor_category",
+   "sort": "desc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering vendor_name asc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Software Engineer",
+   "ordering": "vendor_name",
+   "sort": "asc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering vendor_name desc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Software Engineer",
+   "ordering": "vendor_name",
+   "sort": "desc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering education_level asc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Program Manager",
+   "ordering": "education_level",
+   "sort": "asc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering education_level desc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Program Manager",
+   "ordering": "education_level",
+   "sort": "desc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering min_years_experience asc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Systems Engineer",
+   "ordering": "min_years_experience",
+   "sort": "asc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering min_years_experience desc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Systems Engineer",
+   "ordering": "min_years_experience",
+   "sort": "desc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering next_year_price asc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Business Analyst",
+   "ordering": "next_year_price",
+   "sort": "asc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering next_year_price desc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Business Analyst",
+   "ordering": "next_year_price",
+   "sort": "desc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering idv_piid asc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Data Scientist",
+   "ordering": "idv_piid",
+   "sort": "asc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering idv_piid desc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Data Scientist",
+   "ordering": "idv_piid",
+   "sort": "desc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering business_size asc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Registered Nurse I",
+   "ordering": "business_size",
+   "sort": "asc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword ordering business_size desc",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Registered Nurse I",
+   "ordering": "business_size",
+   "sort": "desc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword: lowercase",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "project manager",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: upper",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "PROJECT MANAGER",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: wildcard",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "proj*manager",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: leading wildcard",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "*analyst",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: two letters",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "qa",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: one letter",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "x",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: punctuation",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Sr.",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: apostrophe",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "O'Reilly",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: ampersand",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "R&D",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: plus",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "C++",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: slash",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "A/V Technician",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: colon",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Engineer 1: Sr. Naval Architect",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: question mark",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "?",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: contract number",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "47QRAA22D004N",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: contract number lowercase",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "47qrea21d001b",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: vendor name",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "PROXY PERSONNEL",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: nothing matches",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "zzzzqqqq xyzzy",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: nurse with all filters",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "education_level": "BA|MA",
+   "experience_min": 1,
+   "experience_max": 10,
+   "price_min": 30,
+   "price_max": 120.5,
+   "business_size": "S",
+   "security_clearance": "no",
+   "sin": "541611",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: clearance yes",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "engineer",
+   "security_clearance": "yes",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: clearance no",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "engineer",
+   "security_clearance": "no",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: business O",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "analyst",
+   "business_size": "O",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: education PHD",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "scientist",
+   "education_level": "PHD",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: education TEC",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "technician",
+   "education_level": "TEC",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: education HS",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "clerk",
+   "education_level": "HS",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: education AA",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "technician",
+   "education_level": "AA",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: experience max only",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "analyst",
+   "experience_max": 2,
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: experience exact",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "analyst",
+   "experience_min": 5,
+   "experience_max": 5,
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: price min only",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "analyst",
+   "price_min": 150,
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: price max only",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "analyst",
+   "price_max": 40,
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: price exact",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "price_min": 28.9,
+   "price_max": 28.9,
+   "page_size": 3
+  }
+ },
+ {
+  "name": "keyword: paging page 2",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page": 2,
+   "page_size": 10
+  }
+ },
+ {
+  "name": "keyword: paging past the end",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Registered Nurse I",
+   "page": 50,
+   "page_size": 100
+  }
+ },
+ {
+  "name": "keyword: paging at the window",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "engineer",
+   "page": 20,
+   "page_size": 500
+  }
+ },
+ {
+  "name": "keyword: paging window 100x100",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "manager",
+   "page": 100,
+   "page_size": 100
+  }
+ },
+ {
+  "name": "keyword: page_size 500",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page_size": 500
+  }
+ },
+ {
+  "name": "keyword: page_size 1",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "nurse",
+   "page_size": 1
+  }
+ },
+ {
+  "name": "keyword: exclude",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Registered Nurse I",
+   "exclude": "1710487800|1703111483",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: exclude unknown ids",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Registered Nurse I",
+   "exclude": "1|2|abc",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: exclude padded",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "Registered Nurse I",
+   "exclude": " 1710487800 ",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "keyword: whole index phrase",
+  "tool": "keyword_search",
+  "arguments": {
+   "keyword": "a",
+   "page_size": 2
+  }
+ },
+ {
+  "name": "exact: Registered Nurse I",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "Registered Nurse I",
+   "education_level": "BA",
+   "experience_min": 1,
+   "page_size": 6
+  }
+ },
+ {
+  "name": "exact: Ocean Engineer I",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "Ocean Engineer I",
+   "page_size": 11
+  }
+ },
+ {
+  "name": "exact: colon title",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "Engineer 1: Sr. Naval Architect Sr. Marine Engineer Sr. Ocean Engineer",
+   "page_size": 11
+  }
+ },
+ {
+  "name": "exact: colon title MA",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "Engineer 1: Sr. Naval Architect Sr. Marine Engineer Sr. Ocean Engineer",
+   "education_level": "MA",
+   "page_size": 11
+  }
+ },
+ {
+  "name": "exact: colon vendor",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "vendor_name",
+   "value": "Leidos, Inc.: Engineering",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "exact: colon contract",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "idv_piid",
+   "value": "47QRAA:1",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "exact: Leidos title with colon",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "Leidos, Inc.: Engineering Drafting 3",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "exact: lowercase title",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "registered nurse i",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "exact: vendor",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "vendor_name",
+   "value": "PROXY PERSONNEL LLC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "exact: vendor ordered by title",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "vendor_name",
+   "value": "T47 INTERNATIONAL, INC.",
+   "ordering": "labor_category",
+   "sort": "desc",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "exact: contract",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "idv_piid",
+   "value": "47QRAA22D004N",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "exact: engineer II filters",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "Engineer II",
+   "experience_min": 3,
+   "price_max": 150,
+   "business_size": "S",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "exact: Project Manager page 3",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "Project Manager",
+   "page": 3,
+   "page_size": 50
+  }
+ },
+ {
+  "name": "exact: no match",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "Zzz Not A Title",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "exact: paged past the end",
+  "tool": "exact_search",
+  "arguments": {
+   "field": "labor_category",
+   "value": "Ocean Engineer I",
+   "page": 3,
+   "page_size": 5
+  }
+ },
+ {
+  "name": "suggest: labor_category nurse",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "nurse"
+  }
+ },
+ {
+  "name": "suggest: labor_category Engineer 1",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "Engineer 1"
+  }
+ },
+ {
+  "name": "suggest: labor_category project man",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "project man"
+  }
+ },
+ {
+  "name": "suggest: labor_category cyber",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "cyber"
+  }
+ },
+ {
+  "name": "suggest: labor_category QA",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "QA"
+  }
+ },
+ {
+  "name": "suggest: labor_category sr.",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "sr."
+  }
+ },
+ {
+  "name": "suggest: labor_category data sci",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "data sci"
+  }
+ },
+ {
+  "name": "suggest: labor_category *analyst",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "*analyst"
+  }
+ },
+ {
+  "name": "suggest: labor_category zzqq",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "labor_category",
+   "term": "zzqq"
+  }
+ },
+ {
+  "name": "suggest: vendor_name booz",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "booz"
+  }
+ },
+ {
+  "name": "suggest: vendor_name SAIC",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "SAIC"
+  }
+ },
+ {
+  "name": "suggest: vendor_name pact",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "pact"
+  }
+ },
+ {
+  "name": "suggest: vendor_name Leidos",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "Leidos"
+  }
+ },
+ {
+  "name": "suggest: vendor_name inc",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "inc"
+  }
+ },
+ {
+  "name": "suggest: vendor_name llc",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "llc"
+  }
+ },
+ {
+  "name": "suggest: vendor_name deloitte",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "deloitte"
+  }
+ },
+ {
+  "name": "suggest: vendor_name PALANTIR",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "PALANTIR"
+  }
+ },
+ {
+  "name": "suggest: vendor_name ab",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "ab"
+  }
+ },
+ {
+  "name": "suggest: vendor_name 1st choice",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "1st choice"
+  }
+ },
+ {
+  "name": "suggest: idv_piid 47QRAA",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "idv_piid",
+   "term": "47QRAA"
+  }
+ },
+ {
+  "name": "suggest: idv_piid 47qrea",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "idv_piid",
+   "term": "47qrea"
+  }
+ },
+ {
+  "name": "suggest: idv_piid GS-35F",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "idv_piid",
+   "term": "GS-35F"
+  }
+ },
+ {
+  "name": "suggest: idv_piid GS10F",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "idv_piid",
+   "term": "GS10F"
+  }
+ },
+ {
+  "name": "suggest: idv_piid 47QTCA",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "idv_piid",
+   "term": "47QTCA"
+  }
+ },
+ {
+  "name": "suggest: idv_piid D004N",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "idv_piid",
+   "term": "D004N"
+  }
+ },
+ {
+  "name": "suggest: idv_piid zz",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "idv_piid",
+   "term": "zz"
+  }
+ },
+ {
+  "name": "suggest: padded term",
+  "tool": "suggest_contains",
+  "arguments": {
+   "field": "vendor_name",
+   "term": "  booz  "
+  }
+ },
+ {
+  "name": "browse: education BA",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "education_level": "BA"
+  }
+ },
+ {
+  "name": "browse: education MA|PHD",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "education_level": "MA|PHD"
+  }
+ },
+ {
+  "name": "browse: experience 5+",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "experience_min": 5
+  }
+ },
+ {
+  "name": "browse: experience 0-2",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "experience_max": 2
+  }
+ },
+ {
+  "name": "browse: experience 3-7",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "experience_min": 3,
+   "experience_max": 7
+  }
+ },
+ {
+  "name": "browse: price 50+",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "price_min": 50
+  }
+ },
+ {
+  "name": "browse: price under 25",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "price_max": 25
+  }
+ },
+ {
+  "name": "browse: price 100-100.5",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "price_min": 100,
+   "price_max": 100.5
+  }
+ },
+ {
+  "name": "browse: price whole dollars",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "price_min": 100,
+   "price_max": 100
+  }
+ },
+ {
+  "name": "browse: business S",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "business_size": "S"
+  }
+ },
+ {
+  "name": "browse: business O",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "business_size": "O"
+  }
+ },
+ {
+  "name": "browse: clearance yes",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "security_clearance": "yes"
+  }
+ },
+ {
+  "name": "browse: clearance no",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "security_clearance": "no"
+  }
+ },
+ {
+  "name": "browse: sin 541611",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "sin": "541611"
+  }
+ },
+ {
+  "name": "browse: sin int",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "sin": 541611
+  }
+ },
+ {
+  "name": "browse: sin lowercase",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "sin": "54151s"
+  }
+ },
+ {
+  "name": "browse: sin partial",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "sin": "5415"
+  }
+ },
+ {
+  "name": "browse: BA 5-15 years",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "education_level": "BA",
+   "experience_min": 5,
+   "experience_max": 15
+  }
+ },
+ {
+  "name": "browse: MA S cleared",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "education_level": "MA",
+   "business_size": "S",
+   "security_clearance": "yes"
+  }
+ },
+ {
+  "name": "browse: sin and price",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "sin": "54151S",
+   "price_min": 80,
+   "price_max": 120
+  }
+ },
+ {
+  "name": "browse: sin ordered by vendor desc",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "sin": "611430",
+   "ordering": "vendor_name",
+   "sort": "desc"
+  }
+ },
+ {
+  "name": "browse: sin ordered by next year price",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "sin": "541715",
+   "ordering": "next_year_price"
+  }
+ },
+ {
+  "name": "browse: sin ordered by experience desc",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "sin": "541330ENG",
+   "ordering": "min_years_experience",
+   "sort": "desc"
+  }
+ },
+ {
+  "name": "browse: sin ordered by contract",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "sin": "561210FAC",
+   "ordering": "idv_piid"
+  }
+ },
+ {
+  "name": "browse: sin ordered by business size",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "sin": "541690",
+   "ordering": "business_size",
+   "sort": "desc"
+  }
+ },
+ {
+  "name": "browse: sin ordered by education",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "sin": "541511",
+   "ordering": "education_level"
+  }
+ },
+ {
+  "name": "browse: page 2",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 25,
+   "education_level": "PHD",
+   "page": 2
+  }
+ },
+ {
+  "name": "browse: page past end",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 250,
+   "education_level": "PHD",
+   "price_min": 900,
+   "page": 40
+  }
+ },
+ {
+  "name": "browse: window edge",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 500,
+   "business_size": "S",
+   "page": 20
+  }
+ },
+ {
+  "name": "browse: worksite",
+  "tool": "filtered_browse",
+  "arguments": {
+   "page_size": 5,
+   "business_size": "S",
+   "worksite": "Virtual"
+  }
+ },
+ {
+  "name": "igce: Project Manager",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Project Manager"
+  }
+ },
+ {
+  "name": "igce: Senior Software Engineer",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Senior Software Engineer"
+  }
+ },
+ {
+  "name": "igce: Software Engineer",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Software Engineer"
+  }
+ },
+ {
+  "name": "igce: Program Manager",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Program Manager"
+  }
+ },
+ {
+  "name": "igce: Systems Engineer",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Systems Engineer"
+  }
+ },
+ {
+  "name": "igce: Business Analyst",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Business Analyst"
+  }
+ },
+ {
+  "name": "igce: Data Scientist",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Data Scientist"
+  }
+ },
+ {
+  "name": "igce: Registered Nurse I",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Registered Nurse I"
+  }
+ },
+ {
+  "name": "igce: Help Desk Specialist",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Help Desk Specialist"
+  }
+ },
+ {
+  "name": "igce: Network Engineer",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Network Engineer"
+  }
+ },
+ {
+  "name": "igce: Cybersecurity Analyst",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Cybersecurity Analyst"
+  }
+ },
+ {
+  "name": "igce: Cyber Security Analyst",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Cyber Security Analyst"
+  }
+ },
+ {
+  "name": "igce: nurse BA 1+",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Registered Nurse I",
+   "education_level": "BA",
+   "experience_min": 1
+  }
+ },
+ {
+  "name": "igce: nurse BA|MA 3+",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Registered Nurse I",
+   "education_level": "BA|MA",
+   "experience_min": 3
+  }
+ },
+ {
+  "name": "igce: engineer on 541330ENG",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Engineer",
+   "sin": "541330ENG"
+  }
+ },
+ {
+  "name": "igce: analyst cleared",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Analyst",
+   "security_clearance": "yes",
+   "business_size": "O"
+  }
+ },
+ {
+  "name": "igce: experience max",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Help Desk",
+   "experience_max": 3
+  }
+ },
+ {
+  "name": "igce: wildcard",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Sr*Engineer"
+  }
+ },
+ {
+  "name": "igce: vendor phrase",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Systems Engineering"
+  }
+ },
+ {
+  "name": "igce: contract number",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "47QRAA22D004N"
+  }
+ },
+ {
+  "name": "igce: nothing",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "zzqq none"
+  }
+ },
+ {
+  "name": "igce: colon title",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "Engineer 1: Sr. Naval Architect Sr. Marine Engineer Sr. Ocean Engineer"
+  }
+ },
+ {
+  "name": "igce: padded",
+  "tool": "igce_benchmark",
+  "arguments": {
+   "labor_category": "  Ocean Engineer I  "
+  }
+ },
+ {
+  "name": "sin: 54151S",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "54151S",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "sin: 541611",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541611",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "sin: 541715",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541715",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "sin: 541330ENG",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541330ENG",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "sin: 541690",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541690",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "sin: 561210FAC",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "561210FAC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "sin: 541511",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541511",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "sin: 611430",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "611430",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "sin retired: 541512",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541512"
+  }
+ },
+ {
+  "name": "sin retired: 541513",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541513"
+  }
+ },
+ {
+  "name": "sin retired: 541610",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541610"
+  }
+ },
+ {
+  "name": "sin retired: 541519",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541519"
+  }
+ },
+ {
+  "name": "sin: int",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": 611430
+  }
+ },
+ {
+  "name": "sin: lowercase",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541330eng",
+   "page_size": 1
+  }
+ },
+ {
+  "name": "sin: 541330EMI",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "541330EMI",
+   "page_size": 11
+  }
+ },
+ {
+  "name": "sin: page_size 500",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "611430",
+   "page_size": 500
+  }
+ },
+ {
+  "name": "sin: padded",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": " 54151S "
+  }
+ },
+ {
+  "name": "sin: unknown",
+  "tool": "sin_analysis",
+  "arguments": {
+   "sin_code": "999999ZZ"
+  }
+ },
+ {
+  "name": "vendor: PACT, INC.",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "PACT, INC.",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: SAIC",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "SAIC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: CACI",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "CACI",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: PALANTIR",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "PALANTIR",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Science Applications",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Science Applications",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: booz",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "booz",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Booz Allen Hamilton",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Booz Allen Hamilton",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Leidos",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Leidos",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Accenture Federal",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Accenture Federal",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Deloitte",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Deloitte",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: ICF",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ICF",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Gartner",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Gartner",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: MITRE",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "MITRE",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Peraton",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Peraton",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: General Dynamics",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "General Dynamics",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Lockheed",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Lockheed",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Northrop",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Northrop",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Raytheon",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Raytheon",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: ManTech",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ManTech",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Guidehouse",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Guidehouse",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: KPMG",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "KPMG",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Ernst",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Ernst",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: IBM",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "IBM",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Unisys",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Unisys",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Maximus",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Maximus",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Tetra Tech",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Tetra Tech",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: AECOM",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "AECOM",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Jacobs",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Jacobs",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: ABT ASSOCIATES",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ABT ASSOCIATES",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: ASRC FEDERAL",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ASRC FEDERAL",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: AMENTUM",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "AMENTUM",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: ALION SCIENCE",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ALION SCIENCE",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: AMERICAN SYSTEMS",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "AMERICAN SYSTEMS",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: AKIMA",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "AKIMA",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: CHENEGA",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "CHENEGA",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: BOWHEAD",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "BOWHEAD",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: CALISTA",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "CALISTA",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: AHTNA",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "AHTNA",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: ARCTIC SLOPE REGIONAL",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ARCTIC SLOPE REGIONAL",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: CHICKASAW NATION",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "CHICKASAW NATION",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: 1901 GROUP",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "1901 GROUP",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: ABT GLOBAL",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ABT GLOBAL",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: APTIM",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "APTIM",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: A2Z INC",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "A2Z INC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: 3A, LLC",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "3A, LLC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: ACI TECHNOLOGIES, INC.",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ACI TECHNOLOGIES, INC.",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: IMPACT RESOURCES, INC",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "IMPACT RESOURCES, INC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: APOGEE-SAIC CAPABILITIES INTEGRATOR, LLC",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "APOGEE-SAIC CAPABILITIES INTEGRATOR, LLC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: ABSG CONSULTING INC",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ABSG CONSULTING INC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: ACATO INFORMATION MANAGEMENT, LLC",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ACATO INFORMATION MANAGEMENT, LLC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: 5D INFORMATION MANAGEMENT, INC",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "5D INFORMATION MANAGEMENT, INC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: AAC INC.",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "AAC INC.",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: ACCOUNT CONTROL TECHNOLOGY INC.",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "ACCOUNT CONTROL TECHNOLOGY INC.",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: AC FIRST, LLC",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "AC FIRST, LLC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: IT",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "IT",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: AB",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "AB",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: LLC",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "LLC",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: inc",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "inc",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Corporation",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Corporation",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor: Consulting",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Consulting",
+   "page_size": 5
+  }
+ },
+ {
+  "name": "vendor paging: booz page 2",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "booz",
+   "page": 2,
+   "page_size": 50
+  }
+ },
+ {
+  "name": "vendor paging: booz past end",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "booz",
+   "page": 99,
+   "page_size": 100
+  }
+ },
+ {
+  "name": "vendor paging: by price desc",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Leidos",
+   "ordering": "current_price",
+   "sort": "desc",
+   "page_size": 10
+  }
+ },
+ {
+  "name": "vendor paging: page_size 500",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "Deloitte",
+   "page_size": 500
+  }
+ },
+ {
+  "name": "vendor paging: by contract",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "PROXY PERSONNEL",
+   "ordering": "idv_piid"
+  }
+ },
+ {
+  "name": "vendor: not found",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "zzqq no such vendor"
+  }
+ },
+ {
+  "name": "vendor: padded",
+  "tool": "vendor_rate_card",
+  "arguments": {
+   "vendor_name": "  booz allen  ",
+   "page_size": 3
+  }
+ },
+ {
+  "name": "price: Project Manager at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Project Manager",
+   "proposed_rate": 124.68509674072266
+  }
+ },
+ {
+  "name": "price: Project Manager at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Project Manager",
+   "proposed_rate": 152.89999389648438
+  }
+ },
+ {
+  "name": "price: Project Manager at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Project Manager",
+   "proposed_rate": 184.38999938964844
+  }
+ },
+ {
+  "name": "price: Project Manager at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Project Manager",
+   "proposed_rate": 124.68
+  }
+ },
+ {
+  "name": "price: Project Manager at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Project Manager",
+   "proposed_rate": 184.4
+  }
+ },
+ {
+  "name": "price: Project Manager at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Project Manager",
+   "proposed_rate": 152.91
+  }
+ },
+ {
+  "name": "price: Senior Software Engineer at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Software Engineer",
+   "proposed_rate": 137.25
+  }
+ },
+ {
+  "name": "price: Senior Software Engineer at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Software Engineer",
+   "proposed_rate": 160.41259765625
+  }
+ },
+ {
+  "name": "price: Senior Software Engineer at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Software Engineer",
+   "proposed_rate": 192.91000366210938
+  }
+ },
+ {
+  "name": "price: Senior Software Engineer at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Software Engineer",
+   "proposed_rate": 137.24
+  }
+ },
+ {
+  "name": "price: Senior Software Engineer at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Software Engineer",
+   "proposed_rate": 192.92
+  }
+ },
+ {
+  "name": "price: Senior Software Engineer at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Software Engineer",
+   "proposed_rate": 160.42
+  }
+ },
+ {
+  "name": "price: Business Analyst at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Business Analyst",
+   "proposed_rate": 97.91000366210938
+  }
+ },
+ {
+  "name": "price: Business Analyst at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Business Analyst",
+   "proposed_rate": 121.91999816894531
+  }
+ },
+ {
+  "name": "price: Business Analyst at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Business Analyst",
+   "proposed_rate": 151.3000030517578
+  }
+ },
+ {
+  "name": "price: Business Analyst at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Business Analyst",
+   "proposed_rate": 97.9
+  }
+ },
+ {
+  "name": "price: Business Analyst at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Business Analyst",
+   "proposed_rate": 151.31
+  }
+ },
+ {
+  "name": "price: Business Analyst at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Business Analyst",
+   "proposed_rate": 121.93
+  }
+ },
+ {
+  "name": "price: Help Desk Specialist at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Help Desk Specialist",
+   "proposed_rate": 62.27000045776367
+  }
+ },
+ {
+  "name": "price: Help Desk Specialist at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Help Desk Specialist",
+   "proposed_rate": 80.06999969482422
+  }
+ },
+ {
+  "name": "price: Help Desk Specialist at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Help Desk Specialist",
+   "proposed_rate": 100.45999908447266
+  }
+ },
+ {
+  "name": "price: Help Desk Specialist at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Help Desk Specialist",
+   "proposed_rate": 62.26
+  }
+ },
+ {
+  "name": "price: Help Desk Specialist at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Help Desk Specialist",
+   "proposed_rate": 100.47
+  }
+ },
+ {
+  "name": "price: Help Desk Specialist at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Help Desk Specialist",
+   "proposed_rate": 80.08
+  }
+ },
+ {
+  "name": "price: Technical Writer at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Technical Writer",
+   "proposed_rate": 76.97000122070312
+  }
+ },
+ {
+  "name": "price: Technical Writer at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Technical Writer",
+   "proposed_rate": 95.76000213623047
+  }
+ },
+ {
+  "name": "price: Technical Writer at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Technical Writer",
+   "proposed_rate": 118.55000305175781
+  }
+ },
+ {
+  "name": "price: Technical Writer at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Technical Writer",
+   "proposed_rate": 76.96
+  }
+ },
+ {
+  "name": "price: Technical Writer at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Technical Writer",
+   "proposed_rate": 118.56
+  }
+ },
+ {
+  "name": "price: Technical Writer at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Technical Writer",
+   "proposed_rate": 95.77
+  }
+ },
+ {
+  "name": "price: Database Administrator at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Database Administrator",
+   "proposed_rate": 104.66500091552734
+  }
+ },
+ {
+  "name": "price: Database Administrator at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Database Administrator",
+   "proposed_rate": 129.44000244140625
+  }
+ },
+ {
+  "name": "price: Database Administrator at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Database Administrator",
+   "proposed_rate": 156.12989807128906
+  }
+ },
+ {
+  "name": "price: Database Administrator at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Database Administrator",
+   "proposed_rate": 104.66
+  }
+ },
+ {
+  "name": "price: Database Administrator at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Database Administrator",
+   "proposed_rate": 156.14
+  }
+ },
+ {
+  "name": "price: Database Administrator at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Database Administrator",
+   "proposed_rate": 129.45
+  }
+ },
+ {
+  "name": "price: Ocean Engineer I at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Ocean Engineer I",
+   "proposed_rate": 72.54000091552734
+  }
+ },
+ {
+  "name": "price: Ocean Engineer I at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Ocean Engineer I",
+   "proposed_rate": 83.73999786376953
+  }
+ },
+ {
+  "name": "price: Ocean Engineer I at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Ocean Engineer I",
+   "proposed_rate": 117.20999908447266
+  }
+ },
+ {
+  "name": "price: Ocean Engineer I at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Ocean Engineer I",
+   "proposed_rate": 72.53
+  }
+ },
+ {
+  "name": "price: Ocean Engineer I at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Ocean Engineer I",
+   "proposed_rate": 117.22
+  }
+ },
+ {
+  "name": "price: Ocean Engineer I at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Ocean Engineer I",
+   "proposed_rate": 83.75
+  }
+ },
+ {
+  "name": "price: Registered Nurse I at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Registered Nurse I",
+   "proposed_rate": 63.91999816894531
+  }
+ },
+ {
+  "name": "price: Registered Nurse I at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Registered Nurse I",
+   "proposed_rate": 76.87999725341797
+  }
+ },
+ {
+  "name": "price: Registered Nurse I at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Registered Nurse I",
+   "proposed_rate": 94.41999816894531
+  }
+ },
+ {
+  "name": "price: Registered Nurse I at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Registered Nurse I",
+   "proposed_rate": 63.91
+  }
+ },
+ {
+  "name": "price: Registered Nurse I at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Registered Nurse I",
+   "proposed_rate": 94.43
+  }
+ },
+ {
+  "name": "price: Registered Nurse I at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Registered Nurse I",
+   "proposed_rate": 76.89
+  }
+ },
+ {
+  "name": "price: Network Engineer at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Network Engineer",
+   "proposed_rate": 105.4000015258789
+  }
+ },
+ {
+  "name": "price: Network Engineer at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Network Engineer",
+   "proposed_rate": 132.15939331054688
+  }
+ },
+ {
+  "name": "price: Network Engineer at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Network Engineer",
+   "proposed_rate": 161.75999450683594
+  }
+ },
+ {
+  "name": "price: Network Engineer at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Network Engineer",
+   "proposed_rate": 105.39
+  }
+ },
+ {
+  "name": "price: Network Engineer at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Network Engineer",
+   "proposed_rate": 161.77
+  }
+ },
+ {
+  "name": "price: Network Engineer at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Network Engineer",
+   "proposed_rate": 132.17
+  }
+ },
+ {
+  "name": "price: Graphic Designer at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Graphic Designer",
+   "proposed_rate": 81.45999908447266
+  }
+ },
+ {
+  "name": "price: Graphic Designer at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Graphic Designer",
+   "proposed_rate": 103.04810333251953
+  }
+ },
+ {
+  "name": "price: Graphic Designer at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Graphic Designer",
+   "proposed_rate": 128.0800018310547
+  }
+ },
+ {
+  "name": "price: Graphic Designer at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Graphic Designer",
+   "proposed_rate": 81.45
+  }
+ },
+ {
+  "name": "price: Graphic Designer at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Graphic Designer",
+   "proposed_rate": 128.09
+  }
+ },
+ {
+  "name": "price: Graphic Designer at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Graphic Designer",
+   "proposed_rate": 103.06
+  }
+ },
+ {
+  "name": "price: General Clerk II** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 34.698001861572266
+  }
+ },
+ {
+  "name": "price: General Clerk II** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 40.47999954223633
+  }
+ },
+ {
+  "name": "price: General Clerk II** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 50.060001373291016
+  }
+ },
+ {
+  "name": "price: General Clerk II** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 34.69
+  }
+ },
+ {
+  "name": "price: General Clerk II** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 50.07
+  }
+ },
+ {
+  "name": "price: General Clerk II** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk II**",
+   "proposed_rate": 40.49
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 38.79999923706055
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 44.619998931884766
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 51.16999816894531
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 38.79
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 51.18
+  }
+ },
+ {
+  "name": "price: Warehouse Specialist** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Warehouse Specialist**",
+   "proposed_rate": 44.63
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 81.97440338134766
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 103.75180053710938
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 121.63069915771484
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 81.96
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 121.64
+  }
+ },
+ {
+  "name": "price: Information Technology Professional Services at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Information Technology Professional Services",
+   "proposed_rate": 103.76
+  }
+ },
+ {
+  "name": "price: General Clerk I** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 31.299400329589844
+  }
+ },
+ {
+  "name": "price: General Clerk I** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 35.66999816894531
+  }
+ },
+ {
+  "name": "price: General Clerk I** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 42.786598205566406
+  }
+ },
+ {
+  "name": "price: General Clerk I** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 31.29
+  }
+ },
+ {
+  "name": "price: General Clerk I** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 42.8
+  }
+ },
+ {
+  "name": "price: General Clerk I** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Clerk I**",
+   "proposed_rate": 35.68
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 162.4199981689453
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 192.8800048828125
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 226.13079833984375
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 162.41
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 226.14
+  }
+ },
+ {
+  "name": "price: Cloud Subject Matter Expert 1 at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Cloud Subject Matter Expert 1",
+   "proposed_rate": 192.89
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 107.33999633789062
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 134.00999450683594
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 149.72999572753906
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 107.33
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 149.74
+  }
+ },
+ {
+  "name": "price: Health IT Analyst III at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Health IT Analyst III",
+   "proposed_rate": 134.02
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 52.93000030517578
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 58.439998626708984
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 67.83879852294922
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 52.92
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 67.85
+  }
+ },
+ {
+  "name": "price: General Maintenance Worker** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "General Maintenance Worker**",
+   "proposed_rate": 58.45
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 49.630001068115234
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 54.50870132446289
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 61.95000076293945
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 49.62
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 61.96
+  }
+ },
+ {
+  "name": "price: Engineering Technician II** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician II**",
+   "proposed_rate": 54.52
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 46.6442985534668
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 49.718101501464844
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 55.70000076293945
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 46.63
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 55.71
+  }
+ },
+ {
+  "name": "price: Engineering Technician I** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician I**",
+   "proposed_rate": 49.73
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 38.79999923706055
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 46.63999938964844
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 47.52000045776367
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 38.79
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 47.53
+  }
+ },
+ {
+  "name": "price: Forklift Operator** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Forklift Operator**",
+   "proposed_rate": 46.65
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 109.19999694824219
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 127.70999908447266
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 148.02000427246094
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 109.19
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 148.03
+  }
+ },
+ {
+  "name": "price: GIS Specialist IV at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "GIS Specialist IV",
+   "proposed_rate": 127.72
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 132.66000366210938
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 145.389892578125
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 152.19000244140625
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 132.65
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 152.2
+  }
+ },
+ {
+  "name": "price: Senior Computer Systems Engineer/Architect at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Systems Engineer/Architect",
+   "proposed_rate": 145.4
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 60.04669952392578
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 62.63090133666992
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 68.27999877929688
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 60.04
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 68.29
+  }
+ },
+ {
+  "name": "price: Engineering Technician III** at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Engineering Technician III**",
+   "proposed_rate": 62.64
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 135.81640625
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at p50",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 144.57000732421875
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 151.25
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at below p25",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 135.81
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at above p75",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 151.26
+  }
+ },
+ {
+  "name": "price: Senior Computer Hardware Engineer at p50 + 0.01",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Senior Computer Hardware Engineer",
+   "proposed_rate": 144.58
+  }
+ },
+ {
+  "name": "price: nurse BA 1+ (fixture)",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Registered Nurse I",
+   "education_level": "BA",
+   "experience_min": 1,
+   "proposed_rate": 60
+  }
+ },
+ {
+  "name": "price: nurse BA|MA 3+ (fixture)",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Registered Nurse I",
+   "proposed_rate": 135,
+   "education_level": "BA|MA",
+   "experience_min": 3
+  }
+ },
+ {
+  "name": "price: integer rate",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Ocean Engineer I",
+   "proposed_rate": 72
+  }
+ },
+ {
+  "name": "price: exact low sample",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Ocean Engineer I",
+   "proposed_rate": 72.54
+  }
+ },
+ {
+  "name": "price: no data",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "zzqq none",
+   "proposed_rate": 50
+  }
+ },
+ {
+  "name": "price: with sin",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Project Manager",
+   "sin": "541611",
+   "proposed_rate": 150
+  }
+ },
+ {
+  "name": "price: cleared",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Program Manager",
+   "security_clearance": "yes",
+   "proposed_rate": 175.5
+  }
+ },
+ {
+  "name": "price: string rate",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Project Manager",
+   "proposed_rate": "120.25"
+  }
+ },
+ {
+  "name": "price: tiny rate",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Project Manager",
+   "proposed_rate": 0.01
+  }
+ },
+ {
+  "name": "price: huge rate",
+  "tool": "price_reasonableness_check",
+  "arguments": {
+   "labor_category": "Project Manager",
+   "proposed_rate": 99999
+  }
+ }
+]
