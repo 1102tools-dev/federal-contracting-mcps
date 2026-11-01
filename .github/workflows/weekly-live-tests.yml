@@ -1,4 +1,4 @@
-name: Weekly live tests
+name: Daily live tests
 
 # Once a week, run the live tests of the five servers that call a government
 # API on every request, against the real API. They catch a changed field, a new
@@ -10,7 +10,9 @@ name: Weekly live tests
 
 on:
   schedule:
-    - cron: '17 14 * * 1'
+    # 09:00 UTC: 3 a.m. Central standard time (4 a.m. in daylight time), when hosted traffic
+    # is lowest; Regulations.gov's run shares the publisher key's hourly allowance.
+    - cron: '0 9 * * *'
   workflow_dispatch:
 
 permissions:
@@ -79,4 +81,4 @@ jobs:
       issues: write
     uses: ./.github/workflows/outage-alert.yml
     with:
-      title: Weekly live tests failing
+      title: Daily live tests failing
