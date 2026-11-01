@@ -1,0 +1,105 @@
+name: eCFR copy refresh
+
+# Keeps the D1 copy of the current eCFR that the hosted eCFR MCP
+# (ecfr.1102tools.com) answers most tools from in step with eCFR.
+#
+# Hourly: change-only refresh. Skips while eCFR is importing. A title whose
+# latest_amended_on or latest_issue_date moved gets its structure at the new
+# date, and only the parts that changed (structure diff plus versions issued
+# since the stored issue date) are fetched again, one XML request at a time,
+# 3 seconds apart. Only rows whose hash changed are written; a title whose only
+# change is up_to_date_as_of costs one row (plus meta.version, which every
+# write moves so the Worker's answer cache never outlives a change).
+#
+# Daily: the safety net. Re-reads about 7 titles' whole-title XML (every title
+# once a week, rotation kept in the database) and rewrites only parts whose
+# parsed text no longer matches. Nothing differs, nothing written.
+#
+# Every run adds up D1's rows_written and stops past --max-rows. Never deploys
+# the Worker.
+#
+# Credential: the sam-data-load environment (main only) holds
+# CLOUDFLARE_D1_TOKEN, a Cloudflare API token limited to D1 edit on this
+# account. The database id comes from deploy/ecfr/wrangler.jsonc
+# (env.production d1_databases).
+
+on:
+  schedule:
+    - cron: '23 * * * *'   # refresh
+    - cron: '50 9 * * *'   # safety net
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'refresh (change-only) or verify (safety-net slice)'
+        type: choice
+        options: [refresh, verify]
+        default: refresh
+      titles:
+        description: 'Only these titles, space-separated (verify: instead of the day''s slice)'
+        type: string
+        default: ''
+      max_rows:
+        description: 'Stop once this run writes more D1 rows'
+        type: string
+        default: '200000'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ecfr-load
+  cancel-in-progress: false
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    # A failure alerts through outage-alert.yml (with backoff), not by failing the run.
+    continue-on-error: true
+    environment: sam-data-load
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 846d3e41e48446abcd3570c0959f9fb5
+      CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+      EVENT: ${{ github.event_name }}
+      SCHEDULE: ${{ github.event.schedule }}
+      INPUT_COMMAND: ${{ github.event.inputs.command }}
+      TITLES: ${{ github.event.inputs.titles }}
+      MAX_ROWS: ${{ github.event.inputs.max_rows || '200000' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: Check credential
+        run: test -n "$CLOUDFLARE_D1_TOKEN" || { echo 'Add CLOUDFLARE_D1_TOKEN to the sam-data-load environment'; exit 1; }
+      - name: Update the eCFR copy in D1
+        run: |
+          if [ "$EVENT" = workflow_dispatch ]; then command="$INPUT_COMMAND"
+          elif [ "$SCHEDULE" = '50 9 * * *' ]; then command=verify
+          else command=refresh; fi
+          case "$command" in refresh|verify) ;; *) echo "unknown command $command"; exit 1 ;; esac
+          case "$MAX_ROWS" in ''|*[!0-9]*) echo "max_rows must be a number"; exit 1 ;; esac
+          extra=()
+          for t in $TITLES; do
+            case "$t" in *[!0-9]*) echo "titles must be numbers"; exit 1 ;; esac
+            extra+=("$t")
+          done
+          if [ ${#extra[@]} -gt 0 ]; then extra=(--titles "${extra[@]}"); fi
+          status=0
+          uv run --frozen --python 3.12 --project servers/ecfr-mcp \
+            python scripts/load_ecfr.py "$command" --remote --max-rows "$MAX_ROWS" \
+            "${extra[@]}" --json status.json > /dev/null || status=$?
+          {
+            echo "### eCFR $command: $(jq -r '.rows_written // "?"' status.json 2>/dev/null || echo '?') D1 rows written"
+            echo '```json'; cat status.json 2>/dev/null || echo '{}'; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+
+  alert:
+    needs: load
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    uses: ./.github/workflows/outage-alert.yml
+    with:
+      title: eCFR copy refresh failing

@@ -1,0 +1,81 @@
+name: eCFR hosted tests
+
+# The hosted eCFR Worker answers most tool calls from a D1 copy of the current
+# eCFR and forwards the rest to the Python server. This checks the loader
+# offline, the Worker's types and tests, and parity with the Python server:
+# every case in deploy/ecfr/test/fixture-cases.json is sent to both, compared
+# byte for byte, over a small recording built from the package's own eCFR XML
+# fixtures (deploy/ecfr/test/fixture_recording.py). The full parity run
+# (test/parity-cases.json) needs the whole recording and runs locally; see
+# deploy/ecfr/WORKER_PROGRESS.md.
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/ecfr/**'
+      - 'deploy/shared/**'
+      - 'scripts/load_ecfr.py'
+      - 'tests/test_ecfr_loader.py'
+      - 'servers/ecfr-mcp/src/**'
+      - 'servers/ecfr-mcp/tests/fixtures/**'
+      - 'servers/ecfr-mcp/pyproject.toml'
+      - 'servers/ecfr-mcp/uv.lock'
+      - 'servers/ecfr-mcp/server.json'
+      - '.github/workflows/ecfr-hosted-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/ecfr/**'
+      - 'deploy/shared/**'
+      - 'scripts/load_ecfr.py'
+      - 'tests/test_ecfr_loader.py'
+      - 'servers/ecfr-mcp/src/**'
+      - 'servers/ecfr-mcp/tests/fixtures/**'
+      - 'servers/ecfr-mcp/pyproject.toml'
+      - 'servers/ecfr-mcp/uv.lock'
+      - 'servers/ecfr-mcp/server.json'
+      - '.github/workflows/ecfr-hosted-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # The package's own environment (the loader parses with it), on the container's Python.
+      PY: uv run --frozen --python 3.12 --project servers/ecfr-mcp
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - name: Loader
+        run: $PY --with pytest pytest -q tests/test_ecfr_loader.py
+      - name: Fixture copy
+        run: |
+          $PY python deploy/ecfr/test/fixture_recording.py "$RUNNER_TEMP/rec"
+          $PY python scripts/load_ecfr.py build --rec "$RUNNER_TEMP/rec" --local "$RUNNER_TEMP/d1.sqlite"
+      - name: Worker typecheck and tests
+        working-directory: deploy/ecfr
+        env:
+          ECFR_TEST_DB: ${{ runner.temp }}/d1.sqlite
+        run: |
+          npm ci --ignore-scripts
+          npm run check
+          npm test
+          node --test ../shared/edge.test.ts
+      - name: Parity with the Python server, without and with the answer cache
+        run: |
+          for cache in "" --cache; do
+            $PY --with uvicorn python deploy/ecfr/scripts/parity.py --db "$RUNNER_TEMP/d1.sqlite" \
+              --base "$RUNNER_TEMP/rec" --rec "$RUNNER_TEMP/rec/parity" --cases deploy/ecfr/test/fixture-cases.json $cache
+          done
+      - name: Deploy dry runs
+        working-directory: deploy/ecfr
+        # Production keeps its container (not rebuilt here); staging has none.
+        run: |
+          npx wrangler deploy --dry-run --env production --containers-rollout=none --outdir "$RUNNER_TEMP/ecfr-dist"
+          npx wrangler deploy --dry-run --env staging --outdir "$RUNNER_TEMP/ecfr-staging-dist"

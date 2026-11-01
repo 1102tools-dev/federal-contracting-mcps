@@ -1,60 +1,45 @@
-import { publicDocs } from "./public-docs";
-import { Container, getContainer } from "@cloudflare/containers";
-import { MAX_BODY_BYTES, fetchWithRetry, listenAtEdge, logToolCall, originFirst, readBounded, tooLarge, withinLimit, rateLimited, explainCapacity, explainUnavailable } from "../../shared/edge";
-export { RateCounter } from "../../shared/rate-counter";
+import {Container, getContainer} from "@cloudflare/containers";
+import {explainCapacity, explainUnavailable, fetchWithRetry, originFirst, withToolCallLog} from "../../shared/edge.ts";
+export {RateCounter} from "../../shared/rate-counter.ts";
+import {toForwardUrl} from "./forward.ts";
+import {makeWorker, type Env} from "./worker.ts";
 
-export class ECFR extends Container {
+// The protocol and most tool calls are answered by the Worker from D1
+// (src/worker.ts); the rest go to the Python server below. The staging Worker
+// (env.staging, no container) sends them to FORWARD_URL, production's /mcp.
+
+export class ECFR extends Container<Env> {
   defaultPort = 8080;
   sleepAfter = "2m";
 }
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-    if (publicDocs[url.pathname] && request.method === "GET") return new Response(publicDocs[url.pathname], {headers: {"Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff"}});
-    if (url.pathname !== "/mcp" && url.pathname !== "/health") {
-      return new Response("eCFR MCP by 1102tools. Connect at /mcp.", {status: url.pathname === "/" ? 200 : 404});
-    }
-    const origin = request.headers.get("Origin");
-    if (origin && origin !== url.origin) return new Response("Origin not allowed", {status: 403});
-    if (!await withinLimit(request, env, 20)) {
-      return rateLimited(request, "eCFR", 20);
-    }
-    if (url.pathname === "/mcp" && request.method !== "POST") {
-      return new Response("Use POST for stateless MCP requests.", {status: 405, headers: {Allow: "POST"}});
-    }
-    if (url.pathname === "/health" && request.method !== "GET") return new Response(null, {status: 405});
-    // Read the body at the edge, bounded, so slow or oversized uploads never
-    // hold one of the single container's admission slots.
-    let body: ArrayBuffer | null = null;
-    if (request.method === "POST") {
-      if (Number(request.headers.get("Content-Length") ?? "0") > MAX_BODY_BYTES) return tooLarge();
-      body = await readBounded(request);
-      if (body === null) return tooLarge();
-    }
-    const listen = listenAtEdge(request.headers, body);
-    if (listen) return listen;
-    try {
-      const headers = new Headers(request.headers);
-      headers.set("Host", "container.internal");
-      headers.delete("Origin");
-      headers.delete("Cookie");
-      headers.delete("Authorization");
-      headers.delete("Content-Length");
-      const forwarded = () => new Request(`http://container.internal${url.pathname}`, {
-        method: request.method, headers, body,
-      });
-      // A single named instance preserves process/file pacing across all users.
-      const backend = getContainer(env.BACKEND, "public-ecfr");
-      // The Dell first (deploy/dell), then this container.
-      const started = Date.now();
-      const response = await originFirst(env, url.pathname, {method: request.method, headers, body},
-        () => fetchWithRetry(() => backend.fetch(forwarded())));
-      logToolCall("ecfr", body, response, started, request.headers.get("User-Agent"));
-      return explainCapacity(response, body, "eCFR");
-    } catch (error) {
-      console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
-      return explainUnavailable(body, "eCFR");
-    }
-  },
-} satisfies ExportedHandler<Env>;
+/** A request the copy can't answer, sent as received: the Dell first, then the container. */
+async function toBackend(request: Request, body: ArrayBuffer | null, env: Env): Promise<Response> {
+  if (env.FORWARD_URL) return await toForwardUrl(env.FORWARD_URL, request, body);
+  const url = new URL(request.url);
+  try {
+    const headers = new Headers(request.headers);
+    headers.set("Host", "container.internal");
+    headers.delete("Origin");
+    headers.delete("Cookie");
+    headers.delete("Authorization");
+    headers.delete("Content-Length");
+    const forwarded = () => new Request(`http://container.internal${url.pathname}`, {
+      method: request.method, headers, body,
+    });
+    // A single named instance preserves process/file pacing across all users.
+    const container = getContainer(env.BACKEND as DurableObjectNamespace<ECFR>, "public-ecfr");
+    // The Dell first (deploy/dell), then this container.
+    const response = await originFirst(env, url.pathname, {method: request.method, headers, body},
+      () => fetchWithRetry(() => container.fetch(forwarded())));
+    const backend = response.headers.get("X-1102tools-Backend");
+    const explained = explainCapacity(response, body, "eCFR");
+    if (backend && explained !== response) explained.headers.set("X-1102tools-Backend", backend);
+    return explained;
+  } catch {
+    console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
+    return explainUnavailable(body, "eCFR");
+  }
+}
+
+export default {fetch: withToolCallLog("ecfr", makeWorker(toBackend).fetch)} satisfies ExportedHandler<Env>;
