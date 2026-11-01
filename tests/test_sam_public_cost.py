@@ -15,6 +15,9 @@ class CostTests(unittest.TestCase):
  def tearDown(self):self.oracle.close();self.tmp.cleanup()
  def test_seed_counts_pk(self):
   r=self.oracle.rehearse(["INSERT INTO hashes VALUES('entities','one','digest');"],'seed');self.assertEqual((r['native_total_changes'],r['index_entry_operations'],r['conservative_units']),(1,1,2))
+ def test_insert_or_ignore_counts_only_new_rows(self):
+  # Split oversized entity deltas write children with INSERT OR IGNORE (Nov 2026).
+  r=self.oracle.rehearse(["INSERT OR IGNORE INTO hashes VALUES('entities','one','digest');","INSERT OR IGNORE INTO hashes VALUES('entities','one','digest');"],'ignore');self.assertEqual((r['native_total_changes'],r['conservative_units']),(1,2))
  def test_update_index_delete_and_insert(self):
   r=self.oracle.rehearse(["UPDATE records SET name='new' WHERE id=1;"],'update');self.assertEqual(r['conservative_units'],3)
  def test_ddl_does_not_reuse_changes(self):

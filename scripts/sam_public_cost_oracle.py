@@ -149,9 +149,9 @@ class CostOracle:
         try:
             for statement in statements:
                 text=statement.strip()
-                if not re.match(r'^(INSERT(?: OR REPLACE)? INTO|UPDATE|DELETE FROM|DROP INDEX|CREATE INDEX|CREATE TABLE|ALTER TABLE|DROP TABLE|SELECT CASE)\b',text,re.I):
+                if not re.match(r'^(INSERT(?: OR (?:REPLACE|IGNORE))? INTO|UPDATE|DELETE FROM|DROP INDEX|CREATE INDEX|CREATE TABLE|ALTER TABLE|DROP TABLE|SELECT CASE)\b',text,re.I):
                     raise ValueError('Unsupported SQL in cost oracle')
-                dml=re.match(r'(INSERT(?: OR REPLACE)? INTO|UPDATE|DELETE FROM) ([A-Za-z0-9_]+)',text,re.I)
+                dml=re.match(r'(INSERT(?: OR (?:REPLACE|IGNORE))? INTO|UPDATE|DELETE FROM) ([A-Za-z0-9_]+)',text,re.I)
                 before=self.db.total_changes
                 replacement=False
                 if dml:
