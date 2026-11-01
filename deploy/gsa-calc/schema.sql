@@ -8,11 +8,15 @@
 -- its hash changes, and only the indexes below exist.
 --
 -- Nights: GSA rebuilds one Elasticsearch index every night. The copy keeps the
--- current night and, during a refresh, the next one side by side. A records row
--- belongs to nights v_from <= N < v_to; the Worker reads N = meta 'current'.
--- A refresh adds changed and new records with v_from = N+1, closes replaced and
--- removed ones with v_to = N+1, then moves 'current' and 'version' in one
--- statement (so no answer mixes two nights), then deletes rows with v_to <= N+1.
+-- current night, the night before it, and during a refresh the next one. A
+-- records row belongs to nights v_from <= N < v_to; the Worker reads N = meta
+-- 'current'. A refresh adds changed and new records with v_from = N+1, closes
+-- replaced and removed ones with v_to = N+1, then moves 'current', 'version'
+-- and 'timestamp' in one statement (so no answer mixes two nights), then
+-- deletes the rows no night >= N can see (v_to <= N: those closed at the
+-- previous switch). Cleanup runs a night behind: rows closed at this switch
+-- stay until the next one, so an answer that read 'current' = N just before the
+-- switch still finds every night-N row.
 
 CREATE TABLE IF NOT EXISTS meta (
   key TEXT PRIMARY KEY,
@@ -61,8 +65,9 @@ CREATE TABLE IF NOT EXISTS sources (
 -- Distinct values of the three fields GSA's keyword and suggest-contains search,
 -- so substring matching scans thousands of short strings instead of every
 -- record. A candidate list only: the Worker still applies the exact predicate
--- to records. A refresh adds new values before the switch and drops values no
--- night uses after it, so the list is never missing a current value.
+-- to records. A refresh adds new values before the switch and, after it, drops
+-- values no remaining row uses (night N+1's rows and the night-N rows kept a
+-- night), so the list never misses a value either night reads.
 CREATE TABLE IF NOT EXISTS terms (
   field TEXT NOT NULL,              -- labor_category, vendor_name or idv_piid
   value TEXT NOT NULL,

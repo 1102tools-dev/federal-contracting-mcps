@@ -36,9 +36,12 @@ rows. Nights as schema.sql's header describes: an empty copy becomes night 1;
 a copy whose meta 'version' is another index gets night N+1 change-only (only
 records whose (id, hash) is new are written, with v_from = N+1; replaced and
 removed rows get v_to = N+1; new terms are added), then one statement moves
-meta current, version, timestamp and loaded_at together, then rows with
-v_to <= N+1, their sources rows and unused terms are deleted. A recording of
-the copy's own index writes nothing; an older one is refused. Rows left by an
+meta current, version, timestamp and loaded_at together, then rows no night
+>= N can see (v_to <= N: those the previous switch closed), their sources rows
+and terms no remaining row uses are deleted. Cleanup runs a night behind: rows
+closed at this switch stay until the next one, so an answer that read night N
+just before the switch still finds every night-N row. A recording of the
+copy's own index writes nothing; an older one is refused. Rows left by an
 interrupted run are reused when they still match and deleted when they don't.
 --limit N loads only the first N records (a sample). Prints a JSON status with
 written_estimate, the rows a D1 load bills: table rows inserted, updated or
@@ -50,7 +53,10 @@ WITHOUT ROWID, one write per row; meta's TEXT key has an automatic index).
 diff: churn between two recordings: records added, removed, changed by content
 hash, unchanged; records that came back under a new _id with the same content;
 distinct _timestamp values per night; which _source keys changed; and the rows
-a change-only refresh from A to B would write, counted as build counts them.
+the change from A to B costs, counted as build counts them: at the switch to B
+(inserts, closes, new terms, meta) and at the switch after it (deleting the
+rows B retired and the terms only they used). A refresh to B also deletes what
+the switch to A retired, which two recordings can't show.
 
     python3 scripts/load_gsa_calc.py diff --a rec-night1/pull --b rec-night2/pull
 
@@ -869,8 +875,10 @@ class Plan:
         self.night = current + 1
         self.inserts: set[int] = set()     # recording positions written as new rows (v_from = night)
         self.reopen: list[int] = []        # live rows a stopped run had closed, still in the recording
-        self.close: list[int] = []         # live rows replaced or removed: v_to = night
-        self.cleanup: list[int] = []       # rows deleted after the switch (v_to <= night)
+        self.close: list[int] = []         # live rows replaced or removed whose v_to is set to night now
+        self.retire: list[int] = []        # every live row night N+1 no longer has (close + closed by a
+                                           # stopped run); kept for night N until the next switch
+        self.cleanup: list[int] = []       # rows deleted after the switch: v_to <= N, closed at an earlier one
         self.drop: list[int] = []          # staged rows of a stopped run that no longer match
         self.orphans: list[int] = []       # sources rows a stopped run left without their records row
         self.unchanged = 0
@@ -880,12 +888,12 @@ class Plan:
         self.terms_drop: list[tuple[str, str]] = []
 
 
-def make_plan(current: int, found: Scan, rows: list[tuple[int, int, str, int, int]],
-              terms: dict[tuple[str, str], str]) -> Plan:
+def make_plan(current: int, found: Scan, rows: list[tuple[int, int, str, int, int]]) -> Plan:
     """Compare the stored rows with the recording. A live row (v_from <= N < v_to) whose
-    (id, hash) is in the recording stays; any other live row is closed. A staged row
-    (v_from > N, left by a stopped run) is kept when it is night N+1 and still matches,
-    and dropped otherwise. Rows closed before N are leftovers of a stopped cleanup."""
+    (id, hash) is in the recording stays; any other live row is retired (v_to = N+1) and
+    kept for night N. A staged row (v_from > N, left by a stopped run) is kept when it is
+    night N+1 and still matches, and dropped otherwise. Rows no night >= N sees (v_to <= N,
+    retired at the previous switch or before) are deleted after this switch."""
     plan = Plan(current)
     matched: set[tuple[int, str]] = set()
     staged: list[tuple[int, tuple[int, str], int, int]] = []
@@ -903,7 +911,7 @@ def make_plan(current: int, found: Scan, rows: list[tuple[int, int, str, int, in
         else:
             if v_to != plan.night:
                 plan.close.append(rid)
-            plan.cleanup.append(rid)
+            plan.retire.append(rid)
     for rid, key, v_from, v_to in staged:
         if v_from == plan.night and key in found.keys and key not in matched:
             matched.add(key)
@@ -913,12 +921,31 @@ def make_plan(current: int, found: Scan, rows: list[tuple[int, int, str, int, in
         else:
             plan.drop.append(rid)
     plan.inserts = {position for key, position in found.keys.items() if key not in matched}
-    for key, folded in found.terms.items():
+    return plan
+
+
+def plan_terms(plan: Plan, found: Scan, retired: set[tuple[str, str]], terms: dict[tuple[str, str], str]) -> int:
+    """Terms after the switch: night N+1's values plus those of the rows retired now (night N
+    still reads them until the next switch). New or refolded ones are written before the
+    switch, the rest deleted after it. Returns how many terms the copy then holds."""
+    wanted = dict(found.terms)
+    for key in retired:
+        wanted.setdefault(key, fold(key[1]))
+    for key, folded in wanted.items():
         if terms.get(key) != folded:
             plan.terms_add.append([key[0], key[1], folded])
             plan.terms_new += key not in terms
-    plan.terms_drop = [key for key in terms if key not in found.terms]
-    return plan
+    plan.terms_drop = [key for key in terms if key not in wanted]
+    return len(wanted)
+
+
+def stored_values(db: Target, rids: list[int]) -> set[tuple[str, str]]:
+    """(field, value) of TERM_FIELDS for these records rows."""
+    values: set[tuple[str, str]] = set()
+    for sql in packed(f"SELECT {', '.join(TERM_FIELDS)} FROM records WHERE rid IN (", [str(r) for r in sorted(rids)], ")"):
+        for row in db.query(sql):
+            values.update(term_values(row))
+    return values
 
 
 def finish(db: Target, status: dict[str, Any], started: tuple[float, int, int]) -> dict[str, Any]:
@@ -976,7 +1003,8 @@ def build(db: Target, rec: Path | str, limit: int | None = None, log: Callable[[
 
     rows = stored_rows(db)
     terms = stored_terms(db)
-    plan = make_plan(current, found, rows, terms)
+    plan = make_plan(current, found, rows)
+    terms_after = plan_terms(plan, found, stored_values(db, plan.retire), terms)
     if "staging" in meta or plan.drop:
         base = max((rid for rid, _, _, v_from, _ in rows if v_from <= current), default=0)
         plan.orphans = [as_int(r["rid"]) for r in db.query(
@@ -989,14 +1017,15 @@ def build(db: Target, rec: Path | str, limit: int | None = None, log: Callable[[
                     meta_updates=len(SWITCH_KEYS) - switch_new, meta_deletes=1)
     estimate = add_up(stage, after)
     status.update(action="loading", night=plan.night, inserted=len(plan.inserts), unchanged=plan.unchanged,
-                  kept_staged=plan.kept_staged, closed=len(plan.close), reopened=len(plan.reopen),
-                  deleted=len(plan.cleanup), dropped_staged=len(plan.drop), orphan_sources=len(plan.orphans),
-                  terms={"total": len(found.terms), "added": plan.terms_new,
+                  kept_staged=plan.kept_staged, retired=len(plan.retire), closed=len(plan.close),
+                  reopened=len(plan.reopen), deleted=len(plan.cleanup), dropped_staged=len(plan.drop),
+                  orphan_sources=len(plan.orphans),
+                  terms={"total": terms_after, "night": len(found.terms), "added": plan.terms_new,
                          "refolded": len(plan.terms_add) - plan.terms_new, "removed": len(plan.terms_drop)},
                   written_estimate=estimate)
     log(f"night {plan.night}: {len(plan.inserts):,} records to write, {plan.unchanged:,} unchanged, "
-        f"{plan.kept_staged:,} already staged, {len(plan.close):,} to close, {len(plan.cleanup):,} to delete after "
-        f"the switch; about {estimate['total']:,} D1 rows")
+        f"{plan.kept_staged:,} already staged, {len(plan.retire):,} to retire (kept a night), "
+        f"{len(plan.cleanup):,} retired earlier to delete after the switch; about {estimate['total']:,} D1 rows")
     db.room(estimate["total"], f"Night {plan.night} ({index})")
 
     # Stage night N+1. Readers of night N see none of this.
@@ -1023,7 +1052,8 @@ def build(db: Target, rec: Path | str, limit: int | None = None, log: Callable[[
     status["action"] = "switched"
     log(f"switched to night {plan.night} ({index})")
 
-    # Cleanup: rows no night reads any more, then terms no row uses.
+    # Cleanup, a night behind: rows no night >= N reads (v_to <= N), then terms no remaining
+    # row uses. Rows retired at this switch stay for answers still reading night N.
     statements = by_rid("DELETE FROM sources WHERE rid IN (", plan.cleanup)
     statements += by_rid("DELETE FROM records WHERE rid IN (", plan.cleanup)
     for field in TERM_FIELDS:
@@ -1119,10 +1149,11 @@ def diff(a: Path | str, b: Path | str, log: Callable[[str], None] = print) -> di
     terms_added = term_sets[1] - term_sets[0]
     terms_removed = term_sets[0] - term_sets[1]
     changed = counts["changed"]
-    projected = written(inserts=counts["added"] + changed, closes=changed + len(removed),
-                        deletes=changed + len(removed), terms_added=len(terms_added),
-                        terms_removed=len(terms_removed), meta_inserts=1, meta_updates=len(SWITCH_KEYS),
-                        meta_deletes=1)
+    # Cleanup lags a night: the switch to B writes the new rows and closes the old ones; the
+    # switch after it deletes the rows B retired and the terms only they used.
+    at_switch = written(inserts=counts["added"] + changed, closes=changed + len(removed),
+                        terms_added=len(terms_added), meta_inserts=1, meta_updates=len(SWITCH_KEYS), meta_deletes=1)
+    next_switch = written(deletes=changed + len(removed), terms_removed=len(terms_removed))
 
     def side(recording: Recording, records: int, stamp: Counter, terms: set) -> dict[str, Any]:
         return {"index": recording.index, "records": records, "priced_records": recording.summary.get("priced_records"),
@@ -1140,7 +1171,8 @@ def diff(a: Path | str, b: Path | str, log: Callable[[str], None] = print) -> di
         "changed_keys": dict(fields.most_common()),
         "terms": {"added": dict(Counter(f for f, _ in terms_added)),
                   "removed": dict(Counter(f for f, _ in terms_removed))},
-        "projected_rows_written": projected,
+        "projected_rows_written": add_up(at_switch, next_switch),
+        "projected_split": {"at_switch": at_switch, "next_switch": next_switch},
         "seconds": round(time.monotonic() - started, 1),
     }
 

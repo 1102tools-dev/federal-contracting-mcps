@@ -37,6 +37,7 @@ loader = module("load_gsa_calc", ROOT / "scripts/load_gsa_calc.py")
 NIGHT1, TS1 = "ceilingrates-2026-11-01_02-00-02", "2026-11-01T02:00:03Z"
 NIGHT2, TS2 = "ceilingrates-2026-11-02_02-00-02", "2026-11-02T02:00:04Z"
 NIGHT3, TS3 = "ceilingrates-2026-11-03_02-00-01", "2026-11-03T02:00:02Z"
+NIGHT4, TS4 = "ceilingrates-2026-11-04_02-00-02", "2026-11-04T02:00:03Z"
 OPEN = loader.OPEN
 
 
@@ -81,10 +82,11 @@ def night_two():
     return after
 
 
-def night_three():
+def night_three(ts=TS3):
+    """Night two's records with a new _timestamp only."""
     after = night_two()
     for row in after.values():
-        row["_timestamp"] = TS3
+        row["_timestamp"] = ts
     return after
 
 
@@ -105,7 +107,8 @@ def write_recording(path, index, records, priced=None, pull=False):
 def recs(tmp_path):
     return (write_recording(tmp_path / "n1", NIGHT1, night_one()),
             write_recording(tmp_path / "n2", NIGHT2, night_two()),
-            write_recording(tmp_path / "n3", NIGHT3, night_three()))
+            write_recording(tmp_path / "n3", NIGHT3, night_three()),
+            write_recording(tmp_path / "n4", NIGHT4, night_three(TS4)))
 
 
 def f32(x):
@@ -236,30 +239,32 @@ def test_night_two_change_only(recs):
     status = loader.build(db, recs[1], log=quiet)
     rows = night_two()
     assert status["action"] == "loaded" and status["night"] == 2
-    assert (status["inserted"], status["unchanged"], status["closed"], status["deleted"]) == (3, 2, 3, 3)
+    assert (status["inserted"], status["unchanged"], status["retired"], status["closed"], status["deleted"]) == (
+        3, 2, 3, 3, 0)
     stored = {(r["id"], r["v_from"]): r for r in db.query("SELECT * FROM records")}
-    # Unchanged and _timestamp-only rows stay as they were; the changed and new ones are night 2's.
-    assert sorted(stored) == [(1001, 1), (1002, 2), (1004, 1), (1005, 2), (1006, 2)]
+    # Unchanged and _timestamp-only rows stay as they were; the changed and new ones are night 2's;
+    # the replaced and removed ones are closed at night 2 and kept for night 1 until the next switch.
+    assert sorted(stored) == [(1001, 1), (1002, 1), (1002, 2), (1003, 1), (1004, 1), (1005, 2), (1006, 2), (1007, 1)]
     assert stored[(1001, 1)]["rid"] == rids[1001] and stored[(1004, 1)]["rid"] == rids[1004]
     assert stored[(1002, 2)]["price"] == f32(104.41) and stored[(1002, 2)]["hash"] == expected_hash(rows["1002"])
-    assert all(r["v_to"] == OPEN for r in stored.values())
-    assert counts(db)["sources"] == 5
+    assert {k: r["v_to"] for k, r in stored.items() if r["v_to"] != OPEN} == {(1002, 1): 2, (1003, 1): 2, (1007, 1): 2}
+    assert counts(db)["sources"] == 8
     assert {i: h for i, (h, _, _) in view(db, 2).items()} == {int(k): expected_hash(v) for k, v in rows.items()}
     # A _timestamp-only change is not rewritten: its stored JSON keeps night 1's stamp, and the
     # Worker puts meta 'timestamp' in its place.
     assert json.loads(view(db, 2)[1004][2])["_timestamp"] == TS1 and meta(db)["timestamp"] == TS2
     assert json.loads(view(db, 2)[1005][2])["labor_category"] == "Développeur Senior"
     terms = {(r["field"], r["value"]): r["folded"] for r in db.query("SELECT * FROM terms")}
-    assert ("labor_category", "Retired Role") not in terms and ("vendor_name", "Old Vendor Inc") not in terms
+    assert ("labor_category", "Retired Role") in terms  # night 1's 1007 is kept a night, so its terms are
     assert ("labor_category", "Analyst") in terms  # 1006 still uses it
     assert terms[("labor_category", "Développeur Senior")] == "développeur senior"
-    assert status["terms"] == {"total": 13, "added": 3, "refolded": 0, "removed": 3}
+    assert status["terms"] == {"total": 16, "night": 13, "added": 3, "refolded": 0, "removed": 0}
     m = meta(db)
     assert (m["current"], m["version"], m["timestamp"]) == ("2", NIGHT2, TS2) and "staging" not in m
-    # 3 inserts, 3 closes and 3 deletes on records (index entries for inserts and deletes only),
-    # their sources rows, 3 terms in and 3 out, meta: staging in, 4 switch updates, staging out.
-    assert status["written_estimate"] == {"records": 9, "sources": 6, "terms": 6, "meta": 6,
-                                          "index_entries": 20, "total": 47}
+    # 3 inserts (each with 3 index entries and a sources row) and 3 closes on records, 3 new terms,
+    # meta: staging in, 4 switch updates, staging out. The deletes come at the next switch.
+    assert status["written_estimate"] == {"records": 6, "sources": 3, "terms": 3, "meta": 6,
+                                          "index_entries": 11, "total": 29}
     est = status["written_estimate"]
     assert status["rows_written"] == est["total"] - est["index_entries"]
     db.rows_written = 0
@@ -282,13 +287,37 @@ def test_fold_rule_change_refolds_terms(recs, monkeypatch):
     loader.build(db, recs[0], log=quiet)
     monkeypatch.undo()
     status = loader.build(db, recs[1], log=quiet)
-    assert status["terms"]["refolded"] == 10 and status["terms"]["added"] == 3
+    # 10 of night 2's terms existed, plus 3 kept for night 1's retired 1007: all refolded.
+    assert status["terms"]["refolded"] == 13 and status["terms"]["added"] == 3
     assert all(r["folded"] == r["value"].lower() for r in db.query("SELECT * FROM terms"))
+
+
+def test_a_reader_of_night_n_still_sees_it_after_the_switch(recs):
+    """Cleanup runs a night behind: an answer that read current = N just before the switch to
+    N+1 still finds every night-N row, its sources JSON and its terms afterwards."""
+    db = loader.LocalD1(":memory:")
+    loader.build(db, recs[0], log=quiet)
+    night1 = view(db, 1)
+    assert sorted(night1) == [1001, 1002, 1003, 1004, 1007]
+    loader.build(db, recs[1], log=quiet)
+    assert meta(db)["current"] == "2" and view(db, 1) == night1
+    terms = {(r["field"], r["value"]) for r in db.query("SELECT field, value FROM terms")}
+    assert all(set(loader.term_values(row)) <= terms for rows in (night_one(), night_two()) for row in rows.values())
+    night2 = view(db, 2)
+    status = loader.build(db, recs[2], log=quiet)
+    assert meta(db)["current"] == "3" and view(db, 2) == night2
+    # Night 1's retired rows go at the switch after the one that retired them, with their terms.
+    assert status["deleted"] == 3 and status["terms"]["removed"] == 3 and sorted(view(db, 1)) == [1001, 1004]
+    assert counts(db)["records"] == counts(db)["sources"] == 5
+    assert ("labor_category", "Retired Role") not in {(r["field"], r["value"]) for r in db.query("SELECT * FROM terms")}
+    assert status["written_estimate"] == {"records": 3, "sources": 3, "terms": 3, "meta": 6,
+                                          "index_entries": 11, "total": 26}
 
 
 def test_cleanup_left_by_a_stopped_run_is_finished_next_night(recs, monkeypatch):
     db = loader.LocalD1(":memory:")
     loader.build(db, recs[0], log=quiet)
+    loader.build(db, recs[1], log=quiet)
     real = loader.LocalD1.execute
 
     def stop_at_cleanup(self, statements):
@@ -298,13 +327,13 @@ def test_cleanup_left_by_a_stopped_run_is_finished_next_night(recs, monkeypatch)
 
     monkeypatch.setattr(loader.LocalD1, "execute", stop_at_cleanup)
     with pytest.raises(RuntimeError, match="lost"):
-        loader.build(db, recs[1], log=quiet)
+        loader.build(db, recs[2], log=quiet)
     monkeypatch.undo()
     m = meta(db)
-    assert (m["current"], m["staging"]) == ("2", "2")  # switched; cleanup not done
-    assert {i for i in view(db, 2)} == {int(k) for k in night_two()}
+    assert (m["current"], m["staging"]) == ("3", "3")  # switched; cleanup not done
+    assert {i for i in view(db, 3)} == {int(k) for k in night_two()}
     assert conn(db).execute("SELECT COUNT(*) FROM records WHERE v_to = 2").fetchone()[0] == 3
-    status = loader.build(db, recs[2], log=quiet)
+    status = loader.build(db, recs[3], log=quiet)
     assert status["deleted"] == 3 and status["inserted"] == 0 and status["terms"]["removed"] == 3
     assert conn(db).execute("SELECT COUNT(*) FROM records WHERE v_to != ?", (OPEN,)).fetchone()[0] == 0
     assert counts(db)["records"] == counts(db)["sources"] == 5 and "staging" not in meta(db)
@@ -397,9 +426,9 @@ def test_max_rows_refuses_before_writing(recs):
     loader.build(remote(fake), recs[0], log=quiet)
     before = dump(fake)
     with pytest.raises(loader.RowCap, match="Nothing written"):
-        loader.build(remote(fake, max_rows=46), recs[1], log=quiet)
+        loader.build(remote(fake, max_rows=28), recs[1], log=quiet)
     assert dump(fake) == before and "staging" not in meta(fake)
-    assert loader.build(remote(fake, max_rows=47), recs[1], log=quiet)["action"] == "loaded"
+    assert loader.build(remote(fake, max_rows=29), recs[1], log=quiet)["action"] == "loaded"
 
 
 def test_a_stopped_refresh_never_switches_and_the_next_run_reuses_its_rows(recs, monkeypatch):
@@ -535,13 +564,22 @@ def test_diff_counts_churn_and_projects_the_build(recs):
     assert report["a"]["timestamps"] == {TS1: 5} and report["a"]["index"] == NIGHT1
     assert report["terms"] == {"added": {"labor_category": 1, "vendor_name": 1, "idv_piid": 1},
                                "removed": {"labor_category": 1, "vendor_name": 1, "idv_piid": 1}}
-    db = loader.LocalD1(":memory:")
-    loader.build(db, recs[0], log=quiet)
-    assert report["projected_rows_written"] == loader.build(db, recs[1], log=quiet)["written_estimate"]
     assert report["churn_pct"] == 100.0
+    # Per change, the same total as deleting at the switch (47); cleanup just lands a night later.
+    split = report["projected_split"]
+    assert report["projected_rows_written"] == loader.add_up(split["at_switch"], split["next_switch"])
+    assert report["projected_rows_written"]["total"] == 47
+    assert (split["at_switch"]["total"], split["next_switch"]["total"]) == (29, 18)
     same = loader.diff(recs[1], recs[2], log=quiet)
     assert same["changed"] == same["added"] == same["removed"] == 0
-    assert same["projected_rows_written"]["total"] == 8
+    assert same["projected_rows_written"]["total"] == same["projected_split"]["at_switch"]["total"] == 8
+    # build agrees: the switch to night 2 costs at_switch; the switch to night 3 deletes what
+    # night 2 retired (next_switch) on top of its own meta writes.
+    db = loader.LocalD1(":memory:")
+    loader.build(db, recs[0], log=quiet)
+    assert loader.build(db, recs[1], log=quiet)["written_estimate"] == split["at_switch"]
+    assert loader.build(db, recs[2], log=quiet)["written_estimate"] == loader.add_up(
+        split["next_switch"], same["projected_split"]["at_switch"])
 
 
 def test_diff_key_order_change(tmp_path):
