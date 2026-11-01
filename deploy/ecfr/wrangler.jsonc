@@ -44,6 +44,13 @@
       ]
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ecfr",
+      "database_id": "52271b16-3137-4dc4-9068-0a311ed09ec8"
+    }
+  ],
   "ratelimits": [
     {
       "name": "REQUEST_LIMITER",
@@ -100,6 +107,13 @@
           }
         ]
       },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "ecfr",
+          "database_id": "52271b16-3137-4dc4-9068-0a311ed09ec8"
+        }
+      ],
       "ratelimits": [
         {
           "name": "REQUEST_LIMITER",
@@ -120,6 +134,60 @@
       ],
       "vars": {
         "ORIGIN_URL": "https://ecfr-origin.1102tools.com"
+      }
+    },
+    "staging": {
+      "name": "ecfr-mcp-staging",
+      "workers_dev": true,
+      "routes": [
+        {
+          "pattern": "ecfr-staging.1102tools.com",
+          "custom_domain": true
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "RateCounter",
+            "name": "RATE_COUNTER"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": [
+            "RateCounter"
+          ]
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "ecfr",
+          "database_id": "52271b16-3137-4dc4-9068-0a311ed09ec8"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "REQUEST_LIMITER",
+          "namespace_id": "110261",
+          "simple": {
+            "limit": 20,
+            "period": 60
+          }
+        },
+        {
+          "name": "AI_LIMITER",
+          "namespace_id": "110271",
+          "simple": {
+            "limit": 600,
+            "period": 60
+          }
+        }
+      ],
+      "vars": {
+        "FORWARD_URL": "https://ecfr.1102tools.com/mcp"
       }
     }
   }

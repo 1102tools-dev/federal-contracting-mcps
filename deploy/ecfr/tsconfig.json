@@ -8,7 +8,9 @@
     "noEmit": true,
     "types": [
       "node"
-    ]
+    ],
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true
   },
   "include": [
     "src/**/*.ts",
