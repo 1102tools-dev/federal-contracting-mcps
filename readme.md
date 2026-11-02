@@ -37,8 +37,6 @@ Add them from the [install table](#local-or-hosted).
 - **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
 - **Private.** No tracking. Searches aren't logged and IP addresses aren't kept. Run it locally and nothing passes through 1102tools at all.
 
-[See how 1102tools compares](https://1102tools.com/compare) with paid GovCon platforms and other MCP servers.
-
 <a href="https://www.youtube.com/watch?v=TlPaQOu2fgY"><img src="https://img.youtube.com/vi/TlPaQOu2fgY/maxresdefault.jpg" alt="Watch: USAspending vs SAM.gov, same contract data without the 1,000-a-day limit" width="560"></a>
 
 ## What you can ask
