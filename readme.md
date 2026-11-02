@@ -6,7 +6,8 @@
 
 Free MCP servers that plug your AI into SAM.gov, USAspending, GSA CALC+, BLS wage data, GSA Per Diem, the FAR, the Federal Register, Regulations.gov and Acquisition.gov. Find opportunities, size up the incumbent, price labor and travel, and check the rules without leaving the chat.
 
-**[Install in Claude or ChatGPT](#local-or-hosted)** · [Watch a demo](https://www.youtube.com/watch?v=2CnYSrNIuWU) · [Find a ready-made prompt](https://github.com/1102tools-dev/federal-contracting-prompts) · [1102tools.com](https://1102tools.com)
+**[Install in Claude or ChatGPT](#local-or-hosted)** · [Watch a demo](https://www.youtube.com/watch?v=2CnYSrNIuWU)<br>
+[Find a ready-made prompt](https://github.com/1102tools-dev/federal-contracting-prompts) · [1102tools.com](https://1102tools.com) · [Live usage](https://1102tools.com/usage)
 
 <a href="https://www.youtube.com/watch?v=2CnYSrNIuWU"><img src="https://img.youtube.com/vi/2CnYSrNIuWU/maxresdefault.jpg" alt="Watch: You don't have to pay for AI on SAM.gov" width="560"></a>
 
