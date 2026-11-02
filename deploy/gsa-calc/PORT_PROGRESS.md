@@ -64,3 +64,18 @@ Status: building. No D1 database yet; production untouched.
 - 2026-11-02 02:31 UTC: the 02:20 schedule hadn't fired, so night 2 was dispatched by hand
   (run 41378233394, probe-record-cases). Schedule removed in PR #302 (bb30ae4) so a late scheduled run
   can't repeat it; the workflow is dispatch-only again.
+- 2026-11-02 05:16 UTC: night 2 recorded (run 41378233394: index ceilingrates-2026-11-02_02-00-02, 820 pull
+  calls, 102 min; 351,334 records; 171 probes; 319 case answers). Results (`.snapshot.nosync/`):
+  - Churn night 1 → 2 (`diff-n1-n2.json`): 0 added, 0 removed, 437 changed (0.12%; current/next/second-year
+    price 285, subcategory 132, vendor_name 20, category 10). Change-only build onto the night-1 copy
+    (`calc-night2.sqlite`, 6.8 s): written_estimate 2,631 rows at the switch + ~2,186 at the next one.
+  - Scratch D1 (gsa-calc-scratch, created and deleted): 10,000-record sample wrote 57,348 rows per D1's
+    meta vs the loader's estimate 57,337 (+11 = schema statements). Full-load projection 1,903,471 holds.
+  - Verdicts (`verdicts-night2.json`): 162 price checks, 0 status / 0 iqr_position / 0 vs_median changed;
+    26 igce cases, 0 population_scope changes. Only percentile values move (68 cases; median gap $0.13,
+    max $0.97).
+  - Tools parity on the night-2 copy: 605 cases, 592 identical, 13 documented, 0 unexpected.
+  - compare-emulator night 2 (1,305 answers): 187 identical, 44 noise, 138 percentiles/histogram only,
+    935 GSA-approximate, 1 different: GSA answers 406 to the 500-character keyword case (Python's own cap
+    is 500, its comment assumed GSA refused only above 500); the copy answered 200. Length probes
+    dispatched from temp branch calc-length-probe (run 41393708469) to find GSA's cutoff.
