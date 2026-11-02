@@ -302,7 +302,7 @@ def batches(connection):
 
 
 def incremental_load(db,kind,path,metadata,allow_small=False,diagnostic_max_writes=None,*,oracle=None,authorized_round=False):
-    from load_sam_public import prepare,refuse_leftovers,file_sha256,validate_count,quote,ROOT,STATUS_SQL,table_sql
+    from load_sam_public import prepare,refuse_leftovers,file_sha256,validate_count,quote,ROOT,STATUS_SQL,table_sql,QUARANTINE_SQL,quarantine_sql
     start=time.monotonic()
     if getattr(db,'target',None)=='remote' and oracle is None:
         raise ValueError('Remote writes require a full local production-copy cost oracle')
@@ -383,7 +383,7 @@ def incremental_load(db,kind,path,metadata,allow_small=False,diagnostic_max_writ
                     if amplification_exceeded(measured,proof['conservative_units'] if proof else reserved) or (oracle is None and actual_writes>5000000):
                         raise RuntimeError(f'D1 write amplification exceeded reservation ({measured}>{reserved}, total {actual_writes}/{planned}); stop before any further mutations')
                 return response
-            measured_atomic([RUN_SQL,BUDGET_SQL,DAILY_SQL,HASH_SQL],MIGRATION_ALLOWANCE)
+            measured_atomic([RUN_SQL,BUDGET_SQL,DAILY_SQL,HASH_SQL]+([QUARANTINE_SQL] if kind=='entities' else []),MIGRATION_ALLOWANCE)
             run_columns={r['name'] for r in db.query('PRAGMA table_info(public_refresh_runs)')}
             if not {'owner_token','owner_expires_at'}<=run_columns:raise ValueError('Refresh journal schema missing ownership columns; refusing public writes')
             started=active[0]['started_at'] if active and active[0]['state']=='applying' else now.isoformat()
@@ -427,7 +427,8 @@ def incremental_load(db,kind,path,metadata,allow_small=False,diagnostic_max_writ
                 finally:local.close()
             status=dict(kind=kind,**metadata,loaded_at=dt.datetime.now(dt.timezone.utc).isoformat(),row_count=count,sha256=sha,database_bytes=db.size(),load_seconds=round(time.monotonic()-start,3),source_rows=int(audit.get('source_rows',count)),rejected_rows=int(audit.get('rejected_rows',0)),opted_out_rows=int(audit.get('opted_out_rows',0)),duplicate_rows=int(audit.get('duplicate_rows',0)))
             final_sql=[ownership_assert(),f"INSERT OR REPLACE INTO extract_status ({','.join(status)}) VALUES ({','.join(quote(v) for v in status.values())});",f"UPDATE public_refresh_runs SET state='complete',updated_at={quote(status['loaded_at'])},owner_expires_at={quote(status['loaded_at'])} WHERE kind={quote(kind)};"]
-            try:measured_atomic(final_sql,10)
+            if kind=='entities':final_sql[2:2]=quarantine_sql(audit.get('quarantined',[]))
+            try:measured_atomic(final_sql,10+4*len(audit.get('quarantined',[])))
             except Exception as failure:
                 observed=db.query(f"SELECT state,owner_token FROM public_refresh_runs WHERE kind={quote(kind)}")
                 source=db.query(f"SELECT sha256,loaded_at FROM extract_status WHERE kind={quote(kind)}")

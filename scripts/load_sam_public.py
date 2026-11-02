@@ -296,13 +296,28 @@ def chunks(statements):
         yield batch
 
 
-def promotion_sql(kind, suffix, status):
+QUARANTINE_SQL = '''CREATE TABLE IF NOT EXISTS entity_quarantine (
+uei TEXT NOT NULL, cage_code TEXT NOT NULL, legal_business_name TEXT NOT NULL, reason TEXT NOT NULL,
+PRIMARY KEY(uei,cage_code));'''
+
+
+def quarantine_sql(rows):
+    """Replace the list of companies whose source rows this generation skipped."""
+    unique = {(r['uei'], r['cage_code']): r for r in rows}
+    return ['DELETE FROM entity_quarantine;'] + [
+        f"INSERT INTO entity_quarantine VALUES ({quote(r['uei'])},{quote(r['cage_code'])},{quote(r['legal_business_name'])},{quote(r['reason'])});"
+        for r in unique.values()]
+
+
+def promotion_sql(kind, suffix, status, quarantined=()):
     tables = [kind] + (['entity_naics','entity_business_types'] if kind == 'entities' else [])
     statements = []
     for table in tables:
         statements += [f'ALTER TABLE {table} RENAME TO {table}_previous;', f'ALTER TABLE {table}{suffix} RENAME TO {table};']
     fields = list(status)
     statements.append(f'INSERT OR REPLACE INTO extract_status ({",".join(fields)}) VALUES ({",".join(quote(status[k]) for k in fields)});')
+    if kind == 'entities':
+        statements += [QUARANTINE_SQL] + quarantine_sql(quarantined)
     statements.extend(f'DROP TABLE {table}_previous;' for table in tables)
     return statements
 
@@ -408,7 +423,7 @@ def load(db, kind, path, metadata, allow_small=False, prepared=None):
             status = dict(kind=kind,**metadata,loaded_at=dt.datetime.now(dt.timezone.utc).isoformat(),row_count=count,sha256=file_sha256(path),database_bytes=size,load_seconds=round(time.monotonic()-start,3))
             status.update(source_rows=int(audit.get('source_rows',count)), rejected_rows=int(audit.get('rejected_rows',0)), opted_out_rows=int(audit.get('opted_out_rows',0)),duplicate_rows=int(audit.get('duplicate_rows',0)))
             phase = 'atomic promotion'
-            db.atomic(promotion_sql(kind,suffix,status))
+            db.atomic(promotion_sql(kind,suffix,status,audit.get('quarantined',())))
         except BaseException as failure:
             failure.add_note(f'{kind}: failed while {phase}')
             committed = False

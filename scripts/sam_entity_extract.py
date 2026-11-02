@@ -109,6 +109,12 @@ def parse_row(line):
         'naicsList':[dict(naicsCode=v[:6], **({'sbaSmallBusiness':v[6:]} if v[6:] in ('Y','N') else {})) for v in naics]}}}
     return row
 
+def _quarantined(fields, reason):
+    """Identity of a skipped row, so search can say this company's record was dropped."""
+    # UEI, CAGE and name come before any field seen to hold a stray pipe.
+    return {'uei': fields[0].strip(), 'cage_code': fields[3].strip(), 'legal_business_name': fields[11].strip(), 'reason': reason}
+
+
 def iter_rows(path, *, audit=None):
     """Yield visible entities; reject bad headers, rows, ZIP CRCs, or truncation."""
     with _text(path) as stream:
@@ -119,7 +125,7 @@ def iter_rows(path, *, audit=None):
         _date(header[2])
         expected = int(header[3]); count = 0
         metrics = audit if audit is not None else {}
-        metrics.update(source_rows=0, rejected_rows=0, opted_out_rows=0, returned_rows=0, quarantine_reasons={})
+        metrics.update(source_rows=0, rejected_rows=0, opted_out_rows=0, returned_rows=0, quarantine_reasons={}, quarantined=[])
         for line in stream:
             if line.startswith('EOF '):
                 if line.rstrip('\r\n') != 'EOF' + first[3:]:
@@ -138,12 +144,14 @@ def iter_rows(path, *, audit=None):
                 metrics['rejected_rows'] += 1
                 reasons = metrics['quarantine_reasons']
                 reasons['unescaped_pipe_expanded_row'] = reasons.get('unescaped_pipe_expanded_row', 0) + 1
+                metrics['quarantined'].append(_quarantined(fields, 'unescaped_pipe_expanded_row'))
                 continue
             # SAM sometimes merges two registrations into one row (two dates joined by ~), with status A, E or A~E.
             if len(fields) == 142 and fields[-1] == '!end' and any(re.fullmatch(r'\d{8}~\d{8}', fields[i].strip()) for i in DATES.values()):
                 metrics['rejected_rows'] += 1
                 reasons = metrics['quarantine_reasons']
                 reasons['ambiguous_merged_registration'] = reasons.get('ambiguous_merged_registration', 0) + 1
+                metrics['quarantined'].append(_quarantined(fields, 'ambiguous_merged_registration'))
                 continue
             try:
                 row = parse_row(line)

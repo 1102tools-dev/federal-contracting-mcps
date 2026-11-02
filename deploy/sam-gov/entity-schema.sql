@@ -22,6 +22,11 @@ source_url TEXT NOT NULL, loaded_at TEXT NOT NULL, row_count INTEGER NOT NULL,
 sha256 TEXT NOT NULL, database_bytes INTEGER NOT NULL, load_seconds REAL NOT NULL,
 source_rows INTEGER NOT NULL DEFAULT 0, rejected_rows INTEGER NOT NULL DEFAULT 0, opted_out_rows INTEGER NOT NULL DEFAULT 0, duplicate_rows INTEGER NOT NULL DEFAULT 0);
 
+-- Companies whose source rows the current entities generation skipped as malformed.
+CREATE TABLE IF NOT EXISTS entity_quarantine (
+uei TEXT NOT NULL, cage_code TEXT NOT NULL, legal_business_name TEXT NOT NULL, reason TEXT NOT NULL,
+PRIMARY KEY(uei,cage_code));
+
 -- Incremental refresh journal. Incomplete generations are not served.
 CREATE TABLE IF NOT EXISTS public_refresh_runs (
  kind TEXT PRIMARY KEY CHECK(kind IN ('entities','exclusions')),
