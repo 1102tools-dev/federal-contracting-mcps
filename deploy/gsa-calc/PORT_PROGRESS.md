@@ -61,3 +61,6 @@ Status: building. No D1 database yet; production untouched.
   parity case, ~3 h), scheduled ONCE for 02:20 UTC Nov 2 so it doesn't need the Mac. Remove the
   schedule after it runs. Then: build night 2 change-only on the night-1 copy (churn + rows), rerun
   compare-emulator, `parity.py --verdicts`, scratch-D1 sample, report to James.
+- 2026-11-02 02:31 UTC: the 02:20 schedule hadn't fired, so night 2 was dispatched by hand
+  (run 41378233394, probe-record-cases). Schedule removed in PR #302 (bb30ae4) so a late scheduled run
+  can't repeat it; the workflow is dispatch-only again.
