@@ -79,3 +79,7 @@ Status: building. No D1 database yet; production untouched.
     935 GSA-approximate, 1 different: GSA answers 406 to the 500-character keyword case (Python's own cap
     is 500, its comment assumed GSA refused only above 500); the copy answered 200. Length probes
     dispatched from temp branch calc-length-probe (run 41393708469) to find GSA's cutoff.
+- 2026-11-02 ~06:15 UTC: long-keyword rule (PROBE_FINDINGS.md "Long keywords"): keyword and suggest terms of
+  344+ characters are refused with GSA's empty 406. compare-emulator night 2 + length probes: 1,333 answers,
+  0 different. Tools parity on the night-2 copy: 0 unexpected. Temp branch calc-length-probe deleted.
+  Next: report to James; full D1 load on or after Nov 7.

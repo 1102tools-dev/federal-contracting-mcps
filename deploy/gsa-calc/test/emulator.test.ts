@@ -193,6 +193,16 @@ test("an empty copy forwards; a night's rows outside the window are not read", a
   assert.deepEqual(parseQuery("ordering=bogus"), {status: 406, text: ""});
 });
 
+test("keywords and suggest terms of 344 characters or more are refused (too many grams)", () => {
+  const refused = {status: 406, text: ""};
+  assert.notDeepEqual(parseQuery(`keyword=${"a".repeat(343)}`), refused);
+  assert.deepEqual(parseQuery(`keyword=${"a".repeat(344)}`), refused);
+  assert.deepEqual(parseQuery(`keyword=${"project manager ".repeat(22).slice(0, 344)}`), refused);
+  assert.notDeepEqual(parseQuery(`suggest-contains=labor_category:${"a".repeat(343)}`), refused);
+  assert.deepEqual(parseQuery(`suggest-contains=labor_category:${"a".repeat(344)}`), refused);
+  assert.notDeepEqual(parseQuery(`search=labor_category:${"a".repeat(499)}`), refused);
+});
+
 test("one D1 round trip per query", async () => {
   const start = fixtureDb.log.length;
   await body(fixtureDb, ANSWERS.mixed_grade.query);

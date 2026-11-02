@@ -133,6 +133,8 @@ export function parseQuery(qs: string): Query | Refusal {
     const [field, term] = fieldValue(suggest);
     mode = {kind: "suggest", field, term};
   }
+  if (mode.kind === "keyword" && tooManyGrams(mode.text)) return REFUSED;
+  if (mode.kind === "suggest" && isSearchField(mode.field) && tooManyGrams(mode.term)) return REFUSED;
   const pageText = last("page") ?? "1";
   const sizeText = last("page_size") ?? "100";
   if (!WHOLE.test(pageText) || !WHOLE.test(sizeText)) return REFUSED;
@@ -177,6 +179,21 @@ export function keywordGrams(text: string): string[] | null {
   if (chars.length < NGRAM.min) return null;
   const size = Math.min(NGRAM.max, chars.length);
   return [...new Set(Array.from({length: chars.length - size + 1}, (_, i) => chars.slice(i, i + size).join("")))];
+}
+
+// Elasticsearch's indices.query.bool.max_clause_count: one clause per gram the
+// analyzer emits (every 2-4 character gram, repeats included), per field.
+const MAX_CLAUSES = 1024;
+
+/** GSA refuses a keyword or suggest-contains term with more grams than one
+ * query may hold (406): 3n - 6 grams for n characters, so 344 characters and up
+ * (night-2 length probes: 343 answered, 344 refused, with or without repeats;
+ * search= values of 514 characters answered). */
+function tooManyGrams(text: string): boolean {
+  const n = [...text].length;
+  let grams = 0;
+  for (let size = NGRAM.min; size <= NGRAM.max; size++) grams += Math.max(0, n - size + 1);
+  return grams > MAX_CLAUSES;
 }
 
 // The field's values holding every gram (one JSON array of grams per statement,

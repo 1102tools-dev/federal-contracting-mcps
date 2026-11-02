@@ -151,3 +151,15 @@ Pull (848 pages incl. the nurse page): 45 identical, 14 noise only, 1 percentile
 GSA-approximate; hits equal up to ties on every page after the idv_piid rule (790 pages reorder within ties, 128
 cut a tie group at the page edge). Percentiles differ in 1,743 aggregations (median gap $0.0077, max $4.27);
 histograms in 864 answers.
+
+## Long keywords (night 2, 2026-11-02; implemented in src/rules.ts tooManyGrams)
+The night-2 case "validation: keyword 500 characters" (reachable: the Python server's cap is 500) got GSA's
+empty 406; the copy had answered 200. Length probes (GitHub runs 41393708469 and 41394076155, temp branch
+calc-length-probe, recordings in `.snapshot.nosync/rec-length1`, `rec-length2`):
+- keyword=: 343 characters answered, 344 refused, both for "a" repeated and for real words ("project manager
+  senior analyst ..."). 72-343 all answered; 344, 350, 400, 450, 499 refused.
+- suggest-contains=labor_category:TERM: the same cutoff on the term (343 answered, 344 refused).
+- search=labor_category:VALUE: 499 characters answered (exact match, no grams).
+This is Elasticsearch's max_clause_count (1,024): n characters give 3n - 6 grams of 2-4 characters, repeats
+included, per field (3 x 343 - 6 = 1,023; 3 x 344 - 6 = 1,026). Not a URI limit (a 574-character search query
+string is answered). compare-emulator night 2 with these probes: 1,333 answers, 0 different.
