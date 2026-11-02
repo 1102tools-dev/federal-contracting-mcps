@@ -755,3 +755,20 @@ def test_outage_alert_reads_why_a_job_failed_from_its_log(monkeypatch):
                         'looks like the government site is down, not our code')
     assert oa.error_line('2026-10-22T07:11:55.4Z ##[error]The job exceeded the maximum execution time of 60m0s.\n') == \
         'The job exceeded the maximum execution time of 60m0s.'
+
+
+def test_outage_recovery_closes_issue_without_an_email(monkeypatch, tmp_path):
+    # GitHub can only send a recovery as a red "Run failed" email, which read as a new failure.
+    oa = _outage_alert()
+    calls = []
+    issue = [{'number': 7, 'title': 'Load failing: x', 'createdAt': '2026-11-01T00:00:00Z',
+              'body': '<!-- failing: job:load; alerts: 3; last: 1 -->\nreport'}]
+    monkeypatch.setattr(oa, 'gh', lambda *a: calls.append(a) or (json.dumps(issue) if a[:2] == ('issue', 'list') else ''))
+    monkeypatch.setattr(oa, 'failed_jobs', lambda *a: [])
+    output = tmp_path / 'out'
+    for k, v in dict(GITHUB_REPOSITORY='o/r', TITLE='Load failing', GITHUB_SERVER_URL='https://github.com', RUN_ID='1',
+                     WORKFLOW='w', FAILING='', HEADLINE='', GITHUB_OUTPUT=str(output)).items():
+        monkeypatch.setenv(k, v)
+    oa.main()
+    assert ('issue', 'close', '7') in calls
+    assert not output.exists() or 'alert=' not in output.read_text()
