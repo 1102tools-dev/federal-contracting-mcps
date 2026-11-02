@@ -16,15 +16,10 @@ name: GSA CALC+ copy
 # probe-record-cases: probe, then record, then cases, in one job and one
 #   stream (--gap apart throughout, including between phases), one artifact.
 #
-# Scheduled once (02:20 UTC on November 2, after GSA's rebuild): night 2 of the
-# port's measurements, probe-record-cases. Remove the schedule after it runs.
-#
 # Runs here, never from the Mac: the Mac and the Dell share the home IP, and
 # the Dell's hosted CALC+ calls GSA from it. No credentials needed.
 
 on:
-  schedule:
-    - cron: '20 2 2 11 *'
   workflow_dispatch:
     inputs:
       command:
@@ -49,14 +44,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 350
     env:
-      COMMAND: ${{ github.event.inputs.command || 'probe-record-cases' }}
-      GAP: ${{ github.event.inputs.gap || '7.5' }}
+      COMMAND: ${{ github.event.inputs.command }}
+      GAP: ${{ github.event.inputs.gap }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-        if: ${{ github.event_name == 'schedule' || github.event.inputs.command == 'probe-record-cases' || github.event.inputs.command == 'cases' }}
+        if: ${{ github.event.inputs.command == 'probe-record-cases' || github.event.inputs.command == 'cases' }}
       - name: Python server for the cases
-        if: ${{ github.event_name == 'schedule' || github.event.inputs.command == 'probe-record-cases' || github.event.inputs.command == 'cases' }}
+        if: ${{ github.event.inputs.command == 'probe-record-cases' || github.event.inputs.command == 'cases' }}
         # Ready before the first GSA call, so a setup failure can't waste a recorded night.
         run: |
           uv sync --frozen --python 3.12 --project servers/gsa-calc-mcp
