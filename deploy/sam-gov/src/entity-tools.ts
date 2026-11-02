@@ -120,6 +120,19 @@ function totals(count: number) {
 }
 export const TOTAL_RECORDS_NOTE = "More than 1,000 registrations match, so the count stops at 1,000. Every match is still searchable: results come in the same order, and later pages continue past 1,000. To narrow it, add a state, a NAICS code or more of the company name.";
 
+/** Warn only the searches that match a company whose source row this month's file garbled. */
+async function quarantineNotes(db: Database, query: {uei?: string, cage?: string, name?: string}, fileDate: string | undefined): Promise<string[]> {
+  let rows: Row[];
+  try {rows = (await db.prepare("SELECT uei, cage_code, legal_business_name FROM entity_quarantine ORDER BY uei").bind().all<Row>()).results;}
+  catch {return [];}
+  const name = query.name ? normalizedName(query.name) : "";
+  const hits = rows.filter(row =>
+    (query.uei && row.uei === query.uei) || (query.cage && row.cage_code === query.cage) ||
+    (name && normalizedName(row.legal_business_name).includes(name)));
+  const unique = [...new Map(hits.map(row => [row.uei, row])).values()].slice(0, 5);
+  return unique.map(row => `SAM.gov's ${fileDate ?? "current"} public file had a malformed record for ${row.legal_business_name} (UEI ${row.uei}), so it is not in this hosted copy. Check SAM.gov for this registration.`);
+}
+
 export async function searchEntities(db: Database, args: Args, now = new Date(), nameIndexDb?: Database) {
   if (!db || typeof db.prepare !== "function") throw new ToolError("SAM.gov public entity data is unavailable; confirm registration status on SAM.gov.");
   const allowed = Object.keys(ENTITY_TOOL.inputSchema.properties);
@@ -227,7 +240,7 @@ export async function searchEntities(db: Database, args: Args, now = new Date(),
     source: "SAM.gov public Entity Registration monthly V2 extract",
     file_name: snapshot?.file_name ?? null, file_date: snapshot?.file_date ?? null,
     source_url: snapshot?.source_url ?? null,
-    notes: [...freshness.notes, ...ENTITY_CAVEATS, ...(quarantined > 0 ? [`${quarantined} malformed source rows were quarantined and excluded from this hosted mirror; coverage is incomplete.`] : [])],
+    notes: [...freshness.notes, ...ENTITY_CAVEATS, ...(quarantined > 0 && (uei || cage || name) ? await quarantineNotes(db, {uei, cage, name}, snapshot?.file_date) : [])],
   };
   if (!snapshot?.file_date) return {summary: entityNoMatchSummary(null), status: "not_loaded", totalRecords: 0, entityData: [], page, size, ...provenance};
   const rows: Row[] = JSON.parse(snapshot.records);

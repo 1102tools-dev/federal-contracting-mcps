@@ -79,6 +79,7 @@ class EntityExtractTests(unittest.TestCase):
             self.assertEqual(audit['source_rows'],1000)
             self.assertEqual(audit['rejected_rows'],1)
             self.assertEqual(audit['quarantine_reasons'],{'unescaped_pipe_expanded_row':1})
+            self.assertEqual(audit['quarantined'][0]['uei'],row.split('|')[0])
             p.write_text(p.read_text().replace(row,bad,1))
             with self.assertRaisesRegex(ValueError,'0.1%'):list(m.iter_rows(p))
 
@@ -97,6 +98,7 @@ class EntityExtractTests(unittest.TestCase):
             p.write_text('BOF '+h+'\n'+(row+'\n')*2997+'\n'.join(merged)+'\nEOF '+h+'\n')
             self.assertEqual(len(list(m.iter_rows(p,audit=audit))),2997)
             self.assertEqual(audit['quarantine_reasons'],{'ambiguous_merged_registration':3})
+            self.assertEqual([(q['uei'],q['legal_business_name'],q['reason']) for q in audit['quarantined']],[(row.split('|')[0],row.split('|')[11],'ambiguous_merged_registration')]*3)
 
     def test_unsafe_zip_path(self):
         with tempfile.TemporaryDirectory() as td:

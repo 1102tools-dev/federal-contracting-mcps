@@ -59,7 +59,7 @@ class Incremental(unittest.TestCase):
         with patch.object(self.db,'atomic',side_effect=atomic):result=self.run_load('entities',[self.entity(date='2026-10-12')])
         self.assertEqual(self.db.query('SELECT entity_id FROM entities')[0]['entity_id'],old)
         self.assertEqual(self.db.query('SELECT * FROM entity_naics'),children)
-        self.assertFalse(any(s.startswith(('DELETE FROM entity_','INSERT INTO entity_')) for s in statements))
+        self.assertFalse(any(s.startswith(('DELETE FROM entity_naics','DELETE FROM entity_business','INSERT INTO entity_naics','INSERT INTO entity_business')) for s in statements))
         self.assertEqual(result['delta']['changed'],1)
         self.assertEqual(self.db.query('SELECT state FROM public_refresh_runs')[0]['state'],'complete')
     def test_add_change_remove_and_membership_diffs(self):
@@ -68,6 +68,20 @@ class Incremental(unittest.TestCase):
         self.assertEqual(result['delta'],dict(inserted=1,changed=1,removed=1,unchanged=0))
         self.assertEqual(self.db.query('SELECT COUNT(*) n FROM entities')[0]['n'],2)
         self.assertEqual(self.db.query('SELECT COUNT(*) n FROM entity_naics')[0]['n'],2)
+    def test_completed_refresh_replaces_quarantined_company_list(self):
+        self.seed('entities',[self.entity()])
+        def rows(skipped):
+            def iter_rows(path,audit=None):
+                audit.update(source_rows=2,rejected_rows=len(skipped),quarantined=skipped)
+                return iter([self.entity(date='2026-10-12')])
+            return iter_rows
+        bad=dict(uei='BADBAD000001',cage_code='7WTV1',legal_business_name='Garbled LLC',reason='ambiguous_merged_registration')
+        with patch('sam_entity_extract.iter_rows',side_effect=rows([bad,bad])):
+            incremental.incremental_load(self.db,'entities',self.path,self.metadata,True)
+        self.assertEqual(self.db.query('SELECT uei,legal_business_name FROM entity_quarantine'),[dict(uei='BADBAD000001',legal_business_name='Garbled LLC')])
+        with patch('sam_entity_extract.iter_rows',side_effect=rows([])):
+            incremental.incremental_load(self.db,'entities',self.path,dict(self.metadata,file_date='2026-11-01'),True)
+        self.assertEqual(self.db.query('SELECT COUNT(*) n FROM entity_quarantine')[0]['n'],0)
     def test_oversized_legacy_record_is_read_alone(self):
         # Real 2026-10 rows list hundreds of NAICS codes (~111 KB projected), past the 80 KB batch budget.
         big=dict(self.entity('BIGBIG123456','54321'),record_json={'pad':'x'*60_000})

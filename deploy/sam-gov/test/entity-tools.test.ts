@@ -155,10 +155,22 @@ test("a swap immediately after the query cannot mix entity rows with a newer sou
   assert.match(queries[0].sql, /s\.\* FROM extract_status/);
 });
 
-test("quarantined source rows are disclosed, and missing database gives a corrective ToolError", async () => {
+test("only searches matching a quarantined company get its note, and missing database gives a corrective ToolError", async () => {
   const {db, sqlite} = database();
-  sqlite.exec("UPDATE extract_status SET rejected_rows=7");
-  assert.match((await searchEntities(db, {})).notes.join(" "), /7 malformed source rows were quarantined and excluded/);
+  sqlite.exec("UPDATE extract_status SET rejected_rows=2");
+  sqlite.exec("INSERT INTO entity_quarantine VALUES ('QQQQQQQQQQQ1','7WTV1','SC INDUSTRIAL SALES, LLC','ambiguous_merged_registration'), ('QQQQQQQQQQQ2','','VOSTOCK LLC','unescaped_pipe_expanded_row')");
+  const note = /malformed record for SC INDUSTRIAL SALES, LLC \(UEI QQQQQQQQQQQ1\)/;
+  for (const args of [{uei: "qqqqqqqqqqq1"}, {cage_code: "7wtv1"}, {legal_business_name: "SC Industrial Sales"}]) {
+    const result = await searchEntities(db, args);
+    assert.equal(result.totalRecords, 0);
+    assert.match(result.notes.join(" "), note);
+    assert.doesNotMatch(result.notes.join(" "), /VOSTOCK|quarantined/);
+  }
+  for (const args of [{}, {legal_business_name: "Alpha"}, {uei: "ABCDEFGHIJK1"}, {cage_code: "QQQQQ"}]) {
+    assert.doesNotMatch((await searchEntities(db, args)).notes.join(" "), /malformed|quarantined/);
+  }
+  sqlite.exec("DROP TABLE entity_quarantine");
+  assert.doesNotMatch((await searchEntities(db, {uei: "QQQQQQQQQQQ1"})).notes.join(" "), /malformed/);
   await assert.rejects(searchEntities(undefined as any, {}), /public entity data is unavailable/);
 });
 
