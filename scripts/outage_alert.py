@@ -10,8 +10,9 @@ passes its own), plus any job in this run that failed: its failed step and the
 error line from its log, so the email says why, not just that it failed.
 
 One open issue per TITLE tracks the problem. Alerts go out when it starts, then
-GAPS apart (the last gap repeats), at once when something new fails, and once
-more as an all-clear when it recovers. The issue body keeps the state in a
+GAPS apart (the last gap repeats), and at once when something new fails. Recovery
+closes the issue without an email: GitHub can only send it as a red "Run failed"
+email, which read as a new failure (Nov 1, 2026). Every alert email means broken. The issue body keeps the state in a
 first-line marker: <!-- failing: a,b; alerts: N; last: EPOCH -->.
 """
 import json, os, re, subprocess, sys, time, urllib.request
@@ -79,7 +80,7 @@ def lasted(created, now):
 
 
 def decide(issue, failing, now):
-    """(alert kind or None, alerts, last) for this run; kind is new, reminder or clear."""
+    """(kind or None, alerts, last) for this run; new and reminder alert, clear closes the issue quietly."""
     marker = MARKER.match((issue or {}).get("body") or "")
     before = set(filter(None, marker.group(1).split(","))) if marker else set()
     alerts, last = (int(marker.group(2)), int(marker.group(3))) if marker else (0, 0)
@@ -123,7 +124,6 @@ def main():
     elif issue:
         gh("issue", "comment", str(issue["number"]), "--body", f"Passing again. {run_url}")
         gh("issue", "close", str(issue["number"]))
-        alert = f"All clear: passing again after {lasted(issue['createdAt'], now)} ({title})"
     print(alert or "No alert this run.")
     if alert:
         with open(env["GITHUB_OUTPUT"], "a") as out:

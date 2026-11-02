@@ -5,8 +5,9 @@ name: Outage alert
 # never fails the run by itself; scripts/outage_alert.py reads why they failed,
 # keeps one issue per title, and decides whether this run alerts: when a
 # problem starts, then 30 minutes, 1, 2, 5 and 12 hours apart and daily after
-# that, and once more when it recovers. Only then does the alert job fail,
-# named with the headline, which is what GitHub's failure email shows.
+# that. Recovery closes the issue without an email, so every failure email
+# means something is broken. Only on an alert does the alert job fail, named
+# with the headline, which is what GitHub's failure email shows.
 
 on:
   workflow_call:
