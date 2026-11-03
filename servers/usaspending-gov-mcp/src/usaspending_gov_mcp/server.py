@@ -1402,17 +1402,21 @@ async def get_idv_children(
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
         raise UserInputError(f"page must be >= 1. Got {page}.")
-    return await _post(
+    idv_id, id_note = generated_idv_id.strip(), None
+    # Only a bare PIID is resolved; every other value goes upstream unchanged.
+    if not idv_id.isdigit() and not idv_id.upper().startswith(("CONT_", "ASST_")) and _BARE_PIID.match(idv_id):
+        idv_id, id_note = await _resolve_idv_award_id(idv_id, field="generated_idv_id")
+    return _with_id_note(await _post(
         "/api/v2/idvs/awards/",
         {
-            "award_id": generated_idv_id.strip(),
+            "award_id": idv_id,
             "type": child_type,
             "limit": limit,
             "page": page,
             "sort": sort,
             "order": order,
         },
-    )
+    ), id_note)
 
 
 # ---------------------------------------------------------------------------
@@ -2718,6 +2722,52 @@ def _validate_idv_award_id(award_id: str, *, field: str = "award_id") -> str:
     return award_id
 
 
+# A bare PIID such as 'GS00Q14OADU131': letters, digits and dashes with at
+# least one digit, so a word like 'bogus' still gets the generated-id error.
+_BARE_PIID = re.compile(r"^(?=.*\d)[A-Za-z0-9-]{5,50}$")
+
+
+async def _resolve_idv_award_id(award_id: str, *, field: str = "award_id") -> tuple[str, str | None]:
+    """Accept the IDV ids AI clients actually send, not only CONT_IDV_*.
+
+    The Claude directory showed get_idv_amounts failing on about a third of
+    calls (Nov 2026): clients passed the numeric internal_id that lookup_piid
+    lists first, or the bare PIID. USAspending's IDV endpoints accept the
+    numeric id as-is (verified live 2026-11-03), and a bare PIID is resolved
+    to its IDV through the same exact award_ids search lookup_piid uses.
+    Returns the id to send and a note when the id was resolved.
+    """
+    if not isinstance(award_id, str) or not award_id.strip():
+        raise UserInputError(f"{field} cannot be empty.")
+    raw = _validate_no_control_chars(award_id.strip(), field=field) or ""
+    if raw.isdigit():
+        return raw, None
+    if raw.upper().startswith(("CONT_", "ASST_")) or not _BARE_PIID.match(raw):
+        return _validate_idv_award_id(raw, field=field), None
+    piid = raw.upper()
+    found = await _piid_search({"award_ids": list(dict.fromkeys([piid, raw]))}, "idv", 5)
+    ids = [r.get("generated_internal_id") for r in found["rows"] if isinstance(r, dict)]
+    ids = [i for i in ids if isinstance(i, str) and i.startswith("CONT_IDV_")]
+    if len(ids) == 1:
+        return ids[0], f"{field}={raw!r} is a PIID; answered for its IDV {ids[0]}."
+    if not ids:
+        raise UserInputError(
+            f"{field}={raw!r} is not an IDV PIID or a generated IDV id (CONT_IDV_*). "
+            f"If it is a contract or task order, use lookup_piid() and the awards "
+            f"endpoints instead."
+        )
+    raise UserInputError(
+        f"{field}={raw!r} matches {len(ids)}{'+' if found['hasNext'] else ''} IDVs: "
+        f"{', '.join(ids)}. Pass the one you mean."
+    )
+
+
+def _with_id_note(result: Any, note: str | None) -> Any:
+    if note and isinstance(result, dict):
+        result["award_id_note"] = note
+    return result
+
+
 @mcp.tool(annotations={"title": "Get IDV Amounts", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_idv_amounts(award_id: str) -> dict[str, Any]:
     """Top-line amounts for an Indefinite Delivery Vehicle (IDV).
@@ -2726,8 +2776,8 @@ async def get_idv_amounts(award_id: str) -> dict[str, Any]:
     and base/option values rolled up across all task/delivery orders under
     the IDV. Pass a CONT_IDV_* generated_internal_id.
     """
-    award_id = _validate_idv_award_id(award_id)
-    result = await _get(f"/api/v2/idvs/amounts/{award_id}/")
+    award_id, id_note = await _resolve_idv_award_id(award_id)
+    result = _with_id_note(await _get(f"/api/v2/idvs/amounts/{award_id}/"), id_note)
     return _add_note(result, "Child award obligations and option values describe reported "
                      "contracts; child account obligations and outlays come from File C "
                      "and can be partial or lagged. File C outlays do not establish the "
@@ -2750,15 +2800,15 @@ async def get_idv_funding(
     paid. Use get_idv_amounts() for reported child-order obligation totals
     and get_idv_activity() or get_idv_children() for child-order records.
     """
-    award_id = _validate_idv_award_id(award_id)
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
         raise UserInputError(f"page must be >= 1. Got {page}.")
+    award_id, id_note = await _resolve_idv_award_id(award_id)
     payload = {
         "award_id": award_id, "sort": sort, "order": order,
         "limit": limit, "page": page,
     }
-    result = await _post("/api/v2/idvs/funding/", payload)
+    result = _with_id_note(await _post("/api/v2/idvs/funding/", payload), id_note)
     return _add_note(result, "File C funding records associated with this IDV can be partial "
                      "or lagged; they do not establish the full child-order obligation or "
                      "amount paid. Use get_idv_amounts for child-order obligation totals.")
@@ -2767,8 +2817,8 @@ async def get_idv_funding(
 @mcp.tool(annotations={"title": "Get IDV Funding Rollup", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
 async def get_idv_funding_rollup(award_id: str) -> dict[str, Any]:
     """Funding rollup totals for an IDV (single dict, not paginated)."""
-    award_id = _validate_idv_award_id(award_id)
-    result = await _post("/api/v2/idvs/funding_rollup/", {"award_id": award_id})
+    award_id, id_note = await _resolve_idv_award_id(award_id)
+    result = _with_id_note(await _post("/api/v2/idvs/funding_rollup/", {"award_id": award_id}), id_note)
     return _add_note(result, "File C funding can be partial or lagged; this rollup is not "
                      "the full child-order obligation or amount paid. Compare with "
                      "get_idv_amounts for child-order obligation totals.")
@@ -2793,15 +2843,15 @@ async def get_idv_activity(
     hide_edge_cases=True filters out child awards missing obligated/awarded
     amounts or end dates.
     """
-    award_id = _validate_idv_award_id(award_id)
     limit = _clamp_limit(limit, cap=100)
     if page < 1:
         raise UserInputError(f"page must be >= 1. Got {page}.")
+    award_id, id_note = await _resolve_idv_award_id(award_id)
     payload = {
         "award_id": award_id, "hide_edge_cases": hide_edge_cases,
         "limit": limit, "page": page,
     }
-    return await _post("/api/v2/idvs/activity/", payload)
+    return _with_id_note(await _post("/api/v2/idvs/activity/", payload), id_note)
 
 
 # ---------------------------------------------------------------------------
