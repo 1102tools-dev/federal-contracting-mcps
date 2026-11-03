@@ -214,6 +214,48 @@ _DASHES = str.maketrans({"\u2013": "-", "\u2014": "-", "\u2011": "-", "\u2212": 
 # cited paragraph is not a separate eCFR document; the base section is.
 _PAREN_CITE_RE = re.compile(r"(?:\s*\([A-Za-z0-9]{1,6}\))+\s*$")
 
+# Clause alternates named after a cite: '52.219-14 Alt I', '52.215-20, Alternate II',
+# '52.212-5 (Alt. III)', '52.219-9 ALT 4'. An alternate is not a separate eCFR
+# document either: its paragraphs are printed inside the base clause.
+_ALTERNATE_RE = re.compile(r"(?:\s*,\s*|\s+|\s*\(\s*)alt(?:ernate)?\.?\s*(IV|V|I{1,3}|[1-5])\s*\)?\s*$", re.IGNORECASE)
+
+
+def _alternate_named(value: Any) -> str | None:
+    """'Alternate II' for a cite like '52.212-5 Alt 2', or None."""
+    m = _ALTERNATE_RE.search(value.strip()) if isinstance(value, str) else None
+    if m is None:
+        return None
+    number = m.group(1)
+    return f"Alternate {_roman(int(number)) if number.isdigit() else number.upper()}"
+
+
+def _alternate_note(section: str, alternate: str, date: str, parsed: dict[str, Any] | None) -> str:
+    """Where the alternate is: in the clause's parsed text, if it has one (parsed is None for raw XML)."""
+    head = f"eCFR has no separate section for {section} {alternate}, so this is the basic clause {section}"
+    where = f"a paragraph headed {alternate} and its date, then the changes it makes."
+    if parsed is None:
+        return f"{head}. If it has an {alternate}, it is printed inside its text: {where}"
+    paragraphs = [*parsed.get("paragraphs", []), *(p for unit in parsed.get("sections", []) for p in unit.get("paragraphs", []))]
+    heading = re.compile(rf"\*?{alternate}(?![A-Za-z0-9])")
+    if any(heading.match(p) for p in paragraphs):
+        return f"{head}, with {alternate} printed inside it: {where}"
+    return f"{head}. Its text on {date} has no paragraph headed {alternate}."
+
+
+def _later_date_note(asked: str, latest: str, title_number: int) -> str:
+    return (
+        f"eCFR's latest text for title {title_number} is dated {latest} (eCFR runs a few days behind), "
+        f"so this is the text as of {latest}, not {asked}."
+    )
+
+
+def _add_note(answer: dict[str, Any], *notes: str) -> dict[str, Any]:
+    """The answer with notes added to its 'note', after any it already has."""
+    text = " ".join(n for n in (answer.get("note"), *notes) if n)
+    if text:
+        answer["note"] = text
+    return answer
+
 
 def _cited_title(value: Any) -> int | None:
     """The title named in a cite like '2 CFR 200.320', if any."""
@@ -238,6 +280,7 @@ def _coerce_cfr_str(
     field: str,
     strip_prefixes: bool = False,
     strip_cites: bool = False,
+    strip_alternates: bool = False,
     maxlen: int = 120,
 ) -> str | None:
     """Accept int or str for CFR identifiers (part/subpart/section/chapter).
@@ -246,6 +289,8 @@ def _coerce_cfr_str(
     optionally strip common user-added prefixes like 'FAR ' or '48 CFR '.
     strip_cites additionally drops trailing paragraph cites, so
     '15.305(a)(2)' resolves to section '15.305' instead of a guaranteed 404.
+    strip_alternates drops a clause alternate first ('52.219-14 Alt I' is
+    section '52.219-14').
     Returns None for None/empty/whitespace-only. Raises on other types.
     """
     if value is None:
@@ -271,6 +316,10 @@ def _coerce_cfr_str(
             previous = s
             s = _SECTION_PREFIX_RE.sub("", s)
             s = _LABEL_PREFIX_RE.sub("", s).strip()
+        if not s:
+            return None
+    if strip_alternates:
+        s = _ALTERNATE_RE.sub("", s).strip()
         if not s:
             return None
     if strip_cites:
@@ -819,11 +868,32 @@ async def get_cfr_content(
     trailing paragraph cites like section='15.305(a)(2)' resolve to the base
     section '15.305'.
     """
+    return await _cfr_content(
+        title_number=title_number, date=date, part=part, subpart=subpart, section=section,
+        chapter=chapter, appendix=appendix, raw_xml=raw_xml, page=page,
+    )
+
+
+async def _cfr_content(
+    *,
+    title_number: Any,
+    date: Any,
+    part: Any,
+    subpart: Any,
+    section: Any,
+    chapter: Any,
+    appendix: Any,
+    raw_xml: bool,
+    page: int,
+    alternate: str | None = None,
+) -> dict[str, Any]:
+    """get_cfr_content's work. lookup_far_clause passes the alternate it took off section_id."""
     title_number = _validate_title_number(title_number)
     date = _validate_date_ymd(date, field="date")
     for field, raw in (("section", section), ("part", part), ("subpart", subpart)):
         _check_cited_title(raw, title_number, field)
-    section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True)
+    alternate = _alternate_named(section) or alternate
+    section = _coerce_cfr_str(section, field="section", strip_prefixes=True, strip_cites=True, strip_alternates=True)
     part = _coerce_cfr_str(part, field="part", strip_prefixes=True)
     subpart = _coerce_cfr_str(subpart, field="subpart", strip_prefixes=True)
     chapter = _validate_chapter(chapter, title_number=title_number)
@@ -839,8 +909,13 @@ async def get_cfr_content(
             "Calling without any filter returns the entire title (often 20+ MB)."
         )
 
-    if date is None:
-        date = await _resolve_date(title_number)
+    # A date past the title's latest (today's, say) is a certain 404 from eCFR:
+    # read the latest text instead and say so.
+    latest = await _resolve_date(title_number)
+    asked = date if date is not None and date > latest else None
+    if date is None or asked:
+        date = latest
+    notes = [_later_date_note(asked, latest, title_number)] if asked else []
 
     path = f"/api/versioner/v1/full/{date}/title-{title_number}.xml"
     params: dict[str, str] = {}
@@ -867,7 +942,9 @@ async def get_cfr_content(
         raise
 
     if raw_xml:
-        return {"date": date, "title": title_number, "xml": xml_content}
+        if alternate and section:
+            notes.append(_alternate_note(section, alternate, date, None))
+        return _add_note({"date": date, "title": title_number, "xml": xml_content}, *notes)
 
     parsed = _parse_xml_to_text(xml_content, date)
     parsed["date"] = date
@@ -891,7 +968,9 @@ async def get_cfr_content(
         narrower = "For one FAR definition, find_far_definition returns just that term."
     else:
         narrower = ""
-    return _xml_text.paginate(parsed, page, narrower=narrower)
+    if alternate and section:
+        notes.append(_alternate_note(section, alternate, date, parsed))
+    return _add_note(_xml_text.paginate(parsed, page, narrower=narrower), *notes)
 
 
 @mcp.tool(annotations={"title": "Get CFR Structure", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": True})
@@ -1678,7 +1757,10 @@ async def lookup_far_clause(
     15.305 (Proposal Evaluation), 19.502-2 (Small Business Set-Asides),
     52.212-4 (Commercial Terms), 52.212-5 (Required Commercial Terms).
     """
-    section_id = _coerce_cfr_str(section_id, field="section_id", strip_prefixes=True, strip_cites=True)
+    alternate = _alternate_named(section_id)
+    section_id = _coerce_cfr_str(
+        section_id, field="section_id", strip_prefixes=True, strip_cites=True, strip_alternates=True
+    )
     if not section_id:
         raise UserInputError(
             "section_id is required. Pass a section like '15.305', '52.212-4' or '252.204-7012'. "
@@ -1687,14 +1769,18 @@ async def lookup_far_clause(
     chapter = _validate_chapter(chapter, title_number=48)
     chapter = _check_title48_chapter(chapter, section_id)
     date = _validate_date_ymd(date, field="date")
-    if date is None:
-        date = await _resolve_date(48)
-    return await get_cfr_content(
+    # The date resolves there (and one past the latest moves back to it).
+    return await _cfr_content(
         title_number=48,
         date=date,
-        chapter=chapter,
+        part=None,
+        subpart=None,
         section=section_id,
+        chapter=chapter,
+        appendix=None,
+        raw_xml=False,
         page=page,
+        alternate=alternate,
     )
 
 

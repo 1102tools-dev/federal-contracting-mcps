@@ -3,8 +3,10 @@
 // (servers/ecfr-mcp/src/ecfr_mcp/server.py) step for step: the same
 // validation order, messages and keys. The copy holds one date per title, so a
 // question about any other date, raw XML, or anything the copy can't rebuild
-// exactly throws Forward and the Python server answers it. The five tools that
-// need eCFR's history or search are always forwarded (LIVE_TOOLS).
+// exactly throws Forward and the Python server answers it (get_cfr_content and
+// lookup_far_clause read a date past the latest as the latest, as Python does).
+// The five tools that need eCFR's history or search are always forwarded
+// (LIVE_TOOLS).
 import CONTRACT from "../tools-contract.json" with {type: "json"};
 import {Forward, ToolError, validateArgs} from "./args.ts";
 import {paginate, parse, type Content} from "./assemble.ts";
@@ -17,8 +19,8 @@ import {repr, str, type Py} from "./pyjson.ts";
 import {STRUCTURE_HANDLERS} from "./structure.ts";
 import {cpLen, strip} from "./text.ts";
 import {
-  COMMON_FAR_SECTIONS, checkCitedTitle, checkTitle48Chapter, clamp, clampStrLen, coerceCfrStr, stripOrNone, validateChapter,
-  validateDate, validateTitle,
+  COMMON_FAR_SECTIONS, alternateNamed, checkCitedTitle, checkTitle48Chapter, clamp, clampStrLen, coerceCfrStr, stripOrNone,
+  validateChapter, validateDate, validateTitle,
 } from "./validate.ts";
 
 export {Forward, ToolError, type Database};
@@ -59,13 +61,40 @@ async function getLatestDate(db: Database, raw: Record<string, unknown>) {
 
 // ---------- get_cfr_content and lookup_far_clause ----------
 
-/** The text of one node as parse() gives it, read in one batch. */
-async function nodeText(db: Database, title: number, date: string | null, target: Step, filters: Record<string, string | null>) {
+/** _alternate_note: where the alternate is, in the clause's parsed text (raw XML is always forwarded). */
+function alternateNote(section: string, alternate: string, date: string, parsed: Obj): string {
+  const head = `eCFR has no separate section for ${section} ${alternate}, so this is the basic clause ${section}`;
+  const paragraphs: string[] = [...(parsed.paragraphs ?? []), ...(parsed.sections ?? []).flatMap((unit: Obj) => unit.paragraphs ?? [])];
+  const heading = new RegExp(`^\\*?${alternate}(?![A-Za-z0-9])`);
+  if (paragraphs.some(p => heading.test(p))) {
+    return `${head}, with ${alternate} printed inside it: a paragraph headed ${alternate} and its date, then the changes it makes.`;
+  }
+  return `${head}. Its text on ${date} has no paragraph headed ${alternate}.`;
+}
+const laterDateNote = (asked: string, latest: string, title: number) =>
+  `eCFR's latest text for title ${title} is dated ${latest} (eCFR runs a few days behind), so this is the text as of ${latest}, not ${asked}.`;
+
+/** _add_note: the answer with notes added to its 'note', after any it already has. */
+function addNote(answer: Obj, ...notes: string[]): Obj {
+  const text = [answer.note, ...notes].filter(n => n).join(" ");
+  if (text) answer.note = text;
+  return answer;
+}
+
+/** The text of one node as parse() gives it, read in one batch. With `latest` (get_cfr_content), a date
+ * past the title's latest is read as the latest, as the Python server does, and `later` is the date asked. */
+async function nodeText(db: Database, title: number, date: string | null, target: Step, filters: Record<string, string | null>, latest = false) {
   const container = target.type !== "section" && target.type !== "appendix";
   const statements = [titleStatement(db, title), targetStatement(db, title, target, true), chunksStatement(db, title, target, container)];
   if (container) statements.push(belowStatement(db, title, target, {withContent: true}));
   const [titles, candidates, chunks, below] = (await db.batch(statements)).map(r => r.results) as [any[], NodeRow[], any[], NodeRow[]?];
   const entry = titleEntry(titles);
+  let later: string | null = null;
+  if (latest) {
+    const newest = resolveDate(entry, title);
+    if (date !== null && date > newest) later = date;
+    if (date === null || later) date = newest;
+  }
   date ??= resolveDate(entry, title);
   checkDate(entry, date);
   const node = only(candidates, filters);
@@ -78,7 +107,7 @@ async function nodeText(db: Database, title: number, date: string | null, target
     if (!content) throw new Forward("no_content");
     return content;
   };
-  return {date, parsed: parse(contentOf(node.key), node.meta ? json(node.meta) : null, date, contentOf)};
+  return {date, later, parsed: parse(contentOf(node.key), node.meta ? json(node.meta) : null, date, contentOf)};
 }
 
 interface ContentArgs {
@@ -93,13 +122,15 @@ interface ContentArgs {
   page: number | bigint;
 }
 
-async function cfrContent(db: Database, a: ContentArgs) {
+/** _cfr_content: get_cfr_content's work. lookup_far_clause passes the alternate it took off section_id. */
+async function cfrContent(db: Database, a: ContentArgs, alternateTaken: string | null = null) {
   const title = validateTitle(a.title_number);
   const date = validateDate(a.date, "date");
   checkCitedTitle(a.section, title, "section");
   checkCitedTitle(a.part, title, "part");
   checkCitedTitle(a.subpart, title, "subpart");
-  const section = coerceCfrStr(a.section, "section", {stripPrefixes: true, stripCites: true});
+  const alternate = alternateNamed(a.section) ?? alternateTaken;
+  const section = coerceCfrStr(a.section, "section", {stripPrefixes: true, stripCites: true, stripAlternates: true});
   const part = coerceCfrStr(a.part, "part", {stripPrefixes: true});
   const subpart = coerceCfrStr(a.subpart, "subpart", {stripPrefixes: true});
   const chapter = validateChapter(a.chapter, title);
@@ -117,7 +148,7 @@ async function cfrContent(db: Database, a: ContentArgs) {
     : subpart ? {type: "subpart", identifier: subpart} : part ? {type: "part", identifier: part} : null;
   if (!target) throw new Forward("chapter_scope");
 
-  const text = await nodeText(db, title, date, target, {chapter, part, subpart});
+  const text = await nodeText(db, title, date, target, {chapter, part, subpart}, true);
   const parsed = text.parsed;
   parsed.date = text.date;
   parsed.title = title;
@@ -129,7 +160,9 @@ async function cfrContent(db: Database, a: ContentArgs) {
   const narrower = Object.hasOwn(parsed, "sections")
     ? "To read one section instead, call get_cfr_content with section= set to an identifier from 'sections' (list_sections_in_part lists them all)."
     : section === "2.101" && title === 48 ? "For one FAR definition, find_far_definition returns just that term." : "";
-  return paginate(parsed, page, narrower);
+  const notes = text.later ? [laterDateNote(text.later, text.date, title)] : [];
+  if (alternate && section) notes.push(alternateNote(section, alternate, text.date, parsed));
+  return addNote(paginate(parsed, page, narrower), ...notes);
 }
 
 async function getCfrContent(db: Database, raw: Record<string, unknown>) {
@@ -138,15 +171,17 @@ async function getCfrContent(db: Database, raw: Record<string, unknown>) {
 
 async function lookupFarClause(db: Database, raw: Record<string, unknown>) {
   const a = validateArgs("lookup_far_clause", raw);
-  const section = coerceCfrStr(a.section_id, "section_id", {stripPrefixes: true, stripCites: true});
+  const alternate = alternateNamed(a.section_id);
+  const section = coerceCfrStr(a.section_id, "section_id", {stripPrefixes: true, stripCites: true, stripAlternates: true});
   if (!section) {
     throw new ToolError("section_id is required. Pass a section like '15.305', '52.212-4' or '252.204-7012'. "
       + `Common sections: ${COMMON_FAR_SECTIONS.slice(0, 5).join(", ")}.`);
   }
   const chapter = checkTitle48Chapter(validateChapter(a.chapter, 48), section);
-  // The date resolves inside get_cfr_content's read, from the same titles row.
+  // The date resolves (and one past the latest moves back to it) inside get_cfr_content's read, from the same titles row.
   const date = validateDate(a.date, "date");
-  return await cfrContent(db, {title_number: 48, date, chapter, section, page: a.page, part: null, subpart: null, appendix: null, raw_xml: false});
+  return await cfrContent(db, {title_number: 48, date, chapter, section, page: a.page, part: null, subpart: null, appendix: null, raw_xml: false},
+    alternate);
 }
 
 // ---------- find_far_definition ----------
