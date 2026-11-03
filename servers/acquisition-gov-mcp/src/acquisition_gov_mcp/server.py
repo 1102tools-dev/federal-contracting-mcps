@@ -299,6 +299,9 @@ async def _read_html_safely(body: bytes, operation: str, **arguments):
             except (ValueError, TypeError) as exc:
                 raise RuntimeError("HTML parser returned an invalid result.") from exc
             if "error" in result:
+                # Input errors stay visible: MCP SDK 2.3 hides anything that is not a ToolError.
+                if result.get("kind") == "UserInputError":
+                    raise UserInputError(result["error"])
                 error = ValueError if result.get("kind") == "ValueError" else RuntimeError
                 raise error(result["error"])
             if "result" not in result:
