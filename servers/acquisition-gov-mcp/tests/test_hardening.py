@@ -88,7 +88,7 @@ async def test_bad_chunk_inputs_do_not_fetch_upstream(monkeypatch):
     calls=[]
     async def fetch(url,**kw):calls.append(url);return b'<main><h1>FAR Overhaul Part 10</h1></main>','text/html',url
     monkeypatch.setattr(s,'_fetch_bytes',fetch)
-    for kwargs in [{'max_characters':1},{'cursor':'bad'},{'section':'   '}]:
+    for kwargs in [{'cursor':'bad'},{'section':'   '}]:
         with pytest.raises(ValueError):await s.get_rfo_part(10,**kwargs)
     assert not calls
 

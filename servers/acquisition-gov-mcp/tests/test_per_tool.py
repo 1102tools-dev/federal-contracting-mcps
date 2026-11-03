@@ -59,7 +59,8 @@ async def test_each_tool_propagates_real_transport_failure(monkeypatch,fixtures,
     monkeypatch.setattr(s,'_prefer_system_curl',False);monkeypatch.setattr(s.shutil,'which',lambda _:None)
     try:
         await rejects(tool,args)
-        assert len(requests)==(2 if tool=='get_rfo_agency_deviation' else 1)
+        # A missing part page also reads the index, to name the parts that exist.
+        assert len(requests)==(2 if tool=='get_rfo_agency_deviation' or (tool,failure)==('get_rfo_part','not_found') else 1)
         assert all('169.254' not in url for url in requests)
     finally:await client.aclose()
 
