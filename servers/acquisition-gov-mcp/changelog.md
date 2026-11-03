@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.17
+
+- `get_rfo_part` corrects slightly-off inputs instead of failing: a `max_characters` outside 1000–40000 is moved into range with a warning; section citations such as "15.305(a)(2)", "FAR 15.305", "48 CFR 52.212-4" or "§ 15.305" look up the base section; a section number from another part (part 15, section "52.212-4") reads that part, with a warning; and a part with no RFO page (20 or 21) names the parts that have one. A section that is not in the part is still an error.
+- Input errors found while reading a page (a section that isn't there, a bad cursor) now reach the AI app as readable messages under MCP SDK 2.3, which hides other errors. Tool definitions are unchanged.
+
 ## 1.0.16
 
 Clearer error messages: when the government's API is down, slow or limiting requests, the message says so and how long to wait, and it no longer shows raw server text. Limits are unchanged. Tools and answers are unchanged.

@@ -55,7 +55,6 @@ async def test_pdf_lookup_merge_and_page_scope_via_mcp(sources):
 @pytest.mark.parametrize('name,args',[
  ('list_rfo_parts',{'part':0}),('list_rfo_parts',{'part':54}),
  ('list_rfo_parts',{'updated_since':'2025-02-30'}),('list_rfo_parts',{'updated_since':'yesterday'}),
- ('get_rfo_part',{'part':10,'max_characters':999}),('get_rfo_part',{'part':10,'max_characters':40001}),
  ('get_rfo_part',{'part':10,'section':' '}),('get_rfo_part',{'part':10,'cursor':'-1'}),
  ('get_rfo_part',{'part':10,'cursor':'9'*1000}),
  ('list_rfo_agency_deviations',{}),('list_rfo_agency_deviations',{'agency':' '}),

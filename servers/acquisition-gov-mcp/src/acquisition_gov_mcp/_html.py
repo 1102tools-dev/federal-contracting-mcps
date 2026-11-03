@@ -10,6 +10,13 @@ from ._errors import UserInputError
 from ._pdf import _labeled_date
 from .constants import ALLOWED_HOSTS, MAX_HTML_BYTES, MAX_OUTPUT_CHARACTERS, RFO_INDEX_URL, DEFAULT_MAX_CHARACTERS
 _PART_RE = re.compile(r"(?:FAR\s*)?Part\s*[-:]?\s*(\d{1,2})", re.I)
+# A section cited the way people write it, over squashed casefolded text:
+# "FAR 15.305", "48 CFR 52.212-4(c)", "§ 15.305(a)(2)". Group 1 is the bare
+# section number; trailing paragraph cites are dropped.
+_SECTION_CITE_RE = re.compile(
+    r"(?:(?:far|part|section|48 ?c\.?f\.?r\.?) ?|§+ ?)*"
+    r"([0-9]{1,2}\.[0-9]{3,4}(?:-[0-9]+)?)(?: ?\([a-z0-9]{1,4}\))*\.?"
+)
 
 def _source_id(kind: str, url: str) -> str:
     return f"{kind}-{hashlib.sha256(url.encode('utf-8')).hexdigest()[:20]}"
@@ -80,6 +87,13 @@ def _validate_heading(section: str | None) -> str | None:
         raise UserInputError("section/heading must contain 1 through 500 nonblank characters.")
     return " ".join(section.split())
 
+def _section_number(section: str | None) -> str | None:
+    """The bare section number when the query is only a section citation."""
+    if section is None:
+        return None
+    match = _SECTION_CITE_RE.fullmatch(" ".join(section.split()).casefold())
+    return match.group(1) if match else None
+
 def _validate_chunk_inputs(cursor: str | None, maximum: int) -> None:
     if not 1_000 <= maximum <= MAX_OUTPUT_CHARACTERS:
         raise UserInputError(f"max_characters must be between 1000 and {MAX_OUTPUT_CHARACTERS}.")
@@ -94,11 +108,12 @@ def _extract_section(node: Tag | BeautifulSoup, section: str | None) -> str:
             raise RuntimeError("The official HTML source contains no extractable content.")
         return text
     needle = section.casefold()
-    # Only a complete section-number query is eligible for prefix removal.
+    # Only a complete section citation is reduced to its section number.
     # Keep descriptive headings intact and retain the numeric token boundaries.
-    numbered = re.fullmatch(r"(?:(?:far|section)\s+|§\s*)?(\d{1,2}\.\d{3}(?:-\d+)?)", needle)
-    if numbered:
-        needle = numbered.group(1)
+    number = _section_number(section)
+    searched = f" (searched for section {number})" if number and number != needle else ""
+    if number:
+        needle = number
     headings = list(node.find_all(re.compile(r"^h[1-6]$")))
     def matches(h):
         text = " ".join(h.get_text(" ", strip=True).split()).casefold()
@@ -106,7 +121,7 @@ def _extract_section(node: Tag | BeautifulSoup, section: str | None) -> str:
     exact = [h for h in headings if " ".join(h.get_text(" ", strip=True).split()).casefold() == needle]
     candidates = exact or [h for h in headings if matches(h)]
     if not candidates:
-        raise UserInputError(f"section {section!r} was not found in the official source.")
+        raise UserInputError(f"section {section!r} was not found in the official source{searched}.")
     if len(candidates) > 1:
         raise UserInputError(f"section {section!r} matches multiple headings; use a more specific heading.")
     heading = candidates[0]

@@ -20,7 +20,7 @@ from mcp.server import MCPServer
 
 from ._errors import GovernmentApiError, UserInputError
 from ._html import (
-    _source_id, _validated_url, _validate_html_body, _main_content, _text_lines, _validate_heading, _validate_chunk_inputs, _extract_section, _chunk, _part_from_card, _agency_name, _parse_index, _parse_html_document
+    _source_id, _validated_url, _validate_html_body, _main_content, _text_lines, _validate_heading, _section_number, _validate_chunk_inputs, _extract_section, _chunk, _part_from_card, _agency_name, _parse_index, _parse_html_document
 )
 from ._pdf import _normalize_date, _labeled_date, _extract_document_fields, _read_pdf
 from . import __version__
@@ -74,6 +74,7 @@ def _unavailable(reason: str) -> GovernmentApiError:
 _pacer = FederalApiPacer(bucket="www.acquisition.gov", default_interval=3.0, sleep=_bounded_pacing_sleep)
 _PART_RE = re.compile(r"(?:FAR\s*)?Part\s*[-:]?\s*(\d{1,2})", re.I)
 _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_PAGE_MISSING_RE = re.compile(r"Acquisition\.gov returned HTTP (?:404|410)\b")
 _REDIRECTS = {301, 302, 303, 307, 308}
 
 
@@ -298,6 +299,9 @@ async def _read_html_safely(body: bytes, operation: str, **arguments):
             except (ValueError, TypeError) as exc:
                 raise RuntimeError("HTML parser returned an invalid result.") from exc
             if "error" in result:
+                # Input errors stay visible: MCP SDK 2.3 hides anything that is not a ToolError.
+                if result.get("kind") == "UserInputError":
+                    raise UserInputError(result["error"])
                 error = ValueError if result.get("kind") == "ValueError" else RuntimeError
                 raise error(result["error"])
             if "result" not in result:
@@ -345,6 +349,26 @@ async def _read_pdf_safely(body: bytes, *, page_start: int, page_end: int | None
             if process.returncode is None:
                 process.kill()
             await process.wait()
+
+
+def _part_ranges(parts: list[int]) -> str:
+    """Sorted part numbers as runs: [1, 2, 3, 5] -> "1-3, 5"."""
+    runs: list[list[int]] = []
+    for number in parts:
+        if runs and number == runs[-1][1] + 1:
+            runs[-1][1] = number
+        else:
+            runs.append([number, number])
+    return ", ".join(str(a) if a == b else f"{a}-{b}" for a, b in runs)
+
+
+async def _indexed_parts(excluding: int) -> list[int]:
+    """Parts the official index lists, or [] when the index is unavailable."""
+    try:
+        parts, _, _, _ = await _index()
+    except Exception:
+        return []
+    return sorted({item["part"] for item in parts} - {excluding})
 
 
 def _matching_agency_names(parts, query):
@@ -424,14 +448,33 @@ async def get_rfo_part(
 ) -> dict[str, Any]:
     """Return parsed, paginated model-deviation text for one FAR part."""
     wanted = _validate_part(part)
-    _validate_chunk_inputs(cursor, max_characters)
+    # Slightly-off inputs are corrected, with a warning, rather than refused.
+    maximum = min(max(max_characters, 1_000), MAX_OUTPUT_CHARACTERS)
+    _validate_chunk_inputs(cursor, maximum)
     _validate_heading(section)
-    body, _, final_url = await _fetch_bytes(
-        f"{RFO_INDEX_URL}/far-overhaul-part-{wanted}",
-        allowed_types=("text/html",),
-        max_bytes=MAX_HTML_BYTES,
-    )
-    page = await _read_html_safely(body, "document", part=wanted, heading=section, cursor=cursor, maximum=max_characters)
+    adjusted: list[str] = []
+    if maximum != max_characters:
+        adjusted.append(f"max_characters {max_characters} is outside 1000 through {MAX_OUTPUT_CHARACTERS}; {maximum} was used.")
+    number = _section_number(section)
+    home = int(number.split(".", 1)[0]) if number else wanted
+    if home != wanted and 1 <= home <= 53:
+        adjusted.append(f"Section {number} is in FAR part {home}, so part {home} was read instead of part {wanted}.")
+        wanted = home
+    try:
+        body, _, final_url = await _fetch_bytes(
+            f"{RFO_INDEX_URL}/far-overhaul-part-{wanted}",
+            allowed_types=("text/html",),
+            max_bytes=MAX_HTML_BYTES,
+        )
+    except RuntimeError as exc:
+        # A part with no page (20 and 21 today): name the parts that have one.
+        if not _PAGE_MISSING_RE.match(str(exc)) or not (listed := await _indexed_parts(wanted)):
+            raise
+        raise UserInputError(
+            f"FAR part {wanted} has no RFO model page on Acquisition.gov. "
+            f"Parts with model pages in the official RFO index: {_part_ranges(listed)}."
+        ) from exc
+    page = await _read_html_safely(body, "document", part=wanted, heading=section, cursor=cursor, maximum=maximum)
     return {
         "source_id": _source_id("model-part", final_url),
         "source_kind": "model_deviation",
@@ -446,7 +489,7 @@ async def get_rfo_part(
         "text_extraction_status": "complete",
         "warnings": [
             "RFO model text is not operative for an agency unless that agency adopts it through a deviation."
-        ] + (["The page text does not state issuance or update dates; list_rfo_parts reports dates from the separate index cards."] if page["issuance_date"] is None and page["updated_date"] is None else []),
+        ] + (["The page text does not state issuance or update dates; list_rfo_parts reports dates from the separate index cards."] if page["issuance_date"] is None and page["updated_date"] is None else []) + adjusted,
         "section": section,
         **page,
     }

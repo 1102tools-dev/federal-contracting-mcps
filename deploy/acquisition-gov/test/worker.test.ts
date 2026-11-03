@@ -95,7 +95,8 @@ test("answers come from the snapshot and carry its fetch times", async () => {
   assert.deepEqual([parts.count, parts.retrieved_at, parts.results.map((p: any) => p.part)], [2, FETCHED_AT, [10, 12]]);
   const part = await data("get_rfo_part", {part: 10, section: "10.001 policy"});
   assert.deepEqual([part.retrieved_at, part.content, part.issuance_date], [FETCHED_AT, "10.001 Policy\nThis is fixture model text, not codified FAR text.", "2025-05-02"]);
-  assert.match(await errorText("get_rfo_part", {part: 11}), /^Error executing tool get_rfo_part: Acquisition.gov returned HTTP 404: <!DOCTYPE html>/);
+  assert.equal(await errorText("get_rfo_part", {part: 11}), "Error executing tool get_rfo_part: FAR part 11 has no RFO model page on Acquisition.gov. "
+    + "Parts with model pages in the official RFO index: 10, 12.");
   const deviations = await data("list_rfo_agency_deviations", {part: 10});
   assert.deepEqual(deviations.results.map((d: any) => d.retrieved_at), [FETCHED_AT, FETCHED_AT, FETCHED_AT]);
   const nsf = deviations.results[2];
@@ -117,6 +118,7 @@ test("one D1 round trip per call; two for a section, heading or agency filter", 
   assert.equal(await trips("list_rfo_parts", {agency: "aeronautics"}), 2);
   assert.equal(await trips("get_rfo_part", {part: 12}), 1);
   assert.equal(await trips("get_rfo_part", {part: 12, section: "12.101 policy."}), 2);
+  assert.equal(await trips("get_rfo_part", {part: 11}), 2, "a missing part reads the index's parts");
   assert.equal(await trips("list_rfo_agency_deviations", {part: 10}), 2);
   assert.equal(await trips("get_rfo_agency_deviation", {source_id: gsa, page_start: 1, page_end: 25}), 1);
   assert.equal(await trips("get_rfo_guidance", {resource: "deviation_guidance"}), 1);
@@ -323,6 +325,50 @@ test("audit section phrasing FAR 10.001 resolves the exact section", async () =>
       "10.001 Policy\nThis is fixture model text, not codified FAR text.");
   }
   assert.match(await errorText("get_rfo_part", {part: 10, section: "FAR 10.0010"}), /was not found/);
+});
+
+// ---------- get_rfo_part corrects slightly-off inputs (as the package does) ----------
+
+const POLICY = "10.001 Policy\nThis is fixture model text, not codified FAR text.";
+
+test("max_characters outside 1000-40000 is clamped with a warning", async () => {
+  for (const [value, used, shown] of [[300, 1000, "300"], [-5, 1000, "-5"], [100000, 40000, "100000"], ["100000000000000000000", 40000, "100000000000000000000"]] as const) {
+    const result = await data("get_rfo_part", {part: 12, max_characters: value});
+    assert.ok(result.content.length > 0 && result.content.length <= used);
+    assert.ok(result.warnings.includes(`max_characters ${shown} is outside 1000 through 40000; ${used} was used.`), shown);
+  }
+  for (const value of [1000, 40000]) {
+    assert.ok(!(await data("get_rfo_part", {part: 12, max_characters: value})).warnings.some((w: string) => w.includes("max_characters")));
+  }
+});
+
+test("section citations with prefixes or paragraph cites resolve the base section", async () => {
+  for (const section of ["10.001(a)(2)", "10.001 (a)", "FAR 10.001(b)(1)(i)", "far part 10.001", "48 CFR 10.001",
+    "48 C.F.R. § 10.001(c)", "§10.001(a)", "§§ 10.001", "Section 10.001.", "FAR §10.001"]) {
+    const result = await data("get_rfo_part", {part: 10, section});
+    assert.deepEqual([result.content, result.section], [POLICY, section]);
+    assert.ok(!result.warnings.some((w: string) => w.includes("was read instead")));
+  }
+});
+
+test("a section from another part reads that part; real misses stay errors", async () => {
+  const result = await data("get_rfo_part", {part: 15, section: "FAR 10.001(a)"});
+  assert.deepEqual([result.far_parts, result.content], [[10], POLICY]);
+  assert.ok(result.warnings.includes("Section 10.001 is in FAR part 10, so part 10 was read instead of part 15."));
+  assert.equal(await errorText("get_rfo_part", {part: 10, section: "10.999(a)"}),
+    "Error executing tool get_rfo_part: section '10.999(a)' was not found in the official source (searched for section 10.999).");
+  // A part number outside 1-53 is not followed; the requested part is searched.
+  assert.equal(await errorText("get_rfo_part", {part: 10, section: "99.101"}),
+    "Error executing tool get_rfo_part: section '99.101' was not found in the official source.");
+});
+
+test("a missing part without index parts keeps the fetch error", async () => {
+  const {sqlite, db: bare} = copy();
+  sqlite.exec("DELETE FROM index_parts");
+  const result = await call("get_rfo_part", {part: 11}, bare);
+  assert.equal(result.isError, true);
+  assert.match(result.content[0].text, /^Error executing tool get_rfo_part: Acquisition.gov returned HTTP 404: <!DOCTYPE html>/);
+  sqlite.close();
 });
 
 test("audit State filter excludes United States Treasury token", async () => {

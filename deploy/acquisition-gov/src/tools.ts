@@ -67,6 +67,27 @@ function validateHeading(section: string | null): string | null {
   return squash(section);
 }
 
+// A section cited the way people write it, over squashed casefolded text:
+// "FAR 15.305", "48 CFR 52.212-4(c)", "§ 15.305(a)(2)". Group 1 is the bare
+// section number; trailing paragraph cites are dropped.
+const SECTION_CITE = /^(?:(?:far|part|section|48 ?c\.?f\.?r\.?) ?|§+ ?)*([0-9]{1,2}\.[0-9]{3,4}(?:-[0-9]+)?)(?: ?\([a-z0-9]{1,4}\))*\.?$/;
+
+/** _section_number: the bare section number when the query is only a section citation. */
+function sectionNumber(section: string | null): string | null {
+  if (section === null) return null;
+  return SECTION_CITE.exec(casefold(squash(section)))?.[1] ?? null;
+}
+
+/** Sorted part numbers as runs: [1, 2, 3, 5] -> "1-3, 5". */
+function partRanges(parts: number[]): string {
+  const runs: [number, number][] = [];
+  for (const number of parts) {
+    if (runs.length && number === runs.at(-1)![1] + 1) runs.at(-1)![1] = number;
+    else runs.push([number, number]);
+  }
+  return runs.map(([a, b]) => (a === b ? String(a) : `${a}-${b}`)).join(", ");
+}
+
 /** _chunk's page of a text `length` code points long: [start, end), or its cursor error. */
 function chunkWindow(length: number, cursor: string | null, maximum: number): [number, number] {
   const start = cursor === null ? 0 : Number(cursor);
@@ -150,11 +171,14 @@ async function htmlDocument(db: Database, key: string, heading: string | null, c
     window = chunkWindow(length, cursor, maximum);
     content = streamText(rows.results, window[0], window[1]);
   } else {
-    const needle = casefold(heading).replace(/^(?:(?:far|section)\s+|§\s*)?(\d{1,2}\.\d{3}(?:-\d+)?)$/, "$1");
+    // Only a complete section citation is reduced to its section number.
+    const number = sectionNumber(heading);
+    const searched = number !== null && number !== casefold(heading) ? ` (searched for section ${number})` : "";
+    const needle = number ?? casefold(heading);
     const pattern = new RegExp(`(?<![${WORD}.])${escapeRegex(needle)}(?![${WORD}.])`, "u");
     const exact = headings.results.filter(h => h.key === needle);
     const candidates = exact.length ? exact : headings.results.filter(h => pattern.test(h.key));
-    if (!candidates.length) throw new ToolError(`section ${repr(heading)} was not found in the official source.`);
+    if (!candidates.length) throw new ToolError(`section ${repr(heading)} was not found in the official source${searched}.`);
     if (candidates.length > 1) throw new ToolError(`section ${repr(heading)} matches multiple headings; use a more specific heading.`);
     const {start, end: stop} = candidates[0];
     length = stop - start;
@@ -248,14 +272,38 @@ async function listRfoParts(db: Database, args: Args): Promise<Py> {
 
 async function getRfoPart(db: Database, args: Args): Promise<Py> {
   const a = validateArgs("get_rfo_part", args);
-  const wanted = validatePart(a.part);
-  validateChunkInputs(a.cursor, a.max_characters);
+  let wanted = validatePart(a.part);
+  // Slightly-off inputs are corrected, with a warning, rather than refused.
+  const maximum = a.max_characters < 1000 ? 1000 : a.max_characters > MAX_OUTPUT_CHARACTERS ? MAX_OUTPUT_CHARACTERS : Number(a.max_characters);
+  validateChunkInputs(a.cursor, maximum);
   const heading = validateHeading(a.section);
-  const {src, page} = await htmlDocument(db, `part:${wanted}`, heading, a.cursor, Number(a.max_characters));
+  const adjusted: string[] = [];
+  if (a.max_characters < 1000 || a.max_characters > MAX_OUTPUT_CHARACTERS) {
+    adjusted.push(`max_characters ${intStr(a.max_characters)} is outside 1000 through ${MAX_OUTPUT_CHARACTERS}; ${maximum} was used.`);
+  }
+  const number = sectionNumber(heading);
+  const home = number === null ? wanted : Number(number.split(".")[0]);
+  if (home !== wanted && home >= 1 && home <= 53) {
+    adjusted.push(`Section ${number} is in FAR part ${home}, so part ${home} was read instead of part ${wanted}.`);
+    wanted = home;
+  }
+  let found: Awaited<ReturnType<typeof htmlDocument>>;
+  try {
+    found = await htmlDocument(db, `part:${wanted}`, heading, a.cursor, maximum);
+  } catch (error) {
+    // A part with no page (20 and 21 today): name the parts the index lists.
+    if (!(error instanceof ToolError && /^Acquisition\.gov returned HTTP (?:404|410)(?![\p{L}\p{N}_])/u.test(error.message))) throw error;
+    const {results} = await db.prepare(`SELECT DISTINCT part FROM index_parts WHERE doc = ${DOC_OF} AND part != ? ORDER BY part`).bind("index", wanted).all();
+    if (!results.length) throw error;
+    throw new ToolError(`FAR part ${wanted} has no RFO model page on Acquisition.gov. `
+      + `Parts with model pages in the official RFO index: ${partRanges(results.map(r => r.part))}.`);
+  }
+  const {src, page} = found;
   const warnings = ["RFO model text is not operative for an agency unless that agency adopts it through a deviation."];
   if (page.issuance_date === null && page.updated_date === null) {
     warnings.push("The page text does not state issuance or update dates; list_rfo_parts reports dates from the separate index cards.");
   }
+  warnings.push(...adjusted);
   return {
     source_id: src.source_id, source_kind: "model_deviation", agency: null, far_parts: [wanted], source_url: src.final_url,
     effective_date: null, expiration_date: null, applicability_text: null, retrieved_at: src.retrieved_at,
