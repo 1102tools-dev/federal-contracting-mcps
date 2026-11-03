@@ -58,6 +58,9 @@ const CITED_TITLE = new RegExp(`^${S}*(\\p{Nd}+)${S}*C\\.?${S}*F\\.?${S}*R${END_
 const DASHES = /[\u2013\u2014\u2011\u2212]/g;
 // Trailing paragraph cites like '15.305(a)' or '52.212-4(c)(2)(xviii)'.
 const PAREN_CITE = new RegExp(`(?:${S}*\\([A-Za-z0-9]{1,6}\\))+${S}*$`, "u");
+// Clause alternates named after a cite: '52.219-14 Alt I', '52.215-20, Alternate II', '52.212-5 (Alt. III)'.
+const ALTERNATE = new RegExp(`(?:${S}*,${S}*|${S}+|${S}*\\(${S}*)alt(?:ernate)?\\.?${S}*(IV|V|I{1,3}|[1-5])${S}*\\)?${S}*$`, "iu");
+const ROMAN = ["", "I", "II", "III", "IV", "V"];
 const YMD = /^\p{Nd}{4}-\p{Nd}{2}-\p{Nd}{2}$/u;
 
 const fail = (message: string): never => {
@@ -120,8 +123,15 @@ export function checkCitedTitle(value: unknown, titleNumber: number, field: stri
   }
 }
 
+/** _alternate_named: 'Alternate II' for a cite like '52.212-5 Alt 2', or null. */
+export function alternateNamed(value: unknown): string | null {
+  const match = typeof value === "string" ? ALTERNATE.exec(strip(value)) : null;
+  if (!match) return null;
+  return `Alternate ${/^[1-5]$/.test(match[1]) ? ROMAN[Number(match[1])] : match[1].toUpperCase()}`;
+}
+
 /** _coerce_cfr_str: an int or str identifier as a clean string, or null. */
-export function coerceCfrStr(value: unknown, field: string, {stripPrefixes = false, stripCites = false, maxlen = 120} = {}): string | null {
+export function coerceCfrStr(value: unknown, field: string, {stripPrefixes = false, stripCites = false, stripAlternates = false, maxlen = 120} = {}): string | null {
   if (value === null || value === undefined) return null;
   const raw = typeof value === "string" ? value : intStr(value as PyInt);
   if (raw.includes("\x00")) fail(`${field}=${repr(value)} contains a null byte.`);
@@ -136,6 +146,10 @@ export function coerceCfrStr(value: unknown, field: string, {stripPrefixes = fal
       s = s.replace(SECTION_PREFIX, "");
       s = strip(s.replace(LABEL_PREFIX, ""));
     }
+    if (!s) return null;
+  }
+  if (stripAlternates) {
+    s = strip(s.replace(ALTERNATE, ""));
     if (!s) return null;
   }
   if (stripCites) {

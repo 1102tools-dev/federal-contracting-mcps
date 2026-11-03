@@ -13,7 +13,10 @@ def read_fixture(monkeypatch):
         assert path == "/api/versioner/v1/full/2026-10-07/title-40.xml"
         assert params == {"section": "141.61"}
         return FIXTURE.read_text()
+    async def resolve(title_number):
+        return "2026-10-29"
     monkeypatch.setattr(srv, "_get_xml", get_xml)
+    monkeypatch.setattr(srv, "_resolve_date", resolve)
     return asyncio.run(srv.get_cfr_content(title_number=40, section="141.61", date="2026-10-07"))
 
 

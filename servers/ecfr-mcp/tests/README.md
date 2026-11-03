@@ -17,6 +17,7 @@ git history. [../testing.md](../testing.md) explains how to run them.
 | `test_content_round4.py` | 1.1.6 missing-source guidance through real stdio, legacy history/dated-text/removal followups and unexpected-error controls | 5 | offline |
 | `test_content_round3.py` | 1.1.5 source-backed Section 508 chronological timeline/page followups and available 2016 snapshot comparison | 2 | offline |
 | `test_content_round6.py` | 1.1.8 dioxin MCL scientific notation and genuine footnotes from a saved Title 40 response | 3 | offline |
+| `test_forgiving_inputs.py` | 1.1.15 `get_cfr_content`/`lookup_far_clause`: a date past the latest reads the latest text with a note; clause alternates (`52.219-14 Alt I`) return the basic clause with a note | 36 | offline |
 | `test_content_round5.py` | 1.1.7 numbered FAR 2.101 subtype definitions (individual surety, corporate surety, cosurety) | 5 | offline |
 | `test_content_round2.py` | 1.1.3 ordinary content research: COR original/canonical/acronym definitions, executable grants-comparison followup, intersected correction scopes using primary-source fixtures | 7 | offline |
 | `test_sdk_error_recovery.py` | 1.1.2 delivery correction: real stdio errors retain actionable guidance, then corrected questions complete | 1 | offline |

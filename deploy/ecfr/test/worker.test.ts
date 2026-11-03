@@ -23,7 +23,7 @@ import {toForwardUrl} from "../src/forward.ts";
 import {dumps} from "../src/pyjson.ts";
 import {pyInt} from "../src/text.ts";
 import {LIVE_TOOLS, TOOLS} from "../src/tools.ts";
-import {checkTitle48Chapter, coerceCfrStr, validateDate} from "../src/validate.ts";
+import {alternateNamed, checkTitle48Chapter, coerceCfrStr, validateDate} from "../src/validate.ts";
 import {answerKey} from "../src/rpc.ts";
 import {callTool, handleMessage, makeWorker} from "../src/worker.ts";
 import {d1} from "./d1.ts";
@@ -164,6 +164,7 @@ test("one D1 round trip per tool call", async () => {
   assert.equal(await trips("get_cfr_content", {section: "2.101", page: 2}), 1);
   assert.equal(await trips("get_cfr_content", {part: "52", page: 2}), 1);
   assert.equal(await trips("lookup_far_clause", {section_id: "15.305"}), 1);
+  assert.equal(await trips("lookup_far_clause", {section_id: "52.219-9 Alt I", date: "2026-11-03"}), 1);
   assert.equal(await trips("get_cfr_structure", {part: "15"}), 1);
   assert.equal(await trips("get_cfr_structure", {}), 1);
   assert.equal(await trips("get_ancestry", {appendix: "Appendix A to Chapter 2"}), 1);
@@ -189,6 +190,42 @@ test("questions the copy can't answer exactly are forwarded", async () => {
   // Inputs that fail validation are answered here, even with raw_xml.
   assert.match(await errorText("get_cfr_content", {section: "15.305", raw_xml: true, page: 0}), /page must be >= 1\. Got 0\./);
   assert.match(await errorText("get_cfr_content", {title_number: 35, section: "1.1"}), /Cannot resolve a date for title 35: this title is marked 'reserved'/);
+});
+
+test("a date past the copy's and a clause alternate are answered from the copy, with a note", async () => {
+  const plain = await data("get_cfr_content", {section: "52.219-9"});
+  assert.equal(plain.note, undefined);
+  const today = await data("get_cfr_content", {section: "52.219-9", date: "2026-11-03"});
+  const {note, ...rest} = today;
+  assert.equal(note, "eCFR's latest text for title 48 is dated 2026-10-29 (eCFR runs a few days behind), so this is the text as of 2026-10-29, not 2026-11-03.");
+  assert.deepEqual(rest, plain);
+  assert.equal((await data("lookup_far_clause", {section_id: "52.219-9", date: "2026-11-03"})).note, note);
+  assert.equal((await data("lookup_far_clause", {section_id: "52.219-9", date: "2026-10-29"})).note, undefined);
+  for (const [raw, alternate] of [["52.219-9 Alt I", "Alternate I"], ["52.219-9 Alt. II", "Alternate II"], ["52.219-9 Alternate III", "Alternate III"],
+    ["52.219-9 ALT IV", "Alternate IV"], ["FAR 52.219-9 (Alt I)", "Alternate I"], ["52.219-9, alt 2", "Alternate II"], ["§ 52.219-9(c) Alt I", "Alternate I"]]) {
+    for (const [name, args] of [["lookup_far_clause", {section_id: raw}], ["get_cfr_content", {section: raw}]] as const) {
+      const answer = await data(name, args);
+      assert.equal(answer.section, "52.219-9", raw);
+      assert.equal(answer.note, `eCFR has no separate section for 52.219-9 ${alternate}, so this is the basic clause 52.219-9, `
+        + `with ${alternate} printed inside it: a paragraph headed ${alternate} and its date, then the changes it makes.`);
+      assert.ok(answer.paragraphs.some((p: string) => p.startsWith(`*${alternate}* (`)), raw);
+    }
+  }
+  // An alternate the clause doesn't have is named as missing.
+  for (const [name, args] of [["lookup_far_clause", {section_id: "52.219-9 Alt V"}], ["get_cfr_content", {section: "52.219-9 Alt 5"}]] as const) {
+    assert.equal((await data(name, args)).note, "eCFR has no separate section for 52.219-9 Alternate V, so this is the basic clause 52.219-9. "
+      + "Its text on 2026-10-29 has no paragraph headed Alternate V.");
+  }
+  // Both at once: the date's note comes first.
+  const both = await data("lookup_far_clause", {section_id: "52.219-9 Alt I", date: "2026-11-03"});
+  assert.match(both.note, /^eCFR's latest text for title 48 .* not 2026-11-03\. eCFR has no separate section for 52\.219-9 Alternate I,/);
+  // An earlier date is still asked live, a bad date is still an error, and a reserved title has no latest date.
+  await forwards("lookup_far_clause", {section_id: "52.219-9 Alt I", date: "2026-10-28"});
+  assert.match(await errorText("get_cfr_content", {section: "52.219-9", date: "2026-11-31"}), /date='2026-11-31' is not a valid calendar date: day is out of range for month/);
+  assert.match(await errorText("lookup_far_clause", {section_id: "52.219-9", date: "11/03/2026"}), /date must be YYYY-MM-DD/);
+  assert.match(await errorText("get_cfr_content", {title_number: 35, section: "1.1", date: "2026-11-03"}), /Cannot resolve a date for title 35/);
+  // find_far_definition is unchanged: the Python server asks eCFR for any other date.
+  await forwards("find_far_definition", {term: "surety", date: "2026-11-03"});
 });
 
 test("a forwarded request goes on exactly as sent; local answers are tagged d1", async () => {
@@ -346,6 +383,15 @@ test("identifiers, dates and sizes are read the way the Python server reads them
   assert.equal(section(15), "15");
   assert.equal(section("FAR"), null);
   assert.throws(() => section("1".repeat(121)), /section exceeds maximum length of 120 chars\. Got 121\./);
+  const clause = (value: unknown) => coerceCfrStr(value, "section_id", {stripPrefixes: true, stripCites: true, stripAlternates: true});
+  assert.equal(clause("FAR 52.212-5(b) Alt II"), "52.212-5");
+  assert.equal(clause("52.219-9 Alt VI"), "52.219-9 Alt VI");
+  assert.equal(clause("52.219-9Alt I"), "52.219-9Alt I");
+  assert.equal(clause("(Alt I)"), null);
+  assert.equal(section("52.219-9 Alt I"), "52.219-9 Alt I");
+  assert.equal(alternateNamed("52.215-20 alternate iv"), "Alternate IV");
+  assert.equal(alternateNamed(" 52.215-20 Alt 5 "), "Alternate V");
+  assert.equal(alternateNamed(52), null);
   assert.equal(checkTitle48Chapter(null, "252.204-7012"), "2");
   assert.equal(checkTitle48Chapter(null, "1852.215-84"), "18");
   assert.throws(() => checkTitle48Chapter("1", "552.238-81"), /552\.238-81 is in Title 48 chapter 5 \(GSAR \(Parts 500-599\)\), not chapter 1\./);

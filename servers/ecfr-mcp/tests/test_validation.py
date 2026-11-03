@@ -891,7 +891,11 @@ def test_decimal_section_survives_as_string(monkeypatch):
         observed_sections.append(params["section"])
         return "<HEAD>Test section</HEAD><P>Test text.</P>"
 
+    async def resolve(title_number):
+        return "2026-10-29"
+
     monkeypatch.setattr(srv, "_get_xml", fake_get_xml)
+    monkeypatch.setattr(srv, "_resolve_date", resolve)
 
     async def _run():
         for sec in ("4.130", "4.13"):

@@ -90,6 +90,14 @@ class _CaptureXml:
         return self.response
 
 
+@pytest.fixture
+def latest_date(monkeypatch):
+    """get_cfr_content checks every date against the title's latest; answer that offline."""
+    async def resolve(title_number):
+        return "2026-10-29"
+    monkeypatch.setattr(srv, "_resolve_date", resolve)
+
+
 # ===========================================================================
 # TIER 1: VALIDATION (offline)
 # ===========================================================================
@@ -322,7 +330,7 @@ def test_find_recent_changes_orders_newest_first():
         srv._get_json = orig
 
 
-def test_content_sends_appendix_on_wire():
+def test_content_sends_appendix_on_wire(latest_date):
     mock = _CaptureXml()
     orig, srv._get_xml = srv._get_xml, mock
     try:
@@ -338,7 +346,7 @@ def test_content_sends_appendix_on_wire():
         srv._get_xml = orig
 
 
-def test_appendix_alone_satisfies_content_filter_check():
+def test_appendix_alone_satisfies_content_filter_check(latest_date):
     mock = _CaptureXml()
     orig, srv._get_xml = srv._get_xml, mock
     try:
@@ -376,7 +384,7 @@ def test_structure_and_ancestry_send_appendix_on_wire():
         srv._get_json = orig
 
 
-def test_section_cite_stripped_on_wire():
+def test_section_cite_stripped_on_wire(latest_date):
     mock = _CaptureXml()
     orig, srv._get_xml = srv._get_xml, mock
     try:

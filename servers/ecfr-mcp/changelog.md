@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.1.15
+
+`get_cfr_content` and `lookup_far_clause` fix two common slips instead of failing. A date later than eCFR's latest text for the title (today's date, say) returns that latest text, with a note giving the date used. A clause alternate after the number, such as `52.219-14 Alt I`, `Alternate II` or `(Alt. III)`, returns the basic clause, with a note that the alternate is printed inside it (or that this clause's text has no such alternate). Invalid dates are still errors. Tools are unchanged.
+
 ## 1.1.14
 
 Clearer error messages: when the government's API is down, slow or limiting requests, the message says so and how long to wait, and it no longer shows raw server text. Regulation-text requests now stop waiting after 40 seconds instead of 60, so a slow eCFR site gets that clear message. Limits are unchanged. Tools and answers are unchanged.
