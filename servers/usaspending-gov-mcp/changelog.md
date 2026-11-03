@@ -2,6 +2,10 @@
 
 Release evidence for October 10, 2026 is in the [release record](../../docs/releases/2026-10-10-content-audit.md).
 
+## 1.0.29
+
+The IDV tools accept the ids AI apps most often send. `get_idv_amounts`, `get_idv_funding`, `get_idv_funding_rollup` and `get_idv_activity` now take the numeric award id from `lookup_piid` or `search_awards`, and those four plus `get_idv_children` take a bare IDV PIID such as `GS00Q14OADU131` and answer for its IDV, saying so in `award_id_note`. A PIID shared by several IDVs gets a message naming them. Tool names, inputs and descriptions are unchanged.
+
 ## 1.0.28
 
 Clearer error messages: when the government's API is down, slow or limiting requests, the message says so and how long to wait, and it no longer shows raw server text. Limits are unchanged. Tools and answers are unchanged.
