@@ -50,8 +50,8 @@ export default {
       const started = Date.now();
       const response = await originFirst(env, url.pathname, {method: request.method, headers, body},
         () => fetchWithRetry(() => backend.fetch(forwarded())));
-      logToolCall("usaspending", body, response, started, request.headers.get("User-Agent"));
-      return explainCapacity(response, body, "USAspending");
+      const logged = await logToolCall("usaspending", body, response, started, request.headers.get("User-Agent"));
+      return explainCapacity(logged, body, "USAspending");
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
       return explainUnavailable(body, "USAspending");

@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
 import {MinuteCounter, RateCounter} from "./rate-counter.ts";
-import {clientApp, programName, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, explainUnavailable, TURNED_AWAY_HEADER, type CounterNamespace, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, withinOriginLimit, originLimited, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys, chatgptUser} from "./edge.ts";
+import {callResult, clientApp, programName, fetchWithRetry, isContainerFailure, isOriginFailure, listenAtEdge, logToolCall, explainUnavailable, TURNED_AWAY_HEADER, type CounterNamespace, originFirst, resetOriginProbes, isAiPlatform, toolName, withToolCallLog, withinLimit, withinOriginLimit, originLimited, rateLimited, explainCapacity, isAiPlatformLive, resetLiveRanges, OPENAI_RANGES_URL, metaKeys, chatgptUser} from "./edge.ts";
 
 // Tests never reach openai.com: the live AI-platform list download fails unless a test mocks it.
 const networkFetch = globalThis.fetch;
@@ -321,7 +321,7 @@ test("logs the names of a call's _meta labels and never their values", () => {
   assert.deepEqual(metaKeys(null), []);
 });
 
-test("logs the tool name of a tools/call and never its arguments", () => {
+test("logs the tool name of a tools/call and never its arguments", async () => {
   const body = (message: unknown) => new TextEncoder().encode(JSON.stringify(message)).buffer as ArrayBuffer;
   const call = body({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "keyword_search", arguments: {keyword: "secret words"}}});
   assert.equal(toolName(call), "keyword_search");
@@ -336,14 +336,14 @@ test("logs the tool name of a tools/call and never its arguments", () => {
   console.log = (line: string) => { lines.push(line); };
   try {
     const response = new Response("{}", {status: 200, headers: {"X-1102tools-Backend": "origin"}});
-    logToolCall("gsa-calc", call, response, Date.now() - 5, "Claude-User");
-    logToolCall("gsa-calc", body({jsonrpc: "2.0", id: 2, method: "tools/list"}), response, Date.now(), "Claude-User");
+    await logToolCall("gsa-calc", call, response, Date.now() - 5, "Claude-User");
+    await logToolCall("gsa-calc", body({jsonrpc: "2.0", id: 2, method: "tools/list"}), response, Date.now(), "Claude-User");
   } finally {
     console.log = original;
   }
   assert.equal(lines.length, 1);
   const line = JSON.parse(lines[0]);
-  assert.deepEqual({...line, ms: 0}, {event: "tool_call", service: "gsa-calc", tool: "keyword_search", client: "claude", backend: "origin", cache: null, status: 200, ms: 0, meta: []});
+  assert.deepEqual({...line, ms: 0}, {event: "tool_call", service: "gsa-calc", tool: "keyword_search", client: "claude", backend: "origin", cache: null, status: 200, result: "unknown", upstream: null, ms: 0, meta: []});
   assert.ok(line.ms >= 0);
   assert.ok(!lines[0].includes("secret"));
 });
@@ -363,7 +363,7 @@ test("labels the app from the User-Agent without keeping the string", () => {
   assert.equal(clientApp(null), "other");
 });
 
-test("names an unknown app by its first User-Agent word only", () => {
+test("names an unknown app by its first User-Agent word only", async () => {
   assert.equal(programName("Wallmad/0.3 (procurement-source-connector)"), "Wallmad");
   assert.equal(programName("OldRexTech-govcon-tools/1.0"), "OldRexTech-govcon-tools");
   assert.equal(programName("node"), "node");
@@ -380,8 +380,8 @@ test("names an unknown app by its first User-Agent word only", () => {
   try {
     const call = new TextEncoder().encode(JSON.stringify({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "search_opportunities"}})).buffer as ArrayBuffer;
     const response = new Response("{}", {status: 200});
-    logToolCall("sam-gov", call, response, Date.now(), "Wallmad/0.3 (procurement-source-connector)");
-    logToolCall("sam-gov", call, response, Date.now(), "Claude-User");
+    await logToolCall("sam-gov", call, new Response("{}", {status: 200}), Date.now(), "Wallmad/0.3 (procurement-source-connector)");
+    await logToolCall("sam-gov", call, new Response("{}", {status: 200}), Date.now(), "Claude-User");
   } finally {
     console.log = original;
   }
@@ -415,7 +415,7 @@ test("the D1 wrapper logs answered tools/call requests only", async () => {
     console.log = original;
   }
   assert.equal(lines.length, 1);
-  assert.deepEqual({...JSON.parse(lines[0]), ms: 0}, {event: "tool_call", service: "sam-gov", tool: "search_opportunities", client: "chatgpt", backend: null, cache: "hit", status: 200, ms: 0, meta: []});
+  assert.deepEqual({...JSON.parse(lines[0]), ms: 0}, {event: "tool_call", service: "sam-gov", tool: "search_opportunities", client: "chatgpt", backend: null, cache: "hit", status: 200, result: "unknown", upstream: null, ms: 0, meta: []});
   assert.ok(!lines[0].includes("secret"));
 });
 
@@ -589,4 +589,53 @@ test("the RateCounter object answers 204 within the limit and 429 over it", asyn
   assert.equal((await hit()).status, 204);
   assert.equal((await hit()).status, 429);
   assert.equal((await counter.fetch(new Request("https://rate-counter/hit", {method: "POST", body: "{}"}))).status, 400);
+});
+
+test("labels how a tool call turned out without keeping the answer", async () => {
+  const answer = (result: unknown) => JSON.stringify({jsonrpc: "2.0", id: 1, result});
+  const text = (words: string, isError = false) => answer({content: [{type: "text", text: words}], isError});
+  const structured = (value: unknown) => answer({content: [{type: "text", text: JSON.stringify(value)}], structuredContent: value});
+  // Found something.
+  assert.deepEqual(callResult(structured({count: 3, results: [{}, {}, {}]})), {result: "ok", upstream: null});
+  assert.deepEqual(callResult(text(JSON.stringify({occ_code: "151252", wages: {}}))), {result: "ok", upstream: null});
+  // Worked, found nothing: the shapes the nine servers send back.
+  assert.equal(callResult(text(JSON.stringify({data: [], meta: {totalElements: 0}, no_data: true}))).result, "empty");
+  assert.equal(callResult(text(JSON.stringify({total_matches: 0, returned: 0, results: []}))).result, "empty");
+  assert.equal(callResult(text(JSON.stringify({summary: "No record matched these filters in the public file."}))).result, "empty");
+  assert.equal(callResult(text(JSON.stringify({results: [], page_metadata: {page: 1, hasNext: false}}))).result, "empty");
+  assert.equal(callResult(structured({results: [], meta: {total_pages: 0, total_count: 0}})).result, "empty");
+  assert.equal(callResult(structured({description: "Documents matching 'x'", count: 0, results: []})).result, "empty");
+  assert.equal(callResult(text(JSON.stringify({hits: {total: {value: 0}, hits: []}}))).result, "empty");
+  assert.equal(callResult(structured({query: {city: "x"}, status: "unresolved", note: "GSA did not recognize it"})).result, "empty");
+  assert.equal(callResult(structured({count: 0, total_matches: 0, results: [], warnings: []})).result, "empty");
+  // The tool answered with an error.
+  assert.deepEqual(callResult(text("Error executing tool get_document_detail: HTTP 404: Resource not found.", true)), {result: "tool_error", upstream: 404});
+  assert.deepEqual(callResult(text("Invalid NAICS code '12'.", true)), {result: "tool_error", upstream: null});
+  assert.deepEqual(callResult(JSON.stringify({jsonrpc: "2.0", id: 1, error: {code: -32602, message: "Invalid params"}})), {result: "tool_error", upstream: null});
+  // The government site failed or rate limited us.
+  assert.deepEqual(callResult(text("The government's Regulations.gov API isn't responding right now (timed out). This is on the government's side.", true)), {result: "upstream_error", upstream: null});
+  assert.deepEqual(callResult(text("HTTP 503: Service Unavailable", true)), {result: "upstream_error", upstream: 503});
+  assert.deepEqual(callResult(text("The government's Regulations.gov API is limiting how often it can be asked. Wait a few minutes.", true)), {result: "upstream_error", upstream: 429});
+  // An event-stream answer reads the same way; anything unreadable is "unknown".
+  assert.equal(callResult(`event: message\ndata: ${structured({count: 0, results: []})}\n\n`).result, "empty");
+  assert.equal(callResult("not json").result, "unknown");
+
+  const lines: string[] = [];
+  const original = console.log;
+  console.log = (line: string) => { lines.push(line); };
+  const call = new TextEncoder().encode(JSON.stringify({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "search_documents", arguments: {search_term: "secret words"}}})).buffer as ArrayBuffer;
+  const body = text("HTTP 404: secret answer text", true);
+  let back: Response;
+  try {
+    back = await logToolCall("regulations-gov", call, new Response(body, {status: 200, headers: {"Content-Type": "application/json"}}), Date.now(), "Claude-User");
+  } finally {
+    console.log = original;
+  }
+  const line = JSON.parse(lines[0]);
+  assert.equal(line.result, "tool_error");
+  assert.equal(line.upstream, 404);
+  assert.ok(!lines[0].includes("secret"));
+  // The AI app still gets the whole answer.
+  assert.equal(await back.text(), body);
+  assert.equal(back.headers.get("Content-Type"), "application/json");
 });

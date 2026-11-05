@@ -53,8 +53,8 @@ export default {
       const started = Date.now();
       const response = await originFirst(env, url.pathname, {method: request.method, headers, body},
         () => fetchWithRetry(() => backend.fetch(forwarded())), {"X-Regulations-Key": env.REGULATIONS_GOV_API_KEY ?? ""});
-      logToolCall("regulations-gov", body, response, started, request.headers.get("User-Agent"));
-      return explainCapacity(response, body, "Regulations.gov");
+      const logged = await logToolCall("regulations-gov", body, response, started, request.headers.get("User-Agent"));
+      return explainCapacity(logged, body, "Regulations.gov");
     } catch (error) {
       console.log(JSON.stringify({event: "backend_unavailable", reason: "container_request_failed"}));
       return explainUnavailable(body, "Regulations.gov");

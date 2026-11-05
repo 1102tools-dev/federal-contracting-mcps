@@ -359,15 +359,128 @@ export function programName(userAgent: string | null): string {
   return name.toLowerCase() === "mozilla" ? "browser" : name;
 }
 
-export function logToolCall(service: string, body: ArrayBuffer | null, response: Response, started: number, userAgent: string | null): void {
+// --- Call results ------------------------------------------------------------
+//
+// Each tool_call line also says how the call turned out, read from the answer
+// the AI app gets back: "ok" (found something), "empty" (worked, found
+// nothing), "tool_error" (the tool answered with an error, such as a bad ID)
+// or "upstream_error" (the government site failed or rate limited us), plus
+// the government site's HTTP code when the error message names one. Only the
+// label is logged; the answer itself is never logged or kept.
+
+export type CallResult = {result: "ok" | "empty" | "tool_error" | "upstream_error" | "unknown"; upstream: number | null};
+
+const MAX_RESULT_BYTES = 4 * 1024 * 1024;
+// Zero in any of these, at the top or one level down, means the search found nothing.
+const COUNT_KEYS = ["total_matches", "totalElements", "total_count", "totalResults", "total_records", "numberOfElements", "count", "total", "returned", "result_count", "matches"];
+const LIST_KEYS = ["results", "data", "items", "records", "hits", "matches", "documents"];
+const EMPTY_STATUS = new Set(["unresolved", "not_found", "no_match", "no_matches", "none"]);
+const NO_MATCH_TEXT = /^(no (record|result|match|data|document|entit|opportunit|award|comment|docket)s?\b|nothing (matched|found))/i;
+const GOVERNMENT_DOWN = /government's .{1,60} API (isn't responding|is limiting|is rate limiting|rate limited|returned an error)|isn't responding right now/i;
+
+function countIn(value: Record<string, unknown>): number | null {
+  for (const key of COUNT_KEYS) {
+    const n = value[key];
+    if (typeof n === "number") return n;
+    if (isObject(n) && typeof n.value === "number") return n.value;  // Elasticsearch hits.total
+  }
+  return null;
+}
+
+function emptyAnswer(value: unknown): boolean {
+  if (Array.isArray(value)) return value.length === 0;
+  if (!isObject(value)) return false;
+  if (value.no_data === true) return true;
+  if (typeof value.status === "string" && EMPTY_STATUS.has(value.status.toLowerCase())) return true;
+  for (const key of ["summary", "note", "message"]) {
+    if (typeof value[key] === "string" && NO_MATCH_TEXT.test((value[key] as string).trim())) return true;
+  }
+  const counts: number[] = [];
+  const top = countIn(value);
+  if (top !== null) counts.push(top);
+  for (const key of ["meta", "page_metadata", "hits", "pagination"]) {
+    if (isObject(value[key])) {
+      const n = countIn(value[key] as Record<string, unknown>);
+      if (n !== null) counts.push(n);
+    }
+  }
+  if (counts.length) return counts.every(n => n === 0);
+  const lists = LIST_KEYS.filter(key => Array.isArray(value[key]) || (isObject(value[key]) && Array.isArray((value[key] as Record<string, unknown>).hits)));
+  if (!lists.length) return false;
+  return lists.every(key => {
+    const list = Array.isArray(value[key]) ? value[key] : (value[key] as Record<string, unknown>).hits;
+    return (list as unknown[]).length === 0;
+  });
+}
+
+/** The JSON-RPC message in an answer body: plain JSON, or the last data: line of an event stream. */
+function rpcAnswer(text: string): unknown {
+  const trimmed = text.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {}
+  const data = trimmed.split(/\r?\n/).filter(line => line.startsWith("data:")).pop();
+  if (!data) return null;
+  try {
+    return JSON.parse(data.slice(5));
+  } catch {
+    return null;
+  }
+}
+
+/** How a tools/call turned out, from the answer text. */
+export function callResult(text: string): CallResult {
+  const message = rpcAnswer(text);
+  if (!isObject(message)) return {result: "unknown", upstream: null};
+  if (isObject(message.error)) return {result: "tool_error", upstream: null};
+  const result = message.result;
+  if (!isObject(result)) return {result: "unknown", upstream: null};
+  const content = Array.isArray(result.content) ? result.content : [];
+  const first = content.find(item => isObject(item) && typeof item.text === "string") as {text: string} | undefined;
+  const words = first?.text ?? "";
+  if (result.isError === true) {
+    const code = words.match(/\bHTTP (\d{3})\b/);
+    const upstream = code ? Number(code[1]) : null;
+    if (GOVERNMENT_DOWN.test(words) || (upstream !== null && (upstream === 429 || upstream >= 500))) {
+      return {result: "upstream_error", upstream: upstream ?? (/limit/i.test(words) ? 429 : null)};
+    }
+    return {result: "tool_error", upstream};
+  }
+  let answer: unknown = result.structuredContent;
+  if (answer === undefined && words) {
+    try {
+      answer = JSON.parse(words);
+    } catch {
+      answer = words;
+    }
+  }
+  if (typeof answer === "string") return {result: NO_MATCH_TEXT.test(answer.trim()) ? "empty" : "ok", upstream: null};
+  if (answer === undefined && !content.length) return {result: "empty", upstream: null};
+  return {result: emptyAnswer(answer) ? "empty" : "ok", upstream: null};
+}
+
+/** Logs a tools/call with its result and hands back an answer with the same body. */
+export async function logToolCall(service: string, body: ArrayBuffer | null, response: Response, started: number, userAgent: string | null): Promise<Response> {
   const tool = toolName(body);
-  if (tool === null) return;
+  if (tool === null) return response;
   const client = clientApp(userAgent);
+  let outcome: CallResult = {result: "unknown", upstream: null};
+  let answer = response;
+  const size = Number(response.headers.get("Content-Length") ?? "0");
+  if (response.body && response.status === 200 && size <= MAX_RESULT_BYTES) {
+    const text = await response.text();
+    outcome = callResult(text);
+    answer = new Response(text, response);
+  } else if (response.status >= 400) {
+    outcome = {result: "tool_error", upstream: null};
+  }
   console.log(JSON.stringify({
     event: "tool_call", service, tool, client, ...(client === "other" ? {program: programName(userAgent)} : {}),
     backend: response.headers.get("X-1102tools-Backend"), cache: response.headers.get("X-1102tools-Cache"),
-    status: response.status, ms: Date.now() - started, meta: metaKeys(body),
+    status: response.status, result: outcome.result, upstream: outcome.upstream,
+    ms: Date.now() - started, meta: metaKeys(body),
   }));
+  return answer;
 }
 
 // Requests turned away before the server sees them; the container-backed
@@ -388,8 +501,8 @@ export function withToolCallLog<E>(service: string, handler: (request: Request, 
     if (body === null) return tooLarge();
     const started = Date.now();
     const response = await handler(new Request(request, {body}), env);
-    if (!TURNED_AWAY.has(response.status) && !response.headers.has(TURNED_AWAY_HEADER)) logToolCall(service, body, response, started, request.headers.get("User-Agent"));
-    return response;
+    if (TURNED_AWAY.has(response.status) || response.headers.has(TURNED_AWAY_HEADER)) return response;
+    return logToolCall(service, body, response, started, request.headers.get("User-Agent"));
   };
 }
 
