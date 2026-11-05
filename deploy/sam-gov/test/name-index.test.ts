@@ -31,7 +31,9 @@ function databases(indexSha = "sha") {
   return {source, index};
 }
 
-const strip = (result: any) => ({...result, notes: undefined});
+// file_age_hours comes from the clock, so two runs can differ by 0.01 when an
+// age boundary passes between them; it isn't what this test compares.
+const strip = (result: any) => ({...result, notes: undefined, file_age_hours: undefined});
 
 test("indexed entity and exclusion name searches equal the unindexed results", async () => {
   const {source, index} = databases();
