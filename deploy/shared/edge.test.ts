@@ -609,9 +609,19 @@ test("labels how a tool call turned out without keeping the answer", async () =>
   assert.equal(callResult(structured({query: {city: "x"}, status: "unresolved", note: "GSA did not recognize it"})).result, "empty");
   assert.equal(callResult(structured({count: 0, total_matches: 0, results: [], warnings: []})).result, "empty");
   // The tool answered with an error.
-  assert.deepEqual(callResult(text("Error executing tool get_document_detail: HTTP 404: Resource not found.", true)), {result: "tool_error", upstream: 404});
-  assert.deepEqual(callResult(text("Invalid NAICS code '12'.", true)), {result: "tool_error", upstream: null});
-  assert.deepEqual(callResult(JSON.stringify({jsonrpc: "2.0", id: 1, error: {code: -32602, message: "Invalid params"}})), {result: "tool_error", upstream: null});
+  // Asked for something that doesn't exist.
+  assert.deepEqual(callResult(text("Error executing tool get_document_detail: HTTP 404: Resource not found.", true)), {result: "not_found", upstream: 404});
+  assert.equal(callResult(text("Error executing tool get_opportunity: No notice found for that ID.", true)).result, "not_found");
+  assert.equal(callResult(text("Section 52.999-1 does not exist in this title.", true)).result, "not_found");
+  // The request was missing something or had a wrong value (what directory bots usually send).
+  assert.equal(callResult(text("Error executing tool search_awards: search_awards requires at least one filter beyond award_type.", true)).result, "bad_input");
+  assert.equal(callResult(text("Error executing tool search_awards: 1 validation error for search_awardsArguments\naward_type\n  Input should be 'contracts', 'idvs'", true)).result, "bad_input");
+  assert.equal(callResult(text("Error executing tool get_cfr_content: title_number must be between 1 and 50. Got 99.", true)).result, "bad_input");
+  assert.deepEqual(callResult(text("Invalid NAICS code '12'.", true)), {result: "bad_input", upstream: null});
+  assert.deepEqual(callResult(JSON.stringify({jsonrpc: "2.0", id: 1, error: {code: -32602, message: "Invalid params"}})), {result: "bad_input", upstream: null});
+  // Anything else is a tool error worth a look.
+  assert.deepEqual(callResult(text("Error executing tool search_cfr: 'NoneType' object has no attribute 'get'", true)), {result: "tool_error", upstream: null});
+  assert.deepEqual(callResult(JSON.stringify({jsonrpc: "2.0", id: 1, error: {code: -32603, message: "Internal error"}})), {result: "tool_error", upstream: null});
   // The government site failed or rate limited us.
   assert.deepEqual(callResult(text("The government's Regulations.gov API isn't responding right now (timed out). This is on the government's side.", true)), {result: "upstream_error", upstream: null});
   assert.deepEqual(callResult(text("HTTP 503: Service Unavailable", true)), {result: "upstream_error", upstream: 503});
@@ -632,7 +642,7 @@ test("labels how a tool call turned out without keeping the answer", async () =>
     console.log = original;
   }
   const line = JSON.parse(lines[0]);
-  assert.equal(line.result, "tool_error");
+  assert.equal(line.result, "not_found");
   assert.equal(line.upstream, 404);
   assert.ok(!lines[0].includes("secret"));
   // The AI app still gets the whole answer.

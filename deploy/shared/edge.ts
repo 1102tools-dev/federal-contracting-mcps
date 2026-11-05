@@ -363,12 +363,14 @@ export function programName(userAgent: string | null): string {
 //
 // Each tool_call line also says how the call turned out, read from the answer
 // the AI app gets back: "ok" (found something), "empty" (worked, found
-// nothing), "tool_error" (the tool answered with an error, such as a bad ID)
-// or "upstream_error" (the government site failed or rate limited us), plus
-// the government site's HTTP code when the error message names one. Only the
-// label is logged; the answer itself is never logged or kept.
+// nothing), "not_found" (asked for an ID or record that doesn't exist),
+// "bad_input" (the request was missing something or had a wrong value, and
+// the tool said so), "tool_error" (any other error from the tool: the ones
+// worth looking at) or "upstream_error" (the government site failed or rate
+// limited us), plus the government site's HTTP code when the error message
+// names one. Only the label is logged; the answer itself is never logged or kept.
 
-export type CallResult = {result: "ok" | "empty" | "tool_error" | "upstream_error" | "unknown"; upstream: number | null};
+export type CallResult = {result: "ok" | "empty" | "not_found" | "bad_input" | "tool_error" | "upstream_error" | "unknown"; upstream: number | null};
 
 const MAX_RESULT_BYTES = 4 * 1024 * 1024;
 // Zero in any of these, at the top or one level down, means the search found nothing.
@@ -376,6 +378,9 @@ const COUNT_KEYS = ["total_matches", "totalElements", "total_count", "totalResul
 const LIST_KEYS = ["results", "data", "items", "records", "hits", "matches", "documents"];
 const EMPTY_STATUS = new Set(["unresolved", "not_found", "no_match", "no_matches", "none"]);
 const NO_MATCH_TEXT = /^(no (record|result|match|data|document|entit|opportunit|award|comment|docket)s?\b|nothing (matched|found))/i;
+// The tool rejected the request itself: a missing filter, a wrong value or type.
+const BAD_INPUT = /validation error|input should be|requires at least one|is required|are required|must be (one of|between|a |an |at least|at most|\d)|must (include|provide|supply|specify|use)|invalid |not a valid|unknown (tool|parameter|argument|field)|unexpected keyword|missing (required )?(argument|parameter|field)|expected (a |an |one of)|too (long|short|many)|out of range|not supported|unsupported|use one of|did you mean/i;
+const NOT_FOUND = /\bnot found\b|could not be found|couldn't be found|does not exist|doesn't exist|no such |no (document|docket|comment|award|record|entity|section|part|opportunity|notice) (with|for|matching|found)/i;
 const GOVERNMENT_DOWN = /government's .{1,60} API (isn't responding|is limiting|is rate limiting|rate limited|returned an error)|isn't responding right now/i;
 
 function countIn(value: Record<string, unknown>): number | null {
@@ -432,7 +437,10 @@ function rpcAnswer(text: string): unknown {
 export function callResult(text: string): CallResult {
   const message = rpcAnswer(text);
   if (!isObject(message)) return {result: "unknown", upstream: null};
-  if (isObject(message.error)) return {result: "tool_error", upstream: null};
+  if (isObject(message.error)) {
+    const code = message.error.code;
+    return {result: code === -32602 || code === -32601 ? "bad_input" : "tool_error", upstream: null};
+  }
   const result = message.result;
   if (!isObject(result)) return {result: "unknown", upstream: null};
   const content = Array.isArray(result.content) ? result.content : [];
@@ -444,6 +452,8 @@ export function callResult(text: string): CallResult {
     if (GOVERNMENT_DOWN.test(words) || (upstream !== null && (upstream === 429 || upstream >= 500))) {
       return {result: "upstream_error", upstream: upstream ?? (/limit/i.test(words) ? 429 : null)};
     }
+    if (upstream === 404 || NOT_FOUND.test(words)) return {result: "not_found", upstream};
+    if (upstream === 400 || upstream === 422 || BAD_INPUT.test(words)) return {result: "bad_input", upstream};
     return {result: "tool_error", upstream};
   }
   let answer: unknown = result.structuredContent;
