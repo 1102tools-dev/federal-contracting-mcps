@@ -6,10 +6,10 @@
 
 Free MCP servers that plug your AI into SAM.gov, USAspending, GSA CALC+, BLS wage data, GSA Per Diem, the FAR, the Federal Register, Regulations.gov and Acquisition.gov. Find opportunities, size up the incumbent, price labor and travel, and check the rules without leaving the chat.
 
-**[Install in Claude or ChatGPT](#local-or-hosted)** · [Watch a demo](https://www.youtube.com/watch?v=2CnYSrNIuWU)<br>
+**[Install in Claude or ChatGPT](#local-or-hosted)** · [Watch a demo](https://1102tools.com/downloads/1102tools-sam-gov-free-ai.mp4)<br>
 [Find a ready-made prompt](https://github.com/1102tools-dev/federal-contracting-prompts) · [1102tools.com](https://1102tools.com) · [Live usage](https://1102tools.com/usage)
 
-<a href="https://www.youtube.com/watch?v=2CnYSrNIuWU"><img src="https://img.youtube.com/vi/2CnYSrNIuWU/maxresdefault.jpg" alt="Watch: You don't have to pay for AI on SAM.gov" width="560"></a>
+<a href="https://1102tools.com/downloads/1102tools-sam-gov-free-ai.mp4"><img src="https://1102tools.com/downloads/1102tools-sam-gov-free-ai.jpg" alt="Watch: You don't have to pay for AI on SAM.gov" width="560"></a>
 
 ## Not sure where to start?
 
@@ -37,21 +37,21 @@ Add them from the [install table](#local-or-hosted).
 - **One of a kind.** The only known MCP server for Acquisition.gov FAR Overhaul model text and agency class deviations.
 - **Private.** No tracking. Searches aren't logged and IP addresses aren't kept. Run it locally and nothing passes through 1102tools at all.
 
-<a href="https://www.youtube.com/watch?v=TlPaQOu2fgY"><img src="https://img.youtube.com/vi/TlPaQOu2fgY/maxresdefault.jpg" alt="Watch: USAspending vs SAM.gov, same contract data without the 1,000-a-day limit" width="560"></a>
+<a href="https://1102tools.com/downloads/1102tools-usaspending-vs-sam.mp4"><img src="https://1102tools.com/downloads/1102tools-usaspending-vs-sam.jpg" alt="Watch: USAspending vs SAM.gov, same contract data without the 1,000-a-day limit" width="560"></a>
 
 ## What you can ask
 
 | MCP | Best for | Try asking | Demo |
 |---|---|---|---|
-| [SAM.gov](https://1102tools.com/mcp/sam-gov) | Finding opportunities to bid on. The full version looks up awards too. | "Find open small business set-aside solicitations for NAICS 541512 that close in the next 30 days." | [Watch](https://www.youtube.com/watch?v=2CnYSrNIuWU) |
-| [USAspending](https://1102tools.com/mcp/usaspending) | Looking up past awards: who won, how much, and from which agency. | "Who holds the incumbent contract for this requirement, and when does it expire?" | [Watch](https://www.youtube.com/watch?v=j8rK_l_7u5Y) |
-| [GSA CALC+](https://1102tools.com/mcp/gsa-calc) | Pricing labor in proposals and IGCEs against rates GSA has already awarded. | "Is my proposed labor rate competitive with awarded GSA rates?" | [Watch](https://www.youtube.com/watch?v=AYJNeIwnEjM) |
-| [BLS OEWS](https://1102tools.com/mcp/bls-oews) | Pricing labor in proposals and IGCEs with market wage data. | "Build a fully burdened labor rate from BLS wages for my price proposal." | [Watch](https://www.youtube.com/watch?v=s8KXOP0GE_E) |
-| [GSA Per Diem](https://1102tools.com/mcp/gsa-per-diem) | Pricing travel in proposals and IGCEs. | "What travel costs should I include for a three-day site visit to Denver?" | [Watch](https://www.youtube.com/watch?v=lQxSMRltO-w) |
-| [eCFR](https://1102tools.com/mcp/ecfr) | A FAR answer when there's no contracting officer to ask. | "What does FAR Part 19 say about small business set-asides?" | [Watch](https://www.youtube.com/watch?v=MPmbY_7JOrQ) |
-| [Federal Register](https://1102tools.com/mcp/federal-register) | Seeing which FAR rules are coming and when comments close. | "Which proposed FAR rules could affect small contractors, and when do comments close?" | [Watch](https://www.youtube.com/watch?v=uVpZIWXz5j4) |
-| [Regulations.gov](https://1102tools.com/mcp/regulations-gov) | Reading what contractors said about a rule before you comment. | "What did other contractors say in their comments on this FAR rule?" | [Watch](https://www.youtube.com/watch?v=5tLd2EobUaw) |
-| [Acquisition.gov](https://1102tools.com/mcp/acquisition-gov) | Seeing which FAR Overhaul changes an agency has adopted. | "Has this agency issued a class deviation that affects my proposal?" | [Watch](https://www.youtube.com/watch?v=FyFrYhKA7h8) |
+| [SAM.gov](https://1102tools.com/mcp/sam-gov) | Finding opportunities to bid on. The full version looks up awards too. | "Find open small business set-aside solicitations for NAICS 541512 that close in the next 30 days." | [Watch](https://1102tools.com/downloads/1102tools-sam-gov-free-ai.mp4) |
+| [USAspending](https://1102tools.com/mcp/usaspending) | Looking up past awards: who won, how much, and from which agency. | "Who holds the incumbent contract for this requirement, and when does it expire?" | [Watch](https://1102tools.com/downloads/1102tools-usaspending-demo.mp4) |
+| [GSA CALC+](https://1102tools.com/mcp/gsa-calc) | Pricing labor in proposals and IGCEs against rates GSA has already awarded. | "Is my proposed labor rate competitive with awarded GSA rates?" | [Watch](https://1102tools.com/downloads/1102tools-gsa-calc-demo.mp4) |
+| [BLS OEWS](https://1102tools.com/mcp/bls-oews) | Pricing labor in proposals and IGCEs with market wage data. | "Build a fully burdened labor rate from BLS wages for my price proposal." | [Watch](https://1102tools.com/downloads/1102tools-bls-oews-demo.mp4) |
+| [GSA Per Diem](https://1102tools.com/mcp/gsa-per-diem) | Pricing travel in proposals and IGCEs. | "What travel costs should I include for a three-day site visit to Denver?" | [Watch](https://1102tools.com/downloads/1102tools-gsa-perdiem-demo.mp4) |
+| [eCFR](https://1102tools.com/mcp/ecfr) | A FAR answer when there's no contracting officer to ask. | "What does FAR Part 19 say about small business set-asides?" | [Watch](https://1102tools.com/downloads/1102tools-ecfr-demo.mp4) |
+| [Federal Register](https://1102tools.com/mcp/federal-register) | Seeing which FAR rules are coming and when comments close. | "Which proposed FAR rules could affect small contractors, and when do comments close?" | [Watch](https://1102tools.com/downloads/1102tools-federal-register-demo.mp4) |
+| [Regulations.gov](https://1102tools.com/mcp/regulations-gov) | Reading what contractors said about a rule before you comment. | "What did other contractors say in their comments on this FAR rule?" | [Watch](https://1102tools.com/downloads/1102tools-regulations-gov-demo.mp4) |
+| [Acquisition.gov](https://1102tools.com/mcp/acquisition-gov) | Seeing which FAR Overhaul changes an agency has adopted. | "Has this agency issued a class deviation that affects my proposal?" | [Watch](https://1102tools.com/downloads/1102tools-acquisition-gov-demo.mp4) |
 
 Want a stronger starting point? The [prompt library](https://github.com/1102tools-dev/federal-contracting-prompts) has ready-made requests for capture, pricing, competitor research and FAR questions. Each one names the MCPs it needs.
 
