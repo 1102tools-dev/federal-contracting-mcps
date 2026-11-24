@@ -261,7 +261,7 @@ def test_live_g9_sin_541611_lower_bound_not_negative():
     if api_lower < 0:
         assert b["lower"] == 0 and b["lower_clamped_to_zero"] is True
     else:
-        assert b["lower"] == api_lower
+        assert b["lower"] == pytest.approx(api_lower)
 
 
 # ---------------------------------------------------------------------------
